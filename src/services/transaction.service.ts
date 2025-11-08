@@ -9,6 +9,7 @@ import type {
   TransactionOrderByWithRelationInput,
   TransactionWhereInput,
 } from '@server/generated/prisma/models/Transaction';
+import Decimal from 'decimal.js';
 import { Elysia } from 'elysia';
 import type {
   IListTransactionsQuery,
@@ -108,22 +109,26 @@ export class TransactionService {
 
   private validateSufficientBalance(
     account: {
-      balance: number;
+      balance: Decimal | number;
       type: AccountType;
-      creditLimit?: number | null;
+      creditLimit?: Decimal | number | null;
     },
-    amount: number,
-    fee: number,
+    amount: Decimal,
+    fee: Decimal,
   ) {
+    const balance = new Decimal(account.balance);
+    const total = amount.plus(fee);
+
     if (account.type === AccountType.credit_card) {
-      const total = amount + fee;
-      const availableCredit = (account.creditLimit ?? 0) + account.balance;
-      if (total > availableCredit) {
+      const creditLimit = account.creditLimit
+        ? new Decimal(account.creditLimit)
+        : new Decimal(0);
+      const availableCredit = creditLimit.plus(balance);
+      if (total.gt(availableCredit)) {
         throw new Error('Insufficient credit limit');
       }
     } else {
-      const total = amount + fee;
-      if (total > account.balance) {
+      if (total.gt(balance)) {
         throw new Error('Insufficient balance');
       }
     }
@@ -165,17 +170,18 @@ export class TransactionService {
   }
 
   private convertCurrency(
-    amount: number,
+    amount: Decimal | number,
     fromCurrency: Currency,
     toCurrency: Currency,
-  ): number {
+  ): Decimal {
+    const amountDecimal = new Decimal(amount);
     if (fromCurrency === toCurrency) {
-      return amount;
+      return amountDecimal;
     }
 
-    const exchangeRates: Record<string, Record<string, number>> = {
-      VND: { USD: 1 / 25000 },
-      USD: { VND: 25000 },
+    const exchangeRates: Record<string, Record<string, Decimal>> = {
+      VND: { USD: new Decimal(1).div(25000) },
+      USD: { VND: new Decimal(25000) },
     };
 
     const rate = exchangeRates[fromCurrency]?.[toCurrency];
@@ -185,7 +191,7 @@ export class TransactionService {
       );
     }
 
-    return Math.round(amount * rate);
+    return amountDecimal.mul(rate);
   }
 
   private async applyBalanceEffect(
@@ -193,8 +199,8 @@ export class TransactionService {
     transactionType: TransactionType,
     accountId: string,
     toAccountId: string | null | undefined,
-    amount: number,
-    fee: number,
+    amount: Decimal | number,
+    fee: Decimal | number,
     currency: Currency,
     accountCurrency: Currency,
     toAccountCurrency?: Currency,
@@ -204,19 +210,22 @@ export class TransactionService {
       select: { id: true, balance: true, type: true, creditLimit: true },
     });
 
-    let amountInAccountCurrency = amount;
+    const amountDecimal = new Decimal(amount);
+    const feeDecimal = new Decimal(fee);
+
+    let amountInAccountCurrency = amountDecimal;
     if (currency !== accountCurrency) {
       amountInAccountCurrency = this.convertCurrency(
-        amount,
+        amountDecimal,
         currency,
         accountCurrency,
       );
     }
 
-    let feeInAccountCurrency = fee;
+    let feeInAccountCurrency = feeDecimal;
     if (currency !== accountCurrency) {
       feeInAccountCurrency = this.convertCurrency(
-        fee,
+        feeDecimal,
         currency,
         accountCurrency,
       );
@@ -227,7 +236,7 @@ export class TransactionService {
       case TransactionType.loan_received:
         await tx.account.update({
           where: { id: accountId },
-          data: { balance: { increment: amountInAccountCurrency } },
+          data: { balance: { increment: amountInAccountCurrency.toNumber() } },
         });
         break;
 
@@ -243,7 +252,9 @@ export class TransactionService {
           where: { id: accountId },
           data: {
             balance: {
-              decrement: amountInAccountCurrency + feeInAccountCurrency,
+              decrement: amountInAccountCurrency
+                .plus(feeInAccountCurrency)
+                .toNumber(),
             },
           },
         });
@@ -263,10 +274,10 @@ export class TransactionService {
           feeInAccountCurrency,
         );
 
-        let amountInToAccountCurrency = amount;
+        let amountInToAccountCurrency = amountDecimal;
         if (toAccountCurrency && currency !== toAccountCurrency) {
           amountInToAccountCurrency = this.convertCurrency(
-            amount,
+            amountDecimal,
             currency,
             toAccountCurrency,
           );
@@ -276,13 +287,17 @@ export class TransactionService {
           where: { id: accountId },
           data: {
             balance: {
-              decrement: amountInAccountCurrency + feeInAccountCurrency,
+              decrement: amountInAccountCurrency
+                .plus(feeInAccountCurrency)
+                .toNumber(),
             },
           },
         });
         await tx.account.update({
           where: { id: toAccountId },
-          data: { balance: { increment: amountInToAccountCurrency } },
+          data: {
+            balance: { increment: amountInToAccountCurrency.toNumber() },
+          },
         });
         break;
       }
@@ -294,25 +309,28 @@ export class TransactionService {
     transactionType: TransactionType,
     accountId: string,
     toAccountId: string | null | undefined,
-    amount: number,
-    fee: number,
+    amount: Decimal | number,
+    fee: Decimal | number,
     currency: Currency,
     accountCurrency: Currency,
     toAccountCurrency?: Currency,
   ) {
-    let amountInAccountCurrency = amount;
+    const amountDecimal = new Decimal(amount);
+    const feeDecimal = new Decimal(fee);
+
+    let amountInAccountCurrency = amountDecimal;
     if (currency !== accountCurrency) {
       amountInAccountCurrency = this.convertCurrency(
-        amount,
+        amountDecimal,
         currency,
         accountCurrency,
       );
     }
 
-    let feeInAccountCurrency = fee;
+    let feeInAccountCurrency = feeDecimal;
     if (currency !== accountCurrency) {
       feeInAccountCurrency = this.convertCurrency(
-        fee,
+        feeDecimal,
         currency,
         accountCurrency,
       );
@@ -323,7 +341,7 @@ export class TransactionService {
       case TransactionType.loan_received:
         await tx.account.update({
           where: { id: accountId },
-          data: { balance: { decrement: amountInAccountCurrency } },
+          data: { balance: { decrement: amountInAccountCurrency.toNumber() } },
         });
         break;
 
@@ -334,7 +352,9 @@ export class TransactionService {
           where: { id: accountId },
           data: {
             balance: {
-              increment: amountInAccountCurrency + feeInAccountCurrency,
+              increment: amountInAccountCurrency
+                .plus(feeInAccountCurrency)
+                .toNumber(),
             },
           },
         });
@@ -345,10 +365,10 @@ export class TransactionService {
           throw new Error('To account is required for transfer');
         }
 
-        let amountInToAccountCurrency = amount;
+        let amountInToAccountCurrency = amountDecimal;
         if (toAccountCurrency && currency !== toAccountCurrency) {
           amountInToAccountCurrency = this.convertCurrency(
-            amount,
+            amountDecimal,
             currency,
             toAccountCurrency,
           );
@@ -358,13 +378,17 @@ export class TransactionService {
           where: { id: accountId },
           data: {
             balance: {
-              increment: amountInAccountCurrency + feeInAccountCurrency,
+              increment: amountInAccountCurrency
+                .plus(feeInAccountCurrency)
+                .toNumber(),
             },
           },
         });
         await tx.account.update({
           where: { id: toAccountId },
-          data: { balance: { decrement: amountInToAccountCurrency } },
+          data: {
+            balance: { decrement: amountInToAccountCurrency.toNumber() },
+          },
         });
         break;
       }
@@ -402,21 +426,29 @@ export class TransactionService {
       await this.validateLoanPartyOwnership(userId, data.loanPartyId);
     }
 
-    const fee = data.fee ?? 0;
-    let priceInBaseCurrency = data.priceInBaseCurrency ?? null;
-    let feeInBaseCurrency = data.feeInBaseCurrency ?? null;
+    const amountDecimal = new Decimal(data.amount);
+    const feeDecimal = new Decimal(data.fee ?? 0);
+    const priceDecimal = data.price ? new Decimal(data.price) : null;
+    const quantityDecimal = data.quantity ? new Decimal(data.quantity) : null;
+
+    let priceInBaseCurrency: Decimal | null = data.priceInBaseCurrency
+      ? new Decimal(data.priceInBaseCurrency)
+      : null;
+    let feeInBaseCurrency: Decimal | null = data.feeInBaseCurrency
+      ? new Decimal(data.feeInBaseCurrency)
+      : null;
 
     if (currency !== user.baseCurrency) {
-      if (data.price && !priceInBaseCurrency) {
+      if (priceDecimal && !priceInBaseCurrency) {
         priceInBaseCurrency = this.convertCurrency(
-          data.price,
+          priceDecimal,
           currency,
           user.baseCurrency,
         );
       }
-      if (fee > 0 && !feeInBaseCurrency) {
+      if (feeDecimal.gt(0) && !feeInBaseCurrency) {
         feeInBaseCurrency = this.convertCurrency(
-          fee,
+          feeDecimal,
           currency,
           user.baseCurrency,
         );
@@ -431,13 +463,13 @@ export class TransactionService {
       categoryId: data.categoryId ?? null,
       investmentId: data.investmentId ?? null,
       loanPartyId: data.loanPartyId ?? null,
-      amount: data.amount,
+      amount: amountDecimal.toNumber(),
       currency,
-      price: data.price ?? null,
-      priceInBaseCurrency,
-      quantity: data.quantity ?? null,
-      fee,
-      feeInBaseCurrency,
+      price: priceDecimal?.toNumber() ?? null,
+      priceInBaseCurrency: priceInBaseCurrency?.toNumber() ?? null,
+      quantity: quantityDecimal?.toNumber() ?? null,
+      fee: feeDecimal.toNumber(),
+      feeInBaseCurrency: feeInBaseCurrency?.toNumber() ?? null,
       date: new Date(data.date),
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
       note: data.note ?? null,
@@ -487,8 +519,8 @@ export class TransactionService {
           data.type,
           data.accountId,
           data.toAccountId,
-          data.amount,
-          fee,
+          amountDecimal,
+          feeDecimal,
           currency,
           account.currency,
           toAccount?.currency,
@@ -514,8 +546,8 @@ export class TransactionService {
         data.type,
         data.accountId,
         data.toAccountId,
-        data.amount,
-        fee,
+        amountDecimal,
+        feeDecimal,
         currency,
         account.currency,
         toAccount?.currency,

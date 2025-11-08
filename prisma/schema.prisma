@@ -89,8 +89,8 @@ model Account {
   type        AccountType
   name        String
   currency    Currency    @default(VND)
-  balance     Int         @default(0)
-  creditLimit Int?        @map("credit_limit")
+  balance     Decimal     @default(0) @db.Decimal(20, 8)
+  creditLimit Decimal?    @map("credit_limit") @db.Decimal(20, 8)
   expiryDate  DateTime?   @map("expiry_date")
   meta        Json?
   createdAt   DateTime    @default(now()) @map("created_at")
@@ -157,13 +157,13 @@ model Transaction {
   categoryId          String?         @map("category_id")
   investmentId        String?         @map("investment_id")
   loanPartyId         String?         @map("loan_party_id")
-  amount              Int
+  amount              Decimal         @db.Decimal(20, 8)
   currency            Currency        @default(VND)
-  price               Int?
-  priceInBaseCurrency Int?            @map("price_in_base_currency")
-  quantity            Int?
-  fee                 Int             @default(0)
-  feeInBaseCurrency   Int?            @map("fee_in_base_currency")
+  price               Decimal?        @db.Decimal(20, 8)
+  priceInBaseCurrency Decimal?       @map("price_in_base_currency") @db.Decimal(20, 8)
+  quantity            Decimal?        @db.Decimal(20, 8)
+  fee                 Decimal         @default(0) @db.Decimal(20, 8)
+  feeInBaseCurrency   Decimal?       @map("fee_in_base_currency") @db.Decimal(20, 8)
   date                DateTime
   dueDate             DateTime?       @map("due_date")
   note                String?
@@ -194,7 +194,7 @@ model Budget {
   id         String       @id @default(uuid(7))
   userId     String       @map("user_id")
   categoryId String       @map("category_id")
-  amount     Int
+  amount     Decimal      @db.Decimal(20, 8)
   period     BudgetPeriod
   startDate  DateTime     @map("start_date")
   endDate    DateTime?    @map("end_date")
@@ -234,7 +234,7 @@ model RecurringTransaction {
   accountId  String             @map("account_id")
   categoryId String?            @map("category_id")
   type       TransactionType
-  amount     Int
+  amount     Decimal            @db.Decimal(20, 8)
   currency   Currency           @default(VND)
   frequency  RecurringFrequency
   nextDate   DateTime           @map("next_date")
