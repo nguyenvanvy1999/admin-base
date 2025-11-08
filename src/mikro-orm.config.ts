@@ -1,7 +1,9 @@
-import { defineConfig, PostgreSqlDriver } from '@mikro-orm/postgresql';
+import { BetterSqliteDriver, defineConfig } from '@mikro-orm/better-sqlite';
+import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
 
 export default defineConfig({
-  driver: PostgreSqlDriver,
+  driver: BetterSqliteDriver,
   entities: ['src/entities'],
-  clientUrl: process.env.DATABASE_URL,
+  dbName: 'investment',
+  highlighter: new SqlHighlighter(),
 });

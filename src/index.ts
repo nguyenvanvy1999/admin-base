@@ -1,6 +1,7 @@
 import { staticPlugin } from '@elysiajs/static';
 import swagger from '@elysiajs/swagger';
 import { RequestContext } from '@mikro-orm/core';
+import { appEnv } from '@server/env';
 import { Elysia } from 'elysia';
 import userController from './controllers/user.controller';
 import { initORM } from './db';
@@ -55,7 +56,7 @@ export const app = new Elysia()
     //add more controllers here
   )
 
-  .listen(+process.env.PORT ?? 3000);
+  .listen(appEnv.PORT);
 
 console.log(
   `Server started open http://${app.server?.hostname}:${app.server?.port} in the browser`,

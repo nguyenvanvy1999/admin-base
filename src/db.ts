@@ -3,8 +3,8 @@ import {
   type EntityRepository,
   MikroORM,
   type Options,
-} from '@mikro-orm/postgresql';
-import { User } from './entities/User';
+} from '@mikro-orm/better-sqlite';
+import { User } from './entities/user';
 import config from './mikro-orm.config';
 
 export interface Services {
