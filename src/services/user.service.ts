@@ -1,26 +1,31 @@
 import { prisma } from '@server/db';
-import type { User } from '@server/generated/prisma/client';
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
 import { CURRENCY_IDS } from '../constants/currency';
+import type {
+  ILoginDto,
+  IRegisterDto,
+  IUpdateProfileDto,
+} from '../dto/user.dto';
 import { CategoryService } from './category.service';
 
 export class UserService {
   private categoryService = new CategoryService();
 
-  async register(username: string, password: string): Promise<User> {
+  async register(data: IRegisterDto) {
     const existUser = await prisma.user.findFirst({
-      where: { username },
+      where: { username: data.username },
     });
     if (existUser) {
       throw new Error('User already exists');
     }
-    const hashPassword = await Bun.password.hash(password, 'bcrypt');
+    const hashPassword = await Bun.password.hash(data.password, 'bcrypt');
     const user = await prisma.user.create({
       data: {
-        username,
+        username: data.username,
         password: hashPassword,
+        name: data.name,
         role: UserRole.user,
         baseCurrencyId: CURRENCY_IDS.VND,
       },
@@ -31,25 +36,15 @@ export class UserService {
     return user;
   }
 
-  async login(
-    username: string,
-    password: string,
-  ): Promise<{
-    user: {
-      id: string;
-      username: string;
-      role: UserRole;
-    };
-    jwt: string;
-  }> {
+  async login(data: ILoginDto) {
     const user = await prisma.user.findFirst({
-      where: { username },
+      where: { username: data.username },
     });
     if (!user) {
       throw new Error('User not found');
     }
     const isValid = await Bun.password.verify(
-      password,
+      data.password,
       user.password,
       'bcrypt',
     );
@@ -71,13 +66,7 @@ export class UserService {
     };
   }
 
-  async getUserInfo(id: string): Promise<{
-    id: string;
-    username: string;
-    name: string | null;
-    role: UserRole;
-    baseCurrencyId: string;
-  }> {
+  async getUserInfo(id: string) {
     const user = await prisma.user.findFirst({
       where: { id },
     });
@@ -93,15 +82,7 @@ export class UserService {
     };
   }
 
-  async updateProfile(
-    userId: string,
-    data: {
-      name?: string;
-      baseCurrencyId?: string;
-      oldPassword?: string;
-      newPassword?: string;
-    },
-  ) {
+  async updateProfile(userId: string, data: IUpdateProfileDto) {
     const user = await prisma.user.findFirst({
       where: { id: userId },
     });

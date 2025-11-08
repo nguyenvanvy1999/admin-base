@@ -1,5 +1,6 @@
 import { UserRole } from '@server/generated/prisma/enums';
-import { Elysia, t } from 'elysia';
+import { Elysia } from 'elysia';
+import { LoginDto, RegisterDto, UpdateProfileDto } from '../dto/user.dto';
 import authMacro from '../macros/auth';
 import userService from '../services/user.service';
 
@@ -10,32 +11,25 @@ const userController = new Elysia().group('/users', (group) =>
     .post(
       '/register',
       async ({ body, userService }) => {
-        return await userService.register(body.username, body.password);
+        return await userService.register(body);
       },
       {
         detail: {
           tags: ['User'],
         },
-        body: t.Object({
-          username: t.String(),
-          password: t.String({ minLength: 6 }),
-          name: t.Optional(t.String()),
-        }),
+        body: RegisterDto,
       },
     )
     .post(
       '/login',
       async ({ body, userService }) => {
-        return await userService.login(body.username, body.password);
+        return await userService.login(body);
       },
       {
         detail: {
           tags: ['User'],
         },
-        body: t.Object({
-          username: t.String(),
-          password: t.String(),
-        }),
+        body: LoginDto,
       },
     )
     .get(
@@ -54,15 +48,7 @@ const userController = new Elysia().group('/users', (group) =>
     .put(
       '/profile',
       async ({ user, body, userService }) => {
-        if (body.newPassword && !body.oldPassword) {
-          throw new Error('Old password is required to change password');
-        }
-        return await userService.updateProfile(user.id, {
-          name: body.name,
-          baseCurrencyId: body.baseCurrencyId,
-          oldPassword: body.oldPassword,
-          newPassword: body.newPassword,
-        });
+        return await userService.updateProfile(user.id, body);
       },
       {
         checkAuth: [UserRole.user],
@@ -70,12 +56,7 @@ const userController = new Elysia().group('/users', (group) =>
           tags: ['User'],
           security: [{ JwtAuth: [] }],
         },
-        body: t.Object({
-          name: t.Optional(t.String()),
-          baseCurrencyId: t.Optional(t.String()),
-          oldPassword: t.Optional(t.String()),
-          newPassword: t.Optional(t.String({ minLength: 6 })),
-        }),
+        body: UpdateProfileDto,
       },
     ),
 );
