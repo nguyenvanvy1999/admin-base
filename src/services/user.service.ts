@@ -74,7 +74,9 @@ export class UserService {
   async getUserInfo(id: string): Promise<{
     id: string;
     username: string;
+    name: string | null;
     role: UserRole;
+    baseCurrencyId: string;
   }> {
     const user = await prisma.user.findFirst({
       where: { id },
@@ -85,7 +87,76 @@ export class UserService {
     return {
       id: user.id,
       username: user.username,
+      name: user.name,
       role: user.role,
+      baseCurrencyId: user.baseCurrencyId,
+    };
+  }
+
+  async updateProfile(
+    userId: string,
+    data: {
+      name?: string;
+      baseCurrencyId?: string;
+      oldPassword?: string;
+      newPassword?: string;
+    },
+  ) {
+    const user = await prisma.user.findFirst({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (data.newPassword) {
+      if (!data.oldPassword) {
+        throw new Error('Old password is required to change password');
+      }
+      const isValid = await Bun.password.verify(
+        data.oldPassword,
+        user.password,
+        'bcrypt',
+      );
+      if (!isValid) {
+        throw new Error('Invalid old password');
+      }
+    }
+
+    if (data.baseCurrencyId) {
+      const currency = await prisma.currency.findUnique({
+        where: { id: data.baseCurrencyId },
+      });
+      if (!currency) {
+        throw new Error('Currency not found');
+      }
+    }
+
+    const updateData: {
+      name?: string;
+      baseCurrencyId?: string;
+      password?: string;
+    } = {};
+
+    if (data.name !== undefined) {
+      updateData.name = data.name;
+    }
+    if (data.baseCurrencyId) {
+      updateData.baseCurrencyId = data.baseCurrencyId;
+    }
+    if (data.newPassword) {
+      updateData.password = await Bun.password.hash(data.newPassword, 'bcrypt');
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+
+    return {
+      id: updatedUser.id,
+      username: updatedUser.username,
+      role: updatedUser.role,
     };
   }
 }

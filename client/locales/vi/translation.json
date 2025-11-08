@@ -1,68 +1,89 @@
 {
-	"common": {
-		"appName": "FinTrack",
-		"allRightsReserved": "Bảo lưu mọi quyền",
-		"copyright": "© {{year}} FinTrack. Bảo lưu mọi quyền.",
-		"online": "Trực tuyến",
-		"nA": "N/A"
-	},
-	"login": {
-		"title": "FinTrack",
-		"username": "Tên đăng nhập",
-		"password": "Mật khẩu",
-		"usernamePlaceholder": "Nhập tên đăng nhập",
-		"passwordPlaceholder": "Nhập mật khẩu",
-		"signIn": "Đăng nhập",
-		"signingIn": "Đang đăng nhập...",
-		"dontHaveAccount": "Chưa có tài khoản?",
-		"signUpHere": "Đăng ký tại đây"
-	},
-	"register": {
-		"title": "FinTrack",
-		"createAccount": "Tạo tài khoản của bạn",
-		"joinUs": "Tham gia cùng chúng tôi ngay hôm nay và bắt đầu hành trình",
-		"username": "Tên đăng nhập",
-		"password": "Mật khẩu",
-		"confirmPassword": "Xác nhận mật khẩu",
-		"usernamePlaceholder": "Nhập tên đăng nhập",
-		"passwordPlaceholder": "Tạo mật khẩu mạnh",
-		"confirmPasswordPlaceholder": "Xác nhận mật khẩu",
-		"createAccountButton": "Tạo tài khoản",
-		"creatingAccount": "Đang tạo tài khoản...",
-		"alreadyHaveAccount": "Đã có tài khoản?",
-		"signInHere": "Đăng nhập tại đây",
-		"passwordRequired": "Mật khẩu là bắt buộc",
-		"passwordMinLength": "Mật khẩu phải có ít nhất 6 ký tự",
-		"confirmPasswordRequired": "Vui lòng xác nhận mật khẩu",
-		"passwordsDoNotMatch": "Mật khẩu không khớp"
-	},
-	"home": {
-		"welcomeBack": "Chào mừng trở lại, {{username}}!",
-		"successfullyLogged": "Bạn đã đăng nhập thành công",
-		"userInformation": "Thông tin người dùng",
-		"userId": "ID người dùng",
-		"username": "Tên đăng nhập",
-		"role": "Vai trò",
-		"hotReloadTitle": "Hot Reload với Bun",
-		"hotReloadDescription": "Phát triển cực nhanh với hot module reloading tích hợp sẵn của Bun. Không cần Vite, Webpack hay các bundler khác!",
-		"edenTreatyTitle": "Eden Treaty Type Safety",
-		"edenTreatyDescription": "Type safety từ đầu đến cuối giữa frontend và backend. Tự động tạo TypeScript types từ Elysia API của bạn.",
-		"tailwindTitle": "Tailwind CSS",
-		"tailwindDescription": "CSS framework ưu tiên utility cho phát triển UI nhanh chóng. Thiết kế đẹp, responsive với CSS tùy chỉnh tối thiểu.",
-		"elysiaTitle": "Elysia Backend",
-		"elysiaDescription": "Framework backend TypeScript hiệu năng cao. Xây dựng trên Bun runtime để đạt tốc độ và hiệu quả tối đa.",
-		"quickActions": "Thao tác nhanh",
-		"documentation": "Tài liệu"
-	},
-	"header": {
-		"appName": "FinTrack",
-		"profile": "Hồ sơ",
-		"logout": "Đăng xuất"
-	},
-	"footer": {
-		"appName": "FinTrack",
-		"version": "v{{version}}",
-		"allRightsReserved": "© {{year}} FinTrack. Bảo lưu mọi quyền."
-	}
+  "common": {
+    "appName": "FinTrack",
+    "allRightsReserved": "Bảo lưu mọi quyền",
+    "copyright": "© {{year}} FinTrack. Bảo lưu mọi quyền.",
+    "online": "Trực tuyến",
+    "nA": "N/A"
+  },
+  "login": {
+    "title": "FinTrack",
+    "username": "Tên đăng nhập",
+    "password": "Mật khẩu",
+    "usernamePlaceholder": "Nhập tên đăng nhập",
+    "passwordPlaceholder": "Nhập mật khẩu",
+    "signIn": "Đăng nhập",
+    "signingIn": "Đang đăng nhập...",
+    "dontHaveAccount": "Chưa có tài khoản?",
+    "signUpHere": "Đăng ký tại đây"
+  },
+  "register": {
+    "title": "FinTrack",
+    "createAccount": "Tạo tài khoản của bạn",
+    "joinUs": "Tham gia cùng chúng tôi ngay hôm nay và bắt đầu hành trình",
+    "username": "Tên đăng nhập",
+    "password": "Mật khẩu",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "usernamePlaceholder": "Nhập tên đăng nhập",
+    "passwordPlaceholder": "Tạo mật khẩu mạnh",
+    "confirmPasswordPlaceholder": "Xác nhận mật khẩu",
+    "createAccountButton": "Tạo tài khoản",
+    "creatingAccount": "Đang tạo tài khoản...",
+    "alreadyHaveAccount": "Đã có tài khoản?",
+    "signInHere": "Đăng nhập tại đây",
+    "passwordRequired": "Mật khẩu là bắt buộc",
+    "passwordMinLength": "Mật khẩu phải có ít nhất 6 ký tự",
+    "confirmPasswordRequired": "Vui lòng xác nhận mật khẩu",
+    "passwordsDoNotMatch": "Mật khẩu không khớp"
+  },
+  "home": {
+    "welcomeBack": "Chào mừng trở lại, {{username}}!",
+    "successfullyLogged": "Bạn đã đăng nhập thành công",
+    "userInformation": "Thông tin người dùng",
+    "userId": "ID người dùng",
+    "username": "Tên đăng nhập",
+    "role": "Vai trò",
+    "hotReloadTitle": "Hot Reload với Bun",
+    "hotReloadDescription": "Phát triển cực nhanh với hot module reloading tích hợp sẵn của Bun. Không cần Vite, Webpack hay các bundler khác!",
+    "edenTreatyTitle": "Eden Treaty Type Safety",
+    "edenTreatyDescription": "Type safety từ đầu đến cuối giữa frontend và backend. Tự động tạo TypeScript types từ Elysia API của bạn.",
+    "tailwindTitle": "Tailwind CSS",
+    "tailwindDescription": "CSS framework ưu tiên utility cho phát triển UI nhanh chóng. Thiết kế đẹp, responsive với CSS tùy chỉnh tối thiểu.",
+    "elysiaTitle": "Elysia Backend",
+    "elysiaDescription": "Framework backend TypeScript hiệu năng cao. Xây dựng trên Bun runtime để đạt tốc độ và hiệu quả tối đa.",
+    "quickActions": "Thao tác nhanh",
+    "documentation": "Tài liệu"
+  },
+  "header": {
+    "appName": "FinTrack",
+    "profile": "Hồ sơ",
+    "logout": "Đăng xuất"
+  },
+  "footer": {
+    "appName": "FinTrack",
+    "version": "v{{version}}",
+    "allRightsReserved": "© {{year}} FinTrack. Bảo lưu mọi quyền."
+  },
+  "profile": {
+    "title": "Hồ sơ",
+    "edit": "Chỉnh sửa",
+    "save": "Lưu",
+    "saving": "Đang lưu...",
+    "cancel": "Hủy",
+    "loading": "Đang tải...",
+    "userNotFound": "Không tìm thấy người dùng",
+    "username": "Tên đăng nhập",
+    "name": "Tên",
+    "namePlaceholder": "Nhập tên của bạn",
+    "role": "Vai trò",
+    "baseCurrency": "Tiền tệ cơ sở",
+    "changePassword": "Đổi mật khẩu",
+    "oldPassword": "Mật khẩu cũ",
+    "oldPasswordPlaceholder": "Nhập mật khẩu cũ",
+    "newPassword": "Mật khẩu mới",
+    "newPasswordPlaceholder": "Nhập mật khẩu mới",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "confirmPasswordPlaceholder": "Xác nhận mật khẩu mới",
+    "passwordsDoNotMatch": "Mật khẩu không khớp"
+  }
 }
-

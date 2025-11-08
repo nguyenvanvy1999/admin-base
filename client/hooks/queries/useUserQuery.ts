@@ -24,7 +24,9 @@ export const useUserQuery = () => {
       const user = response.data as {
         id: string;
         username: string;
+        name: string | null;
         role: string;
+        baseCurrencyId: string;
       };
 
       setUser({

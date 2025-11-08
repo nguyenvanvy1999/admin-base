@@ -1,68 +1,67 @@
 {
-	"common": {
-		"appName": "FinTrack",
-		"allRightsReserved": "All rights reserved",
-		"copyright": "© {{year}} FinTrack. All rights reserved.",
-		"online": "Online",
-		"nA": "N/A"
-	},
-	"login": {
-		"title": "FinTrack",
-		"username": "Username",
-		"password": "Password",
-		"usernamePlaceholder": "Enter your username",
-		"passwordPlaceholder": "Enter your password",
-		"signIn": "Sign in",
-		"signingIn": "Signing in...",
-		"dontHaveAccount": "Don't have an account?",
-		"signUpHere": "Sign up here"
-	},
-	"register": {
-		"title": "FinTrack",
-		"createAccount": "Create your account",
-		"joinUs": "Join us today and start your journey",
-		"username": "Username",
-		"password": "Password",
-		"confirmPassword": "Confirm Password",
-		"usernamePlaceholder": "Enter your username",
-		"passwordPlaceholder": "Create a strong password",
-		"confirmPasswordPlaceholder": "Confirm your password",
-		"createAccountButton": "Create Account",
-		"creatingAccount": "Creating account...",
-		"alreadyHaveAccount": "Already have an account?",
-		"signInHere": "Sign in here",
-		"passwordRequired": "Password is required",
-		"passwordMinLength": "Password must be at least 6 characters",
-		"confirmPasswordRequired": "Please confirm your password",
-		"passwordsDoNotMatch": "Passwords do not match"
-	},
-	"home": {
-		"welcomeBack": "Welcome back, {{username}}!",
-		"successfullyLogged": "You're successfully logged",
-		"userInformation": "User Information",
-		"userId": "User ID",
-		"username": "Username",
-		"role": "Role",
-		"hotReloadTitle": "Hot Reload with Bun",
-		"hotReloadDescription": "Lightning-fast development with Bun's built-in hot module reloading. No Vite, Webpack, or other bundlers needed!",
-		"edenTreatyTitle": "Eden Treaty Type Safety",
-		"edenTreatyDescription": "End-to-end type safety between frontend and backend. Automatic TypeScript types generated from your Elysia API.",
-		"tailwindTitle": "Tailwind CSS",
-		"tailwindDescription": "Utility-first CSS framework for rapid UI development. Beautiful, responsive designs with minimal custom CSS.",
-		"elysiaTitle": "Elysia Backend",
-		"elysiaDescription": "High-performance TypeScript backend framework. Built on Bun runtime for maximum speed and efficiency.",
-		"quickActions": "Quick Actions",
-		"documentation": "Documentation"
-	},
-	"header": {
-		"appName": "FinTrack",
-		"profile": "Profile",
-		"logout": "Logout"
-	},
-	"footer": {
-		"appName": "FinTrack",
-		"version": "v{{version}}",
-		"allRightsReserved": "© {{year}} FinTrack. All rights reserved."
-	}
+  "common": {
+    "appName": "FinTrack",
+    "allRightsReserved": "All rights reserved",
+    "copyright": "© {{year}} FinTrack. All rights reserved.",
+    "online": "Online",
+    "nA": "N/A"
+  },
+  "login": {
+    "title": "FinTrack",
+    "username": "Username",
+    "password": "Password",
+    "usernamePlaceholder": "Enter your username",
+    "passwordPlaceholder": "Enter your password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "dontHaveAccount": "Don't have an account?",
+    "signUpHere": "Sign up here"
+  },
+  "register": {
+    "title": "FinTrack",
+    "createAccount": "Create your account",
+    "joinUs": "Join us today and start your journey",
+    "username": "Username",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "usernamePlaceholder": "Enter your username",
+    "passwordPlaceholder": "Create a strong password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "createAccountButton": "Create Account",
+    "creatingAccount": "Creating account...",
+    "alreadyHaveAccount": "Already have an account?",
+    "signInHere": "Sign in here",
+    "passwordRequired": "Password is required",
+    "passwordMinLength": "Password must be at least 6 characters",
+    "confirmPasswordRequired": "Please confirm your password",
+    "passwordsDoNotMatch": "Passwords do not match"
+  },
+  "home": {
+    "welcomeBack": "Welcome back, {{username}}!",
+    "successfullyLogged": "You're successfully logged",
+    "userInformation": "User Information",
+    "userId": "User ID",
+    "username": "Username",
+    "role": "Role",
+    "hotReloadTitle": "Hot Reload with Bun",
+    "hotReloadDescription": "Lightning-fast development with Bun's built-in hot module reloading. No Vite, Webpack, or other bundlers needed!",
+    "edenTreatyTitle": "Eden Treaty Type Safety",
+    "edenTreatyDescription": "End-to-end type safety between frontend and backend. Automatic TypeScript types generated from your Elysia API.",
+    "tailwindTitle": "Tailwind CSS",
+    "tailwindDescription": "Utility-first CSS framework for rapid UI development. Beautiful, responsive designs with minimal custom CSS.",
+    "elysiaTitle": "Elysia Backend",
+    "elysiaDescription": "High-performance TypeScript backend framework. Built on Bun runtime for maximum speed and efficiency.",
+    "quickActions": "Quick Actions",
+    "documentation": "Documentation"
+  },
+  "header": {
+    "appName": "FinTrack",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "footer": {
+    "appName": "FinTrack",
+    "version": "v{{version}}",
+    "allRightsReserved": "© {{year}} FinTrack. All rights reserved."
+  }
 }
-

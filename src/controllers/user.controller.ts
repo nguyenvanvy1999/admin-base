@@ -50,6 +50,33 @@ const userController = new Elysia().group('/users', (group) =>
           security: [{ JwtAuth: [] }],
         },
       },
+    )
+    .put(
+      '/profile',
+      async ({ user, body, userService }) => {
+        if (body.newPassword && !body.oldPassword) {
+          throw new Error('Old password is required to change password');
+        }
+        return await userService.updateProfile(user.id, {
+          name: body.name,
+          baseCurrencyId: body.baseCurrencyId,
+          oldPassword: body.oldPassword,
+          newPassword: body.newPassword,
+        });
+      },
+      {
+        checkAuth: [UserRole.user],
+        detail: {
+          tags: ['User'],
+          security: [{ JwtAuth: [] }],
+        },
+        body: t.Object({
+          name: t.Optional(t.String()),
+          baseCurrencyId: t.Optional(t.String()),
+          oldPassword: t.Optional(t.String()),
+          newPassword: t.Optional(t.String({ minLength: 6 })),
+        }),
+      },
     ),
 );
 

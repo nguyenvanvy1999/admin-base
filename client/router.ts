@@ -3,6 +3,7 @@ import { createHashRouter } from 'react-router';
 import ProtectedPageLayout from './layouts';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
 
 /** IMPORTANT: use hash router instead of browser router to avoid conflicts with the server routes
@@ -17,6 +18,10 @@ const router = createHashRouter([
       {
         path: '/',
         Component: HomePage,
+      },
+      {
+        path: '/profile',
+        Component: ProfilePage,
       },
     ],
   },
