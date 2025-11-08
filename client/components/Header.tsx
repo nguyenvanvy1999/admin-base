@@ -38,9 +38,7 @@ const Header = () => {
               className="h-10 w-10 rounded-full shadow-sm border-2 border-gray-100"
             />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">
-                Investment Checking
-              </h1>
+              <h1 className="text-xl font-bold text-gray-900">FinTrack</h1>
             </div>
           </div>
 

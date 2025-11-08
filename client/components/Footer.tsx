@@ -10,9 +10,7 @@ const Footer = () => {
           <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
             <div className="flex items-center space-x-2">
               <span className="text-gray-400">•</span>
-              <span className="text-sm text-gray-500">
-                Investment Checking v{version}
-              </span>
+              <span className="text-sm text-gray-500">FinTrack v{version}</span>
               <span className="text-gray-400">•</span>
             </div>
           </div>
@@ -21,7 +19,7 @@ const Footer = () => {
         {/* Bottom line */}
         <div className="mt-4 pt-4 border-t border-gray-100">
           <p className="text-center text-xs text-gray-500">
-            &copy; {currentYear} Investment Checking. All rights reserved.
+            &copy; {currentYear} FinTrack. All rights reserved.
           </p>
         </div>
       </div>

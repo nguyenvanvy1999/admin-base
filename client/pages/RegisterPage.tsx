@@ -120,10 +120,7 @@ const RegisterPage = () => {
               className="h-20 w-20 rounded-full shadow-lg border-4 border-white"
             />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            {' '}
-            Investment Checking
-          </h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2"> FinTrack</h1>
         </div>
 
         {/* Register Form */}
@@ -264,7 +261,7 @@ const RegisterPage = () => {
         {/* Footer */}
         <div className="mt-4 pt-4 border-t border-gray-100">
           <p className="text-center text-xs text-gray-500">
-            &copy; {currentYear} Investment Checking. All rights reserved.
+            &copy; {currentYear} FinTrack. All rights reserved.
           </p>
         </div>
       </div>

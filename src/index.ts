@@ -12,8 +12,8 @@ export const app = new Elysia()
       provider: 'swagger-ui',
       documentation: {
         info: {
-          title: 'Investment Checking',
-          description: 'Investment Checking API Documentation',
+          title: 'FinTrack',
+          description: 'FinTrack API Documentation',
           version: '1.0.0',
         },
         components: {
