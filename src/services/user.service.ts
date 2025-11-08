@@ -6,7 +6,12 @@ import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
 
 export class UserService {
-  async register(username: string, password: string) {
+  async register(
+    username: string,
+    email: string,
+    password: string,
+    name?: string,
+  ) {
     const existUser = await db
       .select()
       .from(usersTable)
@@ -14,7 +19,17 @@ export class UserService {
       .limit(1);
 
     if (existUser.length > 0) {
-      throw new Error('User already exists');
+      throw new Error('Username already exists');
+    }
+
+    const existEmail = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, email))
+      .limit(1);
+
+    if (existEmail.length > 0) {
+      throw new Error('Email already exists');
     }
 
     const hashPassword = await Bun.password.hash(password, 'bcrypt');
@@ -22,7 +37,9 @@ export class UserService {
       .insert(usersTable)
       .values({
         username,
+        email,
         password: hashPassword,
+        name: name || null,
         role: 'user',
       })
       .returning();
@@ -60,7 +77,10 @@ export class UserService {
       user: {
         id: Number(user.id),
         username: user.username,
+        email: user.email,
+        name: user.name,
         role: user.role,
+        baseCurrency: user.baseCurrency,
       },
       jwt: token,
     };
@@ -81,7 +101,10 @@ export class UserService {
     return {
       id: user.id,
       username: user.username,
+      email: user.email,
+      name: user.name,
       role: user.role,
+      baseCurrency: user.baseCurrency,
     };
   }
 }
