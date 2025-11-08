@@ -12,8 +12,8 @@ export const app = new Elysia()
       provider: 'swagger-ui',
       documentation: {
         info: {
-          title: 'Elysia fullstack template',
-          description: 'Elysia fullstack template API Documentation',
+          title: 'Investment Checking',
+          description: 'Investment Checking API Documentation',
           version: '1.0.0',
         },
         components: {
@@ -39,7 +39,6 @@ export const app = new Elysia()
     }),
   )
   .group('/api', (group) => group.onError(errorMiddleware).use(userController))
-
   .listen(appEnv.PORT);
 
 console.log(
