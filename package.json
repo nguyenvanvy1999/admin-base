@@ -9,8 +9,10 @@
     "format": "bunx @biomejs/biome format --write .",
     "lint": "bunx @biomejs/biome lint --write .",
     "check": "bunx @biomejs/biome check --write .",
+    "db:migrate": "bunx prisma migrate dev --create-only --name init",
+    "db:deploy": "bunx prisma migrate deploy",
     "db:generate": "bunx prisma generate",
-    "db:migrate": "bunx prisma migrate dev"
+    "db:dev:reset": "bunx prisma migrate reset --force"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.4.0",

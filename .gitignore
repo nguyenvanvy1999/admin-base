@@ -45,3 +45,4 @@ package-lock.json
 .idea
 server
 src/generated
+prisma/investment.db
