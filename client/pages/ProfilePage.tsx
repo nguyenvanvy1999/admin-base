@@ -1,3 +1,4 @@
+import { Button } from '@client/components/ui/button';
 import { FormInput } from '@client/components/ui/FormInput';
 import { FormSelect } from '@client/components/ui/FormSelect';
 import { useUpdateProfileMutation } from '@client/hooks/mutations/useUserMutations';
@@ -124,10 +125,7 @@ const ProfilePage = () => {
               {t('profile.title')}
             </h1>
             {!isEditMode && (
-              <button
-                onClick={handleEdit}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
+              <Button onClick={handleEdit}>
                 <svg
                   className="w-4 h-4 mr-2"
                   fill="none"
@@ -142,7 +140,7 @@ const ProfilePage = () => {
                   />
                 </svg>
                 {t('profile.edit')}
-              </button>
+              </Button>
             )}
           </div>
 
@@ -276,23 +274,22 @@ const ProfilePage = () => {
               </div>
 
               <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={handleCancel}
                   disabled={updateProfileMutation.isPending}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {t('profile.cancel')}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   disabled={updateProfileMutation.isPending}
-                  className="px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {updateProfileMutation.isPending
                     ? t('profile.saving')
                     : t('profile.save')}
-                </button>
+                </Button>
               </div>
             </form>
           ) : (

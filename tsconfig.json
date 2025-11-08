@@ -22,6 +22,27 @@
       ],
       "@client/*": [
         "./client/*"
+      ],
+      "@/*": [
+        "./client/*"
+      ],
+      "@/components": [
+        "./client/components"
+      ],
+      "@/components/*": [
+        "./client/components/*"
+      ],
+      "@/lib": [
+        "./client/libs"
+      ],
+      "@/lib/*": [
+        "./client/libs/*"
+      ],
+      "@/hooks": [
+        "./client/hooks"
+      ],
+      "@/hooks/*": [
+        "./client/hooks/*"
       ]
     }
   }

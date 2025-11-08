@@ -1,5 +1,13 @@
 import type { FieldApi } from '@tanstack/react-form';
-import Select from './Select';
+import { cn } from '../utils';
+import { Label } from './label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './select';
 
 type SelectOption = {
   value: string;
@@ -25,19 +33,40 @@ export const FormSelect = <TFormData,>({
   className = '',
   disabled = false,
 }: FormSelectProps<TFormData>) => {
+  const error = field.state.meta.errors[0];
+
   return (
-    <Select
-      name={field.name}
-      label={label}
-      value={field.state.value ?? ''}
-      onChange={(e) => field.handleChange(e.target.value)}
-      onBlur={field.handleBlur}
-      error={field.state.meta.errors[0]}
-      required={required}
-      placeholder={placeholder}
-      options={options}
-      className={className}
-      disabled={disabled}
-    />
+    <div className="space-y-2">
+      {label && (
+        <Label htmlFor={field.name}>
+          {label}
+          {required && <span className="text-destructive ml-1">*</span>}
+        </Label>
+      )}
+      <Select
+        value={field.state.value ?? ''}
+        onValueChange={(value) => field.handleChange(value)}
+        disabled={disabled}
+      >
+        <SelectTrigger
+          id={field.name}
+          className={cn(
+            error && 'border-destructive focus:ring-destructive',
+            className,
+          )}
+          onBlur={field.handleBlur}
+        >
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
   );
 };

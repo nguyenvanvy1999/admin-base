@@ -1,6 +1,7 @@
+import { Button } from '@client/components/ui/button';
 import { FormInput } from '@client/components/ui/FormInput';
+import { useValidation } from '@client/components/validation';
 import { useRegisterMutation } from '@client/hooks/mutations/useAuthMutations';
-import { useValidation } from '@client/libs/validation';
 import { useForm } from '@tanstack/react-form';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -131,10 +132,10 @@ const RegisterPage = () => {
             {/* Terms and Conditions */}
 
             {/* Submit Button */}
-            <button
+            <Button
               type="submit"
               disabled={registerMutation.isPending}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
+              className="w-full"
             >
               {registerMutation.isPending ? (
                 <>
@@ -163,7 +164,7 @@ const RegisterPage = () => {
               ) : (
                 t('register.createAccountButton')
               )}
-            </button>
+            </Button>
           </form>
 
           {/* Sign in link */}
