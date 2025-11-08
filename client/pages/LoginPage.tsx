@@ -1,9 +1,11 @@
 import { useLoginMutation } from '@client/hooks/mutations/useAuthMutations';
 import type * as React from 'react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 const LoginPage = () => {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
     username: '',
@@ -39,7 +41,9 @@ const LoginPage = () => {
               className="h-20 w-20 rounded-full shadow-lg border-4 border-white"
             />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2"> FinTrack</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            {t('login.title')}
+          </h1>
         </div>
 
         {/* Login Form */}
@@ -50,7 +54,7 @@ const LoginPage = () => {
                 htmlFor="username"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Username
+                {t('login.username')}
               </label>
               <input
                 id="username"
@@ -60,7 +64,7 @@ const LoginPage = () => {
                 value={formData.username}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none"
-                placeholder="Enter your username"
+                placeholder={t('login.usernamePlaceholder')}
               />
             </div>
 
@@ -69,7 +73,7 @@ const LoginPage = () => {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Password
+                {t('login.password')}
               </label>
               <input
                 id="password"
@@ -79,7 +83,7 @@ const LoginPage = () => {
                 value={formData.password}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none"
-                placeholder="Enter your password"
+                placeholder={t('login.passwordPlaceholder')}
               />
             </div>
 
@@ -110,10 +114,10 @@ const LoginPage = () => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Signing in...
+                  {t('login.signingIn')}
                 </>
               ) : (
-                'Sign in'
+                t('login.signIn')
               )}
             </button>
           </form>
@@ -121,12 +125,12 @@ const LoginPage = () => {
           {/* Sign up link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              {t('login.dontHaveAccount')}{' '}
               <Link
                 to="/register"
                 className="font-medium text-indigo-600 hover:text-indigo-500 transition duration-200"
               >
-                Sign up here
+                {t('login.signUpHere')}
               </Link>
             </p>
           </div>
@@ -134,7 +138,7 @@ const LoginPage = () => {
 
         <div className="mt-4 pt-4 border-t border-gray-100">
           <p className="text-center text-xs text-gray-500">
-            &copy; {currentYear} FinTrack. All rights reserved.
+            {t('common.copyright', { year: currentYear })}
           </p>
         </div>
       </div>

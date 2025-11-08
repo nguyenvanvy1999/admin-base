@@ -2,7 +2,6 @@ import { staticPlugin } from '@elysiajs/static';
 import swagger from '@elysiajs/swagger';
 import { appEnv } from '@server/env';
 import { Elysia } from 'elysia';
-import transactionController from './controllers/transaction.controller';
 import userController from './controllers/user.controller';
 import errorMiddleware from './middlewares/error-middleware';
 
@@ -39,12 +38,7 @@ export const app = new Elysia()
       assets: './client',
     }),
   )
-  .group('/api', (group) =>
-    group
-      .onError(errorMiddleware)
-      .use(userController)
-      .use(transactionController),
-  )
+  .group('/api', (group) => group.onError(errorMiddleware).use(userController))
   .listen(appEnv.PORT);
 
 console.log(

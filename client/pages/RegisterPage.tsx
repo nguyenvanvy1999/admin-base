@@ -1,9 +1,11 @@
 import { useRegisterMutation } from '@client/hooks/mutations/useAuthMutations';
 import type * as React from 'react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 const RegisterPage = () => {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
 
   const [formData, setFormData] = useState({
@@ -33,15 +35,15 @@ const RegisterPage = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('register.passwordRequired');
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('register.passwordMinLength');
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = t('register.confirmPasswordRequired');
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = t('register.passwordsDoNotMatch');
     }
 
     setErrors(newErrors);
@@ -73,17 +75,19 @@ const RegisterPage = () => {
               className="h-20 w-20 rounded-full shadow-lg border-4 border-white"
             />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2"> FinTrack</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            {t('register.title')}
+          </h1>
         </div>
 
         {/* Register Form */}
         <div className="bg-white py-8 px-6 shadow-xl rounded-2xl border border-gray-100">
           <div className="mb-6">
             <h3 className="text-2xl font-bold text-gray-900 text-center">
-              Create your account
+              {t('register.createAccount')}
             </h3>
             <p className="text-sm text-gray-600 text-center mt-2">
-              Join us today and start your journey
+              {t('register.joinUs')}
             </p>
           </div>
 
@@ -93,7 +97,7 @@ const RegisterPage = () => {
                 htmlFor="username"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Username
+                {t('register.username')}
               </label>
               <input
                 id="username"
@@ -102,7 +106,7 @@ const RegisterPage = () => {
                 required
                 value={formData.username}
                 onChange={handleInputChange}
-                placeholder="Enter your username"
+                placeholder={t('register.usernamePlaceholder')}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none`}
               />
             </div>
@@ -113,7 +117,7 @@ const RegisterPage = () => {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Password
+                {t('register.password')}
               </label>
               <input
                 id="password"
@@ -125,7 +129,7 @@ const RegisterPage = () => {
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none ${
                   errors.password ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Create a strong password"
+                placeholder={t('register.passwordPlaceholder')}
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
@@ -138,13 +142,13 @@ const RegisterPage = () => {
                 htmlFor="confirmPassword"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Confirm Password
+                {t('register.confirmPassword')}
               </label>
               <input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
-                placeholder="Confirm your password"
+                placeholder={t('register.confirmPasswordPlaceholder')}
                 required
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
@@ -189,10 +193,10 @@ const RegisterPage = () => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Creating account...
+                  {t('register.creatingAccount')}
                 </>
               ) : (
-                'Create Account'
+                t('register.createAccountButton')
               )}
             </button>
           </form>
@@ -200,12 +204,12 @@ const RegisterPage = () => {
           {/* Sign in link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Already have an account?{' '}
+              {t('register.alreadyHaveAccount')}{' '}
               <Link
                 to="/login"
                 className="font-medium text-indigo-600 hover:text-indigo-500 transition duration-200"
               >
-                Sign in here
+                {t('register.signInHere')}
               </Link>
             </p>
           </div>
@@ -214,7 +218,7 @@ const RegisterPage = () => {
         {/* Footer */}
         <div className="mt-4 pt-4 border-t border-gray-100">
           <p className="text-center text-xs text-gray-500">
-            &copy; {currentYear} FinTrack. All rights reserved.
+            {t('common.copyright', { year: currentYear })}
           </p>
         </div>
       </div>

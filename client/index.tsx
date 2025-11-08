@@ -6,6 +6,7 @@ import ToastContainer from './components/ToastContainer';
 import { useUserQuery } from './hooks/queries/useUserQuery';
 import { queryClient } from './libs/queryClient';
 import router from './router';
+import './i18n';
 
 function AppContent() {
   useUserQuery();

@@ -1,0 +1,32 @@
+import i18n from 'i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+import { initReactI18next } from 'react-i18next';
+import enTranslations from './locales/en/translation.json';
+import viTranslations from './locales/vi/translation.json';
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    debug: !isProduction,
+    lng: 'vi',
+    fallbackLng: 'vi',
+    resources: {
+      en: {
+        translation: enTranslations,
+      },
+      vi: {
+        translation: viTranslations,
+      },
+    },
+    interpolation: {
+      escapeValue: false,
+    },
+    detection: {
+      caches: ['localStorage', 'cookie'],
+    },
+  });
+
+export default i18n;

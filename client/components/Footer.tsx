@@ -1,6 +1,9 @@
+import { useTranslation } from 'react-i18next';
+
 const Footer = () => {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
-  const version = '1.0.0'; // From package.json
+  const version = '1.0.0';
 
   return (
     <footer className="bg-white border-t border-gray-200">
@@ -10,7 +13,9 @@ const Footer = () => {
           <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
             <div className="flex items-center space-x-2">
               <span className="text-gray-400">•</span>
-              <span className="text-sm text-gray-500">FinTrack v{version}</span>
+              <span className="text-sm text-gray-500">
+                {t('footer.appName')} {t('footer.version', { version })}
+              </span>
               <span className="text-gray-400">•</span>
             </div>
           </div>
@@ -19,7 +24,7 @@ const Footer = () => {
         {/* Bottom line */}
         <div className="mt-4 pt-4 border-t border-gray-100">
           <p className="text-center text-xs text-gray-500">
-            &copy; {currentYear} FinTrack. All rights reserved.
+            {t('footer.allRightsReserved', { year: currentYear })}
           </p>
         </div>
       </div>

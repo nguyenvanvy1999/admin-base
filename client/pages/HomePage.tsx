@@ -1,6 +1,8 @@
 import useUserStore from '@client/store/user';
+import { useTranslation } from 'react-i18next';
 
 const HomePage = () => {
+  const { t } = useTranslation();
   const { user } = useUserStore();
 
   return (
@@ -9,34 +11,40 @@ const HomePage = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {user?.username}!
+            {t('home.welcomeBack', { username: user?.username })}
           </h1>
-          <p className="text-gray-600">You're successfully logged</p>
+          <p className="text-gray-600">{t('home.successfullyLogged')}</p>
         </div>
 
         {/* User Information Card */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            User Information
+            {t('home.userInformation')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gray-50 rounded-lg p-4">
-              <dt className="text-sm font-medium text-gray-500">User ID</dt>
+              <dt className="text-sm font-medium text-gray-500">
+                {t('home.userId')}
+              </dt>
               <dd className="mt-1 text-lg font-semibold text-gray-900">
-                {user?.id || 'N/A'}
+                {user?.id || t('common.nA')}
               </dd>
             </div>
             <div className="bg-gray-50 rounded-lg p-4">
-              <dt className="text-sm font-medium text-gray-500">Username</dt>
+              <dt className="text-sm font-medium text-gray-500">
+                {t('home.username')}
+              </dt>
               <dd className="mt-1 text-lg font-semibold text-gray-900">
-                {user?.username || 'N/A'}
+                {user?.username || t('common.nA')}
               </dd>
             </div>
             <div className="bg-gray-50 rounded-lg p-4">
-              <dt className="text-sm font-medium text-gray-500">Role</dt>
+              <dt className="text-sm font-medium text-gray-500">
+                {t('home.role')}
+              </dt>
               <dd className="mt-1">
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                  {user?.role || 'N/A'}
+                  {user?.role || t('common.nA')}
                 </span>
               </dd>
             </div>
@@ -66,12 +74,11 @@ const HomePage = () => {
                 </div>
               </div>
               <h3 className="ml-3 text-lg font-medium text-gray-900">
-                Hot Reload with Bun
+                {t('home.hotReloadTitle')}
               </h3>
             </div>
             <p className="text-gray-600 mb-4">
-              Lightning-fast development with Bun's built-in hot module
-              reloading. No Vite, Webpack, or other bundlers needed!
+              {t('home.hotReloadDescription')}
             </p>
             <div className="bg-gray-50 rounded-lg p-3">
               <code className="text-sm text-gray-800">
@@ -101,12 +108,11 @@ const HomePage = () => {
                 </div>
               </div>
               <h3 className="ml-3 text-lg font-medium text-gray-900">
-                Eden Treaty Type Safety
+                {t('home.edenTreatyTitle')}
               </h3>
             </div>
             <p className="text-gray-600 mb-4">
-              End-to-end type safety between frontend and backend. Automatic
-              TypeScript types generated from your Elysia API.
+              {t('home.edenTreatyDescription')}
             </p>
             <div className="bg-gray-50 rounded-lg p-3">
               <code className="text-sm text-gray-800">
@@ -136,12 +142,11 @@ const HomePage = () => {
                 </div>
               </div>
               <h3 className="ml-3 text-lg font-medium text-gray-900">
-                Tailwind CSS
+                {t('home.tailwindTitle')}
               </h3>
             </div>
             <p className="text-gray-600 mb-4">
-              Utility-first CSS framework for rapid UI development. Beautiful,
-              responsive designs with minimal custom CSS.
+              {t('home.tailwindDescription')}
             </p>
             <div className="bg-gray-50 rounded-lg p-3">
               <code className="text-sm text-gray-800">
@@ -171,13 +176,10 @@ const HomePage = () => {
                 </div>
               </div>
               <h3 className="ml-3 text-lg font-medium text-gray-900">
-                Elysia Backend
+                {t('home.elysiaTitle')}
               </h3>
             </div>
-            <p className="text-gray-600 mb-4">
-              High-performance TypeScript backend framework. Built on Bun
-              runtime for maximum speed and efficiency.
-            </p>
+            <p className="text-gray-600 mb-4">{t('home.elysiaDescription')}</p>
             <div className="bg-gray-50 rounded-lg p-3">
               <code className="text-sm text-gray-800">
                 app.get('/api/users', handler)
@@ -189,7 +191,7 @@ const HomePage = () => {
         {/* Quick Actions */}
         <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Quick Actions
+            {t('home.quickActions')}
           </h3>
           <div className="flex flex-wrap gap-4">
             <button
@@ -201,7 +203,7 @@ const HomePage = () => {
               }
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              Documentation
+              {t('home.documentation')}
             </button>
           </div>
         </div>

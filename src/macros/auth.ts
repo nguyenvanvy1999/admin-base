@@ -20,6 +20,9 @@ const authMacro = new Elysia().macro({
           id: string;
           role: string;
         };
+        if (!decoded.id) {
+          throw new Error('Invalid token: user id not found');
+        }
         const user = {
           id: decoded.id,
           role: decoded.role,
