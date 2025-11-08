@@ -1,9 +1,14 @@
+import type { PrismaTx } from '@server/common/type';
 import { prisma } from '@server/db';
 import {
   AccountType,
   type Currency,
   TransactionType,
 } from '@server/generated/prisma/enums';
+import type {
+  TransactionOrderByWithRelationInput,
+  TransactionWhereInput,
+} from '@server/generated/prisma/models/Transaction';
 import { Elysia } from 'elysia';
 import type {
   IListTransactionsQuery,
@@ -184,8 +189,7 @@ export class TransactionService {
   }
 
   private async applyBalanceEffect(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tx: any,
+    tx: PrismaTx,
     transactionType: TransactionType,
     accountId: string,
     toAccountId: string | null | undefined,
@@ -286,8 +290,7 @@ export class TransactionService {
   }
 
   private async revertBalanceEffect(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tx: any,
+    tx: PrismaTx,
     transactionType: TransactionType,
     accountId: string,
     toAccountId: string | null | undefined,
@@ -466,7 +469,7 @@ export class TransactionService {
         throw new Error('Transaction not owned by user');
       }
 
-      return prisma.$transaction(async (tx: any) => {
+      return prisma.$transaction(async (tx: PrismaTx) => {
         await this.revertBalanceEffect(
           tx,
           existingTransaction.type,
@@ -505,7 +508,7 @@ export class TransactionService {
       });
     }
 
-    return prisma.$transaction(async (tx: any) => {
+    return prisma.$transaction(async (tx: PrismaTx) => {
       await this.applyBalanceEffect(
         tx,
         data.type,
@@ -568,7 +571,7 @@ export class TransactionService {
       sortOrder = 'desc',
     } = filters;
 
-    const where: any = {
+    const where: TransactionWhereInput = {
       userId,
     };
 
@@ -597,7 +600,7 @@ export class TransactionService {
       }
     }
 
-    const orderBy: any = {};
+    const orderBy: TransactionOrderByWithRelationInput = {};
     if (sortBy === 'date') {
       orderBy.date = sortOrder;
     } else if (sortBy === 'amount') {
@@ -658,7 +661,7 @@ export class TransactionService {
       throw new Error('Transaction not owned by user');
     }
 
-    await prisma.$transaction(async (tx: any) => {
+    await prisma.$transaction(async (tx: PrismaTx) => {
       await this.revertBalanceEffect(
         tx,
         transaction.type,
