@@ -50,19 +50,6 @@ const userController = new Elysia().group('/users', (group) =>
           security: [{ JwtAuth: [] }],
         },
       },
-    )
-    .get(
-      '/admin',
-      ({ user }) => {
-        return user;
-      },
-      {
-        checkAuth: [UserRole.admin],
-        detail: {
-          tags: ['User'],
-          security: [{ JwtAuth: [] }],
-        },
-      },
     ),
 );
 
