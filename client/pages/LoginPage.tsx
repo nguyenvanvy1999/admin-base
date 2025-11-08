@@ -1,33 +1,28 @@
+import { FormInput } from '@client/components/ui/FormInput';
 import { useLoginMutation } from '@client/hooks/mutations/useAuthMutations';
-import type * as React from 'react';
-import { useState } from 'react';
+import { useValidation } from '@client/libs/validation';
+import { useForm } from '@tanstack/react-form';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 const LoginPage = () => {
   const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
-  const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-  });
   const loginMutation = useLoginMutation();
+  const validation = useValidation();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    loginMutation.mutate({
-      username: formData.username,
-      password: formData.password,
-    });
-  };
+  const form = useForm({
+    defaultValues: {
+      username: '',
+      password: '',
+    },
+    onSubmit: ({ value }) => {
+      loginMutation.mutate({
+        username: value.username,
+        password: value.password,
+      });
+    },
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -48,44 +43,46 @@ const LoginPage = () => {
 
         {/* Login Form */}
         <div className="bg-white dark:bg-gray-800 py-8 px-6 shadow-xl rounded-2xl border border-gray-100 dark:border-gray-700">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                {t('login.username')}
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                value={formData.username}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                placeholder={t('login.usernamePlaceholder')}
-              />
-            </div>
+          <form
+            className="space-y-6"
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+          >
+            <form.Field
+              name="username"
+              validators={{
+                onChange: validation.required('login.username'),
+              }}
+            >
+              {(field) => (
+                <FormInput
+                  field={field}
+                  label={t('login.username')}
+                  placeholder={t('login.usernamePlaceholder')}
+                  required
+                />
+              )}
+            </form.Field>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                {t('login.password')}
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                placeholder={t('login.passwordPlaceholder')}
-              />
-            </div>
+            <form.Field
+              name="password"
+              validators={{
+                onChange: validation.required('login.password'),
+              }}
+            >
+              {(field) => (
+                <FormInput
+                  field={field}
+                  type="password"
+                  label={t('login.password')}
+                  placeholder={t('login.passwordPlaceholder')}
+                  required
+                />
+              )}
+            </form.Field>
 
             <button
               type="submit"

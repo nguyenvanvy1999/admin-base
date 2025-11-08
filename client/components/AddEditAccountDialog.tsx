@@ -1,10 +1,12 @@
 import { CURRENCY_IDS } from '@server/constants/currency';
 import { AccountType } from '@server/generated/prisma/enums';
-import { useEffect, useState } from 'react';
+import { useForm } from '@tanstack/react-form';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import DatePicker from './ui/DatePicker';
-import Input from './ui/Input';
-import Select from './ui/Select';
+import { useValidation } from '../libs/validation';
+import { FormDatePicker } from './ui/FormDatePicker';
+import { FormInput } from './ui/FormInput';
+import { FormSelect } from './ui/FormSelect';
 
 type Account = {
   id: string;
@@ -50,101 +52,67 @@ const AddEditAccountDialog = ({
 }: AddEditAccountDialogProps) => {
   const { t } = useTranslation();
   const isEditMode = !!account;
+  const validation = useValidation();
 
-  const [formData, setFormData] = useState({
-    name: '',
-    type: '',
-    currencyId: '',
-    creditLimit: '',
-    expiryDate: '',
+  const form = useForm({
+    defaultValues: {
+      name: '',
+      type: '',
+      currencyId: '',
+      creditLimit: '',
+      expiryDate: '',
+    },
+    onSubmit: ({ value }) => {
+      const submitData: {
+        id?: string;
+        type: string;
+        name: string;
+        currencyId: string;
+        creditLimit?: number;
+        expiryDate?: string;
+      } = {
+        name: value.name.trim(),
+        type: value.type,
+        currencyId: value.currencyId,
+      };
+
+      if (isEditMode && account) {
+        submitData.id = account.id;
+      }
+
+      if (value.type === AccountType.credit_card) {
+        if (value.creditLimit) {
+          submitData.creditLimit = parseFloat(value.creditLimit);
+        }
+        if (value.expiryDate) {
+          submitData.expiryDate = new Date(value.expiryDate).toISOString();
+        }
+      }
+
+      onSubmit(submitData);
+    },
   });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (account) {
-      setFormData({
-        name: account.name,
-        type: account.type,
-        currencyId: account.currencyId,
-        creditLimit: account.creditLimit || '',
-        expiryDate: account.expiryDate
+      form.setFieldValue('name', account.name);
+      form.setFieldValue('type', account.type);
+      form.setFieldValue('currencyId', account.currencyId);
+      form.setFieldValue('creditLimit', account.creditLimit || '');
+      form.setFieldValue(
+        'expiryDate',
+        account.expiryDate
           ? new Date(account.expiryDate).toISOString().split('T')[0]
           : '',
-      });
+      );
     } else {
-      setFormData({
-        name: '',
-        type: '',
-        currencyId: '',
-        creditLimit: '',
-        expiryDate: '',
-      });
+      form.setFieldValue('name', '');
+      form.setFieldValue('type', '');
+      form.setFieldValue('currencyId', '');
+      form.setFieldValue('creditLimit', '');
+      form.setFieldValue('expiryDate', '');
     }
-    setErrors({});
-  }, [account, isOpen]);
-
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = t('accounts.nameRequired');
-    }
-    if (!formData.type) {
-      newErrors.type = t('accounts.typeRequired');
-    }
-    if (!formData.currencyId) {
-      newErrors.currencyId = t('accounts.currencyRequired');
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-
-    const submitData: {
-      id?: string;
-      type: string;
-      name: string;
-      currencyId: string;
-      creditLimit?: number;
-      expiryDate?: string;
-    } = {
-      name: formData.name.trim(),
-      type: formData.type,
-      currencyId: formData.currencyId,
-    };
-
-    if (isEditMode && account) {
-      submitData.id = account.id;
-    }
-
-    if (formData.type === AccountType.credit_card) {
-      if (formData.creditLimit) {
-        submitData.creditLimit = parseFloat(formData.creditLimit);
-      }
-      if (formData.expiryDate) {
-        submitData.expiryDate = new Date(formData.expiryDate).toISOString();
-      }
-    }
-
-    onSubmit(submitData);
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const isCreditCard = formData.type === AccountType.credit_card;
+  }, [account, isOpen, form]);
 
   if (!isOpen) return null;
 
@@ -184,75 +152,110 @@ const AddEditAccountDialog = ({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="text"
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+            className="space-y-4"
+          >
+            <form.Field
               name="name"
-              label={t('accounts.name')}
-              value={formData.name}
-              onChange={handleInputChange}
-              placeholder={t('accounts.namePlaceholder')}
-              error={errors.name}
-              required
-            />
+              validators={{
+                onChange: validation.required('accounts.nameRequired'),
+              }}
+            >
+              {(field) => (
+                <FormInput
+                  field={field}
+                  label={t('accounts.name')}
+                  placeholder={t('accounts.namePlaceholder')}
+                  required
+                />
+              )}
+            </form.Field>
 
-            <Select
+            <form.Field
               name="type"
-              label={t('accounts.type')}
-              value={formData.type}
-              onChange={handleInputChange}
-              placeholder={t('accounts.typePlaceholder')}
-              error={errors.type}
-              required
-              options={[
-                { value: AccountType.cash, label: t('accounts.cash') },
-                { value: AccountType.bank, label: t('accounts.bank') },
-                {
-                  value: AccountType.credit_card,
-                  label: t('accounts.credit_card'),
-                },
-                {
-                  value: AccountType.investment,
-                  label: t('accounts.investment'),
-                },
-              ]}
-            />
+              validators={{
+                onChange: validation.required('accounts.typeRequired'),
+              }}
+            >
+              {(field) => (
+                <FormSelect
+                  field={field}
+                  label={t('accounts.type')}
+                  placeholder={t('accounts.typePlaceholder')}
+                  required
+                  options={[
+                    { value: AccountType.cash, label: t('accounts.cash') },
+                    { value: AccountType.bank, label: t('accounts.bank') },
+                    {
+                      value: AccountType.credit_card,
+                      label: t('accounts.credit_card'),
+                    },
+                    {
+                      value: AccountType.investment,
+                      label: t('accounts.investment'),
+                    },
+                  ]}
+                />
+              )}
+            </form.Field>
 
-            <Select
+            <form.Field
               name="currencyId"
-              label={t('accounts.currency')}
-              value={formData.currencyId}
-              onChange={handleInputChange}
-              placeholder={t('accounts.currencyPlaceholder')}
-              error={errors.currencyId}
-              required
-              options={CURRENCIES.map((currency) => ({
-                value: currency.id,
-                label: `${currency.code} - ${currency.name}`,
-              }))}
+              validators={{
+                onChange: validation.required('accounts.currencyRequired'),
+              }}
+            >
+              {(field) => (
+                <FormSelect
+                  field={field}
+                  label={t('accounts.currency')}
+                  placeholder={t('accounts.currencyPlaceholder')}
+                  required
+                  options={CURRENCIES.map((currency) => ({
+                    value: currency.id,
+                    label: `${currency.code} - ${currency.name}`,
+                  }))}
+                />
+              )}
+            </form.Field>
+
+            <form.Subscribe
+              selector={(state) => state.values.type}
+              children={(typeValue) => {
+                const isCreditCard = typeValue === AccountType.credit_card;
+                if (!isCreditCard) return null;
+                return (
+                  <>
+                    <form.Field name="creditLimit">
+                      {(field) => (
+                        <FormInput
+                          field={field}
+                          type="number"
+                          label={t('accounts.creditLimit')}
+                          placeholder={t('accounts.creditLimitPlaceholder')}
+                          min="0"
+                          step="0.01"
+                        />
+                      )}
+                    </form.Field>
+
+                    <form.Field name="expiryDate">
+                      {(field) => (
+                        <FormDatePicker
+                          field={field}
+                          label={t('accounts.expiryDate')}
+                        />
+                      )}
+                    </form.Field>
+                  </>
+                );
+              }}
             />
-
-            {isCreditCard && (
-              <>
-                <Input
-                  type="number"
-                  name="creditLimit"
-                  label={t('accounts.creditLimit')}
-                  value={formData.creditLimit}
-                  onChange={handleInputChange}
-                  placeholder={t('accounts.creditLimitPlaceholder')}
-                  min="0"
-                  step="0.01"
-                />
-
-                <DatePicker
-                  name="expiryDate"
-                  label={t('accounts.expiryDate')}
-                  value={formData.expiryDate}
-                  onChange={handleInputChange}
-                />
-              </>
-            )}
 
             <div className="flex justify-end gap-3 pt-4">
               <button

@@ -1,67 +1,29 @@
+import { FormInput } from '@client/components/ui/FormInput';
 import { useRegisterMutation } from '@client/hooks/mutations/useAuthMutations';
-import type * as React from 'react';
-import { useState } from 'react';
+import { useValidation } from '@client/libs/validation';
+import { useForm } from '@tanstack/react-form';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 const RegisterPage = () => {
   const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
-
-  const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const registerMutation = useRegisterMutation();
+  const validation = useValidation();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.password) {
-      newErrors.password = t('register.passwordRequired');
-    } else if (formData.password.length < 6) {
-      newErrors.password = t('register.passwordMinLength');
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = t('register.confirmPasswordRequired');
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = t('register.passwordsDoNotMatch');
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    registerMutation.mutate({
-      username: formData.username,
-      password: formData.password,
-    });
-  };
+  const form = useForm({
+    defaultValues: {
+      username: '',
+      password: '',
+      confirmPassword: '',
+    },
+    onSubmit: ({ value }) => {
+      registerMutation.mutate({
+        username: value.username,
+        password: value.password,
+      });
+    },
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -91,83 +53,80 @@ const RegisterPage = () => {
             </p>
           </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                {t('register.username')}
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                value={formData.username}
-                onChange={handleInputChange}
-                placeholder={t('register.usernamePlaceholder')}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-              />
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                {t('register.password')}
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 ${
-                  errors.password
-                    ? 'border-red-500 dark:border-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
-                }`}
-                placeholder={t('register.passwordPlaceholder')}
-              />
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {errors.password}
-                </p>
+          <form
+            className="space-y-6"
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+          >
+            <form.Field
+              name="username"
+              validators={{
+                onChange: validation.required('login.username'),
+              }}
+            >
+              {(field) => (
+                <FormInput
+                  field={field}
+                  label={t('register.username')}
+                  placeholder={t('register.usernamePlaceholder')}
+                  required
+                />
               )}
-            </div>
+            </form.Field>
 
-            {/* Confirm Password Field */}
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                {t('register.confirmPassword')}
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder={t('register.confirmPasswordPlaceholder')}
-                required
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 ${
-                  errors.confirmPassword
-                    ? 'border-red-500 dark:border-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {errors.confirmPassword}
-                </p>
+            <form.Field
+              name="password"
+              validators={{
+                onChange: ({ value }) => {
+                  if (!value || (typeof value === 'string' && !value.trim())) {
+                    return t('register.passwordRequired');
+                  }
+                  if (typeof value === 'string' && value.length < 6) {
+                    return t('register.passwordMinLength');
+                  }
+                  return undefined;
+                },
+              }}
+            >
+              {(field) => (
+                <FormInput
+                  field={field}
+                  type="password"
+                  label={t('register.password')}
+                  placeholder={t('register.passwordPlaceholder')}
+                  required
+                />
               )}
-            </div>
+            </form.Field>
+
+            <form.Field
+              name="confirmPassword"
+              validators={{
+                onChange: ({ value, fieldApi }) => {
+                  if (!value || (typeof value === 'string' && !value.trim())) {
+                    return t('register.confirmPasswordRequired');
+                  }
+                  const password = fieldApi.form.getFieldValue('password');
+                  if (typeof value === 'string' && value !== password) {
+                    return t('register.passwordsDoNotMatch');
+                  }
+                  return undefined;
+                },
+              }}
+            >
+              {(field) => (
+                <FormInput
+                  field={field}
+                  type="password"
+                  label={t('register.confirmPassword')}
+                  placeholder={t('register.confirmPasswordPlaceholder')}
+                  required
+                />
+              )}
+            </form.Field>
 
             {/* Terms and Conditions */}
 

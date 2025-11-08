@@ -1,7 +1,9 @@
+import { FormInput } from '@client/components/ui/FormInput';
+import { FormSelect } from '@client/components/ui/FormSelect';
 import { useUpdateProfileMutation } from '@client/hooks/mutations/useUserMutations';
 import { useUserQuery } from '@client/hooks/queries/useUserQuery';
 import { CURRENCY_IDS } from '@server/constants/currency';
-import type * as React from 'react';
+import { useForm } from '@tanstack/react-form';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -15,25 +17,56 @@ const ProfilePage = () => {
   const { data: user, isLoading } = useUserQuery();
   const updateProfileMutation = useUpdateProfileMutation();
   const [isEditMode, setIsEditMode] = useState(false);
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    baseCurrencyId: user?.baseCurrencyId || CURRENCY_IDS.VND,
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+
+  const form = useForm({
+    defaultValues: {
+      name: user?.name || '',
+      baseCurrencyId: user?.baseCurrencyId || CURRENCY_IDS.VND,
+      oldPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+    onSubmit: ({ value }) => {
+      const updateData: {
+        name?: string;
+        baseCurrencyId?: string;
+        oldPassword?: string;
+        newPassword?: string;
+      } = {};
+
+      if (value.name !== user?.name) {
+        updateData.name = value.name;
+      }
+      if (value.baseCurrencyId !== user?.baseCurrencyId) {
+        updateData.baseCurrencyId = value.baseCurrencyId;
+      }
+      if (value.newPassword) {
+        updateData.oldPassword = value.oldPassword;
+        updateData.newPassword = value.newPassword;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        setIsEditMode(false);
+        return;
+      }
+
+      updateProfileMutation.mutate(updateData, {
+        onSuccess: () => {
+          setIsEditMode(false);
+        },
+      });
+    },
   });
 
   useEffect(() => {
     if (user && !isEditMode) {
-      setFormData({
-        name: user.name || '',
-        baseCurrencyId: user.baseCurrencyId,
-        oldPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
+      form.setFieldValue('name', user.name || '');
+      form.setFieldValue('baseCurrencyId', user.baseCurrencyId);
+      form.setFieldValue('oldPassword', '');
+      form.setFieldValue('newPassword', '');
+      form.setFieldValue('confirmPassword', '');
     }
-  }, [user, isEditMode]);
+  }, [user, isEditMode, form]);
 
   if (isLoading) {
     return (
@@ -58,76 +91,26 @@ const ProfilePage = () => {
     );
   }
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
   const handleEdit = () => {
-    setFormData({
-      name: user.name || '',
-      baseCurrencyId: user.baseCurrencyId,
-      oldPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
+    if (user) {
+      form.setFieldValue('name', user.name || '');
+      form.setFieldValue('baseCurrencyId', user.baseCurrencyId);
+      form.setFieldValue('oldPassword', '');
+      form.setFieldValue('newPassword', '');
+      form.setFieldValue('confirmPassword', '');
+    }
     setIsEditMode(true);
   };
 
   const handleCancel = () => {
     setIsEditMode(false);
-    setFormData({
-      name: user.name || '',
-      baseCurrencyId: user.baseCurrencyId,
-      oldPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (
-      formData.newPassword &&
-      formData.newPassword !== formData.confirmPassword
-    ) {
-      return;
+    if (user) {
+      form.setFieldValue('name', user.name || '');
+      form.setFieldValue('baseCurrencyId', user.baseCurrencyId);
+      form.setFieldValue('oldPassword', '');
+      form.setFieldValue('newPassword', '');
+      form.setFieldValue('confirmPassword', '');
     }
-
-    const updateData: {
-      name?: string;
-      baseCurrencyId?: string;
-      oldPassword?: string;
-      newPassword?: string;
-    } = {};
-
-    if (formData.name !== user.name) {
-      updateData.name = formData.name;
-    }
-    if (formData.baseCurrencyId !== user.baseCurrencyId) {
-      updateData.baseCurrencyId = formData.baseCurrencyId;
-    }
-    if (formData.newPassword) {
-      updateData.oldPassword = formData.oldPassword;
-      updateData.newPassword = formData.newPassword;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      setIsEditMode(false);
-      return;
-    }
-
-    updateProfileMutation.mutate(updateData, {
-      onSuccess: () => {
-        setIsEditMode(false);
-      },
-    });
   };
 
   const selectedCurrency = CURRENCIES.find((c) => c.id === user.baseCurrencyId);
@@ -164,7 +147,14 @@ const ProfilePage = () => {
           </div>
 
           {isEditMode ? (
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                form.handleSubmit();
+              }}
+              className="space-y-6"
+            >
               <div>
                 <label
                   htmlFor="username"
@@ -181,45 +171,28 @@ const ProfilePage = () => {
                 />
               </div>
 
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                  {t('profile.name')}
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  placeholder={t('profile.namePlaceholder')}
-                />
-              </div>
+              <form.Field name="name">
+                {(field) => (
+                  <FormInput
+                    field={field}
+                    label={t('profile.name')}
+                    placeholder={t('profile.namePlaceholder')}
+                  />
+                )}
+              </form.Field>
 
-              <div>
-                <label
-                  htmlFor="baseCurrencyId"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                  {t('profile.baseCurrency')}
-                </label>
-                <select
-                  id="baseCurrencyId"
-                  name="baseCurrencyId"
-                  value={formData.baseCurrencyId}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                >
-                  {CURRENCIES.map((currency) => (
-                    <option key={currency.id} value={currency.id}>
-                      {currency.symbol} - {currency.name} ({currency.code})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <form.Field name="baseCurrencyId">
+                {(field) => (
+                  <FormSelect
+                    field={field}
+                    label={t('profile.baseCurrency')}
+                    options={CURRENCIES.map((currency) => ({
+                      value: currency.id,
+                      label: `${currency.symbol} - ${currency.name} (${currency.code})`,
+                    }))}
+                  />
+                )}
+              </form.Field>
 
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
@@ -227,65 +200,78 @@ const ProfilePage = () => {
                 </h3>
 
                 <div className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="oldPassword"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                    >
-                      {t('profile.oldPassword')}
-                    </label>
-                    <input
-                      id="oldPassword"
-                      name="oldPassword"
-                      type="password"
-                      value={formData.oldPassword}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                      placeholder={t('profile.oldPasswordPlaceholder')}
-                    />
-                  </div>
+                  <form.Field name="oldPassword">
+                    {(field) => (
+                      <FormInput
+                        field={field}
+                        type="password"
+                        label={t('profile.oldPassword')}
+                        placeholder={t('profile.oldPasswordPlaceholder')}
+                      />
+                    )}
+                  </form.Field>
 
-                  <div>
-                    <label
-                      htmlFor="newPassword"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                    >
-                      {t('profile.newPassword')}
-                    </label>
-                    <input
-                      id="newPassword"
-                      name="newPassword"
-                      type="password"
-                      value={formData.newPassword}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                      placeholder={t('profile.newPasswordPlaceholder')}
-                    />
-                  </div>
+                  <form.Field
+                    name="newPassword"
+                    validators={{
+                      onChange: ({ value }) => {
+                        if (
+                          !value ||
+                          (typeof value === 'string' && !value.trim())
+                        ) {
+                          return undefined;
+                        }
+                        if (typeof value === 'string' && value.length < 6) {
+                          return t('register.passwordMinLength');
+                        }
+                        return undefined;
+                      },
+                    }}
+                  >
+                    {(field) => (
+                      <FormInput
+                        field={field}
+                        type="password"
+                        label={t('profile.newPassword')}
+                        placeholder={t('profile.newPasswordPlaceholder')}
+                      />
+                    )}
+                  </form.Field>
 
-                  <div>
-                    <label
-                      htmlFor="confirmPassword"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                    >
-                      {t('profile.confirmPassword')}
-                    </label>
-                    <input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                      placeholder={t('profile.confirmPasswordPlaceholder')}
-                    />
-                    {formData.newPassword &&
-                      formData.newPassword !== formData.confirmPassword && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                          {t('profile.passwordsDoNotMatch')}
-                        </p>
-                      )}
-                  </div>
+                  <form.Field
+                    name="confirmPassword"
+                    validators={{
+                      onChange: ({ value, fieldApi }) => {
+                        const newPassword =
+                          fieldApi.form.getFieldValue('newPassword');
+                        if (!newPassword) {
+                          return undefined;
+                        }
+                        if (
+                          !value ||
+                          (typeof value === 'string' && !value.trim())
+                        ) {
+                          return t('register.confirmPasswordRequired');
+                        }
+                        if (
+                          typeof value === 'string' &&
+                          value !== newPassword
+                        ) {
+                          return t('profile.passwordsDoNotMatch');
+                        }
+                        return undefined;
+                      },
+                    }}
+                  >
+                    {(field) => (
+                      <FormInput
+                        field={field}
+                        type="password"
+                        label={t('profile.confirmPassword')}
+                        placeholder={t('profile.confirmPasswordPlaceholder')}
+                      />
+                    )}
+                  </form.Field>
                 </div>
               </div>
 
@@ -300,13 +286,7 @@ const ProfilePage = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={
-                    updateProfileMutation.isPending ||
-                    !!(
-                      formData.newPassword &&
-                      formData.newPassword !== formData.confirmPassword
-                    )
-                  }
+                  disabled={updateProfileMutation.isPending}
                   className="px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {updateProfileMutation.isPending
