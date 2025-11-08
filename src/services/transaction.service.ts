@@ -1,5 +1,5 @@
 // import type { PrismaTx } from '@server/common/type';
-// import { prisma } from '@server/db';
+// import { prisma } from '@server/libs/db';
 // import {
 //   AccountType,
 //   type Currency,

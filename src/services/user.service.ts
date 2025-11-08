@@ -1,4 +1,4 @@
-import { prisma } from '@server/db';
+import { prisma } from '@server/libs/db'
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
