@@ -25,9 +25,9 @@
     "@logtape/pretty": "^1.1.2",
     "@prisma/adapter-pg": "^6.19.0",
     "@prisma/client": "^6.19.0",
-    "@mantine/core": "^7.15.0",
-    "@mantine/dates": "^7.15.0",
-    "@mantine/hooks": "^7.15.0",
+    "@mantine/core": "^8.3.6",
+    "@mantine/dates": "^8.3.6",
+    "@mantine/hooks": "^8.3.6",
     "@tanstack/react-form": "^1.0.0",
     "@tanstack/react-query": "^5.90.7",
     "clsx": "^2.1.1",
@@ -45,7 +45,7 @@
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.17",
     "uuidv7": "^1.0.2",
-    "zod": "^3.24.1",
+    "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
