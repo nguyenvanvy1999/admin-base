@@ -17,7 +17,7 @@ const authMacro = new Elysia().macro({
         }
         const jwtToken = token.split(' ')[1];
         const decoded = jwt.verify(jwtToken, appEnv.JWT_SECRET) as {
-          id: number;
+          id: string;
           role: string;
         };
         const user = {

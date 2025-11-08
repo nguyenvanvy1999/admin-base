@@ -1,7 +1,8 @@
-import { Database } from 'bun:sqlite';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { appEnv } from '@server/env';
-import { drizzle } from 'drizzle-orm/bun-sqlite';
-import * as schema from './db/schema';
+import { PrismaClient } from './generated/prisma/client';
 
-const sqlite = new Database(appEnv.DB_URI);
-export const db = drizzle(sqlite, { schema });
+const adapter = new PrismaPg({
+  url: appEnv.POSTGRES_URL,
+});
+export const prisma = new PrismaClient({ adapter });

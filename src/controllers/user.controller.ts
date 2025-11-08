@@ -9,12 +9,7 @@ const userController = new Elysia().group('/users', (group) =>
     .post(
       '/register',
       async ({ body, userService }) => {
-        return await userService.register(
-          body.username,
-          body.email,
-          body.password,
-          body.name,
-        );
+        return await userService.register(body.username, body.password);
       },
       {
         detail: {

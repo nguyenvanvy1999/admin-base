@@ -44,4 +44,4 @@ package-lock.json
 **/*.bun
 .idea
 server
-investment.db
+src/generated
