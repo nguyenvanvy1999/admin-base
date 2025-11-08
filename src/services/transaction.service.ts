@@ -5,54 +5,29 @@ import {
   TransactionType,
 } from '@server/generated/prisma/enums';
 import { Elysia } from 'elysia';
-
-interface CreateTransactionData {
-  accountId: string;
-  toAccountId?: string | null;
-  type: TransactionType;
-  categoryId?: string | null;
-  investmentId?: string | null;
-  loanPartyId?: string | null;
-  amount: number;
-  currency?: Currency;
-  price?: number | null;
-  priceInBaseCurrency?: number | null;
-  quantity?: number | null;
-  fee?: number;
-  feeInBaseCurrency?: number | null;
-  date: Date;
-  dueDate?: Date | null;
-  note?: string | null;
-  receiptUrl?: string | null;
-  metadata?: any;
-}
-
-interface UpdateTransactionData extends Partial<CreateTransactionData> {}
-
-interface ListTransactionsFilters {
-  type?: TransactionType;
-  accountId?: string;
-  categoryId?: string;
-  investmentId?: string;
-  loanPartyId?: string;
-  dateFrom?: Date;
-  dateTo?: Date;
-  page?: number;
-  limit?: number;
-  sortBy?: 'date' | 'amount';
-  sortOrder?: 'asc' | 'desc';
-}
+import type {
+  IListTransactionsQuery,
+  IUpsertTransaction,
+} from '../dto/transaction.dto';
 
 export class TransactionService {
   private async validateAccountOwnership(userId: string, accountId: string) {
-    const account = await prisma.account.findFirst({
-      where: {
-        id: accountId,
-        userId,
+    const account = await prisma.account.findUnique({
+      where: { id: accountId },
+      select: {
+        id: true,
+        userId: true,
+        currency: true,
+        type: true,
+        balance: true,
+        creditLimit: true,
       },
     });
     if (!account) {
-      throw new Error('Account not found or not owned by user');
+      throw new Error('Account not found');
+    }
+    if (account.userId !== userId) {
+      throw new Error('Account not owned by user');
     }
     return account;
   }
@@ -61,61 +36,69 @@ export class TransactionService {
     userId: string,
     toAccountId: string,
   ) {
-    const account = await prisma.account.findFirst({
-      where: {
-        id: toAccountId,
-        userId,
+    const account = await prisma.account.findUnique({
+      where: { id: toAccountId },
+      select: {
+        id: true,
+        userId: true,
+        currency: true,
+        type: true,
+        balance: true,
+        creditLimit: true,
       },
     });
     if (!account) {
-      throw new Error('To account not found or not owned by user');
+      throw new Error('To account not found');
+    }
+    if (account.userId !== userId) {
+      throw new Error('To account not owned by user');
     }
     return account;
   }
 
   private async validateCategoryOwnership(userId: string, categoryId: string) {
-    const category = await prisma.category.findFirst({
-      where: {
-        id: categoryId,
-        userId,
-      },
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+      select: { id: true, userId: true },
     });
     if (!category) {
-      throw new Error('Category not found or not owned by user');
+      throw new Error('Category not found');
     }
-    return category;
+    if (category.userId !== userId) {
+      throw new Error('Category not owned by user');
+    }
   }
 
   private async validateInvestmentOwnership(
     userId: string,
     investmentId: string,
   ) {
-    const investment = await prisma.investment.findFirst({
-      where: {
-        id: investmentId,
-        userId,
-      },
+    const investment = await prisma.investment.findUnique({
+      where: { id: investmentId },
+      select: { id: true, userId: true },
     });
     if (!investment) {
-      throw new Error('Investment not found or not owned by user');
+      throw new Error('Investment not found');
     }
-    return investment;
+    if (investment.userId !== userId) {
+      throw new Error('Investment not owned by user');
+    }
   }
 
   private async validateLoanPartyOwnership(
     userId: string,
     loanPartyId: string,
   ) {
-    const loanParty = await prisma.loanParty.findFirst({
-      where: {
-        id: loanPartyId,
-        userId,
-      },
+    const loanParty = await prisma.loanParty.findUnique({
+      where: { id: loanPartyId },
+      select: { id: true, userId: true },
     });
     if (!loanParty) {
-      throw new Error('Loan party not found or not owned by user');
+      throw new Error('Loan party not found');
     }
-    return loanParty;
+    if (loanParty.userId !== userId) {
+      throw new Error('Loan party not owned by user');
+    }
   }
 
   private validateSufficientBalance(
@@ -141,16 +124,18 @@ export class TransactionService {
     }
   }
 
-  private validateTransactionType(data: CreateTransactionData) {
+  private validateTransactionType(data: {
+    type: TransactionType;
+    categoryId?: string | null;
+    toAccountId?: string | null;
+    loanPartyId?: string | null;
+    investmentId?: string | null;
+  }) {
     switch (data.type) {
       case TransactionType.income:
-        if (!data.categoryId) {
-          throw new Error('Category is required for income transactions');
-        }
-        break;
       case TransactionType.expense:
         if (!data.categoryId) {
-          throw new Error('Category is required for expense transactions');
+          throw new Error(`Category is required for ${data.type} transactions`);
         }
         break;
       case TransactionType.transfer:
@@ -159,14 +144,10 @@ export class TransactionService {
         }
         break;
       case TransactionType.loan_given:
-        if (!data.loanPartyId) {
-          throw new Error('Loan party is required for loan given transactions');
-        }
-        break;
       case TransactionType.loan_received:
         if (!data.loanPartyId) {
           throw new Error(
-            'Loan party is required for loan received transactions',
+            `Loan party is required for ${data.type} transactions`,
           );
         }
         break;
@@ -203,6 +184,7 @@ export class TransactionService {
   }
 
   private async applyBalanceEffect(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tx: any,
     transactionType: TransactionType,
     accountId: string,
@@ -215,6 +197,7 @@ export class TransactionService {
   ) {
     const account = await tx.account.findUniqueOrThrow({
       where: { id: accountId },
+      select: { id: true, balance: true, type: true, creditLimit: true },
     });
 
     let amountInAccountCurrency = amount;
@@ -303,6 +286,7 @@ export class TransactionService {
   }
 
   private async revertBalanceEffect(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tx: any,
     transactionType: TransactionType,
     accountId: string,
@@ -384,7 +368,7 @@ export class TransactionService {
     }
   }
 
-  async createTransaction(userId: string, data: CreateTransactionData) {
+  async upsertTransaction(userId: string, data: IUpsertTransaction) {
     this.validateTransactionType(data);
 
     const account = await this.validateAccountOwnership(userId, data.accountId);
@@ -392,6 +376,7 @@ export class TransactionService {
 
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: userId },
+      select: { id: true, baseCurrency: true },
     });
 
     let toAccount: typeof account | null = null;
@@ -435,7 +420,92 @@ export class TransactionService {
       }
     }
 
-    return prisma.$transaction(async (tx) => {
+    const transactionData = {
+      userId,
+      accountId: data.accountId,
+      toAccountId: data.toAccountId ?? null,
+      type: data.type,
+      categoryId: data.categoryId ?? null,
+      investmentId: data.investmentId ?? null,
+      loanPartyId: data.loanPartyId ?? null,
+      amount: data.amount,
+      currency,
+      price: data.price ?? null,
+      priceInBaseCurrency,
+      quantity: data.quantity ?? null,
+      fee,
+      feeInBaseCurrency,
+      date: new Date(data.date),
+      dueDate: data.dueDate ? new Date(data.dueDate) : null,
+      note: data.note ?? null,
+      receiptUrl: data.receiptUrl ?? null,
+      metadata: data.metadata ?? null,
+    };
+
+    if (data.id) {
+      const existingTransaction = await prisma.transaction.findUnique({
+        where: { id: data.id },
+        select: {
+          id: true,
+          userId: true,
+          type: true,
+          accountId: true,
+          toAccountId: true,
+          amount: true,
+          fee: true,
+          currency: true,
+          account: { select: { currency: true } },
+          toAccount: { select: { currency: true } },
+        },
+      });
+
+      if (!existingTransaction) {
+        throw new Error('Transaction not found');
+      }
+      if (existingTransaction.userId !== userId) {
+        throw new Error('Transaction not owned by user');
+      }
+
+      return prisma.$transaction(async (tx: any) => {
+        await this.revertBalanceEffect(
+          tx,
+          existingTransaction.type,
+          existingTransaction.accountId,
+          existingTransaction.toAccountId,
+          existingTransaction.amount,
+          existingTransaction.fee,
+          existingTransaction.currency,
+          existingTransaction.account.currency,
+          existingTransaction.toAccount?.currency,
+        );
+
+        await this.applyBalanceEffect(
+          tx,
+          data.type,
+          data.accountId,
+          data.toAccountId,
+          data.amount,
+          fee,
+          currency,
+          account.currency,
+          toAccount?.currency,
+        );
+
+        return tx.transaction.update({
+          where: { id: data.id },
+          data: transactionData,
+          include: {
+            account: true,
+            toAccount: true,
+            category: true,
+            investment: true,
+            loanParty: true,
+          },
+        });
+      });
+    }
+
+    return prisma.$transaction(async (tx: any) => {
       await this.applyBalanceEffect(
         tx,
         data.type,
@@ -449,27 +519,7 @@ export class TransactionService {
       );
 
       return tx.transaction.create({
-        data: {
-          userId,
-          accountId: data.accountId,
-          toAccountId: data.toAccountId,
-          type: data.type,
-          categoryId: data.categoryId,
-          investmentId: data.investmentId,
-          loanPartyId: data.loanPartyId,
-          amount: data.amount,
-          currency,
-          price: data.price,
-          priceInBaseCurrency,
-          quantity: data.quantity,
-          fee,
-          feeInBaseCurrency,
-          date: data.date,
-          dueDate: data.dueDate,
-          note: data.note,
-          receiptUrl: data.receiptUrl,
-          metadata: data.metadata,
-        },
+        data: transactionData,
         include: {
           account: true,
           toAccount: true,
@@ -503,10 +553,7 @@ export class TransactionService {
     return transaction;
   }
 
-  async listTransactions(
-    userId: string,
-    filters: ListTransactionsFilters = {},
-  ) {
+  async listTransactions(userId: string, filters: IListTransactionsQuery = {}) {
     const {
       type,
       accountId,
@@ -543,10 +590,10 @@ export class TransactionService {
     if (dateFrom || dateTo) {
       where.date = {};
       if (dateFrom) {
-        where.date.gte = dateFrom;
+        where.date.gte = new Date(dateFrom);
       }
       if (dateTo) {
-        where.date.lte = dateTo;
+        where.date.lte = new Date(dateTo);
       }
     }
 
@@ -587,184 +634,31 @@ export class TransactionService {
     };
   }
 
-  async updateTransaction(
-    userId: string,
-    transactionId: string,
-    data: UpdateTransactionData,
-  ) {
-    const existingTransaction = await prisma.transaction.findFirst({
-      where: {
-        id: transactionId,
-        userId,
-      },
-      include: {
-        account: true,
-        toAccount: true,
-      },
-    });
-
-    if (!existingTransaction) {
-      throw new Error('Transaction not found');
-    }
-
-    const account = existingTransaction.account;
-    const currency = data.currency ?? existingTransaction.currency;
-
-    if (data.accountId && data.accountId !== existingTransaction.accountId) {
-      await this.validateAccountOwnership(userId, data.accountId);
-    }
-
-    if (
-      data.toAccountId &&
-      data.toAccountId !== existingTransaction.toAccountId
-    ) {
-      await this.validateToAccountOwnership(userId, data.toAccountId);
-    }
-
-    if (data.categoryId) {
-      await this.validateCategoryOwnership(userId, data.categoryId);
-    }
-
-    if (data.investmentId) {
-      await this.validateInvestmentOwnership(userId, data.investmentId);
-    }
-
-    if (data.loanPartyId) {
-      await this.validateLoanPartyOwnership(userId, data.loanPartyId);
-    }
-
-    if (data.type) {
-      this.validateTransactionType({
-        ...existingTransaction,
-        ...data,
-      } as CreateTransactionData);
-    }
-
-    const user = await prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-    });
-
-    const updateData: any = {};
-    if (data.accountId !== undefined) updateData.accountId = data.accountId;
-    if (data.toAccountId !== undefined)
-      updateData.toAccountId = data.toAccountId;
-    if (data.type !== undefined) updateData.type = data.type;
-    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
-    if (data.investmentId !== undefined)
-      updateData.investmentId = data.investmentId;
-    if (data.loanPartyId !== undefined)
-      updateData.loanPartyId = data.loanPartyId;
-    if (data.amount !== undefined) updateData.amount = data.amount;
-    if (data.currency !== undefined) updateData.currency = data.currency;
-    if (data.price !== undefined) updateData.price = data.price;
-    if (data.quantity !== undefined) updateData.quantity = data.quantity;
-    if (data.fee !== undefined) updateData.fee = data.fee;
-    if (data.date !== undefined) updateData.date = data.date;
-    if (data.dueDate !== undefined) updateData.dueDate = data.dueDate;
-    if (data.note !== undefined) updateData.note = data.note;
-    if (data.receiptUrl !== undefined) updateData.receiptUrl = data.receiptUrl;
-    if (data.metadata !== undefined) updateData.metadata = data.metadata;
-
-    const finalAmount = data.amount ?? existingTransaction.amount;
-    const finalFee = data.fee ?? existingTransaction.fee;
-    const finalType = data.type ?? existingTransaction.type;
-    const finalToAccountId =
-      data.toAccountId ?? existingTransaction.toAccountId;
-    const finalAccountId = data.accountId ?? existingTransaction.accountId;
-    const finalAccount = data.accountId
-      ? await prisma.account.findUniqueOrThrow({
-          where: { id: data.accountId },
-        })
-      : account;
-    const finalToAccount = finalToAccountId
-      ? await prisma.account.findFirst({ where: { id: finalToAccountId } })
-      : existingTransaction.toAccount;
-
-    let priceInBaseCurrency =
-      data.priceInBaseCurrency ?? existingTransaction.priceInBaseCurrency;
-    let feeInBaseCurrency =
-      data.feeInBaseCurrency ?? existingTransaction.feeInBaseCurrency;
-
-    if (currency !== user.baseCurrency) {
-      if (data.price && !priceInBaseCurrency) {
-        priceInBaseCurrency = this.convertCurrency(
-          data.price,
-          currency,
-          user.baseCurrency,
-        );
-      }
-      if (finalFee > 0 && !feeInBaseCurrency) {
-        feeInBaseCurrency = this.convertCurrency(
-          finalFee,
-          currency,
-          user.baseCurrency,
-        );
-      }
-    }
-
-    if (priceInBaseCurrency !== undefined) {
-      updateData.priceInBaseCurrency = priceInBaseCurrency;
-    }
-    if (feeInBaseCurrency !== undefined) {
-      updateData.feeInBaseCurrency = feeInBaseCurrency;
-    }
-
-    return prisma.$transaction(async (tx) => {
-      await this.revertBalanceEffect(
-        tx,
-        existingTransaction.type,
-        existingTransaction.accountId,
-        existingTransaction.toAccountId,
-        existingTransaction.amount,
-        existingTransaction.fee,
-        existingTransaction.currency,
-        existingTransaction.account.currency,
-        existingTransaction.toAccount?.currency,
-      );
-
-      await this.applyBalanceEffect(
-        tx,
-        finalType,
-        finalAccountId,
-        finalToAccountId,
-        finalAmount,
-        finalFee,
-        currency,
-        finalAccount.currency,
-        finalToAccount?.currency,
-      );
-
-      return tx.transaction.update({
-        where: { id: transactionId },
-        data: updateData,
-        include: {
-          account: true,
-          toAccount: true,
-          category: true,
-          investment: true,
-          loanParty: true,
-        },
-      });
-    });
-  }
-
   async deleteTransaction(userId: string, transactionId: string) {
-    const transaction = await prisma.transaction.findFirst({
-      where: {
-        id: transactionId,
-        userId,
-      },
-      include: {
-        account: true,
-        toAccount: true,
+    const transaction = await prisma.transaction.findUnique({
+      where: { id: transactionId },
+      select: {
+        id: true,
+        userId: true,
+        type: true,
+        accountId: true,
+        toAccountId: true,
+        amount: true,
+        fee: true,
+        currency: true,
+        account: { select: { currency: true } },
+        toAccount: { select: { currency: true } },
       },
     });
 
     if (!transaction) {
       throw new Error('Transaction not found');
     }
+    if (transaction.userId !== userId) {
+      throw new Error('Transaction not owned by user');
+    }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       await this.revertBalanceEffect(
         tx,
         transaction.type,
