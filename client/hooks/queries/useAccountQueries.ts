@@ -25,14 +25,15 @@ export const useAccountsQuery = (query: ListAccountsQuery = {}) => {
         );
       }
 
-      return response.data as {
-        accounts: AccountFull[];
-        pagination: {
-          page: number;
-          limit: number;
-          total: number;
-          totalPages: number;
-        };
+      const data = response.data;
+
+      return {
+        accounts: data.accounts.map((account) => ({
+          ...account,
+          balance: account.balance.toString(),
+          creditLimit: account.creditLimit?.toString() ?? null,
+        })) satisfies AccountFull[],
+        pagination: data.pagination,
       };
     },
   });
