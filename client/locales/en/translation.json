@@ -10,7 +10,13 @@
     "save": "Save",
     "cancel": "Cancel",
     "add": "Add",
-    "close": "Close"
+    "close": "Close",
+    "showing": "Showing",
+    "previous": "Previous",
+    "next": "Next",
+    "deleting": "Deleting...",
+    "saving": "Saving...",
+    "search": "Search"
   },
   "login": {
     "title": "FinTrack",

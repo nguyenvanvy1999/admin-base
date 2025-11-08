@@ -10,7 +10,13 @@
     "save": "Lưu",
     "cancel": "Hủy",
     "add": "Thêm",
-    "close": "Đóng"
+    "close": "Đóng",
+    "showing": "Hiển thị",
+    "previous": "Trước",
+    "next": "Sau",
+    "deleting": "Đang xóa...",
+    "saving": "Đang lưu...",
+    "search": "Tìm kiếm"
   },
   "login": {
     "title": "FinTrack",

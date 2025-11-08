@@ -1,5 +1,6 @@
 import AccountTable from '@client/components/AccountTable';
 import AddEditAccountDialog from '@client/components/AddEditAccountDialog';
+import Pagination from '@client/components/Pagination';
 import {
   useCreateAccountMutation,
   useDeleteAccountMutation,
@@ -138,14 +139,14 @@ const AccountPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {t('accounts.title')}
               </h1>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                 {t('accounts.subtitle')}
               </p>
             </div>
@@ -171,21 +172,38 @@ const AccountPage = () => {
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                placeholder={t('accounts.search')}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-              />
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
+            <div className="md:col-span-8">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg
+                    className="h-5 w-5 text-gray-400 dark:text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  placeholder={t('accounts.search')}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
             </div>
-            <div className="sm:w-48">
+            <div className="md:col-span-4">
               <select
                 value={typeFilter}
                 onChange={handleTypeFilterChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               >
                 <option value="">{t('accounts.all')}</option>
                 <option value={AccountType.cash}>{t('accounts.cash')}</option>
@@ -200,47 +218,25 @@ const AccountPage = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="overflow-hidden">
             <AccountTable
               accounts={filteredAccounts}
               onEdit={handleEdit}
               onDelete={handleDelete}
               isLoading={isLoading}
             />
-
-            {data?.pagination && data.pagination.totalPages > 1 && (
-              <div className="mt-4 flex items-center justify-between">
-                <div className="text-sm text-gray-700 dark:text-gray-300">
-                  {t('common.showing', {
-                    defaultValue: 'Showing',
-                  })}{' '}
-                  {(page - 1) * limit + 1} -{' '}
-                  {Math.min(page * limit, data.pagination.total)} of{' '}
-                  {data.pagination.total}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1 || isLoading}
-                    className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
-                  >
-                    {t('common.previous', { defaultValue: 'Previous' })}
-                  </button>
-                  <button
-                    onClick={() =>
-                      setPage((p) =>
-                        Math.min(data.pagination.totalPages, p + 1),
-                      )
-                    }
-                    disabled={page >= data.pagination.totalPages || isLoading}
-                    className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
-                  >
-                    {t('common.next', { defaultValue: 'Next' })}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
+
+          {data?.pagination && data.pagination.totalPages > 0 && (
+            <Pagination
+              currentPage={page}
+              totalPages={data.pagination.totalPages}
+              totalItems={data.pagination.total}
+              itemsPerPage={limit}
+              onPageChange={setPage}
+              isLoading={isLoading}
+            />
+          )}
         </div>
 
         {isDialogOpen && (

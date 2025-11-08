@@ -2,6 +2,9 @@ import { CURRENCY_IDS } from '@server/constants/currency';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import DatePicker from './ui/DatePicker';
+import Input from './ui/Input';
+import Select from './ui/Select';
 
 type Account = {
   id: string;
@@ -81,8 +84,6 @@ const AddEditAccountDialog = ({
     setErrors({});
   }, [account, isOpen]);
 
-  if (!isOpen) return null;
-
   const validate = () => {
     const newErrors: Record<string, string> = {};
 
@@ -145,15 +146,18 @@ const AddEditAccountDialog = ({
 
   const isCreditCard = formData.type === AccountType.credit_card;
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+          className="fixed inset-0 bg-gray-900 bg-opacity-40 dark:bg-opacity-60 transition-opacity backdrop-blur-sm"
           onClick={onClose}
+          aria-hidden="true"
         ></div>
 
-        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="relative z-10 bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 mx-auto">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
               {isEditMode
@@ -181,118 +185,72 @@ const AddEditAccountDialog = ({
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('accounts.name')} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder={t('accounts.namePlaceholder')}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                  errors.name
-                    ? 'border-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {errors.name}
-                </p>
-              )}
-            </div>
+            <Input
+              type="text"
+              name="name"
+              label={t('accounts.name')}
+              value={formData.name}
+              onChange={handleInputChange}
+              placeholder={t('accounts.namePlaceholder')}
+              error={errors.name}
+              required
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('accounts.type')} <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="type"
-                value={formData.type}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                  errors.type
-                    ? 'border-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
-                }`}
-              >
-                <option value="">{t('accounts.typePlaceholder')}</option>
-                <option value={AccountType.cash}>{t('accounts.cash')}</option>
-                <option value={AccountType.bank}>{t('accounts.bank')}</option>
-                <option value={AccountType.credit_card}>
-                  {t('accounts.credit_card')}
-                </option>
-                <option value={AccountType.investment}>
-                  {t('accounts.investment')}
-                </option>
-              </select>
-              {errors.type && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {errors.type}
-                </p>
-              )}
-            </div>
+            <Select
+              name="type"
+              label={t('accounts.type')}
+              value={formData.type}
+              onChange={handleInputChange}
+              placeholder={t('accounts.typePlaceholder')}
+              error={errors.type}
+              required
+              options={[
+                { value: AccountType.cash, label: t('accounts.cash') },
+                { value: AccountType.bank, label: t('accounts.bank') },
+                {
+                  value: AccountType.credit_card,
+                  label: t('accounts.credit_card'),
+                },
+                {
+                  value: AccountType.investment,
+                  label: t('accounts.investment'),
+                },
+              ]}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('accounts.currency')} <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="currencyId"
-                value={formData.currencyId}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                  errors.currencyId
-                    ? 'border-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
-                }`}
-              >
-                <option value="">{t('accounts.currencyPlaceholder')}</option>
-                {CURRENCIES.map((currency) => (
-                  <option key={currency.id} value={currency.id}>
-                    {currency.code} - {currency.name}
-                  </option>
-                ))}
-              </select>
-              {errors.currencyId && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {errors.currencyId}
-                </p>
-              )}
-            </div>
+            <Select
+              name="currencyId"
+              label={t('accounts.currency')}
+              value={formData.currencyId}
+              onChange={handleInputChange}
+              placeholder={t('accounts.currencyPlaceholder')}
+              error={errors.currencyId}
+              required
+              options={CURRENCIES.map((currency) => ({
+                value: currency.id,
+                label: `${currency.code} - ${currency.name}`,
+              }))}
+            />
 
             {isCreditCard && (
               <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {t('accounts.creditLimit')}
-                  </label>
-                  <input
-                    type="number"
-                    name="creditLimit"
-                    value={formData.creditLimit}
-                    onChange={handleInputChange}
-                    placeholder={t('accounts.creditLimitPlaceholder')}
-                    min="0"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
+                <Input
+                  type="number"
+                  name="creditLimit"
+                  label={t('accounts.creditLimit')}
+                  value={formData.creditLimit}
+                  onChange={handleInputChange}
+                  placeholder={t('accounts.creditLimitPlaceholder')}
+                  min="0"
+                  step="0.01"
+                />
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {t('accounts.expiryDate')}
-                  </label>
-                  <input
-                    type="date"
-                    name="expiryDate"
-                    value={formData.expiryDate}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
+                <DatePicker
+                  name="expiryDate"
+                  label={t('accounts.expiryDate')}
+                  value={formData.expiryDate}
+                  onChange={handleInputChange}
+                />
               </>
             )}
 
