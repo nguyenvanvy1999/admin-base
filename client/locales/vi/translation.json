@@ -85,5 +85,23 @@
     "confirmPassword": "Xác nhận mật khẩu",
     "confirmPasswordPlaceholder": "Xác nhận mật khẩu mới",
     "passwordsDoNotMatch": "Mật khẩu không khớp"
+  },
+  "sidebar": {
+    "dashboard": "Bảng điều khiển",
+    "transactions": "Giao dịch",
+    "budgets": "Ngân sách",
+    "accounts": "Tài khoản",
+    "investments": "Đầu tư",
+    "meta": "Meta",
+    "categories": "Danh mục",
+    "entities": "Thực thể",
+    "tags": "Thẻ",
+    "rules": "Quy tắc",
+    "statistics": "Thống kê"
+  },
+  "notFound": {
+    "title": "Không tìm thấy trang",
+    "description": "Trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.",
+    "goHome": "Về trang chủ"
   }
 }

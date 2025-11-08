@@ -1,2 +1,29 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Hide horizontal scrollbar for sidebar */
+.sidebar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(203 213 225) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background-color: rgb(203 213 225);
+  border-radius: 3px;
+}
+
+.dark .sidebar-nav {
+  scrollbar-color: rgb(55 65 81) transparent;
+}
+
+.dark .sidebar-nav::-webkit-scrollbar-thumb {
+  background-color: rgb(55 65 81);
+}

@@ -63,5 +63,23 @@
     "appName": "FinTrack",
     "version": "v{{version}}",
     "allRightsReserved": "© {{year}} FinTrack. All rights reserved."
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "budgets": "Budgets",
+    "accounts": "Accounts",
+    "investments": "Investments",
+    "meta": "Meta",
+    "categories": "Categories",
+    "entities": "Entities",
+    "tags": "Tags",
+    "rules": "Rules",
+    "statistics": "Statistics"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "The page you are looking for does not exist or has been moved.",
+    "goHome": "Go to Home"
   }
 }

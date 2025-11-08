@@ -3,6 +3,7 @@ import { createHashRouter } from 'react-router';
 import ProtectedPageLayout from './layouts';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import NotFoundPage from './pages/NotFoundPage';
 import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
 
@@ -22,6 +23,46 @@ const router = createHashRouter([
       {
         path: '/profile',
         Component: ProfilePage,
+      },
+      {
+        path: '/transactions',
+        Component: NotFoundPage,
+      },
+      {
+        path: '/budgets',
+        Component: NotFoundPage,
+      },
+      {
+        path: '/accounts',
+        Component: NotFoundPage,
+      },
+      {
+        path: '/investments',
+        Component: NotFoundPage,
+      },
+      {
+        path: '/categories',
+        Component: NotFoundPage,
+      },
+      {
+        path: '/entities',
+        Component: NotFoundPage,
+      },
+      {
+        path: '/tags',
+        Component: NotFoundPage,
+      },
+      {
+        path: '/rules',
+        Component: NotFoundPage,
+      },
+      {
+        path: '/statistics',
+        Component: NotFoundPage,
+      },
+      {
+        path: '/404',
+        Component: NotFoundPage,
       },
     ],
   },
