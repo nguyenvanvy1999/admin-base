@@ -64,6 +64,28 @@
     "version": "v{{version}}",
     "allRightsReserved": "© {{year}} FinTrack. All rights reserved."
   },
+  "profile": {
+    "title": "Profile",
+    "edit": "Edit",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "userNotFound": "User not found",
+    "username": "Username",
+    "name": "Name",
+    "namePlaceholder": "Enter your name",
+    "role": "Role",
+    "baseCurrency": "Base Currency",
+    "changePassword": "Change Password",
+    "oldPassword": "Old Password",
+    "oldPasswordPlaceholder": "Enter old password",
+    "newPassword": "New Password",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm new password",
+    "passwordsDoNotMatch": "Passwords do not match"
+  },
   "sidebar": {
     "dashboard": "Dashboard",
     "transactions": "Transactions",
