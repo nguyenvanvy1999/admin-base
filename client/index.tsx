@@ -3,7 +3,6 @@ import '@client/global.css';
 import { ColorSchemeScript } from '@mantine/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router';
-import ToastContainer from './components/ToastContainer';
 import { useUserQuery } from './hooks/queries/useUserQuery';
 import { queryClient } from './libs/queryClient';
 import MantineProvider from './providers/MantineProvider';
@@ -13,12 +12,7 @@ import './i18n';
 function AppContent() {
   useUserQuery();
 
-  return (
-    <>
-      <RouterProvider router={router} />
-      <ToastContainer />
-    </>
-  );
+  return <RouterProvider router={router} />;
 }
 
 function App() {

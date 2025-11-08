@@ -1,7 +1,6 @@
 import { logger } from '../libs/logger';
 
 const errorMiddleware = ({ code, error, set }: any) => {
-  logger.error('Request error occurred', { code, error });
   if (code === 'UNKNOWN') {
     //user throw error
     set.status = 400;
@@ -11,6 +10,7 @@ const errorMiddleware = ({ code, error, set }: any) => {
     };
   }
   if (code === 'INTERNAL_SERVER_ERROR' || code === 'PARSE') {
+    logger.error(`Request error occurred ${JSON.stringify({ code, error })}`);
     set.status = 500;
     return {
       message: error.message,
@@ -31,6 +31,8 @@ const errorMiddleware = ({ code, error, set }: any) => {
       status: 404,
     };
   }
+
+  logger.error(`Request error occurred ${JSON.stringify({ code, error })}`);
   set.status = 500;
   return {
     message: error.message,
