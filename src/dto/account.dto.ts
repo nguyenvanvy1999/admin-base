@@ -1,0 +1,23 @@
+import { AccountType } from '@server/generated/prisma/enums';
+import { t } from 'elysia';
+
+export const UpsertAccountDto = t.Object({
+  id: t.Optional(t.String()),
+  type: t.Enum(AccountType),
+  name: t.String(),
+  currencyId: t.String(),
+  creditLimit: t.Optional(t.Number({ minimum: 0 })),
+  expiryDate: t.Optional(t.String({ format: 'date-time' })),
+  meta: t.Optional(t.Any()),
+});
+
+export const ListAccountsQueryDto = t.Object({
+  type: t.Optional(t.Enum(AccountType)),
+  page: t.Optional(t.Integer({ minimum: 1, default: 1 })),
+  limit: t.Optional(t.Integer({ minimum: 1, default: 20 })),
+  sortBy: t.Optional(t.Union([t.Literal('name'), t.Literal('createdAt')])),
+  sortOrder: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
+});
+
+export type IUpsertAccountDto = typeof UpsertAccountDto.static;
+export type IListAccountsQueryDto = typeof ListAccountsQueryDto.static;
