@@ -34,12 +34,13 @@ const Header = () => {
           <div className="flex items-center space-x-3">
             <img
               src="/public/logo.jpeg"
-              alt="CodingCat Logo"
+              alt="Logo"
               className="h-10 w-10 rounded-full shadow-sm border-2 border-gray-100"
             />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">CodingCat</h1>
-              <p className="text-xs text-gray-500 -mt-1">Elysia Fullstack</p>
+              <h1 className="text-xl font-bold text-gray-900">
+                Investment Checking
+              </h1>
             </div>
           </div>
 

@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
 const RegisterPage = () => {
+  const currentYear = new Date().getFullYear();
+
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -105,14 +107,14 @@ const RegisterPage = () => {
           <div className="flex justify-center mb-6">
             <img
               src="/public/logo.jpeg"
-              alt="CodingCat Logo"
+              alt="Logo"
               className="h-20 w-20 rounded-full shadow-lg border-4 border-white"
             />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">CodingCat</h1>
-          <h2 className="text-2xl font-semibold text-indigo-600 mb-8">
-            Elysia Fullstack Template
-          </h2>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            {' '}
+            Investment Checking
+          </h1>
         </div>
 
         {/* Register Form */}
@@ -127,7 +129,6 @@ const RegisterPage = () => {
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Email Field */}
             <div>
               <label
                 htmlFor="username"
@@ -142,13 +143,9 @@ const RegisterPage = () => {
                 required
                 value={formData.username}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
-                }`}
+                placeholder="Enter your username"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none`}
               />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-              )}
             </div>
 
             {/* Password Field */}
@@ -188,6 +185,7 @@ const RegisterPage = () => {
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
+                placeholder="Confirm your password"
                 required
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
@@ -255,8 +253,10 @@ const RegisterPage = () => {
         </div>
 
         {/* Footer */}
-        <div className="text-center text-sm text-gray-500">
-          <p>&copy; 2024 CodingCat Elysia Fullstack. All rights reserved.</p>
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <p className="text-center text-xs text-gray-500">
+            &copy; {currentYear} Investment Checking. All rights reserved.
+          </p>
         </div>
       </div>
     </div>
