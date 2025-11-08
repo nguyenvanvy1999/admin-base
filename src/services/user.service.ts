@@ -1,4 +1,4 @@
-import type { User } from '@server/entities/User';
+import type { User } from '@server/entities/user';
 import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
 import { initORM } from '../db';

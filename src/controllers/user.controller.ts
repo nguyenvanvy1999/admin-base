@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
 
 import authMacro from '../macros/auth';
-import userService from '../services/UserService';
+import userService from '../services/user.service';
 
 const userController = new Elysia().group('/users', (group) =>
   group

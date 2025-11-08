@@ -3,7 +3,14 @@
   "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.html", "test/**/*.ts"]
+    "includes": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.html",
+      "test/**/*.ts",
+      "client/**/*.ts",
+      "client/**/*.tsx"
+    ]
   },
   "formatter": {
     "enabled": true,
