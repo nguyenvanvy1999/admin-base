@@ -12,99 +12,138 @@ import type {
 import Decimal from 'decimal.js';
 import { Elysia } from 'elysia';
 import type {
+  IIncomeExpenseTransaction,
+  IInvestmentTransaction,
   IListTransactionsQuery,
+  ILoanTransaction,
+  ITransferTransaction,
   IUpsertTransaction,
 } from '../dto/transaction.dto';
 
 export class TransactionService {
+  private static readonly TRANSACTION_INCLUDE = {
+    account: true,
+    toAccount: true,
+    category: true,
+    investment: true,
+    loanParty: true,
+  } as const;
+
+  private static readonly TRANSACTION_SELECT_FOR_BALANCE = {
+    id: true,
+    userId: true,
+    type: true,
+    accountId: true,
+    toAccountId: true,
+    amount: true,
+    fee: true,
+    currency: true,
+    account: { select: { currency: true } },
+    toAccount: { select: { currency: true } },
+  } as const;
+
+  private async validateOwnership<T extends { userId: string }>(
+    userId: string,
+    entityId: string,
+    findFn: (id: string) => Promise<T | null>,
+    entityName: string,
+  ): Promise<T> {
+    const entity = await findFn(entityId);
+    if (!entity) {
+      throw new Error(`${entityName} not found`);
+    }
+    if (entity.userId !== userId) {
+      throw new Error(`${entityName} not owned by user`);
+    }
+    return entity;
+  }
+
   private async validateAccountOwnership(userId: string, accountId: string) {
-    const account = await prisma.account.findUnique({
-      where: { id: accountId },
-      select: {
-        id: true,
-        userId: true,
-        currency: true,
-        type: true,
-        balance: true,
-        creditLimit: true,
-      },
-    });
-    if (!account) {
-      throw new Error('Account not found');
-    }
-    if (account.userId !== userId) {
-      throw new Error('Account not owned by user');
-    }
-    return account;
+    return await this.validateOwnership(
+      userId,
+      accountId,
+      (id) =>
+        prisma.account.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            userId: true,
+            currency: true,
+            type: true,
+            balance: true,
+            creditLimit: true,
+          },
+        }),
+      'Account',
+    );
   }
 
   private async validateToAccountOwnership(
     userId: string,
     toAccountId: string,
   ) {
-    const account = await prisma.account.findUnique({
-      where: { id: toAccountId },
-      select: {
-        id: true,
-        userId: true,
-        currency: true,
-        type: true,
-        balance: true,
-        creditLimit: true,
-      },
-    });
-    if (!account) {
-      throw new Error('To account not found');
-    }
-    if (account.userId !== userId) {
-      throw new Error('To account not owned by user');
-    }
-    return account;
+    return await this.validateOwnership(
+      userId,
+      toAccountId,
+      (id) =>
+        prisma.account.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            userId: true,
+            currency: true,
+            type: true,
+            balance: true,
+            creditLimit: true,
+          },
+        }),
+      'To account',
+    );
   }
 
   private async validateCategoryOwnership(userId: string, categoryId: string) {
-    const category = await prisma.category.findUnique({
-      where: { id: categoryId },
-      select: { id: true, userId: true },
-    });
-    if (!category) {
-      throw new Error('Category not found');
-    }
-    if (category.userId !== userId) {
-      throw new Error('Category not owned by user');
-    }
+    await this.validateOwnership(
+      userId,
+      categoryId,
+      (id) =>
+        prisma.category.findUnique({
+          where: { id },
+          select: { id: true, userId: true },
+        }),
+      'Category',
+    );
   }
 
   private async validateInvestmentOwnership(
     userId: string,
     investmentId: string,
   ) {
-    const investment = await prisma.investment.findUnique({
-      where: { id: investmentId },
-      select: { id: true, userId: true },
-    });
-    if (!investment) {
-      throw new Error('Investment not found');
-    }
-    if (investment.userId !== userId) {
-      throw new Error('Investment not owned by user');
-    }
+    await this.validateOwnership(
+      userId,
+      investmentId,
+      (id) =>
+        prisma.investment.findUnique({
+          where: { id },
+          select: { id: true, userId: true },
+        }),
+      'Investment',
+    );
   }
 
   private async validateLoanPartyOwnership(
     userId: string,
     loanPartyId: string,
   ) {
-    const loanParty = await prisma.loanParty.findUnique({
-      where: { id: loanPartyId },
-      select: { id: true, userId: true },
-    });
-    if (!loanParty) {
-      throw new Error('Loan party not found');
-    }
-    if (loanParty.userId !== userId) {
-      throw new Error('Loan party not owned by user');
-    }
+    await this.validateOwnership(
+      userId,
+      loanPartyId,
+      (id) =>
+        prisma.loanParty.findUnique({
+          where: { id },
+          select: { id: true, userId: true },
+        }),
+      'Loan party',
+    );
   }
 
   private validateSufficientBalance(
@@ -134,38 +173,131 @@ export class TransactionService {
     }
   }
 
-  private validateTransactionType(data: {
-    type: TransactionType;
-    categoryId?: string | null;
-    toAccountId?: string | null;
-    loanPartyId?: string | null;
-    investmentId?: string | null;
-  }) {
+  private prepareTransactionData(
+    userId: string,
+    data: IUpsertTransaction,
+    accountCurrency: Currency,
+    userBaseCurrency: Currency,
+  ) {
+    const currency = data.currency ?? accountCurrency;
+    const amountDecimal = new Decimal(data.amount);
+    const feeDecimal = new Decimal(data.fee ?? 0);
+
+    let feeInBaseCurrency: Decimal | null = data.feeInBaseCurrency
+      ? new Decimal(data.feeInBaseCurrency)
+      : null;
+
+    if (
+      currency !== userBaseCurrency &&
+      feeDecimal.gt(0) &&
+      !feeInBaseCurrency
+    ) {
+      feeInBaseCurrency = this.convertCurrency(
+        feeDecimal,
+        currency,
+        userBaseCurrency,
+      );
+    }
+
+    const baseData = {
+      userId,
+      accountId: data.accountId,
+      type: data.type,
+      amount: amountDecimal.toNumber(),
+      currency,
+      fee: feeDecimal.toNumber(),
+      feeInBaseCurrency: feeInBaseCurrency?.toNumber() ?? null,
+      date: new Date(data.date),
+      dueDate: data.dueDate ? new Date(data.dueDate) : null,
+      note: data.note ?? null,
+      receiptUrl: data.receiptUrl ?? null,
+      metadata: data.metadata ?? null,
+    };
+
     switch (data.type) {
       case TransactionType.income:
-      case TransactionType.expense:
-        if (!data.categoryId) {
-          throw new Error(`Category is required for ${data.type} transactions`);
-        }
-        break;
-      case TransactionType.transfer:
-        if (!data.toAccountId) {
-          throw new Error('To account is required for transfer transactions');
-        }
-        break;
+      case TransactionType.expense: {
+        const incomeExpenseData = data as IIncomeExpenseTransaction;
+        return {
+          ...baseData,
+          categoryId: incomeExpenseData.categoryId,
+          toAccountId: null,
+          investmentId: null,
+          loanPartyId: null,
+          price: null,
+          priceInBaseCurrency: null,
+          quantity: null,
+        };
+      }
+
+      case TransactionType.transfer: {
+        const transferData = data as ITransferTransaction;
+        return {
+          ...baseData,
+          toAccountId: transferData.toAccountId,
+          categoryId: null,
+          investmentId: null,
+          loanPartyId: null,
+          price: null,
+          priceInBaseCurrency: null,
+          quantity: null,
+        };
+      }
+
       case TransactionType.loan_given:
-      case TransactionType.loan_received:
-        if (!data.loanPartyId) {
-          throw new Error(
-            `Loan party is required for ${data.type} transactions`,
+      case TransactionType.loan_received: {
+        const loanData = data as ILoanTransaction;
+        return {
+          ...baseData,
+          loanPartyId: loanData.loanPartyId,
+          categoryId: null,
+          toAccountId: null,
+          investmentId: null,
+          price: null,
+          priceInBaseCurrency: null,
+          quantity: null,
+        };
+      }
+
+      case TransactionType.investment: {
+        const investmentData = data as IInvestmentTransaction;
+        const priceDecimal = investmentData.price
+          ? new Decimal(investmentData.price)
+          : null;
+        const quantityDecimal = investmentData.quantity
+          ? new Decimal(investmentData.quantity)
+          : null;
+        let priceInBaseCurrency: Decimal | null =
+          investmentData.priceInBaseCurrency
+            ? new Decimal(investmentData.priceInBaseCurrency)
+            : null;
+
+        if (
+          currency !== userBaseCurrency &&
+          priceDecimal &&
+          !priceInBaseCurrency
+        ) {
+          priceInBaseCurrency = this.convertCurrency(
+            priceDecimal,
+            currency,
+            userBaseCurrency,
           );
         }
-        break;
-      case TransactionType.investment:
-        if (!data.investmentId) {
-          throw new Error('Investment is required for investment transactions');
-        }
-        break;
+
+        return {
+          ...baseData,
+          investmentId: investmentData.investmentId,
+          price: priceDecimal?.toNumber() ?? null,
+          priceInBaseCurrency: priceInBaseCurrency?.toNumber() ?? null,
+          quantity: quantityDecimal?.toNumber() ?? null,
+          categoryId: null,
+          toAccountId: null,
+          loanPartyId: null,
+        };
+      }
+
+      default:
+        throw new Error(`Invalid transaction type`);
     }
   }
 
@@ -194,22 +326,12 @@ export class TransactionService {
     return amountDecimal.mul(rate);
   }
 
-  private async applyBalanceEffect(
-    tx: PrismaTx,
-    transactionType: TransactionType,
-    accountId: string,
-    toAccountId: string | null | undefined,
+  private convertAmountToAccountCurrency(
     amount: Decimal | number,
     fee: Decimal | number,
     currency: Currency,
     accountCurrency: Currency,
-    toAccountCurrency?: Currency,
-  ) {
-    const account = await tx.account.findUniqueOrThrow({
-      where: { id: accountId },
-      select: { id: true, balance: true, type: true, creditLimit: true },
-    });
-
+  ): { amountInAccountCurrency: Decimal; feeInAccountCurrency: Decimal } {
     const amountDecimal = new Decimal(amount);
     const feeDecimal = new Decimal(fee);
 
@@ -230,6 +352,45 @@ export class TransactionService {
         accountCurrency,
       );
     }
+
+    return { amountInAccountCurrency, feeInAccountCurrency };
+  }
+
+  private convertAmountToToAccountCurrency(
+    amount: Decimal | number,
+    currency: Currency,
+    toAccountCurrency?: Currency,
+  ): Decimal {
+    const amountDecimal = new Decimal(amount);
+    if (!toAccountCurrency || currency === toAccountCurrency) {
+      return amountDecimal;
+    }
+    return this.convertCurrency(amountDecimal, currency, toAccountCurrency);
+  }
+
+  private async applyBalanceEffect(
+    tx: PrismaTx,
+    transactionType: TransactionType,
+    accountId: string,
+    toAccountId: string | null | undefined,
+    amount: Decimal | number,
+    fee: Decimal | number,
+    currency: Currency,
+    accountCurrency: Currency,
+    toAccountCurrency?: Currency,
+  ) {
+    const account = await tx.account.findUniqueOrThrow({
+      where: { id: accountId },
+      select: { id: true, balance: true, type: true, creditLimit: true },
+    });
+
+    const { amountInAccountCurrency, feeInAccountCurrency } =
+      this.convertAmountToAccountCurrency(
+        amount,
+        fee,
+        currency,
+        accountCurrency,
+      );
 
     switch (transactionType) {
       case TransactionType.income:
@@ -274,14 +435,11 @@ export class TransactionService {
           feeInAccountCurrency,
         );
 
-        let amountInToAccountCurrency = amountDecimal;
-        if (toAccountCurrency && currency !== toAccountCurrency) {
-          amountInToAccountCurrency = this.convertCurrency(
-            amountDecimal,
-            currency,
-            toAccountCurrency,
-          );
-        }
+        const amountInToAccountCurrency = this.convertAmountToToAccountCurrency(
+          amount,
+          currency,
+          toAccountCurrency,
+        );
 
         await tx.account.update({
           where: { id: accountId },
@@ -315,26 +473,13 @@ export class TransactionService {
     accountCurrency: Currency,
     toAccountCurrency?: Currency,
   ) {
-    const amountDecimal = new Decimal(amount);
-    const feeDecimal = new Decimal(fee);
-
-    let amountInAccountCurrency = amountDecimal;
-    if (currency !== accountCurrency) {
-      amountInAccountCurrency = this.convertCurrency(
-        amountDecimal,
+    const { amountInAccountCurrency, feeInAccountCurrency } =
+      this.convertAmountToAccountCurrency(
+        amount,
+        fee,
         currency,
         accountCurrency,
       );
-    }
-
-    let feeInAccountCurrency = feeDecimal;
-    if (currency !== accountCurrency) {
-      feeInAccountCurrency = this.convertCurrency(
-        feeDecimal,
-        currency,
-        accountCurrency,
-      );
-    }
 
     switch (transactionType) {
       case TransactionType.income:
@@ -365,14 +510,11 @@ export class TransactionService {
           throw new Error('To account is required for transfer');
         }
 
-        let amountInToAccountCurrency = amountDecimal;
-        if (toAccountCurrency && currency !== toAccountCurrency) {
-          amountInToAccountCurrency = this.convertCurrency(
-            amountDecimal,
-            currency,
-            toAccountCurrency,
-          );
-        }
+        const amountInToAccountCurrency = this.convertAmountToToAccountCurrency(
+          amount,
+          currency,
+          toAccountCurrency,
+        );
 
         await tx.account.update({
           where: { id: accountId },
@@ -395,175 +537,262 @@ export class TransactionService {
     }
   }
 
-  async upsertTransaction(userId: string, data: IUpsertTransaction) {
-    this.validateTransactionType(data);
+  private async processTransaction<T extends IUpsertTransaction>(
+    userId: string,
+    data: T,
+    account: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    userBaseCurrency: Currency,
+    validationFn?: () => Promise<void>,
+    toAccount?: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+  ) {
+    if (validationFn) {
+      await validationFn();
+    }
 
-    const account = await this.validateAccountOwnership(userId, data.accountId);
     const currency = data.currency ?? account.currency;
+    const amountDecimal = new Decimal(data.amount);
+    const feeDecimal = new Decimal(data.fee ?? 0);
+
+    const preparedTransactionData = this.prepareTransactionData(
+      userId,
+      data,
+      account.currency,
+      userBaseCurrency,
+    );
+
+    const toAccountId = toAccount?.id ?? null;
+    const toAccountCurrency = toAccount?.currency;
+
+    if (data.id) {
+      return this.updateTransaction(
+        userId,
+        data.id,
+        preparedTransactionData,
+        data.type,
+        account.id,
+        toAccountId,
+        amountDecimal,
+        feeDecimal,
+        currency,
+        account.currency,
+        toAccountCurrency,
+      );
+    }
+
+    return this.createTransaction(
+      preparedTransactionData,
+      data.type,
+      account.id,
+      toAccountId,
+      amountDecimal,
+      feeDecimal,
+      currency,
+      account.currency,
+      toAccountCurrency,
+    );
+  }
+
+  private async handleIncomeExpenseTransaction(
+    userId: string,
+    data: IIncomeExpenseTransaction,
+    account: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    userBaseCurrency: Currency,
+  ) {
+    return await this.processTransaction(
+      userId,
+      data,
+      account,
+      userBaseCurrency,
+      () => this.validateCategoryOwnership(userId, data.categoryId),
+    );
+  }
+
+  private async handleTransferTransaction(
+    userId: string,
+    data: ITransferTransaction,
+    account: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    userBaseCurrency: Currency,
+  ) {
+    const toAccount = await this.validateToAccountOwnership(
+      userId,
+      data.toAccountId,
+    );
+
+    return await this.processTransaction(
+      userId,
+      data,
+      account,
+      userBaseCurrency,
+      undefined,
+      toAccount,
+    );
+  }
+
+  private async handleLoanTransaction(
+    userId: string,
+    data: ILoanTransaction,
+    account: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    userBaseCurrency: Currency,
+  ) {
+    return await this.processTransaction(
+      userId,
+      data,
+      account,
+      userBaseCurrency,
+      () => this.validateLoanPartyOwnership(userId, data.loanPartyId),
+    );
+  }
+
+  private async handleInvestmentTransaction(
+    userId: string,
+    data: IInvestmentTransaction,
+    account: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    userBaseCurrency: Currency,
+  ) {
+    return await this.processTransaction(
+      userId,
+      data,
+      account,
+      userBaseCurrency,
+      () => this.validateInvestmentOwnership(userId, data.investmentId),
+    );
+  }
+
+  private createTransaction(
+    transactionData: Parameters<typeof prisma.transaction.create>[0]['data'],
+    type: TransactionType,
+    accountId: string,
+    toAccountId: string | null,
+    amount: Decimal,
+    fee: Decimal,
+    currency: Currency,
+    accountCurrency: Currency,
+    toAccountCurrency?: Currency,
+  ) {
+    return prisma.$transaction(async (tx: PrismaTx) => {
+      await this.applyBalanceEffect(
+        tx,
+        type,
+        accountId,
+        toAccountId,
+        amount,
+        fee,
+        currency,
+        accountCurrency,
+        toAccountCurrency,
+      );
+
+      return tx.transaction.create({
+        data: transactionData,
+        include: TransactionService.TRANSACTION_INCLUDE,
+      });
+    });
+  }
+
+  private async updateTransaction(
+    userId: string,
+    transactionId: string,
+    transactionData: Parameters<typeof prisma.transaction.update>[0]['data'],
+    type: TransactionType,
+    accountId: string,
+    toAccountId: string | null,
+    amount: Decimal,
+    fee: Decimal,
+    currency: Currency,
+    accountCurrency: Currency,
+    toAccountCurrency?: Currency,
+  ) {
+    const existingTransaction = await prisma.transaction.findUnique({
+      where: { id: transactionId },
+      select: TransactionService.TRANSACTION_SELECT_FOR_BALANCE,
+    });
+
+    if (!existingTransaction) {
+      throw new Error('Transaction not found');
+    }
+    if (existingTransaction.userId !== userId) {
+      throw new Error('Transaction not owned by user');
+    }
+
+    return prisma.$transaction(async (tx: PrismaTx) => {
+      await this.revertBalanceEffect(
+        tx,
+        existingTransaction.type,
+        existingTransaction.accountId,
+        existingTransaction.toAccountId,
+        existingTransaction.amount,
+        existingTransaction.fee,
+        existingTransaction.currency,
+        existingTransaction.account.currency,
+        existingTransaction.toAccount?.currency,
+      );
+
+      await this.applyBalanceEffect(
+        tx,
+        type,
+        accountId,
+        toAccountId,
+        amount,
+        fee,
+        currency,
+        accountCurrency,
+        toAccountCurrency,
+      );
+
+      return tx.transaction.update({
+        where: { id: transactionId },
+        data: transactionData,
+        include: TransactionService.TRANSACTION_INCLUDE,
+      });
+    });
+  }
+
+  async upsertTransaction(userId: string, data: IUpsertTransaction) {
+    const account = await this.validateAccountOwnership(userId, data.accountId);
 
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: { id: true, baseCurrency: true },
     });
 
-    let toAccount: typeof account | null = null;
-    if (data.toAccountId) {
-      toAccount = await this.validateToAccountOwnership(
-        userId,
-        data.toAccountId,
-      );
-    }
-
-    if (data.categoryId) {
-      await this.validateCategoryOwnership(userId, data.categoryId);
-    }
-
-    if (data.investmentId) {
-      await this.validateInvestmentOwnership(userId, data.investmentId);
-    }
-
-    if (data.loanPartyId) {
-      await this.validateLoanPartyOwnership(userId, data.loanPartyId);
-    }
-
-    const amountDecimal = new Decimal(data.amount);
-    const feeDecimal = new Decimal(data.fee ?? 0);
-    const priceDecimal = data.price ? new Decimal(data.price) : null;
-    const quantityDecimal = data.quantity ? new Decimal(data.quantity) : null;
-
-    let priceInBaseCurrency: Decimal | null = data.priceInBaseCurrency
-      ? new Decimal(data.priceInBaseCurrency)
-      : null;
-    let feeInBaseCurrency: Decimal | null = data.feeInBaseCurrency
-      ? new Decimal(data.feeInBaseCurrency)
-      : null;
-
-    if (currency !== user.baseCurrency) {
-      if (priceDecimal && !priceInBaseCurrency) {
-        priceInBaseCurrency = this.convertCurrency(
-          priceDecimal,
-          currency,
+    switch (data.type) {
+      case TransactionType.income:
+      case TransactionType.expense:
+        return this.handleIncomeExpenseTransaction(
+          userId,
+          data as IIncomeExpenseTransaction,
+          account,
           user.baseCurrency,
         );
-      }
-      if (feeDecimal.gt(0) && !feeInBaseCurrency) {
-        feeInBaseCurrency = this.convertCurrency(
-          feeDecimal,
-          currency,
+
+      case TransactionType.transfer:
+        return this.handleTransferTransaction(
+          userId,
+          data as ITransferTransaction,
+          account,
           user.baseCurrency,
         );
-      }
-    }
 
-    const transactionData = {
-      userId,
-      accountId: data.accountId,
-      toAccountId: data.toAccountId ?? null,
-      type: data.type,
-      categoryId: data.categoryId ?? null,
-      investmentId: data.investmentId ?? null,
-      loanPartyId: data.loanPartyId ?? null,
-      amount: amountDecimal.toNumber(),
-      currency,
-      price: priceDecimal?.toNumber() ?? null,
-      priceInBaseCurrency: priceInBaseCurrency?.toNumber() ?? null,
-      quantity: quantityDecimal?.toNumber() ?? null,
-      fee: feeDecimal.toNumber(),
-      feeInBaseCurrency: feeInBaseCurrency?.toNumber() ?? null,
-      date: new Date(data.date),
-      dueDate: data.dueDate ? new Date(data.dueDate) : null,
-      note: data.note ?? null,
-      receiptUrl: data.receiptUrl ?? null,
-      metadata: data.metadata ?? null,
-    };
-
-    if (data.id) {
-      const existingTransaction = await prisma.transaction.findUnique({
-        where: { id: data.id },
-        select: {
-          id: true,
-          userId: true,
-          type: true,
-          accountId: true,
-          toAccountId: true,
-          amount: true,
-          fee: true,
-          currency: true,
-          account: { select: { currency: true } },
-          toAccount: { select: { currency: true } },
-        },
-      });
-
-      if (!existingTransaction) {
-        throw new Error('Transaction not found');
-      }
-      if (existingTransaction.userId !== userId) {
-        throw new Error('Transaction not owned by user');
-      }
-
-      return prisma.$transaction(async (tx: PrismaTx) => {
-        await this.revertBalanceEffect(
-          tx,
-          existingTransaction.type,
-          existingTransaction.accountId,
-          existingTransaction.toAccountId,
-          existingTransaction.amount,
-          existingTransaction.fee,
-          existingTransaction.currency,
-          existingTransaction.account.currency,
-          existingTransaction.toAccount?.currency,
+      case TransactionType.loan_given:
+      case TransactionType.loan_received:
+        return this.handleLoanTransaction(
+          userId,
+          data as ILoanTransaction,
+          account,
+          user.baseCurrency,
         );
 
-        await this.applyBalanceEffect(
-          tx,
-          data.type,
-          data.accountId,
-          data.toAccountId,
-          amountDecimal,
-          feeDecimal,
-          currency,
-          account.currency,
-          toAccount?.currency,
+      case TransactionType.investment:
+        return this.handleInvestmentTransaction(
+          userId,
+          data as IInvestmentTransaction,
+          account,
+          user.baseCurrency,
         );
 
-        return tx.transaction.update({
-          where: { id: data.id },
-          data: transactionData,
-          include: {
-            account: true,
-            toAccount: true,
-            category: true,
-            investment: true,
-            loanParty: true,
-          },
-        });
-      });
+      default:
+        throw new Error(`Invalid transaction type`);
     }
-
-    return prisma.$transaction(async (tx: PrismaTx) => {
-      await this.applyBalanceEffect(
-        tx,
-        data.type,
-        data.accountId,
-        data.toAccountId,
-        amountDecimal,
-        feeDecimal,
-        currency,
-        account.currency,
-        toAccount?.currency,
-      );
-
-      return tx.transaction.create({
-        data: transactionData,
-        include: {
-          account: true,
-          toAccount: true,
-          category: true,
-          investment: true,
-          loanParty: true,
-        },
-      });
-    });
   }
 
   async getTransaction(userId: string, transactionId: string) {
@@ -572,13 +801,7 @@ export class TransactionService {
         id: transactionId,
         userId,
       },
-      include: {
-        account: true,
-        toAccount: true,
-        category: true,
-        investment: true,
-        loanParty: true,
-      },
+      include: TransactionService.TRANSACTION_INCLUDE,
     });
 
     if (!transaction) {
@@ -672,18 +895,7 @@ export class TransactionService {
   async deleteTransaction(userId: string, transactionId: string) {
     const transaction = await prisma.transaction.findUnique({
       where: { id: transactionId },
-      select: {
-        id: true,
-        userId: true,
-        type: true,
-        accountId: true,
-        toAccountId: true,
-        amount: true,
-        fee: true,
-        currency: true,
-        account: { select: { currency: true } },
-        toAccount: { select: { currency: true } },
-      },
+      select: TransactionService.TRANSACTION_SELECT_FOR_BALANCE,
     });
 
     if (!transaction) {
