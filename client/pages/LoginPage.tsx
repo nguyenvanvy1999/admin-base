@@ -30,7 +30,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Logo and Title Section */}
         <div className="text-center">
@@ -38,21 +38,21 @@ const LoginPage = () => {
             <img
               src="/public/logo.jpeg"
               alt="Logo"
-              className="h-20 w-20 rounded-full shadow-lg border-4 border-white"
+              className="h-20 w-20 rounded-full shadow-lg border-4 border-white dark:border-gray-800"
             />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             {t('login.title')}
           </h1>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white py-8 px-6 shadow-xl rounded-2xl border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 py-8 px-6 shadow-xl rounded-2xl border border-gray-100 dark:border-gray-700">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label
                 htmlFor="username"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
               >
                 {t('login.username')}
               </label>
@@ -63,7 +63,7 @@ const LoginPage = () => {
                 required
                 value={formData.username}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                 placeholder={t('login.usernamePlaceholder')}
               />
             </div>
@@ -71,7 +71,7 @@ const LoginPage = () => {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
               >
                 {t('login.password')}
               </label>
@@ -82,7 +82,7 @@ const LoginPage = () => {
                 required
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                 placeholder={t('login.passwordPlaceholder')}
               />
             </div>
@@ -124,11 +124,11 @@ const LoginPage = () => {
 
           {/* Sign up link */}
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               {t('login.dontHaveAccount')}{' '}
               <Link
                 to="/register"
-                className="font-medium text-indigo-600 hover:text-indigo-500 transition duration-200"
+                className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition duration-200"
               >
                 {t('login.signUpHere')}
               </Link>
@@ -136,8 +136,8 @@ const LoginPage = () => {
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <p className="text-center text-xs text-gray-500">
+        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+          <p className="text-center text-xs text-gray-500 dark:text-gray-400">
             {t('common.copyright', { year: currentYear })}
           </p>
         </div>

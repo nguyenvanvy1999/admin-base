@@ -1,5 +1,6 @@
-import { prisma } from '@server/libs/db'
 import { UserRole } from '@server/generated/prisma/enums';
+import type { UserUncheckedUpdateInput } from '@server/generated/prisma/models/User';
+import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
 import { CURRENCY_IDS } from '../constants/currency';
@@ -113,13 +114,9 @@ export class UserService {
       }
     }
 
-    const updateData: {
-      name?: string;
-      baseCurrencyId?: string;
-      password?: string;
-    } = {};
+    const updateData: UserUncheckedUpdateInput = {};
 
-    if (data.name !== undefined) {
+    if (data.name?.length) {
       updateData.name = data.name;
     }
     if (data.baseCurrencyId) {

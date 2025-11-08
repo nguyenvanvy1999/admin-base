@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import LanguageSwitcher from './LanguageSwitcher';
+import ThemeToggle from './ThemeToggle';
 
 const Header = () => {
   const { t } = useTranslation();
@@ -35,7 +36,7 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and App Name */}
@@ -46,17 +47,20 @@ const Header = () => {
             <img
               src="/public/logo.jpeg"
               alt="Logo"
-              className="h-10 w-10 rounded-full shadow-sm border-2 border-gray-100"
+              className="h-10 w-10 rounded-full shadow-sm border-2 border-gray-100 dark:border-gray-700"
             />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 {t('header.appName')}
               </h1>
             </div>
           </button>
 
-          {/* Right side: Language Switcher and User Avatar */}
+          {/* Right side: Theme Toggle, Language Switcher and User Avatar */}
           <div className="flex items-center space-x-4">
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
             {/* Language Switcher */}
             <LanguageSwitcher />
 
@@ -64,18 +68,20 @@ const Header = () => {
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:bg-gray-50 px-3 py-2 transition duration-200"
+                className="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2 transition duration-200"
               >
                 <img
                   src="/public/logo.jpeg"
                   alt="User Avatar"
-                  className="h-8 w-8 rounded-full border-2 border-gray-200"
+                  className="h-8 w-8 rounded-full border-2 border-gray-200 dark:border-gray-600"
                 />
                 <div className="hidden sm:block text-left">
-                  <p className="font-medium text-gray-900">
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
                     {user?.name || user?.username || ''}
                   </p>
-                  <p className="text-xs text-gray-500">{t('common.online')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {t('common.online')}
+                  </p>
                 </div>
                 <svg
                   className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
@@ -104,13 +110,13 @@ const Header = () => {
                   ></div>
 
                   {/* Dropdown Content */}
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-200">
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-20 border border-gray-200 dark:border-gray-700">
                     {/* User Info */}
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {user?.name || user?.username || ''}
                       </p>
-                      <p className="text-xs text-gray-500 truncate">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                         {user?.role || ''}
                       </p>
                     </div>
@@ -118,7 +124,7 @@ const Header = () => {
                     {/* Menu Items */}
                     <button
                       onClick={handleProfileClick}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-200"
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-200"
                     >
                       <svg
                         className="mr-3 h-4 w-4 text-gray-400"
@@ -138,7 +144,7 @@ const Header = () => {
 
                     <button
                       onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-200"
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-200"
                     >
                       <svg
                         className="mr-3 h-4 w-4 text-gray-400"

@@ -1,7 +1,7 @@
-import { logger } from '../libs/logger'
+import { logger } from '../libs/logger';
 
 const errorMiddleware = ({ code, error, set }: any) => {
-	logger.error('Request error occurred', { code, error })
+  logger.error('Request error occurred', { code, error });
   if (code === 'UNKNOWN') {
     //user throw error
     set.status = 400;

@@ -1,4 +1,4 @@
-import { appEnv } from '@server/libs/env'
+import { appEnv } from '@server/libs/env';
 import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
 

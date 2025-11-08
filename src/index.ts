@@ -1,10 +1,10 @@
-import { staticPlugin } from '@elysiajs/static'
-import swagger from '@elysiajs/swagger'
-import { appEnv } from '@server/libs/env'
-import { Elysia } from 'elysia'
-import { logger } from './libs/logger'
-import userController from './controllers/user.controller'
-import errorMiddleware from './middlewares/error-middleware'
+import { staticPlugin } from '@elysiajs/static';
+import swagger from '@elysiajs/swagger';
+import { appEnv } from '@server/libs/env';
+import { Elysia } from 'elysia';
+import userController from './controllers/user.controller';
+import { logger } from './libs/logger';
+import errorMiddleware from './middlewares/error-middleware';
 
 export const app = new Elysia()
   .use(
@@ -43,8 +43,8 @@ export const app = new Elysia()
   .listen(appEnv.PORT);
 
 logger.info(
-	`Server started open http://${app.server?.hostname}:${app.server?.port} in the browser`,
-)
+  `Server started open http://${app.server?.hostname}:${app.server?.port} in the browser`,
+);
 logger.info(
-	`API can be found at  http://${app.server?.hostname}:${app.server?.port}/api/docs in the browser`,
-)
+  `API can be found at  http://${app.server?.hostname}:${app.server?.port}/api/docs in the browser`,
+);

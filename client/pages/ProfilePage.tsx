@@ -37,10 +37,12 @@ const ProfilePage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{t('profile.loading')}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            {t('profile.loading')}
+          </p>
         </div>
       </div>
     );
@@ -48,8 +50,10 @@ const ProfilePage = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">{t('profile.userNotFound')}</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <p className="text-gray-600 dark:text-gray-400">
+          {t('profile.userNotFound')}
+        </p>
       </div>
     );
   }
@@ -129,11 +133,11 @@ const ProfilePage = () => {
   const selectedCurrency = CURRENCIES.find((c) => c.id === user.baseCurrencyId);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               {t('profile.title')}
             </h1>
             {!isEditMode && (
@@ -164,7 +168,7 @@ const ProfilePage = () => {
               <div>
                 <label
                   htmlFor="username"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
                   {t('profile.username')}
                 </label>
@@ -173,14 +177,14 @@ const ProfilePage = () => {
                   type="text"
                   value={user.username}
                   disabled
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
                   {t('profile.name')}
                 </label>
@@ -190,7 +194,7 @@ const ProfilePage = () => {
                   type="text"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   placeholder={t('profile.namePlaceholder')}
                 />
               </div>
@@ -198,7 +202,7 @@ const ProfilePage = () => {
               <div>
                 <label
                   htmlFor="baseCurrencyId"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
                   {t('profile.baseCurrency')}
                 </label>
@@ -207,7 +211,7 @@ const ProfilePage = () => {
                   name="baseCurrencyId"
                   value={formData.baseCurrencyId}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   {CURRENCIES.map((currency) => (
                     <option key={currency.id} value={currency.id}>
@@ -217,8 +221,8 @@ const ProfilePage = () => {
                 </select>
               </div>
 
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
                   {t('profile.changePassword')}
                 </h3>
 
@@ -226,7 +230,7 @@ const ProfilePage = () => {
                   <div>
                     <label
                       htmlFor="oldPassword"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                     >
                       {t('profile.oldPassword')}
                     </label>
@@ -236,7 +240,7 @@ const ProfilePage = () => {
                       type="password"
                       value={formData.oldPassword}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                       placeholder={t('profile.oldPasswordPlaceholder')}
                     />
                   </div>
@@ -244,7 +248,7 @@ const ProfilePage = () => {
                   <div>
                     <label
                       htmlFor="newPassword"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                     >
                       {t('profile.newPassword')}
                     </label>
@@ -254,7 +258,7 @@ const ProfilePage = () => {
                       type="password"
                       value={formData.newPassword}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                       placeholder={t('profile.newPasswordPlaceholder')}
                     />
                   </div>
@@ -262,7 +266,7 @@ const ProfilePage = () => {
                   <div>
                     <label
                       htmlFor="confirmPassword"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                     >
                       {t('profile.confirmPassword')}
                     </label>
@@ -272,12 +276,12 @@ const ProfilePage = () => {
                       type="password"
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                       placeholder={t('profile.confirmPasswordPlaceholder')}
                     />
                     {formData.newPassword &&
                       formData.newPassword !== formData.confirmPassword && (
-                        <p className="mt-1 text-sm text-red-600">
+                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                           {t('profile.passwordsDoNotMatch')}
                         </p>
                       )}
@@ -285,12 +289,12 @@ const ProfilePage = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+              <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <button
                   type="button"
                   onClick={handleCancel}
                   disabled={updateProfileMutation.isPending}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {t('profile.cancel')}
                 </button>
@@ -314,40 +318,40 @@ const ProfilePage = () => {
           ) : (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <dt className="text-sm font-medium text-gray-500 mb-1">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     {t('profile.username')}
                   </dt>
-                  <dd className="text-lg font-semibold text-gray-900">
+                  <dd className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {user.username}
                   </dd>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <dt className="text-sm font-medium text-gray-500 mb-1">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     {t('profile.name')}
                   </dt>
-                  <dd className="text-lg font-semibold text-gray-900">
+                  <dd className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {user.name || t('common.nA')}
                   </dd>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <dt className="text-sm font-medium text-gray-500 mb-1">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     {t('profile.role')}
                   </dt>
                   <dd className="mt-1">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
                       {user.role}
                     </span>
                   </dd>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <dt className="text-sm font-medium text-gray-500 mb-1">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     {t('profile.baseCurrency')}
                   </dt>
-                  <dd className="text-lg font-semibold text-gray-900">
+                  <dd className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {selectedCurrency
                       ? `${selectedCurrency.symbol} - ${selectedCurrency.name} (${selectedCurrency.code})`
                       : t('common.nA')}

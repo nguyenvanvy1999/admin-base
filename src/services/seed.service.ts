@@ -1,5 +1,5 @@
 import { CURRENCY_IDS } from '@server/constants/currency';
-import { prisma } from '@server/libs/db'
+import { prisma } from '@server/libs/db';
 
 export class SeedService {
   async seedCurrencies(): Promise<void> {

@@ -1,5 +1,5 @@
-import { prisma } from '@server/libs/db'
 import { CategoryType } from '@server/generated/prisma/enums';
+import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 
 export class CategoryService {
