@@ -1,12 +1,10 @@
-import { Button, Group, Modal, Stack } from '@mantine/core';
+import { Button, Group, Modal, Select, Stack, TextInput } from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
 import { CURRENCY_IDS } from '@server/constants/currency';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FormDatePicker } from './ui/FormDatePicker';
-import { FormSelect } from './ui/FormSelect';
-import { FormTextInput } from './ui/FormTextInput';
 import { useValidation } from './validation';
 
 type Account = {
@@ -136,14 +134,20 @@ const AddEditAccountDialog = ({
               onChange: validation.required('accounts.nameRequired'),
             }}
           >
-            {(field) => (
-              <FormTextInput
-                field={field}
-                label={t('accounts.name')}
-                placeholder={t('accounts.namePlaceholder')}
-                required
-              />
-            )}
+            {(field) => {
+              const error = field.state.meta.errors[0];
+              return (
+                <TextInput
+                  label={t('accounts.name')}
+                  placeholder={t('accounts.namePlaceholder')}
+                  required
+                  value={field.state.value ?? ''}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  onBlur={field.handleBlur}
+                  error={error}
+                />
+              );
+            }}
           </form.Field>
 
           <form.Field
@@ -152,26 +156,32 @@ const AddEditAccountDialog = ({
               onChange: validation.required('accounts.typeRequired'),
             }}
           >
-            {(field) => (
-              <FormSelect
-                field={field}
-                label={t('accounts.type')}
-                placeholder={t('accounts.typePlaceholder')}
-                required
-                options={[
-                  { value: AccountType.cash, label: t('accounts.cash') },
-                  { value: AccountType.bank, label: t('accounts.bank') },
-                  {
-                    value: AccountType.credit_card,
-                    label: t('accounts.credit_card'),
-                  },
-                  {
-                    value: AccountType.investment,
-                    label: t('accounts.investment'),
-                  },
-                ]}
-              />
-            )}
+            {(field) => {
+              const error = field.state.meta.errors[0];
+              return (
+                <Select
+                  label={t('accounts.type')}
+                  placeholder={t('accounts.typePlaceholder')}
+                  required
+                  data={[
+                    { value: AccountType.cash, label: t('accounts.cash') },
+                    { value: AccountType.bank, label: t('accounts.bank') },
+                    {
+                      value: AccountType.credit_card,
+                      label: t('accounts.credit_card'),
+                    },
+                    {
+                      value: AccountType.investment,
+                      label: t('accounts.investment'),
+                    },
+                  ]}
+                  value={field.state.value ?? null}
+                  onChange={(value) => field.handleChange(value ?? '')}
+                  onBlur={field.handleBlur}
+                  error={error}
+                />
+              );
+            }}
           </form.Field>
 
           <form.Field
@@ -180,18 +190,24 @@ const AddEditAccountDialog = ({
               onChange: validation.required('accounts.currencyRequired'),
             }}
           >
-            {(field) => (
-              <FormSelect
-                field={field}
-                label={t('accounts.currency')}
-                placeholder={t('accounts.currencyPlaceholder')}
-                required
-                options={CURRENCIES.map((currency) => ({
-                  value: currency.id,
-                  label: `${currency.code} - ${currency.name}`,
-                }))}
-              />
-            )}
+            {(field) => {
+              const error = field.state.meta.errors[0];
+              return (
+                <Select
+                  label={t('accounts.currency')}
+                  placeholder={t('accounts.currencyPlaceholder')}
+                  required
+                  data={CURRENCIES.map((currency) => ({
+                    value: currency.id,
+                    label: `${currency.code} - ${currency.name}`,
+                  }))}
+                  value={field.state.value ?? null}
+                  onChange={(value) => field.handleChange(value ?? '')}
+                  onBlur={field.handleBlur}
+                  error={error}
+                />
+              );
+            }}
           </form.Field>
 
           <form.Subscribe
@@ -202,25 +218,100 @@ const AddEditAccountDialog = ({
               return (
                 <>
                   <form.Field name="creditLimit">
-                    {(field) => (
-                      <FormTextInput
-                        field={field}
-                        type="number"
-                        label={t('accounts.creditLimit')}
-                        placeholder={t('accounts.creditLimitPlaceholder')}
-                        min="0"
-                        step="0.01"
-                      />
-                    )}
+                    {(field) => {
+                      const error = field.state.meta.errors[0];
+                      return (
+                        <TextInput
+                          type="number"
+                          label={t('accounts.creditLimit')}
+                          placeholder={t('accounts.creditLimitPlaceholder')}
+                          min="0"
+                          step="0.01"
+                          value={field.state.value ?? ''}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          onBlur={field.handleBlur}
+                          error={error}
+                        />
+                      );
+                    }}
                   </form.Field>
 
                   <form.Field name="expiryDate">
-                    {(field) => (
-                      <FormDatePicker
-                        field={field}
-                        label={t('accounts.expiryDate')}
-                      />
-                    )}
+                    {(field) => {
+                      const error = field.state.meta.errors[0];
+                      let dateValue: Date | null = null;
+
+                      if (
+                        field.state.value &&
+                        field.state.value.trim() !== ''
+                      ) {
+                        try {
+                          const dateStr = field.state.value;
+                          if (dateStr.includes('T')) {
+                            dateValue = new Date(dateStr);
+                          } else {
+                            const parts = dateStr.split('-');
+                            if (parts.length === 3) {
+                              const year = parseInt(parts[0], 10);
+                              const month = parseInt(parts[1], 10);
+                              const day = parseInt(parts[2], 10);
+                              if (
+                                !isNaN(year) &&
+                                !isNaN(month) &&
+                                !isNaN(day)
+                              ) {
+                                dateValue = new Date(year, month - 1, day);
+                              }
+                            }
+                          }
+                          if (dateValue && isNaN(dateValue.getTime())) {
+                            dateValue = null;
+                          }
+                        } catch {
+                          dateValue = null;
+                        }
+                      }
+
+                      return (
+                        <DatePickerInput
+                          label={t('accounts.expiryDate')}
+                          value={dateValue}
+                          onChange={(date) => {
+                            if (date === null) {
+                              field.handleChange('');
+                              return;
+                            }
+
+                            if (
+                              date &&
+                              typeof date === 'object' &&
+                              'getTime' in date
+                            ) {
+                              const dateObj = date as Date;
+                              if (!isNaN(dateObj.getTime())) {
+                                const year = dateObj.getFullYear();
+                                const month = String(
+                                  dateObj.getMonth() + 1,
+                                ).padStart(2, '0');
+                                const day = String(dateObj.getDate()).padStart(
+                                  2,
+                                  '0',
+                                );
+                                const dateString = `${year}-${month}-${day}`;
+                                field.handleChange(dateString);
+                              } else {
+                                field.handleChange('');
+                              }
+                            } else {
+                              field.handleChange('');
+                            }
+                          }}
+                          onBlur={field.handleBlur}
+                          error={error}
+                          clearable
+                        />
+                      );
+                    }}
                   </form.Field>
                 </>
               );

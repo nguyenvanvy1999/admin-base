@@ -1,7 +1,6 @@
-import { FormTextInput } from '@client/components/ui/FormTextInput';
 import { useValidation } from '@client/components/validation';
 import { useLoginMutation } from '@client/hooks/mutations/useAuthMutations';
-import { Button, Loader } from '@mantine/core';
+import { Button, Loader, TextInput } from '@mantine/core';
 import { useForm } from '@tanstack/react-form';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -58,14 +57,20 @@ const LoginPage = () => {
                 onChange: validation.required('login.username'),
               }}
             >
-              {(field) => (
-                <FormTextInput
-                  field={field}
-                  label={t('login.username')}
-                  placeholder={t('login.usernamePlaceholder')}
-                  required
-                />
-              )}
+              {(field) => {
+                const error = field.state.meta.errors[0];
+                return (
+                  <TextInput
+                    label={t('login.username')}
+                    placeholder={t('login.usernamePlaceholder')}
+                    required
+                    value={field.state.value ?? ''}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={error}
+                  />
+                );
+              }}
             </form.Field>
 
             <form.Field
@@ -74,15 +79,21 @@ const LoginPage = () => {
                 onChange: validation.required('login.password'),
               }}
             >
-              {(field) => (
-                <FormTextInput
-                  field={field}
-                  type="password"
-                  label={t('login.password')}
-                  placeholder={t('login.passwordPlaceholder')}
-                  required
-                />
-              )}
+              {(field) => {
+                const error = field.state.meta.errors[0];
+                return (
+                  <TextInput
+                    type="password"
+                    label={t('login.password')}
+                    placeholder={t('login.passwordPlaceholder')}
+                    required
+                    value={field.state.value ?? ''}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={error}
+                  />
+                );
+              }}
             </form.Field>
 
             <Button

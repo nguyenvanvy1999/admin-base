@@ -1,7 +1,6 @@
-import { FormTextInput } from '@client/components/ui/FormTextInput';
 import { useValidation } from '@client/components/validation';
 import { useRegisterMutation } from '@client/hooks/mutations/useAuthMutations';
-import { Button, Loader } from '@mantine/core';
+import { Button, Loader, TextInput } from '@mantine/core';
 import { useForm } from '@tanstack/react-form';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -68,14 +67,20 @@ const RegisterPage = () => {
                 onChange: validation.required('login.username'),
               }}
             >
-              {(field) => (
-                <FormTextInput
-                  field={field}
-                  label={t('register.username')}
-                  placeholder={t('register.usernamePlaceholder')}
-                  required
-                />
-              )}
+              {(field) => {
+                const error = field.state.meta.errors[0];
+                return (
+                  <TextInput
+                    label={t('register.username')}
+                    placeholder={t('register.usernamePlaceholder')}
+                    required
+                    value={field.state.value ?? ''}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={error}
+                  />
+                );
+              }}
             </form.Field>
 
             <form.Field
@@ -92,15 +97,21 @@ const RegisterPage = () => {
                 },
               }}
             >
-              {(field) => (
-                <FormTextInput
-                  field={field}
-                  type="password"
-                  label={t('register.password')}
-                  placeholder={t('register.passwordPlaceholder')}
-                  required
-                />
-              )}
+              {(field) => {
+                const error = field.state.meta.errors[0];
+                return (
+                  <TextInput
+                    type="password"
+                    label={t('register.password')}
+                    placeholder={t('register.passwordPlaceholder')}
+                    required
+                    value={field.state.value ?? ''}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={error}
+                  />
+                );
+              }}
             </form.Field>
 
             <form.Field
@@ -118,15 +129,21 @@ const RegisterPage = () => {
                 },
               }}
             >
-              {(field) => (
-                <FormTextInput
-                  field={field}
-                  type="password"
-                  label={t('register.confirmPassword')}
-                  placeholder={t('register.confirmPasswordPlaceholder')}
-                  required
-                />
-              )}
+              {(field) => {
+                const error = field.state.meta.errors[0];
+                return (
+                  <TextInput
+                    type="password"
+                    label={t('register.confirmPassword')}
+                    placeholder={t('register.confirmPasswordPlaceholder')}
+                    required
+                    value={field.state.value ?? ''}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={error}
+                  />
+                );
+              }}
             </form.Field>
 
             {/* Terms and Conditions */}

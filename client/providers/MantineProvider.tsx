@@ -1,6 +1,7 @@
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
 import { MantineProvider as MantineProviderBase } from '@mantine/core';
+import { DatesProvider } from '@mantine/dates';
 
 const MantineProvider = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -11,7 +12,7 @@ const MantineProvider = ({ children }: { children: React.ReactNode }) => {
         defaultRadius: 'md',
       }}
     >
-      {children}
+      <DatesProvider settings={{ firstDayOfWeek: 0 }}>{children}</DatesProvider>
     </MantineProviderBase>
   );
 };

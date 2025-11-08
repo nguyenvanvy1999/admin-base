@@ -1,8 +1,6 @@
-import { FormSelect } from '@client/components/ui/FormSelect';
-import { FormTextInput } from '@client/components/ui/FormTextInput';
 import { useUpdateProfileMutation } from '@client/hooks/mutations/useUserMutations';
 import { useUserQuery } from '@client/hooks/queries/useUserQuery';
-import { Button, TextInput } from '@mantine/core';
+import { Button, Select, TextInput } from '@mantine/core';
 import { CURRENCY_IDS } from '@server/constants/currency';
 import { useForm } from '@tanstack/react-form';
 import { useEffect, useState } from 'react';
@@ -145,26 +143,38 @@ const ProfilePage = () => {
               />
 
               <form.Field name="name">
-                {(field) => (
-                  <FormTextInput
-                    field={field}
-                    label={t('profile.name')}
-                    placeholder={t('profile.namePlaceholder')}
-                  />
-                )}
+                {(field) => {
+                  const error = field.state.meta.errors[0];
+                  return (
+                    <TextInput
+                      label={t('profile.name')}
+                      placeholder={t('profile.namePlaceholder')}
+                      value={field.state.value ?? ''}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      error={error}
+                    />
+                  );
+                }}
               </form.Field>
 
               <form.Field name="baseCurrencyId">
-                {(field) => (
-                  <FormSelect
-                    field={field}
-                    label={t('profile.baseCurrency')}
-                    options={CURRENCIES.map((currency) => ({
-                      value: currency.id,
-                      label: `${currency.symbol} - ${currency.name} (${currency.code})`,
-                    }))}
-                  />
-                )}
+                {(field) => {
+                  const error = field.state.meta.errors[0];
+                  return (
+                    <Select
+                      label={t('profile.baseCurrency')}
+                      data={CURRENCIES.map((currency) => ({
+                        value: currency.id,
+                        label: `${currency.symbol} - ${currency.name} (${currency.code})`,
+                      }))}
+                      value={field.state.value ?? null}
+                      onChange={(value) => field.handleChange(value ?? '')}
+                      onBlur={field.handleBlur}
+                      error={error}
+                    />
+                  );
+                }}
               </form.Field>
 
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
@@ -174,14 +184,20 @@ const ProfilePage = () => {
 
                 <div className="space-y-4">
                   <form.Field name="oldPassword">
-                    {(field) => (
-                      <FormTextInput
-                        field={field}
-                        type="password"
-                        label={t('profile.oldPassword')}
-                        placeholder={t('profile.oldPasswordPlaceholder')}
-                      />
-                    )}
+                    {(field) => {
+                      const error = field.state.meta.errors[0];
+                      return (
+                        <TextInput
+                          type="password"
+                          label={t('profile.oldPassword')}
+                          placeholder={t('profile.oldPasswordPlaceholder')}
+                          value={field.state.value ?? ''}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          onBlur={field.handleBlur}
+                          error={error}
+                        />
+                      );
+                    }}
                   </form.Field>
 
                   <form.Field
@@ -201,14 +217,20 @@ const ProfilePage = () => {
                       },
                     }}
                   >
-                    {(field) => (
-                      <FormTextInput
-                        field={field}
-                        type="password"
-                        label={t('profile.newPassword')}
-                        placeholder={t('profile.newPasswordPlaceholder')}
-                      />
-                    )}
+                    {(field) => {
+                      const error = field.state.meta.errors[0];
+                      return (
+                        <TextInput
+                          type="password"
+                          label={t('profile.newPassword')}
+                          placeholder={t('profile.newPasswordPlaceholder')}
+                          value={field.state.value ?? ''}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          onBlur={field.handleBlur}
+                          error={error}
+                        />
+                      );
+                    }}
                   </form.Field>
 
                   <form.Field
@@ -236,14 +258,20 @@ const ProfilePage = () => {
                       },
                     }}
                   >
-                    {(field) => (
-                      <FormTextInput
-                        field={field}
-                        type="password"
-                        label={t('profile.confirmPassword')}
-                        placeholder={t('profile.confirmPasswordPlaceholder')}
-                      />
-                    )}
+                    {(field) => {
+                      const error = field.state.meta.errors[0];
+                      return (
+                        <TextInput
+                          type="password"
+                          label={t('profile.confirmPassword')}
+                          placeholder={t('profile.confirmPasswordPlaceholder')}
+                          value={field.state.value ?? ''}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          onBlur={field.handleBlur}
+                          error={error}
+                        />
+                      );
+                    }}
                   </form.Field>
                 </div>
               </div>
