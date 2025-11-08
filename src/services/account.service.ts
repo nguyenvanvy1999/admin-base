@@ -1,3 +1,4 @@
+import type { AccountWhereInput } from '@server/generated/prisma/models/Account';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import type {
@@ -93,19 +94,27 @@ export class AccountService {
   async listAccounts(userId: string, query: IListAccountsQueryDto = {}) {
     const {
       type,
+      search,
       page = 1,
       limit = 20,
       sortBy = 'createdAt',
       sortOrder = 'desc',
     } = query;
 
-    const where: any = {
+    const where: AccountWhereInput = {
       userId,
       deletedAt: null,
     };
 
     if (type) {
       where.type = type;
+    }
+
+    if (search && search.trim()) {
+      where.name = {
+        contains: search.trim(),
+        mode: 'insensitive',
+      };
     }
 
     const orderBy: any = {};

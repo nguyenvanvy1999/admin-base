@@ -147,6 +147,7 @@
     "typeRequired": "Loại tài khoản là bắt buộc",
     "currencyRequired": "Tiền tệ là bắt buộc",
     "pageSize": "Số bản ghi mỗi trang",
-    "pageSizeLabel": "Hiển thị"
+    "pageSizeLabel": "Hiển thị",
+    "clearFilters": "Xóa bộ lọc"
   }
 }

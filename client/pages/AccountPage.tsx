@@ -42,32 +42,19 @@ const AccountPage = () => {
   const queryParams = useMemo(
     () => ({
       type: typeFilter || undefined,
+      search: searchQuery.trim() || undefined,
       page,
       limit,
       sortBy: 'createdAt' as const,
       sortOrder: 'desc' as const,
     }),
-    [typeFilter, page, limit],
+    [typeFilter, searchQuery, page, limit],
   );
 
   const { data, isLoading } = useAccountsQuery(queryParams);
   const createMutation = useCreateAccountMutation();
   const updateMutation = useUpdateAccountMutation();
   const deleteMutation = useDeleteAccountMutation();
-
-  const filteredAccounts = useMemo(() => {
-    if (!data?.accounts) return [];
-    let accounts = data.accounts;
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      accounts = accounts.filter((account) =>
-        account.name.toLowerCase().includes(query),
-      );
-    }
-
-    return accounts;
-  }, [data?.accounts, searchQuery]);
 
   const handleAdd = () => {
     setSelectedAccount(null);
@@ -136,6 +123,16 @@ const AccountPage = () => {
     setPage(1);
   }, []);
 
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery('');
+    setTypeFilter('');
+    setPage(1);
+  }, []);
+
+  const hasActiveFilters = useMemo(() => {
+    return searchQuery.trim() !== '' || typeFilter !== '';
+  }, [searchQuery, typeFilter]);
+
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
@@ -202,11 +199,22 @@ const AccountPage = () => {
                 ]}
               />
             </div>
+            {hasActiveFilters && (
+              <div className="w-full md:w-auto">
+                <Button
+                  variant="outline"
+                  onClick={handleClearFilters}
+                  disabled={isLoading}
+                >
+                  {t('accounts.clearFilters')}
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="overflow-hidden">
             <AccountTable
-              accounts={filteredAccounts}
+              accounts={data?.accounts || []}
               onEdit={handleEdit}
               onDelete={handleDelete}
               isLoading={isLoading}

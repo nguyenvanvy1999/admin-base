@@ -147,6 +147,7 @@
     "typeRequired": "Account type is required",
     "currencyRequired": "Currency is required",
     "pageSize": "Records per page",
-    "pageSizeLabel": "Show"
+    "pageSizeLabel": "Show",
+    "clearFilters": "Clear Filters"
   }
 }

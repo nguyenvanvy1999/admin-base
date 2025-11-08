@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 
 type ListAccountsQuery = {
   type?: string;
+  search?: string;
   page?: number;
   limit?: number;
   sortBy?: 'name' | 'createdAt';
