@@ -15,18 +15,6 @@ export type BaseAccount = {
   currency: Currency;
 };
 
-export type AccountWithBalance = BaseAccount & {
-  balance: string;
-  creditLimit: string | null;
-};
-
-export type AccountWithCreditCardDetails = BaseAccount & {
-  creditLimit: string | null;
-  notifyOnDueDate: boolean | null;
-  paymentDay: number | null;
-  notifyDaysBefore: number | null;
-};
-
 export type AccountFull = BaseAccount & {
   balance: string;
   creditLimit: string | null;
