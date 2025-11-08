@@ -3,6 +3,7 @@ import '@client/global.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { RouterProvider } from 'react-router';
+import ToastContainer from './components/ToastContainer';
 import { ACCESS_TOKEN_KEY } from './constants';
 import { api } from './libs/api';
 import router from './router';
@@ -39,6 +40,7 @@ function App() {
   return (
     <QueryClientProvider client={client}>
       <RouterProvider router={router} />
+      <ToastContainer />
     </QueryClientProvider>
   );
 }

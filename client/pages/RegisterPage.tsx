@@ -1,4 +1,5 @@
 import { ACCESS_TOKEN_KEY } from '@client/constants';
+import useToast from '@client/hooks/useToast';
 import { api } from '@client/libs/api';
 import useUserStore from '@client/store/user';
 import { useState } from 'react';
@@ -16,6 +17,7 @@ const RegisterPage = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { setUser } = useUserStore();
   const navigate = useNavigate();
+  const { showError } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -94,8 +96,9 @@ const RegisterPage = () => {
         role: loginData.user.role,
       });
       navigate('/');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error registering', error);
+      showError(error.message || 'An unknown error occurred');
     }
   };
 

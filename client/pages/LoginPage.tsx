@@ -1,4 +1,5 @@
 import { ACCESS_TOKEN_KEY } from '@client/constants';
+import useToast from '@client/hooks/useToast';
 import { api } from '@client/libs/api';
 import useUserStore from '@client/store/user';
 import { useState } from 'react';
@@ -13,6 +14,7 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { setUser } = useUserStore();
+  const { showError } = useToast();
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -51,7 +53,7 @@ const LoginPage = () => {
       navigate('/');
     } catch (error: any) {
       console.error('Error logging in', error);
-      alert(error.message);
+      showError(error.message || 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
