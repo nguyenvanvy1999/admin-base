@@ -1,4 +1,3 @@
-import { formatCurrency } from '@client/libs/currency';
 import type { AccountFull } from '@client/types/account';
 import { AccountType } from '@server/generated/prisma/enums';
 import {
@@ -9,6 +8,7 @@ import {
 } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatCurrency } from './utils/currency';
 
 type AccountTableProps = {
   accounts: AccountFull[];

@@ -1,4 +1,4 @@
-import { useValidation } from '@client/components/validation';
+import { useValidation } from '@client/components/utils/validation';
 import { useLoginMutation } from '@client/hooks/mutations/useAuthMutations';
 import { Button, Loader, TextInput } from '@mantine/core';
 import { useForm } from '@tanstack/react-form';

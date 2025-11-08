@@ -14,7 +14,7 @@ import { AccountType } from '@server/generated/prisma/enums';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useValidation } from './validation';
+import { useValidation } from './utils/validation';
 
 type AddEditAccountDialogProps = {
   isOpen: boolean;
