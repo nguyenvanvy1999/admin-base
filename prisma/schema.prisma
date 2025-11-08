@@ -10,11 +10,239 @@ datasource db {
   url      = env("POSTGRES_URL")
 }
 
+enum UserRole {
+  user
+  admin
+}
+
+enum AccountType {
+  cash
+  bank
+  credit_card
+  investment
+}
+
+enum CategoryType {
+  income
+  expense
+}
+
+enum TransactionType {
+  income
+  expense
+  transfer
+  loan_given
+  loan_received
+  investment
+}
+
+enum InvestmentAssetType {
+  coin
+  ccq
+  custom
+}
+
+enum BudgetPeriod {
+  monthly
+  yearly
+}
+
+enum RecurringFrequency {
+  daily
+  weekly
+  monthly
+}
+
+enum Currency {
+  VND
+  USD
+}
+
 model User {
-  id        String   @id @default(uuid(7))
-  username  String   @unique
-  password  String
-  role      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  password     String
+  name         String?
+  role         UserRole @default(user)
+  baseCurrency Currency @default(VND) @map("base_currency")
+  settings     Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  accounts              Account[]
+  categories            Category[]
+  investments           Investment[]
+  transactions          Transaction[]
+  budgets               Budget[]
+  loanParties           LoanParty[]
+  recurringTransactions RecurringTransaction[]
+
+  @@index([username], name: "user_username_idx")
+}
+
+model Account {
+  id          Int         @id @default(autoincrement())
+  userId      Int         @map("user_id")
+  type        AccountType
+  name        String
+  currency    Currency    @default(VND)
+  balance     Int         @default(0)
+  creditLimit Int?        @map("credit_limit")
+  expiryDate  DateTime?   @map("expiry_date")
+  meta        Json?
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions          Transaction[]          @relation("AccountTransactions")
+  toTransactions        Transaction[]          @relation("ToAccountTransactions")
+  recurringTransactions RecurringTransaction[]
+
+  @@index([userId], name: "account_userId_idx")
+  @@index([type], name: "account_type_idx")
+}
+
+model Category {
+  id        Int          @id @default(autoincrement())
+  userId    Int          @map("user_id")
+  type      CategoryType
+  name      String
+  parentId  Int?         @map("parent_id")
+  icon      String?
+  color     String?
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent                Category?              @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children              Category[]             @relation("CategoryHierarchy")
+  transactions          Transaction[]
+  budgets               Budget[]
+  recurringTransactions RecurringTransaction[]
+
+  @@index([userId], name: "category_userId_idx")
+  @@index([type], name: "category_type_idx")
+  @@index([parentId], name: "category_parentId_idx")
+}
+
+model Investment {
+  id        Int                 @id @default(autoincrement())
+  userId    Int                 @map("user_id")
+  symbol    String
+  name      String
+  assetType InvestmentAssetType @map("asset_type")
+  currency  Currency            @default(VND)
+  extra     Json?
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([userId], name: "investment_userId_idx")
+  @@index([assetType], name: "investment_assetType_idx")
+  @@index([symbol], name: "investment_symbol_idx")
+}
+
+model Transaction {
+  id                  Int             @id @default(autoincrement())
+  userId              Int             @map("user_id")
+  accountId           Int             @map("account_id")
+  toAccountId         Int?            @map("to_account_id")
+  type                TransactionType
+  categoryId          Int?            @map("category_id")
+  investmentId        Int?            @map("investment_id")
+  loanPartyId         Int?            @map("loan_party_id")
+  amount              Int
+  currency            Currency        @default(VND)
+  price               Int?
+  priceInBaseCurrency Int?            @map("price_in_base_currency")
+  quantity            Int?
+  fee                 Int             @default(0)
+  feeInBaseCurrency   Int?            @map("fee_in_base_currency")
+  date                DateTime
+  dueDate             DateTime?       @map("due_date")
+  note                String?
+  receiptUrl          String?         @map("receipt_url")
+  metadata            Json?
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account    Account     @relation("AccountTransactions", fields: [accountId], references: [id], onDelete: Cascade)
+  toAccount  Account?    @relation("ToAccountTransactions", fields: [toAccountId], references: [id], onDelete: SetNull)
+  category   Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  investment Investment? @relation(fields: [investmentId], references: [id], onDelete: SetNull)
+  loanParty  LoanParty?  @relation(fields: [loanPartyId], references: [id], onDelete: SetNull)
+
+  @@index([userId], name: "transaction_userId_idx")
+  @@index([accountId], name: "transaction_accountId_idx")
+  @@index([toAccountId], name: "transaction_toAccountId_idx")
+  @@index([categoryId], name: "transaction_categoryId_idx")
+  @@index([investmentId], name: "transaction_investmentId_idx")
+  @@index([loanPartyId], name: "transaction_loanPartyId_idx")
+  @@index([date], name: "transaction_date_idx")
+  @@index([dueDate], name: "transaction_dueDate_idx")
+  @@index([type], name: "transaction_type_idx")
+}
+
+model Budget {
+  id         Int          @id @default(autoincrement())
+  userId     Int          @map("user_id")
+  categoryId Int          @map("category_id")
+  amount     Int
+  period     BudgetPeriod
+  startDate  DateTime     @map("start_date")
+  endDate    DateTime?    @map("end_date")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "budget_userId_idx")
+  @@index([categoryId], name: "budget_categoryId_idx")
+}
+
+model LoanParty {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  note      String?
+  meta      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([userId, name], name: "loanParty_userId_name_unique")
+  @@index([userId], name: "loanParty_userId_idx")
+  @@index([name], name: "loanParty_name_idx")
+}
+
+model RecurringTransaction {
+  id         Int                @id @default(autoincrement())
+  userId     Int                @map("user_id")
+  accountId  Int                @map("account_id")
+  categoryId Int?               @map("category_id")
+  type       TransactionType
+  amount     Int
+  currency   Currency           @default(VND)
+  frequency  RecurringFrequency
+  nextDate   DateTime           @map("next_date")
+  endDate    DateTime?          @map("end_date")
+  note       String?
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account  Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId], name: "recurringTransaction_userId_idx")
+  @@index([nextDate], name: "recurringTransaction_nextDate_idx")
 }
