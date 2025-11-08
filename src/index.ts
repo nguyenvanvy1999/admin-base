@@ -1,17 +1,10 @@
 import { staticPlugin } from '@elysiajs/static';
 import swagger from '@elysiajs/swagger';
-import { RequestContext } from '@mikro-orm/core';
 import { appEnv } from '@server/env';
 import { Elysia } from 'elysia';
 import userController from './controllers/user.controller';
-import { initORM } from './db';
 import errorMiddleware from './middlewares/error-middleware';
-import responseMiddleware from './middlewares/response-middleware';
 
-//init database connection
-const dataSource = await initORM();
-//sync entities class to database
-await dataSource.orm.getSchemaGenerator().updateSchema();
 export const app = new Elysia()
   .use(
     swagger({
@@ -45,16 +38,7 @@ export const app = new Elysia()
       assets: './client',
     }),
   )
-  .group(
-    '/api',
-    (group) =>
-      group
-        .onBeforeHandle(() => RequestContext.enter(dataSource.em))
-        .onAfterHandle(responseMiddleware)
-        .onError(errorMiddleware)
-        .use(userController),
-    //add more controllers here
-  )
+  .group('/api', (group) => group.onError(errorMiddleware).use(userController))
 
   .listen(appEnv.PORT);
 

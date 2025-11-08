@@ -4,6 +4,9 @@ import { Value } from '@sinclair/typebox/value';
 
 export const envSchema = t.Object({
   PORT: t.Number({ minimum: 0, maximum: 65535, default: 3000 }),
+  DB_URI: t.String({
+    default: 'file:./investment.db',
+  }),
 });
 
 const Compiler = TypeCompiler.Compile(envSchema);

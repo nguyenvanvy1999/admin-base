@@ -1,0 +1,20 @@
+generator client {
+  provider   = "prisma-client" // JavaScript/TypeScript client
+  output     = "../src/generated/prisma" // Output directory for generated client
+  engineType = "client"
+  runtime    = "bun"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DB_URI")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  role      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

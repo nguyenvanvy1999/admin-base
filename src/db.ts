@@ -1,34 +1,8 @@
-import {
-  type EntityManager,
-  type EntityRepository,
-  MikroORM,
-  type Options,
-} from '@mikro-orm/better-sqlite';
-import { User } from './entities/user';
-import config from './mikro-orm.config';
+import { PrismaBetterSQLite3 } from '@prisma/adapter-better-sqlite3';
+import { appEnv } from '@server/env';
+import { PrismaClient } from './generated/prisma/client';
 
-export interface Services {
-  orm: MikroORM;
-  em: EntityManager;
-  user: EntityRepository<User>;
-}
-
-let dataSource: Services;
-
-// Initialize the ORM then return the data source this will use data source as a cache so call multiple times will not reinitialize the ORM
-export async function initORM(options?: Options): Promise<Services> {
-  if (dataSource) return dataSource;
-  // allow overriding config options for testing
-  const orm = await MikroORM.init({
-    ...config,
-    ...options,
-  });
-
-  // save to cache before returning
-  dataSource = {
-    orm,
-    em: orm.em,
-    user: orm.em.getRepository(User),
-  };
-  return dataSource;
-}
+const adapter = new PrismaBetterSQLite3({
+  url: appEnv.DB_URI,
+});
+export const prisma = new PrismaClient({ adapter });
