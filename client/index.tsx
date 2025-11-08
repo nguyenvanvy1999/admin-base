@@ -5,6 +5,7 @@ import { RouterProvider } from 'react-router';
 import ToastContainer from './components/ToastContainer';
 import { useUserQuery } from './hooks/queries/useUserQuery';
 import { queryClient } from './libs/queryClient';
+import MantineProvider from './providers/MantineProvider';
 import ThemeProvider from './providers/ThemeProvider';
 import router from './router';
 import './i18n';
@@ -23,9 +24,11 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <AppContent />
-      </QueryClientProvider>
+      <MantineProvider>
+        <QueryClientProvider client={queryClient}>
+          <AppContent />
+        </QueryClientProvider>
+      </MantineProvider>
     </ThemeProvider>
   );
 }

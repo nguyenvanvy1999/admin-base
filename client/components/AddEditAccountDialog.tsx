@@ -1,19 +1,12 @@
+import { Button, Group, Modal, Stack } from '@mantine/core';
 import { CURRENCY_IDS } from '@server/constants/currency';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from './ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from './ui/dialog';
 import { FormDatePicker } from './ui/FormDatePicker';
-import { FormInput } from './ui/FormInput';
 import { FormSelect } from './ui/FormSelect';
+import { FormTextInput } from './ui/FormTextInput';
 import { useValidation } from './validation';
 
 type Account = {
@@ -123,22 +116,20 @@ const AddEditAccountDialog = ({
   }, [account, isOpen, form]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {isEditMode ? t('accounts.editAccount') : t('accounts.addAccount')}
-          </DialogTitle>
-        </DialogHeader>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            form.handleSubmit();
-          }}
-          className="space-y-4"
-        >
+    <Modal
+      opened={isOpen}
+      onClose={onClose}
+      title={isEditMode ? t('accounts.editAccount') : t('accounts.addAccount')}
+      size="md"
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          form.handleSubmit();
+        }}
+      >
+        <Stack gap="md">
           <form.Field
             name="name"
             validators={{
@@ -146,7 +137,7 @@ const AddEditAccountDialog = ({
             }}
           >
             {(field) => (
-              <FormInput
+              <FormTextInput
                 field={field}
                 label={t('accounts.name')}
                 placeholder={t('accounts.namePlaceholder')}
@@ -212,7 +203,7 @@ const AddEditAccountDialog = ({
                 <>
                   <form.Field name="creditLimit">
                     {(field) => (
-                      <FormInput
+                      <FormTextInput
                         field={field}
                         type="number"
                         label={t('accounts.creditLimit')}
@@ -236,7 +227,7 @@ const AddEditAccountDialog = ({
             }}
           />
 
-          <DialogFooter>
+          <Group justify="flex-end" mt="md">
             <Button
               type="button"
               variant="outline"
@@ -252,10 +243,10 @@ const AddEditAccountDialog = ({
                   ? t('common.save')
                   : t('common.add')}
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
   );
 };
 
