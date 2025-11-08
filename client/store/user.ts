@@ -7,13 +7,13 @@ export type UserStore = {
 };
 
 export type User = {
-  id: number;
+  id: string;
   username: string;
   role: string;
 };
 
 const defaultUser: User = {
-  id: 0,
+  id: '',
   username: '',
   role: 'user',
 };

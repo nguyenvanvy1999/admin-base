@@ -1,10 +1,7 @@
-import { ACCESS_TOKEN_KEY } from '@client/constants';
-import useToast from '@client/hooks/useToast';
-import { api } from '@client/libs/api';
-import useUserStore from '@client/store/user';
+import { useLoginMutation } from '@client/hooks/mutations/useAuthMutations';
 import type * as React from 'react';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 
 const LoginPage = () => {
   const currentYear = new Date().getFullYear();
@@ -12,10 +9,8 @@ const LoginPage = () => {
     username: '',
     password: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-  const { setUser } = useUserStore();
-  const { showError } = useToast();
+  const loginMutation = useLoginMutation();
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -24,39 +19,12 @@ const LoginPage = () => {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    const response = await api.api.users.login.post({
+    loginMutation.mutate({
       username: formData.username,
       password: formData.password,
     });
-
-    if (response.error) {
-      console.error('Error logging in', response.error);
-      showError(response.error.value.message ?? 'An unknown error occurred');
-      setIsLoading(false);
-      return;
-    }
-
-    const data = response.data as {
-      user: {
-        id: number;
-        username: string;
-        role: string;
-      };
-      jwt: string;
-    };
-
-    localStorage.setItem(ACCESS_TOKEN_KEY, data.jwt);
-    setUser({
-      id: data.user.id,
-      username: data.user.username,
-      role: data.user.role,
-    });
-    setIsLoading(false);
-    navigate('/');
   };
 
   return (
@@ -117,10 +85,10 @@ const LoginPage = () => {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={loginMutation.isPending}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
             >
-              {isLoading ? (
+              {loginMutation.isPending ? (
                 <>
                   <svg
                     className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"

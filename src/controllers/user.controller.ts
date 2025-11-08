@@ -17,7 +17,6 @@ const userController = new Elysia().group('/users', (group) =>
         },
         body: t.Object({
           username: t.String(),
-          email: t.String({ format: 'email' }),
           password: t.String({ minLength: 6 }),
           name: t.Optional(t.String()),
         }),

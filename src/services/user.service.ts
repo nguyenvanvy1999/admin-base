@@ -33,7 +33,7 @@ export class UserService {
     password: string,
   ): Promise<{
     user: {
-      id: number;
+      id: string;
       username: string;
       role: string;
     };
@@ -60,7 +60,7 @@ export class UserService {
 
     return {
       user: {
-        id: Number(user.id),
+        id: user.id,
         username: user.username,
         role: user.role,
       },
