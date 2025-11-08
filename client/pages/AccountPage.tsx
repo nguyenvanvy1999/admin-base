@@ -37,7 +37,7 @@ const AccountPage = () => {
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
-  const limit = 20;
+  const [limit, setLimit] = useState(20);
 
   const queryParams = useMemo(
     () => ({
@@ -130,6 +130,12 @@ const AccountPage = () => {
     setPage(1);
   }, []);
 
+  const handlePageSizeChange = useCallback((value: string | null) => {
+    const newLimit = value ? parseInt(value, 10) : 20;
+    setLimit(newLimit);
+    setPage(1);
+  }, []);
+
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
@@ -153,8 +159,8 @@ const AccountPage = () => {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
-            <div className="md:col-span-8">
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="w-full md:w-64">
               <TextInput
                 value={searchQuery}
                 onChange={(e) =>
@@ -163,10 +169,11 @@ const AccountPage = () => {
                 placeholder={t('accounts.search')}
               />
             </div>
-            <div className="md:col-span-4">
+            <div className="w-full md:w-48">
               <Select
                 value={typeFilter || null}
                 onChange={handleTypeFilterChange}
+                placeholder={t('accounts.typePlaceholder')}
                 data={[
                   { value: '', label: t('accounts.all') },
                   { value: AccountType.cash, label: t('accounts.cash') },
@@ -179,6 +186,19 @@ const AccountPage = () => {
                     value: AccountType.investment,
                     label: t('accounts.investment'),
                   },
+                ]}
+              />
+            </div>
+            <div className="w-full md:w-32">
+              <Select
+                value={limit.toString()}
+                onChange={handlePageSizeChange}
+                placeholder={t('accounts.pageSizeLabel')}
+                data={[
+                  { value: '10', label: '10' },
+                  { value: '20', label: '20' },
+                  { value: '50', label: '50' },
+                  { value: '100', label: '100' },
                 ]}
               />
             </div>

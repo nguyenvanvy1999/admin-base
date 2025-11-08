@@ -145,6 +145,8 @@
     "expiryDatePlaceholder": "Chọn ngày hết hạn",
     "nameRequired": "Tên tài khoản là bắt buộc",
     "typeRequired": "Loại tài khoản là bắt buộc",
-    "currencyRequired": "Tiền tệ là bắt buộc"
+    "currencyRequired": "Tiền tệ là bắt buộc",
+    "pageSize": "Số bản ghi mỗi trang",
+    "pageSizeLabel": "Hiển thị"
   }
 }
