@@ -1,7 +1,9 @@
 import { prisma } from '@server/db';
 import type { User } from '@server/generated/prisma/client';
+import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
+import { CURRENCY_IDS } from '../constants/currency';
 import { CategoryService } from './category.service';
 
 export class UserService {
@@ -19,7 +21,8 @@ export class UserService {
       data: {
         username,
         password: hashPassword,
-        role: 'user',
+        role: UserRole.user,
+        baseCurrencyId: CURRENCY_IDS.VND,
       },
     });
 
@@ -35,7 +38,7 @@ export class UserService {
     user: {
       id: string;
       username: string;
-      role: string;
+      role: UserRole;
     };
     jwt: string;
   }> {
@@ -71,7 +74,7 @@ export class UserService {
   async getUserInfo(id: string): Promise<{
     id: string;
     username: string;
-    role: string;
+    role: UserRole;
   }> {
     const user = await prisma.user.findFirst({
       where: { id },

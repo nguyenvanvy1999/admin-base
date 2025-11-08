@@ -1,3 +1,4 @@
+import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import authMacro from '../macros/auth';
 import userService from '../services/user.service';
@@ -43,7 +44,7 @@ const userController = new Elysia().group('/users', (group) =>
         return await userService.getUserInfo(user.id);
       },
       {
-        checkAuth: ['user'],
+        checkAuth: [UserRole.user],
         detail: {
           tags: ['User'],
           security: [{ JwtAuth: [] }],
@@ -56,7 +57,7 @@ const userController = new Elysia().group('/users', (group) =>
         return user;
       },
       {
-        checkAuth: ['admin'],
+        checkAuth: [UserRole.admin],
         detail: {
           tags: ['User'],
           security: [{ JwtAuth: [] }],
