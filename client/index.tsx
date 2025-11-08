@@ -7,13 +7,21 @@ import { useUserQuery } from './hooks/queries/useUserQuery';
 import { queryClient } from './libs/queryClient';
 import router from './router';
 
-function App() {
+function AppContent() {
   useUserQuery();
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <>
       <RouterProvider router={router} />
       <ToastContainer />
+    </>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
     </QueryClientProvider>
   );
 }

@@ -56,31 +56,57 @@ enum RecurringFrequency {
   monthly
 }
 
-enum Currency {
-  VND
-  USD
+enum TradeSide {
+  buy
+  sell
+}
+
+model Currency {
+  id        String   @id @default(uuid(7))
+  code      String   @unique
+  name      String
+  symbol    String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users                 User[]
+  accounts              Account[]
+  investments           Investment[]
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
+  investmentTrades      InvestmentTrade[]
+
+  @@index([code], name: "currency_code_idx")
+  @@map("currencies")
 }
 
 model User {
-  id           String   @id @default(uuid(7))
-  username     String   @unique
-  password     String
-  name         String?
-  role         UserRole @default(user)
-  baseCurrency Currency @default(VND) @map("base_currency")
-  settings     Json?
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id             String    @id @default(uuid(7))
+  username       String    @unique
+  password       String
+  name           String?
+  role           UserRole  @default(user)
+  baseCurrencyId String    @map("base_currency_id")
+  settings       Json?
+  deletedAt      DateTime? @map("deleted_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
+  baseCurrency          Currency               @relation(fields: [baseCurrencyId], references: [id], onDelete: Restrict)
   accounts              Account[]
   categories            Category[]
   investments           Investment[]
   transactions          Transaction[]
   budgets               Budget[]
-  loanParties           LoanParty[]
+  entities              Entity[]
   recurringTransactions RecurringTransaction[]
+  investmentTrades      InvestmentTrade[]
+  holdings              Holding[]
 
   @@index([username], name: "user_username_idx")
+  @@index([baseCurrencyId], name: "user_baseCurrencyId_idx")
+  @@map("users")
 }
 
 model Account {
@@ -88,21 +114,26 @@ model Account {
   userId      String      @map("user_id")
   type        AccountType
   name        String
-  currency    Currency    @default(VND)
-  balance     Decimal     @default(0) @db.Decimal(20, 8)
-  creditLimit Decimal?    @map("credit_limit") @db.Decimal(20, 8)
+  currencyId  String      @map("currency_id")
+  balance     Decimal     @default(0) @db.Decimal(30, 10)
+  creditLimit Decimal?    @map("credit_limit") @db.Decimal(30, 10)
   expiryDate  DateTime?   @map("expiry_date")
   meta        Json?
+  deletedAt   DateTime?   @map("deleted_at")
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
 
+  currency              Currency               @relation(fields: [currencyId], references: [id], onDelete: Restrict)
   user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions          Transaction[]          @relation("AccountTransactions")
   toTransactions        Transaction[]          @relation("ToAccountTransactions")
   recurringTransactions RecurringTransaction[]
+  investmentTrades      InvestmentTrade[]
 
   @@index([userId], name: "account_userId_idx")
   @@index([type], name: "account_type_idx")
+  @@index([currencyId], name: "account_currencyId_idx")
+  @@map("accounts")
 }
 
 model Category {
@@ -114,6 +145,7 @@ model Category {
   icon      String?
   color     String?
   isLocked  Boolean      @default(false) @map("is_locked")
+  deletedAt DateTime?    @map("deleted_at")
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
 
@@ -127,25 +159,32 @@ model Category {
   @@index([userId], name: "category_userId_idx")
   @@index([type], name: "category_type_idx")
   @@index([parentId], name: "category_parentId_idx")
+  @@map("categories")
 }
 
 model Investment {
-  id        String              @id @default(uuid(7))
-  userId    String              @map("user_id")
-  symbol    String
-  name      String
-  assetType InvestmentAssetType @map("asset_type")
-  currency  Currency            @default(VND)
-  extra     Json?
-  createdAt DateTime            @default(now()) @map("created_at")
-  updatedAt DateTime            @updatedAt @map("updated_at")
+  id         String              @id @default(uuid(7))
+  userId     String              @map("user_id")
+  symbol     String
+  name       String
+  assetType  InvestmentAssetType @map("asset_type")
+  currencyId String              @map("currency_id")
+  extra      Json?
+  deletedAt  DateTime?           @map("deleted_at")
+  createdAt  DateTime            @default(now()) @map("created_at")
+  updatedAt  DateTime            @updatedAt @map("updated_at")
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currency     Currency          @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  trades       InvestmentTrade[]
+  holdings     Holding[]
 
   @@index([userId], name: "investment_userId_idx")
   @@index([assetType], name: "investment_assetType_idx")
   @@index([symbol], name: "investment_symbol_idx")
+  @@index([currencyId], name: "investment_currencyId_idx")
+  @@map("investments")
 }
 
 model Transaction {
@@ -156,48 +195,57 @@ model Transaction {
   type                TransactionType
   categoryId          String?         @map("category_id")
   investmentId        String?         @map("investment_id")
-  loanPartyId         String?         @map("loan_party_id")
-  amount              Decimal         @db.Decimal(20, 8)
-  currency            Currency        @default(VND)
-  price               Decimal?        @db.Decimal(20, 8)
-  priceInBaseCurrency Decimal?       @map("price_in_base_currency") @db.Decimal(20, 8)
-  quantity            Decimal?        @db.Decimal(20, 8)
-  fee                 Decimal         @default(0) @db.Decimal(20, 8)
-  feeInBaseCurrency   Decimal?       @map("fee_in_base_currency") @db.Decimal(20, 8)
+  entityId            String?         @map("entity_id")
+  amount              Decimal         @db.Decimal(30, 10)
+  currencyId          String          @map("currency_id")
+  price               Decimal?        @db.Decimal(30, 10)
+  priceInBaseCurrency Decimal?        @map("price_in_base_currency") @db.Decimal(30, 10)
+  quantity            Decimal?        @db.Decimal(30, 10)
+  fee                 Decimal         @default(0) @db.Decimal(30, 10)
+  feeInBaseCurrency   Decimal?        @map("fee_in_base_currency") @db.Decimal(30, 10)
   date                DateTime
   dueDate             DateTime?       @map("due_date")
   note                String?
   receiptUrl          String?         @map("receipt_url")
   metadata            Json?
+  deletedAt           DateTime?       @map("deleted_at")
   createdAt           DateTime        @default(now()) @map("created_at")
   updatedAt           DateTime        @updatedAt @map("updated_at")
 
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account    Account     @relation("AccountTransactions", fields: [accountId], references: [id], onDelete: Cascade)
-  toAccount  Account?    @relation("ToAccountTransactions", fields: [toAccountId], references: [id], onDelete: SetNull)
-  category   Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  investment Investment? @relation(fields: [investmentId], references: [id], onDelete: SetNull)
-  loanParty  LoanParty?  @relation(fields: [loanPartyId], references: [id], onDelete: SetNull)
+  currency   Currency         @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account    Account          @relation("AccountTransactions", fields: [accountId], references: [id], onDelete: Cascade)
+  toAccount  Account?         @relation("ToAccountTransactions", fields: [toAccountId], references: [id], onDelete: SetNull)
+  category   Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  investment Investment?      @relation(fields: [investmentId], references: [id], onDelete: SetNull)
+  entity     Entity?          @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  trade      InvestmentTrade? @relation("TransactionTrade")
 
   @@index([userId], name: "transaction_userId_idx")
   @@index([accountId], name: "transaction_accountId_idx")
   @@index([toAccountId], name: "transaction_toAccountId_idx")
   @@index([categoryId], name: "transaction_categoryId_idx")
   @@index([investmentId], name: "transaction_investmentId_idx")
-  @@index([loanPartyId], name: "transaction_loanPartyId_idx")
+  @@index([entityId], name: "transaction_entityId_idx")
+  @@index([currencyId], name: "transaction_currencyId_idx")
   @@index([date], name: "transaction_date_idx")
   @@index([dueDate], name: "transaction_dueDate_idx")
   @@index([type], name: "transaction_type_idx")
+  @@index([userId, date], name: "transaction_user_date_idx")
+  @@index([userId, accountId, date], name: "transaction_user_account_date_idx")
+  @@index([userId, investmentId, date], name: "transaction_user_investment_date_idx")
+  @@map("transactions")
 }
 
 model Budget {
   id         String       @id @default(uuid(7))
   userId     String       @map("user_id")
   categoryId String       @map("category_id")
-  amount     Decimal      @db.Decimal(20, 8)
+  amount     Decimal      @db.Decimal(30, 10)
   period     BudgetPeriod
   startDate  DateTime     @map("start_date")
   endDate    DateTime?    @map("end_date")
+  deletedAt  DateTime?    @map("deleted_at")
   createdAt  DateTime     @default(now()) @map("created_at")
   updatedAt  DateTime     @updatedAt @map("updated_at")
 
@@ -206,26 +254,29 @@ model Budget {
 
   @@index([userId], name: "budget_userId_idx")
   @@index([categoryId], name: "budget_categoryId_idx")
+  @@map("budgets")
 }
 
-model LoanParty {
-  id        String   @id @default(uuid(7))
-  userId    String   @map("user_id")
+model Entity {
+  id        String    @id @default(uuid(7))
+  userId    String    @map("user_id")
   name      String
+  type      String?
   phone     String?
   email     String?
   address   String?
   note      String?
-  meta      Json?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
-  @@unique([userId, name], name: "loanParty_userId_name_unique")
-  @@index([userId], name: "loanParty_userId_idx")
-  @@index([name], name: "loanParty_name_idx")
+  @@unique([userId, name], name: "entity_userId_name_unique")
+  @@index([userId], name: "entity_userId_idx")
+  @@index([name], name: "entity_name_idx")
+  @@map("entities")
 }
 
 model RecurringTransaction {
@@ -234,8 +285,8 @@ model RecurringTransaction {
   accountId  String             @map("account_id")
   categoryId String?            @map("category_id")
   type       TransactionType
-  amount     Decimal            @db.Decimal(20, 8)
-  currency   Currency           @default(VND)
+  amount     Decimal            @db.Decimal(30, 10)
+  currencyId String             @map("currency_id")
   frequency  RecurringFrequency
   nextDate   DateTime           @map("next_date")
   endDate    DateTime?          @map("end_date")
@@ -243,10 +294,68 @@ model RecurringTransaction {
   createdAt  DateTime           @default(now()) @map("created_at")
   updatedAt  DateTime           @updatedAt @map("updated_at")
 
+  currency Currency  @relation(fields: [currencyId], references: [id], onDelete: Restrict)
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   account  Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
   category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@index([userId], name: "recurringTransaction_userId_idx")
+  @@index([currencyId], name: "recurringTransaction_currencyId_idx")
   @@index([nextDate], name: "recurringTransaction_nextDate_idx")
+  @@map("recurring_transactions")
+}
+
+model InvestmentTrade {
+  id                  String    @id @default(uuid(7))
+  userId              String    @map("user_id")
+  investmentId        String    @map("investment_id")
+  accountId           String    @map("account_id")
+  side                TradeSide
+  timestamp           DateTime
+  price               Decimal   @db.Decimal(30, 10)
+  quantity            Decimal   @db.Decimal(30, 10)
+  amount              Decimal   @db.Decimal(30, 10)
+  fee                 Decimal   @default(0) @db.Decimal(30, 10)
+  currencyId          String    @map("currency_id")
+  priceCurrency       String?   @map("price_currency")
+  priceInBaseCurrency Decimal?  @map("price_in_base_currency") @db.Decimal(30, 10)
+  priceSource         String?   @map("price_source")
+  priceFetchedAt      DateTime? @map("price_fetched_at")
+  externalId          String?   @map("external_id")
+  transactionId       String?   @unique @map("transaction_id")
+  meta                Json?
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  currency    Currency     @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investment  Investment   @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  account     Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation("TransactionTrade", fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, investmentId], name: "trade_user_investment_idx")
+  @@index([investmentId, timestamp], name: "trade_investment_time_idx")
+  @@index([currencyId], name: "trade_currencyId_idx")
+  @@index([externalId], name: "trade_externalId_idx")
+  @@map("investment_trades")
+}
+
+model Holding {
+  id                     String    @id @default(uuid(7))
+  userId                 String    @map("user_id")
+  investmentId           String    @map("investment_id")
+  quantity               Decimal   @db.Decimal(30, 10)
+  avgCost                Decimal   @map("avg_cost") @db.Decimal(30, 10)
+  unrealizedPnl          Decimal?  @map("unrealized_pnl") @db.Decimal(30, 10)
+  unrealizedPnlUpdatedAt DateTime? @map("unrealized_pnl_updated_at")
+  lastPrice              Decimal?  @map("last_price") @db.Decimal(30, 10)
+  lastPriceAt            DateTime? @map("last_price_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investment Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, investmentId], name: "holding_user_investment_idx")
+  @@map("holdings")
 }
