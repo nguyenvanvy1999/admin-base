@@ -22,7 +22,6 @@ export const useAccountQuery = (accountId: string | null) => {
         currencyId: string;
         balance: string;
         creditLimit: string | null;
-        expiryDate: string | null;
         meta: any;
         createdAt: string;
         updatedAt: string;

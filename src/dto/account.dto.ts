@@ -7,7 +7,9 @@ export const UpsertAccountDto = t.Object({
   name: t.String(),
   currencyId: t.String(),
   creditLimit: t.Optional(t.Number({ minimum: 0 })),
-  expiryDate: t.Optional(t.String({ format: 'date-time' })),
+  notifyOnDueDate: t.Optional(t.Boolean()),
+  paymentDay: t.Optional(t.Integer({ minimum: 1, maximum: 31 })),
+  notifyDaysBefore: t.Optional(t.Integer({ minimum: 0 })),
   meta: t.Optional(t.Any()),
 });
 

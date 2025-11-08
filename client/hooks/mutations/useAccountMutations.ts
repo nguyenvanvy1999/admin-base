@@ -8,7 +8,9 @@ type UpsertAccountData = {
   name: string;
   currencyId: string;
   creditLimit?: number;
-  expiryDate?: string;
+  notifyOnDueDate?: boolean;
+  paymentDay?: number;
+  notifyDaysBefore?: number;
   meta?: any;
 };
 

@@ -38,6 +38,17 @@ export class AccountService {
       await this.validateAccountOwnership(userId, data.id);
     }
 
+    if (
+      data.paymentDay !== undefined &&
+      (data.paymentDay < 1 || data.paymentDay > 31)
+    ) {
+      throw new Error('Payment day must be between 1 and 31');
+    }
+
+    if (data.notifyDaysBefore !== undefined && data.notifyDaysBefore < 0) {
+      throw new Error('Notify days before must be greater than or equal to 0');
+    }
+
     if (data.id) {
       return prisma.account.update({
         where: { id: data.id },
@@ -46,7 +57,9 @@ export class AccountService {
           name: data.name,
           currencyId: data.currencyId,
           creditLimit: data.creditLimit ?? null,
-          expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
+          notifyOnDueDate: data.notifyOnDueDate ?? null,
+          paymentDay: data.paymentDay ?? null,
+          notifyDaysBefore: data.notifyDaysBefore ?? null,
           meta: data.meta ?? null,
         },
         include: {
@@ -60,7 +73,9 @@ export class AccountService {
           name: data.name,
           currencyId: data.currencyId,
           creditLimit: data.creditLimit ?? null,
-          expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
+          notifyOnDueDate: data.notifyOnDueDate ?? null,
+          paymentDay: data.paymentDay ?? null,
+          notifyDaysBefore: data.notifyDaysBefore ?? null,
           meta: data.meta ?? null,
           userId,
           balance: 0,

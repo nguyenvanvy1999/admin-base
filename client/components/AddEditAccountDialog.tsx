@@ -1,5 +1,13 @@
-import { Button, Group, Modal, Select, Stack, TextInput } from '@mantine/core';
-import { DatePickerInput } from '@mantine/dates';
+import {
+  Button,
+  Checkbox,
+  Group,
+  Modal,
+  NumberInput,
+  Select,
+  Stack,
+  TextInput,
+} from '@mantine/core';
 import { CURRENCY_IDS } from '@server/constants/currency';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useForm } from '@tanstack/react-form';
@@ -13,7 +21,9 @@ type Account = {
   name: string;
   currencyId: string;
   creditLimit: string | null;
-  expiryDate: string | null;
+  notifyOnDueDate: boolean | null;
+  paymentDay: number | null;
+  notifyDaysBefore: number | null;
   currency: {
     id: string;
     code: string;
@@ -32,7 +42,9 @@ type AddEditAccountDialogProps = {
     name: string;
     currencyId: string;
     creditLimit?: number;
-    expiryDate?: string;
+    notifyOnDueDate?: boolean;
+    paymentDay?: number;
+    notifyDaysBefore?: number;
   }) => void;
   isLoading?: boolean;
 };
@@ -59,16 +71,24 @@ const AddEditAccountDialog = ({
       type: '',
       currencyId: '',
       creditLimit: '',
-      expiryDate: '',
+      notifyOnDueDate: false,
+      paymentDay: '',
+      notifyDaysBefore: '',
     },
     onSubmit: ({ value }) => {
+      if (!value.currencyId || value.currencyId.trim() === '') {
+        return;
+      }
+
       const submitData: {
         id?: string;
         type: string;
         name: string;
         currencyId: string;
         creditLimit?: number;
-        expiryDate?: string;
+        notifyOnDueDate?: boolean;
+        paymentDay?: number;
+        notifyDaysBefore?: number;
       } = {
         name: value.name.trim(),
         type: value.type,
@@ -83,8 +103,20 @@ const AddEditAccountDialog = ({
         if (value.creditLimit) {
           submitData.creditLimit = parseFloat(value.creditLimit);
         }
-        if (value.expiryDate) {
-          submitData.expiryDate = new Date(value.expiryDate).toISOString();
+        if (value.notifyOnDueDate !== undefined) {
+          submitData.notifyOnDueDate = value.notifyOnDueDate;
+        }
+        if (value.paymentDay && value.paymentDay !== '') {
+          const day = parseInt(value.paymentDay.toString(), 10);
+          if (!isNaN(day) && day >= 1 && day <= 31) {
+            submitData.paymentDay = day;
+          }
+        }
+        if (value.notifyDaysBefore && value.notifyDaysBefore !== '') {
+          const days = parseInt(value.notifyDaysBefore.toString(), 10);
+          if (!isNaN(days) && days >= 0) {
+            submitData.notifyDaysBefore = days;
+          }
         }
       }
 
@@ -98,18 +130,20 @@ const AddEditAccountDialog = ({
       form.setFieldValue('type', account.type);
       form.setFieldValue('currencyId', account.currencyId);
       form.setFieldValue('creditLimit', account.creditLimit || '');
+      form.setFieldValue('notifyOnDueDate', account.notifyOnDueDate ?? false);
+      form.setFieldValue('paymentDay', account.paymentDay?.toString() || '');
       form.setFieldValue(
-        'expiryDate',
-        account.expiryDate
-          ? new Date(account.expiryDate).toISOString().split('T')[0]
-          : '',
+        'notifyDaysBefore',
+        account.notifyDaysBefore?.toString() || '',
       );
     } else {
       form.setFieldValue('name', '');
       form.setFieldValue('type', '');
       form.setFieldValue('currencyId', '');
       form.setFieldValue('creditLimit', '');
-      form.setFieldValue('expiryDate', '');
+      form.setFieldValue('notifyOnDueDate', false);
+      form.setFieldValue('paymentDay', '');
+      form.setFieldValue('notifyDaysBefore', '');
     }
   }, [account, isOpen, form]);
 
@@ -236,79 +270,75 @@ const AddEditAccountDialog = ({
                     }}
                   </form.Field>
 
-                  <form.Field name="expiryDate">
+                  <form.Field name="notifyOnDueDate">
                     {(field) => {
                       const error = field.state.meta.errors[0];
-                      let dateValue: Date | null = null;
-
-                      if (
-                        field.state.value &&
-                        field.state.value.trim() !== ''
-                      ) {
-                        try {
-                          const dateStr = field.state.value;
-                          if (dateStr.includes('T')) {
-                            dateValue = new Date(dateStr);
-                          } else {
-                            const parts = dateStr.split('-');
-                            if (parts.length === 3) {
-                              const year = parseInt(parts[0], 10);
-                              const month = parseInt(parts[1], 10);
-                              const day = parseInt(parts[2], 10);
-                              if (
-                                !isNaN(year) &&
-                                !isNaN(month) &&
-                                !isNaN(day)
-                              ) {
-                                dateValue = new Date(year, month - 1, day);
-                              }
-                            }
-                          }
-                          if (dateValue && isNaN(dateValue.getTime())) {
-                            dateValue = null;
-                          }
-                        } catch {
-                          dateValue = null;
-                        }
-                      }
-
                       return (
-                        <DatePickerInput
-                          label={t('accounts.expiryDate')}
-                          value={dateValue}
-                          onChange={(date) => {
-                            if (date === null) {
-                              field.handleChange('');
-                              return;
-                            }
-
-                            if (
-                              date &&
-                              typeof date === 'object' &&
-                              'getTime' in date
-                            ) {
-                              const dateObj = date as Date;
-                              if (!isNaN(dateObj.getTime())) {
-                                const year = dateObj.getFullYear();
-                                const month = String(
-                                  dateObj.getMonth() + 1,
-                                ).padStart(2, '0');
-                                const day = String(dateObj.getDate()).padStart(
-                                  2,
-                                  '0',
-                                );
-                                const dateString = `${year}-${month}-${day}`;
-                                field.handleChange(dateString);
-                              } else {
-                                field.handleChange('');
-                              }
-                            } else {
-                              field.handleChange('');
-                            }
-                          }}
+                        <Checkbox
+                          label={t('accounts.notifyOnDueDate')}
+                          checked={field.state.value ?? false}
+                          onChange={(e) =>
+                            field.handleChange(e.currentTarget.checked)
+                          }
                           onBlur={field.handleBlur}
                           error={error}
-                          clearable
+                        />
+                      );
+                    }}
+                  </form.Field>
+
+                  <form.Field name="paymentDay">
+                    {(field) => {
+                      const error = field.state.meta.errors[0];
+                      return (
+                        <NumberInput
+                          label={t('accounts.paymentDay')}
+                          placeholder={t('accounts.paymentDayPlaceholder')}
+                          min={1}
+                          max={31}
+                          value={
+                            field.state.value && field.state.value !== ''
+                              ? Number(field.state.value)
+                              : undefined
+                          }
+                          onChange={(value) =>
+                            field.handleChange(
+                              value !== '' && value !== null
+                                ? value.toString()
+                                : '',
+                            )
+                          }
+                          onBlur={field.handleBlur}
+                          error={error}
+                        />
+                      );
+                    }}
+                  </form.Field>
+
+                  <form.Field name="notifyDaysBefore">
+                    {(field) => {
+                      const error = field.state.meta.errors[0];
+                      return (
+                        <NumberInput
+                          label={t('accounts.notifyDaysBefore')}
+                          placeholder={t(
+                            'accounts.notifyDaysBeforePlaceholder',
+                          )}
+                          min={0}
+                          value={
+                            field.state.value && field.state.value !== ''
+                              ? Number(field.state.value)
+                              : undefined
+                          }
+                          onChange={(value) =>
+                            field.handleChange(
+                              value !== '' && value !== null
+                                ? value.toString()
+                                : '',
+                            )
+                          }
+                          onBlur={field.handleBlur}
+                          error={error}
                         />
                       );
                     }}

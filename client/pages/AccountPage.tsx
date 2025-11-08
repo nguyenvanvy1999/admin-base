@@ -19,7 +19,9 @@ type Account = {
   currencyId: string;
   balance: string;
   creditLimit: string | null;
-  expiryDate: string | null;
+  notifyOnDueDate: boolean | null;
+  paymentDay: number | null;
+  notifyDaysBefore: number | null;
   currency: {
     id: string;
     code: string;
@@ -87,7 +89,9 @@ const AccountPage = () => {
     name: string;
     currencyId: string;
     creditLimit?: number;
-    expiryDate?: string;
+    notifyOnDueDate?: boolean;
+    paymentDay?: number;
+    notifyDaysBefore?: number;
   }) => {
     if (formData.id) {
       await updateMutation.mutateAsync(formData);

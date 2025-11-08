@@ -15,7 +15,6 @@ type Account = {
   currencyId: string;
   balance: string;
   creditLimit: string | null;
-  expiryDate: string | null;
   currency: {
     id: string;
     code: string;
@@ -48,11 +47,6 @@ const AccountTable = ({
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString();
   };
 
   const getAccountTypeLabel = (type: string) => {
@@ -118,14 +112,6 @@ const AccountTable = ({
             </div>
           );
         },
-      }),
-      columnHelper.accessor('expiryDate', {
-        header: t('accounts.expiryDate'),
-        cell: (info) => (
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {formatDate(info.getValue())}
-          </div>
-        ),
       }),
       columnHelper.display({
         id: 'actions',
