@@ -2,6 +2,7 @@ import { ACCESS_TOKEN_KEY } from '@client/constants';
 import useToast from '@client/hooks/useToast';
 import { api } from '@client/libs/api';
 import useUserStore from '@client/store/user';
+import type * as React from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
@@ -60,46 +61,51 @@ const RegisterPage = () => {
       return;
     }
 
-    try {
-      setIsLoading(true);
-      const response = await api.api.users.register.post({
-        username: formData.username,
-        password: formData.password,
-      });
-      if (response.error) {
-        const errorMessage =
-          (response.error.value as any)?.message ?? 'An unknown error occurred';
-        throw new Error(errorMessage);
-      }
-      const loginResponse = await api.api.users.login.post({
-        username: formData.username,
-        password: formData.password,
-      });
-      if (loginResponse.error) {
-        const errorMessage =
-          (loginResponse.error.value as any)?.message ??
-          'An unknown error occurred';
-        throw new Error(errorMessage);
-      }
-      const loginData = loginResponse.data as {
-        user: {
-          id: number;
-          username: string;
-          role: string;
-        };
-        jwt: string;
-      };
-      localStorage.setItem(ACCESS_TOKEN_KEY, loginData.jwt);
-      setUser({
-        id: loginData.user.id,
-        username: loginData.user.username,
-        role: loginData.user.role,
-      });
-      navigate('/');
-    } catch (error: any) {
-      console.error('Error registering', error);
-      showError(error.message || 'An unknown error occurred');
+    setIsLoading(true);
+
+    const response = await api.api.users.register.post({
+      username: formData.username,
+      password: formData.password,
+    });
+
+    if (response.error) {
+      console.error('Error registering', response.error);
+      showError(response.error.value.message ?? 'An unknown error occurred');
+      setIsLoading(false);
+      return;
     }
+
+    const loginResponse = await api.api.users.login.post({
+      username: formData.username,
+      password: formData.password,
+    });
+
+    if (loginResponse.error) {
+      console.error('Error logging in after register', loginResponse.error);
+      showError(
+        loginResponse.error.value.message ?? 'An unknown error occurred',
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    const loginData = loginResponse.data as {
+      user: {
+        id: number;
+        username: string;
+        role: string;
+      };
+      jwt: string;
+    };
+
+    localStorage.setItem(ACCESS_TOKEN_KEY, loginData.jwt);
+    setUser({
+      id: loginData.user.id,
+      username: loginData.user.username,
+      role: loginData.user.role,
+    });
+    setIsLoading(false);
+    navigate('/');
   };
 
   return (

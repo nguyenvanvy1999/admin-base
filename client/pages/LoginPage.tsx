@@ -2,6 +2,7 @@ import { ACCESS_TOKEN_KEY } from '@client/constants';
 import useToast from '@client/hooks/useToast';
 import { api } from '@client/libs/api';
 import useUserStore from '@client/store/user';
+import type * as React from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
@@ -25,38 +26,37 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      setIsLoading(true);
-      const response = await api.api.users.login.post({
-        username: formData.username,
-        password: formData.password,
-      });
-      if (response.error) {
-        const errorMessage =
-          (response.error.value as any)?.message ?? 'An unknown error occurred';
-        throw new Error(errorMessage);
-      }
-      const data = response.data as {
-        user: {
-          id: number;
-          username: string;
-          role: string;
-        };
-        jwt: string;
-      };
-      localStorage.setItem(ACCESS_TOKEN_KEY, data.jwt);
-      setUser({
-        id: data.user.id,
-        username: data.user.username,
-        role: data.user.role,
-      });
-      navigate('/');
-    } catch (error: any) {
-      console.error('Error logging in', error);
-      showError(error.message || 'An unknown error occurred');
-    } finally {
+    setIsLoading(true);
+
+    const response = await api.api.users.login.post({
+      username: formData.username,
+      password: formData.password,
+    });
+
+    if (response.error) {
+      console.error('Error logging in', response.error);
+      showError(response.error.value.message ?? 'An unknown error occurred');
       setIsLoading(false);
+      return;
     }
+
+    const data = response.data as {
+      user: {
+        id: number;
+        username: string;
+        role: string;
+      };
+      jwt: string;
+    };
+
+    localStorage.setItem(ACCESS_TOKEN_KEY, data.jwt);
+    setUser({
+      id: data.user.id,
+      username: data.user.username,
+      role: data.user.role,
+    });
+    setIsLoading(false);
+    navigate('/');
   };
 
   return (
