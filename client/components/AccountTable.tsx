@@ -1,3 +1,5 @@
+import { formatCurrency } from '@client/libs/currency';
+import type { AccountFull } from '@client/types/account';
 import { AccountType } from '@server/generated/prisma/enums';
 import {
   createColumnHelper,
@@ -8,29 +10,14 @@ import {
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-type Account = {
-  id: string;
-  type: string;
-  name: string;
-  currencyId: string;
-  balance: string;
-  creditLimit: string | null;
-  currency: {
-    id: string;
-    code: string;
-    name: string;
-    symbol: string | null;
-  };
-};
-
 type AccountTableProps = {
-  accounts: Account[];
-  onEdit: (account: Account) => void;
-  onDelete: (account: Account) => void;
+  accounts: AccountFull[];
+  onEdit: (account: AccountFull) => void;
+  onDelete: (account: AccountFull) => void;
   isLoading?: boolean;
 };
 
-const columnHelper = createColumnHelper<Account>();
+const columnHelper = createColumnHelper<AccountFull>();
 
 const AccountTable = ({
   accounts,
@@ -39,15 +26,6 @@ const AccountTable = ({
   isLoading = false,
 }: AccountTableProps) => {
   const { t } = useTranslation();
-
-  const formatCurrency = (value: string, symbol: string | null) => {
-    const num = parseFloat(value);
-    if (isNaN(num)) return '0';
-    return `${symbol || ''}${num.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  };
 
   const getAccountTypeLabel = (type: string) => {
     switch (type) {

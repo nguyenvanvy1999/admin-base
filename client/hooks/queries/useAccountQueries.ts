@@ -1,4 +1,5 @@
 import { api } from '@client/libs/api';
+import type { AccountFull } from '@client/types/account';
 import { useQuery } from '@tanstack/react-query';
 
 type ListAccountsQuery = {
@@ -15,7 +16,7 @@ export const useAccountsQuery = (query: ListAccountsQuery = {}) => {
     queryKey: ['accounts', query],
     queryFn: async () => {
       const response = await api.api.accounts.get({
-        query: query as any,
+        query: query,
       });
 
       if (response.error) {
@@ -25,23 +26,7 @@ export const useAccountsQuery = (query: ListAccountsQuery = {}) => {
       }
 
       return response.data as {
-        accounts: Array<{
-          id: string;
-          type: string;
-          name: string;
-          currencyId: string;
-          balance: string;
-          creditLimit: string | null;
-          meta: any;
-          createdAt: string;
-          updatedAt: string;
-          currency: {
-            id: string;
-            code: string;
-            name: string;
-            symbol: string | null;
-          };
-        }>;
+        accounts: AccountFull[];
         pagination: {
           page: number;
           limit: number;

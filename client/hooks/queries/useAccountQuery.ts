@@ -1,4 +1,5 @@
 import { api } from '@client/libs/api';
+import type { AccountFull } from '@client/types/account';
 import { useQuery } from '@tanstack/react-query';
 
 export const useAccountQuery = (accountId: string | null) => {
@@ -7,7 +8,7 @@ export const useAccountQuery = (accountId: string | null) => {
     queryFn: async () => {
       if (!accountId) return null;
 
-      const response = await api.api.accounts[accountId].get();
+      const response = await api.api.accounts({ id: accountId }).get();
 
       if (response.error) {
         throw new Error(
@@ -15,23 +16,7 @@ export const useAccountQuery = (accountId: string | null) => {
         );
       }
 
-      return response.data as {
-        id: string;
-        type: string;
-        name: string;
-        currencyId: string;
-        balance: string;
-        creditLimit: string | null;
-        meta: any;
-        createdAt: string;
-        updatedAt: string;
-        currency: {
-          id: string;
-          code: string;
-          name: string;
-          symbol: string | null;
-        };
-      };
+      return response.data as AccountFull | null;
     },
     enabled: !!accountId,
   });

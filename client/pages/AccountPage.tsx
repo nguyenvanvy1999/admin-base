@@ -7,35 +7,22 @@ import {
   useUpdateAccountMutation,
 } from '@client/hooks/mutations/useAccountMutations';
 import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
+import type { AccountFormData, AccountFull } from '@client/types/account';
 import { Button, Group, Modal, Select, Text, TextInput } from '@mantine/core';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-type Account = {
-  id: string;
-  type: string;
-  name: string;
-  currencyId: string;
-  balance: string;
-  creditLimit: string | null;
-  notifyOnDueDate: boolean | null;
-  paymentDay: number | null;
-  notifyDaysBefore: number | null;
-  currency: {
-    id: string;
-    code: string;
-    name: string;
-    symbol: string | null;
-  };
-};
-
 const AccountPage = () => {
   const { t } = useTranslation();
-  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<AccountFull | null>(
+    null,
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
+  const [accountToDelete, setAccountToDelete] = useState<AccountFull | null>(
+    null,
+  );
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -63,12 +50,12 @@ const AccountPage = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (account: Account) => {
+  const handleEdit = (account: AccountFull) => {
     setSelectedAccount(account);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (account: Account) => {
+  const handleDelete = (account: AccountFull) => {
     setAccountToDelete(account);
     setIsDeleteDialogOpen(true);
   };
@@ -83,16 +70,7 @@ const AccountPage = () => {
     setAccountToDelete(null);
   };
 
-  const handleSubmit = async (formData: {
-    id?: string;
-    type: string;
-    name: string;
-    currencyId: string;
-    creditLimit?: number;
-    notifyOnDueDate?: boolean;
-    paymentDay?: number;
-    notifyDaysBefore?: number;
-  }) => {
+  const handleSubmit = async (formData: AccountFormData) => {
     if (formData.id) {
       await updateMutation.mutateAsync(formData);
     } else {

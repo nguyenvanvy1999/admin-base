@@ -1,25 +1,14 @@
 import useToast from '@client/hooks/useToast';
 import { api } from '@client/libs/api';
+import type { AccountFormData } from '@client/types/account';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-type UpsertAccountData = {
-  id?: string;
-  type: string;
-  name: string;
-  currencyId: string;
-  creditLimit?: number;
-  notifyOnDueDate?: boolean;
-  paymentDay?: number;
-  notifyDaysBefore?: number;
-  meta?: any;
-};
 
 export const useCreateAccountMutation = () => {
   const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Omit<UpsertAccountData, 'id'>) => {
+    mutationFn: async (data: Omit<AccountFormData, 'id'>) => {
       const response = await api.api.accounts.post(data);
       if (response.error) {
         throw new Error(
@@ -43,7 +32,7 @@ export const useUpdateAccountMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: UpsertAccountData) => {
+    mutationFn: async (data: AccountFormData) => {
       if (!data.id) {
         throw new Error('Account ID is required for update');
       }
@@ -73,7 +62,7 @@ export const useDeleteAccountMutation = () => {
 
   return useMutation({
     mutationFn: async (accountId: string) => {
-      const response = await api.api.accounts[accountId].delete();
+      const response = await api.api.accounts({ id: accountId }).delete();
       if (response.error) {
         throw new Error(
           response.error.value?.message ?? 'An unknown error occurred',

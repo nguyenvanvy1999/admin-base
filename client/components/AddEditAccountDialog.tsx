@@ -1,3 +1,4 @@
+import type { AccountFormData, AccountFull } from '@client/types/account';
 import {
   Button,
   Checkbox,
@@ -15,37 +16,11 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useValidation } from './validation';
 
-type Account = {
-  id: string;
-  type: string;
-  name: string;
-  currencyId: string;
-  creditLimit: string | null;
-  notifyOnDueDate: boolean | null;
-  paymentDay: number | null;
-  notifyDaysBefore: number | null;
-  currency: {
-    id: string;
-    code: string;
-    name: string;
-    symbol: string | null;
-  };
-};
-
 type AddEditAccountDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  account: Account | null;
-  onSubmit: (data: {
-    id?: string;
-    type: string;
-    name: string;
-    currencyId: string;
-    creditLimit?: number;
-    notifyOnDueDate?: boolean;
-    paymentDay?: number;
-    notifyDaysBefore?: number;
-  }) => void;
+  account: AccountFull | null;
+  onSubmit: (data: AccountFormData) => void;
   isLoading?: boolean;
 };
 
@@ -80,18 +55,9 @@ const AddEditAccountDialog = ({
         return;
       }
 
-      const submitData: {
-        id?: string;
-        type: string;
-        name: string;
-        currencyId: string;
-        creditLimit?: number;
-        notifyOnDueDate?: boolean;
-        paymentDay?: number;
-        notifyDaysBefore?: number;
-      } = {
+      const submitData: AccountFormData = {
         name: value.name.trim(),
-        type: value.type,
+        type: value.type as AccountType,
         currencyId: value.currencyId,
       };
 
@@ -348,23 +314,40 @@ const AddEditAccountDialog = ({
             }}
           />
 
-          <Group justify="flex-end" mt="md">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading
-                ? t('common.saving', { defaultValue: 'Saving...' })
-                : isEditMode
-                  ? t('common.save')
-                  : t('common.add')}
-            </Button>
-          </Group>
+          <form.Subscribe
+            selector={(state) => ({
+              isValid: state.isValid,
+              values: state.values,
+            })}
+          >
+            {({ isValid, values }) => {
+              const isFormValid =
+                isValid &&
+                values.name?.trim() !== '' &&
+                values.type !== '' &&
+                values.currencyId !== '';
+
+              return (
+                <Group justify="flex-end" mt="md">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={isLoading}
+                  >
+                    {t('common.cancel')}
+                  </Button>
+                  <Button type="submit" disabled={isLoading || !isFormValid}>
+                    {isLoading
+                      ? t('common.saving', { defaultValue: 'Saving...' })
+                      : isEditMode
+                        ? t('common.save')
+                        : t('common.add')}
+                  </Button>
+                </Group>
+              );
+            }}
+          </form.Subscribe>
         </Stack>
       </form>
     </Modal>
