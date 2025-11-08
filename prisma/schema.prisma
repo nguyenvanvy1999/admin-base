@@ -23,8 +23,11 @@ enum AccountType {
 }
 
 enum CategoryType {
-  income
   expense
+  income
+  transfer
+  investment
+  loan
 }
 
 enum TransactionType {
@@ -59,7 +62,7 @@ enum Currency {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
+  id           String   @id @default(uuid(7))
   username     String   @unique
   password     String
   name         String?
@@ -81,8 +84,8 @@ model User {
 }
 
 model Account {
-  id          Int         @id @default(autoincrement())
-  userId      Int         @map("user_id")
+  id          String      @id @default(uuid(7))
+  userId      String      @map("user_id")
   type        AccountType
   name        String
   currency    Currency    @default(VND)
@@ -103,13 +106,14 @@ model Account {
 }
 
 model Category {
-  id        Int          @id @default(autoincrement())
-  userId    Int          @map("user_id")
+  id        String       @id @default(uuid(7))
+  userId    String       @map("user_id")
   type      CategoryType
   name      String
-  parentId  Int?         @map("parent_id")
+  parentId  String?      @map("parent_id")
   icon      String?
   color     String?
+  isLocked  Boolean      @default(false) @map("is_locked")
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
 
@@ -126,8 +130,8 @@ model Category {
 }
 
 model Investment {
-  id        Int                 @id @default(autoincrement())
-  userId    Int                 @map("user_id")
+  id        String              @id @default(uuid(7))
+  userId    String              @map("user_id")
   symbol    String
   name      String
   assetType InvestmentAssetType @map("asset_type")
@@ -145,14 +149,14 @@ model Investment {
 }
 
 model Transaction {
-  id                  Int             @id @default(autoincrement())
-  userId              Int             @map("user_id")
-  accountId           Int             @map("account_id")
-  toAccountId         Int?            @map("to_account_id")
+  id                  String          @id @default(uuid(7))
+  userId              String          @map("user_id")
+  accountId           String          @map("account_id")
+  toAccountId         String?         @map("to_account_id")
   type                TransactionType
-  categoryId          Int?            @map("category_id")
-  investmentId        Int?            @map("investment_id")
-  loanPartyId         Int?            @map("loan_party_id")
+  categoryId          String?         @map("category_id")
+  investmentId        String?         @map("investment_id")
+  loanPartyId         String?         @map("loan_party_id")
   amount              Int
   currency            Currency        @default(VND)
   price               Int?
@@ -187,9 +191,9 @@ model Transaction {
 }
 
 model Budget {
-  id         Int          @id @default(autoincrement())
-  userId     Int          @map("user_id")
-  categoryId Int          @map("category_id")
+  id         String       @id @default(uuid(7))
+  userId     String       @map("user_id")
+  categoryId String       @map("category_id")
   amount     Int
   period     BudgetPeriod
   startDate  DateTime     @map("start_date")
@@ -205,8 +209,8 @@ model Budget {
 }
 
 model LoanParty {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
+  id        String   @id @default(uuid(7))
+  userId    String   @map("user_id")
   name      String
   phone     String?
   email     String?
@@ -225,10 +229,10 @@ model LoanParty {
 }
 
 model RecurringTransaction {
-  id         Int                @id @default(autoincrement())
-  userId     Int                @map("user_id")
-  accountId  Int                @map("account_id")
-  categoryId Int?               @map("category_id")
+  id         String             @id @default(uuid(7))
+  userId     String             @map("user_id")
+  accountId  String             @map("account_id")
+  categoryId String?            @map("category_id")
   type       TransactionType
   amount     Int
   currency   Currency           @default(VND)

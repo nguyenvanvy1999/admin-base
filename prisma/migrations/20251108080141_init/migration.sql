@@ -5,7 +5,7 @@ CREATE TYPE "UserRole" AS ENUM ('user', 'admin');
 CREATE TYPE "AccountType" AS ENUM ('cash', 'bank', 'credit_card', 'investment');
 
 -- CreateEnum
-CREATE TYPE "CategoryType" AS ENUM ('income', 'expense');
+CREATE TYPE "CategoryType" AS ENUM ('expense', 'income', 'transfer', 'investment', 'loan');
 
 -- CreateEnum
 CREATE TYPE "TransactionType" AS ENUM ('income', 'expense', 'transfer', 'loan_given', 'loan_received', 'investment');
@@ -24,7 +24,7 @@ CREATE TYPE "Currency" AS ENUM ('VND', 'USD');
 
 -- CreateTable
 CREATE TABLE "User" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "username" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "name" TEXT,
@@ -39,8 +39,8 @@ CREATE TABLE "User" (
 
 -- CreateTable
 CREATE TABLE "Account" (
-    "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
     "type" "AccountType" NOT NULL,
     "name" TEXT NOT NULL,
     "currency" "Currency" NOT NULL DEFAULT 'VND',
@@ -56,13 +56,14 @@ CREATE TABLE "Account" (
 
 -- CreateTable
 CREATE TABLE "Category" (
-    "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
     "type" "CategoryType" NOT NULL,
     "name" TEXT NOT NULL,
-    "parent_id" INTEGER,
+    "parent_id" TEXT,
     "icon" TEXT,
     "color" TEXT,
+    "is_locked" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -71,8 +72,8 @@ CREATE TABLE "Category" (
 
 -- CreateTable
 CREATE TABLE "Investment" (
-    "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
     "symbol" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "asset_type" "InvestmentAssetType" NOT NULL,
@@ -86,14 +87,14 @@ CREATE TABLE "Investment" (
 
 -- CreateTable
 CREATE TABLE "Transaction" (
-    "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
-    "account_id" INTEGER NOT NULL,
-    "to_account_id" INTEGER,
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "account_id" TEXT NOT NULL,
+    "to_account_id" TEXT,
     "type" "TransactionType" NOT NULL,
-    "category_id" INTEGER,
-    "investment_id" INTEGER,
-    "loan_party_id" INTEGER,
+    "category_id" TEXT,
+    "investment_id" TEXT,
+    "loan_party_id" TEXT,
     "amount" INTEGER NOT NULL,
     "currency" "Currency" NOT NULL DEFAULT 'VND',
     "price" INTEGER,
@@ -114,9 +115,9 @@ CREATE TABLE "Transaction" (
 
 -- CreateTable
 CREATE TABLE "Budget" (
-    "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
-    "category_id" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "category_id" TEXT NOT NULL,
     "amount" INTEGER NOT NULL,
     "period" "BudgetPeriod" NOT NULL,
     "start_date" TIMESTAMP(3) NOT NULL,
@@ -129,8 +130,8 @@ CREATE TABLE "Budget" (
 
 -- CreateTable
 CREATE TABLE "LoanParty" (
-    "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "phone" TEXT,
     "email" TEXT,
@@ -145,10 +146,10 @@ CREATE TABLE "LoanParty" (
 
 -- CreateTable
 CREATE TABLE "RecurringTransaction" (
-    "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
-    "account_id" INTEGER NOT NULL,
-    "category_id" INTEGER,
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "account_id" TEXT NOT NULL,
+    "category_id" TEXT,
     "type" "TransactionType" NOT NULL,
     "amount" INTEGER NOT NULL,
     "currency" "Currency" NOT NULL DEFAULT 'VND',

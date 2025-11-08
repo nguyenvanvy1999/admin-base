@@ -2,8 +2,11 @@ import { prisma } from '@server/db';
 import type { User } from '@server/generated/prisma/client';
 import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
+import { CategoryService } from './category.service';
 
 export class UserService {
+  private categoryService = new CategoryService();
+
   async register(username: string, password: string): Promise<User> {
     const existUser = await prisma.user.findFirst({
       where: { username },
@@ -12,13 +15,17 @@ export class UserService {
       throw new Error('User already exists');
     }
     const hashPassword = await Bun.password.hash(password, 'bcrypt');
-    return prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         username,
         password: hashPassword,
         role: 'user',
       },
     });
+
+    await this.categoryService.seedDefaultCategories(user.id);
+
+    return user;
   }
 
   async login(
