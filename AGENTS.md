@@ -9,24 +9,24 @@ with end-to-end type safety via Eden Treaty.
 
 - 🔥 Hot reload development with Bun (no bundlers needed)
 - 🛡️ JWT authentication with macro-based route protection
-- 📊 Drizzle for type-safe database operations. Using drive: Bun SQLite Drive
+- 📊 Prisma ORM for type-safe database operations with PostgreSQL
 - ⚛️ React 19 with Tailwind CSS
 - 🔗 Eden Treaty for end-to-end type safety
 - 📚 Auto-generated Swagger documentation
 
 ## Tech Stack
 
-| Layer       | Technology          | Purpose                                   |
-|-------------|---------------------|-------------------------------------------|
-| Runtime     | Bun                 | JavaScript runtime (replaces Node.js)     |
-| Backend     | Elysia.js           | High-performance TypeScript web framework |
-| Database    | DrizzleORM + SQLite | ORM with decorator-based entities         |
-| Frontend    | React 19            | UI library                                |
-| Routing     | React Router (Hash) | Client-side routing                       |
-| Styling     | Tailwind CSS v4     | Utility-first CSS                         |
-| State       | Zustand             | Lightweight state management              |
-| Type Safety | Eden Treaty         | End-to-end TypeScript types               |
-| Auth        | JWT + jsonwebtoken  | Token-based authentication                |
+| Layer       | Technology              | Purpose                                   |
+|-------------|-------------------------|-------------------------------------------|
+| Runtime     | Bun                     | JavaScript runtime (replaces Node.js)     |
+| Backend     | Elysia.js               | High-performance TypeScript web framework |
+| Database    | Prisma ORM + PostgreSQL | Type-safe ORM with PostgreSQL             |
+| Frontend    | React 19                | UI library                                |
+| Routing     | React Router (Hash)     | Client-side routing                       |
+| Styling     | Tailwind CSS v4         | Utility-first CSS                         |
+| State       | Zustand                 | Lightweight state management              |
+| Type Safety | Eden Treaty             | End-to-end TypeScript types               |
+| Auth        | JWT + jsonwebtoken      | Token-based authentication                |
 
 ## Project Structure
 
@@ -42,7 +42,9 @@ elysia-fullstack-template/
 │   │   └── response-middleware.ts
 │   ├── macros/               # Elysia macros (e.g., auth)
 │   │   └── auth.ts           # JWT authentication macro
-│   ├── db.ts                 # Database initialization & services
+│   ├── db.ts                 # Prisma client initialization
+│   ├── generated/             # Generated Prisma client
+│   │   └── prisma/           # Prisma client types and models
 │   └── index.ts              # Server entry point
 │
 ├── client/                   # Frontend (React)
@@ -63,6 +65,9 @@ elysia-fullstack-template/
 │   ├── index.html            # HTML template
 │   └── global.css            # Global styles (Tailwind import)
 │
+├── prisma/                    # Prisma schema and migrations
+│   ├── schema.prisma         # Database schema definition
+│   └── migrations/           # Database migration files
 ├── .env.example              # Environment variables template
 ├── .prettierrc               # Code formatting rules
 ├── package.json              # Dependencies & scripts
@@ -110,14 +115,18 @@ export default userController
 ```typescript
 // src/services/UserService.ts
 import {Elysia} from "elysia";
-import {initORM} from "../db";
+import {prisma} from "../db";
 
 export class UserService {
     async register(username: string, password: string) {
-        const db = await initORM()
         // Business logic here
-        const user = db.user.create({username, password, role: "user"})
-        await db.em.persistAndFlush(user)
+        const user = await prisma.user.create({
+            data: {
+                username,
+                password,
+                role: "user"
+            }
+        })
         return user
     }
 }
@@ -243,11 +252,12 @@ const router = createHashRouter([
     - NEVER use `createBrowserRouter`
     - Reason: Static file serving mounts at `/`, browser router conflicts with server routes
 
-2**Entity Registration**
+2**Prisma Schema Management**
 
-- New entities MUST extend `BaseEntity`
-- New entities MUST be added to `src/db.ts` services interface
-- Schema auto-updates on server restart
+- New models MUST be added to `prisma/schema.prisma`
+- Run `bun run db:migrate` to create migration
+- Run `bun run db:generate` to generate Prisma client
+- Schema changes require migration generation
 
 3**Protected Routes**
 
@@ -311,38 +321,34 @@ group("/api", group =>
     - Eden Treaty automatically gets new types
     - Use: `api.api.myroute.get()`
 
-### Adding a New Database Entity
+### Adding a New Database Model
 
-1. **Create Entity** (`src/entities/MyEntity.ts`)
+1. **Add Model to Prisma Schema** (`prisma/schema.prisma`)
 
-```typescript
-
-@Entity()
-export class MyEntity extends BaseEntity {
-    @Property()
-    name!: string;
+```prisma
+model MyEntity {
+  id        String   @id @default(uuid(7))
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 ```
 
-2. **Register in db.ts**
+2. **Generate Migration**
 
-```typescript
-   export interface Services {
-    // ... existing
-    myEntity: EntityRepository<MyEntity>;
-}
-
-dataSource = {
-    // ... existing
-    myEntity: orm.em.getRepository(MyEntity)
-}
+```bash
+bun run db:migrate
+bun run db:generate
 ```
 
 3. **Use in Services**
 
 ```typescript
-   const db = await initORM()
-const item = await db.myEntity.findOne({id})
+import {prisma} from "../db"
+
+const item = await prisma.myEntity.findUnique({
+    where: {id}
+})
 ```
 
 ### Adding a Protected Frontend Route
@@ -394,7 +400,7 @@ async ({user}) => {
 Create `.env` file (see `.env.example`):
 
 ```env
-DB_URI=./investment.db
+POSTGRES_URL=postgresql://user:password@localhost:5432/investment
 JWT_SECRET=your-super-secret-jwt-key-here
 PORT=3000
 ```
@@ -404,6 +410,12 @@ PORT=3000
 ```bash
 # Install dependencies
 bun install
+
+# Database migrations
+bun run db:migrate      # Create migration
+bun run db:generate     # Generate Prisma client
+bun run db:deploy       # Deploy migrations
+bun run db:dev:reset    # Reset database (dev only)
 
 # Development with hot reload
 bun run dev
@@ -532,9 +544,10 @@ bun run build
     - Check static files are being served correctly
 
 3. **Database connection fails**
-    - Verify DB_URI in .env
-    - Check SQLite file
+    - Verify POSTGRES_URL in .env
+    - Check PostgreSQL is running
     - Ensure database exists
+    - Run migrations: `bun run db:migrate`
 
 4. **Types not syncing between frontend/backend**
     - Restart dev server to regenerate types

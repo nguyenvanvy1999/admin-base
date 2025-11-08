@@ -13,7 +13,7 @@ A modern, production-ready fullstack template built with **Elysia** (backend) an
 
 ### 🛡️ **Backend (Elysia)**
 
-- **Drizzle ORM** for database management with TypeScript entities
+- **Prisma ORM** for database management with PostgreSQL
 - **JWT Authentication** with macro-based auth checking
 - **Swagger Documentation** automatically generated
 - **Type-safe API** with full TypeScript support
@@ -97,7 +97,7 @@ elysia-fullstack-template/
 
 The backend runs on Elysia with the following features:
 
-- **Database**: Drizzle ORM with SQLite support
+- **Database**: Prisma ORM with PostgreSQL
 - **Authentication**: JWT with macro-based route protection
 - **API Documentation**: Auto-generated Swagger docs
 - **Hot Reload**: Automatic server restart on file changes
@@ -132,17 +132,21 @@ bun start
 Create a `.env` file in the root directory:
 
 ```env
-DB_URL=./database.db
+POSTGRES_URL=postgresql://user:password@localhost:5432/investment
 JWT_SECRET=your-super-secret-jwt-key
 PORT=3000
 ```
 
 ### Database Setup
 
-1. Init SQLite database
-2. Create a database
-3. Update `DATABASE_URL` in your `.env` file
-4. Run migrations (if any)
+1. Ensure PostgreSQL is running
+2. Create a database (e.g., `investment`)
+3. Update `POSTGRES_URL` in your `.env` file
+4. Run Prisma migrations:
+   ```bash
+   bun run db:migrate
+   bun run db:generate
+   ```
 
 ## 🚀 Production Deployment
 
@@ -187,6 +191,7 @@ CMD ["bun", "start"]
 
 - **Runtime**: [Bun](https://bun.sh) - Fast JavaScript runtime
 - **Backend**: [Elysia](https://elysiajs.com) - High-performance TypeScript framework
+- **Database**: [Prisma](https://www.prisma.io) - Type-safe ORM with PostgreSQL
 - **Frontend**: [React](https://reactjs.org) - UI library
 - **State Management**: [Zustand](https://zustand-demo.pmnd.rs) - Lightweight state management
 - **Styling**: [Tailwind CSS](https://tailwindcss.com) - Utility-first CSS framework
