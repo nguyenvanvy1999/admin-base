@@ -1,6 +1,7 @@
 # 🚀 Elysia Fullstack Template
 
-A modern, production-ready fullstack template built with **Elysia** (backend) and **React** (frontend), powered by **Bun** runtime for lightning-fast development and hot reloading.
+A modern, production-ready fullstack template built with **Elysia** (backend) and **React** (frontend), powered by **Bun
+** runtime for lightning-fast development and hot reloading.
 
 ## ✨ Features
 
@@ -12,7 +13,7 @@ A modern, production-ready fullstack template built with **Elysia** (backend) an
 
 ### 🛡️ **Backend (Elysia)**
 
-- **MikroORM** for database management with TypeScript entities
+- **Drizzle ORM** for database management with TypeScript entities
 - **JWT Authentication** with macro-based auth checking
 - **Swagger Documentation** automatically generated
 - **Type-safe API** with full TypeScript support
@@ -85,7 +86,6 @@ elysia-fullstack-template/
 ├── src/                   # Backend Elysia application
 │   ├── controllers/       # API route handlers
 │   ├── services/          # Business logic
-│   ├── entities/          # MikroORM entities
 │   ├── middlewares/       # Custom middlewares
 │   └── macros/            # Authentication macros
 └── package.json           # Dependencies and scripts
@@ -97,7 +97,7 @@ elysia-fullstack-template/
 
 The backend runs on Elysia with the following features:
 
-- **Database**: MikroORM with PostgreSQL support
+- **Database**: Drizzle ORM with SQLite support
 - **Authentication**: JWT with macro-based route protection
 - **API Documentation**: Auto-generated Swagger docs
 - **Hot Reload**: Automatic server restart on file changes
@@ -132,14 +132,14 @@ bun start
 Create a `.env` file in the root directory:
 
 ```env
-DATABASE_URL=postgresql://username:password@localhost:5432/database_name
+DB_URL=./database.db
 JWT_SECRET=your-super-secret-jwt-key
 PORT=3000
 ```
 
 ### Database Setup
 
-1. Install PostgreSQL
+1. Init SQLite database
 2. Create a database
 3. Update `DATABASE_URL` in your `.env` file
 4. Run migrations (if any)
@@ -148,7 +148,8 @@ PORT=3000
 
 ### Important Note: Hash Router Requirement
 
-The frontend **must use hash router** to avoid conflicts with server routes. The static file serving mounts the client folder at the root path (`/`), so any SPA routes need corresponding files in the client folder.
+The frontend **must use hash router** to avoid conflicts with server routes. The static file serving mounts the client
+folder at the root path (`/`), so any SPA routes need corresponding files in the client folder.
 
 ### Production Build Process
 
@@ -187,7 +188,6 @@ CMD ["bun", "start"]
 - **Runtime**: [Bun](https://bun.sh) - Fast JavaScript runtime
 - **Backend**: [Elysia](https://elysiajs.com) - High-performance TypeScript framework
 - **Frontend**: [React](https://reactjs.org) - UI library
-- **Database**: [MikroORM](https://mikro-orm.io) - TypeScript ORM
 - **State Management**: [Zustand](https://zustand-demo.pmnd.rs) - Lightweight state management
 - **Styling**: [Tailwind CSS](https://tailwindcss.com) - Utility-first CSS framework
 - **Type Safety**: [Eden Treaty](https://elysiajs.com/eden/overview.html) - End-to-end type safety
@@ -212,7 +212,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Elysia](https://elysiajs.com) for the amazing TypeScript framework
 - [Bun](https://bun.sh) for the fast JavaScript runtime
-- [MikroORM](https://mikro-orm.io) for the excellent TypeScript ORM
 - [Tailwind CSS](https://tailwindcss.com) for the utility-first CSS framework
 
 ---
