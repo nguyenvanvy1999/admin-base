@@ -4,7 +4,13 @@
     "allRightsReserved": "All rights reserved",
     "copyright": "© {{year}} FinTrack. All rights reserved.",
     "online": "Online",
-    "nA": "N/A"
+    "nA": "N/A",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "add": "Add",
+    "close": "Close"
   },
   "login": {
     "title": "FinTrack",
@@ -103,5 +109,36 @@
     "title": "Page Not Found",
     "description": "The page you are looking for does not exist or has been moved.",
     "goHome": "Go to Home"
+  },
+  "accounts": {
+    "title": "Accounts",
+    "subtitle": "Manage your accounts",
+    "addAccount": "Add Account",
+    "editAccount": "Edit Account",
+    "deleteAccount": "Delete Account",
+    "name": "Name",
+    "type": "Type",
+    "currency": "Currency",
+    "balance": "Balance",
+    "creditLimit": "Credit Limit",
+    "expiryDate": "Expiry Date",
+    "actions": "Actions",
+    "cash": "Cash",
+    "bank": "Bank",
+    "credit_card": "Credit Card",
+    "investment": "Investment",
+    "deleteConfirmTitle": "Delete Account",
+    "deleteConfirmMessage": "Are you sure you want to delete this account?",
+    "noAccounts": "No accounts found",
+    "search": "Search accounts...",
+    "all": "All",
+    "namePlaceholder": "Enter account name",
+    "typePlaceholder": "Select account type",
+    "currencyPlaceholder": "Select currency",
+    "creditLimitPlaceholder": "Enter credit limit",
+    "expiryDatePlaceholder": "Select expiry date",
+    "nameRequired": "Account name is required",
+    "typeRequired": "Account type is required",
+    "currencyRequired": "Currency is required"
   }
 }

@@ -1,6 +1,7 @@
 import { createHashRouter } from 'react-router';
 
 import ProtectedPageLayout from './layouts';
+import AccountPage from './pages/AccountPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -34,7 +35,7 @@ const router = createHashRouter([
       },
       {
         path: '/accounts',
-        Component: NotFoundPage,
+        Component: AccountPage,
       },
       {
         path: '/investments',

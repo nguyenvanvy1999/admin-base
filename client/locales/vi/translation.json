@@ -4,7 +4,13 @@
     "allRightsReserved": "Bảo lưu mọi quyền",
     "copyright": "© {{year}} FinTrack. Bảo lưu mọi quyền.",
     "online": "Trực tuyến",
-    "nA": "N/A"
+    "nA": "N/A",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "add": "Thêm",
+    "close": "Đóng"
   },
   "login": {
     "title": "FinTrack",
@@ -103,5 +109,36 @@
     "title": "Không tìm thấy trang",
     "description": "Trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.",
     "goHome": "Về trang chủ"
+  },
+  "accounts": {
+    "title": "Tài khoản",
+    "subtitle": "Quản lý tài khoản",
+    "addAccount": "Thêm tài khoản",
+    "editAccount": "Chỉnh sửa tài khoản",
+    "deleteAccount": "Xóa tài khoản",
+    "name": "Tên",
+    "type": "Loại",
+    "currency": "Tiền tệ",
+    "balance": "Số dư",
+    "creditLimit": "Hạn mức tín dụng",
+    "expiryDate": "Ngày hết hạn",
+    "actions": "Thao tác",
+    "cash": "Tiền mặt",
+    "bank": "Ngân hàng",
+    "credit_card": "Thẻ tín dụng",
+    "investment": "Đầu tư",
+    "deleteConfirmTitle": "Xóa tài khoản",
+    "deleteConfirmMessage": "Bạn có chắc chắn muốn xóa tài khoản này?",
+    "noAccounts": "Không tìm thấy tài khoản",
+    "search": "Tìm kiếm tài khoản...",
+    "all": "Tất cả",
+    "namePlaceholder": "Nhập tên tài khoản",
+    "typePlaceholder": "Chọn loại tài khoản",
+    "currencyPlaceholder": "Chọn tiền tệ",
+    "creditLimitPlaceholder": "Nhập hạn mức tín dụng",
+    "expiryDatePlaceholder": "Chọn ngày hết hạn",
+    "nameRequired": "Tên tài khoản là bắt buộc",
+    "typeRequired": "Loại tài khoản là bắt buộc",
+    "currencyRequired": "Tiền tệ là bắt buộc"
   }
 }
