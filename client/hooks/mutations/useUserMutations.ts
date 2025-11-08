@@ -27,8 +27,9 @@ export const useUpdateProfileMutation = () => {
     },
     onSuccess: async (data) => {
       setUser({
-        id: String(data.id),
+        id: data.id,
         username: data.username,
+        name: data.name ?? null,
         role: data.role,
       });
       await queryClient.invalidateQueries({ queryKey: ['user'] });

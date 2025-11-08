@@ -25,8 +25,13 @@ const Header = () => {
     // Close dropdown
     setIsDropdownOpen(false);
 
-    // TODO: Navigate to profile page when implemented
-    console.log('Navigate to profile page');
+    // Navigate to profile page
+    navigate('/profile');
+  };
+
+  const handleHomeClick = () => {
+    // Navigate to home page
+    navigate('/');
   };
 
   return (
@@ -34,7 +39,10 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and App Name */}
-          <div className="flex items-center space-x-3">
+          <button
+            onClick={handleHomeClick}
+            className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-lg px-2 py-1"
+          >
             <img
               src="/public/logo.jpeg"
               alt="Logo"
@@ -45,7 +53,7 @@ const Header = () => {
                 {t('header.appName')}
               </h1>
             </div>
-          </div>
+          </button>
 
           {/* Right side: Language Switcher and User Avatar */}
           <div className="flex items-center space-x-4">
@@ -65,7 +73,7 @@ const Header = () => {
                 />
                 <div className="hidden sm:block text-left">
                   <p className="font-medium text-gray-900">
-                    {user?.username || ''}
+                    {user?.name || user?.username || ''}
                   </p>
                   <p className="text-xs text-gray-500">{t('common.online')}</p>
                 </div>
@@ -100,7 +108,7 @@ const Header = () => {
                     {/* User Info */}
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-900">
-                        {user?.username || ''}
+                        {user?.name || user?.username || ''}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
                         {user?.role || ''}

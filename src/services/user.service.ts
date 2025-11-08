@@ -137,6 +137,7 @@ export class UserService {
     return {
       id: updatedUser.id,
       username: updatedUser.username,
+      name: updatedUser.name,
       role: updatedUser.role,
     };
   }

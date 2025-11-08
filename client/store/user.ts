@@ -9,12 +9,14 @@ export type UserStore = {
 export type User = {
   id: string;
   username: string;
+  name: string | null;
   role: string;
 };
 
 const defaultUser: User = {
   id: '',
   username: '',
+  name: null,
   role: 'user',
 };
 const useUserStore = create<UserStore>((set) => ({
