@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where(.dark, .dark *, [data-mantine-color-scheme="dark"], [data-mantine-color-scheme="dark"] *));
 
 @layer base {
 	:root {
@@ -25,7 +25,8 @@
 		--radius: 0.5rem;
 	}
 
-	.dark {
+	.dark,
+	[data-mantine-color-scheme="dark"] {
 		--background: 222.2 84% 4.9%;
 		--foreground: 210 40% 98%;
 		--card: 222.2 84% 4.9%;
@@ -73,10 +74,12 @@
   border-radius: 3px;
 }
 
-.dark .sidebar-nav {
+.dark .sidebar-nav,
+[data-mantine-color-scheme="dark"] .sidebar-nav {
   scrollbar-color: rgb(55 65 81) transparent;
 }
 
-.dark .sidebar-nav::-webkit-scrollbar-thumb {
+.dark .sidebar-nav::-webkit-scrollbar-thumb,
+[data-mantine-color-scheme="dark"] .sidebar-nav::-webkit-scrollbar-thumb {
   background-color: rgb(55 65 81);
 }

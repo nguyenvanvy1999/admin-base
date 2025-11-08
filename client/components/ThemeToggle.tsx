@@ -1,10 +1,11 @@
-import useThemeStore from '@client/store/theme';
+import { useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
 
 const ThemeToggle = () => {
-  const { theme, toggleTheme } = useThemeStore();
+  const { setColorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme('light');
 
   const handleClick = () => {
-    toggleTheme();
+    setColorScheme(computedColorScheme === 'dark' ? 'light' : 'dark');
   };
 
   return (
@@ -12,10 +13,12 @@ const ThemeToggle = () => {
       onClick={handleClick}
       className="flex items-center justify-center w-10 h-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-200 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
       aria-label={
-        theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+        computedColorScheme === 'dark'
+          ? 'Switch to light mode'
+          : 'Switch to dark mode'
       }
     >
-      {theme === 'dark' ? (
+      {computedColorScheme === 'dark' ? (
         <svg
           className="w-5 h-5 text-yellow-500"
           fill="none"
