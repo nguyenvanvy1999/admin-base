@@ -1,3 +1,4 @@
+import { appEnv } from '@server/env';
 import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
 
@@ -15,7 +16,7 @@ const authMacro = new Elysia().macro({
           throw new Error('Token not found');
         }
         const jwtToken = token.split(' ')[1];
-        const decoded = jwt.verify(jwtToken, process.env.JWT_SECRET ?? '') as {
+        const decoded = jwt.verify(jwtToken, appEnv.JWT_SECRET) as {
           id: number;
           role: string;
         };

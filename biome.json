@@ -9,9 +9,7 @@
       "src/**/*.html",
       "test/**/*.ts",
       "client/**/*.ts",
-      "client/**/*.tsx",
-      "prisma.config.ts",
-      "!src/generated/prisma"
+      "client/**/*.tsx"
     ]
   },
   "formatter": {

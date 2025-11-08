@@ -1,8 +1,7 @@
-import { PrismaBetterSQLite3 } from '@prisma/adapter-better-sqlite3';
+import { Database } from 'bun:sqlite';
 import { appEnv } from '@server/env';
-import { PrismaClient } from './generated/prisma/client';
+import { drizzle } from 'drizzle-orm/bun-sqlite';
+import * as schema from './db/schema';
 
-const adapter = new PrismaBetterSQLite3({
-  url: appEnv.DB_URI,
-});
-export const prisma = new PrismaClient({ adapter });
+const sqlite = new Database(appEnv.DB_URI);
+export const db = drizzle(sqlite, { schema });

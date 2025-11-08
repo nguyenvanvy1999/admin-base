@@ -44,5 +44,4 @@ package-lock.json
 **/*.bun
 .idea
 server
-src/generated
-prisma/investment.db
+investment.db
