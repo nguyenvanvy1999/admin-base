@@ -64,7 +64,14 @@ export const ListTransactionsQueryDto = t.Object({
   dateTo: t.Optional(t.String({ format: 'date-time' })),
   page: t.Optional(t.Integer({ minimum: 1, examples: [1], default: 1 })),
   limit: t.Optional(t.Integer({ minimum: 1, examples: [20], default: 20 })),
-  sortBy: t.Optional(t.Union([t.Literal('date'), t.Literal('amount')])),
+  sortBy: t.Optional(
+    t.Union([
+      t.Literal('date'),
+      t.Literal('amount'),
+      t.Literal('type'),
+      t.Literal('accountId'),
+    ]),
+  ),
   sortOrder: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
 });
 

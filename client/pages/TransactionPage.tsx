@@ -37,7 +37,9 @@ const TransactionPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
-  const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
+  const [sortBy, setSortBy] = useState<
+    'date' | 'amount' | 'type' | 'accountId'
+  >('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const queryParams = useMemo(
@@ -157,6 +159,8 @@ const TransactionPage = () => {
     }));
   }, [entities]);
 
+  const summary = data?.summary;
+
   return (
     <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
@@ -180,6 +184,7 @@ const TransactionPage = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             isLoading={isLoading}
+            summary={summary}
             search={{
               onSearch: (searchValue: string) => {
                 setSearchQuery(searchValue);
@@ -288,7 +293,9 @@ const TransactionPage = () => {
                 newSortBy: string,
                 newSortOrder: 'asc' | 'desc',
               ) => {
-                setSortBy(newSortBy as 'date' | 'amount');
+                setSortBy(
+                  newSortBy as 'date' | 'amount' | 'type' | 'accountId',
+                );
                 setSortOrder(newSortOrder);
                 setPage(1);
               },

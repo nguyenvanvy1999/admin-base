@@ -13,7 +13,7 @@ type ListTransactionsQuery = {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'date' | 'amount';
+  sortBy?: 'date' | 'amount' | 'type' | 'accountId';
   sortOrder?: 'asc' | 'desc';
 };
 
@@ -65,6 +65,7 @@ export const useTransactionsQuery = (query: ListTransactionsQuery = {}) => {
               : null,
         })) satisfies TransactionFull[],
         pagination: data.pagination,
+        summary: data.summary || [],
       };
     },
   });

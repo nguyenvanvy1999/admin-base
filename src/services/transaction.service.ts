@@ -1,4 +1,4 @@
-import { AccountType, TransactionType } from '@server/generated/prisma/enums';
+import { TransactionType } from '@server/generated/prisma/enums';
 import type {
   TransactionOrderByWithRelationInput,
   TransactionWhereInput,
@@ -16,14 +16,6 @@ import type {
 } from '../dto/transaction.dto';
 
 type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
-
-type AccountWithCurrency = {
-  id: string;
-  currencyId: string;
-  type: AccountType;
-  balance: Decimal | number;
-  creditLimit?: Decimal | number | null;
-};
 
 class BalanceCalculator {
   private exchangeRates: Record<string, Record<string, Decimal>> = {
@@ -109,29 +101,6 @@ class BalanceCalculator {
 class BalanceUpdater {
   constructor(private calculator: BalanceCalculator) {}
 
-  private validateSufficientBalance(
-    account: AccountWithCurrency,
-    amount: Decimal,
-    fee: Decimal,
-  ) {
-    const balance = new Decimal(account.balance);
-    const total = amount.plus(fee);
-
-    if (account.type === AccountType.credit_card) {
-      const creditLimit = account.creditLimit
-        ? new Decimal(account.creditLimit)
-        : new Decimal(0);
-      const availableCredit = creditLimit.plus(balance);
-      if (total.gt(availableCredit)) {
-        throw new Error('Insufficient credit limit');
-      }
-    } else {
-      if (total.gt(balance)) {
-        throw new Error('Insufficient balance');
-      }
-    }
-  }
-
   async applyBalanceEffect(
     tx: PrismaTx,
     transactionType: TransactionType,
@@ -143,14 +112,10 @@ class BalanceUpdater {
     accountCurrencyId: string,
     toAccountCurrencyId?: string,
   ) {
-    const account = await tx.account.findUniqueOrThrow({
+    await tx.account.findUniqueOrThrow({
       where: { id: accountId },
       select: {
         id: true,
-        balance: true,
-        type: true,
-        creditLimit: true,
-        currencyId: true,
       },
     });
 
@@ -175,17 +140,6 @@ class BalanceUpdater {
 
       case TransactionType.expense:
       case TransactionType.loan_given:
-        this.validateSufficientBalance(
-          {
-            ...account,
-            balance: new Decimal(account.balance),
-            creditLimit: account.creditLimit
-              ? new Decimal(account.creditLimit)
-              : null,
-          },
-          amountInAccountCurrency,
-          feeInAccountCurrency,
-        );
         await tx.account.update({
           where: { id: accountId },
           data: {
@@ -205,18 +159,6 @@ class BalanceUpdater {
         await tx.account.findUniqueOrThrow({
           where: { id: toAccountId },
         });
-
-        this.validateSufficientBalance(
-          {
-            ...account,
-            balance: new Decimal(account.balance),
-            creditLimit: account.creditLimit
-              ? new Decimal(account.creditLimit)
-              : null,
-          },
-          amountInAccountCurrency,
-          feeInAccountCurrency,
-        );
 
         const amountInToAccountCurrency =
           await this.calculator.convertAmountToToAccountCurrency(
@@ -872,11 +814,15 @@ export class TransactionService {
       orderBy.date = sortOrder;
     } else if (sortBy === 'amount') {
       orderBy.amount = sortOrder;
+    } else if (sortBy === 'type') {
+      orderBy.type = sortOrder;
+    } else if (sortBy === 'accountId') {
+      orderBy.accountId = sortOrder;
     }
 
     const skip = (page - 1) * limit;
 
-    const [transactions, total] = await Promise.all([
+    const [transactions, total, allTransactionsForSummary] = await Promise.all([
       prisma.transaction.findMany({
         where,
         orderBy,
@@ -885,7 +831,55 @@ export class TransactionService {
         include: TransactionService.TRANSACTION_INCLUDE,
       }),
       prisma.transaction.count({ where }),
+      prisma.transaction.findMany({
+        where,
+        select: {
+          type: true,
+          amount: true,
+          currencyId: true,
+          currency: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              symbol: true,
+            },
+          },
+        },
+      }),
     ]);
+
+    const summaryByCurrency = new Map<
+      string,
+      { currency: any; totalIncome: Decimal; totalExpense: Decimal }
+    >();
+
+    for (const transaction of allTransactionsForSummary) {
+      const amount = new Decimal(transaction.amount);
+      const currencyId = transaction.currencyId;
+      const currency = transaction.currency;
+
+      if (!summaryByCurrency.has(currencyId)) {
+        summaryByCurrency.set(currencyId, {
+          currency,
+          totalIncome: new Decimal(0),
+          totalExpense: new Decimal(0),
+        });
+      }
+
+      const summary = summaryByCurrency.get(currencyId)!;
+      if (transaction.type === TransactionType.income) {
+        summary.totalIncome = summary.totalIncome.plus(amount);
+      } else if (transaction.type === TransactionType.expense) {
+        summary.totalExpense = summary.totalExpense.plus(amount);
+      }
+    }
+
+    const summary = Array.from(summaryByCurrency.values()).map((item) => ({
+      currency: item.currency,
+      totalIncome: item.totalIncome.toNumber(),
+      totalExpense: item.totalExpense.toNumber(),
+    }));
 
     return {
       transactions,
@@ -895,6 +889,7 @@ export class TransactionService {
         total,
         totalPages: Math.ceil(total / limit),
       },
+      summary,
     };
   }
 
