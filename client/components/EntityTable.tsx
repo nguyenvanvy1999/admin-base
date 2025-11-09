@@ -1,4 +1,5 @@
 import type { EntityFull } from '@client/types/entity';
+import { EntityType } from '@server/generated/prisma/enums';
 import {
   createColumnHelper,
   flexRender,
@@ -40,9 +41,15 @@ const EntityTable = ({
         cell: (info) => {
           const value = info.getValue();
           if (!value) return <span className="text-gray-400">-</span>;
+          const label =
+            value === EntityType.individual
+              ? t('entities.individual')
+              : value === EntityType.organization
+                ? t('entities.organization')
+                : value;
           return (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-              {value}
+              {label}
             </span>
           );
         },

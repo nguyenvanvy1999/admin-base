@@ -1,7 +1,9 @@
+import type { EntityType } from '@server/generated/prisma/enums';
+
 export type EntityFull = {
   id: string;
   name: string;
-  type: string | null;
+  type: EntityType | null;
   phone: string | null;
   email: string | null;
   address: string | null;
@@ -13,7 +15,7 @@ export type EntityFull = {
 export type EntityFormData = {
   id?: string;
   name: string;
-  type?: string;
+  type?: EntityType;
   phone?: string;
   email?: string;
   address?: string;

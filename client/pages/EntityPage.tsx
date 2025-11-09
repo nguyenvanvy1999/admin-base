@@ -9,6 +9,7 @@ import {
 import { useEntitiesQuery } from '@client/hooks/queries/useEntityQueries';
 import type { EntityFormData, EntityFull } from '@client/types/entity';
 import { Button, Group, Modal, Select, Text, TextInput } from '@mantine/core';
+import { EntityType } from '@server/generated/prisma/enums';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -18,14 +19,14 @@ const EntityPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [entityToDelete, setEntityToDelete] = useState<EntityFull | null>(null);
-  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [typeFilter, setTypeFilter] = useState<EntityType | ''>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
 
   const queryParams = useMemo(
     () => ({
-      type: typeFilter || undefined,
+      type: (typeFilter || undefined) as EntityType | undefined,
       search: searchQuery.trim() || undefined,
       page,
       limit,
@@ -98,7 +99,7 @@ const EntityPage = () => {
   );
 
   const handleTypeFilterChange = useCallback((value: string | null) => {
-    setTypeFilter(value || '');
+    setTypeFilter((value as EntityType) || '');
     setPage(1);
   }, []);
 
@@ -122,17 +123,6 @@ const EntityPage = () => {
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteMutation.isPending;
-
-  const uniqueTypes = useMemo(() => {
-    if (!data?.entities) return [];
-    const types = new Set<string>();
-    data.entities.forEach((entity) => {
-      if (entity.type) {
-        types.add(entity.type);
-      }
-    });
-    return Array.from(types).sort();
-  }, [data?.entities]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -169,10 +159,14 @@ const EntityPage = () => {
                 placeholder={t('entities.typePlaceholder')}
                 data={[
                   { value: '', label: t('entities.all') },
-                  ...uniqueTypes.map((type) => ({
-                    value: type,
-                    label: type,
-                  })),
+                  {
+                    value: EntityType.individual,
+                    label: t('entities.individual'),
+                  },
+                  {
+                    value: EntityType.organization,
+                    label: t('entities.organization'),
+                  },
                 ]}
               />
             </div>

@@ -3,10 +3,12 @@ import {
   Button,
   Group,
   Modal,
+  Select,
   Stack,
   Textarea,
   TextInput,
 } from '@mantine/core';
+import { EntityType } from '@server/generated/prisma/enums';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -132,13 +134,24 @@ const AddEditEntityDialog = ({
             {(field) => {
               const error = field.state.meta.errors[0];
               return (
-                <TextInput
+                <Select
                   label={t('entities.type')}
                   placeholder={t('entities.typePlaceholder')}
-                  value={field.state.value ?? ''}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  data={[
+                    {
+                      value: EntityType.individual,
+                      label: t('entities.individual'),
+                    },
+                    {
+                      value: EntityType.organization,
+                      label: t('entities.organization'),
+                    },
+                  ]}
+                  value={field.state.value ?? null}
+                  onChange={(value) => field.handleChange(value ?? undefined)}
                   onBlur={field.handleBlur}
                   error={error}
+                  clearable
                 />
               );
             }}
