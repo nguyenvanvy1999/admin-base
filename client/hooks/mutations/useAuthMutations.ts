@@ -46,6 +46,7 @@ export const useLoginMutation = () => {
       setUser({
         id: String(data.user.id),
         username: data.user.username,
+        name: null,
         role: data.user.role,
       });
       await queryClient.invalidateQueries({ queryKey: ['user'] });
@@ -90,6 +91,7 @@ export const useRegisterMutation = () => {
       setUser({
         id: String(data.user.id),
         username: data.user.username,
+        name: null,
         role: data.user.role,
       });
       await queryClient.invalidateQueries({ queryKey: ['user'] });

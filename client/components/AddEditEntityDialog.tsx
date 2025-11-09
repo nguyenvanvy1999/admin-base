@@ -146,7 +146,7 @@ const AddEditEntityDialog = ({
                     },
                   ]}
                   value={field.state.value ?? null}
-                  onChange={(value) => field.handleChange(value ?? undefined)}
+                  onChange={(value) => field.handleChange(value ?? '')}
                   onBlur={field.handleBlur}
                   error={error}
                 />
