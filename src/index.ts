@@ -1,16 +1,17 @@
+import openapi from '@elysiajs/openapi';
 import { staticPlugin } from '@elysiajs/static';
-import swagger from '@elysiajs/swagger';
 import { appEnv } from '@server/libs/env';
 import { Elysia } from 'elysia';
 import accountController from './controllers/account.controller';
+import entityController from './controllers/entity.controller';
 import userController from './controllers/user.controller';
 import { logger } from './libs/logger';
 import errorMiddleware from './middlewares/error-middleware';
 
 export const app = new Elysia()
   .use(
-    swagger({
-      path: '/api-docs',
+    openapi({
+      path: '/docs',
       provider: 'swagger-ui',
       documentation: {
         info: {
@@ -29,7 +30,7 @@ export const app = new Elysia()
           },
         },
       },
-      swaggerOptions: {
+      swagger: {
         persistAuthorization: true,
       },
     }),
@@ -41,7 +42,11 @@ export const app = new Elysia()
     }),
   )
   .group('/api', (group) =>
-    group.onError(errorMiddleware).use(userController).use(accountController),
+    group
+      .onError(errorMiddleware)
+      .use(userController)
+      .use(accountController)
+      .use(entityController),
   )
   .listen(appEnv.PORT);
 
@@ -49,5 +54,5 @@ logger.info(
   `Server started open http://${app.server?.hostname}:${app.server?.port} in the browser`,
 );
 logger.info(
-  `API can be found at  http://${app.server?.hostname}:${app.server?.port}/api/docs in the browser`,
+  `API can be found at  http://${app.server?.hostname}:${app.server?.port}/docs in the browser`,
 );

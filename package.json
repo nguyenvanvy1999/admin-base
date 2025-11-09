@@ -17,8 +17,8 @@
   },
   "dependencies": {
     "@elysiajs/eden": "^1.4.4",
+    "@elysiajs/openapi": "^1.4.11",
     "@elysiajs/static": "^1.4.6",
-    "@elysiajs/swagger": "^1.2.0",
     "@logtape/file": "^1.1.2",
     "@logtape/logtape": "^1.1.2",
     "@logtape/pretty": "^1.1.2",
