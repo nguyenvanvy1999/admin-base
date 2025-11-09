@@ -14,7 +14,7 @@ export const UpsertAccountDto = t.Object({
 });
 
 export const ListAccountsQueryDto = t.Object({
-  type: t.Optional(t.Enum(AccountType)),
+  type: t.Optional(t.Array(t.Enum(AccountType))),
   search: t.Optional(t.String()),
   page: t.Optional(t.Integer({ minimum: 1, default: 1 })),
   limit: t.Optional(t.Integer({ minimum: 1, default: 20 })),

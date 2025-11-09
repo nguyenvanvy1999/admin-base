@@ -1,9 +1,10 @@
 import { api } from '@client/libs/api';
 import type { EntityFull } from '@client/types/entity';
+import type { EntityType } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
 
 type ListEntitiesQuery = {
-  type?: string;
+  type?: EntityType[];
   search?: string;
   page?: number;
   limit?: number;

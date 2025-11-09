@@ -108,8 +108,8 @@ export class EntityService {
       deletedAt: null,
     };
 
-    if (type) {
-      where.type = type;
+    if (type && type.length > 0) {
+      where.type = { in: type };
     }
 
     if (search && search.trim()) {

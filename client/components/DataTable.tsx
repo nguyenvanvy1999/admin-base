@@ -1,10 +1,11 @@
-import { Button, Select, TextInput } from '@mantine/core';
+import { ActionIcon, Button, Select, TextInput } from '@mantine/core';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -86,6 +87,16 @@ function DataTable<T extends Record<string, any>>({
     [pageSize, pagination],
   );
 
+  const handleClearSearch = useCallback(() => {
+    setSearchInput('');
+    if (search?.onSearch) {
+      search.onSearch('');
+    }
+    if (pagination) {
+      pagination.onPageChange(1);
+    }
+  }, [search, pagination]);
+
   const handleReset = useCallback(() => {
     setSearchInput('');
     if (filters?.onReset) {
@@ -138,6 +149,18 @@ function DataTable<T extends Record<string, any>>({
                   }
                 }}
                 placeholder={search.placeholder || t('common.search')}
+                rightSection={
+                  searchInput.trim() !== '' ? (
+                    <ActionIcon
+                      size="sm"
+                      variant="transparent"
+                      onClick={handleClearSearch}
+                      disabled={isLoading}
+                    >
+                      <X size={16} />
+                    </ActionIcon>
+                  ) : null
+                }
               />
             </div>
           )}

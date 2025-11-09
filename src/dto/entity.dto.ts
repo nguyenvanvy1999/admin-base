@@ -19,10 +19,12 @@ export const UpsertEntityDto = t.Object({
 export const ListEntitiesQueryDto = t.Object({
   search: t.Optional(t.String()),
   type: t.Optional(
-    t.Union([
-      t.Literal(EntityType.individual),
-      t.Literal(EntityType.organization),
-    ]),
+    t.Array(
+      t.Union([
+        t.Literal(EntityType.individual),
+        t.Literal(EntityType.organization),
+      ]),
+    ),
   ),
   page: t.Optional(t.Integer({ minimum: 1, default: 1 })),
   limit: t.Optional(t.Integer({ minimum: 1, default: 20 })),

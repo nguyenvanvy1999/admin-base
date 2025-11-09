@@ -7,7 +7,7 @@ import {
 } from '@client/hooks/mutations/useAccountMutations';
 import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
 import type { AccountFormData, AccountFull } from '@client/types/account';
-import { Button, Group, Modal, Select, Text } from '@mantine/core';
+import { Button, Group, Modal, MultiSelect, Text } from '@mantine/core';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -22,15 +22,15 @@ const AccountPage = () => {
   const [accountToDelete, setAccountToDelete] = useState<AccountFull | null>(
     null,
   );
-  const [typeFilterInput, setTypeFilterInput] = useState<string>('');
-  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [typeFilterInput, setTypeFilterInput] = useState<AccountType[]>([]);
+  const [typeFilter, setTypeFilter] = useState<AccountType[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
 
   const queryParams = useMemo(
     () => ({
-      type: typeFilter || undefined,
+      type: typeFilter.length > 0 ? typeFilter : undefined,
       search: searchQuery.trim() || undefined,
       page,
       limit,
@@ -40,7 +40,7 @@ const AccountPage = () => {
     [typeFilter, searchQuery, page, limit],
   );
 
-  const { data, isLoading, refetch } = useAccountsQuery(queryParams);
+  const { data, isLoading } = useAccountsQuery(queryParams);
   const createMutation = useCreateAccountMutation();
   const updateMutation = useUpdateAccountMutation();
   const deleteMutation = useDeleteAccountMutation();
@@ -87,7 +87,7 @@ const AccountPage = () => {
   };
 
   const hasActiveFilters = useMemo(() => {
-    return searchQuery.trim() !== '' || typeFilter !== '';
+    return searchQuery.trim() !== '' || typeFilter.length > 0;
   }, [searchQuery, typeFilter]);
 
   const isSubmitting =
@@ -123,7 +123,6 @@ const AccountPage = () => {
                 setSearchQuery(searchValue);
                 setTypeFilter(typeFilterInput);
                 setPage(1);
-                refetch();
               },
               placeholder: t('accounts.search'),
             }}
@@ -138,21 +137,19 @@ const AccountPage = () => {
               hasActive: hasActiveFilters,
               onReset: () => {
                 setSearchQuery('');
-                setTypeFilterInput('');
-                setTypeFilter('');
+                setTypeFilterInput([]);
+                setTypeFilter([]);
                 setPage(1);
-                refetch();
               },
               slots: [
-                <Select
+                <MultiSelect
                   key="type-filter"
-                  value={typeFilterInput || null}
-                  onChange={(value: string | null) => {
-                    setTypeFilterInput(value || '');
-                  }}
+                  value={typeFilterInput}
+                  onChange={(value) =>
+                    setTypeFilterInput(value as AccountType[])
+                  }
                   placeholder={t('accounts.typePlaceholder')}
                   data={[
-                    { value: '', label: t('accounts.all') },
                     { value: AccountType.cash, label: t('accounts.cash') },
                     { value: AccountType.bank, label: t('accounts.bank') },
                     {

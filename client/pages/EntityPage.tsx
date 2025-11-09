@@ -7,7 +7,7 @@ import {
 } from '@client/hooks/mutations/useEntityMutations';
 import { useEntitiesQuery } from '@client/hooks/queries/useEntityQueries';
 import type { EntityFormData, EntityFull } from '@client/types/entity';
-import { Button, Group, Modal, Select, Text } from '@mantine/core';
+import { Button, Group, Modal, MultiSelect, Text } from '@mantine/core';
 import { EntityType } from '@server/generated/prisma/enums';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,15 +18,15 @@ const EntityPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [entityToDelete, setEntityToDelete] = useState<EntityFull | null>(null);
-  const [typeFilterInput, setTypeFilterInput] = useState<EntityType | ''>('');
-  const [typeFilter, setTypeFilter] = useState<EntityType | ''>('');
+  const [typeFilterInput, setTypeFilterInput] = useState<EntityType[]>([]);
+  const [typeFilter, setTypeFilter] = useState<EntityType[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
 
   const queryParams = useMemo(
     () => ({
-      type: (typeFilter || undefined) as EntityType | undefined,
+      type: typeFilter.length > 0 ? typeFilter : undefined,
       search: searchQuery.trim() || undefined,
       page,
       limit,
@@ -36,7 +36,7 @@ const EntityPage = () => {
     [typeFilter, searchQuery, page, limit],
   );
 
-  const { data, isLoading, refetch } = useEntitiesQuery(queryParams);
+  const { data, isLoading } = useEntitiesQuery(queryParams);
   const createMutation = useCreateEntityMutation();
   const updateMutation = useUpdateEntityMutation();
   const deleteMutation = useDeleteEntityMutation();
@@ -91,7 +91,7 @@ const EntityPage = () => {
   };
 
   const hasActiveFilters = useMemo(() => {
-    return searchQuery.trim() !== '' || typeFilter !== '';
+    return searchQuery.trim() !== '' || typeFilter.length > 0;
   }, [searchQuery, typeFilter]);
 
   const isSubmitting =
@@ -127,7 +127,6 @@ const EntityPage = () => {
                 setSearchQuery(searchValue);
                 setTypeFilter(typeFilterInput);
                 setPage(1);
-                refetch();
               },
               placeholder: t('entities.search'),
             }}
@@ -142,21 +141,19 @@ const EntityPage = () => {
               hasActive: hasActiveFilters,
               onReset: () => {
                 setSearchQuery('');
-                setTypeFilterInput('');
-                setTypeFilter('');
+                setTypeFilterInput([]);
+                setTypeFilter([]);
                 setPage(1);
-                refetch();
               },
               slots: [
-                <Select
+                <MultiSelect
                   key="type-filter"
-                  value={typeFilterInput || null}
-                  onChange={(value: string | null) => {
-                    setTypeFilterInput((value as EntityType) || '');
-                  }}
+                  value={typeFilterInput}
+                  onChange={(value) =>
+                    setTypeFilterInput(value as EntityType[])
+                  }
                   placeholder={t('entities.typePlaceholder')}
                   data={[
-                    { value: '', label: t('entities.all') },
                     {
                       value: EntityType.individual,
                       label: t('entities.individual'),

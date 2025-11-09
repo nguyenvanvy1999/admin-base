@@ -1,9 +1,10 @@
 import { api } from '@client/libs/api';
 import type { AccountFull } from '@client/types/account';
+import type { AccountType } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
 
 type ListAccountsQuery = {
-  type?: string;
+  type?: AccountType[];
   search?: string;
   page?: number;
   limit?: number;
