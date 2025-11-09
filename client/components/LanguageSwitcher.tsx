@@ -22,7 +22,7 @@ const LanguageSwitcher = () => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2 transition duration-200 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+        className="flex items-center space-x-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[hsl(var(--color-primary))] hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2 transition duration-200 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
       >
         <span className="text-lg">{currentLanguage.flag}</span>
         <span className="hidden sm:block text-gray-700 dark:text-gray-300 font-medium">
@@ -58,7 +58,7 @@ const LanguageSwitcher = () => {
                 onClick={() => handleLanguageChange(lang.code)}
                 className={`flex items-center w-full px-4 py-2 text-sm transition duration-200 ${
                   i18n.language === lang.code
-                    ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-medium'
+                    ? 'bg-[hsl(var(--color-primary-light))] dark:bg-[hsl(var(--color-primary-dark))] text-[hsl(var(--color-primary))] dark:text-[hsl(var(--color-primary))] font-medium'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
@@ -66,7 +66,7 @@ const LanguageSwitcher = () => {
                 <span>{lang.name}</span>
                 {i18n.language === lang.code && (
                   <svg
-                    className="ml-auto h-4 w-4 text-indigo-600"
+                    className="ml-auto h-4 w-4 text-[hsl(var(--color-primary))]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

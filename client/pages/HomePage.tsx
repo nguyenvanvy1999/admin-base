@@ -6,7 +6,7 @@ const HomePage = () => {
   const { user } = useUserStore();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
@@ -45,7 +45,7 @@ const HomePage = () => {
                 {t('home.role')}
               </dt>
               <dd className="mt-1">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[hsl(var(--color-primary-light))] dark:bg-[hsl(var(--color-primary-dark))] text-[hsl(var(--color-primary))] dark:text-[hsl(var(--color-primary))]">
                   {user?.role || t('common.nA')}
                 </span>
               </dd>
@@ -152,7 +152,8 @@ const HomePage = () => {
             </p>
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
               <code className="text-sm text-gray-800 dark:text-gray-200">
-                className="bg-indigo-600 hover:bg-indigo-700"
+                className="bg-[hsl(var(--color-primary))]
+                hover:bg-[hsl(var(--color-primary-hover))]"
               </code>
             </div>
           </div>
@@ -205,7 +206,7 @@ const HomePage = () => {
                   '_blank',
                 )
               }
-              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[hsl(var(--color-primary))]"
             >
               {t('home.documentation')}
             </button>

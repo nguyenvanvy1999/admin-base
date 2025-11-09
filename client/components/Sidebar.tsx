@@ -62,7 +62,7 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
       isCollapsed ? 'justify-center px-2 py-3' : 'px-4 py-3'
     } ${
       isActive
-        ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300'
+        ? 'bg-[hsl(var(--color-primary-light))] dark:bg-[hsl(var(--color-primary-dark))] text-[hsl(var(--color-primary))] dark:text-[hsl(var(--color-primary))]'
         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
     }`;
 

@@ -388,7 +388,7 @@ const CategoryPage = () => {
     deleteMutation.isPending;
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900 flex flex-col">
       <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 overflow-auto">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full flex flex-col">
           <div className="flex items-center justify-between mb-6">

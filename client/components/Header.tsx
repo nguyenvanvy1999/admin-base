@@ -60,7 +60,7 @@ const Header = () => {
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2 transition duration-200"
+                className="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[hsl(var(--color-primary))] hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2 transition duration-200"
               >
                 <img
                   src="/public/logo.svg"

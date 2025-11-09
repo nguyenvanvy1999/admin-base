@@ -11,7 +11,7 @@ const ThemeToggle = () => {
   return (
     <button
       onClick={handleClick}
-      className="flex items-center justify-center w-10 h-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-200 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+      className="flex items-center justify-center w-10 h-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[hsl(var(--color-primary))] hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-200 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
       aria-label={
         computedColorScheme === 'dark'
           ? 'Switch to light mode'
