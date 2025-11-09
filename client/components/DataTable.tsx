@@ -1,4 +1,4 @@
-import { ActionIcon, Button, Select, TextInput } from '@mantine/core';
+import { ActionIcon, Button, TextInput } from '@mantine/core';
 import { Close, KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
@@ -131,9 +131,6 @@ function DataTable<T extends Record<string, any>>({
   }, [columns, columnOrder, columnOrderState, autoFormatDisabled, t]);
 
   const [searchInput, setSearchInput] = useState('');
-  const [currentPageSize, setCurrentPageSize] = useState(
-    pageSize?.initialSize || 20,
-  );
 
   const handleSearch = useCallback(() => {
     if (search?.onSearch) {
@@ -143,19 +140,6 @@ function DataTable<T extends Record<string, any>>({
       }
     }
   }, [search, searchInput, pagination]);
-
-  const handlePageSizeChange = useCallback(
-    (size: number) => {
-      setCurrentPageSize(size);
-      if (pageSize?.onPageSizeChange) {
-        pageSize.onPageSizeChange(size);
-      }
-      if (pagination) {
-        pagination.onPageChange(1);
-      }
-    },
-    [pageSize, pagination],
-  );
 
   const handleClearSearch = useCallback(() => {
     setSearchInput('');
@@ -212,7 +196,7 @@ function DataTable<T extends Record<string, any>>({
       cols.push(
         createIndexColumn<T>(
           pagination?.currentPage || 1,
-          pagination?.itemsPerPage || currentPageSize,
+          pagination?.itemsPerPage || pageSize?.initialSize || 20,
           t,
         ),
       );
@@ -225,14 +209,7 @@ function DataTable<T extends Record<string, any>>({
     }
 
     return cols;
-  }, [
-    showIndexColumn,
-    processedColumns,
-    actions,
-    pagination,
-    currentPageSize,
-    t,
-  ]);
+  }, [showIndexColumn, processedColumns, actions, pagination, pageSize, t]);
 
   const table = useReactTable({
     data,
@@ -240,13 +217,11 @@ function DataTable<T extends Record<string, any>>({
     getCoreRowModel: getCoreRowModel(),
   });
 
-  const pageSizeOptions = pageSize?.options || [10, 20, 50, 100];
-
   const hasFilters = filters && (hasActiveFilters || filters.slots?.length);
 
   return (
     <div className="space-y-4">
-      {(search || pageSize || hasFilters) && (
+      {(search || hasFilters) && (
         <div className="flex flex-col md:flex-row gap-4">
           {search && (
             <div className="w-full md:w-64">
@@ -282,26 +257,6 @@ function DataTable<T extends Record<string, any>>({
               {slot}
             </div>
           ))}
-
-          {pageSize && (
-            <div className="w-full md:w-32">
-              <Select
-                value={currentPageSize.toString()}
-                onChange={(value) => {
-                  if (value) {
-                    handlePageSizeChange(parseInt(value, 10));
-                  }
-                }}
-                placeholder={t('common.pageSize', {
-                  defaultValue: 'Page Size',
-                })}
-                data={pageSizeOptions.map((size) => ({
-                  value: size.toString(),
-                  label: size.toString(),
-                }))}
-              />
-            </div>
-          )}
 
           <div className="w-full md:w-auto flex gap-2">
             {search && (
@@ -487,7 +442,7 @@ function DataTable<T extends Record<string, any>>({
         )}
       </div>
 
-      {pagination && pagination.totalPages > 0 && pagination.totalPages > 1 && (
+      {pagination && pagination.totalPages > 0 && (
         <Pagination
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}
@@ -495,6 +450,19 @@ function DataTable<T extends Record<string, any>>({
           itemsPerPage={pagination.itemsPerPage}
           onPageChange={pagination.onPageChange}
           isLoading={isLoading}
+          pageSize={
+            pageSize
+              ? {
+                  options: pageSize.options,
+                  onPageSizeChange: (size: number) => {
+                    pageSize.onPageSizeChange(size);
+                    if (pagination) {
+                      pagination.onPageChange(1);
+                    }
+                  },
+                }
+              : undefined
+          }
         />
       )}
     </div>
