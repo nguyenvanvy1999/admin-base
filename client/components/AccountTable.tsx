@@ -1,11 +1,11 @@
 import type { AccountFull } from '@client/types/account';
+import { NumberFormatter } from '@mantine/core';
 import { AccountType } from '@server/generated/prisma/enums';
 import type { ColumnDef } from '@tanstack/react-table';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import DataTable, { type DataTableProps } from './DataTable';
-import { formatCurrency } from './utils/currency';
 
 type AccountTableProps = {
   accounts: AccountFull[];
@@ -82,9 +82,17 @@ const AccountTable = ({
           enableSorting: true,
           cell: (info) => {
             const account = info.row.original;
+            const balance = parseFloat(info.getValue());
             return (
               <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {formatCurrency(info.getValue(), account.currency.symbol)}
+                <NumberFormatter
+                  value={balance}
+                  prefix={
+                    account.currency.symbol ? `${account.currency.symbol} ` : ''
+                  }
+                  thousandSeparator=","
+                  decimalScale={2}
+                />
               </div>
             );
           },
@@ -95,9 +103,24 @@ const AccountTable = ({
           cell: (info) => {
             const account = info.row.original;
             const value = info.getValue();
+            if (!value)
+              return (
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  -
+                </div>
+              );
+            const creditLimit =
+              typeof value === 'string' ? parseFloat(value) : value;
             return (
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                {value ? formatCurrency(value, account.currency.symbol) : '-'}
+                <NumberFormatter
+                  value={creditLimit}
+                  prefix={
+                    account.currency.symbol ? `${account.currency.symbol} ` : ''
+                  }
+                  thousandSeparator=","
+                  decimalScale={2}
+                />
               </div>
             );
           },

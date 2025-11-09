@@ -41,8 +41,8 @@ const AddEditAccountDialog = ({
       name: '',
       type: '',
       currencyId: '',
-      initialBalance: '0',
-      creditLimit: '',
+      initialBalance: 0,
+      creditLimit: 0,
       notifyOnDueDate: false,
       paymentDay: '',
       notifyDaysBefore: '',
@@ -61,17 +61,17 @@ const AddEditAccountDialog = ({
       if (isEditMode && account) {
         submitData.id = account.id;
       } else {
-        if (value.initialBalance && value.initialBalance !== '') {
-          const balance = parseFloat(value.initialBalance);
-          if (!isNaN(balance)) {
-            submitData.initialBalance = balance;
-          }
+        if (
+          value.initialBalance !== undefined &&
+          value.initialBalance !== null
+        ) {
+          submitData.initialBalance = Number(value.initialBalance);
         }
       }
 
       if (value.type === AccountType.credit_card) {
-        if (value.creditLimit) {
-          submitData.creditLimit = parseFloat(value.creditLimit);
+        if (value.creditLimit !== undefined && value.creditLimit !== null) {
+          submitData.creditLimit = Number(value.creditLimit);
         }
         if (value.notifyOnDueDate !== undefined) {
           submitData.notifyOnDueDate = value.notifyOnDueDate;
@@ -99,8 +99,11 @@ const AddEditAccountDialog = ({
       form.setFieldValue('name', account.name);
       form.setFieldValue('type', account.type);
       form.setFieldValue('currencyId', account.currencyId);
-      form.setFieldValue('initialBalance', '0');
-      form.setFieldValue('creditLimit', account.creditLimit || '');
+      form.setFieldValue('initialBalance', 0);
+      form.setFieldValue(
+        'creditLimit',
+        account.creditLimit ? Number(account.creditLimit) : 0,
+      );
       form.setFieldValue('notifyOnDueDate', account.notifyOnDueDate ?? false);
       form.setFieldValue('paymentDay', account.paymentDay?.toString() || '');
       form.setFieldValue(
@@ -111,8 +114,8 @@ const AddEditAccountDialog = ({
       form.setFieldValue('name', '');
       form.setFieldValue('type', '');
       form.setFieldValue('currencyId', '');
-      form.setFieldValue('initialBalance', '0');
-      form.setFieldValue('creditLimit', '');
+      form.setFieldValue('initialBalance', 0);
+      form.setFieldValue('creditLimit', 0);
       form.setFieldValue('notifyOnDueDate', false);
       form.setFieldValue('paymentDay', '');
       form.setFieldValue('notifyDaysBefore', '');
@@ -225,17 +228,20 @@ const AddEditAccountDialog = ({
                     label={t('accounts.initialBalance')}
                     placeholder={t('accounts.initialBalancePlaceholder')}
                     value={
-                      field.state.value && field.state.value !== ''
-                        ? Number(field.state.value)
+                      typeof field.state.value === 'number'
+                        ? field.state.value
                         : 0
                     }
-                    onChange={(value) =>
+                    onChange={(value) => {
                       field.handleChange(
-                        value !== '' && value !== null ? value.toString() : '0',
-                      )
-                    }
+                        value !== '' && value !== null ? Number(value) : 0,
+                      );
+                    }}
                     onBlur={field.handleBlur}
                     error={error}
+                    thousandSeparator=","
+                    decimalScale={2}
+                    min={0}
                   />
                 );
               }}
@@ -253,16 +259,26 @@ const AddEditAccountDialog = ({
                     {(field) => {
                       const error = field.state.meta.errors[0];
                       return (
-                        <TextInput
-                          type="number"
+                        <NumberInput
                           label={t('accounts.creditLimit')}
                           placeholder={t('accounts.creditLimitPlaceholder')}
-                          min="0"
-                          step="0.01"
-                          value={field.state.value ?? ''}
-                          onChange={(e) => field.handleChange(e.target.value)}
+                          value={
+                            typeof field.state.value === 'number'
+                              ? field.state.value
+                              : 0
+                          }
+                          onChange={(value) => {
+                            field.handleChange(
+                              value !== '' && value !== null
+                                ? Number(value)
+                                : 0,
+                            );
+                          }}
                           onBlur={field.handleBlur}
                           error={error}
+                          thousandSeparator=","
+                          decimalScale={2}
+                          min={0}
                         />
                       );
                     }}
