@@ -22,6 +22,8 @@ import { TransactionType } from '@server/generated/prisma/enums';
 import { useForm } from '@tanstack/react-form';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import CategorySelect from './CategorySelect';
+import { flattenCategories, getCategoryIcon } from './utils/category';
 import { useValidation } from './utils/validation';
 
 type AddEditTransactionDialogProps = {
@@ -55,27 +57,20 @@ const AddEditTransactionDialog = ({
   const { data: entitiesData } = useEntitiesQuery({});
 
   const accounts = accountsData?.accounts || [];
-  const categories = categoriesData?.categories || [];
   const entities = entitiesData?.entities || [];
 
-  const filteredCategories = useMemo(() => {
-    const transactionType =
-      activeTab === TransactionType.income
-        ? TransactionType.income
-        : TransactionType.expense;
-    return categories.filter(
-      (cat) =>
-        (transactionType === TransactionType.income && cat.type === 'income') ||
-        (transactionType === TransactionType.expense && cat.type === 'expense'),
-    );
-  }, [categories, activeTab]);
+  const transactionType = useMemo(() => {
+    return activeTab === TransactionType.income
+      ? TransactionType.income
+      : TransactionType.expense;
+  }, [activeTab]);
 
-  const categoryOptions = useMemo(() => {
-    return filteredCategories.map((cat) => ({
-      value: cat.id,
-      label: cat.name,
-    }));
-  }, [filteredCategories]);
+  const flattenedCategories = useMemo(() => {
+    if (!categoriesData?.categories) {
+      return [];
+    }
+    return flattenCategories(categoriesData.categories, t, transactionType);
+  }, [categoriesData, transactionType, t]);
 
   const entityOptions = useMemo(() => {
     return entities.map((entity) => ({
@@ -92,13 +87,40 @@ const AddEditTransactionDialog = ({
   }, [accounts]);
 
   const quickCategoryButtons = useMemo(() => {
-    return filteredCategories.slice(0, 7).map((cat) => ({
-      id: cat.id,
-      name: cat.name,
-      icon: cat.icon,
-      color: cat.color,
-    }));
-  }, [filteredCategories]);
+    if (!categoriesData?.categories) {
+      return [];
+    }
+
+    const findCategoryById = (
+      categories: typeof categoriesData.categories,
+      id: string,
+    ): (typeof categoriesData.categories)[0] | null => {
+      for (const cat of categories) {
+        if (cat.id === id) return cat;
+        if (cat.children) {
+          const found = findCategoryById(cat.children, id);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    return flattenedCategories
+      .filter((opt) => {
+        const cat = findCategoryById(categoriesData.categories, opt.value);
+        return cat && cat.type === transactionType;
+      })
+      .slice(0, 7)
+      .map((opt) => {
+        const cat = findCategoryById(categoriesData.categories, opt.value);
+        return {
+          id: opt.value,
+          name: opt.label.trim(),
+          icon: opt.icon || cat?.name,
+          color: opt.color,
+        };
+      });
+  }, [flattenedCategories, categoriesData, transactionType, t]);
 
   const form = useForm({
     defaultValues: {
@@ -222,16 +244,6 @@ const AddEditTransactionDialog = ({
     if (!form.state.values.accountId) return null;
     return accounts.find((acc) => acc.id === form.state.values.accountId);
   }, [form.state.values.accountId, accounts]);
-
-  const isFormValid = useMemo(() => {
-    const values = form.state.values;
-    return (
-      values.amount > 0 &&
-      values.accountId !== '' &&
-      values.categoryId !== '' &&
-      values.date !== ''
-    );
-  }, [form.state.values]);
 
   const currencySymbol = selectedAccount?.currency.symbol || '';
 
@@ -419,15 +431,15 @@ const AddEditTransactionDialog = ({
                   const error = field.state.meta.errors[0];
                   return (
                     <div>
-                      <Select
+                      <CategorySelect
                         label={t('transactions.category')}
                         placeholder={t('transactions.selectCategory')}
                         required
-                        data={categoryOptions}
-                        value={field.state.value ?? null}
+                        value={field.state.value || null}
                         onChange={(value) => field.handleChange(value || '')}
                         onBlur={field.handleBlur}
                         error={error}
+                        filterType={transactionType}
                         searchable
                       />
                       {error && (
@@ -437,24 +449,37 @@ const AddEditTransactionDialog = ({
                       )}
                       {quickCategoryButtons.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {quickCategoryButtons.map((cat) => (
-                            <Button
-                              key={cat.id}
-                              type="button"
-                              variant={
-                                field.state.value === cat.id
-                                  ? 'filled'
-                                  : 'outline'
-                              }
-                              size="xs"
-                              onClick={() => field.handleChange(cat.id)}
-                              leftSection={
-                                cat.icon ? <span>{cat.icon}</span> : null
-                              }
-                            >
-                              {cat.name}
-                            </Button>
-                          ))}
+                          {quickCategoryButtons.map((cat) => {
+                            const IconComponent = cat.icon
+                              ? getCategoryIcon(cat.icon)
+                              : null;
+                            return (
+                              <Button
+                                key={cat.id}
+                                type="button"
+                                variant={
+                                  field.state.value === cat.id
+                                    ? 'filled'
+                                    : 'outline'
+                                }
+                                size="xs"
+                                onClick={() => field.handleChange(cat.id)}
+                                leftSection={
+                                  IconComponent ? (
+                                    <IconComponent
+                                      style={{
+                                        fontSize: 16,
+                                        color: cat.color || 'inherit',
+                                        opacity: 0.8,
+                                      }}
+                                    />
+                                  ) : null
+                                }
+                              >
+                                {cat.name}
+                              </Button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -536,7 +561,14 @@ const AddEditTransactionDialog = ({
               values: state.values,
             })}
           >
-            {() => {
+            {({ isValid, values }) => {
+              const isFormValid =
+                isValid &&
+                values.amount > 0 &&
+                values.accountId !== '' &&
+                values.categoryId !== '' &&
+                values.date !== '';
+
               return (
                 <Group justify="flex-end" mt="md">
                   <Button
