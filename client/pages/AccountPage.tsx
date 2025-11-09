@@ -1,6 +1,5 @@
 import AccountTable from '@client/components/AccountTable';
 import AddEditAccountDialog from '@client/components/AddEditAccountDialog';
-import Pagination from '@client/components/Pagination';
 import {
   useCreateAccountMutation,
   useDeleteAccountMutation,
@@ -8,7 +7,7 @@ import {
 } from '@client/hooks/mutations/useAccountMutations';
 import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
 import type { AccountFormData, AccountFull } from '@client/types/account';
-import { Button, Group, Modal, Select, Text, TextInput } from '@mantine/core';
+import { Button, Group, Modal, Select, Text } from '@mantine/core';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -88,13 +87,6 @@ const AccountPage = () => {
     }
   };
 
-  const handleSearchInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchInput(e.target.value);
-    },
-    [],
-  );
-
   const handleSearch = useCallback(() => {
     setSearchQuery(searchInput);
     setTypeFilter(typeFilterInput);
@@ -106,9 +98,8 @@ const AccountPage = () => {
     setTypeFilterInput(value || '');
   }, []);
 
-  const handlePageSizeChange = useCallback((value: string | null) => {
-    const newLimit = value ? parseInt(value, 10) : 20;
-    setLimit(newLimit);
+  const handlePageSizeChange = useCallback((size: number) => {
+    setLimit(size);
     setPage(1);
   }, []);
 
@@ -148,91 +139,58 @@ const AccountPage = () => {
             </Button>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="w-full md:w-64">
-              <TextInput
-                value={searchInput}
-                onChange={(e) =>
-                  handleSearchInputChange(
-                    e as React.ChangeEvent<HTMLInputElement>,
-                  )
-                }
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
+          <AccountTable
+            accounts={data?.accounts || []}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            isLoading={isLoading}
+            search={{
+              value: searchInput,
+              onChange: setSearchInput,
+              onSearch: handleSearch,
+              placeholder: t('accounts.search'),
+            }}
+            pageSize={{
+              value: limit,
+              onChange: handlePageSizeChange,
+            }}
+            filters={{
+              hasActive: hasActiveFilters,
+              onReset: handleClearFilters,
+              slots: [
+                <Select
+                  key="type-filter"
+                  value={typeFilterInput || null}
+                  onChange={handleTypeFilterChange}
+                  placeholder={t('accounts.typePlaceholder')}
+                  data={[
+                    { value: '', label: t('accounts.all') },
+                    { value: AccountType.cash, label: t('accounts.cash') },
+                    { value: AccountType.bank, label: t('accounts.bank') },
+                    {
+                      value: AccountType.credit_card,
+                      label: t('accounts.credit_card'),
+                    },
+                    {
+                      value: AccountType.investment,
+                      label: t('accounts.investment'),
+                    },
+                  ]}
+                />,
+              ],
+            }}
+            pagination={
+              data?.pagination && data.pagination.totalPages > 0
+                ? {
+                    currentPage: page,
+                    totalPages: data.pagination.totalPages,
+                    totalItems: data.pagination.total,
+                    itemsPerPage: limit,
+                    onPageChange: setPage,
                   }
-                }}
-                placeholder={t('accounts.search')}
-              />
-            </div>
-            <div className="w-full md:w-48">
-              <Select
-                value={typeFilterInput || null}
-                onChange={handleTypeFilterChange}
-                placeholder={t('accounts.typePlaceholder')}
-                data={[
-                  { value: '', label: t('accounts.all') },
-                  { value: AccountType.cash, label: t('accounts.cash') },
-                  { value: AccountType.bank, label: t('accounts.bank') },
-                  {
-                    value: AccountType.credit_card,
-                    label: t('accounts.credit_card'),
-                  },
-                  {
-                    value: AccountType.investment,
-                    label: t('accounts.investment'),
-                  },
-                ]}
-              />
-            </div>
-            <div className="w-full md:w-32">
-              <Select
-                value={limit.toString()}
-                onChange={handlePageSizeChange}
-                placeholder={t('accounts.pageSizeLabel')}
-                data={[
-                  { value: '10', label: '10' },
-                  { value: '20', label: '20' },
-                  { value: '50', label: '50' },
-                  { value: '100', label: '100' },
-                ]}
-              />
-            </div>
-            <div className="w-full md:w-auto flex gap-2">
-              <Button onClick={handleSearch} disabled={isLoading}>
-                {t('common.search')}
-              </Button>
-              {hasActiveFilters && (
-                <Button
-                  variant="outline"
-                  onClick={handleClearFilters}
-                  disabled={isLoading}
-                >
-                  {t('accounts.clearFilters')}
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="overflow-hidden">
-            <AccountTable
-              accounts={data?.accounts || []}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              isLoading={isLoading}
-            />
-          </div>
-
-          {data?.pagination && data.pagination.totalPages > 0 && (
-            <Pagination
-              currentPage={page}
-              totalPages={data.pagination.totalPages}
-              totalItems={data.pagination.total}
-              itemsPerPage={limit}
-              onPageChange={setPage}
-              isLoading={isLoading}
-            />
-          )}
+                : undefined
+            }
+          />
         </div>
 
         {isDialogOpen && (
