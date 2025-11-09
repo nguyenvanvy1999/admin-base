@@ -2,6 +2,7 @@ import { createHashRouter } from 'react-router';
 
 import ProtectedPageLayout from './layouts';
 import AccountPage from './pages/AccountPage';
+import EntityPage from './pages/EntityPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -47,7 +48,7 @@ const router = createHashRouter([
       },
       {
         path: '/entities',
-        Component: NotFoundPage,
+        Component: EntityPage,
       },
       {
         path: '/tags',
