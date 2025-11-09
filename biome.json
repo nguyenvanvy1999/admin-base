@@ -12,6 +12,7 @@
       "client/**/*.tsx",
       "client/**/*.tsx",
       "client/**/*.json",
+      "client/**/*.css",
       "prisma.config.ts",
       "!src/generated/prisma"
     ]
@@ -130,6 +131,11 @@
   },
   "html": { "formatter": { "enabled": true } },
   "json": { "formatter": { "enabled": true } },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
   "overrides": [
     {
       "includes": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
