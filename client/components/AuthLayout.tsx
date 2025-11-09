@@ -17,7 +17,7 @@ export const AuthLayout = ({ title, children }: AuthLayoutProps) => {
         <div className="text-center">
           <div className="flex justify-center mb-6">
             <img
-              src="/public/logo.jpeg"
+              src="/public/logo.svg"
               alt="Logo"
               className="h-20 w-20 rounded-full shadow-lg border-4 border-white dark:border-gray-800"
             />

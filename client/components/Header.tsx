@@ -45,7 +45,7 @@ const Header = () => {
             className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-lg px-2 py-1"
           >
             <img
-              src="/public/logo.jpeg"
+              src="/public/logo.svg"
               alt="Logo"
               className="h-10 w-10 rounded-full shadow-sm border-2 border-gray-100 dark:border-gray-700"
             />
@@ -71,7 +71,7 @@ const Header = () => {
                 className="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2 transition duration-200"
               >
                 <img
-                  src="/public/logo.jpeg"
+                  src="/public/logo.svg"
                   alt="User Avatar"
                   className="h-8 w-8 rounded-full border-2 border-gray-200 dark:border-gray-600"
                 />

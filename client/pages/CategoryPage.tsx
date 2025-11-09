@@ -22,7 +22,7 @@ import { Add, Delete, Edit, Lock } from '@mui/icons-material';
 import { Box, IconButton, Stack } from '@mui/material';
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
 import { CategoryType } from '@server/generated/prisma/enums';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const transformToMUITree = (categories: CategoryFull[]): MUITreeItem[] => {
