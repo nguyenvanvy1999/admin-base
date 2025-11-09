@@ -7,7 +7,7 @@ interface AuthLayoutProps {
   subtitle?: string;
 }
 
-export const AuthLayout = ({ title, children, subtitle }: AuthLayoutProps) => {
+export const AuthLayout = ({ title, children }: AuthLayoutProps) => {
   const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
 
