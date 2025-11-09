@@ -23,7 +23,9 @@ const AccountPage = () => {
   const [accountToDelete, setAccountToDelete] = useState<AccountFull | null>(
     null,
   );
+  const [typeFilterInput, setTypeFilterInput] = useState<string>('');
   const [typeFilter, setTypeFilter] = useState<string>('');
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -40,7 +42,7 @@ const AccountPage = () => {
     [typeFilter, searchQuery, page, limit],
   );
 
-  const { data, isLoading } = useAccountsQuery(queryParams);
+  const { data, isLoading, refetch } = useAccountsQuery(queryParams);
   const createMutation = useCreateAccountMutation();
   const updateMutation = useUpdateAccountMutation();
   const deleteMutation = useDeleteAccountMutation();
@@ -86,17 +88,22 @@ const AccountPage = () => {
     }
   };
 
-  const handleSearchChange = useCallback(
+  const handleSearchInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchQuery(e.target.value);
-      setPage(1);
+      setSearchInput(e.target.value);
     },
     [],
   );
 
-  const handleTypeFilterChange = useCallback((value: string | null) => {
-    setTypeFilter(value || '');
+  const handleSearch = useCallback(() => {
+    setSearchQuery(searchInput);
+    setTypeFilter(typeFilterInput);
     setPage(1);
+    refetch();
+  }, [searchInput, typeFilterInput, refetch]);
+
+  const handleTypeFilterChange = useCallback((value: string | null) => {
+    setTypeFilterInput(value || '');
   }, []);
 
   const handlePageSizeChange = useCallback((value: string | null) => {
@@ -106,10 +113,13 @@ const AccountPage = () => {
   }, []);
 
   const handleClearFilters = useCallback(() => {
+    setSearchInput('');
     setSearchQuery('');
+    setTypeFilterInput('');
     setTypeFilter('');
     setPage(1);
-  }, []);
+    refetch();
+  }, [refetch]);
 
   const hasActiveFilters = useMemo(() => {
     return searchQuery.trim() !== '' || typeFilter !== '';
@@ -141,16 +151,23 @@ const AccountPage = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="w-full md:w-64">
               <TextInput
-                value={searchQuery}
+                value={searchInput}
                 onChange={(e) =>
-                  handleSearchChange(e as React.ChangeEvent<HTMLInputElement>)
+                  handleSearchInputChange(
+                    e as React.ChangeEvent<HTMLInputElement>,
+                  )
                 }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
                 placeholder={t('accounts.search')}
               />
             </div>
             <div className="w-full md:w-48">
               <Select
-                value={typeFilter || null}
+                value={typeFilterInput || null}
                 onChange={handleTypeFilterChange}
                 placeholder={t('accounts.typePlaceholder')}
                 data={[
@@ -181,8 +198,11 @@ const AccountPage = () => {
                 ]}
               />
             </div>
-            {hasActiveFilters && (
-              <div className="w-full md:w-auto">
+            <div className="w-full md:w-auto flex gap-2">
+              <Button onClick={handleSearch} disabled={isLoading}>
+                {t('common.search')}
+              </Button>
+              {hasActiveFilters && (
                 <Button
                   variant="outline"
                   onClick={handleClearFilters}
@@ -190,8 +210,8 @@ const AccountPage = () => {
                 >
                   {t('accounts.clearFilters')}
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <div className="overflow-hidden">

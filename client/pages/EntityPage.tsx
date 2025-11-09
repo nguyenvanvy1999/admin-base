@@ -19,7 +19,9 @@ const EntityPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [entityToDelete, setEntityToDelete] = useState<EntityFull | null>(null);
+  const [typeFilterInput, setTypeFilterInput] = useState<EntityType | ''>('');
   const [typeFilter, setTypeFilter] = useState<EntityType | ''>('');
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -36,7 +38,7 @@ const EntityPage = () => {
     [typeFilter, searchQuery, page, limit],
   );
 
-  const { data, isLoading } = useEntitiesQuery(queryParams);
+  const { data, isLoading, refetch } = useEntitiesQuery(queryParams);
   const createMutation = useCreateEntityMutation();
   const updateMutation = useUpdateEntityMutation();
   const deleteMutation = useDeleteEntityMutation();
@@ -90,17 +92,22 @@ const EntityPage = () => {
     }
   };
 
-  const handleSearchChange = useCallback(
+  const handleSearchInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchQuery(e.target.value);
-      setPage(1);
+      setSearchInput(e.target.value);
     },
     [],
   );
 
-  const handleTypeFilterChange = useCallback((value: string | null) => {
-    setTypeFilter((value as EntityType) || '');
+  const handleSearch = useCallback(() => {
+    setSearchQuery(searchInput);
+    setTypeFilter(typeFilterInput);
     setPage(1);
+    refetch();
+  }, [searchInput, typeFilterInput, refetch]);
+
+  const handleTypeFilterChange = useCallback((value: string | null) => {
+    setTypeFilterInput((value as EntityType) || '');
   }, []);
 
   const handlePageSizeChange = useCallback((value: string | null) => {
@@ -110,10 +117,13 @@ const EntityPage = () => {
   }, []);
 
   const handleClearFilters = useCallback(() => {
+    setSearchInput('');
     setSearchQuery('');
+    setTypeFilterInput('');
     setTypeFilter('');
     setPage(1);
-  }, []);
+    refetch();
+  }, [refetch]);
 
   const hasActiveFilters = useMemo(() => {
     return searchQuery.trim() !== '' || typeFilter !== '';
@@ -145,16 +155,23 @@ const EntityPage = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="w-full md:w-64">
               <TextInput
-                value={searchQuery}
+                value={searchInput}
                 onChange={(e) =>
-                  handleSearchChange(e as React.ChangeEvent<HTMLInputElement>)
+                  handleSearchInputChange(
+                    e as React.ChangeEvent<HTMLInputElement>,
+                  )
                 }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
                 placeholder={t('entities.search')}
               />
             </div>
             <div className="w-full md:w-48">
               <Select
-                value={typeFilter || null}
+                value={typeFilterInput || null}
                 onChange={handleTypeFilterChange}
                 placeholder={t('entities.typePlaceholder')}
                 data={[
@@ -183,8 +200,11 @@ const EntityPage = () => {
                 ]}
               />
             </div>
-            {hasActiveFilters && (
-              <div className="w-full md:w-auto">
+            <div className="w-full md:w-auto flex gap-2">
+              <Button onClick={handleSearch} disabled={isLoading}>
+                {t('common.search')}
+              </Button>
+              {hasActiveFilters && (
                 <Button
                   variant="outline"
                   onClick={handleClearFilters}
@@ -192,8 +212,8 @@ const EntityPage = () => {
                 >
                   {t('entities.clearFilters')}
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <div className="overflow-hidden">
