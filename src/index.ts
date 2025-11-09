@@ -3,6 +3,7 @@ import { staticPlugin } from '@elysiajs/static';
 import { appEnv } from '@server/libs/env';
 import { Elysia } from 'elysia';
 import accountController from './controllers/account.controller';
+import categoryController from './controllers/category.controller';
 import currencyController from './controllers/currency.controller';
 import entityController from './controllers/entity.controller';
 import tagController from './controllers/tag.controller';
@@ -48,6 +49,7 @@ export const app = new Elysia()
       .onError(errorMiddleware)
       .use(userController)
       .use(accountController)
+      .use(categoryController)
       .use(currencyController)
       .use(entityController)
       .use(tagController),
