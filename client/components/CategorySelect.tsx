@@ -81,7 +81,9 @@ const CategorySelect = ({
         disabled: opt.disabled,
       }))}
       value={value}
-      onChange={onChange}
+      onChange={(val) => {
+        onChange(val);
+      }}
       onBlur={onBlur}
       error={error}
       searchable={searchable}
@@ -94,6 +96,7 @@ const CategorySelect = ({
               display: 'flex',
               alignItems: 'center',
               gap: 4,
+              pointerEvents: 'none',
             }}
           >
             <IconComponent

@@ -1,4 +1,5 @@
 import AddEditTransactionDialog from '@client/components/AddEditTransactionDialog';
+import CategoryMultiSelect from '@client/components/CategoryMultiSelect';
 import TransactionTable from '@client/components/TransactionTable';
 import {
   useCreateTransactionMutation,
@@ -6,7 +7,7 @@ import {
   useUpdateTransactionMutation,
 } from '@client/hooks/mutations/useTransactionMutations';
 import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
-import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
+import { useEntitiesQuery } from '@client/hooks/queries/useEntityQueries';
 import { useTransactionsQuery } from '@client/hooks/queries/useTransactionQueries';
 import type {
   TransactionFormData,
@@ -26,17 +27,13 @@ const TransactionPage = () => {
   const [transactionToDelete, setTransactionToDelete] =
     useState<TransactionFull | null>(null);
   const [typeFilterInput, setTypeFilterInput] = useState<TransactionType[]>([]);
-  const [typeFilter, setTypeFilter] = useState<TransactionType | undefined>(
-    undefined,
-  );
+  const [typeFilterIds, setTypeFilterIds] = useState<TransactionType[]>([]);
   const [accountFilterInput, setAccountFilterInput] = useState<string[]>([]);
-  const [accountFilter, setAccountFilter] = useState<string | undefined>(
-    undefined,
-  );
+  const [accountFilterIds, setAccountFilterIds] = useState<string[]>([]);
   const [categoryFilterInput, setCategoryFilterInput] = useState<string[]>([]);
-  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(
-    undefined,
-  );
+  const [categoryFilterIds, setCategoryFilterIds] = useState<string[]>([]);
+  const [entityFilterInput, setEntityFilterInput] = useState<string[]>([]);
+  const [entityFilterIds, setEntityFilterIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -45,9 +42,10 @@ const TransactionPage = () => {
 
   const queryParams = useMemo(
     () => ({
-      type: typeFilter,
-      accountId: accountFilter,
-      categoryId: categoryFilter,
+      types: typeFilterIds.length > 0 ? typeFilterIds : undefined,
+      accountIds: accountFilterIds.length > 0 ? accountFilterIds : undefined,
+      categoryIds: categoryFilterIds.length > 0 ? categoryFilterIds : undefined,
+      entityIds: entityFilterIds.length > 0 ? entityFilterIds : undefined,
       search: searchQuery.trim() || undefined,
       page,
       limit,
@@ -55,9 +53,10 @@ const TransactionPage = () => {
       sortOrder,
     }),
     [
-      typeFilter,
-      accountFilter,
-      categoryFilter,
+      typeFilterIds,
+      accountFilterIds,
+      categoryFilterIds,
+      entityFilterIds,
       searchQuery,
       page,
       limit,
@@ -68,10 +67,10 @@ const TransactionPage = () => {
 
   const { data, isLoading } = useTransactionsQuery(queryParams);
   const { data: accountsData } = useAccountsQuery({});
-  const { data: categoriesData } = useCategoriesQuery({});
+  const { data: entitiesData } = useEntitiesQuery({});
 
   const accounts = accountsData?.accounts || [];
-  const categories = categoriesData?.categories || [];
+  const entities = entitiesData?.entities || [];
 
   const createMutation = useCreateTransactionMutation();
   const updateMutation = useUpdateTransactionMutation();
@@ -126,11 +125,18 @@ const TransactionPage = () => {
   const hasActiveFilters = useMemo(() => {
     return (
       searchQuery.trim() !== '' ||
-      typeFilter !== undefined ||
-      accountFilter !== undefined ||
-      categoryFilter !== undefined
+      typeFilterIds.length > 0 ||
+      accountFilterIds.length > 0 ||
+      categoryFilterIds.length > 0 ||
+      entityFilterIds.length > 0
     );
-  }, [searchQuery, typeFilter, accountFilter, categoryFilter]);
+  }, [
+    searchQuery,
+    typeFilterIds,
+    accountFilterIds,
+    categoryFilterIds,
+    entityFilterIds,
+  ]);
 
   const isSubmitting =
     createMutation.isPending ||
@@ -144,12 +150,12 @@ const TransactionPage = () => {
     }));
   }, [accounts]);
 
-  const categoryOptions = useMemo(() => {
-    return categories.map((category) => ({
-      value: category.id,
-      label: category.name,
+  const entityOptions = useMemo(() => {
+    return entities.map((entity) => ({
+      value: entity.id,
+      label: entity.name,
     }));
-  }, [categories]);
+  }, [entities]);
 
   return (
     <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
@@ -177,9 +183,10 @@ const TransactionPage = () => {
             search={{
               onSearch: (searchValue: string) => {
                 setSearchQuery(searchValue);
-                setTypeFilter(typeFilterInput[0] || undefined);
-                setAccountFilter(accountFilterInput[0] || undefined);
-                setCategoryFilter(categoryFilterInput[0] || undefined);
+                setTypeFilterIds(typeFilterInput);
+                setAccountFilterIds(accountFilterInput);
+                setCategoryFilterIds(categoryFilterInput);
+                setEntityFilterIds(entityFilterInput);
                 setPage(1);
               },
               placeholder: t('transactions.search'),
@@ -196,11 +203,13 @@ const TransactionPage = () => {
               onReset: () => {
                 setSearchQuery('');
                 setTypeFilterInput([]);
-                setTypeFilter(undefined);
+                setTypeFilterIds([]);
                 setAccountFilterInput([]);
-                setAccountFilter(undefined);
+                setAccountFilterIds([]);
                 setCategoryFilterInput([]);
-                setCategoryFilter(undefined);
+                setCategoryFilterIds([]);
+                setEntityFilterInput([]);
+                setEntityFilterIds([]);
                 setPage(1);
               },
               slots: [
@@ -209,7 +218,7 @@ const TransactionPage = () => {
                   value={typeFilterInput}
                   onChange={(value) => {
                     setTypeFilterInput(value as TransactionType[]);
-                    setTypeFilter(value[0] as TransactionType | undefined);
+                    setTypeFilterIds(value as TransactionType[]);
                   }}
                   placeholder={t('transactions.typePlaceholder')}
                   data={[
@@ -232,20 +241,32 @@ const TransactionPage = () => {
                   value={accountFilterInput}
                   onChange={(value) => {
                     setAccountFilterInput(value);
-                    setAccountFilter(value[0] || undefined);
+                    setAccountFilterIds(value);
                   }}
                   placeholder={t('transactions.accountPlaceholder')}
                   data={accountOptions}
                 />,
-                <MultiSelect
+                <CategoryMultiSelect
                   key="category-filter"
                   value={categoryFilterInput}
                   onChange={(value) => {
                     setCategoryFilterInput(value);
-                    setCategoryFilter(value[0] || undefined);
+                    setCategoryFilterIds(value);
                   }}
                   placeholder={t('transactions.categoryPlaceholder')}
-                  data={categoryOptions}
+                />,
+                <MultiSelect
+                  key="entity-filter"
+                  value={entityFilterInput}
+                  onChange={(value) => {
+                    setEntityFilterInput(value);
+                    setEntityFilterIds(value);
+                  }}
+                  placeholder={t('transactions.entityPlaceholder', {
+                    defaultValue: 'Select entities',
+                  })}
+                  data={entityOptions}
+                  searchable
                 />,
               ],
             }}

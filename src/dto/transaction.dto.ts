@@ -56,10 +56,10 @@ export const BatchTransactionsDto = t.Object({
 });
 
 export const ListTransactionsQueryDto = t.Object({
-  type: t.Optional(t.Enum(TransactionType)),
-  accountId: t.Optional(t.String()),
-  categoryId: t.Optional(t.String()),
-  entityId: t.Optional(t.String()),
+  types: t.Optional(t.Array(t.Enum(TransactionType))),
+  accountIds: t.Optional(t.Array(t.String())),
+  categoryIds: t.Optional(t.Array(t.String())),
+  entityIds: t.Optional(t.Array(t.String())),
   dateFrom: t.Optional(t.String({ format: 'date-time' })),
   dateTo: t.Optional(t.String({ format: 'date-time' })),
   page: t.Optional(t.Integer({ minimum: 1, examples: [1], default: 1 })),

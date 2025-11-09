@@ -1,11 +1,12 @@
 import type { TransactionFull } from '@client/types/transaction';
-import { Badge, NumberFormatter } from '@mantine/core';
+import { Badge, Box, NumberFormatter } from '@mantine/core';
 import { TransactionType } from '@server/generated/prisma/enums';
 import type { ColumnDef } from '@tanstack/react-table';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import DataTable, { type DataTableProps } from './DataTable';
+import { getCategoryIcon, getCategoryLabel } from './utils/category';
 
 type TransactionTableProps = {
   transactions: TransactionFull[];
@@ -117,9 +118,36 @@ const TransactionTable = ({
                 </div>
               );
             }
+
+            const IconComponent = category.icon
+              ? getCategoryIcon(category.icon)
+              : null;
+            const categoryLabel = getCategoryLabel(category.name, t);
+
             return (
-              <div className="text-sm text-gray-900 dark:text-gray-100">
-                {category.name}
+              <div className="flex items-center gap-2">
+                {IconComponent && (
+                  <IconComponent
+                    style={{
+                      fontSize: 18,
+                      color: category.color || 'inherit',
+                      opacity: 0.8,
+                    }}
+                  />
+                )}
+                {category.color && (
+                  <Box
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor: category.color,
+                    }}
+                  />
+                )}
+                <span className="text-sm text-gray-900 dark:text-gray-100">
+                  {categoryLabel}
+                </span>
               </div>
             );
           },
@@ -132,20 +160,22 @@ const TransactionTable = ({
             const amount = parseFloat(info.getValue());
             const isExpense = transaction.type === TransactionType.expense;
             const isIncome = transaction.type === TransactionType.income;
-            const sign = isExpense ? '-' : isIncome ? '+' : '';
             const colorClass = isExpense
               ? 'text-red-600 dark:text-red-400'
               : isIncome
                 ? 'text-green-600 dark:text-green-400'
                 : 'text-gray-900 dark:text-gray-100';
+            const currencySymbol = transaction.account.currency.symbol || '';
 
             return (
               <div className={`text-sm font-medium ${colorClass}`}>
+                {isIncome && <span className="mr-1">+</span>}
                 <NumberFormatter
-                  value={amount}
-                  prefix={`${sign}${transaction.account.currency.symbol || ''} `}
+                  value={isExpense ? -amount : amount}
+                  prefix={currencySymbol ? `${currencySymbol} ` : ''}
                   thousandSeparator=","
                   decimalScale={2}
+                  allowNegative={true}
                 />
               </div>
             );

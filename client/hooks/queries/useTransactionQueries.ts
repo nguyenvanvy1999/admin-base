@@ -4,12 +4,13 @@ import type { TransactionType } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
 
 type ListTransactionsQuery = {
-  type?: TransactionType;
-  accountId?: string;
-  categoryId?: string;
-  entityId?: string;
+  types?: TransactionType[];
+  accountIds?: string[];
+  categoryIds?: string[];
+  entityIds?: string[];
   dateFrom?: string;
   dateTo?: string;
+  search?: string;
   page?: number;
   limit?: number;
   sortBy?: 'date' | 'amount';

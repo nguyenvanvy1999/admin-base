@@ -180,12 +180,16 @@ const AddEditTransactionDialog = ({
       if (!saveAndAdd) {
         handleClose();
       } else {
+        const currentAccountId = value.accountId;
+        const currentDate = value.date;
         form.reset();
-        setActiveTab(
-          activeTab === TransactionType.income
-            ? TransactionType.expense
-            : TransactionType.income,
-        );
+        if (currentAccountId) {
+          form.setFieldValue('accountId', currentAccountId);
+        }
+        if (currentDate) {
+          form.setFieldValue('date', currentDate);
+        }
+        setSaveAndAdd(false);
       }
     },
   });
@@ -435,8 +439,10 @@ const AddEditTransactionDialog = ({
                         label={t('transactions.category')}
                         placeholder={t('transactions.selectCategory')}
                         required
-                        value={field.state.value || null}
-                        onChange={(value) => field.handleChange(value || '')}
+                        value={field.state.value ? field.state.value : null}
+                        onChange={(value) => {
+                          field.handleChange(value ?? '');
+                        }}
                         onBlur={field.handleBlur}
                         error={error}
                         filterType={transactionType}

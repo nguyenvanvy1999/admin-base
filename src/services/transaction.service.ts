@@ -828,10 +828,10 @@ export class TransactionService {
 
   async listTransactions(userId: string, filters: IListTransactionsQuery = {}) {
     const {
-      type,
-      accountId,
-      categoryId,
-      entityId,
+      types,
+      accountIds,
+      categoryIds,
+      entityIds,
       dateFrom,
       dateTo,
       page = 1,
@@ -845,17 +845,17 @@ export class TransactionService {
       deletedAt: null,
     };
 
-    if (type) {
-      where.type = type;
+    if (types && types.length > 0) {
+      where.type = { in: types };
     }
-    if (accountId) {
-      where.accountId = accountId;
+    if (accountIds && accountIds.length > 0) {
+      where.accountId = { in: accountIds };
     }
-    if (categoryId) {
-      where.categoryId = categoryId;
+    if (categoryIds && categoryIds.length > 0) {
+      where.categoryId = { in: categoryIds };
     }
-    if (entityId) {
-      where.entityId = entityId;
+    if (entityIds && entityIds.length > 0) {
+      where.entityId = { in: entityIds };
     }
     if (dateFrom || dateTo) {
       where.date = {};
