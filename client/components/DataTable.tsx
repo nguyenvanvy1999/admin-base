@@ -1,11 +1,11 @@
 import { ActionIcon, Button, Select, TextInput } from '@mantine/core';
+import { Close, KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { ArrowDown, ArrowUp, X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -202,7 +202,7 @@ function DataTable<T extends Record<string, any>>({
                       onClick={handleClearSearch}
                       disabled={isLoading}
                     >
-                      <X size={16} />
+                      <Close fontSize="small" />
                     </ActionIcon>
                   ) : null
                 }
@@ -285,19 +285,22 @@ function DataTable<T extends Record<string, any>>({
                         {isSortable && (
                           <span className="flex flex-col">
                             {sortOrder === 'asc' ? (
-                              <ArrowUp
-                                size={12}
+                              <KeyboardArrowUp
+                                fontSize="inherit"
                                 className="text-blue-600 dark:text-blue-400"
                               />
                             ) : sortOrder === 'desc' ? (
-                              <ArrowDown
-                                size={12}
+                              <KeyboardArrowDown
+                                fontSize="inherit"
                                 className="text-blue-600 dark:text-blue-400"
                               />
                             ) : (
                               <span className="flex flex-col opacity-30">
-                                <ArrowUp size={10} />
-                                <ArrowDown size={10} className="-mt-1" />
+                                <KeyboardArrowUp fontSize="inherit" />
+                                <KeyboardArrowDown
+                                  fontSize="inherit"
+                                  className="-mt-1"
+                                />
                               </span>
                             )}
                           </span>
@@ -358,19 +361,22 @@ function DataTable<T extends Record<string, any>>({
                           {isSortable && (
                             <span className="flex flex-col">
                               {sortOrder === 'asc' ? (
-                                <ArrowUp
-                                  size={12}
+                                <KeyboardArrowUp
+                                  fontSize="inherit"
                                   className="text-blue-600 dark:text-blue-400"
                                 />
                               ) : sortOrder === 'desc' ? (
-                                <ArrowDown
-                                  size={12}
+                                <KeyboardArrowDown
+                                  fontSize="inherit"
                                   className="text-blue-600 dark:text-blue-400"
                                 />
                               ) : (
                                 <span className="flex flex-col opacity-30">
-                                  <ArrowUp size={10} />
-                                  <ArrowDown size={10} className="-mt-1" />
+                                  <KeyboardArrowUp fontSize="inherit" />
+                                  <KeyboardArrowDown
+                                    fontSize="inherit"
+                                    className="-mt-1"
+                                  />
                                 </span>
                               )}
                             </span>
