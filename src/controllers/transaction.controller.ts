@@ -1,72 +1,114 @@
-// import { Elysia, t } from 'elysia';
-// import {
-//   ListTransactionsQueryDto,
-//   UpsertTransactionDto,
-// } from '../dto/transaction.dto';
-// import authMacro from '../macros/auth';
-// import transactionService from '../services/transaction.service';
-//
-// const transactionController = new Elysia()
-//   .use(transactionService)
-//   .use(authMacro)
-//   .group('/transactions', (group) =>
-//     group
-//       .post(
-//         '/',
-//         async ({ body, user, transactionService }) => {
-//           return await transactionService.upsertTransaction(user.id, body);
-//         },
-//         {
-//           checkAuth: ['user'],
-//           detail: {
-//             tags: ['Transaction'],
-//             security: [{ JwtAuth: [] }],
-//           },
-//           body: UpsertTransactionDto,
-//         },
-//       )
-//       .get(
-//         '/:id',
-//         async ({ params, user, transactionService }) => {
-//           return await transactionService.getTransaction(user.id, params.id);
-//         },
-//         {
-//           checkAuth: ['user'],
-//           detail: {
-//             tags: ['Transaction'],
-//             security: [{ JwtAuth: [] }],
-//           },
-//           params: t.Object({ id: t.String() }),
-//         },
-//       )
-//       .get(
-//         '/',
-//         async ({ query, user, transactionService }) => {
-//           return await transactionService.listTransactions(user.id, query);
-//         },
-//         {
-//           checkAuth: ['user'],
-//           detail: {
-//             tags: ['Transaction'],
-//             security: [{ JwtAuth: [] }],
-//           },
-//           query: ListTransactionsQueryDto,
-//         },
-//       )
-//       .delete(
-//         '/:id',
-//         async ({ params, user, transactionService }) => {
-//           return await transactionService.deleteTransaction(user.id, params.id);
-//         },
-//         {
-//           checkAuth: ['user'],
-//           detail: {
-//             tags: ['Transaction'],
-//             security: [{ JwtAuth: [] }],
-//           },
-//           params: t.Object({ id: t.String() }),
-//         },
-//       ),
-//   );
-//
-// export default transactionController;
+import { UserRole } from '@server/generated/prisma/enums';
+import { Elysia, t } from 'elysia';
+import {
+  BatchTransactionsDto,
+  ListTransactionsQueryDto,
+  UpsertTransactionDto,
+} from '../dto/transaction.dto';
+import authMacro from '../macros/auth';
+import transactionService from '../services/transaction.service';
+
+const TRANSACTION_DETAIL = {
+  tags: ['Transaction'],
+  security: [{ JwtAuth: [] }],
+};
+
+const transactionController = new Elysia().group(
+  '/transactions',
+  {
+    detail: {
+      tags: ['Transaction'],
+      description:
+        'Transaction management endpoints for creating, reading, updating, and deleting transactions.',
+    },
+  },
+  (group) =>
+    group
+      .use(transactionService)
+      .use(authMacro)
+      .post(
+        '/',
+        async ({ user, body, transactionService }) => {
+          return await transactionService.upsertTransaction(user.id, body);
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...TRANSACTION_DETAIL,
+            summary: 'Create or update transaction',
+            description:
+              'Create a new transaction or update an existing transaction for the authenticated user. If a transaction ID is provided, it will update the existing transaction; otherwise, it creates a new one.',
+          },
+          body: UpsertTransactionDto,
+        },
+      )
+      .post(
+        '/batch',
+        async ({ user, body, transactionService }) => {
+          return await transactionService.createBatchTransactions(
+            user.id,
+            body,
+          );
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...TRANSACTION_DETAIL,
+            summary: 'Create multiple transactions',
+            description:
+              'Create multiple transactions in a single batch operation. All transactions are processed in a single database transaction.',
+          },
+          body: BatchTransactionsDto,
+        },
+      )
+      .get(
+        '/:id',
+        async ({ user, params, transactionService }) => {
+          return await transactionService.getTransaction(user.id, params.id);
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...TRANSACTION_DETAIL,
+            summary: 'Get transaction by ID',
+            description:
+              'Retrieve detailed information about a specific transaction by its ID for the authenticated user.',
+          },
+          params: t.Object({ id: t.String() }),
+        },
+      )
+      .get(
+        '/',
+        async ({ user, query, transactionService }) => {
+          return await transactionService.listTransactions(user.id, query);
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...TRANSACTION_DETAIL,
+            summary: 'List all transactions',
+            description:
+              'Get a paginated list of all transactions belonging to the authenticated user. Supports filtering and sorting.',
+          },
+          query: ListTransactionsQueryDto,
+        },
+      )
+      .delete(
+        '/:id',
+        async ({ user, params, transactionService }) => {
+          return await transactionService.deleteTransaction(user.id, params.id);
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...TRANSACTION_DETAIL,
+            summary: 'Delete transaction',
+            description:
+              'Delete a transaction by its ID. This will revert the balance effects of the transaction.',
+          },
+          params: t.Object({ id: t.String() }),
+        },
+      ),
+);
+
+export default transactionController;
