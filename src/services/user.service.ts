@@ -22,17 +22,22 @@ export class UserService {
       throw new Error('User already exists');
     }
     const hashPassword = await Bun.password.hash(data.password, 'bcrypt');
-    const user = await prisma.user.create({
-      data: {
-        username: data.username,
-        password: hashPassword,
-        name: data.name,
-        role: UserRole.user,
-        baseCurrencyId: CURRENCY_IDS.VND,
-      },
-    });
 
-    await this.categoryService.seedDefaultCategories(user.id);
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          username: data.username,
+          password: hashPassword,
+          name: data.name,
+          role: UserRole.user,
+          baseCurrencyId: CURRENCY_IDS.VND,
+        },
+      });
+
+      await this.categoryService.seedDefaultCategories(tx, newUser.id);
+
+      return newUser;
+    });
 
     return user;
   }

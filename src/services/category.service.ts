@@ -25,45 +25,90 @@ type CategoryWithChildren = {
 };
 
 export class CategoryService {
-  private async createSeedCategory(
-    tx: any,
-    userId: string,
-    categoryData: CategorySeedData,
-    parentId?: string,
-  ): Promise<string> {
-    const category = await tx.category.create({
-      data: {
-        userId,
-        name: categoryData.name,
-        type: categoryData.type,
-        parentId,
-        isLocked: true,
-      },
-    });
+  private flattenCategories(
+    categories: CategorySeedData[],
+    parentName?: string,
+  ): Array<{
+    name: string;
+    type: string;
+    parentName?: string;
+  }> {
+    const result: Array<{
+      name: string;
+      type: string;
+      parentName?: string;
+    }> = [];
 
-    if (categoryData.children && categoryData.children.length > 0) {
-      for (const child of categoryData.children) {
-        await this.createSeedCategory(tx, userId, child, category.id);
+    for (const category of categories) {
+      result.push({
+        name: category.name,
+        type: category.type,
+        parentName,
+      });
+
+      if (category.children && category.children.length > 0) {
+        const children = this.flattenCategories(
+          category.children,
+          category.name,
+        );
+        result.push(...children);
       }
     }
 
-    return category.id;
+    return result;
   }
 
-  async seedDefaultCategories(userId: string): Promise<void> {
-    await prisma.$transaction(async (tx) => {
-      for (const category of LOAN_CATEGORIES) {
-        await this.createSeedCategory(tx, userId, category);
-      }
+  async seedDefaultCategories(tx: any, userId: string): Promise<void> {
+    const allCategories: CategorySeedData[] = [
+      ...LOAN_CATEGORIES,
+      TRANSFER_CATEGORY,
+      INVESTMENT_CATEGORY,
+      INCOME_CATEGORIES,
+      ...EXPENSE_CATEGORIES,
+    ];
 
-      await this.createSeedCategory(tx, userId, TRANSFER_CATEGORY);
-      await this.createSeedCategory(tx, userId, INVESTMENT_CATEGORY);
-      await this.createSeedCategory(tx, userId, INCOME_CATEGORIES);
+    const flattened = this.flattenCategories(allCategories);
 
-      for (const category of EXPENSE_CATEGORIES) {
-        await this.createSeedCategory(tx, userId, category);
+    const level0 = flattened.filter((cat) => !cat.parentName);
+    const level1 = flattened.filter((cat) => cat.parentName);
+
+    const nameToIdMap = new Map<string, string>();
+
+    if (level0.length > 0) {
+      await tx.category.createMany({
+        data: level0.map((cat) => ({
+          userId,
+          name: cat.name,
+          type: cat.type,
+          parentId: null,
+          isLocked: true,
+        })),
+      });
+
+      const createdCategories = await tx.category.findMany({
+        where: {
+          userId,
+          name: { in: level0.map((cat) => cat.name) },
+        },
+        select: { id: true, name: true },
+      });
+
+      for (const cat of createdCategories) {
+        nameToIdMap.set(cat.name, cat.id);
       }
-    });
+    }
+
+    if (level1.length > 0) {
+      await tx.category.createMany({
+        data: level1.map((cat) => ({
+          userId,
+          name: cat.name,
+          type: cat.type,
+          parentId: nameToIdMap.get(cat.parentName!),
+          isLocked: true,
+        })),
+      });
+    }
   }
 
   private async validateCategoryOwnership(userId: string, categoryId: string) {
