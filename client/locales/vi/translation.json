@@ -188,5 +188,25 @@
     "pageSize": "Số bản ghi mỗi trang",
     "pageSizeLabel": "Hiển thị",
     "clearFilters": "Xóa bộ lọc"
+  },
+  "tags": {
+    "title": "Thẻ",
+    "subtitle": "Quản lý thẻ",
+    "addTag": "Thêm thẻ",
+    "editTag": "Chỉnh sửa thẻ",
+    "deleteTag": "Xóa thẻ",
+    "name": "Tên",
+    "description": "Mô tả",
+    "actions": "Thao tác",
+    "deleteConfirmTitle": "Xóa thẻ",
+    "deleteConfirmMessage": "Bạn có chắc chắn muốn xóa thẻ này?",
+    "noTags": "Không tìm thấy thẻ",
+    "search": "Tìm kiếm thẻ...",
+    "namePlaceholder": "Nhập tên thẻ",
+    "descriptionPlaceholder": "Nhập mô tả thẻ",
+    "nameRequired": "Tên thẻ là bắt buộc",
+    "pageSize": "Số bản ghi mỗi trang",
+    "pageSizeLabel": "Hiển thị",
+    "clearFilters": "Xóa bộ lọc"
   }
 }

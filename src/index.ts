@@ -5,6 +5,7 @@ import { Elysia } from 'elysia';
 import accountController from './controllers/account.controller';
 import currencyController from './controllers/currency.controller';
 import entityController from './controllers/entity.controller';
+import tagController from './controllers/tag.controller';
 import userController from './controllers/user.controller';
 import { logger } from './libs/logger';
 import errorMiddleware from './middlewares/error-middleware';
@@ -48,7 +49,8 @@ export const app = new Elysia()
       .use(userController)
       .use(accountController)
       .use(currencyController)
-      .use(entityController),
+      .use(entityController)
+      .use(tagController),
   )
   .listen(appEnv.PORT);
 

@@ -188,5 +188,25 @@
     "pageSize": "Records per page",
     "pageSizeLabel": "Show",
     "clearFilters": "Clear Filters"
+  },
+  "tags": {
+    "title": "Tags",
+    "subtitle": "Manage your tags",
+    "addTag": "Add Tag",
+    "editTag": "Edit Tag",
+    "deleteTag": "Delete Tag",
+    "name": "Name",
+    "description": "Description",
+    "actions": "Actions",
+    "deleteConfirmTitle": "Delete Tag",
+    "deleteConfirmMessage": "Are you sure you want to delete this tag?",
+    "noTags": "No tags found",
+    "search": "Search tags...",
+    "namePlaceholder": "Enter tag name",
+    "descriptionPlaceholder": "Enter tag description",
+    "nameRequired": "Tag name is required",
+    "pageSize": "Records per page",
+    "pageSizeLabel": "Show",
+    "clearFilters": "Clear Filters"
   }
 }

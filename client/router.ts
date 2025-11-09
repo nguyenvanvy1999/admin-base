@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
+import TagPage from './pages/TagPage';
 
 /** IMPORTANT: use hash router instead of browser router to avoid conflicts with the server routes
  *IF still want to use browser router we have 2 options:
@@ -52,7 +53,7 @@ const router = createHashRouter([
       },
       {
         path: '/tags',
-        Component: NotFoundPage,
+        Component: TagPage,
       },
       {
         path: '/rules',
