@@ -14,6 +14,7 @@ import type {
   ITransferTransaction,
   IUpsertTransaction,
 } from '../dto/transaction.dto';
+import { CURRENCY_SELECT_BASIC } from './selects';
 
 type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -119,13 +120,6 @@ const ACCOUNT_SELECT_MINIMAL = {
   id: true,
   userId: true,
   currencyId: true,
-} as const;
-
-const CURRENCY_SELECT_BASIC = {
-  id: true,
-  code: true,
-  name: true,
-  symbol: true,
 } as const;
 
 class BalanceCalculator {

@@ -11,6 +11,26 @@ import type {
 } from '../dto/user.dto';
 import { CategoryService } from './category.service';
 
+const USER_SELECT_FOR_INFO = {
+  id: true,
+  username: true,
+  name: true,
+  role: true,
+  baseCurrencyId: true,
+} as const;
+
+const USER_SELECT_FOR_VALIDATION = {
+  id: true,
+  password: true,
+} as const;
+
+const USER_SELECT_FOR_LOGIN = {
+  id: true,
+  username: true,
+  role: true,
+  password: true,
+} as const;
+
 export class UserService {
   private categoryService = new CategoryService();
 
@@ -45,6 +65,7 @@ export class UserService {
   async login(data: ILoginDto) {
     const user = await prisma.user.findFirst({
       where: { username: data.username },
+      select: USER_SELECT_FOR_LOGIN,
     });
     if (!user) {
       throw new Error('User not found');
@@ -75,22 +96,18 @@ export class UserService {
   async getUserInfo(id: string) {
     const user = await prisma.user.findFirst({
       where: { id },
+      select: USER_SELECT_FOR_INFO,
     });
     if (!user) {
       throw new Error('User not found');
     }
-    return {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      role: user.role,
-      baseCurrencyId: user.baseCurrencyId,
-    };
+    return user;
   }
 
   async updateProfile(userId: string, data: IUpdateProfileDto) {
     const user = await prisma.user.findFirst({
       where: { id: userId },
+      select: USER_SELECT_FOR_VALIDATION,
     });
     if (!user) {
       throw new Error('User not found');
@@ -111,10 +128,10 @@ export class UserService {
     }
 
     if (data.baseCurrencyId) {
-      const currency = await prisma.currency.findUnique({
+      const count = await prisma.currency.count({
         where: { id: data.baseCurrencyId },
       });
-      if (!currency) {
+      if (count === 0) {
         throw new Error('Currency not found');
       }
     }
@@ -134,14 +151,15 @@ export class UserService {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: updateData,
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        role: true,
+      },
     });
 
-    return {
-      id: updatedUser.id,
-      username: updatedUser.username,
-      name: updatedUser.name,
-      role: updatedUser.role,
-    };
+    return updatedUser;
   }
 }
 

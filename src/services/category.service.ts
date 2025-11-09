@@ -24,6 +24,13 @@ type CategoryWithChildren = {
   children?: CategoryWithChildren[];
 };
 
+const CATEGORY_SELECT_MINIMAL = {
+  id: true,
+  isLocked: true,
+  type: true,
+  parentId: true,
+} as const;
+
 export class CategoryService {
   private flattenCategories(
     categories: CategorySeedData[],
@@ -118,6 +125,7 @@ export class CategoryService {
         userId,
         deletedAt: null,
       },
+      select: CATEGORY_SELECT_MINIMAL,
     });
     if (!category) {
       throw new Error('Category not found');

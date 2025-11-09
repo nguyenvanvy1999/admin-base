@@ -6,6 +6,18 @@ import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import type { IListTagsQueryDto, IUpsertTagDto } from '../dto/tag.dto';
 
+const TAG_SELECT_FULL = {
+  id: true,
+  name: true,
+  description: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+const TAG_SELECT_MINIMAL = {
+  id: true,
+} as const;
+
 export class TagService {
   private async validateTagOwnership(userId: string, tagId: string) {
     const tag = await prisma.tag.findFirst({
@@ -14,6 +26,7 @@ export class TagService {
         userId,
         deletedAt: null,
       },
+      select: TAG_SELECT_MINIMAL,
     });
     if (!tag) {
       throw new Error('Tag not found');
@@ -37,9 +50,9 @@ export class TagService {
       where.id = { not: excludeId };
     }
 
-    const existing = await prisma.tag.findFirst({ where });
+    const count = await prisma.tag.count({ where });
 
-    if (existing) {
+    if (count > 0) {
       throw new Error('Tag name already exists');
     }
   }
@@ -59,6 +72,7 @@ export class TagService {
           name: lowerName,
           description: data.description ?? null,
         },
+        select: TAG_SELECT_FULL,
       });
     } else {
       return prisma.tag.create({
@@ -67,6 +81,7 @@ export class TagService {
           name: lowerName,
           description: data.description ?? null,
         },
+        select: TAG_SELECT_FULL,
       });
     }
   }
@@ -78,6 +93,7 @@ export class TagService {
         userId,
         deletedAt: null,
       },
+      select: TAG_SELECT_FULL,
     });
 
     if (!tag) {
@@ -123,6 +139,7 @@ export class TagService {
         orderBy,
         skip,
         take: limit,
+        select: TAG_SELECT_FULL,
       }),
       prisma.tag.count({ where }),
     ]);

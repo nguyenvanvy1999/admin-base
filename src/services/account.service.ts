@@ -5,6 +5,29 @@ import type {
   IListAccountsQueryDto,
   IUpsertAccountDto,
 } from '../dto/account.dto';
+import { CURRENCY_SELECT_BASIC } from './selects';
+
+const ACCOUNT_SELECT_FULL = {
+  id: true,
+  type: true,
+  name: true,
+  currencyId: true,
+  balance: true,
+  creditLimit: true,
+  notifyOnDueDate: true,
+  paymentDay: true,
+  notifyDaysBefore: true,
+  meta: true,
+  createdAt: true,
+  updatedAt: true,
+  currency: {
+    select: CURRENCY_SELECT_BASIC,
+  },
+} as const;
+
+const ACCOUNT_SELECT_MINIMAL = {
+  id: true,
+} as const;
 
 export class AccountService {
   private async validateAccountOwnership(userId: string, accountId: string) {
@@ -14,6 +37,7 @@ export class AccountService {
         userId,
         deletedAt: null,
       },
+      select: ACCOUNT_SELECT_MINIMAL,
     });
     if (!account) {
       throw new Error('Account not found');
@@ -22,13 +46,12 @@ export class AccountService {
   }
 
   private async validateCurrency(currencyId: string) {
-    const currency = await prisma.currency.findUnique({
+    const count = await prisma.currency.count({
       where: { id: currencyId },
     });
-    if (!currency) {
+    if (count === 0) {
       throw new Error('Currency not found');
     }
-    return currency;
   }
 
   async upsertAccount(userId: string, data: IUpsertAccountDto) {
@@ -62,9 +85,7 @@ export class AccountService {
           notifyDaysBefore: data.notifyDaysBefore ?? null,
           meta: data.meta ?? null,
         },
-        include: {
-          currency: true,
-        },
+        select: ACCOUNT_SELECT_FULL,
       });
     } else {
       return prisma.account.create({
@@ -80,9 +101,7 @@ export class AccountService {
           userId,
           balance: data.initialBalance ?? 0,
         },
-        include: {
-          currency: true,
-        },
+        select: ACCOUNT_SELECT_FULL,
       });
     }
   }
@@ -94,9 +113,7 @@ export class AccountService {
         userId,
         deletedAt: null,
       },
-      include: {
-        currency: true,
-      },
+      select: ACCOUNT_SELECT_FULL,
     });
 
     if (!account) {
@@ -154,9 +171,7 @@ export class AccountService {
         orderBy,
         skip,
         take: limit,
-        include: {
-          currency: true,
-        },
+        select: ACCOUNT_SELECT_FULL,
       }),
       prisma.account.count({ where }),
       prisma.account.groupBy({
@@ -174,12 +189,7 @@ export class AccountService {
       where: {
         id: { in: currencyIds },
       },
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        symbol: true,
-      },
+      select: CURRENCY_SELECT_BASIC,
     });
 
     const currencyMap = new Map(currencies.map((c) => [c.id, c]));

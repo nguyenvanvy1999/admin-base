@@ -9,6 +9,22 @@ import type {
   IUpsertEntityDto,
 } from '../dto/entity.dto';
 
+const ENTITY_SELECT_FULL = {
+  id: true,
+  name: true,
+  type: true,
+  phone: true,
+  email: true,
+  address: true,
+  note: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+const ENTITY_SELECT_MINIMAL = {
+  id: true,
+} as const;
+
 export class EntityService {
   private async validateEntityOwnership(userId: string, entityId: string) {
     const entity = await prisma.entity.findFirst({
@@ -17,6 +33,7 @@ export class EntityService {
         userId,
         deletedAt: null,
       },
+      select: ENTITY_SELECT_MINIMAL,
     });
     if (!entity) {
       throw new Error('Entity not found');
@@ -39,9 +56,9 @@ export class EntityService {
       where.id = { not: excludeId };
     }
 
-    const existing = await prisma.entity.findFirst({ where });
+    const count = await prisma.entity.count({ where });
 
-    if (existing) {
+    if (count > 0) {
       throw new Error('Entity name already exists');
     }
   }
@@ -64,6 +81,7 @@ export class EntityService {
           address: data.address ?? null,
           note: data.note ?? null,
         },
+        select: ENTITY_SELECT_FULL,
       });
     } else {
       return prisma.entity.create({
@@ -76,6 +94,7 @@ export class EntityService {
           address: data.address ?? null,
           note: data.note ?? null,
         },
+        select: ENTITY_SELECT_FULL,
       });
     }
   }
@@ -87,6 +106,7 @@ export class EntityService {
         userId,
         deletedAt: null,
       },
+      select: ENTITY_SELECT_FULL,
     });
 
     if (!entity) {
@@ -139,6 +159,7 @@ export class EntityService {
         orderBy,
         skip,
         take: limit,
+        select: ENTITY_SELECT_FULL,
       }),
       prisma.entity.count({ where }),
     ]);
