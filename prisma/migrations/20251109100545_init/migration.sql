@@ -14,6 +14,9 @@ CREATE TYPE "TransactionType" AS ENUM ('income', 'expense', 'transfer', 'loan_gi
 CREATE TYPE "InvestmentAssetType" AS ENUM ('coin', 'ccq', 'custom');
 
 -- CreateEnum
+CREATE TYPE "EntityType" AS ENUM ('individual', 'organization');
+
+-- CreateEnum
 CREATE TYPE "BudgetPeriod" AS ENUM ('monthly', 'yearly');
 
 -- CreateEnum
@@ -60,7 +63,9 @@ CREATE TABLE "accounts" (
     "currency_id" TEXT NOT NULL,
     "balance" DECIMAL(30,10) NOT NULL DEFAULT 0,
     "credit_limit" DECIMAL(30,10),
-    "expiry_date" TIMESTAMP(3),
+    "notify_on_due_date" BOOLEAN,
+    "payment_day" INTEGER,
+    "notify_days_before" INTEGER,
     "meta" JSONB,
     "deleted_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -152,7 +157,7 @@ CREATE TABLE "entities" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "type" TEXT,
+    "type" "EntityType",
     "phone" TEXT,
     "email" TEXT,
     "address" TEXT,
@@ -224,6 +229,19 @@ CREATE TABLE "holdings" (
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "holdings_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "tags" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "deleted_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "tags_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -323,6 +341,9 @@ CREATE INDEX "entity_userId_idx" ON "entities"("user_id");
 CREATE INDEX "entity_name_idx" ON "entities"("name");
 
 -- CreateIndex
+CREATE INDEX "entity_type_idx" ON "entities"("type");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "entities_user_id_name_key" ON "entities"("user_id", "name");
 
 -- CreateIndex
@@ -351,6 +372,15 @@ CREATE INDEX "trade_externalId_idx" ON "investment_trades"("external_id");
 
 -- CreateIndex
 CREATE INDEX "holding_user_investment_idx" ON "holdings"("user_id", "investment_id");
+
+-- CreateIndex
+CREATE INDEX "tag_userId_idx" ON "tags"("user_id");
+
+-- CreateIndex
+CREATE INDEX "tag_name_idx" ON "tags"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "tags_user_id_name_key" ON "tags"("user_id", "name");
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_base_currency_id_fkey" FOREIGN KEY ("base_currency_id") REFERENCES "currencies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -435,3 +465,6 @@ ALTER TABLE "holdings" ADD CONSTRAINT "holdings_user_id_fkey" FOREIGN KEY ("user
 
 -- AddForeignKey
 ALTER TABLE "holdings" ADD CONSTRAINT "holdings_investment_id_fkey" FOREIGN KEY ("investment_id") REFERENCES "investments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "tags" ADD CONSTRAINT "tags_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
