@@ -18,7 +18,43 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { Add, Delete, Edit, Lock } from '@mui/icons-material';
+import type { SvgIconComponent } from '@mui/icons-material';
+import {
+  Add,
+  AttachMoney,
+  BreakfastDining,
+  Build,
+  Business,
+  CardGiftcard,
+  CarRepair,
+  Category,
+  ChildCare,
+  Coffee,
+  CreditCard,
+  Delete,
+  DirectionsCar,
+  Edit,
+  ElectricBolt,
+  Fastfood,
+  Flight,
+  Home,
+  Hotel,
+  LocalGasStation,
+  LocalGroceryStore,
+  LocalPharmacy,
+  Lock,
+  Movie,
+  Phone,
+  Restaurant,
+  School,
+  ShoppingBag,
+  ShoppingCart,
+  SportsEsports,
+  TrendingDown,
+  TrendingUp,
+  WaterDrop,
+  Wifi,
+} from '@mui/icons-material';
 import { Box, IconButton, Stack } from '@mui/material';
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
 import { CategoryType } from '@server/generated/prisma/enums';
@@ -32,6 +68,96 @@ const getCategoryLabel = (
   const translationKey = `categories.${categoryName}`;
   const translated = t(translationKey);
   return translated !== translationKey ? translated : categoryName;
+};
+
+const CATEGORY_ICON_MAP: Record<string, SvgIconComponent> = {
+  food_dining: Restaurant,
+  breakfast: BreakfastDining,
+  restaurant: Restaurant,
+  dinner: Fastfood,
+  lunch: Fastfood,
+  coffee: Coffee,
+  grocery_shopping: LocalGroceryStore,
+  children: ChildCare,
+  toys: SportsEsports,
+  tuition: School,
+  books_supplies: School,
+  milk: LocalGroceryStore,
+  pocket_money: AttachMoney,
+  investment: TrendingUp,
+  loss: TrendingDown,
+  transportation: DirectionsCar,
+  car_insurance: CreditCard,
+  parking: DirectionsCar,
+  car_wash: CarRepair,
+  car_maintenance: CarRepair,
+  taxi_rental: DirectionsCar,
+  gasoline: LocalGasStation,
+  utilities: ElectricBolt,
+  electricity: ElectricBolt,
+  landline: Phone,
+  mobile_phone: Phone,
+  natural_gas: WaterDrop,
+  internet: Wifi,
+  water: WaterDrop,
+  housekeeping: Home,
+  tv_cable: Movie,
+  celebrations: CardGiftcard,
+  gifts: CardGiftcard,
+  wedding: CardGiftcard,
+  funeral: Category,
+  visiting: Home,
+  entertainment: Movie,
+  travel: Flight,
+  beauty: Category,
+  cosmetics: Category,
+  drinks: LocalGroceryStore,
+  movies_music: Movie,
+  recreation: SportsEsports,
+  shopping: ShoppingCart,
+  electronics: Category,
+  shoes: ShoppingBag,
+  other_accessories: ShoppingBag,
+  clothing: ShoppingBag,
+  banking: Business,
+  transfer_fee: CreditCard,
+  housing: Home,
+  send_home: Home,
+  furniture_shopping: ShoppingCart,
+  home_repair: Build,
+  rent: Hotel,
+  self_development: School,
+  socializing: Category,
+  education: School,
+  health: LocalPharmacy,
+  haircut: Category,
+  medical: LocalPharmacy,
+  sports: SportsEsports,
+  medicine: LocalPharmacy,
+  cash_out: AttachMoney,
+  borrow: TrendingDown,
+  lend: TrendingUp,
+  repay_debt: AttachMoney,
+  collect_debt: AttachMoney,
+  transfer: TrendingUp,
+  income: TrendingUp,
+  expense: TrendingDown,
+  salary: AttachMoney,
+  bonus: CardGiftcard,
+  investment_income: TrendingUp,
+  business: Business,
+  other: Category,
+  buy: ShoppingCart,
+  sell: ShoppingCart,
+  dividend: TrendingUp,
+  fee: CreditCard,
+  gain: TrendingUp,
+};
+
+const DEFAULT_ICON = Category;
+
+const getCategoryIcon = (categoryName: string): SvgIconComponent => {
+  return CATEGORY_ICON_MAP[categoryName] || DEFAULT_ICON;
 };
 
 const transformToMUITree = (
@@ -241,9 +367,9 @@ const CategoryPage = () => {
     deleteMutation.isPending;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+      <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 overflow-auto">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -329,7 +455,7 @@ const CategoryPage = () => {
               <Text>{t('categories.noCategories')}</Text>
             </div>
           ) : (
-            <Box sx={{ minHeight: 400, maxHeight: 600, overflow: 'auto' }}>
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
               <RichTreeView
                 items={filteredTreeItems}
                 expandedItems={expandedItems}
@@ -356,6 +482,10 @@ const CategoryPage = () => {
                         !category.isLocked &&
                         (!category.children || category.children.length === 0);
 
+                      const IconComponent = getCategoryIcon(
+                        category?.name || '',
+                      );
+
                       return {
                         label: (
                           <Box
@@ -375,7 +505,13 @@ const CategoryPage = () => {
                                 gap: 1,
                               }}
                             >
-                              {item.icon && <span>{item.icon}</span>}
+                              <IconComponent
+                                sx={{
+                                  fontSize: 18,
+                                  color: item.color || 'inherit',
+                                  opacity: 0.8,
+                                }}
+                              />
                               {item.color && (
                                 <Box
                                   sx={{
