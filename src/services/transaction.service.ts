@@ -822,7 +822,7 @@ export class TransactionService {
 
     const skip = (page - 1) * limit;
 
-    const [transactions, total, allTransactionsForSummary] = await Promise.all([
+    const [transactions, total, summaryGroups] = await Promise.all([
       prisma.transaction.findMany({
         where,
         orderBy,
@@ -831,33 +831,41 @@ export class TransactionService {
         include: TransactionService.TRANSACTION_INCLUDE,
       }),
       prisma.transaction.count({ where }),
-      prisma.transaction.findMany({
+      prisma.transaction.groupBy({
+        by: ['currencyId', 'type'],
         where,
-        select: {
-          type: true,
+        _sum: {
           amount: true,
-          currencyId: true,
-          currency: {
-            select: {
-              id: true,
-              code: true,
-              name: true,
-              symbol: true,
-            },
-          },
         },
       }),
     ]);
+
+    const currencyIds = [...new Set(summaryGroups.map((g) => g.currencyId))];
+
+    const currencies = await prisma.currency.findMany({
+      where: {
+        id: { in: currencyIds },
+      },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        symbol: true,
+      },
+    });
+
+    const currencyMap = new Map(currencies.map((c) => [c.id, c]));
 
     const summaryByCurrency = new Map<
       string,
       { currency: any; totalIncome: Decimal; totalExpense: Decimal }
     >();
 
-    for (const transaction of allTransactionsForSummary) {
-      const amount = new Decimal(transaction.amount);
-      const currencyId = transaction.currencyId;
-      const currency = transaction.currency;
+    for (const group of summaryGroups) {
+      const currencyId = group.currencyId;
+      const currency = currencyMap.get(currencyId);
+
+      if (!currency) continue;
 
       if (!summaryByCurrency.has(currencyId)) {
         summaryByCurrency.set(currencyId, {
@@ -868,10 +876,14 @@ export class TransactionService {
       }
 
       const summary = summaryByCurrency.get(currencyId)!;
-      if (transaction.type === TransactionType.income) {
-        summary.totalIncome = summary.totalIncome.plus(amount);
-      } else if (transaction.type === TransactionType.expense) {
-        summary.totalExpense = summary.totalExpense.plus(amount);
+      const sumAmount = group._sum.amount
+        ? new Decimal(group._sum.amount)
+        : new Decimal(0);
+
+      if (group.type === TransactionType.income) {
+        summary.totalIncome = summary.totalIncome.plus(sumAmount);
+      } else if (group.type === TransactionType.expense) {
+        summary.totalExpense = summary.totalExpense.plus(sumAmount);
       }
     }
 
