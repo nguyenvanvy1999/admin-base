@@ -16,7 +16,9 @@
     "next": "Sau",
     "deleting": "Đang xóa...",
     "saving": "Đang lưu...",
-    "search": "Tìm kiếm"
+    "search": "Tìm kiếm",
+    "pageSize": "Kích thước trang",
+    "reset": "Đặt lại"
   },
   "login": {
     "title": "FinTrack",

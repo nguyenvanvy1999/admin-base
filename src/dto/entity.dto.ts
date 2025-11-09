@@ -4,12 +4,10 @@ import { t } from 'elysia';
 export const UpsertEntityDto = t.Object({
   id: t.Optional(t.String()),
   name: t.String(),
-  type: t.Optional(
-    t.Union([
-      t.Literal(EntityType.individual),
-      t.Literal(EntityType.organization),
-    ]),
-  ),
+  type: t.Union([
+    t.Literal(EntityType.individual),
+    t.Literal(EntityType.organization),
+  ]),
   phone: t.Optional(t.String()),
   email: t.Optional(t.String()),
   address: t.Optional(t.String()),

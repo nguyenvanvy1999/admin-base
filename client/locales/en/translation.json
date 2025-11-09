@@ -16,7 +16,9 @@
     "next": "Next",
     "deleting": "Deleting...",
     "saving": "Saving...",
-    "search": "Search"
+    "search": "Search",
+    "pageSize": "Page Size",
+    "reset": "Reset"
   },
   "login": {
     "title": "FinTrack",

@@ -55,7 +55,7 @@ export class EntityService {
         where: { id: data.id },
         data: {
           name: data.name,
-          type: data.type ?? null,
+          type: data.type,
           phone: data.phone ?? null,
           email: data.email ?? null,
           address: data.address ?? null,
@@ -67,7 +67,7 @@ export class EntityService {
         data: {
           userId,
           name: data.name,
-          type: data.type ?? null,
+          type: data.type,
           phone: data.phone ?? null,
           email: data.email ?? null,
           address: data.address ?? null,

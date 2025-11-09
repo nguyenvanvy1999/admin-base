@@ -15,7 +15,7 @@ export type EntityFull = {
 export type EntityFormData = {
   id?: string;
   name: string;
-  type?: EntityType;
+  type: EntityType;
   phone?: string;
   email?: string;
   address?: string;

@@ -45,14 +45,11 @@ const AddEditEntityDialog = ({
     onSubmit: ({ value }) => {
       const submitData: EntityFormData = {
         name: value.name.trim(),
+        type: value.type as EntityType,
       };
 
       if (isEditMode && entity) {
         submitData.id = entity.id;
-      }
-
-      if (value.type && value.type.trim() !== '') {
-        submitData.type = value.type.trim();
       }
 
       if (value.phone && value.phone.trim() !== '') {
@@ -84,12 +81,7 @@ const AddEditEntityDialog = ({
       form.setFieldValue('address', entity.address || '');
       form.setFieldValue('note', entity.note || '');
     } else {
-      form.setFieldValue('name', '');
-      form.setFieldValue('type', '');
-      form.setFieldValue('phone', '');
-      form.setFieldValue('email', '');
-      form.setFieldValue('address', '');
-      form.setFieldValue('note', '');
+      form.reset();
     }
   }, [entity, isOpen, form]);
 
@@ -130,13 +122,19 @@ const AddEditEntityDialog = ({
             }}
           </form.Field>
 
-          <form.Field name="type">
+          <form.Field
+            name="type"
+            validators={{
+              onChange: validation.required('entities.typeRequired'),
+            }}
+          >
             {(field) => {
               const error = field.state.meta.errors[0];
               return (
                 <Select
                   label={t('entities.type')}
                   placeholder={t('entities.typePlaceholder')}
+                  required
                   data={[
                     {
                       value: EntityType.individual,
@@ -151,7 +149,6 @@ const AddEditEntityDialog = ({
                   onChange={(value) => field.handleChange(value ?? undefined)}
                   onBlur={field.handleBlur}
                   error={error}
-                  clearable
                 />
               );
             }}
@@ -230,7 +227,11 @@ const AddEditEntityDialog = ({
             })}
           >
             {({ isValid, values }) => {
-              const isFormValid = isValid && values.name?.trim() !== '';
+              const isFormValid =
+                isValid &&
+                values.name?.trim() !== '' &&
+                values.type &&
+                values.type.trim() !== '';
 
               return (
                 <Group justify="flex-end" mt="md">
