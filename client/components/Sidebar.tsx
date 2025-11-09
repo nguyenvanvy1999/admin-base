@@ -1,6 +1,5 @@
 import {
   AccountBalance,
-  Assignment,
   BarChart,
   Business,
   Category,
@@ -10,7 +9,10 @@ import {
   KeyboardArrowDown,
   Label,
   Lightbulb,
+  Rule,
+  Savings,
   Settings,
+  Tag,
   TrendingUp,
 } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
@@ -118,7 +120,7 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
               to="/budgets"
               className={({ isActive }) => menuItemClass(isActive)}
             >
-              <Assignment className={iconClass} />
+              <Savings className={iconClass} />
               {!isCollapsed && (
                 <span className="ml-3 flex-1">{t('sidebar.budgets')}</span>
               )}
@@ -183,7 +185,7 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
                       to="/tags"
                       className={({ isActive }) => menuItemClass(isActive)}
                     >
-                      <Category className={iconClass} />
+                      <Tag className={iconClass} />
                       <span className="ml-3">{t('sidebar.tags')}</span>
                     </NavLink>
 
@@ -191,7 +193,7 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
                       to="/rules"
                       className={({ isActive }) => menuItemClass(isActive)}
                     >
-                      <Lightbulb className={iconClass} />
+                      <Rule className={iconClass} />
                       <span className="ml-3">{t('sidebar.rules')}</span>
                     </NavLink>
                   </div>
