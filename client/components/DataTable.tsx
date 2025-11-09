@@ -8,18 +8,28 @@ import {
 } from '@tanstack/react-table';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { reorderColumns, useColumnOrder } from './DataTable/columnPersistence';
+import {
+  convertToTanStackColumn,
+  createIndexColumn,
+} from './DataTable/columnUtils';
+import type { ColumnOrderConfig, DataTableColumn } from './DataTable/types';
 import {
   type ActionColumnOptions,
   createActionColumn,
 } from './DataTable/utils';
 import Pagination from './Pagination';
 
+export type { ColumnOrderConfig, DataTableColumn } from './DataTable/types';
 export type { ActionColumnOptions } from './DataTable/utils';
 
 export type DataTableProps<T extends Record<string, any>> = {
   data: T[];
-  columns: ColumnDef<T>[];
+  columns: ColumnDef<T>[] | DataTableColumn<T>[];
   isLoading?: boolean;
+  showIndexColumn?: boolean;
+  columnOrder?: ColumnOrderConfig;
+  autoFormatDisabled?: boolean;
   pagination?: {
     currentPage: number;
     totalPages: number;
@@ -55,6 +65,9 @@ function DataTable<T extends Record<string, any>>({
   data,
   columns,
   isLoading = false,
+  showIndexColumn = true,
+  columnOrder,
+  autoFormatDisabled = false,
   pagination,
   search,
   pageSize,
@@ -65,6 +78,55 @@ function DataTable<T extends Record<string, any>>({
   sorting,
 }: DataTableProps<T>) {
   const { t } = useTranslation();
+
+  const isDataTableColumn = (
+    col: ColumnDef<T> | DataTableColumn<T>,
+  ): col is DataTableColumn<T> => {
+    return 'format' in col || 'title' in col || 'onClick' in col;
+  };
+
+  const defaultColumnIds = useMemo(() => {
+    return columns.map((col, index) => {
+      if (isDataTableColumn(col)) {
+        return (
+          (typeof col.accessor === 'string' ? col.accessor : col.id) ||
+          `col-${index}`
+        );
+      }
+      const colDef = col as ColumnDef<T>;
+      return colDef.id || (colDef as any).accessorKey || `col-${index}`;
+    });
+  }, [columns]);
+
+  const [columnOrderState, _setColumnOrderState] = useColumnOrder(
+    columnOrder?.storeKey,
+    columnOrder?.defaultOrder || defaultColumnIds,
+  );
+
+  const processedColumns = useMemo(() => {
+    const converted = columns.map((col) => {
+      if (isDataTableColumn(col)) {
+        return convertToTanStackColumn(
+          {
+            ...col,
+            autoFormatDisabled: col.autoFormatDisabled ?? autoFormatDisabled,
+          },
+          t,
+        );
+      }
+      return col as ColumnDef<T>;
+    });
+
+    if (columnOrder?.storeKey && columnOrderState.length > 0) {
+      return reorderColumns(
+        converted,
+        columnOrderState,
+        (col) => col.id || (col as any).accessorKey || '',
+      );
+    }
+
+    return converted;
+  }, [columns, columnOrder, columnOrderState, autoFormatDisabled, t]);
 
   const [searchInput, setSearchInput] = useState('');
   const [currentPageSize, setCurrentPageSize] = useState(
@@ -142,30 +204,33 @@ function DataTable<T extends Record<string, any>>({
   );
 
   const finalColumns = useMemo(() => {
-    const indexColumn: ColumnDef<T> = {
-      id: 'index',
-      header: () => t('common.index', { defaultValue: 'STT' }),
-      cell: (info) => {
-        const rowIndex = info.row.index;
-        const currentPage = pagination?.currentPage || 1;
-        const itemsPerPage = pagination?.itemsPerPage || currentPageSize;
-        const index = (currentPage - 1) * itemsPerPage + rowIndex + 1;
-        return (
-          <span className="text-gray-600 dark:text-gray-400 font-medium">
-            {index}
-          </span>
-        );
-      },
-      size: 80,
-      enableSorting: false,
-    };
+    const cols: ColumnDef<T>[] = [];
 
-    const cols = [indexColumn, ...columns];
+    if (showIndexColumn) {
+      cols.push(
+        createIndexColumn<T>(
+          pagination?.currentPage || 1,
+          pagination?.itemsPerPage || currentPageSize,
+          t,
+        ),
+      );
+    }
+
+    cols.push(...processedColumns);
+
     if (actions) {
       cols.push(createActionColumn(actions));
     }
+
     return cols;
-  }, [columns, actions, pagination, currentPageSize, t]);
+  }, [
+    showIndexColumn,
+    processedColumns,
+    actions,
+    pagination,
+    currentPageSize,
+    t,
+  ]);
 
   const table = useReactTable({
     data,
