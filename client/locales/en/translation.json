@@ -163,7 +163,8 @@
     "currencyRequired": "Currency is required",
     "pageSize": "Records per page",
     "pageSizeLabel": "Show",
-    "clearFilters": "Clear Filters"
+    "clearFilters": "Clear Filters",
+    "totalAssets": "Total Assets"
   },
   "entities": {
     "title": "Entities",
@@ -369,6 +370,8 @@
     "saveAndAdd": "Save and Add",
     "typePlaceholder": "Select transaction type",
     "accountPlaceholder": "Select account",
-    "categoryPlaceholder": "Select category"
+    "categoryPlaceholder": "Select category",
+    "totalIncome": "Total Income",
+    "totalExpense": "Total Expense"
   }
 }

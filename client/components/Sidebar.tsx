@@ -63,7 +63,7 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
     } ${
       isActive
         ? 'bg-[hsl(var(--color-primary-light))] dark:bg-[hsl(var(--color-primary-dark))] text-[hsl(var(--color-primary))] dark:text-[hsl(var(--color-primary))]'
-        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+        : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
     }`;
 
   const iconClass = 'w-5 h-5 flex-shrink-0';
@@ -71,22 +71,22 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
   return (
     <>
       <div
-        className={`fixed top-16 left-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 flex-shrink-0 z-30 ${
+        className={`fixed top-16 left-0 bg-white dark:bg-gray-700 border-r border-gray-200 dark:border-gray-600 transition-all duration-300 flex-shrink-0 z-30 ${
           isCollapsed ? 'w-16' : 'w-64'
         } ${isMobile && isCollapsed ? 'hidden' : ''}`}
         style={{ height: 'calc(100vh - 64px)' }}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-end p-4 border-b border-gray-200 dark:border-gray-700 min-h-[64px] relative">
+          <div className="flex items-center justify-end p-4 border-b border-gray-200 dark:border-gray-600 min-h-[64px] relative">
             <button
               onClick={toggleSidebar}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors absolute right-2"
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors absolute right-2"
               aria-label="Toggle sidebar"
             >
               {isCollapsed ? (
-                <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               ) : (
-                <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400 rotate-180" />
+                <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300 rotate-180" />
               )}
             </button>
           </div>
@@ -147,7 +147,7 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
             </NavLink>
 
             {!isCollapsed && (
-              <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-600">
                 <button
                   onClick={toggleSubMenu}
                   className={`w-full ${menuItemClass(false)}`}
@@ -202,7 +202,7 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
             )}
 
             {isCollapsed && (
-              <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-600">
                 <NavLink
                   to="/categories"
                   className={({ isActive }) => menuItemClass(isActive)}

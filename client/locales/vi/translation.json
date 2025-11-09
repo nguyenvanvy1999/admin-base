@@ -163,7 +163,8 @@
     "currencyRequired": "Tiền tệ là bắt buộc",
     "pageSize": "Số bản ghi mỗi trang",
     "pageSizeLabel": "Hiển thị",
-    "clearFilters": "Xóa bộ lọc"
+    "clearFilters": "Xóa bộ lọc",
+    "totalAssets": "Tổng tài sản"
   },
   "entities": {
     "title": "Thực thể",
@@ -369,6 +370,8 @@
     "saveAndAdd": "Lưu và thêm",
     "typePlaceholder": "Chọn loại giao dịch",
     "accountPlaceholder": "Chọn tài khoản",
-    "categoryPlaceholder": "Chọn hạng mục"
+    "categoryPlaceholder": "Chọn hạng mục",
+    "totalIncome": "Tổng thu",
+    "totalExpense": "Tổng chi"
   }
 }
