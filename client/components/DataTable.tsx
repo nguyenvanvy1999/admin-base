@@ -5,7 +5,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { X } from 'lucide-react';
+import { ArrowDown, ArrowUp, X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -44,6 +44,11 @@ export type DataTableProps<T extends Record<string, any>> = {
   actions?: ActionColumnOptions<T>;
   onRowClick?: (row: T) => void;
   emptyMessage?: string;
+  sorting?: {
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    onSortChange?: (sortBy: string, sortOrder: 'asc' | 'desc') => void;
+  };
 };
 
 function DataTable<T extends Record<string, any>>({
@@ -57,6 +62,7 @@ function DataTable<T extends Record<string, any>>({
   actions,
   onRowClick,
   emptyMessage,
+  sorting,
 }: DataTableProps<T>) {
   const { t } = useTranslation();
 
@@ -113,6 +119,27 @@ function DataTable<T extends Record<string, any>>({
       (filters?.hasActive !== undefined && filters.hasActive)
     );
   }, [searchInput, filters?.hasActive]);
+
+  const handleSort = useCallback(
+    (columnId: string) => {
+      if (!sorting?.onSortChange) return;
+
+      const currentSortBy = sorting.sortBy;
+      const currentSortOrder = sorting.sortOrder || 'asc';
+
+      if (currentSortBy === columnId) {
+        const newOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+        sorting.onSortChange(columnId, newOrder);
+      } else {
+        sorting.onSortChange(columnId, 'asc');
+      }
+
+      if (pagination) {
+        pagination.onPageChange(1);
+      }
+    },
+    [sorting, pagination],
+  );
 
   const finalColumns = useMemo(() => {
     const indexColumn: ColumnDef<T> = {
@@ -233,19 +260,52 @@ function DataTable<T extends Record<string, any>>({
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
-                {table.getHeaderGroups()[0]?.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
+                {table.getHeaderGroups()[0]?.headers.map((header) => {
+                  const columnDef = header.column.columnDef;
+                  const isSortable =
+                    sorting?.onSortChange && columnDef.enableSorting !== false;
+                  const columnId = header.column.id;
+                  const isSorted =
+                    sorting?.sortBy === columnId && sorting?.sortOrder;
+                  const sortOrder = isSorted ? sorting.sortOrder : null;
+
+                  return (
+                    <th
+                      key={header.id}
+                      className={`px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ${
+                        isSortable
+                          ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none'
+                          : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(columnDef.header, header.getContext())}
+                        {isSortable && (
+                          <span className="flex flex-col">
+                            {sortOrder === 'asc' ? (
+                              <ArrowUp
+                                size={12}
+                                className="text-blue-600 dark:text-blue-400"
+                              />
+                            ) : sortOrder === 'desc' ? (
+                              <ArrowDown
+                                size={12}
+                                className="text-blue-600 dark:text-blue-400"
+                              />
+                            ) : (
+                              <span className="flex flex-col opacity-30">
+                                <ArrowUp size={10} />
+                                <ArrowDown size={10} className="-mt-1" />
+                              </span>
+                            )}
+                          </span>
                         )}
-                  </th>
-                ))}
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
@@ -271,19 +331,54 @@ function DataTable<T extends Record<string, any>>({
             <thead className="bg-gray-50 dark:bg-gray-800">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
+                  {headerGroup.headers.map((header) => {
+                    const columnDef = header.column.columnDef;
+                    const isSortable =
+                      sorting?.onSortChange &&
+                      columnDef.enableSorting !== false;
+                    const columnId = header.column.id;
+                    const isSorted =
+                      sorting?.sortBy === columnId && sorting?.sortOrder;
+                    const sortOrder = isSorted ? sorting.sortOrder : null;
+
+                    return (
+                      <th
+                        key={header.id}
+                        className={`px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ${
+                          isSortable
+                            ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none'
+                            : ''
+                        }`}
+                        onClick={() => isSortable && handleSort(columnId)}
+                      >
+                        <div className="flex items-center gap-2">
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(columnDef.header, header.getContext())}
+                          {isSortable && (
+                            <span className="flex flex-col">
+                              {sortOrder === 'asc' ? (
+                                <ArrowUp
+                                  size={12}
+                                  className="text-blue-600 dark:text-blue-400"
+                                />
+                              ) : sortOrder === 'desc' ? (
+                                <ArrowDown
+                                  size={12}
+                                  className="text-blue-600 dark:text-blue-400"
+                                />
+                              ) : (
+                                <span className="flex flex-col opacity-30">
+                                  <ArrowUp size={10} />
+                                  <ArrowDown size={10} className="-mt-1" />
+                                </span>
+                              )}
+                            </span>
                           )}
-                    </th>
-                  ))}
+                        </div>
+                      </th>
+                    );
+                  })}
                 </tr>
               ))}
             </thead>

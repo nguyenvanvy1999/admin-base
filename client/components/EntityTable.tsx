@@ -13,7 +13,7 @@ type EntityTableProps = {
   isLoading?: boolean;
 } & Pick<
   DataTableProps<EntityFull>,
-  'search' | 'pageSize' | 'filters' | 'pagination'
+  'search' | 'pageSize' | 'filters' | 'pagination' | 'sorting'
 >;
 
 const columnHelper = createColumnHelper<EntityFull>();
@@ -27,6 +27,7 @@ const EntityTable = ({
   pageSize,
   filters,
   pagination,
+  sorting,
 }: EntityTableProps) => {
   const { t } = useTranslation();
 
@@ -35,6 +36,7 @@ const EntityTable = ({
       [
         columnHelper.accessor('name', {
           header: t('entities.name'),
+          enableSorting: true,
           cell: (info) => (
             <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
               {info.getValue()}
@@ -43,6 +45,7 @@ const EntityTable = ({
         }),
         columnHelper.accessor('type', {
           header: t('entities.type'),
+          enableSorting: true,
           cell: (info) => {
             const value = info.getValue();
             if (!value) return <span className="text-gray-400">-</span>;
@@ -123,6 +126,7 @@ const EntityTable = ({
       pageSize={pageSize}
       filters={filters}
       pagination={pagination}
+      sorting={sorting}
     />
   );
 };

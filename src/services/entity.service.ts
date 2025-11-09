@@ -1,4 +1,7 @@
-import type { EntityWhereInput } from '@server/generated/prisma/models/Entity';
+import type {
+  EntityOrderByWithRelationInput,
+  EntityWhereInput,
+} from '@server/generated/prisma/models/Entity';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import type {
@@ -119,9 +122,11 @@ export class EntityService {
       };
     }
 
-    const orderBy: any = {};
+    const orderBy: EntityOrderByWithRelationInput = {};
     if (sortBy === 'name') {
       orderBy.name = sortOrder;
+    } else if (sortBy === 'type') {
+      orderBy.type = sortOrder;
     } else if (sortBy === 'createdAt') {
       orderBy.createdAt = sortOrder;
     }

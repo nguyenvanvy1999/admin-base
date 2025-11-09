@@ -23,6 +23,10 @@ const EntityPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
+  const [sortBy, setSortBy] = useState<'name' | 'type' | 'createdAt'>(
+    'createdAt',
+  );
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const queryParams = useMemo(
     () => ({
@@ -30,10 +34,10 @@ const EntityPage = () => {
       search: searchQuery.trim() || undefined,
       page,
       limit,
-      sortBy: 'createdAt' as const,
-      sortOrder: 'desc' as const,
+      sortBy,
+      sortOrder,
     }),
-    [typeFilter, searchQuery, page, limit],
+    [typeFilter, searchQuery, page, limit, sortBy, sortOrder],
   );
 
   const { data, isLoading } = useEntitiesQuery(queryParams);
@@ -177,6 +181,18 @@ const EntityPage = () => {
                   }
                 : undefined
             }
+            sorting={{
+              sortBy,
+              sortOrder,
+              onSortChange: (
+                newSortBy: string,
+                newSortOrder: 'asc' | 'desc',
+              ) => {
+                setSortBy(newSortBy as 'name' | 'type' | 'createdAt');
+                setSortOrder(newSortOrder);
+                setPage(1);
+              },
+            }}
           />
         </div>
 

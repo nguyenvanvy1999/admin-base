@@ -26,7 +26,9 @@ export const ListEntitiesQueryDto = t.Object({
   ),
   page: t.Optional(t.Integer({ minimum: 1, default: 1 })),
   limit: t.Optional(t.Integer({ minimum: 1, default: 20 })),
-  sortBy: t.Optional(t.Union([t.Literal('name'), t.Literal('createdAt')])),
+  sortBy: t.Optional(
+    t.Union([t.Literal('name'), t.Literal('type'), t.Literal('createdAt')]),
+  ),
   sortOrder: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
 });
 

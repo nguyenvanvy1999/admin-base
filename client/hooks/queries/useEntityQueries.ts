@@ -8,7 +8,7 @@ type ListEntitiesQuery = {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'name' | 'createdAt';
+  sortBy?: 'name' | 'type' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
 };
 
