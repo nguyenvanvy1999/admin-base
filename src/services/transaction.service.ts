@@ -17,6 +17,117 @@ import type {
 
 type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
+const TRANSACTION_INCLUDE = {
+  account: { include: { currency: true } },
+  toAccount: { include: { currency: true } },
+  category: true,
+  entity: true,
+  currency: true,
+} as const;
+
+const TRANSACTION_SELECT_FOR_BALANCE = {
+  id: true,
+  userId: true,
+  type: true,
+  accountId: true,
+  toAccountId: true,
+  amount: true,
+  fee: true,
+  currencyId: true,
+  account: { select: { currencyId: true } },
+  toAccount: { select: { currencyId: true } },
+} as const;
+
+const TRANSACTION_SELECT_FOR_LIST = {
+  id: true,
+  userId: true,
+  accountId: true,
+  toAccountId: true,
+  type: true,
+  categoryId: true,
+  entityId: true,
+  investmentId: true,
+  amount: true,
+  currencyId: true,
+  price: true,
+  priceInBaseCurrency: true,
+  quantity: true,
+  fee: true,
+  feeInBaseCurrency: true,
+  date: true,
+  dueDate: true,
+  note: true,
+  receiptUrl: true,
+  metadata: true,
+  createdAt: true,
+  updatedAt: true,
+  account: {
+    select: {
+      id: true,
+      name: true,
+      currency: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          symbol: true,
+        },
+      },
+    },
+  },
+  toAccount: {
+    select: {
+      id: true,
+      name: true,
+      currency: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          symbol: true,
+        },
+      },
+    },
+  },
+  category: {
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      icon: true,
+      color: true,
+    },
+  },
+  entity: {
+    select: {
+      id: true,
+      name: true,
+      type: true,
+    },
+  },
+  currency: {
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      symbol: true,
+    },
+  },
+} as const;
+
+const ACCOUNT_SELECT_MINIMAL = {
+  id: true,
+  userId: true,
+  currencyId: true,
+} as const;
+
+const CURRENCY_SELECT_BASIC = {
+  id: true,
+  code: true,
+  name: true,
+  symbol: true,
+} as const;
+
 class BalanceCalculator {
   private exchangeRates: Record<string, Record<string, Decimal>> = {
     VND: { USD: new Decimal(1).div(25000) },
@@ -34,9 +145,11 @@ class BalanceCalculator {
 
     const fromCurrency = await prisma.currency.findUnique({
       where: { id: fromCurrencyId },
+      select: CURRENCY_SELECT_BASIC,
     });
     const toCurrency = await prisma.currency.findUnique({
       where: { id: toCurrencyId },
+      select: CURRENCY_SELECT_BASIC,
     });
 
     if (!fromCurrency || !toCurrency) {
@@ -100,6 +213,39 @@ class BalanceCalculator {
 
 class BalanceUpdater {
   constructor(private calculator: BalanceCalculator) {}
+
+  private async updateTransferBalance(
+    tx: PrismaTx,
+    accountId: string,
+    toAccountId: string,
+    amountInAccountCurrency: Decimal,
+    feeInAccountCurrency: Decimal,
+    amountInToAccountCurrency: Decimal,
+    isRevert: boolean,
+  ) {
+    const fromAccountOperation = isRevert ? 'increment' : 'decrement';
+    const toAccountOperation = isRevert ? 'decrement' : 'increment';
+
+    await tx.account.update({
+      where: { id: accountId },
+      data: {
+        balance: {
+          [fromAccountOperation]: amountInAccountCurrency
+            .plus(feeInAccountCurrency)
+            .toNumber(),
+        },
+      },
+    });
+
+    await tx.account.update({
+      where: { id: toAccountId },
+      data: {
+        balance: {
+          [toAccountOperation]: amountInToAccountCurrency.toNumber(),
+        },
+      },
+    });
+  }
 
   async applyBalanceEffect(
     tx: PrismaTx,
@@ -167,22 +313,15 @@ class BalanceUpdater {
             toAccountCurrencyId,
           );
 
-        await tx.account.update({
-          where: { id: accountId },
-          data: {
-            balance: {
-              decrement: amountInAccountCurrency
-                .plus(feeInAccountCurrency)
-                .toNumber(),
-            },
-          },
-        });
-        await tx.account.update({
-          where: { id: toAccountId },
-          data: {
-            balance: { increment: amountInToAccountCurrency.toNumber() },
-          },
-        });
+        await this.updateTransferBalance(
+          tx,
+          accountId,
+          toAccountId,
+          amountInAccountCurrency,
+          feeInAccountCurrency,
+          amountInToAccountCurrency,
+          false,
+        );
         break;
       }
     }
@@ -244,22 +383,15 @@ class BalanceUpdater {
             toAccountCurrencyId,
           );
 
-        await tx.account.update({
-          where: { id: accountId },
-          data: {
-            balance: {
-              increment: amountInAccountCurrency
-                .plus(feeInAccountCurrency)
-                .toNumber(),
-            },
-          },
-        });
-        await tx.account.update({
-          where: { id: toAccountId },
-          data: {
-            balance: { decrement: amountInToAccountCurrency.toNumber() },
-          },
-        });
+        await this.updateTransferBalance(
+          tx,
+          accountId,
+          toAccountId,
+          amountInAccountCurrency,
+          feeInAccountCurrency,
+          amountInToAccountCurrency,
+          true,
+        );
         break;
       }
     }
@@ -267,27 +399,6 @@ class BalanceUpdater {
 }
 
 class TransactionHandlerFactory {
-  private static readonly TRANSACTION_INCLUDE = {
-    account: { include: { currency: true } },
-    toAccount: { include: { currency: true } },
-    category: true,
-    entity: true,
-    currency: true,
-  } as const;
-
-  private static readonly TRANSACTION_SELECT_FOR_BALANCE = {
-    id: true,
-    userId: true,
-    type: true,
-    accountId: true,
-    toAccountId: true,
-    amount: true,
-    fee: true,
-    currencyId: true,
-    account: { select: { currencyId: true } },
-    toAccount: { select: { currencyId: true } },
-  } as const;
-
   constructor(
     private calculator: BalanceCalculator,
     private balanceUpdater: BalanceUpdater,
@@ -300,14 +411,7 @@ class TransactionHandlerFactory {
         userId,
         deletedAt: null,
       },
-      select: {
-        id: true,
-        userId: true,
-        currencyId: true,
-        type: true,
-        balance: true,
-        creditLimit: true,
-      },
+      select: ACCOUNT_SELECT_MINIMAL,
     });
     if (!account) {
       throw new Error('Account not found');
@@ -461,7 +565,7 @@ class TransactionHandlerFactory {
 
       return tx.transaction.create({
         data: transactionData,
-        include: TransactionHandlerFactory.TRANSACTION_INCLUDE,
+        include: TRANSACTION_INCLUDE,
       });
     });
   }
@@ -481,7 +585,7 @@ class TransactionHandlerFactory {
   ) {
     const existingTransaction = await prisma.transaction.findUnique({
       where: { id: transactionId },
-      select: TransactionHandlerFactory.TRANSACTION_SELECT_FOR_BALANCE,
+      select: TRANSACTION_SELECT_FOR_BALANCE,
     });
 
     if (!existingTransaction) {
@@ -519,164 +623,115 @@ class TransactionHandlerFactory {
       return tx.transaction.update({
         where: { id: transactionId },
         data: transactionData,
-        include: TransactionHandlerFactory.TRANSACTION_INCLUDE,
+        include: TRANSACTION_INCLUDE,
       });
     });
   }
 
-  async handleIncomeExpense(
+  private async handleTransaction(
+    userId: string,
+    data: IUpsertTransaction,
+    account: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    userBaseCurrencyId: string,
+    validateOwnership: () => Promise<void>,
+    getToAccount: () => Promise<Awaited<
+      ReturnType<typeof this.validateAccountOwnership>
+    > | null>,
+  ) {
+    await validateOwnership();
+
+    const toAccount = await getToAccount();
+
+    const currencyId = data.currencyId ?? account.currencyId;
+    const amountDecimal = new Decimal(data.amount);
+    const feeDecimal = new Decimal(data.fee ?? 0);
+
+    const preparedTransactionData = await this.prepareTransactionData(
+      userId,
+      data,
+      account.currencyId,
+      userBaseCurrencyId,
+    );
+
+    if (data.id) {
+      return this.updateTransaction(
+        userId,
+        data.id,
+        preparedTransactionData,
+        data.type,
+        account.id,
+        toAccount?.id ?? null,
+        amountDecimal,
+        feeDecimal,
+        currencyId,
+        account.currencyId,
+        toAccount?.currencyId,
+      );
+    }
+
+    return this.createTransaction(
+      preparedTransactionData,
+      data.type,
+      account.id,
+      toAccount?.id ?? null,
+      amountDecimal,
+      feeDecimal,
+      currencyId,
+      account.currencyId,
+      toAccount?.currencyId,
+    );
+  }
+
+  handleIncomeExpense(
     userId: string,
     data: IIncomeExpenseTransaction,
     account: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
     userBaseCurrencyId: string,
   ) {
-    await this.validateCategoryOwnership(userId, data.categoryId);
-
-    const currencyId = data.currencyId ?? account.currencyId;
-    const amountDecimal = new Decimal(data.amount);
-    const feeDecimal = new Decimal(data.fee ?? 0);
-
-    const preparedTransactionData = await this.prepareTransactionData(
+    return this.handleTransaction(
       userId,
       data,
-      account.currencyId,
+      account,
       userBaseCurrencyId,
-    );
-
-    if (data.id) {
-      return this.updateTransaction(
-        userId,
-        data.id,
-        preparedTransactionData,
-        data.type,
-        account.id,
-        null,
-        amountDecimal,
-        feeDecimal,
-        currencyId,
-        account.currencyId,
-      );
-    }
-
-    return this.createTransaction(
-      preparedTransactionData,
-      data.type,
-      account.id,
-      null,
-      amountDecimal,
-      feeDecimal,
-      currencyId,
-      account.currencyId,
+      () => this.validateCategoryOwnership(userId, data.categoryId),
+      () => Promise.resolve(null),
     );
   }
 
-  async handleTransfer(
+  handleTransfer(
     userId: string,
     data: ITransferTransaction,
     account: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
     userBaseCurrencyId: string,
   ) {
-    const toAccount = await this.validateAccountOwnership(
-      userId,
-      data.toAccountId,
-    );
-
-    const currencyId = data.currencyId ?? account.currencyId;
-    const amountDecimal = new Decimal(data.amount);
-    const feeDecimal = new Decimal(data.fee ?? 0);
-
-    const preparedTransactionData = await this.prepareTransactionData(
+    return this.handleTransaction(
       userId,
       data,
-      account.currencyId,
+      account,
       userBaseCurrencyId,
-    );
-
-    if (data.id) {
-      return this.updateTransaction(
-        userId,
-        data.id,
-        preparedTransactionData,
-        data.type,
-        account.id,
-        toAccount.id,
-        amountDecimal,
-        feeDecimal,
-        currencyId,
-        account.currencyId,
-        toAccount.currencyId,
-      );
-    }
-
-    return this.createTransaction(
-      preparedTransactionData,
-      data.type,
-      account.id,
-      toAccount.id,
-      amountDecimal,
-      feeDecimal,
-      currencyId,
-      account.currencyId,
-      toAccount.currencyId,
+      () => Promise.resolve(),
+      () => this.validateAccountOwnership(userId, data.toAccountId),
     );
   }
 
-  async handleLoan(
+  handleLoan(
     userId: string,
     data: ILoanTransaction,
     account: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
     userBaseCurrencyId: string,
   ) {
-    await this.validateEntityOwnership(userId, data.entityId);
-
-    const currencyId = data.currencyId ?? account.currencyId;
-    const amountDecimal = new Decimal(data.amount);
-    const feeDecimal = new Decimal(data.fee ?? 0);
-
-    const preparedTransactionData = await this.prepareTransactionData(
+    return this.handleTransaction(
       userId,
       data,
-      account.currencyId,
+      account,
       userBaseCurrencyId,
-    );
-
-    if (data.id) {
-      return this.updateTransaction(
-        userId,
-        data.id,
-        preparedTransactionData,
-        data.type,
-        account.id,
-        null,
-        amountDecimal,
-        feeDecimal,
-        currencyId,
-        account.currencyId,
-      );
-    }
-
-    return this.createTransaction(
-      preparedTransactionData,
-      data.type,
-      account.id,
-      null,
-      amountDecimal,
-      feeDecimal,
-      currencyId,
-      account.currencyId,
+      () => this.validateEntityOwnership(userId, data.entityId),
+      () => Promise.resolve(null),
     );
   }
 }
 
 export class TransactionService {
-  private static readonly TRANSACTION_INCLUDE = {
-    account: { include: { currency: true } },
-    toAccount: { include: { currency: true } },
-    category: true,
-    entity: true,
-    currency: true,
-  } as const;
-
   private calculator: BalanceCalculator;
   private balanceUpdater: BalanceUpdater;
   private handlerFactory: TransactionHandlerFactory;
@@ -697,14 +752,7 @@ export class TransactionService {
         userId,
         deletedAt: null,
       },
-      select: {
-        id: true,
-        userId: true,
-        currencyId: true,
-        type: true,
-        balance: true,
-        creditLimit: true,
-      },
+      select: ACCOUNT_SELECT_MINIMAL,
     });
 
     if (!account) {
@@ -758,7 +806,7 @@ export class TransactionService {
         userId,
         deletedAt: null,
       },
-      include: TransactionService.TRANSACTION_INCLUDE,
+      include: TRANSACTION_INCLUDE,
     });
 
     if (!transaction) {
@@ -828,7 +876,7 @@ export class TransactionService {
         orderBy,
         skip,
         take: limit,
-        include: TransactionService.TRANSACTION_INCLUDE,
+        select: TRANSACTION_SELECT_FOR_LIST,
       }),
       prisma.transaction.count({ where }),
       prisma.transaction.groupBy({
@@ -846,12 +894,7 @@ export class TransactionService {
       where: {
         id: { in: currencyIds },
       },
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        symbol: true,
-      },
+      select: CURRENCY_SELECT_BASIC,
     });
 
     const currencyMap = new Map(currencies.map((c) => [c.id, c]));
@@ -972,14 +1015,7 @@ export class TransactionService {
               userId,
               deletedAt: null,
             },
-            select: {
-              id: true,
-              userId: true,
-              currencyId: true,
-              type: true,
-              balance: true,
-              creditLimit: true,
-            },
+            select: ACCOUNT_SELECT_MINIMAL,
           });
 
           if (!account) {
