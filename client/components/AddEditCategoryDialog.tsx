@@ -12,6 +12,7 @@ type AddEditCategoryDialogProps = {
   onClose: () => void;
   category: CategoryFull | null;
   parentId?: string | null;
+  parentType?: CategoryType | null;
   onSubmit: (data: CategoryFormData) => void;
   isLoading?: boolean;
 };
@@ -66,11 +67,14 @@ const AddEditCategoryDialog = ({
   onClose,
   category,
   parentId,
+  parentType,
   onSubmit,
   isLoading = false,
 }: AddEditCategoryDialogProps) => {
   const { t } = useTranslation();
   const isEditMode = !!category;
+  const isAddChildMode =
+    !isEditMode && parentId !== undefined && parentId !== null;
   const validation = useValidation();
 
   const { data: categoriesData } = useCategoriesQuery({});
@@ -131,12 +135,15 @@ const AddEditCategoryDialog = ({
       form.setFieldValue('parentId', category.parentId);
       form.setFieldValue('icon', category.icon || '');
       form.setFieldValue('color', category.color || '');
-    } else if (parentId !== undefined) {
+    } else if (parentId !== undefined && parentId !== null) {
       form.setFieldValue('parentId', parentId);
+      if (parentType) {
+        form.setFieldValue('type', parentType);
+      }
     } else {
       form.reset();
     }
-  }, [category, parentId, isOpen, form]);
+  }, [category, parentId, parentType, isOpen, form]);
 
   const categoryTypeOptions = [
     { value: CategoryType.expense, label: t('categories.expense') },
@@ -203,7 +210,7 @@ const AddEditCategoryDialog = ({
                   onChange={(value) => field.handleChange(value ?? '')}
                   onBlur={field.handleBlur}
                   error={error}
-                  disabled={isEditMode}
+                  disabled={isEditMode || isAddChildMode}
                 />
               );
             }}
@@ -221,8 +228,9 @@ const AddEditCategoryDialog = ({
                   onChange={(value) => field.handleChange(value)}
                   onBlur={field.handleBlur}
                   error={error}
-                  clearable
+                  clearable={!isAddChildMode}
                   searchable
+                  disabled={isAddChildMode}
                 />
               );
             }}

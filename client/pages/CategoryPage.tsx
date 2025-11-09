@@ -168,9 +168,12 @@ const CategoryPage = () => {
   };
 
   const handleAddChild = (categoryId: string) => {
-    setSelectedCategory(null);
-    setParentIdForNew(categoryId);
-    setIsDialogOpen(true);
+    const category = categoryMap.get(categoryId);
+    if (category) {
+      setSelectedCategory(null);
+      setParentIdForNew(categoryId);
+      setIsDialogOpen(true);
+    }
   };
 
   const handleEdit = (categoryId: string) => {
@@ -488,6 +491,11 @@ const CategoryPage = () => {
             onClose={handleDialogClose}
             category={selectedCategory}
             parentId={parentIdForNew}
+            parentType={
+              parentIdForNew
+                ? (categoryMap.get(parentIdForNew)?.type ?? null)
+                : null
+            }
             onSubmit={handleSubmit}
             isLoading={isSubmitting}
           />
