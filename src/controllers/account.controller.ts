@@ -4,66 +4,88 @@ import { ListAccountsQueryDto, UpsertAccountDto } from '../dto/account.dto';
 import authMacro from '../macros/auth';
 import accountService from '../services/account.service';
 
-const accountController = new Elysia().group('/accounts', (group) =>
-  group
-    .use(accountService)
-    .use(authMacro)
-    .post(
-      '/',
-      async ({ user, body, accountService }) => {
-        return await accountService.upsertAccount(user.id, body);
-      },
-      {
-        checkAuth: [UserRole.user],
-        detail: {
-          tags: ['Account'],
-          security: [{ JwtAuth: [] }],
+const ACCOUNT_DETAIL = {
+  tags: ['Account'],
+  security: [{ JwtAuth: [] }],
+};
+
+const accountController = new Elysia().group(
+  '/accounts',
+  {
+    detail: {
+      tags: ['Account'],
+      description:
+        'Account management endpoints for creating, reading, updating, and deleting user accounts.',
+    },
+  },
+  (group) =>
+    group
+      .use(accountService)
+      .use(authMacro)
+      .post(
+        '/',
+        async ({ user, body, accountService }) => {
+          return await accountService.upsertAccount(user.id, body);
         },
-        body: UpsertAccountDto,
-      },
-    )
-    .get(
-      '/:id',
-      async ({ user, params, accountService }) => {
-        return await accountService.getAccount(user.id, params.id);
-      },
-      {
-        checkAuth: [UserRole.user],
-        detail: {
-          tags: ['Account'],
-          security: [{ JwtAuth: [] }],
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...ACCOUNT_DETAIL,
+            summary: 'Create or update account',
+            description:
+              'Create a new account or update an existing account for the authenticated user. If an account ID is provided, it will update the existing account; otherwise, it creates a new one.',
+          },
+          body: UpsertAccountDto,
         },
-        params: t.Object({ id: t.String() }),
-      },
-    )
-    .get(
-      '/',
-      async ({ user, query, accountService }) => {
-        return await accountService.listAccounts(user.id, query);
-      },
-      {
-        checkAuth: [UserRole.user],
-        detail: {
-          tags: ['Account'],
-          security: [{ JwtAuth: [] }],
+      )
+      .get(
+        '/:id',
+        async ({ user, params, accountService }) => {
+          return await accountService.getAccount(user.id, params.id);
         },
-        query: ListAccountsQueryDto,
-      },
-    )
-    .delete(
-      '/:id',
-      async ({ user, params, accountService }) => {
-        return await accountService.deleteAccount(user.id, params.id);
-      },
-      {
-        checkAuth: [UserRole.user],
-        detail: {
-          tags: ['Account'],
-          security: [{ JwtAuth: [] }],
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...ACCOUNT_DETAIL,
+            summary: 'Get account by ID',
+            description:
+              'Retrieve detailed information about a specific account by its ID for the authenticated user.',
+          },
+          params: t.Object({ id: t.String() }),
         },
-        params: t.Object({ id: t.String() }),
-      },
-    ),
+      )
+      .get(
+        '/',
+        async ({ user, query, accountService }) => {
+          return await accountService.listAccounts(user.id, query);
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...ACCOUNT_DETAIL,
+            summary: 'List all accounts',
+            description:
+              'Get a paginated list of all accounts belonging to the authenticated user. Supports filtering and sorting.',
+          },
+          query: ListAccountsQueryDto,
+        },
+      )
+      .delete(
+        '/:id',
+        async ({ user, params, accountService }) => {
+          return await accountService.deleteAccount(user.id, params.id);
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...ACCOUNT_DETAIL,
+            summary: 'Delete account',
+            description:
+              'Permanently delete an account by its ID. This action cannot be undone.',
+          },
+          params: t.Object({ id: t.String() }),
+        },
+      ),
 );
 
 export default accountController;
