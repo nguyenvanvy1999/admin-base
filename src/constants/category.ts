@@ -4,7 +4,6 @@ export const CATEGORY_NAME = {
   // Expense categories - Parents
   FOOD_DINING: 'food_dining',
   CHILDREN: 'children',
-  INVESTMENT: 'investment',
   TRANSPORTATION: 'transportation',
   UTILITIES: 'utilities',
   CELEBRATIONS: 'celebrations',
@@ -89,6 +88,9 @@ export const CATEGORY_NAME = {
   BUSINESS: 'business',
   OTHER: 'other',
 
+  // Investment categories - Parents
+  INVESTMENT: 'investment',
+
   // Investment categories - Children
   BUY: 'buy',
   SELL: 'sell',
@@ -128,11 +130,6 @@ export const EXPENSE_CATEGORIES: CategorySeedData[] = [
       { name: CATEGORY_NAME.MILK, type: CategoryType.expense },
       { name: CATEGORY_NAME.POCKET_MONEY, type: CategoryType.expense },
     ],
-  },
-  {
-    name: CATEGORY_NAME.INVESTMENT,
-    type: CategoryType.expense,
-    children: [{ name: CATEGORY_NAME.LOSS, type: CategoryType.expense }],
   },
   {
     name: CATEGORY_NAME.TRANSPORTATION,

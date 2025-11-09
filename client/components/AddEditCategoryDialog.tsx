@@ -30,12 +30,17 @@ const flattenCategories = (
   t: (key: string) => string,
   excludeId?: string,
   depth = 0,
+  onlyLevel1 = false,
 ): Array<{ value: string; label: string; disabled?: boolean }> => {
   const result: Array<{ value: string; label: string; disabled?: boolean }> =
     [];
 
   for (const category of categories) {
     if (category.id === excludeId) {
+      continue;
+    }
+
+    if (onlyLevel1 && category.parentId !== null) {
       continue;
     }
 
@@ -46,9 +51,9 @@ const flattenCategories = (
       disabled: category.isLocked,
     });
 
-    if (category.children && category.children.length > 0) {
+    if (!onlyLevel1 && category.children && category.children.length > 0) {
       result.push(
-        ...flattenCategories(category.children, t, excludeId, depth + 1),
+        ...flattenCategories(category.children, t, excludeId, depth + 1, false),
       );
     }
   }
@@ -76,7 +81,7 @@ const AddEditCategoryDialog = ({
     }
 
     const excludeId = isEditMode && category ? category.id : undefined;
-    return flattenCategories(categoriesData.categories, t, excludeId);
+    return flattenCategories(categoriesData.categories, t, excludeId, 0, true);
   }, [categoriesData, isEditMode, category, t]);
 
   const filteredParentOptions = useMemo(() => {

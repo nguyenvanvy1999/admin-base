@@ -476,6 +476,7 @@ const CategoryPage = () => {
                     );
                     if (item) {
                       const category = categoryMap.get(item.id);
+                      const canAddChild = category && !category.parentId;
                       const canEdit = category && !category.isLocked;
                       const canDelete =
                         category &&
@@ -536,7 +537,7 @@ const CategoryPage = () => {
                               sx={{ display: 'flex', gap: 0.5 }}
                               onClick={(e) => e.stopPropagation()}
                             >
-                              {canEdit && (
+                              {canAddChild && (
                                 <IconButton
                                   size="small"
                                   onClick={() => handleAddChild(item.id)}

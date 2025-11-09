@@ -182,6 +182,10 @@ export class CategoryService {
       if (parent.type !== data.type) {
         throw new Error('Category type must match parent category type');
       }
+
+      if (parent.parentId !== null) {
+        throw new Error('Cannot create category with more than 2 levels');
+      }
     }
 
     return prisma.category.create({
@@ -232,6 +236,10 @@ export class CategoryService {
 
         if (newParent.type !== data.type) {
           throw new Error('Category type must match parent category type');
+        }
+
+        if (newParent.parentId !== null) {
+          throw new Error('Cannot create category with more than 2 levels');
         }
 
         const hasCircularReference = await this.checkCircularReference(
