@@ -115,12 +115,30 @@ function DataTable<T extends Record<string, any>>({
   }, [searchInput, filters?.hasActive]);
 
   const finalColumns = useMemo(() => {
-    const cols = [...columns];
+    const indexColumn: ColumnDef<T> = {
+      id: 'index',
+      header: () => t('common.index', { defaultValue: 'STT' }),
+      cell: (info) => {
+        const rowIndex = info.row.index;
+        const currentPage = pagination?.currentPage || 1;
+        const itemsPerPage = pagination?.itemsPerPage || currentPageSize;
+        const index = (currentPage - 1) * itemsPerPage + rowIndex + 1;
+        return (
+          <span className="text-gray-600 dark:text-gray-400 font-medium">
+            {index}
+          </span>
+        );
+      },
+      size: 80,
+      enableSorting: false,
+    };
+
+    const cols = [indexColumn, ...columns];
     if (actions) {
       cols.push(createActionColumn(actions));
     }
     return cols;
-  }, [columns, actions]);
+  }, [columns, actions, pagination, currentPageSize, t]);
 
   const table = useReactTable({
     data,

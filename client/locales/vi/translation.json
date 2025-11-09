@@ -18,7 +18,8 @@
     "saving": "Đang lưu...",
     "search": "Tìm kiếm",
     "pageSize": "Kích thước trang",
-    "reset": "Đặt lại"
+    "reset": "Đặt lại",
+    "index": "STT"
   },
   "login": {
     "title": "FinTrack",
