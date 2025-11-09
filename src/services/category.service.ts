@@ -4,6 +4,7 @@ import { Elysia } from 'elysia';
 import {
   type CategorySeedData,
   EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
   INVESTMENT_CATEGORY,
   LOAN_CATEGORIES,
   TRANSFER_CATEGORY,
@@ -57,6 +58,7 @@ export class CategoryService {
 
       await this.createSeedCategory(tx, userId, TRANSFER_CATEGORY);
       await this.createSeedCategory(tx, userId, INVESTMENT_CATEGORY);
+      await this.createSeedCategory(tx, userId, INCOME_CATEGORIES);
 
       for (const category of EXPENSE_CATEGORIES) {
         await this.createSeedCategory(tx, userId, category);

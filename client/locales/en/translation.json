@@ -311,6 +311,7 @@
     "expense": "Expense",
     "salary": "Salary",
     "bonus": "Bonus",
+    "gifts_received": "Gifts Received",
     "investment_income": "Investment",
     "business": "Business",
     "other": "Other",

@@ -84,6 +84,7 @@ export const CATEGORY_NAME = {
   // Income categories - Children
   SALARY: 'salary',
   BONUS: 'bonus',
+  GIFTS_RECEIVED: 'gifts_received',
   INVESTMENT_INCOME: 'investment_income',
   BUSINESS: 'business',
   OTHER: 'other',
@@ -252,5 +253,18 @@ export const INVESTMENT_CATEGORY: CategorySeedData = {
     { name: CATEGORY_NAME.FEE, type: CategoryType.investment },
     { name: CATEGORY_NAME.GAIN, type: CategoryType.investment },
     { name: CATEGORY_NAME.LOSS, type: CategoryType.investment },
+  ],
+};
+
+export const INCOME_CATEGORIES: CategorySeedData = {
+  name: CATEGORY_NAME.INCOME,
+  type: CategoryType.income,
+  children: [
+    { name: CATEGORY_NAME.SALARY, type: CategoryType.income },
+    { name: CATEGORY_NAME.BONUS, type: CategoryType.income },
+    { name: CATEGORY_NAME.GIFTS_RECEIVED, type: CategoryType.income },
+    { name: CATEGORY_NAME.INVESTMENT_INCOME, type: CategoryType.income },
+    { name: CATEGORY_NAME.BUSINESS, type: CategoryType.income },
+    { name: CATEGORY_NAME.OTHER, type: CategoryType.income },
   ],
 };

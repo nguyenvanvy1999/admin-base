@@ -11,6 +11,7 @@ import type {
   MUITreeItem,
 } from '@client/types/category';
 import {
+  ActionIcon,
   Button,
   Group,
   Modal,
@@ -29,6 +30,7 @@ import {
   CarRepair,
   Category,
   ChildCare,
+  Close,
   Coffee,
   CreditCard,
   Delete,
@@ -144,6 +146,7 @@ const CATEGORY_ICON_MAP: Record<string, SvgIconComponent> = {
   expense: TrendingDown,
   salary: AttachMoney,
   bonus: CardGiftcard,
+  gifts_received: CardGiftcard,
   investment_income: TrendingUp,
   business: Business,
   other: Category,
@@ -240,6 +243,7 @@ const CategoryPage = () => {
   const [parentIdForNew, setParentIdForNew] = useState<string | null>(null);
   const [typeFilterInput, setTypeFilterInput] = useState<CategoryType[]>([]);
   const [typeFilter, setTypeFilter] = useState<CategoryType[]>([]);
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [selectedItems, setSelectedItems] = useState<string | null>(null);
@@ -361,6 +365,23 @@ const CategoryPage = () => {
     return searchQuery.trim() !== '' || typeFilter.length > 0;
   }, [searchQuery, typeFilter]);
 
+  const handleSearch = () => {
+    setSearchQuery(searchInput);
+    setTypeFilter(typeFilterInput);
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setSearchQuery('');
+  };
+
+  const handleReset = () => {
+    setSearchInput('');
+    setSearchQuery('');
+    setTypeFilterInput([]);
+    setTypeFilter([]);
+  };
+
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
@@ -385,64 +406,80 @@ const CategoryPage = () => {
           </div>
 
           <Stack gap="md" mb="md">
-            <div className="flex gap-4 items-end">
-              <TextInput
-                placeholder={t('categories.search')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ flex: 1 }}
-              />
-              <MultiSelect
-                placeholder={t('categories.filterByType')}
-                value={typeFilterInput}
-                onChange={(value) =>
-                  setTypeFilterInput(value as CategoryType[])
-                }
-                data={[
-                  {
-                    value: CategoryType.expense,
-                    label: t('categories.expense'),
-                  },
-                  {
-                    value: CategoryType.income,
-                    label: t('categories.income'),
-                  },
-                  {
-                    value: CategoryType.transfer,
-                    label: t('categories.transfer'),
-                  },
-                  {
-                    value: CategoryType.investment,
-                    label: t('categories.investment'),
-                  },
-                  {
-                    value: CategoryType.loan,
-                    label: t('categories.loan'),
-                  },
-                ]}
-                style={{ width: 200 }}
-              />
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchQuery('');
-                  setTypeFilterInput([]);
-                  setTypeFilter([]);
-                }}
-                disabled={!hasActiveFilters}
-              >
-                {t('common.reset')}
-              </Button>
-              <Button
-                variant="filled"
-                onClick={() => {
-                  setTypeFilter(typeFilterInput);
-                  setSearchQuery(searchQuery);
-                }}
-                disabled={!hasActiveFilters}
-              >
-                {t('common.search')}
-              </Button>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="w-full md:w-64">
+                <TextInput
+                  placeholder={t('categories.search')}
+                  value={searchInput}
+                  onChange={(e) =>
+                    setSearchInput((e.target as HTMLInputElement).value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch();
+                    }
+                  }}
+                  rightSection={
+                    searchInput.trim() !== '' ? (
+                      <ActionIcon
+                        size="sm"
+                        variant="transparent"
+                        onClick={handleClearSearch}
+                        disabled={isLoading}
+                      >
+                        <Close fontSize="small" />
+                      </ActionIcon>
+                    ) : null
+                  }
+                />
+              </div>
+
+              <div className="w-full md:w-48">
+                <MultiSelect
+                  placeholder={t('categories.filterByType')}
+                  value={typeFilterInput}
+                  onChange={(value) =>
+                    setTypeFilterInput(value as CategoryType[])
+                  }
+                  data={[
+                    {
+                      value: CategoryType.expense,
+                      label: t('categories.expense'),
+                    },
+                    {
+                      value: CategoryType.income,
+                      label: t('categories.income'),
+                    },
+                    {
+                      value: CategoryType.transfer,
+                      label: t('categories.transfer'),
+                    },
+                    {
+                      value: CategoryType.investment,
+                      label: t('categories.investment'),
+                    },
+                    {
+                      value: CategoryType.loan,
+                      label: t('categories.loan'),
+                    },
+                  ]}
+                />
+              </div>
+
+              <div className="w-full md:w-auto flex gap-2">
+                <Button onClick={handleSearch} disabled={isLoading}>
+                  {t('common.search')}
+                </Button>
+                {hasActiveFilters && (
+                  <Button
+                    variant="outline"
+                    onClick={handleReset}
+                    disabled={isLoading}
+                  >
+                    {t('common.reset', { defaultValue: 'Reset' })}
+                  </Button>
+                )}
+              </div>
             </div>
           </Stack>
 
