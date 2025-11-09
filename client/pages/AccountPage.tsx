@@ -6,17 +6,12 @@ import {
   useUpdateAccountMutation,
 } from '@client/hooks/mutations/useAccountMutations';
 import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
+import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import type { AccountFormData, AccountFull } from '@client/types/account';
 import { Button, Group, Modal, MultiSelect, Text } from '@mantine/core';
-import { CURRENCY_IDS } from '@server/constants/currency';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-const CURRENCIES = [
-  { id: CURRENCY_IDS.VND, code: 'VND', name: 'Vietnamese Dong', symbol: '₫' },
-  { id: CURRENCY_IDS.USD, code: 'USD', name: 'US Dollar', symbol: '$' },
-];
 
 const AccountPage = () => {
   const { t } = useTranslation();
@@ -54,6 +49,7 @@ const AccountPage = () => {
   );
 
   const { data, isLoading } = useAccountsQuery(queryParams);
+  const { data: currencies = [] } = useCurrenciesQuery();
   const createMutation = useCreateAccountMutation();
   const updateMutation = useUpdateAccountMutation();
   const deleteMutation = useDeleteAccountMutation();
@@ -189,7 +185,7 @@ const AccountPage = () => {
                   placeholder={t('accounts.currencyPlaceholder', {
                     defaultValue: 'Currency',
                   })}
-                  data={CURRENCIES.map((currency) => ({
+                  data={currencies.map((currency) => ({
                     value: currency.id,
                     label: `${currency.code} - ${currency.name}`,
                   }))}

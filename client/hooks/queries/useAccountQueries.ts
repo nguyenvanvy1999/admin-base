@@ -5,10 +5,11 @@ import { useQuery } from '@tanstack/react-query';
 
 type ListAccountsQuery = {
   type?: AccountType[];
+  currencyId?: string[];
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'name' | 'createdAt';
+  sortBy?: 'name' | 'createdAt' | 'balance';
   sortOrder?: 'asc' | 'desc';
 };
 

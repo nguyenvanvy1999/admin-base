@@ -1,3 +1,4 @@
+import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import type { AccountFormData, AccountFull } from '@client/types/account';
 import {
   Button,
@@ -9,7 +10,6 @@ import {
   Stack,
   TextInput,
 } from '@mantine/core';
-import { CURRENCY_IDS } from '@server/constants/currency';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
@@ -24,11 +24,6 @@ type AddEditAccountDialogProps = {
   isLoading?: boolean;
 };
 
-const CURRENCIES = [
-  { id: CURRENCY_IDS.VND, code: 'VND', name: 'Vietnamese Dong', symbol: '₫' },
-  { id: CURRENCY_IDS.USD, code: 'USD', name: 'US Dollar', symbol: '$' },
-];
-
 const AddEditAccountDialog = ({
   isOpen,
   onClose,
@@ -37,6 +32,7 @@ const AddEditAccountDialog = ({
   isLoading = false,
 }: AddEditAccountDialogProps) => {
   const { t } = useTranslation();
+  const { data: currencies = [] } = useCurrenciesQuery();
   const isEditMode = !!account;
   const validation = useValidation();
 
@@ -197,7 +193,7 @@ const AddEditAccountDialog = ({
                   label={t('accounts.currency')}
                   placeholder={t('accounts.currencyPlaceholder')}
                   required
-                  data={CURRENCIES.map((currency) => ({
+                  data={currencies.map((currency) => ({
                     value: currency.id,
                     label: `${currency.code} - ${currency.name}`,
                   }))}

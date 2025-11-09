@@ -1,26 +1,22 @@
 import { useUpdateProfileMutation } from '@client/hooks/mutations/useUserMutations';
+import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import { useUserQuery } from '@client/hooks/queries/useUserQuery';
 import { Button, Select, TextInput } from '@mantine/core';
-import { CURRENCY_IDS } from '@server/constants/currency';
 import { useForm } from '@tanstack/react-form';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const CURRENCIES = [
-  { id: CURRENCY_IDS.VND, code: 'VND', name: 'Vietnamese Dong', symbol: '₫' },
-  { id: CURRENCY_IDS.USD, code: 'USD', name: 'US Dollar', symbol: '$' },
-];
-
 const ProfilePage = () => {
   const { t } = useTranslation();
   const { data: user, isLoading } = useUserQuery();
+  const { data: currencies = [] } = useCurrenciesQuery();
   const updateProfileMutation = useUpdateProfileMutation();
   const [isEditMode, setIsEditMode] = useState(false);
 
   const form = useForm({
     defaultValues: {
       name: user?.name || '',
-      baseCurrencyId: user?.baseCurrencyId || CURRENCY_IDS.VND,
+      baseCurrencyId: user?.baseCurrencyId || '',
       oldPassword: '',
       newPassword: '',
       confirmPassword: '',
@@ -112,7 +108,7 @@ const ProfilePage = () => {
     }
   };
 
-  const selectedCurrency = CURRENCIES.find((c) => c.id === user.baseCurrencyId);
+  const selectedCurrency = currencies.find((c) => c.id === user.baseCurrencyId);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -164,9 +160,9 @@ const ProfilePage = () => {
                   return (
                     <Select
                       label={t('profile.baseCurrency')}
-                      data={CURRENCIES.map((currency) => ({
+                      data={currencies.map((currency) => ({
                         value: currency.id,
-                        label: `${currency.symbol} - ${currency.name} (${currency.code})`,
+                        label: `${currency.symbol || ''} - ${currency.name} (${currency.code})`,
                       }))}
                       value={field.state.value ?? null}
                       onChange={(value) => field.handleChange(value ?? '')}
@@ -333,7 +329,7 @@ const ProfilePage = () => {
                   </dt>
                   <dd className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {selectedCurrency
-                      ? `${selectedCurrency.symbol} - ${selectedCurrency.name} (${selectedCurrency.code})`
+                      ? `${selectedCurrency.symbol || ''} - ${selectedCurrency.name} (${selectedCurrency.code})`
                       : t('common.nA')}
                   </dd>
                 </div>

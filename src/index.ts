@@ -3,6 +3,7 @@ import { staticPlugin } from '@elysiajs/static';
 import { appEnv } from '@server/libs/env';
 import { Elysia } from 'elysia';
 import accountController from './controllers/account.controller';
+import currencyController from './controllers/currency.controller';
 import entityController from './controllers/entity.controller';
 import userController from './controllers/user.controller';
 import { logger } from './libs/logger';
@@ -46,6 +47,7 @@ export const app = new Elysia()
       .onError(errorMiddleware)
       .use(userController)
       .use(accountController)
+      .use(currencyController)
       .use(entityController),
   )
   .listen(appEnv.PORT);
