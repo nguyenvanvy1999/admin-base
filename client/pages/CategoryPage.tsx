@@ -60,35 +60,33 @@ const filterTree = (
     return items;
   }
 
-  return items
-    .map((item) => {
-      const matchesSearch =
-        !searchQuery ||
-        item.label.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesType =
-        typeFilter.length === 0 || typeFilter.includes(item.type);
+  const filtered: MUITreeItem[] = [];
 
-      const filteredChildren = item.children
-        ? filterTree(item.children, searchQuery, typeFilter)
-        : undefined;
+  for (const item of items) {
+    const matchesSearch =
+      !searchQuery ||
+      item.label.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType =
+      typeFilter.length === 0 || typeFilter.includes(item.type);
 
-      if (matchesSearch && matchesType) {
-        return {
-          ...item,
-          children: filteredChildren,
-        };
-      }
+    const filteredChildren = item.children
+      ? filterTree(item.children, searchQuery, typeFilter)
+      : undefined;
 
-      if (filteredChildren && filteredChildren.length > 0) {
-        return {
-          ...item,
-          children: filteredChildren,
-        };
-      }
+    if (matchesSearch && matchesType) {
+      filtered.push({
+        ...item,
+        children: filteredChildren,
+      });
+    } else if (filteredChildren && filteredChildren.length > 0) {
+      filtered.push({
+        ...item,
+        children: filteredChildren,
+      });
+    }
+  }
 
-      return null;
-    })
-    .filter((item): item is MUITreeItem => item !== null);
+  return filtered;
 };
 
 const CategoryPage = () => {
@@ -106,7 +104,7 @@ const CategoryPage = () => {
   const [typeFilter, setTypeFilter] = useState<CategoryType[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [selectedItems, setSelectedItems] = useState<string | null>(null);
 
   const queryParams = useMemo(
     () => ({
@@ -221,33 +219,6 @@ const CategoryPage = () => {
     }
   };
 
-  const handleItemEdit = useCallback(
-    async (itemId: string, newLabel: string) => {
-      const category = categoryMap.get(itemId);
-      if (!category || category.isLocked) {
-        return;
-      }
-
-      if (newLabel.trim() === category.name) {
-        return;
-      }
-
-      try {
-        await updateMutation.mutateAsync({
-          id: category.id,
-          name: newLabel.trim(),
-          type: category.type,
-          parentId: category.parentId,
-          icon: category.icon,
-          color: category.color,
-        });
-      } catch {
-        // Error is already handled by mutation's onError callback
-      }
-    },
-    [categoryMap, updateMutation],
-  );
-
   const hasActiveFilters = useMemo(() => {
     return searchQuery.trim() !== '' || typeFilter.length > 0;
   }, [searchQuery, typeFilter]);
@@ -350,24 +321,20 @@ const CategoryPage = () => {
               <RichTreeView
                 items={filteredTreeItems}
                 expandedItems={expandedItems}
-                onExpandedItemsChange={(event, itemIds) => {
+                onExpandedItemsChange={(_event: unknown, itemIds: string[]) => {
                   setExpandedItems(itemIds);
                 }}
                 selectedItems={selectedItems}
-                onSelectedItemsChange={(event, itemIds) => {
+                onSelectedItemsChange={(
+                  _event: unknown,
+                  itemIds: string | null,
+                ) => {
                   setSelectedItems(itemIds);
                 }}
-                isItemEditable={(item) => {
-                  const category = categoryMap.get(item.id);
-                  return category ? !category.isLocked : false;
-                }}
-                onItemEdit={(event, itemId, newLabel) => {
-                  handleItemEdit(itemId, newLabel);
-                }}
-                slots={{
-                  itemLabel: (props) => {
+                slotProps={{
+                  item: (ownerState) => {
                     const item = allCategoriesFlat.find(
-                      (cat) => cat.id === props.itemId,
+                      (cat) => cat.id === ownerState.itemId,
                     );
                     if (item) {
                       const category = categoryMap.get(item.id);
@@ -377,79 +344,84 @@ const CategoryPage = () => {
                         !category.isLocked &&
                         (!category.children || category.children.length === 0);
 
-                      return (
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            width: '100%',
-                            paddingRight: 1,
-                          }}
-                        >
+                      return {
+                        label: (
                           <Box
                             sx={{
-                              flex: 1,
                               display: 'flex',
                               alignItems: 'center',
                               gap: 1,
+                              width: '100%',
+                              paddingRight: 1,
                             }}
                           >
-                            {item.icon && <span>{item.icon}</span>}
-                            {item.color && (
+                            <Box
+                              sx={{
+                                flex: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              {item.icon && <span>{item.icon}</span>}
+                              {item.color && (
+                                <Box
+                                  sx={{
+                                    width: 12,
+                                    height: 12,
+                                    borderRadius: '50%',
+                                    backgroundColor: item.color,
+                                  }}
+                                />
+                              )}
                               <Box
-                                sx={{
-                                  width: 12,
-                                  height: 12,
-                                  borderRadius: '50%',
-                                  backgroundColor: item.color,
-                                }}
-                              />
-                            )}
-                            <Box component="span" sx={{ fontSize: '0.875rem' }}>
-                              {item.label}
+                                component="span"
+                                sx={{ fontSize: '0.875rem' }}
+                              >
+                                {ownerState.label}
+                              </Box>
+                              {item.isLocked && (
+                                <Lock sx={{ fontSize: 14, opacity: 0.6 }} />
+                              )}
                             </Box>
-                            {item.isLocked && (
-                              <Lock sx={{ fontSize: 14, opacity: 0.6 }} />
-                            )}
+                            <Box
+                              sx={{ display: 'flex', gap: 0.5 }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {canEdit && (
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleAddChild(item.id)}
+                                  title={t('categories.addChild')}
+                                >
+                                  <Add sx={{ fontSize: 14 }} />
+                                </IconButton>
+                              )}
+                              {canEdit && (
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleEdit(item.id)}
+                                  title={t('categories.editCategory')}
+                                >
+                                  <Edit sx={{ fontSize: 14 }} />
+                                </IconButton>
+                              )}
+                              {canDelete && (
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => handleDelete(item.id)}
+                                  title={t('categories.deleteCategory')}
+                                >
+                                  <Delete sx={{ fontSize: 14 }} />
+                                </IconButton>
+                              )}
+                            </Box>
                           </Box>
-                          <Box
-                            sx={{ display: 'flex', gap: 0.5 }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {canEdit && (
-                              <IconButton
-                                size="small"
-                                onClick={() => handleAddChild(item.id)}
-                                title={t('categories.addChild')}
-                              >
-                                <Add sx={{ fontSize: 14 }} />
-                              </IconButton>
-                            )}
-                            {canEdit && (
-                              <IconButton
-                                size="small"
-                                onClick={() => handleEdit(item.id)}
-                                title={t('categories.editCategory')}
-                              >
-                                <Edit sx={{ fontSize: 14 }} />
-                              </IconButton>
-                            )}
-                            {canDelete && (
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => handleDelete(item.id)}
-                                title={t('categories.deleteCategory')}
-                              >
-                                <Delete sx={{ fontSize: 14 }} />
-                              </IconButton>
-                            )}
-                          </Box>
-                        </Box>
-                      );
+                        ),
+                      };
                     }
-                    return <Box component="span">{props.label}</Box>;
+                    return {};
                   },
                 }}
               />
