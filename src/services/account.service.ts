@@ -148,7 +148,7 @@ export class AccountService {
 
     const skip = (page - 1) * limit;
 
-    const [accounts, total] = await Promise.all([
+    const [accounts, total, summaryGroups] = await Promise.all([
       prisma.account.findMany({
         where,
         orderBy,
@@ -159,7 +159,47 @@ export class AccountService {
         },
       }),
       prisma.account.count({ where }),
+      prisma.account.groupBy({
+        by: ['currencyId'],
+        where,
+        _sum: {
+          balance: true,
+        },
+      }),
     ]);
+
+    const currencyIds = [...new Set(summaryGroups.map((g) => g.currencyId))];
+
+    const currencies = await prisma.currency.findMany({
+      where: {
+        id: { in: currencyIds },
+      },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        symbol: true,
+      },
+    });
+
+    const currencyMap = new Map(currencies.map((c) => [c.id, c]));
+
+    const summary = summaryGroups
+      .map((group) => {
+        const currency = currencyMap.get(group.currencyId);
+        if (!currency) return null;
+
+        return {
+          currency,
+          totalBalance: group._sum.balance?.toNumber() ?? 0,
+        };
+      })
+      .filter(
+        (
+          item,
+        ): item is { currency: (typeof currencies)[0]; totalBalance: number } =>
+          item !== null,
+      );
 
     return {
       accounts,
@@ -169,6 +209,7 @@ export class AccountService {
         total,
         totalPages: Math.ceil(total / limit),
       },
+      summary,
     };
   }
 

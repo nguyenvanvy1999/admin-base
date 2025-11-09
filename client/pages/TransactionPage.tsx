@@ -14,13 +14,23 @@ import type {
   TransactionFormData,
   TransactionFull,
 } from '@client/types/transaction';
-import { Button, Group, Modal, MultiSelect, Text } from '@mantine/core';
+import {
+  Button,
+  Group,
+  Modal,
+  MultiSelect,
+  NumberFormatter,
+  Text,
+  useMantineColorScheme,
+} from '@mantine/core';
 import { TransactionType } from '@server/generated/prisma/enums';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const TransactionPage = () => {
   const { t } = useTranslation();
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
   const [selectedTransaction, setSelectedTransaction] =
     useState<TransactionFull | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -164,6 +174,59 @@ const TransactionPage = () => {
 
   const summary = data?.summary;
 
+  const summaryContent = useMemo(() => {
+    if (!summary || summary.length === 0) return null;
+
+    return (
+      <>
+        {summary.map((item) => (
+          <div key={item.currency.id} className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Text size="sm" className="text-gray-600 dark:text-gray-400">
+                {t('transactions.totalIncome', { defaultValue: 'Tổng thu' })}:
+              </Text>
+              <span
+                className="font-bold"
+                style={{
+                  color: isDark ? 'rgb(34 197 94)' : 'rgb(21 128 61)',
+                }}
+              >
+                <NumberFormatter
+                  value={item.totalIncome}
+                  prefix={
+                    item.currency.symbol ? `${item.currency.symbol} ` : ''
+                  }
+                  thousandSeparator=","
+                  decimalScale={2}
+                />
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Text size="sm" className="text-gray-600 dark:text-gray-400">
+                {t('transactions.totalExpense', { defaultValue: 'Tổng chi' })}:
+              </Text>
+              <span
+                className="font-bold"
+                style={{
+                  color: isDark ? 'rgb(248 113 113)' : 'rgb(185 28 28)',
+                }}
+              >
+                <NumberFormatter
+                  value={item.totalExpense}
+                  prefix={
+                    item.currency.symbol ? `${item.currency.symbol} ` : ''
+                  }
+                  thousandSeparator=","
+                  decimalScale={2}
+                />
+              </span>
+            </div>
+          </div>
+        ))}
+      </>
+    );
+  }, [summary, isDark, t]);
+
   return (
     <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
@@ -187,7 +250,7 @@ const TransactionPage = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             isLoading={isLoading}
-            summary={summary}
+            summary={summaryContent}
             search={{
               onSearch: (searchValue: string) => {
                 setSearchQuery(searchValue);

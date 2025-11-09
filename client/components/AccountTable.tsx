@@ -1,4 +1,5 @@
 import type { AccountFull } from '@client/types/account';
+import { NumberFormatter } from '@mantine/core';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +15,7 @@ type AccountTableProps = {
   isLoading?: boolean;
 } & Pick<
   DataTableProps<AccountFull>,
-  'search' | 'pageSize' | 'filters' | 'pagination' | 'sorting'
+  'search' | 'pageSize' | 'filters' | 'pagination' | 'sorting' | 'summary'
 >;
 
 const AccountTable = ({
@@ -27,6 +28,7 @@ const AccountTable = ({
   filters,
   pagination,
   sorting,
+  summary,
 }: AccountTableProps) => {
   const { t } = useTranslation();
 
@@ -77,6 +79,26 @@ const AccountTable = ({
           decimalScale: 2,
           thousandSeparator: ',',
         },
+        render: (value, row) => {
+          const balance = parseFloat(String(value));
+          const isNegative = balance < 0;
+          const colorClass = isNegative
+            ? 'text-red-600 dark:text-red-400'
+            : 'text-green-600 dark:text-green-400';
+          const currencySymbol = row.currency.symbol || '';
+
+          return (
+            <div className={`text-sm font-medium ${colorClass}`}>
+              <NumberFormatter
+                value={balance}
+                prefix={currencySymbol ? `${currencySymbol} ` : ''}
+                thousandSeparator=","
+                decimalScale={2}
+                allowNegative={true}
+              />
+            </div>
+          );
+        },
       },
       {
         accessor: 'creditLimit',
@@ -110,6 +132,7 @@ const AccountTable = ({
       filters={filters}
       pagination={pagination}
       sorting={sorting}
+      summary={summary}
     />
   );
 };

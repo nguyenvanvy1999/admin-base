@@ -8,13 +8,23 @@ import {
 import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import type { AccountFormData, AccountFull } from '@client/types/account';
-import { Button, Group, Modal, MultiSelect, Text } from '@mantine/core';
+import {
+  Button,
+  Group,
+  Modal,
+  MultiSelect,
+  NumberFormatter,
+  Text,
+  useMantineColorScheme,
+} from '@mantine/core';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const AccountPage = () => {
   const { t } = useTranslation();
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
   const [selectedAccount, setSelectedAccount] = useState<AccountFull | null>(
     null,
   );
@@ -107,6 +117,49 @@ const AccountPage = () => {
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteMutation.isPending;
+
+  const statistics = data?.summary || [];
+
+  const summaryContent = useMemo(() => {
+    if (statistics.length === 0) return null;
+
+    return (
+      <>
+        {statistics.map((item) => {
+          const isNegative = item.totalBalance < 0;
+          const color = isNegative
+            ? isDark
+              ? 'rgb(248 113 113)'
+              : 'rgb(185 28 28)'
+            : isDark
+              ? 'rgb(34 197 94)'
+              : 'rgb(21 128 61)';
+
+          return (
+            <div key={item.currency.id} className="flex items-center gap-2">
+              <Text size="sm" className="text-gray-600 dark:text-gray-400">
+                {t('accounts.totalAssets', {
+                  defaultValue: 'Tổng tài sản',
+                })}{' '}
+                ({item.currency.code}):
+              </Text>
+              <span className="font-bold" style={{ color }}>
+                <NumberFormatter
+                  value={item.totalBalance}
+                  prefix={
+                    item.currency.symbol ? `${item.currency.symbol} ` : ''
+                  }
+                  thousandSeparator=","
+                  decimalScale={2}
+                  allowNegative={true}
+                />
+              </span>
+            </div>
+          );
+        })}
+      </>
+    );
+  }, [statistics, isDark, t]);
 
   return (
     <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
@@ -215,6 +268,7 @@ const AccountPage = () => {
                 setPage(1);
               },
             }}
+            summary={summaryContent}
           />
         </div>
 

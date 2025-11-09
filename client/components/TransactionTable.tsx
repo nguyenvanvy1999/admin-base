@@ -1,11 +1,5 @@
 import type { TransactionFull } from '@client/types/transaction';
-import {
-  Badge,
-  Box,
-  NumberFormatter,
-  Text,
-  useMantineColorScheme,
-} from '@mantine/core';
+import { Badge, Box, NumberFormatter } from '@mantine/core';
 import { TransactionType } from '@server/generated/prisma/enums';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,19 +14,9 @@ type TransactionTableProps = {
   onEdit: (transaction: TransactionFull) => void;
   onDelete: (transaction: TransactionFull) => void;
   isLoading?: boolean;
-  summary?: Array<{
-    currency: {
-      id: string;
-      code: string;
-      name: string;
-      symbol: string | null;
-    };
-    totalIncome: number;
-    totalExpense: number;
-  }>;
 } & Pick<
   DataTableProps<TransactionFull>,
-  'search' | 'pageSize' | 'filters' | 'pagination' | 'sorting'
+  'search' | 'pageSize' | 'filters' | 'pagination' | 'sorting' | 'summary'
 >;
 
 const TransactionTable = ({
@@ -40,16 +24,14 @@ const TransactionTable = ({
   onEdit,
   onDelete,
   isLoading = false,
-  summary,
   search,
   pageSize,
   filters,
   pagination,
   sorting,
+  summary,
 }: TransactionTableProps) => {
   const { t } = useTranslation();
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
 
   const getTransactionTypeLabel = (type: string) => {
     switch (type) {
@@ -198,74 +180,24 @@ const TransactionTable = ({
   );
 
   return (
-    <div className="space-y-4">
-      {summary && summary.length > 0 && (
-        <div className="flex flex-wrap items-center gap-4 text-sm py-2 border-b border-gray-200 dark:border-gray-700">
-          {summary.map((item) => (
-            <div key={item.currency.id} className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Text size="sm" className="text-gray-600 dark:text-gray-400">
-                  {t('transactions.totalIncome', { defaultValue: 'Tổng thu' })}:
-                </Text>
-                <span
-                  className="font-bold"
-                  style={{
-                    color: isDark ? 'rgb(34 197 94)' : 'rgb(21 128 61)',
-                  }}
-                >
-                  <NumberFormatter
-                    value={item.totalIncome}
-                    prefix={
-                      item.currency.symbol ? `${item.currency.symbol} ` : ''
-                    }
-                    thousandSeparator=","
-                    decimalScale={2}
-                  />
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Text size="sm" className="text-gray-600 dark:text-gray-400">
-                  {t('transactions.totalExpense', { defaultValue: 'Tổng chi' })}
-                  :
-                </Text>
-                <span
-                  className="font-bold"
-                  style={{
-                    color: isDark ? 'rgb(248 113 113)' : 'rgb(185 28 28)',
-                  }}
-                >
-                  <NumberFormatter
-                    value={item.totalExpense}
-                    prefix={
-                      item.currency.symbol ? `${item.currency.symbol} ` : ''
-                    }
-                    thousandSeparator=","
-                    decimalScale={2}
-                  />
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      <DataTable
-        data={transactions}
-        columns={columns}
-        isLoading={isLoading}
-        actions={{
-          onEdit,
-          onDelete,
-          headerLabel: t('transactions.actions'),
-        }}
-        onRowClick={onEdit}
-        emptyMessage={t('transactions.noTransactions')}
-        search={search}
-        pageSize={pageSize}
-        filters={filters}
-        pagination={pagination}
-        sorting={sorting}
-      />
-    </div>
+    <DataTable
+      data={transactions}
+      columns={columns}
+      isLoading={isLoading}
+      actions={{
+        onEdit,
+        onDelete,
+        headerLabel: t('transactions.actions'),
+      }}
+      onRowClick={onEdit}
+      emptyMessage={t('transactions.noTransactions')}
+      search={search}
+      pageSize={pageSize}
+      filters={filters}
+      pagination={pagination}
+      sorting={sorting}
+      summary={summary}
+    />
   );
 };
 

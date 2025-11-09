@@ -36,6 +36,7 @@ export const useAccountsQuery = (query: ListAccountsQuery = {}) => {
           creditLimit: account.creditLimit?.toString() ?? null,
         })) satisfies AccountFull[],
         pagination: data.pagination,
+        summary: data.summary || [],
       };
     },
   });

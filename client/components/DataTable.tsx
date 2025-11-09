@@ -51,6 +51,7 @@ export type DataTableProps<T extends Record<string, any>> = {
     onReset?: () => void;
     hasActive?: boolean;
   };
+  summary?: React.ReactNode;
   actions?: ActionColumnOptions<T>;
   onRowClick?: (row: T) => void;
   emptyMessage?: string;
@@ -72,6 +73,7 @@ function DataTable<T extends Record<string, any>>({
   search,
   pageSize,
   filters,
+  summary,
   actions,
   onRowClick,
   emptyMessage,
@@ -317,6 +319,12 @@ function DataTable<T extends Record<string, any>>({
               </Button>
             )}
           </div>
+        </div>
+      )}
+
+      {summary && (
+        <div className="flex flex-wrap items-center gap-4 text-sm py-2 border-b border-gray-200 dark:border-gray-700">
+          {summary}
         </div>
       )}
 
