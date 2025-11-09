@@ -25,17 +25,29 @@ import { CategoryType } from '@server/generated/prisma/enums';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const transformToMUITree = (categories: CategoryFull[]): MUITreeItem[] => {
+const getCategoryLabel = (
+  categoryName: string,
+  t: (key: string) => string,
+): string => {
+  const translationKey = `categories.${categoryName}`;
+  const translated = t(translationKey);
+  return translated !== translationKey ? translated : categoryName;
+};
+
+const transformToMUITree = (
+  categories: CategoryFull[],
+  t: (key: string) => string,
+): MUITreeItem[] => {
   return categories.map((category) => ({
     id: category.id,
-    label: category.name,
+    label: getCategoryLabel(category.name, t),
     type: category.type,
     icon: category.icon,
     color: category.color,
     isLocked: category.isLocked,
     parentId: category.parentId,
     children: category.children
-      ? transformToMUITree(category.children)
+      ? transformToMUITree(category.children, t)
       : undefined,
   }));
 };
@@ -122,8 +134,8 @@ const CategoryPage = () => {
     if (!data?.categories) {
       return [];
     }
-    return transformToMUITree(data.categories);
-  }, [data]);
+    return transformToMUITree(data.categories, t);
+  }, [data, t]);
 
   const filteredTreeItems = useMemo(() => {
     return filterTree(treeItems, searchQuery, typeFilter);
@@ -133,8 +145,8 @@ const CategoryPage = () => {
     if (!data?.categories) {
       return [];
     }
-    return flattenTree(transformToMUITree(data.categories));
-  }, [data]);
+    return flattenTree(transformToMUITree(data.categories, t));
+  }, [data, t]);
 
   const categoryMap = useMemo(() => {
     const map = new Map<string, CategoryFull>();

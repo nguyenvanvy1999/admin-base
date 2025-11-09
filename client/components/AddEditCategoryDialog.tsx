@@ -16,8 +16,18 @@ type AddEditCategoryDialogProps = {
   isLoading?: boolean;
 };
 
+const getCategoryLabel = (
+  categoryName: string,
+  t: (key: string) => string,
+): string => {
+  const translationKey = `categories.${categoryName}`;
+  const translated = t(translationKey);
+  return translated !== translationKey ? translated : categoryName;
+};
+
 const flattenCategories = (
   categories: CategoryFull[],
+  t: (key: string) => string,
   excludeId?: string,
   depth = 0,
 ): Array<{ value: string; label: string; disabled?: boolean }> => {
@@ -32,13 +42,13 @@ const flattenCategories = (
     const prefix = '  '.repeat(depth);
     result.push({
       value: category.id,
-      label: `${prefix}${category.name}`,
+      label: `${prefix}${getCategoryLabel(category.name, t)}`,
       disabled: category.isLocked,
     });
 
     if (category.children && category.children.length > 0) {
       result.push(
-        ...flattenCategories(category.children, excludeId, depth + 1),
+        ...flattenCategories(category.children, t, excludeId, depth + 1),
       );
     }
   }
@@ -66,8 +76,8 @@ const AddEditCategoryDialog = ({
     }
 
     const excludeId = isEditMode && category ? category.id : undefined;
-    return flattenCategories(categoriesData.categories, excludeId);
-  }, [categoriesData, isEditMode, category]);
+    return flattenCategories(categoriesData.categories, t, excludeId);
+  }, [categoriesData, isEditMode, category, t]);
 
   const filteredParentOptions = useMemo(() => {
     return parentOptions;
