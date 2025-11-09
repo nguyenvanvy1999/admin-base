@@ -21,13 +21,37 @@ FinTrack là một ứng dụng web quản lý tài chính cá nhân kết hợp
 
 ### Tech Stack (Bắt Buộc)
 
-- **Backend**: ElysiaJS (TypeScript)
+#### Backend
+
+- **Framework**: ElysiaJS (TypeScript)
 - **Database**: PostgreSQL
 - **ORM**: Prisma
-- **Authentication**: JWT + Refresh Token
+- **Authentication**: JWT với macro-based route protection
 - **Runtime**: Bun
-- **Frontend**: React 19 với Tailwind CSS
+- **Logging**: Logtape với file rotation
+- **API Documentation**: OpenAPI/Swagger tự động
+
+#### Frontend
+
+- **Framework**: React 19
+- **UI Library**: Mantine UI v8 (components chính)
+- **Styling**: Tailwind CSS v4 (utility classes bổ sung)
+- **State Management**:
+    - Zustand (global state - user, theme, etc.)
+    - TanStack Query (server state - API data)
+- **Data Fetching**: TanStack Query (React Query)
+- **Forms**: TanStack Form
+- **Tables**: TanStack Table
+- **Routing**: React Router v7 (Hash Router)
+- **i18n**: i18next với react-i18next
 - **Type Safety**: Eden Treaty (end-to-end type safety)
+- **Icons**: Material UI Icons
+
+#### Development Tools
+
+- **Code Formatter**: Biome (thay thế Prettier)
+- **Linter**: Biome
+- **Type Checking**: TypeScript strict mode
 
 ### Tech Stack (Tùy Chọn)
 
@@ -63,18 +87,29 @@ FinTrack là một ứng dụng web quản lý tài chính cá nhân kết hợp
 ### Quy Tắc Code
 
 1. **Ngôn Ngữ Comment**: Tất cả comment trong code phải bằng tiếng Anh
-2. **Validation**: Sử dụng TypeBox (ElysiaJS `t`) cho validation payload
+2. **Validation**:
+    - Backend: Sử dụng TypeBox (ElysiaJS `t`) cho validation payload
+    - Frontend: TanStack Form với validation schemas
 3. **Testing**:
     - Unit tests cho services
     - Integration tests cho các flow quan trọng (transactions & P&L)
-4. **Code Style**: Tuân theo `.prettierrc` của dự án
+4. **Code Style**: Tuân theo `biome.json` của dự án (Biome thay thế Prettier)
+5. **Type Safety**:
+    - Luôn sử dụng TypeScript strict mode
+    - Sử dụng Eden Treaty types từ backend
+    - Không sử dụng `any` trừ khi thực sự cần thiết
 
 ### Quy Ước Đặt Tên
 
 - **Controllers**: `[name].controller.ts` (ví dụ: `user.controller.ts`)
 - **Services**: `[Name]Service.ts` (ví dụ: `UserService.ts`)
+- **DTOs**: `[name].dto.ts` (ví dụ: `user.dto.ts`)
 - **Pages**: `[Name]Page.tsx` (ví dụ: `LoginPage.tsx`)
 - **Components**: `[Name].tsx` (ví dụ: `Header.tsx`)
+- **Hooks (Queries)**: `use[Name]Queries.ts` (ví dụ: `useAccountQueries.ts`)
+- **Hooks (Mutations)**: `use[Name]Mutations.ts` (ví dụ: `useAccountMutations.ts`)
+- **Types**: `[name].ts` trong `client/types/` (ví dụ: `account.ts`)
+- **Stores**: `[name].ts` trong `client/store/` (ví dụ: `user.ts`)
 
 ### Quy Tắc Database
 
@@ -91,26 +126,47 @@ FinTrack là một ứng dụng web quản lý tài chính cá nhân kết hợp
 ### Cấu Trúc Thư Mục
 
 ```
-investment/
+fin-track/
 ├── src/                      # Backend (ElysiaJS)
 │   ├── controllers/          # API endpoint handlers
 │   ├── services/             # Business logic layer
 │   ├── middlewares/          # Request/response processors
 │   ├── macros/               # Elysia macros (auth, etc.)
-│   ├── db.ts                 # Prisma client initialization
+│   ├── dto/                  # Data Transfer Objects (validation schemas)
+│   ├── constants/            # Backend constants
+│   ├── libs/                 # Utilities (db, logger, env)
+│   ├── generated/            # Generated Prisma client
+│   ├── scripts/              # Utility scripts (seed, etc.)
 │   └── index.ts              # Server entry point
 │
 ├── client/                   # Frontend (React)
 │   ├── components/           # Reusable UI components
+│   │   ├── DataTable/        # DataTable component & utilities
+│   │   └── utils/            # Component utilities
 │   ├── pages/                # Page components
 │   ├── layouts/              # Layout wrappers
-│   ├── store/                # Zustand stores
-│   └── libs/                 # Utilities & API client
+│   ├── store/                # Zustand stores (global state)
+│   ├── hooks/                # Custom React hooks
+│   │   ├── queries/          # TanStack Query hooks
+│   │   ├── mutations/        # TanStack Query mutation hooks
+│   │   └── useToast.tsx      # Toast notification hook
+│   ├── libs/                 # Utilities & API client
+│   ├── types/                # TypeScript type definitions
+│   ├── providers/            # React context providers
+│   ├── styles/               # Global styles & theme
+│   ├── locales/              # i18n translation files
+│   ├── constants.ts          # Frontend constants
+│   ├── router.ts             # Route definitions
+│   ├── i18n.ts               # i18n configuration
+│   └── index.tsx             # React entry point
 │
 ├── prisma/                   # Prisma schema and migrations
 │   ├── schema.prisma         # Database schema definition
 │   └── migrations/           # Database migration files
 │
+├── logs/                     # Application logs
+├── biome.json                # Biome configuration (formatter & linter)
+├── tsconfig.json             # TypeScript configuration
 └── package.json              # Dependencies & scripts
 ```
 
@@ -124,9 +180,458 @@ investment/
 ### Kiến Trúc Frontend
 
 - **Pages**: Các trang chính của ứng dụng
-- **Components**: UI components tái sử dụng
-- **Store**: Zustand cho state management
+- **Components**: UI components tái sử dụng (Mantine + custom)
+- **State Management**:
+    - Zustand: Global state (user, theme, preferences)
+    - TanStack Query: Server state (API data, caching, synchronization)
+    - Local State: useState cho component-specific state
 - **API Client**: Eden Treaty cho type-safe API calls
+- **Forms**: TanStack Form với validation
+- **Tables**: TanStack Table với DataTable wrapper component
+- **i18n**: i18next cho đa ngôn ngữ (hiện tại: vi, en)
+
+---
+
+## 🎨 UI Component Patterns
+
+### Component Library
+
+Dự án sử dụng **Mantine UI v8** làm component library chính, kết hợp với **Tailwind CSS v4** cho utility classes.
+
+### Component Patterns
+
+#### 1. DataTable Component
+
+Component tái sử dụng cho hiển thị dữ liệu dạng bảng với các tính năng:
+
+- Pagination
+- Sorting
+- Filtering
+- Search
+- Action buttons (edit, delete)
+
+**Ví dụ sử dụng:**
+
+```typescript
+// client/components/AccountTable.tsx
+import DataTable from './DataTable';
+import { createColumnHelper } from '@tanstack/react-table';
+
+const columnHelper = createColumnHelper<AccountFull>();
+
+const AccountTable = ({ accounts, onEdit, onDelete }) => {
+  const columns = useMemo(
+    () => [
+      columnHelper.accessor('name', {
+        header: t('accounts.name'),
+        enableSorting: true,
+      }),
+      columnHelper.accessor('balance', {
+        header: t('accounts.balance'),
+        cell: (info) => formatCurrency(info.getValue(), account.currency.symbol),
+      }),
+      // ... more columns
+    ],
+    []
+  );
+
+  return (
+    <DataTable
+      data={accounts}
+      columns={columns}
+      pagination={pagination}
+      search={{ onSearch: handleSearch }}
+      filters={{ slots: filterSlots, onReset: handleResetFilters }}
+      actions={{ onEdit, onDelete }}
+    />
+  );
+};
+```
+
+#### 2. Dialog Components
+
+Sử dụng Mantine Modal/Drawer cho các dialog add/edit:
+
+```typescript
+// client/components/AddEditAccountDialog.tsx
+import { Modal } from '@mantine/core';
+
+const AddEditAccountDialog = ({ opened, onClose, account }) => {
+  return (
+    <Modal opened={opened} onClose={onClose} title={account ? 'Edit' : 'Add'}>
+      {/* Form content */}
+    </Modal>
+  );
+};
+```
+
+#### 3. Toast Notifications
+
+Sử dụng Mantine Notifications với custom hook:
+
+```typescript
+// client/hooks/useToast.tsx
+import { notifications } from '@mantine/notifications';
+
+const useToast = () => {
+  return {
+    showSuccess: (message: string) =>
+      notifications.show({
+        message,
+        color: 'teal',
+        icon: <Check />,
+      }),
+    showError: (message: string) =>
+      notifications.show({
+        message,
+        color: 'red',
+        icon: <Close />,
+      }),
+  };
+};
+```
+
+**Sử dụng trong mutations:**
+
+```typescript
+const { showSuccess, showError } = useToast();
+
+const mutation = useMutation({
+  onSuccess: () => {
+    showSuccess('Account created successfully');
+  },
+  onError: (error) => {
+    showError(error.message);
+  },
+});
+```
+
+### Component Naming & Organization
+
+- **Reusable Components**: Đặt trong `client/components/`
+- **Page-specific Components**: Có thể đặt trong cùng folder với page hoặc trong `components/`
+- **Component Utils**: Đặt trong `client/components/utils/`
+- **Component Types**: Export types cùng với component hoặc trong `client/types/`
+
+---
+
+## 🔄 State Management Patterns
+
+### 1. Zustand (Global State)
+
+Zustand được sử dụng cho global state như user info, theme preferences.
+
+**Ví dụ: User Store**
+
+```typescript
+// client/store/user.ts
+import { create } from 'zustand';
+
+export type UserStore = {
+  user: User;
+  setUser: (user: User) => void;
+  clearUser: () => void;
+};
+
+const useUserStore = create<UserStore>((set) => ({
+  user: defaultUser,
+  setUser: (user: User) => set({ user }),
+  clearUser: () => set({ user: defaultUser }),
+}));
+
+export default useUserStore;
+```
+
+**Sử dụng trong component:**
+
+```typescript
+// client/pages/ProfilePage.tsx
+import useUserStore from '@client/store/user';
+
+const ProfilePage = () => {
+  const { user, setUser } = useUserStore();
+
+  const handleUpdate = async (data) => {
+    const updated = await updateUser(data);
+    setUser(updated);
+  };
+
+  return <div>{user.name}</div>;
+};
+```
+
+### 2. TanStack Query (Server State)
+
+TanStack Query được sử dụng cho tất cả server state (API data).
+
+#### Query Hooks Pattern
+
+```typescript
+// client/hooks/queries/useAccountQueries.ts
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@client/libs/api';
+
+export const useAccountsQuery = (query: ListAccountsQuery = {}) => {
+  return useQuery({
+    queryKey: ['accounts', query],
+    queryFn: async () => {
+      const response = await api.api.accounts.get({ query });
+
+      if (response.error) {
+        throw new Error(
+          response.error.value?.message ?? 'Failed to fetch accounts'
+        );
+      }
+
+      return response.data;
+    },
+  });
+};
+```
+
+**Sử dụng trong component:**
+
+```typescript
+// client/pages/AccountPage.tsx
+const AccountPage = () => {
+  const { data, isLoading, error } = useAccountsQuery({
+    type: ['cash', 'bank'],
+    page: 1,
+    limit: 20,
+  });
+
+  if (isLoading) return <Loader />;
+  if (error) return <Error message={error.message} />;
+
+  return <AccountTable accounts={data.accounts} />;
+};
+```
+
+#### Mutation Hooks Pattern
+
+```typescript
+// client/hooks/mutations/useAccountMutations.ts
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import useToast from '@client/hooks/useToast';
+
+export const useCreateAccountMutation = () => {
+  const { showError, showSuccess } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: AccountFormData) => {
+      const response = await api.api.accounts.post(data);
+      if (response.error) {
+        throw new Error(
+          response.error.value?.message ?? 'An unknown error occurred'
+        );
+      }
+      return response.data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      showSuccess('Account created successfully');
+    },
+    onError: (error: Error) => {
+      showError(error.message);
+    },
+  });
+};
+```
+
+**Sử dụng trong component:**
+
+```typescript
+const AccountPage = () => {
+  const createMutation = useCreateAccountMutation();
+
+  const handleSubmit = async (formData: AccountFormData) => {
+    try {
+      await createMutation.mutateAsync(formData);
+      setIsDialogOpen(false);
+    } catch (error) {
+      // Error đã được xử lý trong mutation hook
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* Form fields */}
+      <Button
+        type="submit"
+        loading={createMutation.isPending}
+      >
+        Create
+      </Button>
+    </form>
+  );
+};
+```
+
+### 3. Local State (useState)
+
+Sử dụng `useState` cho component-specific state:
+
+```typescript
+const AccountPage = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<AccountFull | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // ... component logic
+};
+```
+
+### State Management Best Practices
+
+1. **Global State (Zustand)**: Chỉ dùng cho state cần share giữa nhiều components (user, theme)
+2. **Server State (TanStack Query)**: Luôn dùng cho API data
+3. **Local State (useState)**: Dùng cho component-specific state
+4. **Derived State**: Sử dụng `useMemo` cho computed values
+5. **Query Invalidation**: Luôn invalidate queries sau mutations để sync data
+
+---
+
+## 🔒 Type Safety Patterns
+
+### 1. Eden Treaty (End-to-End Type Safety)
+
+Eden Treaty tự động generate types từ backend Elysia routes.
+
+**API Client Setup:**
+
+```typescript
+// client/libs/api.ts
+import { treaty } from '@elysiajs/eden';
+import type { app } from '@server';
+
+export const api = treaty<typeof app>(window.location.origin, {
+  onRequest() {
+    const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+    if (accessToken) {
+      return {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      };
+    }
+  },
+});
+```
+
+**Type-safe API Calls:**
+
+```typescript
+// TypeScript tự động biết shape của request/response
+const response = await api.api.accounts.post({
+  type: AccountType.cash,
+  name: 'Cash Account',
+  currencyId: 'xxx',
+});
+
+// response.data có type chính xác từ backend
+// response.error có type chính xác
+if (response.error) {
+  // TypeScript biết response.error.value có message
+  console.error(response.error.value?.message);
+} else {
+  // TypeScript biết response.data có shape gì
+  console.log(response.data.id);
+}
+```
+
+### 2. Prisma Generated Types
+
+Sử dụng Prisma generated types cho database models:
+
+```typescript
+// Import từ generated Prisma client
+import { AccountType, UserRole } from '@server/generated/prisma/enums';
+import type { Account } from '@server/generated/prisma/models/Account';
+```
+
+### 3. Frontend Type Definitions
+
+Định nghĩa types riêng cho frontend trong `client/types/`:
+
+```typescript
+// client/types/account.ts
+import type { AccountType } from '@server/generated/prisma/enums';
+
+export type AccountFull = {
+  id: string;
+  type: AccountType;
+  name: string;
+  balance: string; // String để hiển thị (format currency)
+  currency: Currency;
+};
+
+export type AccountFormData = {
+  id?: string;
+  type: AccountType;
+  name: string;
+  currencyId: string;
+  initialBalance?: number;
+};
+```
+
+### 4. DTO Types (Backend)
+
+Sử dụng TypeBox để định nghĩa validation schemas và extract types:
+
+```typescript
+// src/dto/account.dto.ts
+import { t } from 'elysia';
+import { AccountType } from '@server/generated/prisma/enums';
+
+export const UpsertAccountDto = t.Object({
+  id: t.Optional(t.String()),
+  type: t.Enum(AccountType),
+  name: t.String(),
+  currencyId: t.String(),
+  initialBalance: t.Optional(t.Number()),
+});
+
+// Extract TypeScript type from schema
+export type IUpsertAccountDto = typeof UpsertAccountDto.static;
+```
+
+**Sử dụng trong controller:**
+
+```typescript
+// src/controllers/account.controller.ts
+.post(
+  '/',
+  async ({ body }) => {
+    // body có type IUpsertAccountDto
+    return await accountService.upsertAccount(user.id, body);
+  },
+  {
+    body: UpsertAccountDto, // Validation schema
+  }
+)
+```
+
+### 5. Type Safety Best Practices
+
+1. **Luôn sử dụng types từ backend**: Import types từ `@server` thay vì định nghĩa lại
+2. **Type assertions**: Sử dụng `satisfies` thay vì `as` khi có thể
+3. **Avoid `any`**: Chỉ dùng `any` khi thực sự cần thiết, ưu tiên `unknown`
+4. **Type guards**: Sử dụng type guards cho runtime type checking
+5. **Generic types**: Sử dụng generics cho reusable components/functions
+
+**Ví dụ type guard:**
+
+```typescript
+function isAccountFull(account: unknown): account is AccountFull {
+  return (
+    typeof account === 'object' &&
+    account !== null &&
+    'id' in account &&
+    'balance' in account
+  );
+}
+```
 
 ---
 
@@ -588,11 +1093,67 @@ Khi hoàn thành task, cần cung cấp:
 
 ---
 
+## 🌐 Internationalization (i18n)
+
+Dự án sử dụng **i18next** với **react-i18next** cho đa ngôn ngữ.
+
+### Cấu hình i18n
+
+```typescript
+// client/i18n.ts
+import i18n from 'i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+import { initReactI18next } from 'react-i18next';
+
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    lng: 'vi',
+    fallbackLng: 'vi',
+    resources: {
+      en: { translation: enTranslations },
+      vi: { translation: viTranslations },
+    },
+  });
+```
+
+### Sử dụng trong component
+
+```typescript
+import { useTranslation } from 'react-i18next';
+
+const AccountPage = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div>
+      <h1>{t('accounts.title')}</h1>
+      <Button>{t('accounts.create')}</Button>
+    </div>
+  );
+};
+```
+
+### Translation Files
+
+- `client/locales/en/translation.json` - English translations
+- `client/locales/vi/translation.json` - Vietnamese translations
+
+### Language Switcher
+
+Component `LanguageSwitcher` cho phép người dùng chuyển đổi ngôn ngữ.
+
+---
+
 ## 📝 Ghi Chú
 
 - Tất cả code comments phải bằng tiếng Anh
 - Backend sử dụng ElysiaJS + PostgreSQL
 - Database sử dụng Prisma ORM
 - Background jobs sử dụng BullMQ/Redis (cho price sync)
-- Frontend sử dụng React 19 với Tailwind CSS
+- Frontend sử dụng React 19 với Mantine UI + Tailwind CSS
+- State management: Zustand (global) + TanStack Query (server)
 - Type safety end-to-end với Eden Treaty
+- Code formatting: Biome (thay thế Prettier)
+- i18n: i18next với react-i18next

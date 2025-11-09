@@ -23,9 +23,15 @@ A modern, production-ready fullstack template built with **Elysia** (backend) an
 
 - **Auto-bundled with Bun** - no Vite, Webpack, or other bundlers
 - **Hash Router** to avoid conflicts with server routes
-- **Zustand** for global state management
-- **Tailwind CSS** for utility-first styling
-- **Eden Treaty** for end-to-end type safety
+- **Mantine UI v8** - Modern React component library
+- **Tailwind CSS v4** - Utility-first CSS framework
+- **State Management**:
+    - **Zustand** - Lightweight global state management
+    - **TanStack Query** - Powerful server state management
+- **TanStack Form** - Type-safe form management
+- **TanStack Table** - Headless table component
+- **i18next** - Internationalization support
+- **Eden Treaty** - End-to-end type safety
 
 ### 🔐 **Authentication System**
 
@@ -36,10 +42,12 @@ A modern, production-ready fullstack template built with **Elysia** (backend) an
 
 ### 🎨 **UI/UX**
 
-- **Modern, responsive design** with Tailwind CSS
-- **Beautiful login/register** forms with validation
-- **User dashboard** with profile information
-- **Professional header/footer** components
+- **Modern, responsive design** with Mantine UI + Tailwind CSS
+- **Beautiful login/register** forms with TanStack Form validation
+- **Data tables** with sorting, filtering, pagination
+- **Toast notifications** for user feedback
+- **Internationalization** support (i18n)
+- **Dark mode** support (via Mantine theme)
 
 ## 🚀 Quick Start
 
@@ -75,20 +83,35 @@ bun run dev
 ## 📁 Project Structure
 
 ```
-elysia-fullstack-template/
+fin-track/
 ├── client/                 # Frontend React application
 │   ├── components/         # Reusable UI components
-│   ├── pages/             # Page components
-│   ├── layouts/           # Layout components
-│   ├── libs/              # API client and utilities
-│   ├── store/             # Zustand stores
-│   └── public/            # Static assets
-├── src/                   # Backend Elysia application
-│   ├── controllers/       # API route handlers
-│   ├── services/          # Business logic
-│   ├── middlewares/       # Custom middlewares
-│   └── macros/            # Authentication macros
-└── package.json           # Dependencies and scripts
+│   │   ├── DataTable/      # DataTable component & utilities
+│   │   └── utils/          # Component utilities
+│   ├── pages/              # Page components
+│   ├── layouts/            # Layout components
+│   ├── hooks/              # Custom React hooks
+│   │   ├── queries/        # TanStack Query hooks
+│   │   ├── mutations/       # TanStack Query mutation hooks
+│   │   └── useToast.tsx    # Toast notification hook
+│   ├── store/              # Zustand stores (global state)
+│   ├── libs/               # API client and utilities
+│   ├── types/              # TypeScript type definitions
+│   ├── providers/          # React context providers
+│   ├── styles/             # Global styles & theme
+│   ├── locales/            # i18n translation files
+│   └── public/             # Static assets
+├── src/                    # Backend Elysia application
+│   ├── controllers/        # API route handlers
+│   ├── services/           # Business logic
+│   ├── middlewares/        # Custom middlewares
+│   ├── macros/             # Authentication macros
+│   ├── dto/                # Data Transfer Objects
+│   ├── constants/         # Backend constants
+│   ├── libs/               # Utilities (db, logger, env)
+│   └── generated/         # Generated Prisma client
+├── prisma/                 # Prisma schema and migrations
+└── package.json            # Dependencies and scripts
 ```
 
 ## 🛠️ Development
@@ -108,9 +131,15 @@ The frontend is a React SPA with:
 
 - **Bun bundling**: No additional bundlers required
 - **Hash Router**: Prevents conflicts with server routes
+- **UI Components**: Mantine UI v8 for modern components
+- **Styling**: Tailwind CSS v4 for utility classes
 - **Type Safety**: Eden Treaty provides end-to-end types
-- **State Management**: Zustand for global state
-- **Styling**: Tailwind CSS for rapid UI development
+- **State Management**:
+    - Zustand for global state (user, theme)
+    - TanStack Query for server state (API data)
+- **Forms**: TanStack Form for type-safe form handling
+- **Tables**: TanStack Table for data tables
+- **i18n**: i18next for internationalization
 
 ### Available Scripts
 
@@ -189,17 +218,120 @@ CMD ["bun", "start"]
 
 ## 🎯 Key Technologies
 
+### Backend
+
 - **Runtime**: [Bun](https://bun.sh) - Fast JavaScript runtime
-- **Backend**: [Elysia](https://elysiajs.com) - High-performance TypeScript framework
+- **Framework**: [Elysia](https://elysiajs.com) - High-performance TypeScript framework
 - **Database**: [Prisma](https://www.prisma.io) - Type-safe ORM with PostgreSQL
-- **Frontend**: [React](https://reactjs.org) - UI library
-- **State Management**: [Zustand](https://zustand-demo.pmnd.rs) - Lightweight state management
+- **Logging**: [Logtape](https://logtape.logtape.dev) - Structured logging
+
+### Frontend
+
+- **UI Library**: [React](https://reactjs.org) - UI library
+- **Component Library**: [Mantine UI](https://mantine.dev) - Modern React components
 - **Styling**: [Tailwind CSS](https://tailwindcss.com) - Utility-first CSS framework
+- **State Management**:
+    - [Zustand](https://zustand-demo.pmnd.rs) - Lightweight global state
+    - [TanStack Query](https://tanstack.com/query) - Server state management
+- **Forms**: [TanStack Form](https://tanstack.com/form) - Type-safe forms
+- **Tables**: [TanStack Table](https://tanstack.com/table) - Headless tables
+- **i18n**: [i18next](https://www.i18next.com) - Internationalization
 - **Type Safety**: [Eden Treaty](https://elysiajs.com/eden/overview.html) - End-to-end type safety
+
+### Development Tools
+
+- **Formatter/Linter**: [Biome](https://biomejs.dev) - Fast formatter and linter
 
 ## 📚 API Documentation
 
-Once the server is running, visit `http://localhost:3000/swagger` to view the interactive API documentation.
+Once the server is running, visit `http://localhost:3000/docs` to view the interactive API documentation (Swagger UI).
+
+## 🔄 State Management
+
+### Global State (Zustand)
+
+Use Zustand for global state that needs to be shared across components:
+
+```typescript
+import useUserStore from '@client/store/user';
+
+const ProfilePage = () => {
+  const { user, setUser } = useUserStore();
+  // ...
+};
+```
+
+### Server State (TanStack Query)
+
+Use TanStack Query for all API data:
+
+```typescript
+import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
+
+const AccountPage = () => {
+  const { data, isLoading } = useAccountsQuery({ page: 1, limit: 20 });
+  // ...
+};
+```
+
+## 🔒 Type Safety
+
+### Eden Treaty (End-to-End Types)
+
+Eden Treaty automatically generates types from your Elysia backend:
+
+```typescript
+import { api } from '@client/libs/api';
+
+// Fully typed API call
+const response = await api.api.accounts.post({
+  type: AccountType.cash,
+  name: 'Cash Account',
+  currencyId: 'xxx',
+});
+
+// TypeScript knows the exact shape of response.data and response.error
+if (response.error) {
+  console.error(response.error.value?.message);
+} else {
+  console.log(response.data.id);
+}
+```
+
+## 🎨 UI Components
+
+### Mantine UI
+
+The project uses Mantine UI v8 as the primary component library:
+
+```typescript
+import { Button, Modal, TextInput } from '@mantine/core';
+
+const MyComponent = () => {
+  return (
+    <Modal opened={opened} onClose={onClose}>
+      <TextInput label="Name" />
+      <Button>Submit</Button>
+    </Modal>
+  );
+};
+```
+
+### DataTable Component
+
+Reusable DataTable component with sorting, filtering, pagination:
+
+```typescript
+import DataTable from '@client/components/DataTable';
+
+<DataTable
+  data={accounts}
+  columns={columns}
+  pagination={pagination}
+  search={{ onSearch: handleSearch }}
+  filters={{ slots: filterSlots }}
+/>
+```
 
 ## 🤝 Contributing
 
