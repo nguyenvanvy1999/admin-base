@@ -7,6 +7,7 @@ import {
   useUpdateTransactionMutation,
 } from '@client/hooks/mutations/useTransactionMutations';
 import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
+import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
 import { useEntitiesQuery } from '@client/hooks/queries/useEntityQueries';
 import { useTransactionsQuery } from '@client/hooks/queries/useTransactionQueries';
 import type {
@@ -69,9 +70,11 @@ const TransactionPage = () => {
 
   const { data, isLoading } = useTransactionsQuery(queryParams);
   const { data: accountsData } = useAccountsQuery({});
+  const { data: categoriesData } = useCategoriesQuery({});
   const { data: entitiesData } = useEntitiesQuery({});
 
   const accounts = accountsData?.accounts || [];
+  const categories = categoriesData?.categories || [];
   const entities = entitiesData?.entities || [];
 
   const createMutation = useCreateTransactionMutation();
@@ -310,6 +313,9 @@ const TransactionPage = () => {
             transaction={selectedTransaction}
             onSubmit={handleSubmit}
             isLoading={isSubmitting}
+            accounts={accounts}
+            categories={categories}
+            entities={entities}
           />
         )}
 

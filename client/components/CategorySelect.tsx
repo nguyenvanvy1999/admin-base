@@ -1,4 +1,5 @@
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
+import type { CategoryFull } from '@client/types/category';
 import { Box, Select } from '@mantine/core';
 import type { CategoryType } from '@server/generated/prisma/enums';
 import { useMemo } from 'react';
@@ -17,6 +18,7 @@ type CategorySelectProps = {
   searchable?: boolean;
   clearable?: boolean;
   disabled?: boolean;
+  categories?: CategoryFull[];
 };
 
 const CategorySelect = ({
@@ -31,24 +33,32 @@ const CategorySelect = ({
   searchable = true,
   clearable = false,
   disabled = false,
+  categories: categoriesProp,
 }: CategorySelectProps) => {
   const { t } = useTranslation();
-  const { data: categoriesData } = useCategoriesQuery({});
+  const { data: categoriesData } = useCategoriesQuery(
+    {},
+    {
+      enabled: !categoriesProp,
+    },
+  );
+
+  const categories = categoriesProp || categoriesData?.categories || [];
 
   const categoryOptions = useMemo(() => {
-    if (!categoriesData?.categories) {
+    if (!categories || categories.length === 0) {
       return [];
     }
-    return flattenCategories(categoriesData.categories, t, filterType);
-  }, [categoriesData, filterType, t]);
+    return flattenCategories(categories, t, filterType);
+  }, [categories, filterType, t]);
 
   const selectedCategory = useMemo(() => {
-    if (!value || !categoriesData?.categories) return null;
+    if (!value || !categories || categories.length === 0) return null;
 
     const findCategory = (
-      categories: typeof categoriesData.categories,
-    ): (typeof categoriesData.categories)[0] | null => {
-      for (const cat of categories) {
+      cats: typeof categories,
+    ): (typeof categories)[0] | null => {
+      for (const cat of cats) {
         if (cat.id === value) return cat;
         if (cat.children) {
           const found = findCategory(cat.children);
@@ -58,8 +68,8 @@ const CategorySelect = ({
       return null;
     };
 
-    return findCategory(categoriesData.categories);
-  }, [value, categoriesData]);
+    return findCategory(categories);
+  }, [value, categories]);
 
   const selectedOption = useMemo(() => {
     if (!value) return null;

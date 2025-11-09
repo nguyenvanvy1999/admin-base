@@ -1,14 +1,20 @@
 import { api } from '@client/libs/api';
 import type { CategoryFull } from '@client/types/category';
 import type { CategoryType } from '@server/generated/prisma/enums';
-import { useQuery } from '@tanstack/react-query';
+import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 
 type ListCategoriesQuery = {
   type?: CategoryType[];
   includeDeleted?: boolean;
 };
 
-export const useCategoriesQuery = (query: ListCategoriesQuery = {}) => {
+export const useCategoriesQuery = (
+  query: ListCategoriesQuery = {},
+  options?: Omit<
+    UseQueryOptions<{ categories: CategoryFull[] }, Error>,
+    'queryKey' | 'queryFn'
+  >,
+) => {
   return useQuery({
     queryKey: ['categories', query],
     queryFn: async () => {
@@ -28,5 +34,6 @@ export const useCategoriesQuery = (query: ListCategoriesQuery = {}) => {
         categories: data.categories as CategoryFull[],
       };
     },
+    ...options,
   });
 };

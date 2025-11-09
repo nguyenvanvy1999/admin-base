@@ -1,6 +1,6 @@
-import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
-import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
-import { useEntitiesQuery } from '@client/hooks/queries/useEntityQueries';
+import type { AccountFull } from '@client/types/account';
+import type { CategoryFull } from '@client/types/category';
+import type { EntityFull } from '@client/types/entity';
 import type {
   TransactionFormData,
   TransactionFull,
@@ -32,6 +32,9 @@ type AddEditTransactionDialogProps = {
   transaction: TransactionFull | null;
   onSubmit: (data: TransactionFormData, saveAndAdd: boolean) => void;
   isLoading?: boolean;
+  accounts?: AccountFull[];
+  categories?: CategoryFull[];
+  entities?: EntityFull[];
 };
 
 const AddEditTransactionDialog = ({
@@ -40,6 +43,9 @@ const AddEditTransactionDialog = ({
   transaction,
   onSubmit,
   isLoading = false,
+  accounts: accountsProp = [],
+  categories: categoriesProp = [],
+  entities: entitiesProp = [],
 }: AddEditTransactionDialogProps) => {
   const { t } = useTranslation();
   const isEditMode = !!transaction;
@@ -52,12 +58,9 @@ const AddEditTransactionDialog = ({
   const [saveAndAdd, setSaveAndAdd] = useState(false);
   const [feeEnabled, setFeeEnabled] = useState(false);
 
-  const { data: accountsData } = useAccountsQuery({});
-  const { data: categoriesData } = useCategoriesQuery({});
-  const { data: entitiesData } = useEntitiesQuery({});
-
-  const accounts = accountsData?.accounts || [];
-  const entities = entitiesData?.entities || [];
+  const accounts = accountsProp;
+  const categories = categoriesProp;
+  const entities = entitiesProp;
 
   const transactionType = useMemo(() => {
     return activeTab === TransactionType.income
@@ -66,11 +69,11 @@ const AddEditTransactionDialog = ({
   }, [activeTab]);
 
   const flattenedCategories = useMemo(() => {
-    if (!categoriesData?.categories) {
+    if (!categories || categories.length === 0) {
       return [];
     }
-    return flattenCategories(categoriesData.categories, t, transactionType);
-  }, [categoriesData, transactionType, t]);
+    return flattenCategories(categories, t, transactionType);
+  }, [categories, transactionType, t]);
 
   const entityOptions = useMemo(() => {
     return entities.map((entity) => ({
@@ -87,15 +90,15 @@ const AddEditTransactionDialog = ({
   }, [accounts]);
 
   const quickCategoryButtons = useMemo(() => {
-    if (!categoriesData?.categories) {
+    if (!categories || categories.length === 0) {
       return [];
     }
 
     const findCategoryById = (
-      categories: typeof categoriesData.categories,
+      cats: typeof categories,
       id: string,
-    ): (typeof categoriesData.categories)[0] | null => {
-      for (const cat of categories) {
+    ): (typeof categories)[0] | null => {
+      for (const cat of cats) {
         if (cat.id === id) return cat;
         if (cat.children) {
           const found = findCategoryById(cat.children, id);
@@ -107,12 +110,12 @@ const AddEditTransactionDialog = ({
 
     return flattenedCategories
       .filter((opt) => {
-        const cat = findCategoryById(categoriesData.categories, opt.value);
+        const cat = findCategoryById(categories, opt.value);
         return cat && cat.type === transactionType;
       })
       .slice(0, 7)
       .map((opt) => {
-        const cat = findCategoryById(categoriesData.categories, opt.value);
+        const cat = findCategoryById(categories, opt.value);
         return {
           id: opt.value,
           name: opt.label.trim(),
@@ -120,7 +123,7 @@ const AddEditTransactionDialog = ({
           color: opt.color,
         };
       });
-  }, [flattenedCategories, categoriesData, transactionType, t]);
+  }, [flattenedCategories, categories, transactionType, t]);
 
   const form = useForm({
     defaultValues: {
@@ -447,6 +450,7 @@ const AddEditTransactionDialog = ({
                         error={error}
                         filterType={transactionType}
                         searchable
+                        categories={categories}
                       />
                       {error && (
                         <div className="text-red-600 dark:text-red-400 text-sm mt-1">
