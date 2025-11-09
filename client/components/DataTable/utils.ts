@@ -23,6 +23,7 @@ export function createActionColumn<T extends Record<string, any>>(
   return {
     id: 'actions',
     header: headerLabel || 'Actions',
+    enableSorting: false,
     cell: (info: any) => {
       const row = info.row.original;
 

@@ -109,6 +109,7 @@ export class AccountService {
   async listAccounts(userId: string, query: IListAccountsQueryDto = {}) {
     const {
       type,
+      currencyId,
       search,
       page = 1,
       limit = 20,
@@ -125,6 +126,10 @@ export class AccountService {
       where.type = { in: type };
     }
 
+    if (currencyId && currencyId.length > 0) {
+      where.currencyId = { in: currencyId };
+    }
+
     if (search && search.trim()) {
       where.name = {
         contains: search.trim(),
@@ -137,6 +142,8 @@ export class AccountService {
       orderBy.name = sortOrder;
     } else if (sortBy === 'createdAt') {
       orderBy.createdAt = sortOrder;
+    } else if (sortBy === 'balance') {
+      orderBy.balance = sortOrder;
     }
 
     const skip = (page - 1) * limit;

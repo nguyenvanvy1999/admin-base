@@ -63,6 +63,7 @@ const EntityTable = ({
           },
         }),
         columnHelper.accessor('phone', {
+          enableSorting: false,
           header: t('entities.phone'),
           cell: (info) => {
             const value = info.getValue();
@@ -74,6 +75,7 @@ const EntityTable = ({
           },
         }),
         columnHelper.accessor('email', {
+          enableSorting: false,
           header: t('entities.email'),
           cell: (info) => {
             const value = info.getValue();
@@ -85,6 +87,7 @@ const EntityTable = ({
           },
         }),
         columnHelper.accessor('address', {
+          enableSorting: false,
           header: t('entities.address'),
           cell: (info) => {
             const value = info.getValue();
@@ -96,6 +99,7 @@ const EntityTable = ({
           },
         }),
         columnHelper.accessor('note', {
+          enableSorting: false,
           header: t('entities.note'),
           cell: (info) => {
             const value = info.getValue();

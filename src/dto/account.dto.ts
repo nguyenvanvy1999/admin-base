@@ -15,10 +15,13 @@ export const UpsertAccountDto = t.Object({
 
 export const ListAccountsQueryDto = t.Object({
   type: t.Optional(t.Array(t.Enum(AccountType))),
+  currencyId: t.Optional(t.Array(t.String())),
   search: t.Optional(t.String()),
   page: t.Optional(t.Integer({ minimum: 1, default: 1 })),
   limit: t.Optional(t.Integer({ minimum: 1, default: 20 })),
-  sortBy: t.Optional(t.Union([t.Literal('name'), t.Literal('createdAt')])),
+  sortBy: t.Optional(
+    t.Union([t.Literal('name'), t.Literal('createdAt'), t.Literal('balance')]),
+  ),
   sortOrder: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
 });
 

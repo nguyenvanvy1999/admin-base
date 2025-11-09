@@ -8,9 +8,15 @@ import {
 import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
 import type { AccountFormData, AccountFull } from '@client/types/account';
 import { Button, Group, Modal, MultiSelect, Text } from '@mantine/core';
+import { CURRENCY_IDS } from '@server/constants/currency';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+const CURRENCIES = [
+  { id: CURRENCY_IDS.VND, code: 'VND', name: 'Vietnamese Dong', symbol: '₫' },
+  { id: CURRENCY_IDS.USD, code: 'USD', name: 'US Dollar', symbol: '$' },
+];
 
 const AccountPage = () => {
   const { t } = useTranslation();
@@ -24,20 +30,27 @@ const AccountPage = () => {
   );
   const [typeFilterInput, setTypeFilterInput] = useState<AccountType[]>([]);
   const [typeFilter, setTypeFilter] = useState<AccountType[]>([]);
+  const [currencyFilterInput, setCurrencyFilterInput] = useState<string[]>([]);
+  const [currencyFilter, setCurrencyFilter] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
+  const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'balance'>(
+    'createdAt',
+  );
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const queryParams = useMemo(
     () => ({
       type: typeFilter.length > 0 ? typeFilter : undefined,
+      currencyId: currencyFilter.length > 0 ? currencyFilter : undefined,
       search: searchQuery.trim() || undefined,
       page,
       limit,
-      sortBy: 'createdAt' as const,
-      sortOrder: 'desc' as const,
+      sortBy,
+      sortOrder,
     }),
-    [typeFilter, searchQuery, page, limit],
+    [typeFilter, currencyFilter, searchQuery, page, limit, sortBy, sortOrder],
   );
 
   const { data, isLoading } = useAccountsQuery(queryParams);
@@ -87,8 +100,12 @@ const AccountPage = () => {
   };
 
   const hasActiveFilters = useMemo(() => {
-    return searchQuery.trim() !== '' || typeFilter.length > 0;
-  }, [searchQuery, typeFilter]);
+    return (
+      searchQuery.trim() !== '' ||
+      typeFilter.length > 0 ||
+      currencyFilter.length > 0
+    );
+  }, [searchQuery, typeFilter, currencyFilter]);
 
   const isSubmitting =
     createMutation.isPending ||
@@ -122,6 +139,7 @@ const AccountPage = () => {
               onSearch: (searchValue: string) => {
                 setSearchQuery(searchValue);
                 setTypeFilter(typeFilterInput);
+                setCurrencyFilter(currencyFilterInput);
                 setPage(1);
               },
               placeholder: t('accounts.search'),
@@ -139,6 +157,8 @@ const AccountPage = () => {
                 setSearchQuery('');
                 setTypeFilterInput([]);
                 setTypeFilter([]);
+                setCurrencyFilterInput([]);
+                setCurrencyFilter([]);
                 setPage(1);
               },
               slots: [
@@ -162,6 +182,18 @@ const AccountPage = () => {
                     },
                   ]}
                 />,
+                <MultiSelect
+                  key="currency-filter"
+                  value={currencyFilterInput}
+                  onChange={(value) => setCurrencyFilterInput(value)}
+                  placeholder={t('accounts.currencyPlaceholder', {
+                    defaultValue: 'Currency',
+                  })}
+                  data={CURRENCIES.map((currency) => ({
+                    value: currency.id,
+                    label: `${currency.code} - ${currency.name}`,
+                  }))}
+                />,
               ],
             }}
             pagination={
@@ -175,6 +207,18 @@ const AccountPage = () => {
                   }
                 : undefined
             }
+            sorting={{
+              sortBy,
+              sortOrder,
+              onSortChange: (
+                newSortBy: string,
+                newSortOrder: 'asc' | 'desc',
+              ) => {
+                setSortBy(newSortBy as 'name' | 'createdAt' | 'balance');
+                setSortOrder(newSortOrder);
+                setPage(1);
+              },
+            }}
           />
         </div>
 

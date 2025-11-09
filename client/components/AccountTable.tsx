@@ -14,7 +14,7 @@ type AccountTableProps = {
   isLoading?: boolean;
 } & Pick<
   DataTableProps<AccountFull>,
-  'search' | 'pageSize' | 'filters' | 'pagination'
+  'search' | 'pageSize' | 'filters' | 'pagination' | 'sorting'
 >;
 
 const columnHelper = createColumnHelper<AccountFull>();
@@ -28,6 +28,7 @@ const AccountTable = ({
   pageSize,
   filters,
   pagination,
+  sorting,
 }: AccountTableProps) => {
   const { t } = useTranslation();
 
@@ -51,6 +52,7 @@ const AccountTable = ({
       [
         columnHelper.accessor('name', {
           header: t('accounts.name'),
+          enableSorting: true,
           cell: (info) => (
             <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
               {info.getValue()}
@@ -59,6 +61,7 @@ const AccountTable = ({
         }),
         columnHelper.accessor('type', {
           header: t('accounts.type'),
+          enableSorting: false,
           cell: (info) => (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
               {getAccountTypeLabel(info.getValue())}
@@ -67,6 +70,7 @@ const AccountTable = ({
         }),
         columnHelper.accessor('currency.code', {
           header: t('accounts.currency'),
+          enableSorting: false,
           cell: (info) => (
             <div className="text-sm text-gray-500 dark:text-gray-400">
               {info.getValue()}
@@ -75,6 +79,7 @@ const AccountTable = ({
         }),
         columnHelper.accessor('balance', {
           header: t('accounts.balance'),
+          enableSorting: true,
           cell: (info) => {
             const account = info.row.original;
             return (
@@ -86,6 +91,7 @@ const AccountTable = ({
         }),
         columnHelper.accessor('creditLimit', {
           header: t('accounts.creditLimit'),
+          enableSorting: false,
           cell: (info) => {
             const account = info.row.original;
             const value = info.getValue();
@@ -116,6 +122,7 @@ const AccountTable = ({
       pageSize={pageSize}
       filters={filters}
       pagination={pagination}
+      sorting={sorting}
     />
   );
 };
