@@ -5,7 +5,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   type ActionColumnOptions,
@@ -27,20 +27,18 @@ export type DataTableProps<T extends Record<string, any>> = {
     onPageChange: (page: number) => void;
   };
   search?: {
-    value: string;
-    onChange: (value: string) => void;
-    onSearch: () => void;
     placeholder?: string;
+    onSearch: (searchValue: string) => void;
   };
   pageSize?: {
-    value: number;
-    onChange: (size: number) => void;
+    initialSize?: number;
     options?: number[];
+    onPageSizeChange: (size: number) => void;
   };
   filters?: {
-    hasActive: boolean;
-    onReset: () => void;
     slots?: React.ReactNode[];
+    onReset?: () => void;
+    hasActive?: boolean;
   };
   actions?: ActionColumnOptions<T>;
   onRowClick?: (row: T) => void;
@@ -61,6 +59,50 @@ function DataTable<T extends Record<string, any>>({
 }: DataTableProps<T>) {
   const { t } = useTranslation();
 
+  const [searchInput, setSearchInput] = useState('');
+  const [currentPageSize, setCurrentPageSize] = useState(
+    pageSize?.initialSize || 20,
+  );
+
+  const handleSearch = useCallback(() => {
+    if (search?.onSearch) {
+      search.onSearch(searchInput);
+      if (pagination) {
+        pagination.onPageChange(1);
+      }
+    }
+  }, [search, searchInput, pagination]);
+
+  const handlePageSizeChange = useCallback(
+    (size: number) => {
+      setCurrentPageSize(size);
+      if (pageSize?.onPageSizeChange) {
+        pageSize.onPageSizeChange(size);
+      }
+      if (pagination) {
+        pagination.onPageChange(1);
+      }
+    },
+    [pageSize, pagination],
+  );
+
+  const handleReset = useCallback(() => {
+    setSearchInput('');
+    if (filters?.onReset) {
+      filters.onReset();
+    }
+    if (pagination) {
+      pagination.onPageChange(1);
+    }
+  }, [filters, pagination]);
+
+  const hasActiveFilters = useMemo(() => {
+    return (
+      searchInput.trim() !== '' ||
+      (filters?.hasActive !== undefined && filters.hasActive)
+    );
+  }, [searchInput, filters?.hasActive]);
+
   const finalColumns = useMemo(() => {
     const cols = [...columns];
     if (actions) {
@@ -77,7 +119,7 @@ function DataTable<T extends Record<string, any>>({
 
   const pageSizeOptions = pageSize?.options || [10, 20, 50, 100];
 
-  const hasFilters = filters && (filters.hasActive || filters.slots?.length);
+  const hasFilters = filters && (hasActiveFilters || filters.slots?.length);
 
   return (
     <div className="space-y-4">
@@ -86,13 +128,13 @@ function DataTable<T extends Record<string, any>>({
           {search && (
             <div className="w-full md:w-64">
               <TextInput
-                value={search.value}
+                value={searchInput}
                 onChange={(e) =>
-                  search.onChange((e.target as HTMLInputElement).value)
+                  setSearchInput((e.target as HTMLInputElement).value)
                 }
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    search.onSearch();
+                    handleSearch();
                   }
                 }}
                 placeholder={search.placeholder || t('common.search')}
@@ -109,10 +151,10 @@ function DataTable<T extends Record<string, any>>({
           {pageSize && (
             <div className="w-full md:w-32">
               <Select
-                value={pageSize.value.toString()}
+                value={currentPageSize.toString()}
                 onChange={(value) => {
                   if (value) {
-                    pageSize.onChange(parseInt(value, 10));
+                    handlePageSizeChange(parseInt(value, 10));
                   }
                 }}
                 placeholder={t('common.pageSize', {
@@ -128,14 +170,14 @@ function DataTable<T extends Record<string, any>>({
 
           <div className="w-full md:w-auto flex gap-2">
             {search && (
-              <Button onClick={search.onSearch} disabled={isLoading}>
+              <Button onClick={handleSearch} disabled={isLoading}>
                 {t('common.search')}
               </Button>
             )}
-            {filters && filters.hasActive && (
+            {filters && hasActiveFilters && (
               <Button
                 variant="outline"
-                onClick={filters.onReset}
+                onClick={handleReset}
                 disabled={isLoading}
               >
                 {t('common.reset', { defaultValue: 'Reset' })}

@@ -9,7 +9,7 @@ import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
 import type { AccountFormData, AccountFull } from '@client/types/account';
 import { Button, Group, Modal, Select, Text } from '@mantine/core';
 import { AccountType } from '@server/generated/prisma/enums';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const AccountPage = () => {
@@ -24,7 +24,6 @@ const AccountPage = () => {
   );
   const [typeFilterInput, setTypeFilterInput] = useState<string>('');
   const [typeFilter, setTypeFilter] = useState<string>('');
-  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -87,31 +86,6 @@ const AccountPage = () => {
     }
   };
 
-  const handleSearch = useCallback(() => {
-    setSearchQuery(searchInput);
-    setTypeFilter(typeFilterInput);
-    setPage(1);
-    refetch();
-  }, [searchInput, typeFilterInput, refetch]);
-
-  const handleTypeFilterChange = useCallback((value: string | null) => {
-    setTypeFilterInput(value || '');
-  }, []);
-
-  const handlePageSizeChange = useCallback((size: number) => {
-    setLimit(size);
-    setPage(1);
-  }, []);
-
-  const handleClearFilters = useCallback(() => {
-    setSearchInput('');
-    setSearchQuery('');
-    setTypeFilterInput('');
-    setTypeFilter('');
-    setPage(1);
-    refetch();
-  }, [refetch]);
-
   const hasActiveFilters = useMemo(() => {
     return searchQuery.trim() !== '' || typeFilter !== '';
   }, [searchQuery, typeFilter]);
@@ -145,23 +119,37 @@ const AccountPage = () => {
             onDelete={handleDelete}
             isLoading={isLoading}
             search={{
-              value: searchInput,
-              onChange: setSearchInput,
-              onSearch: handleSearch,
+              onSearch: (searchValue: string) => {
+                setSearchQuery(searchValue);
+                setTypeFilter(typeFilterInput);
+                setPage(1);
+                refetch();
+              },
               placeholder: t('accounts.search'),
             }}
             pageSize={{
-              value: limit,
-              onChange: handlePageSizeChange,
+              initialSize: limit,
+              onPageSizeChange: (size: number) => {
+                setLimit(size);
+                setPage(1);
+              },
             }}
             filters={{
               hasActive: hasActiveFilters,
-              onReset: handleClearFilters,
+              onReset: () => {
+                setSearchQuery('');
+                setTypeFilterInput('');
+                setTypeFilter('');
+                setPage(1);
+                refetch();
+              },
               slots: [
                 <Select
                   key="type-filter"
                   value={typeFilterInput || null}
-                  onChange={handleTypeFilterChange}
+                  onChange={(value: string | null) => {
+                    setTypeFilterInput(value || '');
+                  }}
                   placeholder={t('accounts.typePlaceholder')}
                   data={[
                     { value: '', label: t('accounts.all') },

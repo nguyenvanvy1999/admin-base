@@ -9,7 +9,7 @@ import { useEntitiesQuery } from '@client/hooks/queries/useEntityQueries';
 import type { EntityFormData, EntityFull } from '@client/types/entity';
 import { Button, Group, Modal, Select, Text } from '@mantine/core';
 import { EntityType } from '@server/generated/prisma/enums';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const EntityPage = () => {
@@ -20,7 +20,6 @@ const EntityPage = () => {
   const [entityToDelete, setEntityToDelete] = useState<EntityFull | null>(null);
   const [typeFilterInput, setTypeFilterInput] = useState<EntityType | ''>('');
   const [typeFilter, setTypeFilter] = useState<EntityType | ''>('');
-  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -91,31 +90,6 @@ const EntityPage = () => {
     }
   };
 
-  const handleSearch = useCallback(() => {
-    setSearchQuery(searchInput);
-    setTypeFilter(typeFilterInput);
-    setPage(1);
-    refetch();
-  }, [searchInput, typeFilterInput, refetch]);
-
-  const handleTypeFilterChange = useCallback((value: string | null) => {
-    setTypeFilterInput((value as EntityType) || '');
-  }, []);
-
-  const handlePageSizeChange = useCallback((size: number) => {
-    setLimit(size);
-    setPage(1);
-  }, []);
-
-  const handleClearFilters = useCallback(() => {
-    setSearchInput('');
-    setSearchQuery('');
-    setTypeFilterInput('');
-    setTypeFilter('');
-    setPage(1);
-    refetch();
-  }, [refetch]);
-
   const hasActiveFilters = useMemo(() => {
     return searchQuery.trim() !== '' || typeFilter !== '';
   }, [searchQuery, typeFilter]);
@@ -149,23 +123,37 @@ const EntityPage = () => {
             onDelete={handleDelete}
             isLoading={isLoading}
             search={{
-              value: searchInput,
-              onChange: setSearchInput,
-              onSearch: handleSearch,
+              onSearch: (searchValue: string) => {
+                setSearchQuery(searchValue);
+                setTypeFilter(typeFilterInput);
+                setPage(1);
+                refetch();
+              },
               placeholder: t('entities.search'),
             }}
             pageSize={{
-              value: limit,
-              onChange: handlePageSizeChange,
+              initialSize: limit,
+              onPageSizeChange: (size: number) => {
+                setLimit(size);
+                setPage(1);
+              },
             }}
             filters={{
               hasActive: hasActiveFilters,
-              onReset: handleClearFilters,
+              onReset: () => {
+                setSearchQuery('');
+                setTypeFilterInput('');
+                setTypeFilter('');
+                setPage(1);
+                refetch();
+              },
               slots: [
                 <Select
                   key="type-filter"
                   value={typeFilterInput || null}
-                  onChange={handleTypeFilterChange}
+                  onChange={(value: string | null) => {
+                    setTypeFilterInput((value as EntityType) || '');
+                  }}
                   placeholder={t('entities.typePlaceholder')}
                   data={[
                     { value: '', label: t('entities.all') },
