@@ -28,6 +28,7 @@ export type AccountFormData = {
   type: AccountType;
   name: string;
   currencyId: string;
+  initialBalance?: number;
   creditLimit?: number;
   notifyOnDueDate?: boolean;
   paymentDay?: number;

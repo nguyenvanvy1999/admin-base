@@ -6,6 +6,7 @@ export const UpsertAccountDto = t.Object({
   type: t.Enum(AccountType),
   name: t.String(),
   currencyId: t.String(),
+  initialBalance: t.Optional(t.Number()),
   creditLimit: t.Optional(t.Number({ minimum: 0 })),
   notifyOnDueDate: t.Optional(t.Boolean()),
   paymentDay: t.Optional(t.Integer({ minimum: 1, maximum: 31 })),

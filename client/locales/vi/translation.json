@@ -130,6 +130,8 @@
     "type": "Loại",
     "currency": "Tiền tệ",
     "balance": "Số dư",
+    "initialBalance": "Số dư ban đầu",
+    "initialBalancePlaceholder": "Nhập số dư ban đầu (mặc định: 0)",
     "creditLimit": "Hạn mức tín dụng",
     "expiryDate": "Ngày hết hạn",
     "notifyOnDueDate": "Thông báo khi đến hạn",

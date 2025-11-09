@@ -41,6 +41,7 @@ const AddEditAccountDialog = ({
       name: '',
       type: '',
       currencyId: '',
+      initialBalance: '0',
       creditLimit: '',
       notifyOnDueDate: false,
       paymentDay: '',
@@ -59,6 +60,13 @@ const AddEditAccountDialog = ({
 
       if (isEditMode && account) {
         submitData.id = account.id;
+      } else {
+        if (value.initialBalance && value.initialBalance !== '') {
+          const balance = parseFloat(value.initialBalance);
+          if (!isNaN(balance)) {
+            submitData.initialBalance = balance;
+          }
+        }
       }
 
       if (value.type === AccountType.credit_card) {
@@ -91,6 +99,7 @@ const AddEditAccountDialog = ({
       form.setFieldValue('name', account.name);
       form.setFieldValue('type', account.type);
       form.setFieldValue('currencyId', account.currencyId);
+      form.setFieldValue('initialBalance', '0');
       form.setFieldValue('creditLimit', account.creditLimit || '');
       form.setFieldValue('notifyOnDueDate', account.notifyOnDueDate ?? false);
       form.setFieldValue('paymentDay', account.paymentDay?.toString() || '');
@@ -102,6 +111,7 @@ const AddEditAccountDialog = ({
       form.setFieldValue('name', '');
       form.setFieldValue('type', '');
       form.setFieldValue('currencyId', '');
+      form.setFieldValue('initialBalance', '0');
       form.setFieldValue('creditLimit', '');
       form.setFieldValue('notifyOnDueDate', false);
       form.setFieldValue('paymentDay', '');
@@ -205,6 +215,32 @@ const AddEditAccountDialog = ({
               );
             }}
           </form.Field>
+
+          {!isEditMode && (
+            <form.Field name="initialBalance">
+              {(field) => {
+                const error = field.state.meta.errors[0];
+                return (
+                  <NumberInput
+                    label={t('accounts.initialBalance')}
+                    placeholder={t('accounts.initialBalancePlaceholder')}
+                    value={
+                      field.state.value && field.state.value !== ''
+                        ? Number(field.state.value)
+                        : 0
+                    }
+                    onChange={(value) =>
+                      field.handleChange(
+                        value !== '' && value !== null ? value.toString() : '0',
+                      )
+                    }
+                    onBlur={field.handleBlur}
+                    error={error}
+                  />
+                );
+              }}
+            </form.Field>
+          )}
 
           <form.Subscribe
             selector={(state) => state.values.type}

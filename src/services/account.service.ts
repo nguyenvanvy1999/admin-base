@@ -78,7 +78,7 @@ export class AccountService {
           notifyDaysBefore: data.notifyDaysBefore ?? null,
           meta: data.meta ?? null,
           userId,
-          balance: 0,
+          balance: data.initialBalance ?? 0,
         },
         include: {
           currency: true,

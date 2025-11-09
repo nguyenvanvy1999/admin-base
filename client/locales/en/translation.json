@@ -130,6 +130,8 @@
     "type": "Type",
     "currency": "Currency",
     "balance": "Balance",
+    "initialBalance": "Initial Balance",
+    "initialBalancePlaceholder": "Enter initial balance (default: 0)",
     "creditLimit": "Credit Limit",
     "expiryDate": "Expiry Date",
     "notifyOnDueDate": "Notify on Due Date",

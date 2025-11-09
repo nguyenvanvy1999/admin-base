@@ -30,20 +30,12 @@ const Header = () => {
     navigate('/profile');
   };
 
-  const handleHomeClick = () => {
-    // Navigate to home page
-    navigate('/');
-  };
-
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 relative z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and App Name */}
-          <button
-            onClick={handleHomeClick}
-            className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-lg px-2 py-1"
-          >
+          <div className="flex items-center space-x-3">
             <img
               src="/public/logo.svg"
               alt="Logo"
@@ -54,7 +46,7 @@ const Header = () => {
                 {t('header.appName')}
               </h1>
             </div>
-          </button>
+          </div>
 
           {/* Right side: Theme Toggle, Language Switcher and User Avatar */}
           <div className="flex items-center space-x-4">
