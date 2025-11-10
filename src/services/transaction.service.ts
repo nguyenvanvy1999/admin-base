@@ -273,7 +273,11 @@ class BalanceUpdater {
         await tx.account.update({
           where: { id: accountId },
           data: {
-            balance: { increment: amountInAccountCurrency.toNumber() },
+            balance: {
+              increment: amountInAccountCurrency
+                .minus(feeInAccountCurrency)
+                .toNumber(),
+            },
           },
         });
         break;
@@ -346,7 +350,11 @@ class BalanceUpdater {
         await tx.account.update({
           where: { id: accountId },
           data: {
-            balance: { decrement: amountInAccountCurrency.toNumber() },
+            balance: {
+              decrement: amountInAccountCurrency
+                .minus(feeInAccountCurrency)
+                .toNumber(),
+            },
           },
         });
         break;
