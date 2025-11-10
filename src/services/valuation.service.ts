@@ -1,0 +1,152 @@
+import { prisma } from '@server/libs/db';
+import { Elysia } from 'elysia';
+import type {
+  IListInvestmentValuationsQueryDto,
+  IUpsertInvestmentValuationDto,
+} from '../dto/valuation.dto';
+import { investmentServiceInstance } from './investment.service';
+import { CURRENCY_SELECT_BASIC } from './selects';
+
+const VALUATION_SELECT = {
+  id: true,
+  userId: true,
+  investmentId: true,
+  currencyId: true,
+  price: true,
+  timestamp: true,
+  source: true,
+  fetchedAt: true,
+  createdAt: true,
+  updatedAt: true,
+  currency: {
+    select: CURRENCY_SELECT_BASIC,
+  },
+} as const;
+
+export class InvestmentValuationService {
+  private readonly investmentService = investmentServiceInstance;
+
+  private parseDate(value: string) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      throw new Error('Invalid date provided');
+    }
+
+    return date;
+  }
+
+  async upsertValuation(
+    userId: string,
+    investmentId: string,
+    data: IUpsertInvestmentValuationDto,
+  ) {
+    await this.investmentService.validateValuation(userId, investmentId, data);
+
+    const timestamp = this.parseDate(data.timestamp);
+    const fetchedAt = data.fetchedAt ? this.parseDate(data.fetchedAt) : null;
+
+    const existing = await prisma.investmentValuation.findFirst({
+      where: {
+        userId,
+        investmentId,
+        timestamp,
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      return prisma.investmentValuation.update({
+        where: { id: existing.id },
+        data: {
+          price: data.price,
+          currencyId: data.currencyId,
+          source: data.source ?? null,
+          fetchedAt,
+        },
+        select: VALUATION_SELECT,
+      });
+    }
+
+    return prisma.investmentValuation.create({
+      data: {
+        userId,
+        investmentId,
+        price: data.price,
+        currencyId: data.currencyId,
+        timestamp,
+        source: data.source ?? null,
+        fetchedAt,
+      },
+      select: VALUATION_SELECT,
+    });
+  }
+
+  async listValuations(
+    userId: string,
+    investmentId: string,
+    query: IListInvestmentValuationsQueryDto = {},
+  ) {
+    await this.investmentService.ensureInvestment(userId, investmentId);
+
+    const {
+      dateFrom,
+      dateTo,
+      page = 1,
+      limit = 50,
+      sortOrder = 'desc',
+    } = query;
+
+    const where: Record<string, unknown> = {
+      userId,
+      investmentId,
+    };
+
+    if (dateFrom || dateTo) {
+      where.timestamp = {
+        ...(dateFrom ? { gte: this.parseDate(dateFrom) } : {}),
+        ...(dateTo ? { lte: this.parseDate(dateTo) } : {}),
+      };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [valuations, total] = await Promise.all([
+      prisma.investmentValuation.findMany({
+        where,
+        orderBy: { timestamp: sortOrder },
+        skip,
+        take: limit,
+        select: VALUATION_SELECT,
+      }),
+      prisma.investmentValuation.count({ where }),
+    ]);
+
+    return {
+      valuations,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getLatestValuation(userId: string, investmentId: string) {
+    await this.investmentService.ensureInvestment(userId, investmentId);
+
+    return prisma.investmentValuation.findFirst({
+      where: { userId, investmentId },
+      orderBy: { timestamp: 'desc' },
+      select: VALUATION_SELECT,
+    });
+  }
+}
+
+export const investmentValuationServiceInstance =
+  new InvestmentValuationService();
+
+export default new Elysia().decorate(
+  'investmentValuationService',
+  investmentValuationServiceInstance,
+);

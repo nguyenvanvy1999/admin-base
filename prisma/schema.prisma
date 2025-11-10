@@ -45,6 +45,11 @@ enum InvestmentAssetType {
   custom
 }
 
+enum InvestmentMode {
+  priced
+  manual
+}
+
 enum EntityType {
   individual
   organization
@@ -81,6 +86,8 @@ model Currency {
   transactions          Transaction[]
   recurringTransactions RecurringTransaction[]
   investmentTrades      InvestmentTrade[]
+  investmentContributions InvestmentContribution[]
+  investmentValuations  InvestmentValuation[]
 
   @@index([code], name: "currency_code_idx")
   @@map("currencies")
@@ -103,6 +110,8 @@ model User {
   categories            Category[]
   investments           Investment[]
   transactions          Transaction[]
+  investmentContributions InvestmentContribution[]
+  investmentValuations  InvestmentValuation[]
   budgets               Budget[]
   entities              Entity[]
   recurringTransactions RecurringTransaction[]
@@ -137,6 +146,7 @@ model Account {
   toTransactions        Transaction[]          @relation("ToAccountTransactions")
   recurringTransactions RecurringTransaction[]
   investmentTrades      InvestmentTrade[]
+  investmentContributions InvestmentContribution[]
 
   @@index([userId], name: "account_userId_idx")
   @@index([type], name: "account_type_idx")
@@ -176,6 +186,7 @@ model Investment {
   symbol     String
   name       String
   assetType  InvestmentAssetType @map("asset_type")
+  mode       InvestmentMode      @default(priced)
   currencyId String              @map("currency_id")
   extra      Json?
   deletedAt  DateTime?           @map("deleted_at")
@@ -187,6 +198,8 @@ model Investment {
   transactions Transaction[]
   trades       InvestmentTrade[]
   holdings     Holding[]
+  contributions InvestmentContribution[]
+  valuations   InvestmentValuation[]
 
   @@index([userId], name: "investment_userId_idx")
   @@index([assetType], name: "investment_assetType_idx")
@@ -350,6 +363,53 @@ model InvestmentTrade {
   @@index([currencyId], name: "trade_currencyId_idx")
   @@index([externalId], name: "trade_externalId_idx")
   @@map("investment_trades")
+}
+
+model InvestmentContribution {
+  id          String   @id @default(uuid(7))
+  userId      String   @map("user_id")
+  investmentId String  @map("investment_id")
+  accountId   String?  @map("account_id")
+  amount      Decimal  @db.Decimal(30, 10)
+  currencyId  String   @map("currency_id")
+  timestamp   DateTime
+  note        String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investment Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  account    Account?   @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  currency   Currency   @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+
+  @@index([userId], name: "investmentContribution_userId_idx")
+  @@index([investmentId], name: "investmentContribution_investmentId_idx")
+  @@index([accountId], name: "investmentContribution_accountId_idx")
+  @@index([currencyId], name: "investmentContribution_currencyId_idx")
+  @@map("investment_contributions")
+}
+
+model InvestmentValuation {
+  id           String    @id @default(uuid(7))
+  userId       String    @map("user_id")
+  investmentId String    @map("investment_id")
+  currencyId   String    @map("currency_id")
+  price        Decimal   @db.Decimal(30, 10)
+  timestamp    DateTime
+  source       String?
+  fetchedAt    DateTime? @map("fetched_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investment Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  currency   Currency   @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+
+  @@index([userId], name: "investmentValuation_userId_idx")
+  @@index([investmentId], name: "investmentValuation_investmentId_idx")
+  @@index([currencyId], name: "investmentValuation_currencyId_idx")
+  @@index([timestamp], name: "investmentValuation_timestamp_idx")
+  @@map("investment_valuations")
 }
 
 model Holding {

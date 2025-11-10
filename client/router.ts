@@ -5,6 +5,8 @@ import AccountPage from './pages/AccountPage';
 import CategoryPage from './pages/CategoryPage';
 import EntityPage from './pages/EntityPage';
 import HomePage from './pages/HomePage';
+import InvestmentDetailPage from './pages/InvestmentDetailPage';
+import InvestmentPage from './pages/InvestmentPage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProfilePage from './pages/ProfilePage';
@@ -43,7 +45,11 @@ const router = createHashRouter([
       },
       {
         path: '/investments',
-        Component: NotFoundPage,
+        Component: InvestmentPage,
+      },
+      {
+        path: '/investments/:investmentId',
+        Component: InvestmentDetailPage,
       },
       {
         path: '/categories',

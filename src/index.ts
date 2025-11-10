@@ -4,11 +4,15 @@ import { appEnv } from '@server/libs/env';
 import { Elysia } from 'elysia';
 import accountController from './controllers/account.controller';
 import categoryController from './controllers/category.controller';
+import contributionController from './controllers/contribution.controller';
 import currencyController from './controllers/currency.controller';
 import entityController from './controllers/entity.controller';
+import investmentController from './controllers/investment.controller';
 import tagController from './controllers/tag.controller';
+import tradeController from './controllers/trade.controller';
 import transactionController from './controllers/transaction.controller';
 import userController from './controllers/user.controller';
+import valuationController from './controllers/valuation.controller';
 import { logger } from './libs/logger';
 import errorMiddleware from './middlewares/error-middleware';
 
@@ -54,7 +58,11 @@ export const app = new Elysia()
       .use(currencyController)
       .use(entityController)
       .use(tagController)
-      .use(transactionController),
+      .use(transactionController)
+      .use(investmentController)
+      .use(tradeController)
+      .use(contributionController)
+      .use(valuationController),
   )
   .listen(appEnv.PORT);
 
