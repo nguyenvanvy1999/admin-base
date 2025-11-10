@@ -33,3 +33,66 @@ export const ListInvestmentsQueryDto = t.Object({
 
 export type IUpsertInvestmentDto = typeof UpsertInvestmentDto.static;
 export type IListInvestmentsQueryDto = typeof ListInvestmentsQueryDto.static;
+
+const investmentCurrencyShape = {
+  id: t.String(),
+  code: t.String(),
+  name: t.String(),
+  symbol: t.Nullable(t.String()),
+} as const;
+
+export const InvestmentCurrencyDto = t.Object(investmentCurrencyShape);
+
+export const InvestmentDto = t.Object({
+  id: t.String(),
+  userId: t.String(),
+  symbol: t.String(),
+  name: t.String(),
+  assetType: t.Enum(InvestmentAssetType),
+  mode: t.Enum(InvestmentMode),
+  currencyId: t.String(),
+  extra: t.Nullable(t.Any()),
+  deletedAt: t.Nullable(t.String()),
+  createdAt: t.String(),
+  updatedAt: t.String(),
+  currency: InvestmentCurrencyDto,
+});
+
+export const InvestmentPaginationDto = t.Object({
+  page: t.Integer(),
+  limit: t.Integer(),
+  total: t.Integer(),
+  totalPages: t.Integer(),
+});
+
+export const InvestmentListResponseDto = t.Object({
+  investments: t.Array(InvestmentDto),
+  pagination: InvestmentPaginationDto,
+});
+
+export const InvestmentPositionDto = t.Object({
+  quantity: t.Nullable(t.Number()),
+  avgCost: t.Nullable(t.Number()),
+  costBasis: t.Number(),
+  realizedPnl: t.Number(),
+  unrealizedPnl: t.Number(),
+  lastPrice: t.Nullable(t.Number()),
+  lastValue: t.Nullable(t.Number()),
+  lastValuationAt: t.Nullable(t.String()),
+  netContributions: t.Number(),
+});
+
+export const InvestmentLatestValuationDto = t.Object({
+  id: t.String(),
+  price: t.String(),
+  timestamp: t.String(),
+  currencyId: t.String(),
+  source: t.Nullable(t.String()),
+  fetchedAt: t.Nullable(t.String()),
+});
+
+export type InvestmentResponse = typeof InvestmentDto.static;
+export type InvestmentListResponse = typeof InvestmentListResponseDto.static;
+export type InvestmentPositionResponse = typeof InvestmentPositionDto.static;
+export type InvestmentLatestValuationResponse =
+  typeof InvestmentLatestValuationDto.static;

@@ -1,16 +1,7 @@
 import type { EntityType } from '@server/generated/prisma/enums';
+import type { EntityResponse } from '@server/src/dto/entity.dto';
 
-export type EntityFull = {
-  id: string;
-  name: string;
-  type: EntityType | null;
-  phone: string | null;
-  email: string | null;
-  address: string | null;
-  note: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+export type EntityFull = EntityResponse;
 
 export type EntityFormData = {
   id?: string;

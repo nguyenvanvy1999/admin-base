@@ -1,6 +1,10 @@
 import useToast from '@client/hooks/useToast';
-import { api } from '@client/libs/api';
+import { del, post } from '@client/libs/http';
 import type { AccountFormData } from '@client/types/account';
+import type {
+  AccountDeleteResponse,
+  AccountResponse,
+} from '@server/src/dto/account.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateAccountMutation = () => {
@@ -9,13 +13,10 @@ export const useCreateAccountMutation = () => {
 
   return useMutation({
     mutationFn: async (data: Omit<AccountFormData, 'id'>) => {
-      const response = await api.api.accounts.post(data);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await post<AccountResponse, Omit<AccountFormData, 'id'>>(
+        '/api/accounts',
+        data,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['accounts'] });
@@ -37,13 +38,10 @@ export const useUpdateAccountMutation = () => {
         throw new Error('Account ID is required for update');
       }
 
-      const response = await api.api.accounts.post(data);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await post<AccountResponse, AccountFormData>(
+        '/api/accounts',
+        data,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['accounts'] });
@@ -62,13 +60,7 @@ export const useDeleteAccountMutation = () => {
 
   return useMutation({
     mutationFn: async (accountId: string) => {
-      const response = await api.api.accounts({ id: accountId }).delete();
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await del<AccountDeleteResponse>(`/api/accounts/${accountId}`);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['accounts'] });

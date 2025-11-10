@@ -1,6 +1,8 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
+  InvestmentValuationDto,
+  InvestmentValuationListResponseDto,
   ListInvestmentValuationsQueryDto,
   UpsertInvestmentValuationDto,
 } from '../dto/valuation.dto';
@@ -44,6 +46,9 @@ const valuationController = new Elysia().group(
           },
           params: t.Object({ investmentId: t.String() }),
           body: UpsertInvestmentValuationDto,
+          response: {
+            200: InvestmentValuationDto,
+          },
         },
       )
       .get(
@@ -65,6 +70,9 @@ const valuationController = new Elysia().group(
           },
           params: t.Object({ investmentId: t.String() }),
           query: ListInvestmentValuationsQueryDto,
+          response: {
+            200: InvestmentValuationListResponseDto,
+          },
         },
       )
       .get(
@@ -84,6 +92,9 @@ const valuationController = new Elysia().group(
               'Return the most recent valuation snapshot for the specified investment.',
           },
           params: t.Object({ investmentId: t.String() }),
+          response: {
+            200: InvestmentValuationDto,
+          },
         },
       ),
 );

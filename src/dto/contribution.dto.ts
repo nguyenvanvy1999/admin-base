@@ -21,3 +21,47 @@ export type ICreateInvestmentContributionDto =
   typeof CreateInvestmentContributionDto.static;
 export type IListInvestmentContributionsQueryDto =
   typeof ListInvestmentContributionsQueryDto.static;
+
+export const InvestmentContributionAccountDto = t.Object({
+  id: t.String(),
+  name: t.String(),
+});
+
+export const InvestmentContributionCurrencyDto = t.Object({
+  id: t.String(),
+  code: t.String(),
+  name: t.String(),
+  symbol: t.Nullable(t.String()),
+});
+
+export const InvestmentContributionDto = t.Object({
+  id: t.String(),
+  userId: t.String(),
+  investmentId: t.String(),
+  accountId: t.Nullable(t.String()),
+  amount: t.Number(),
+  currencyId: t.String(),
+  timestamp: t.String(),
+  note: t.Nullable(t.String()),
+  createdAt: t.String(),
+  updatedAt: t.String(),
+  account: t.Nullable(InvestmentContributionAccountDto),
+  currency: InvestmentContributionCurrencyDto,
+});
+
+export const InvestmentContributionPaginationDto = t.Object({
+  page: t.Integer(),
+  limit: t.Integer(),
+  total: t.Integer(),
+  totalPages: t.Integer(),
+});
+
+export const InvestmentContributionListResponseDto = t.Object({
+  contributions: t.Array(InvestmentContributionDto),
+  pagination: InvestmentContributionPaginationDto,
+});
+
+export type InvestmentContributionResponse =
+  typeof InvestmentContributionDto.static;
+export type InvestmentContributionListResponse =
+  typeof InvestmentContributionListResponseDto.static;

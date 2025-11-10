@@ -1,6 +1,7 @@
 import { ACCESS_TOKEN_KEY } from '@client/constants';
-import { api } from '@client/libs/api';
+import { get } from '@client/libs/http';
 import useUserStore from '@client/store/user';
+import type { CurrentUserResponse } from '@server/src/dto/user.dto';
 import { useQuery } from '@tanstack/react-query';
 
 export const useUserQuery = () => {
@@ -14,20 +15,7 @@ export const useUserQuery = () => {
         return null;
       }
 
-      const response = await api.api.users.me.get();
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to fetch user',
-        );
-      }
-
-      const user = response.data as {
-        id: string;
-        username: string;
-        name: string | null;
-        role: string;
-        baseCurrencyId: string;
-      };
+      const user = await get<CurrentUserResponse>('/api/users/me');
 
       setUser({
         id: user.id,

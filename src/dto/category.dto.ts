@@ -17,3 +17,42 @@ export const ListCategoriesQueryDto = t.Object({
 
 export type IUpsertCategoryDto = typeof UpsertCategoryDto.static;
 export type IListCategoriesQueryDto = typeof ListCategoriesQueryDto.static;
+
+export const CategoryDto = t.Object({
+  id: t.String(),
+  userId: t.String(),
+  type: t.Enum(CategoryType),
+  name: t.String(),
+  parentId: t.Nullable(t.String()),
+  icon: t.Nullable(t.String()),
+  color: t.Nullable(t.String()),
+  isLocked: t.Boolean(),
+});
+
+export const CategoryTreeDto = t.Recursive((Self) =>
+  t.Object({
+    id: t.String(),
+    userId: t.String(),
+    type: t.Enum(CategoryType),
+    name: t.String(),
+    parentId: t.Nullable(t.String()),
+    icon: t.Nullable(t.String()),
+    color: t.Nullable(t.String()),
+    isLocked: t.Boolean(),
+    children: t.Optional(t.Array(Self)),
+  }),
+);
+
+export const CategoryListResponseDto = t.Object({
+  categories: t.Array(CategoryTreeDto),
+});
+
+export const CategoryDeleteResponseDto = t.Object({
+  success: t.Boolean(),
+  message: t.String(),
+});
+
+export type CategoryResponse = typeof CategoryDto.static;
+export type CategoryTreeResponse = typeof CategoryTreeDto.static;
+export type CategoryListResponse = typeof CategoryListResponseDto.static;
+export type CategoryDeleteResponse = typeof CategoryDeleteResponseDto.static;

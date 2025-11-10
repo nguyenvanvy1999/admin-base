@@ -1,6 +1,7 @@
 import useToast from '@client/hooks/useToast';
-import { api } from '@client/libs/api';
+import { put } from '@client/libs/http';
 import useUserStore from '@client/store/user';
+import type { UpdateProfileResponse } from '@server/src/dto/user.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 type UpdateProfileData = {
@@ -17,13 +18,10 @@ export const useUpdateProfileMutation = () => {
 
   return useMutation({
     mutationFn: async (data: UpdateProfileData) => {
-      const response = await api.api.users.profile.put(data);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await put<UpdateProfileResponse, UpdateProfileData>(
+        '/api/users/profile',
+        data,
+      );
     },
     onSuccess: async (data) => {
       setUser({

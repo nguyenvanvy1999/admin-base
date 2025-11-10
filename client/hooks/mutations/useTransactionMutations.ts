@@ -1,6 +1,10 @@
 import useToast from '@client/hooks/useToast';
-import { api } from '@client/libs/api';
+import { del, post } from '@client/libs/http';
 import type { TransactionFormData } from '@client/types/transaction';
+import type {
+  TransactionDeleteResponse,
+  TransactionDetail,
+} from '@server/src/dto/transaction.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateTransactionMutation = () => {
@@ -15,13 +19,10 @@ export const useCreateTransactionMutation = () => {
         entityId: data.entityId ?? undefined,
         metadata: data.metadata ?? undefined,
       };
-      const response = await api.api.transactions.post(payload);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await post<TransactionDetail, typeof payload>(
+        '/api/transactions',
+        payload,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -49,13 +50,10 @@ export const useUpdateTransactionMutation = () => {
         entityId: data.entityId ?? undefined,
         metadata: data.metadata ?? undefined,
       };
-      const response = await api.api.transactions.post(payload);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await post<TransactionDetail, typeof payload>(
+        '/api/transactions',
+        payload,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -74,15 +72,9 @@ export const useDeleteTransactionMutation = () => {
 
   return useMutation({
     mutationFn: async (transactionId: string) => {
-      const response = await api.api
-        .transactions({ id: transactionId })
-        .delete();
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await del<TransactionDeleteResponse>(
+        `/api/transactions/${transactionId}`,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });

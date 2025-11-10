@@ -1,6 +1,10 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
+  InvestmentDto,
+  InvestmentLatestValuationDto,
+  InvestmentListResponseDto,
+  InvestmentPositionDto,
   ListInvestmentsQueryDto,
   UpsertInvestmentDto,
 } from '../dto/investment.dto';
@@ -39,6 +43,9 @@ const investmentController = new Elysia().group(
               'Create a new investment or update an existing investment configuration.',
           },
           body: UpsertInvestmentDto,
+          response: {
+            200: InvestmentDto,
+          },
         },
       )
       .get(
@@ -55,6 +62,9 @@ const investmentController = new Elysia().group(
               'Return a paginated list of investments for the authenticated user.',
           },
           query: ListInvestmentsQueryDto,
+          response: {
+            200: InvestmentListResponseDto,
+          },
         },
       )
       .get(
@@ -71,6 +81,9 @@ const investmentController = new Elysia().group(
               'Retrieve an investment and its configuration details.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: InvestmentDto,
+          },
         },
       )
       .get(
@@ -87,6 +100,9 @@ const investmentController = new Elysia().group(
               'Return current position metrics such as quantity, cost basis, and PnL for the specified investment.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: InvestmentPositionDto,
+          },
         },
       )
       .get(
@@ -103,6 +119,9 @@ const investmentController = new Elysia().group(
               'Return the latest valuation snapshot for the specified investment.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: t.Nullable(InvestmentLatestValuationDto),
+          },
         },
       ),
 );

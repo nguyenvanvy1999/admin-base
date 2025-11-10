@@ -1,6 +1,7 @@
-import { api } from '@client/libs/api';
+import { get } from '@client/libs/http';
 import type { EntityFull } from '@client/types/entity';
 import type { EntityType } from '@server/generated/prisma/enums';
+import type { EntityListResponse } from '@server/src/dto/entity.dto';
 import { useQuery } from '@tanstack/react-query';
 
 type ListEntitiesQuery = {
@@ -16,17 +17,9 @@ export const useEntitiesQuery = (query: ListEntitiesQuery = {}) => {
   return useQuery({
     queryKey: ['entities', query],
     queryFn: async () => {
-      const response = await api.api.entities.get({
-        query: query,
+      const data = await get<EntityListResponse>('/api/entities', {
+        query,
       });
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to fetch entities',
-        );
-      }
-
-      const data = response.data;
 
       return {
         entities: data.entities.map((entity) => ({

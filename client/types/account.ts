@@ -1,27 +1,7 @@
 import type { AccountType } from '@server/generated/prisma/enums';
+import type { AccountResponse } from '@server/src/dto/account.dto';
 
-export type Currency = {
-  id: string;
-  code: string;
-  name: string;
-  symbol: string | null;
-};
-
-export type BaseAccount = {
-  id: string;
-  type: string;
-  name: string;
-  currencyId: string;
-  currency: Currency;
-};
-
-export type AccountFull = BaseAccount & {
-  balance: string;
-  creditLimit: string | null;
-  notifyOnDueDate: boolean | null;
-  paymentDay: number | null;
-  notifyDaysBefore: number | null;
-};
+export type AccountFull = AccountResponse;
 
 export type AccountFormData = {
   id?: string;

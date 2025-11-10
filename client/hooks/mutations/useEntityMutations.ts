@@ -1,6 +1,10 @@
 import useToast from '@client/hooks/useToast';
-import { api } from '@client/libs/api';
+import { del, post } from '@client/libs/http';
 import type { EntityFormData } from '@client/types/entity';
+import type {
+  EntityDeleteResponse,
+  EntityResponse,
+} from '@server/src/dto/entity.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateEntityMutation = () => {
@@ -9,13 +13,10 @@ export const useCreateEntityMutation = () => {
 
   return useMutation({
     mutationFn: async (data: Omit<EntityFormData, 'id'>) => {
-      const response = await api.api.entities.post(data);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await post<EntityResponse, Omit<EntityFormData, 'id'>>(
+        '/api/entities',
+        data,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['entities'] });
@@ -37,13 +38,7 @@ export const useUpdateEntityMutation = () => {
         throw new Error('Entity ID is required for update');
       }
 
-      const response = await api.api.entities.post(data);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await post<EntityResponse, EntityFormData>('/api/entities', data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['entities'] });
@@ -62,13 +57,7 @@ export const useDeleteEntityMutation = () => {
 
   return useMutation({
     mutationFn: async (entityId: string) => {
-      const response = await api.api.entities({ id: entityId }).delete();
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await del<EntityDeleteResponse>(`/api/entities/${entityId}`);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['entities'] });

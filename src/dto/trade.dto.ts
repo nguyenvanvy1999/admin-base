@@ -31,3 +31,53 @@ export const ListInvestmentTradesQueryDto = t.Object({
 export type ICreateInvestmentTradeDto = typeof CreateInvestmentTradeDto.static;
 export type IListInvestmentTradesQueryDto =
   typeof ListInvestmentTradesQueryDto.static;
+
+export const InvestmentTradeAccountDto = t.Object({
+  id: t.String(),
+  name: t.String(),
+});
+
+export const InvestmentTradeCurrencyDto = t.Object({
+  id: t.String(),
+  code: t.String(),
+  name: t.String(),
+  symbol: t.Nullable(t.String()),
+});
+
+export const InvestmentTradeDto = t.Object({
+  id: t.String(),
+  userId: t.String(),
+  investmentId: t.String(),
+  accountId: t.String(),
+  side: t.Enum(TradeSide),
+  timestamp: t.String(),
+  price: t.Number(),
+  quantity: t.Number(),
+  amount: t.Number(),
+  fee: t.Number(),
+  currencyId: t.String(),
+  transactionId: t.Nullable(t.String()),
+  priceCurrency: t.Nullable(t.String()),
+  priceInBaseCurrency: t.Nullable(t.Number()),
+  priceSource: t.Nullable(t.String()),
+  priceFetchedAt: t.Nullable(t.String()),
+  meta: t.Nullable(t.Any()),
+  account: InvestmentTradeAccountDto,
+  currency: InvestmentTradeCurrencyDto,
+});
+
+export const InvestmentTradePaginationDto = t.Object({
+  page: t.Integer(),
+  limit: t.Integer(),
+  total: t.Integer(),
+  totalPages: t.Integer(),
+});
+
+export const InvestmentTradeListResponseDto = t.Object({
+  trades: t.Array(InvestmentTradeDto),
+  pagination: InvestmentTradePaginationDto,
+});
+
+export type InvestmentTradeResponse = typeof InvestmentTradeDto.static;
+export type InvestmentTradeListResponse =
+  typeof InvestmentTradeListResponseDto.static;

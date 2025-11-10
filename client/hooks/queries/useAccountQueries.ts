@@ -1,6 +1,7 @@
-import { api } from '@client/libs/api';
+import { get } from '@client/libs/http';
 import type { AccountFull } from '@client/types/account';
 import type { AccountType } from '@server/generated/prisma/enums';
+import type { AccountListResponse } from '@server/src/dto/account.dto';
 import { useQuery } from '@tanstack/react-query';
 
 type ListAccountsQuery = {
@@ -17,23 +18,22 @@ export const useAccountsQuery = (query: ListAccountsQuery = {}) => {
   return useQuery({
     queryKey: ['accounts', query],
     queryFn: async () => {
-      const response = await api.api.accounts.get({
-        query: query,
+      const data = await get<AccountListResponse>('/api/accounts', {
+        query,
       });
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to fetch accounts',
-        );
-      }
-
-      const data = response.data;
 
       return {
         accounts: data.accounts.map((account) => ({
           ...account,
-          balance: account.balance.toString(),
-          creditLimit: account.creditLimit?.toString() ?? null,
+          balance:
+            typeof account.balance === 'string'
+              ? account.balance
+              : (account.balance?.toString() ?? '0'),
+          creditLimit:
+            typeof account.creditLimit === 'string' ||
+            account.creditLimit === null
+              ? account.creditLimit
+              : (account.creditLimit?.toString() ?? null),
         })) satisfies AccountFull[],
         pagination: data.pagination,
         summary: data.summary || [],

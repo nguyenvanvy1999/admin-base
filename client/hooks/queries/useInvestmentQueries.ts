@@ -1,4 +1,4 @@
-import { api } from '@client/libs/api';
+import { get } from '@client/libs/http';
 import type {
   InvestmentContribution,
   InvestmentFull,
@@ -11,6 +11,17 @@ import type {
   InvestmentMode,
   TradeSide,
 } from '@server/generated/prisma/enums';
+import type { InvestmentContributionListResponse } from '@server/src/dto/contribution.dto';
+import type {
+  InvestmentListResponse,
+  InvestmentPositionResponse,
+  InvestmentResponse,
+} from '@server/src/dto/investment.dto';
+import type { InvestmentTradeListResponse } from '@server/src/dto/trade.dto';
+import type {
+  InvestmentValuationListResponse,
+  InvestmentValuationResponse,
+} from '@server/src/dto/valuation.dto';
 import { useQuery } from '@tanstack/react-query';
 
 type ListInvestmentsQuery = {
@@ -78,17 +89,9 @@ export const useInvestmentsQuery = (query: ListInvestmentsQuery = {}) => {
   return useQuery({
     queryKey: ['investments', query],
     queryFn: async () => {
-      const response = await api.api.investments.get({
+      const data = await get<InvestmentListResponse>('/api/investments', {
         query,
       });
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to fetch investments',
-        );
-      }
-
-      const data = response.data;
 
       return {
         investments: data.investments.map((investment) => ({
@@ -110,15 +113,9 @@ export const useInvestmentQuery = (investmentId: string) => {
   return useQuery({
     queryKey: ['investment', investmentId],
     queryFn: async () => {
-      const response = await api.api.investments({ id: investmentId }).get();
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to fetch investment',
-        );
-      }
-
-      const investment = response.data;
+      const investment = await get<InvestmentResponse>(
+        `/api/investments/${investmentId}`,
+      );
 
       return {
         ...investment,
@@ -137,18 +134,9 @@ export const useInvestmentPositionQuery = (investmentId: string) => {
   return useQuery({
     queryKey: ['investment-position', investmentId],
     queryFn: async () => {
-      const response = await api.api
-        .investments({ id: investmentId })
-        .holdings.get();
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ??
-            'Failed to fetch investment position',
-        );
-      }
-
-      const position = response.data;
+      const position = await get<InvestmentPositionResponse>(
+        `/api/investments/${investmentId}/holdings`,
+      );
 
       return {
         quantity:
@@ -184,17 +172,10 @@ export const useInvestmentTradesQuery = (
   return useQuery({
     queryKey: ['investment-trades', investmentId, query],
     queryFn: async () => {
-      const response = await api.api
-        .investments({ investmentId })
-        .trades.get({ query });
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to fetch investment trades',
-        );
-      }
-
-      const data = response.data;
+      const data = await get<InvestmentTradeListResponse>(
+        `/api/investments/${investmentId}/trades`,
+        { query },
+      );
 
       return {
         trades: data.trades.map((trade) => ({
@@ -224,18 +205,10 @@ export const useInvestmentContributionsQuery = (
   return useQuery({
     queryKey: ['investment-contributions', investmentId, query],
     queryFn: async () => {
-      const response = await api.api
-        .investments({ investmentId })
-        .contributions.get({ query });
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ??
-            'Failed to fetch investment contributions',
-        );
-      }
-
-      const data = response.data;
+      const data = await get<InvestmentContributionListResponse>(
+        `/api/investments/${investmentId}/contributions`,
+        { query },
+      );
 
       return {
         contributions: data.contributions.map((contribution) => ({
@@ -258,18 +231,10 @@ export const useInvestmentValuationsQuery = (
   return useQuery({
     queryKey: ['investment-valuations', investmentId, query],
     queryFn: async () => {
-      const response = await api.api
-        .investments({ investmentId })
-        .valuations.get({ query });
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ??
-            'Failed to fetch investment valuations',
-        );
-      }
-
-      const data = response.data;
+      const data = await get<InvestmentValuationListResponse>(
+        `/api/investments/${investmentId}/valuations`,
+        { query },
+      );
 
       return {
         valuations: data.valuations.map((valuation) => ({
@@ -290,22 +255,13 @@ export const useLatestInvestmentValuationQuery = (investmentId: string) => {
   return useQuery({
     queryKey: ['investment-latest-valuation', investmentId],
     queryFn: async () => {
-      const response = await api.api
-        .investments({ investmentId })
-        .valuations.latest.get();
+      const valuation = await get<InvestmentValuationResponse | null>(
+        `/api/investments/${investmentId}/valuations/latest`,
+      );
 
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ??
-            'Failed to fetch latest investment valuation',
-        );
-      }
-
-      if (!response.data) {
+      if (!valuation) {
         return null;
       }
-
-      const valuation = response.data;
 
       return {
         ...valuation,

@@ -1,11 +1,15 @@
 import useToast from '@client/hooks/useToast';
-import { api } from '@client/libs/api';
+import { post } from '@client/libs/http';
 import type {
   InvestmentContributionFormData,
   InvestmentFormData,
   InvestmentTradeFormData,
   InvestmentValuationFormData,
 } from '@client/types/investment';
+import type { InvestmentContributionResponse } from '@server/src/dto/contribution.dto';
+import type { InvestmentResponse } from '@server/src/dto/investment.dto';
+import type { InvestmentTradeResponse } from '@server/src/dto/trade.dto';
+import type { InvestmentValuationResponse } from '@server/src/dto/valuation.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 type TradeMutationVariables = {
@@ -34,15 +38,10 @@ export const useCreateInvestmentMutation = () => {
 
   return useMutation({
     mutationFn: async (data: Omit<InvestmentFormData, 'id'>) => {
-      const response = await api.api.investments.post(data);
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to create investment',
-        );
-      }
-
-      return response.data;
+      return await post<InvestmentResponse, Omit<InvestmentFormData, 'id'>>(
+        '/api/investments',
+        data,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['investments'] });
@@ -62,15 +61,10 @@ export const useUpdateInvestmentMutation = () => {
         throw new Error('Investment ID is required for update');
       }
 
-      const response = await api.api.investments.post(data);
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to update investment',
-        );
-      }
-
-      return response.data;
+      return await post<InvestmentResponse, InvestmentFormData>(
+        '/api/investments',
+        data,
+      );
     },
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ['investments'] });
@@ -91,17 +85,10 @@ export const useCreateInvestmentTradeMutation = () => {
 
   return useMutation({
     mutationFn: async ({ investmentId, data }: TradeMutationVariables) => {
-      const response = await api.api
-        .investments({ investmentId })
-        .trades.post(data);
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to create trade',
-        );
-      }
-
-      return response.data;
+      return await post<InvestmentTradeResponse, InvestmentTradeFormData>(
+        `/api/investments/${investmentId}/trades`,
+        data,
+      );
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({
@@ -125,17 +112,10 @@ export const useCreateInvestmentContributionMutation = () => {
       investmentId,
       data,
     }: ContributionMutationVariables) => {
-      const response = await api.api
-        .investments({ investmentId })
-        .contributions.post(data);
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to create contribution',
-        );
-      }
-
-      return response.data;
+      return await post<
+        InvestmentContributionResponse,
+        InvestmentContributionFormData
+      >(`/api/investments/${investmentId}/contributions`, data);
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({
@@ -156,17 +136,10 @@ export const useUpsertInvestmentValuationMutation = () => {
 
   return useMutation({
     mutationFn: async ({ investmentId, data }: ValuationMutationVariables) => {
-      const response = await api.api
-        .investments({ investmentId })
-        .valuations.post(data);
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to save valuation',
-        );
-      }
-
-      return response.data;
+      return await post<
+        InvestmentValuationResponse,
+        InvestmentValuationFormData
+      >(`/api/investments/${investmentId}/valuations`, data);
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({

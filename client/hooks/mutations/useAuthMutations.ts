@@ -1,7 +1,8 @@
 import { ACCESS_TOKEN_KEY } from '@client/constants';
 import useToast from '@client/hooks/useToast';
-import { api } from '@client/libs/api';
+import { post } from '@client/libs/http';
 import useUserStore from '@client/store/user';
+import type { LoginResponse, RegisterResponse } from '@server/src/dto/user.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 
@@ -16,15 +17,6 @@ type RegisterData = {
   name?: string;
 };
 
-type AuthResponse = {
-  user: {
-    id: string;
-    username: string;
-    role: string;
-  };
-  jwt: string;
-};
-
 export const useLoginMutation = () => {
   const navigate = useNavigate();
   const { setUser } = useUserStore();
@@ -33,20 +25,14 @@ export const useLoginMutation = () => {
 
   return useMutation({
     mutationFn: async (data: LoginData) => {
-      const response = await api.api.users.login.post(data);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await post<LoginResponse, LoginData>('/api/users/login', data);
     },
     onSuccess: async (data) => {
       localStorage.setItem(ACCESS_TOKEN_KEY, data.jwt);
       setUser({
         id: String(data.user.id),
         username: data.user.username,
-        name: null,
+        name: data.user.name,
         role: data.user.role,
       });
       await queryClient.invalidateQueries({ queryKey: ['user'] });
@@ -66,32 +52,20 @@ export const useRegisterMutation = () => {
 
   return useMutation({
     mutationFn: async (data: RegisterData) => {
-      const registerResponse = await api.api.users.register.post({
+      await post<RegisterResponse, RegisterData>('/api/users/register', {
         username: data.username,
         password: data.password,
         name: data.name,
       });
-      if (registerResponse.error) {
-        throw new Error(
-          registerResponse.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
 
-      const loginResponse = await api.api.users.login.post(data);
-      if (loginResponse.error) {
-        throw new Error(
-          loginResponse.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-
-      return loginResponse.data as AuthResponse;
+      return await post<LoginResponse, LoginData>('/api/users/login', data);
     },
     onSuccess: async (data) => {
       localStorage.setItem(ACCESS_TOKEN_KEY, data.jwt);
       setUser({
         id: String(data.user.id),
         username: data.user.username,
-        name: null,
+        name: data.user.name,
         role: data.user.role,
       });
       await queryClient.invalidateQueries({ queryKey: ['user'] });

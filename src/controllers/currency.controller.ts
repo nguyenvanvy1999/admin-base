@@ -1,5 +1,6 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia } from 'elysia';
+import { CurrencyListResponseDto } from '../dto/currency.dto';
 import authMacro from '../macros/auth';
 import currencyService from '../services/currency.service';
 
@@ -33,6 +34,9 @@ const currencyController = new Elysia().group(
             summary: 'Get all currencies',
             description:
               'Retrieve a list of all active currencies available in the system.',
+          },
+          response: {
+            200: CurrencyListResponseDto,
           },
         },
       ),

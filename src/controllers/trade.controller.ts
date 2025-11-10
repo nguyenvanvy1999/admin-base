@@ -2,6 +2,8 @@ import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   CreateInvestmentTradeDto,
+  InvestmentTradeDto,
+  InvestmentTradeListResponseDto,
   ListInvestmentTradesQueryDto,
 } from '../dto/trade.dto';
 import authMacro from '../macros/auth';
@@ -44,6 +46,9 @@ const tradeController = new Elysia().group(
           },
           params: t.Object({ investmentId: t.String() }),
           body: CreateInvestmentTradeDto,
+          response: {
+            200: InvestmentTradeDto,
+          },
         },
       )
       .get(
@@ -65,6 +70,9 @@ const tradeController = new Elysia().group(
           },
           params: t.Object({ investmentId: t.String() }),
           query: ListInvestmentTradesQueryDto,
+          response: {
+            200: InvestmentTradeListResponseDto,
+          },
         },
       ),
 );

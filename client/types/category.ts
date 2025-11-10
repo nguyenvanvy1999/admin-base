@@ -1,16 +1,7 @@
 import type { CategoryType } from '@server/generated/prisma/enums';
+import type { CategoryTreeResponse } from '@server/src/dto/category.dto';
 
-export type CategoryFull = {
-  id: string;
-  userId: string;
-  type: CategoryType;
-  name: string;
-  parentId: string | null;
-  icon: string | null;
-  color: string | null;
-  isLocked: boolean;
-  children?: CategoryFull[];
-};
+export type CategoryFull = CategoryTreeResponse;
 
 export type CategoryFormData = {
   id?: string;

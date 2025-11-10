@@ -1,6 +1,10 @@
 import useToast from '@client/hooks/useToast';
-import { api } from '@client/libs/api';
+import { del, post, put } from '@client/libs/http';
 import type { CategoryFormData } from '@client/types/category';
+import type {
+  CategoryDeleteResponse,
+  CategoryResponse,
+} from '@server/src/dto/category.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateCategoryMutation = () => {
@@ -15,13 +19,10 @@ export const useCreateCategoryMutation = () => {
         icon: data.icon ?? undefined,
         color: data.color ?? undefined,
       };
-      const response = await api.api.categories.post(payload);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await post<CategoryResponse, typeof payload>(
+        '/api/categories',
+        payload,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -50,13 +51,10 @@ export const useUpdateCategoryMutation = () => {
         icon: rest.icon ?? undefined,
         color: rest.color ?? undefined,
       };
-      const response = await api.api.categories({ id }).put(updateData);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await put<CategoryResponse, typeof updateData>(
+        `/api/categories/${id}`,
+        updateData,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -75,13 +73,7 @@ export const useDeleteCategoryMutation = () => {
 
   return useMutation({
     mutationFn: async (categoryId: string) => {
-      const response = await api.api.categories({ id: categoryId }).delete();
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await del<CategoryDeleteResponse>(`/api/categories/${categoryId}`);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['categories'] });

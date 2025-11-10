@@ -5,9 +5,11 @@ import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
 import { CURRENCY_IDS } from '../constants/currency';
 import type {
+  AuthUserResponse,
   ILoginDto,
   IRegisterDto,
   IUpdateProfileDto,
+  LoginResponse,
 } from '../dto/user.dto';
 import { CategoryService } from './category.service';
 
@@ -28,6 +30,8 @@ const USER_SELECT_FOR_LOGIN = {
   id: true,
   username: true,
   role: true,
+  name: true,
+  baseCurrencyId: true,
   password: true,
 } as const;
 
@@ -59,7 +63,13 @@ export class UserService {
       return newUser;
     });
 
-    return user;
+    return {
+      id: user.id,
+      username: user.username,
+      name: user.name ?? null,
+      role: user.role,
+      baseCurrencyId: user.baseCurrencyId ?? null,
+    } satisfies AuthUserResponse;
   }
 
   async login(data: ILoginDto) {
@@ -87,10 +97,12 @@ export class UserService {
       user: {
         id: user.id,
         username: user.username,
+        name: user.name ?? null,
         role: user.role,
+        baseCurrencyId: user.baseCurrencyId ?? null,
       },
       jwt: token,
-    };
+    } satisfies LoginResponse;
   }
 
   async getUserInfo(id: string) {
@@ -101,7 +113,13 @@ export class UserService {
     if (!user) {
       throw new Error('User not found');
     }
-    return user;
+    return {
+      id: user.id,
+      username: user.username,
+      name: user.name ?? null,
+      role: user.role,
+      baseCurrencyId: user.baseCurrencyId ?? null,
+    } satisfies AuthUserResponse;
   }
 
   async updateProfile(userId: string, data: IUpdateProfileDto) {
@@ -156,10 +174,17 @@ export class UserService {
         username: true,
         name: true,
         role: true,
+        baseCurrencyId: true,
       },
     });
 
-    return updatedUser;
+    return {
+      id: updatedUser.id,
+      username: updatedUser.username,
+      name: updatedUser.name ?? null,
+      role: updatedUser.role,
+      baseCurrencyId: updatedUser.baseCurrencyId ?? null,
+    } satisfies AuthUserResponse;
   }
 }
 

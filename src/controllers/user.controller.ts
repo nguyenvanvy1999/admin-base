@@ -1,6 +1,14 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia } from 'elysia';
-import { LoginDto, RegisterDto, UpdateProfileDto } from '../dto/user.dto';
+import {
+  CurrentUserResponseDto,
+  LoginDto,
+  LoginResponseDto,
+  RegisterDto,
+  RegisterResponseDto,
+  UpdateProfileDto,
+  UpdateProfileResponseDto,
+} from '../dto/user.dto';
 import authMacro from '../macros/auth';
 import userService from '../services/user.service';
 
@@ -39,6 +47,9 @@ const userController = new Elysia().group(
               'Create a new user account with username, email, and password. Returns user information and authentication token upon successful registration.',
           },
           body: RegisterDto,
+          response: {
+            200: RegisterResponseDto,
+          },
         },
       )
       .post(
@@ -54,6 +65,9 @@ const userController = new Elysia().group(
               'Authenticate a user with username/email and password. Returns user information and JWT token for subsequent authenticated requests.',
           },
           body: LoginDto,
+          response: {
+            200: LoginResponseDto,
+          },
         },
       )
       .get(
@@ -68,6 +82,9 @@ const userController = new Elysia().group(
             summary: 'Get current user info',
             description:
               "Retrieve the authenticated user's profile information including username, email, and account details.",
+          },
+          response: {
+            200: CurrentUserResponseDto,
           },
         },
       )
@@ -85,6 +102,9 @@ const userController = new Elysia().group(
               "Update the authenticated user's profile information such as username, email, or other profile fields.",
           },
           body: UpdateProfileDto,
+          response: {
+            200: UpdateProfileResponseDto,
+          },
         },
       ),
 );

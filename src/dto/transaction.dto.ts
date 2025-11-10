@@ -1,5 +1,9 @@
 import { t } from 'elysia';
-import { TransactionType } from '../generated/prisma/enums';
+import {
+  CategoryType,
+  EntityType,
+  TransactionType,
+} from '../generated/prisma/enums';
 
 const BaseTransactionDto = t.Object({
   id: t.Optional(t.String()),
@@ -82,3 +86,110 @@ export type IIncomeExpenseTransaction =
 export type ITransferTransaction = typeof TransferTransactionDto.static;
 export type ILoanTransaction = typeof LoanTransactionDto.static;
 export type IBatchTransactionsDto = typeof BatchTransactionsDto.static;
+
+const transactionCurrencyShape = {
+  id: t.String(),
+  code: t.String(),
+  name: t.String(),
+  symbol: t.Nullable(t.String()),
+} as const;
+
+export const TransactionCurrencyDto = t.Object(transactionCurrencyShape);
+
+export const TransactionAccountDto = t.Object({
+  id: t.String(),
+  name: t.String(),
+  currency: TransactionCurrencyDto,
+});
+
+export const TransactionCategoryDto = t.Object({
+  id: t.String(),
+  name: t.String(),
+  type: t.Enum(CategoryType),
+  icon: t.Nullable(t.String()),
+  color: t.Nullable(t.String()),
+});
+
+export const TransactionEntityDto = t.Object({
+  id: t.String(),
+  name: t.String(),
+  type: t.Enum(EntityType),
+});
+
+export const TransactionDetailDto = t.Object({
+  id: t.String(),
+  userId: t.String(),
+  accountId: t.String(),
+  toAccountId: t.Nullable(t.String()),
+  transferGroupId: t.Nullable(t.String()),
+  isTransferMirror: t.Boolean(),
+  type: t.Enum(TransactionType),
+  categoryId: t.Nullable(t.String()),
+  entityId: t.Nullable(t.String()),
+  investmentId: t.Nullable(t.String()),
+  amount: t.String(),
+  currencyId: t.String(),
+  price: t.Nullable(t.String()),
+  priceInBaseCurrency: t.Nullable(t.String()),
+  quantity: t.Nullable(t.String()),
+  fee: t.String(),
+  feeInBaseCurrency: t.Nullable(t.String()),
+  date: t.String(),
+  dueDate: t.Nullable(t.String()),
+  note: t.Nullable(t.String()),
+  receiptUrl: t.Nullable(t.String()),
+  metadata: t.Nullable(t.Any()),
+  createdAt: t.String(),
+  updatedAt: t.String(),
+  account: TransactionAccountDto,
+  toAccount: t.Nullable(TransactionAccountDto),
+  category: t.Nullable(TransactionCategoryDto),
+  entity: t.Nullable(TransactionEntityDto),
+  currency: t.Nullable(TransactionCurrencyDto),
+});
+
+export const TransactionPaginationDto = t.Object({
+  page: t.Integer(),
+  limit: t.Integer(),
+  total: t.Integer(),
+  totalPages: t.Integer(),
+});
+
+export const TransactionSummaryDto = t.Object({
+  currency: TransactionCurrencyDto,
+  totalIncome: t.Number(),
+  totalExpense: t.Number(),
+});
+
+export const TransactionListResponseDto = t.Object({
+  transactions: t.Array(TransactionDetailDto),
+  pagination: TransactionPaginationDto,
+  summary: t.Array(TransactionSummaryDto),
+});
+
+export const TransactionDeleteResponseDto = t.Object({
+  success: t.Boolean(),
+  message: t.String(),
+});
+
+export const BatchTransactionResultDto = t.Object({
+  success: t.Boolean(),
+  data: t.Optional(TransactionDetailDto),
+  error: t.Optional(t.String()),
+});
+
+export const BatchTransactionsResponseDto = t.Object({
+  results: t.Array(BatchTransactionResultDto),
+  summary: t.Object({
+    total: t.Integer(),
+    successful: t.Integer(),
+    failed: t.Integer(),
+  }),
+});
+
+export type TransactionDetail = typeof TransactionDetailDto.static;
+export type TransactionListResponse = typeof TransactionListResponseDto.static;
+export type TransactionDeleteResponse =
+  typeof TransactionDeleteResponseDto.static;
+export type BatchTransactionsResponse =
+  typeof BatchTransactionsResponseDto.static;

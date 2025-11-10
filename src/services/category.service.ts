@@ -21,6 +21,8 @@ type CategoryWithChildren = {
   name: string;
   parentId: string | null;
   isLocked: boolean;
+  icon: string | null;
+  color: string | null;
   children?: CategoryWithChildren[];
 };
 
@@ -188,6 +190,8 @@ export class CategoryService {
         name: true,
         parentId: true,
         isLocked: true,
+        icon: true,
+        color: true,
       },
       orderBy: {
         createdAt: 'asc',
@@ -213,6 +217,8 @@ export class CategoryService {
         name: true,
         parentId: true,
         isLocked: true,
+        icon: true,
+        color: true,
       },
     });
 
@@ -259,6 +265,8 @@ export class CategoryService {
         name: true,
         parentId: true,
         isLocked: true,
+        icon: true,
+        color: true,
       },
     });
   }
@@ -323,6 +331,8 @@ export class CategoryService {
         name: true,
         parentId: true,
         isLocked: true,
+        icon: true,
+        color: true,
       },
     });
   }

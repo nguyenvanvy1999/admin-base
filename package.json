@@ -16,7 +16,6 @@
     "seed": "bun run src/scripts/seed.ts"
   },
   "dependencies": {
-    "@elysiajs/eden": "^1.4.4",
     "@elysiajs/openapi": "^1.4.11",
     "@elysiajs/static": "^1.4.6",
     "@logtape/file": "^1.1.2",

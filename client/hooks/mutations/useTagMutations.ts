@@ -1,6 +1,7 @@
 import useToast from '@client/hooks/useToast';
-import { api } from '@client/libs/api';
+import { del, post } from '@client/libs/http';
 import type { TagFormData } from '@client/types/tag';
+import type { TagDeleteResponse, TagResponse } from '@server/src/dto/tag.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateTagMutation = () => {
@@ -9,13 +10,10 @@ export const useCreateTagMutation = () => {
 
   return useMutation({
     mutationFn: async (data: Omit<TagFormData, 'id'>) => {
-      const response = await api.api.tags.post(data);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await post<TagResponse, Omit<TagFormData, 'id'>>(
+        '/api/tags',
+        data,
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['tags'] });
@@ -37,13 +35,7 @@ export const useUpdateTagMutation = () => {
         throw new Error('Tag ID is required for update');
       }
 
-      const response = await api.api.tags.post(data);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await post<TagResponse, TagFormData>('/api/tags', data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['tags'] });
@@ -62,13 +54,7 @@ export const useDeleteTagMutation = () => {
 
   return useMutation({
     mutationFn: async (tagId: string) => {
-      const response = await api.api.tags({ id: tagId }).delete();
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return await del<TagDeleteResponse>(`/api/tags/${tagId}`);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['tags'] });

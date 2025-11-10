@@ -34,3 +34,36 @@ export const ListEntitiesQueryDto = t.Object({
 
 export type IUpsertEntityDto = typeof UpsertEntityDto.static;
 export type IListEntitiesQueryDto = typeof ListEntitiesQueryDto.static;
+
+export const EntityDto = t.Object({
+  id: t.String(),
+  name: t.String(),
+  type: t.Enum(EntityType),
+  phone: t.Nullable(t.String()),
+  email: t.Nullable(t.String()),
+  address: t.Nullable(t.String()),
+  note: t.Nullable(t.String()),
+  createdAt: t.String(),
+  updatedAt: t.String(),
+});
+
+export const EntityPaginationDto = t.Object({
+  page: t.Integer(),
+  limit: t.Integer(),
+  total: t.Integer(),
+  totalPages: t.Integer(),
+});
+
+export const EntityListResponseDto = t.Object({
+  entities: t.Array(EntityDto),
+  pagination: EntityPaginationDto,
+});
+
+export const EntityDeleteResponseDto = t.Object({
+  success: t.Boolean(),
+  message: t.String(),
+});
+
+export type EntityResponse = typeof EntityDto.static;
+export type EntityListResponse = typeof EntityListResponseDto.static;
+export type EntityDeleteResponse = typeof EntityDeleteResponseDto.static;

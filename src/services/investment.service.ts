@@ -1,10 +1,17 @@
-import { InvestmentMode, TradeSide } from '@server/generated/prisma/enums';
+import {
+  type InvestmentAssetType,
+  InvestmentMode,
+  TradeSide,
+} from '@server/generated/prisma/enums';
 import type { InvestmentWhereInput } from '@server/generated/prisma/models/Investment';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import type { ICreateInvestmentContributionDto } from '../dto/contribution.dto';
 import type {
   IListInvestmentsQueryDto,
+  InvestmentLatestValuationResponse,
+  InvestmentPositionResponse,
+  InvestmentResponse,
   IUpsertInvestmentDto,
 } from '../dto/investment.dto';
 import type { ICreateInvestmentTradeDto } from '../dto/trade.dto';
@@ -64,6 +71,39 @@ const safeNumber = (value: unknown) =>
       (value as any).toNumber()
     : Number(value ?? 0);
 
+const serializeInvestment = (investment: {
+  id: string;
+  userId: string;
+  symbol: string;
+  name: string;
+  assetType: InvestmentAssetType;
+  mode: InvestmentMode;
+  currencyId: string;
+  extra: unknown;
+  deletedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  currency: {
+    id: string;
+    code: string;
+    name: string;
+    symbol: string | null;
+  };
+}): InvestmentResponse => ({
+  id: investment.id,
+  userId: investment.userId,
+  symbol: investment.symbol,
+  name: investment.name,
+  assetType: investment.assetType,
+  mode: investment.mode,
+  currencyId: investment.currencyId,
+  extra: investment.extra ?? null,
+  deletedAt: investment.deletedAt ? investment.deletedAt.toISOString() : null,
+  createdAt: investment.createdAt.toISOString(),
+  updatedAt: investment.updatedAt.toISOString(),
+  currency: investment.currency,
+});
+
 export class InvestmentService {
   private async ensureCurrency(currencyId: string) {
     const exists = await prisma.currency.findUnique({
@@ -106,20 +146,22 @@ export class InvestmentService {
 
     if (data.id) {
       const investment = await this.ensureInvestment(userId, data.id);
-      return prisma.investment.update({
+      const updated = await prisma.investment.update({
         where: { id: investment.id },
         data: payload,
         select: INVESTMENT_SELECT_BASE,
       });
+      return serializeInvestment(updated);
     }
 
-    return prisma.investment.create({
+    const created = await prisma.investment.create({
       data: {
         ...payload,
         userId,
       },
       select: INVESTMENT_SELECT_BASE,
     });
+    return serializeInvestment(created);
   }
 
   async listInvestments(userId: string, query: IListInvestmentsQueryDto = {}) {
@@ -175,7 +217,7 @@ export class InvestmentService {
     ]);
 
     return {
-      investments: items,
+      investments: items.map((investment) => serializeInvestment(investment)),
       pagination: {
         page,
         limit,
@@ -186,25 +228,43 @@ export class InvestmentService {
   }
 
   getInvestment(userId: string, investmentId: string) {
-    return this.ensureInvestment(userId, investmentId);
+    return this.ensureInvestment(userId, investmentId).then(
+      serializeInvestment,
+    );
   }
 
   getLatestValuation(userId: string, investmentId: string) {
-    return prisma.investmentValuation.findFirst({
-      where: {
-        userId,
-        investmentId,
-      },
-      orderBy: { timestamp: 'desc' },
-      select: {
-        id: true,
-        price: true,
-        timestamp: true,
-        currencyId: true,
-        source: true,
-        fetchedAt: true,
-      },
-    });
+    return prisma.investmentValuation
+      .findFirst({
+        where: {
+          userId,
+          investmentId,
+        },
+        orderBy: { timestamp: 'desc' },
+        select: {
+          id: true,
+          price: true,
+          timestamp: true,
+          currencyId: true,
+          source: true,
+          fetchedAt: true,
+        },
+      })
+      .then((valuation) => {
+        if (!valuation) {
+          return null;
+        }
+        return {
+          id: valuation.id,
+          price: valuation.price.toString(),
+          timestamp: valuation.timestamp.toISOString(),
+          currencyId: valuation.currencyId,
+          source: valuation.source,
+          fetchedAt: valuation.fetchedAt
+            ? valuation.fetchedAt.toISOString()
+            : null,
+        } satisfies InvestmentLatestValuationResponse;
+      });
   }
 
   private computePricedPosition(
@@ -309,7 +369,22 @@ export class InvestmentService {
         }),
         this.getLatestValuation(userId, investmentId),
       ]);
-      return this.computePricedPosition(trades, valuation);
+      const position = this.computePricedPosition(
+        trades,
+        valuation
+          ? {
+              ...valuation,
+              timestamp: new Date(valuation.timestamp),
+              price: valuation.price,
+            }
+          : null,
+      );
+      return {
+        ...position,
+        lastValuationAt: position.lastValuationAt
+          ? position.lastValuationAt.toISOString()
+          : null,
+      } satisfies InvestmentPositionResponse;
     }
 
     const [contributions, valuation] = await Promise.all([
@@ -320,7 +395,22 @@ export class InvestmentService {
       this.getLatestValuation(userId, investmentId),
     ]);
 
-    return this.computeManualPosition(contributions, valuation);
+    const position = this.computeManualPosition(
+      contributions,
+      valuation
+        ? {
+            ...valuation,
+            timestamp: new Date(valuation.timestamp),
+            price: valuation.price,
+          }
+        : null,
+    );
+    return {
+      ...position,
+      lastValuationAt: position.lastValuationAt
+        ? position.lastValuationAt.toISOString()
+        : null,
+    } satisfies InvestmentPositionResponse;
   }
 
   async validateTrade(

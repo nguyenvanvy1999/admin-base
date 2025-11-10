@@ -1,6 +1,12 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
-import { ListTagsQueryDto, UpsertTagDto } from '../dto/tag.dto';
+import {
+  ListTagsQueryDto,
+  TagDeleteResponseDto,
+  TagDto,
+  TagListResponseDto,
+  UpsertTagDto,
+} from '../dto/tag.dto';
 import authMacro from '../macros/auth';
 import tagService from '../services/tag.service';
 
@@ -36,6 +42,9 @@ const tagController = new Elysia().group(
               'Create a new tag or update an existing tag for the authenticated user. If a tag ID is provided, it will update the existing tag; otherwise, it creates a new one.',
           },
           body: UpsertTagDto,
+          response: {
+            200: TagDto,
+          },
         },
       )
       .get(
@@ -52,6 +61,9 @@ const tagController = new Elysia().group(
               'Retrieve detailed information about a specific tag by its ID for the authenticated user.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: TagDto,
+          },
         },
       )
       .get(
@@ -68,6 +80,9 @@ const tagController = new Elysia().group(
               'Get a paginated list of all tags belonging to the authenticated user. Supports filtering and sorting.',
           },
           query: ListTagsQueryDto,
+          response: {
+            200: TagListResponseDto,
+          },
         },
       )
       .delete(
@@ -84,6 +99,9 @@ const tagController = new Elysia().group(
               'Permanently delete a tag by its ID. This action cannot be undone.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: TagDeleteResponseDto,
+          },
         },
       ),
 );

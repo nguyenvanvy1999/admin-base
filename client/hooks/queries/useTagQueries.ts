@@ -1,5 +1,6 @@
-import { api } from '@client/libs/api';
+import { get } from '@client/libs/http';
 import type { TagFull } from '@client/types/tag';
+import type { TagListResponse } from '@server/src/dto/tag.dto';
 import { useQuery } from '@tanstack/react-query';
 
 type ListTagsQuery = {
@@ -14,17 +15,9 @@ export const useTagsQuery = (query: ListTagsQuery = {}) => {
   return useQuery({
     queryKey: ['tags', query],
     queryFn: async () => {
-      const response = await api.api.tags.get({
-        query: query,
+      const data = await get<TagListResponse>('/api/tags', {
+        query,
       });
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to fetch tags',
-        );
-      }
-
-      const data = response.data;
 
       return {
         tags: data.tags.map((tag) => ({

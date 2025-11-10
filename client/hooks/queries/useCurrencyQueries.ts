@@ -1,26 +1,17 @@
-import { api } from '@client/libs/api';
+import { get } from '@client/libs/http';
+import type {
+  CurrencyListResponse,
+  Currency as CurrencyResponse,
+} from '@server/src/dto/currency.dto';
 import { useQuery } from '@tanstack/react-query';
 
-export type Currency = {
-  id: string;
-  code: string;
-  name: string;
-  symbol: string | null;
-};
+export type Currency = CurrencyResponse;
 
 export const useCurrenciesQuery = () => {
   return useQuery({
     queryKey: ['currencies'],
     queryFn: async () => {
-      const response = await api.api.currencies.get();
-
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to fetch currencies',
-        );
-      }
-
-      return response.data;
+      return await get<CurrencyListResponse>('/api/currencies');
     },
     staleTime: 1000 * 60 * 60,
   });

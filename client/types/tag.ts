@@ -1,10 +1,6 @@
-export type TagFull = {
-  id: string;
-  name: string;
-  description: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { TagResponse } from '@server/src/dto/tag.dto';
+
+export type TagFull = TagResponse;
 
 export type TagFormData = {
   id?: string;

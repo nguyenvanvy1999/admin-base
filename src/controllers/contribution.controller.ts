@@ -2,6 +2,8 @@ import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   CreateInvestmentContributionDto,
+  InvestmentContributionDto,
+  InvestmentContributionListResponseDto,
   ListInvestmentContributionsQueryDto,
 } from '../dto/contribution.dto';
 import authMacro from '../macros/auth';
@@ -44,6 +46,9 @@ const contributionController = new Elysia().group(
           },
           params: t.Object({ investmentId: t.String() }),
           body: CreateInvestmentContributionDto,
+          response: {
+            200: InvestmentContributionDto,
+          },
         },
       )
       .get(
@@ -65,6 +70,9 @@ const contributionController = new Elysia().group(
           },
           params: t.Object({ investmentId: t.String() }),
           query: ListInvestmentContributionsQueryDto,
+          response: {
+            200: InvestmentContributionListResponseDto,
+          },
         },
       ),
 );
