@@ -1,4 +1,5 @@
 import { InvestmentMode, TradeSide } from '@server/generated/prisma/enums';
+import type { InvestmentWhereInput } from '@server/generated/prisma/models/Investment';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import type { ICreateInvestmentContributionDto } from '../dto/contribution.dto';
@@ -133,7 +134,7 @@ export class InvestmentService {
       sortOrder = 'desc',
     } = query;
 
-    const where = {
+    const where: InvestmentWhereInput = {
       userId,
       deletedAt: null,
       ...(assetTypes && assetTypes.length > 0
