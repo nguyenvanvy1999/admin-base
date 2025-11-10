@@ -32,6 +32,8 @@ const TRANSACTION_SELECT_FOR_BALANCE = {
   type: true,
   accountId: true,
   toAccountId: true,
+  transferGroupId: true,
+  isTransferMirror: true,
   amount: true,
   fee: true,
   currencyId: true,
@@ -44,6 +46,8 @@ const TRANSACTION_SELECT_FOR_LIST = {
   userId: true,
   accountId: true,
   toAccountId: true,
+  transferGroupId: true,
+  isTransferMirror: true,
   type: true,
   categoryId: true,
   entityId: true,
@@ -630,6 +634,231 @@ class TransactionHandlerFactory {
     });
   }
 
+  private async createPairedTransfer(
+    userId: string,
+    data: ITransferTransaction,
+    fromAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+  ) {
+    const toAccount = await this.validateAccountOwnership(
+      userId,
+      data.toAccountId,
+    );
+
+    const currencyId = data.currencyId ?? fromAccount.currencyId;
+    const amountDecimal = new Decimal(data.amount);
+    const feeDecimal = new Decimal(data.fee ?? 0);
+    const groupId = crypto.randomUUID();
+
+    return prisma.$transaction(async (tx: PrismaTx) => {
+      // Apply balance effect once for the primary (from) side
+      await this.balanceUpdater.applyBalanceEffect(
+        tx,
+        TransactionType.transfer,
+        fromAccount.id,
+        toAccount.id,
+        amountDecimal,
+        feeDecimal,
+        currencyId,
+        fromAccount.currencyId,
+        toAccount.currencyId,
+      );
+
+      // Create primary transaction (from -> to)
+      const primary = await tx.transaction.create({
+        data: {
+          userId,
+          accountId: fromAccount.id,
+          toAccountId: toAccount.id,
+          type: TransactionType.transfer,
+          amount: amountDecimal.toNumber(),
+          currencyId,
+          fee: feeDecimal.toNumber(),
+          feeInBaseCurrency: null,
+          date: new Date(data.date),
+          dueDate: data.dueDate ? new Date(data.dueDate) : null,
+          note: data.note ?? null,
+          receiptUrl: data.receiptUrl ?? null,
+          metadata: data.metadata ?? null,
+          transferGroupId: groupId,
+          isTransferMirror: false,
+        },
+        include: TRANSACTION_INCLUDE,
+      });
+
+      // Calculate mirror amount in destination currency
+      const amountInToCurrency =
+        await this.calculator.convertAmountToToAccountCurrency(
+          amountDecimal,
+          currencyId,
+          toAccount.currencyId,
+        );
+
+      // Create mirror transaction (to -> from)
+      await tx.transaction.create({
+        data: {
+          userId,
+          accountId: toAccount.id,
+          toAccountId: fromAccount.id,
+          type: TransactionType.transfer,
+          amount: amountInToCurrency.toNumber(),
+          currencyId: toAccount.currencyId,
+          fee: 0,
+          feeInBaseCurrency: null,
+          date: new Date(data.date),
+          dueDate: data.dueDate ? new Date(data.dueDate) : null,
+          note: data.note ?? null,
+          receiptUrl: data.receiptUrl ?? null,
+          metadata: data.metadata ?? null,
+          transferGroupId: groupId,
+          isTransferMirror: true,
+        },
+      });
+
+      return primary;
+    });
+  }
+
+  private async updatePairedTransfer(
+    userId: string,
+    data: ITransferTransaction & { id: string },
+    fromAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+  ) {
+    // Load existing primary
+    const existing = await prisma.transaction.findUnique({
+      where: { id: data.id },
+      select: TRANSACTION_SELECT_FOR_BALANCE,
+    });
+    if (!existing || existing.userId !== userId) {
+      throw new Error('Transaction not found');
+    }
+    if (existing.type !== TransactionType.transfer) {
+      throw new Error('Invalid transaction type for transfer update');
+    }
+
+    const toAccount = await this.validateAccountOwnership(
+      userId,
+      data.toAccountId,
+    );
+
+    const currencyId = data.currencyId ?? fromAccount.currencyId;
+    const amountDecimal = new Decimal(data.amount);
+    const feeDecimal = new Decimal(data.fee ?? 0);
+
+    const groupId = existing.transferGroupId ?? crypto.randomUUID();
+
+    return prisma.$transaction(async (tx: PrismaTx) => {
+      // Revert balances from old primary only
+      await this.balanceUpdater.revertBalanceEffect(
+        tx,
+        existing.type,
+        existing.accountId,
+        existing.toAccountId,
+        existing.amount,
+        existing.fee,
+        existing.currencyId,
+        existing.account.currencyId,
+        existing.toAccount?.currencyId,
+      );
+
+      // Apply balance with new values once for primary
+      await this.balanceUpdater.applyBalanceEffect(
+        tx,
+        TransactionType.transfer,
+        fromAccount.id,
+        toAccount.id,
+        amountDecimal,
+        feeDecimal,
+        currencyId,
+        fromAccount.currencyId,
+        toAccount.currencyId,
+      );
+
+      // Update primary
+      const updatedPrimary = await tx.transaction.update({
+        where: { id: data.id },
+        data: {
+          userId,
+          accountId: fromAccount.id,
+          toAccountId: toAccount.id,
+          type: TransactionType.transfer,
+          amount: amountDecimal.toNumber(),
+          currencyId,
+          fee: feeDecimal.toNumber(),
+          date: new Date(data.date),
+          dueDate: data.dueDate ? new Date(data.dueDate) : null,
+          note: data.note ?? null,
+          receiptUrl: data.receiptUrl ?? null,
+          metadata: data.metadata ?? null,
+          transferGroupId: groupId,
+          isTransferMirror: false,
+        },
+        include: TRANSACTION_INCLUDE,
+      });
+
+      // Calculate mirror amount
+      const amountInToCurrency =
+        await this.calculator.convertAmountToToAccountCurrency(
+          amountDecimal,
+          currencyId,
+          toAccount.currencyId,
+        );
+
+      // Upsert mirror using groupId
+      const existingMirror = existing.transferGroupId
+        ? await tx.transaction.findFirst({
+            where: {
+              userId,
+              transferGroupId: existing.transferGroupId,
+              isTransferMirror: true,
+              deletedAt: null,
+            },
+            select: { id: true },
+          })
+        : null;
+
+      if (existingMirror) {
+        await tx.transaction.update({
+          where: { id: existingMirror.id },
+          data: {
+            accountId: toAccount.id,
+            toAccountId: fromAccount.id,
+            amount: amountInToCurrency.toNumber(),
+            currencyId: toAccount.currencyId,
+            fee: 0,
+            date: new Date(data.date),
+            dueDate: data.dueDate ? new Date(data.dueDate) : null,
+            note: data.note ?? null,
+            receiptUrl: data.receiptUrl ?? null,
+            metadata: data.metadata ?? null,
+            transferGroupId: groupId,
+            isTransferMirror: true,
+          },
+        });
+      } else {
+        await tx.transaction.create({
+          data: {
+            userId,
+            accountId: toAccount.id,
+            toAccountId: fromAccount.id,
+            type: TransactionType.transfer,
+            amount: amountInToCurrency.toNumber(),
+            currencyId: toAccount.currencyId,
+            fee: 0,
+            date: new Date(data.date),
+            dueDate: data.dueDate ? new Date(data.dueDate) : null,
+            note: data.note ?? null,
+            receiptUrl: data.receiptUrl ?? null,
+            metadata: data.metadata ?? null,
+            transferGroupId: groupId,
+            isTransferMirror: true,
+          },
+        });
+      }
+
+      return updatedPrimary;
+    });
+  }
+
   private async handleTransaction(
     userId: string,
     data: IUpsertTransaction,
@@ -704,16 +933,15 @@ class TransactionHandlerFactory {
     userId: string,
     data: ITransferTransaction,
     account: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
-    userBaseCurrencyId: string,
   ) {
-    return this.handleTransaction(
-      userId,
-      data,
-      account,
-      userBaseCurrencyId,
-      () => Promise.resolve(),
-      () => this.validateAccountOwnership(userId, data.toAccountId),
-    );
+    if (data.id) {
+      return this.updatePairedTransfer(
+        userId,
+        data as ITransferTransaction & { id: string },
+        account,
+      );
+    }
+    return this.createPairedTransfer(userId, data, account);
   }
 
   handleLoan(
@@ -782,7 +1010,6 @@ export class TransactionService {
           userId,
           data as ITransferTransaction,
           account,
-          user.baseCurrencyId,
         );
 
       case TransactionType.loan_given:
@@ -957,6 +1184,8 @@ export class TransactionService {
         id: true,
         userId: true,
         type: true,
+        transferGroupId: true,
+        isTransferMirror: true,
         accountId: true,
         toAccountId: true,
         amount: true,
@@ -974,24 +1203,85 @@ export class TransactionService {
       throw new Error('Transaction not owned by user');
     }
 
-    await prisma.$transaction(async (tx: PrismaTx) => {
-      await this.balanceUpdater.revertBalanceEffect(
-        tx,
-        transaction.type,
-        transaction.accountId,
-        transaction.toAccountId,
-        transaction.amount,
-        transaction.fee,
-        transaction.currencyId,
-        transaction.account.currencyId,
-        transaction.toAccount?.currencyId,
-      );
+    // For transfers, delete both sides, but revert balance once using the primary
+    if (transaction.type === TransactionType.transfer) {
+      // Determine primary row
+      const isPrimary = !transaction.isTransferMirror;
+      const primary = isPrimary
+        ? transaction
+        : await prisma.transaction.findFirst({
+            where: {
+              userId,
+              transferGroupId: transaction.transferGroupId ?? undefined,
+              isTransferMirror: false,
+              deletedAt: null,
+            },
+            select: {
+              id: true,
+              type: true,
+              accountId: true,
+              toAccountId: true,
+              amount: true,
+              fee: true,
+              currencyId: true,
+              account: { select: { currencyId: true } },
+              toAccount: { select: { currencyId: true } },
+            },
+          });
 
-      await tx.transaction.update({
-        where: { id: transactionId },
-        data: { deletedAt: new Date() },
+      await prisma.$transaction(async (tx: PrismaTx) => {
+        if (primary) {
+          await this.balanceUpdater.revertBalanceEffect(
+            tx,
+            primary.type,
+            primary.accountId,
+            primary.toAccountId,
+            primary.amount,
+            primary.fee,
+            primary.currencyId,
+            primary.account.currencyId,
+            primary.toAccount?.currencyId,
+          );
+        }
+
+        // Soft delete both sides if group present, else only this one
+        if (transaction.transferGroupId) {
+          await tx.transaction.updateMany({
+            where: {
+              userId,
+              transferGroupId: transaction.transferGroupId,
+              deletedAt: null,
+            },
+            data: { deletedAt: new Date() },
+          });
+        } else {
+          await tx.transaction.update({
+            where: { id: transactionId },
+            data: { deletedAt: new Date() },
+          });
+        }
       });
-    });
+    } else {
+      // Non-transfer: single-side revert and soft delete
+      await prisma.$transaction(async (tx: PrismaTx) => {
+        await this.balanceUpdater.revertBalanceEffect(
+          tx,
+          transaction.type,
+          transaction.accountId,
+          transaction.toAccountId,
+          transaction.amount,
+          transaction.fee,
+          transaction.currencyId,
+          transaction.account.currencyId,
+          transaction.toAccount?.currencyId,
+        );
+
+        await tx.transaction.update({
+          where: { id: transactionId },
+          data: { deletedAt: new Date() },
+        });
+      });
+    }
 
     return { success: true, message: 'Transaction deleted successfully' };
   }
@@ -1077,7 +1367,6 @@ export class TransactionService {
                 userId,
                 transferData,
                 account,
-                user.baseCurrencyId,
               );
               break;
             }

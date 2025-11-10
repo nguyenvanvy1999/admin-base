@@ -200,6 +200,8 @@ model Transaction {
   userId              String          @map("user_id")
   accountId           String          @map("account_id")
   toAccountId         String?         @map("to_account_id")
+  transferGroupId     String?         @map("transfer_group_id")
+  isTransferMirror    Boolean         @default(false) @map("is_transfer_mirror")
   type                TransactionType
   categoryId          String?         @map("category_id")
   investmentId        String?         @map("investment_id")
@@ -242,6 +244,7 @@ model Transaction {
   @@index([userId, date], name: "transaction_user_date_idx")
   @@index([userId, accountId, date], name: "transaction_user_account_date_idx")
   @@index([userId, investmentId, date], name: "transaction_user_investment_date_idx")
+  @@index([transferGroupId], name: "transaction_transferGroupId_idx")
   @@map("transactions")
 }
 

@@ -53,7 +53,9 @@ const AddEditTransactionDialog = ({
   const [activeTab, setActiveTab] = useState<string>(
     transaction?.type === TransactionType.income
       ? TransactionType.income
-      : TransactionType.expense,
+      : transaction?.type === TransactionType.transfer
+        ? TransactionType.transfer
+        : TransactionType.expense,
   );
   const [saveAndAdd, setSaveAndAdd] = useState(false);
   const [feeEnabled, setFeeEnabled] = useState(false);
@@ -63,9 +65,9 @@ const AddEditTransactionDialog = ({
   const entities = entitiesProp;
 
   const transactionType = useMemo(() => {
-    return activeTab === TransactionType.income
-      ? TransactionType.income
-      : TransactionType.expense;
+    if (activeTab === TransactionType.income) return TransactionType.income;
+    if (activeTab === TransactionType.transfer) return TransactionType.transfer;
+    return TransactionType.expense;
   }, [activeTab]);
 
   const flattenedCategories = useMemo(() => {
@@ -129,6 +131,7 @@ const AddEditTransactionDialog = ({
     defaultValues: {
       amount: 0,
       accountId: '',
+      toAccountId: '',
       date: new Date().toISOString(),
       categoryId: '',
       entityId: null as string | null,
@@ -138,19 +141,20 @@ const AddEditTransactionDialog = ({
       borrowToPay: false,
     },
     onSubmit: ({ value }) => {
-      if (!value.accountId || !value.categoryId || !value.date) {
+      if (!value.accountId || !value.date) {
         return;
       }
 
       const transactionType =
         activeTab === TransactionType.income
           ? TransactionType.income
-          : TransactionType.expense;
+          : activeTab === TransactionType.transfer
+            ? TransactionType.transfer
+            : TransactionType.expense;
 
       const submitData: TransactionFormData = {
         type: transactionType,
         accountId: value.accountId,
-        categoryId: value.categoryId,
         amount: Number(value.amount),
         date: value.date,
       };
@@ -159,7 +163,11 @@ const AddEditTransactionDialog = ({
         submitData.id = transaction.id;
       }
 
-      if (value.entityId) {
+      if (transactionType !== TransactionType.transfer && value.categoryId) {
+        submitData.categoryId = value.categoryId;
+      }
+
+      if (transactionType !== TransactionType.transfer && value.entityId) {
         submitData.entityId = value.entityId;
       }
 
@@ -169,6 +177,14 @@ const AddEditTransactionDialog = ({
 
       if (value.fee && value.fee > 0) {
         submitData.fee = Number(value.fee);
+      }
+
+      if (transactionType === TransactionType.transfer) {
+        if (!value.toAccountId || value.toAccountId === value.accountId) {
+          return;
+        }
+        // For transfer, include destination account and ignore category/entity
+        (submitData as any).toAccountId = value.toAccountId;
       }
 
       if (value.tripEvent || value.borrowToPay) {
@@ -203,7 +219,9 @@ const AddEditTransactionDialog = ({
     setActiveTab(
       transaction?.type === TransactionType.income
         ? TransactionType.income
-        : TransactionType.expense,
+        : transaction?.type === TransactionType.transfer
+          ? TransactionType.transfer
+          : TransactionType.expense,
     );
     onClose();
   };
@@ -212,6 +230,9 @@ const AddEditTransactionDialog = ({
     if (transaction) {
       form.setFieldValue('amount', parseFloat(transaction.amount));
       form.setFieldValue('accountId', transaction.accountId);
+      if (transaction.type === TransactionType.transfer) {
+        form.setFieldValue('toAccountId', transaction.toAccountId || '');
+      }
       form.setFieldValue(
         'date',
         transaction.date
@@ -236,6 +257,7 @@ const AddEditTransactionDialog = ({
     } else {
       form.setFieldValue('amount', 0);
       form.setFieldValue('accountId', '');
+      form.setFieldValue('toAccountId', '');
       form.setFieldValue('date', new Date().toISOString());
       form.setFieldValue('categoryId', '');
       form.setFieldValue('entityId', null);
@@ -285,7 +307,7 @@ const AddEditTransactionDialog = ({
               <Tabs.Tab value={TransactionType.income}>
                 {t('transactions.income')}
               </Tabs.Tab>
-              <Tabs.Tab value={TransactionType.transfer} disabled>
+              <Tabs.Tab value={TransactionType.transfer}>
                 {t('transactions.transfer')}
               </Tabs.Tab>
               <Tabs.Tab value="adjust_balance" disabled>
@@ -352,6 +374,40 @@ const AddEditTransactionDialog = ({
                   );
                 }}
               </form.Field>
+
+              {transactionType === TransactionType.transfer && (
+                <form.Field
+                  name="toAccountId"
+                  validators={{
+                    onChange: (value) => {
+                      if (!value || value === form.state.values.accountId) {
+                        return t('transactions.toAccountRequired');
+                      }
+                      return undefined;
+                    },
+                  }}
+                >
+                  {(field) => {
+                    const error = field.state.meta.errors[0];
+                    const toAccountOptions = accountOptions.filter(
+                      (opt) => opt.value !== form.state.values.accountId,
+                    );
+                    return (
+                      <Select
+                        label={t('transactions.transferTo')}
+                        placeholder={t('transactions.selectAccount')}
+                        required
+                        data={toAccountOptions}
+                        value={field.state.value ?? null}
+                        onChange={(value) => field.handleChange(value || '')}
+                        onBlur={field.handleBlur}
+                        error={error}
+                        searchable
+                      />
+                    );
+                  }}
+                </form.Field>
+              )}
 
               <form.Field
                 name="date"
@@ -426,76 +482,78 @@ const AddEditTransactionDialog = ({
             </div>
 
             <div className="space-y-4">
-              <form.Field
-                name="categoryId"
-                validators={{
-                  onChange: validation.required(
-                    'transactions.categoryRequired',
-                  ),
-                }}
-              >
-                {(field) => {
-                  const error = field.state.meta.errors[0];
-                  return (
-                    <div>
-                      <CategorySelect
-                        label={t('transactions.category')}
-                        placeholder={t('transactions.selectCategory')}
-                        required
-                        value={field.state.value ? field.state.value : null}
-                        onChange={(value) => {
-                          field.handleChange(value ?? '');
-                        }}
-                        onBlur={field.handleBlur}
-                        error={error}
-                        filterType={transactionType}
-                        searchable
-                        categories={categories}
-                      />
-                      {error && (
-                        <div className="text-red-600 dark:text-red-400 text-sm mt-1">
-                          {error}
-                        </div>
-                      )}
-                      {quickCategoryButtons.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {quickCategoryButtons.map((cat) => {
-                            const IconComponent = cat.icon
-                              ? getCategoryIcon(cat.icon)
-                              : null;
-                            return (
-                              <Button
-                                key={cat.id}
-                                type="button"
-                                variant={
-                                  field.state.value === cat.id
-                                    ? 'filled'
-                                    : 'outline'
-                                }
-                                size="xs"
-                                onClick={() => field.handleChange(cat.id)}
-                                leftSection={
-                                  IconComponent ? (
-                                    <IconComponent
-                                      style={{
-                                        fontSize: 16,
-                                        color: cat.color || 'inherit',
-                                        opacity: 0.8,
-                                      }}
-                                    />
-                                  ) : null
-                                }
-                              >
-                                {cat.name}
-                              </Button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                }}
-              </form.Field>
+              {transactionType !== TransactionType.transfer && (
+                <form.Field
+                  name="categoryId"
+                  validators={{
+                    onChange: validation.required(
+                      'transactions.categoryRequired',
+                    ),
+                  }}
+                >
+                  {(field) => {
+                    const error = field.state.meta.errors[0];
+                    return (
+                      <div>
+                        <CategorySelect
+                          label={t('transactions.category')}
+                          placeholder={t('transactions.selectCategory')}
+                          required
+                          value={field.state.value ? field.state.value : null}
+                          onChange={(value) => {
+                            field.handleChange(value ?? '');
+                          }}
+                          onBlur={field.handleBlur}
+                          error={error}
+                          filterType={transactionType}
+                          searchable
+                          categories={categories}
+                        />
+                        {error && (
+                          <div className="text-red-600 dark:text-red-400 text-sm mt-1">
+                            {error}
+                          </div>
+                        )}
+                        {quickCategoryButtons.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {quickCategoryButtons.map((cat) => {
+                              const IconComponent = cat.icon
+                                ? getCategoryIcon(cat.icon)
+                                : null;
+                              return (
+                                <Button
+                                  key={cat.id}
+                                  type="button"
+                                  variant={
+                                    field.state.value === cat.id
+                                      ? 'filled'
+                                      : 'outline'
+                                  }
+                                  size="xs"
+                                  onClick={() => field.handleChange(cat.id)}
+                                  leftSection={
+                                    IconComponent ? (
+                                      <IconComponent
+                                        style={{
+                                          fontSize: 16,
+                                          color: cat.color || 'inherit',
+                                          opacity: 0.8,
+                                        }}
+                                      />
+                                    ) : null
+                                  }
+                                >
+                                  {cat.name}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }}
+                </form.Field>
+              )}
 
               <form.Field name="note">
                 {(field) => {
@@ -512,20 +570,22 @@ const AddEditTransactionDialog = ({
                 }}
               </form.Field>
 
-              <form.Field name="borrowToPay">
-                {(field) => {
-                  return (
-                    <Switch
-                      label={t('transactions.borrowToPay')}
-                      checked={field.state.value ?? false}
-                      onChange={(e) =>
-                        field.handleChange(e.currentTarget.checked)
-                      }
-                      onBlur={field.handleBlur}
-                    />
-                  );
-                }}
-              </form.Field>
+              {transactionType !== TransactionType.transfer && (
+                <form.Field name="borrowToPay">
+                  {(field) => {
+                    return (
+                      <Switch
+                        label={t('transactions.borrowToPay')}
+                        checked={field.state.value ?? false}
+                        onChange={(e) =>
+                          field.handleChange(e.currentTarget.checked)
+                        }
+                        onBlur={field.handleBlur}
+                      />
+                    );
+                  }}
+                </form.Field>
+              )}
 
               <form.Field name="fee">
                 {(field) => {
@@ -576,7 +636,10 @@ const AddEditTransactionDialog = ({
                 isValid &&
                 values.amount > 0 &&
                 values.accountId !== '' &&
-                values.categoryId !== '' &&
+                (transactionType === TransactionType.transfer
+                  ? values.toAccountId !== '' &&
+                    values.toAccountId !== values.accountId
+                  : values.categoryId !== '') &&
                 values.date !== '';
 
               return (

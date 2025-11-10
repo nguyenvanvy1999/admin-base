@@ -59,9 +59,10 @@ export type TransactionFull = {
 
 export type TransactionFormData = {
   id?: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'transfer';
   accountId: string;
-  categoryId: string;
+  categoryId?: string;
+  toAccountId?: string;
   amount: number;
   currencyId?: string;
   fee?: number;
