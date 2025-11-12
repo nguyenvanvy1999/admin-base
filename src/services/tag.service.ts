@@ -1,10 +1,17 @@
+import type { Prisma } from '@server/generated/prisma/client';
 import type {
   TagOrderByWithRelationInput,
   TagWhereInput,
 } from '@server/generated/prisma/models/Tag';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
-import type { IListTagsQueryDto, IUpsertTagDto } from '../dto/tag.dto';
+import type {
+  IListTagsQueryDto,
+  IUpsertTagDto,
+  TagListResponse,
+  TagResponse,
+} from '../dto/tag.dto';
+import { dateToIsoString } from '../utils/formatters';
 
 const TAG_SELECT_FULL = {
   id: true,
@@ -17,6 +24,16 @@ const TAG_SELECT_FULL = {
 const TAG_SELECT_MINIMAL = {
   id: true,
 } as const;
+
+type TagRecord = Prisma.TagGetPayload<{ select: typeof TAG_SELECT_FULL }>;
+
+const formatTag = (tag: TagRecord): TagResponse => ({
+  id: tag.id,
+  name: tag.name,
+  description: tag.description ?? null,
+  createdAt: dateToIsoString(tag.createdAt),
+  updatedAt: dateToIsoString(tag.updatedAt),
+});
 
 export class TagService {
   private async validateTagOwnership(userId: string, tagId: string) {
@@ -57,7 +74,7 @@ export class TagService {
     }
   }
 
-  async upsertTag(userId: string, data: IUpsertTagDto) {
+  async upsertTag(userId: string, data: IUpsertTagDto): Promise<TagResponse> {
     if (data.id) {
       await this.validateTagOwnership(userId, data.id);
     }
@@ -66,7 +83,7 @@ export class TagService {
     await this.validateUniqueName(userId, lowerName, data.id);
 
     if (data.id) {
-      return prisma.tag.update({
+      const tag = await prisma.tag.update({
         where: { id: data.id },
         data: {
           name: lowerName,
@@ -74,8 +91,9 @@ export class TagService {
         },
         select: TAG_SELECT_FULL,
       });
+      return formatTag(tag);
     } else {
-      return prisma.tag.create({
+      const tag = await prisma.tag.create({
         data: {
           userId,
           name: lowerName,
@@ -83,10 +101,11 @@ export class TagService {
         },
         select: TAG_SELECT_FULL,
       });
+      return formatTag(tag);
     }
   }
 
-  async getTag(userId: string, tagId: string) {
+  async getTag(userId: string, tagId: string): Promise<TagResponse> {
     const tag = await prisma.tag.findFirst({
       where: {
         id: tagId,
@@ -100,10 +119,13 @@ export class TagService {
       throw new Error('Tag not found');
     }
 
-    return tag;
+    return formatTag(tag);
   }
 
-  async listTags(userId: string, query: IListTagsQueryDto = {}) {
+  async listTags(
+    userId: string,
+    query: IListTagsQueryDto = {},
+  ): Promise<TagListResponse> {
     const {
       search,
       page = 1,
@@ -145,7 +167,7 @@ export class TagService {
     ]);
 
     return {
-      tags,
+      tags: tags.map(formatTag),
       pagination: {
         page,
         limit,

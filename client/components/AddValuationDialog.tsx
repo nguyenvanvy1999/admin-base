@@ -137,7 +137,7 @@ const AddValuationDialog = ({
                   })}
                   error={error}
                   value={dateValue}
-                  onChange={(value) => {
+                  onChange={(value: Date | string | null) => {
                     if (value) {
                       field.onChange(
                         (value instanceof Date
@@ -226,7 +226,7 @@ const AddValuationDialog = ({
                   error={error}
                   clearable
                   value={dateValue}
-                  onChange={(value) => {
+                  onChange={(value: Date | string | null) => {
                     if (!value) {
                       field.onChange('');
                       return;
@@ -234,7 +234,7 @@ const AddValuationDialog = ({
                     field.onChange(
                       (value instanceof Date
                         ? value
-                        : new Date(value)
+                        : new Date(value as string)
                       ).toISOString(),
                     );
                   }}

@@ -1,10 +1,19 @@
+import type { Prisma } from '@server/generated/prisma/client';
 import type { AccountWhereInput } from '@server/generated/prisma/models/Account';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import type {
+  AccountDeleteResponse,
+  AccountListResponse,
+  AccountResponse,
   IListAccountsQueryDto,
   IUpsertAccountDto,
 } from '../dto/account.dto';
+import {
+  dateToIsoString,
+  decimalToNullableString,
+  decimalToString,
+} from '../utils/formatters';
 import { CURRENCY_SELECT_BASIC } from './selects';
 
 const ACCOUNT_SELECT_FULL = {
@@ -28,6 +37,28 @@ const ACCOUNT_SELECT_FULL = {
 const ACCOUNT_SELECT_MINIMAL = {
   id: true,
 } as const;
+
+type AccountRecord = Prisma.AccountGetPayload<{
+  select: typeof ACCOUNT_SELECT_FULL;
+}>;
+
+const formatAccount = (account: AccountRecord): AccountResponse => {
+  return {
+    id: account.id,
+    type: account.type,
+    name: account.name,
+    currencyId: account.currencyId,
+    balance: decimalToString(account.balance),
+    creditLimit: decimalToNullableString(account.creditLimit),
+    notifyOnDueDate: account.notifyOnDueDate ?? null,
+    paymentDay: account.paymentDay ?? null,
+    notifyDaysBefore: account.notifyDaysBefore ?? null,
+    meta: account.meta ?? null,
+    createdAt: dateToIsoString(account.createdAt),
+    updatedAt: dateToIsoString(account.updatedAt),
+    currency: account.currency,
+  };
+};
 
 export class AccountService {
   private async validateAccountOwnership(userId: string, accountId: string) {
@@ -54,7 +85,10 @@ export class AccountService {
     }
   }
 
-  async upsertAccount(userId: string, data: IUpsertAccountDto) {
+  async upsertAccount(
+    userId: string,
+    data: IUpsertAccountDto,
+  ): Promise<AccountResponse> {
     await this.validateCurrency(data.currencyId);
 
     if (data.id) {
@@ -73,7 +107,7 @@ export class AccountService {
     }
 
     if (data.id) {
-      return prisma.account.update({
+      const account = await prisma.account.update({
         where: { id: data.id },
         data: {
           type: data.type,
@@ -87,8 +121,9 @@ export class AccountService {
         },
         select: ACCOUNT_SELECT_FULL,
       });
+      return formatAccount(account);
     } else {
-      return prisma.account.create({
+      const account = await prisma.account.create({
         data: {
           type: data.type,
           name: data.name,
@@ -103,10 +138,14 @@ export class AccountService {
         },
         select: ACCOUNT_SELECT_FULL,
       });
+      return formatAccount(account);
     }
   }
 
-  async getAccount(userId: string, accountId: string) {
+  async getAccount(
+    userId: string,
+    accountId: string,
+  ): Promise<AccountResponse> {
     const account = await prisma.account.findFirst({
       where: {
         id: accountId,
@@ -120,10 +159,13 @@ export class AccountService {
       throw new Error('Account not found');
     }
 
-    return account;
+    return formatAccount(account);
   }
 
-  async listAccounts(userId: string, query: IListAccountsQueryDto = {}) {
+  async listAccounts(
+    userId: string,
+    query: IListAccountsQueryDto = {},
+  ): Promise<AccountListResponse> {
     const {
       type,
       currencyId,
@@ -212,7 +254,7 @@ export class AccountService {
       );
 
     return {
-      accounts,
+      accounts: accounts.map(formatAccount),
       pagination: {
         page,
         limit,
@@ -223,7 +265,10 @@ export class AccountService {
     };
   }
 
-  async deleteAccount(userId: string, accountId: string) {
+  async deleteAccount(
+    userId: string,
+    accountId: string,
+  ): Promise<AccountDeleteResponse> {
     await this.validateAccountOwnership(userId, accountId);
 
     await prisma.account.update({

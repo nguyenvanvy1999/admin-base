@@ -61,7 +61,7 @@ const CategorySelect = ({
       for (const cat of cats) {
         if (cat.id === value) return cat;
         if (cat.children) {
-          const found = findCategory(cat.children);
+          const found = findCategory(cat.children as typeof categories);
           if (found) return found;
         }
       }

@@ -151,7 +151,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
           const value = cell.getValue();
           let content: any;
           if (col.render) {
-            content = col.render(record, row.index);
+            content = col.render(value, record, row.index);
           } else if (!autoFormatDisabled) {
             content =
               typeof col.accessor === 'function'

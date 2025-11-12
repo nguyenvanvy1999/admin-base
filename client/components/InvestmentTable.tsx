@@ -22,7 +22,14 @@ type InvestmentTableProps = {
   onPageChange?: (page: number) => void;
   totalRecords?: number;
   sorting?: { id: string; desc: boolean }[];
-  onSortingChange?: (updater: { id: string; desc: boolean }[]) => void;
+  onSortingChange?: (
+    updater:
+      | { id: string; desc: boolean }[]
+      | ((prev: { id: string; desc: boolean }[]) => {
+          id: string;
+          desc: boolean;
+        }[]),
+  ) => void;
 };
 
 const InvestmentTable = ({
@@ -56,7 +63,7 @@ const InvestmentTable = ({
       {
         accessor: 'assetType',
         title: 'investments.assetType',
-        render: (row) => (
+        render: (value: unknown, row: InvestmentFull) => (
           <Badge color="blue" variant="light">
             {(() => {
               switch (row.assetType) {
@@ -79,7 +86,7 @@ const InvestmentTable = ({
       {
         accessor: 'mode',
         title: 'investments.mode',
-        render: (row) => (
+        render: (value: unknown, row: InvestmentFull) => (
           <Badge
             color={row.mode === InvestmentMode.priced ? 'green' : 'yellow'}
           >
@@ -103,7 +110,7 @@ const InvestmentTable = ({
         title: 'investments.actions',
         textAlign: 'right',
         width: '8rem',
-        render: (row) => (
+        render: (value: unknown, row: InvestmentFull) => (
           <div className="flex items-center justify-end gap-2">
             <ActionIcon
               variant="subtle"

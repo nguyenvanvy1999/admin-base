@@ -19,7 +19,14 @@ type AccountTableProps = {
   onPageChange?: (page: number) => void;
   totalRecords?: number;
   sorting?: { id: string; desc: boolean }[];
-  onSortingChange?: (updater: { id: string; desc: boolean }[]) => void;
+  onSortingChange?: (
+    updater:
+      | { id: string; desc: boolean }[]
+      | ((prev: { id: string; desc: boolean }[]) => {
+          id: string;
+          desc: boolean;
+        }[]),
+  ) => void;
 };
 
 const AccountTable = ({
@@ -63,7 +70,7 @@ const AccountTable = ({
       {
         accessor: 'type',
         title: 'accounts.type',
-        render: (row) => (
+        render: (value: unknown, row: AccountFull) => (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
             {getAccountTypeLabel(row.type)}
           </span>
@@ -77,7 +84,7 @@ const AccountTable = ({
         accessor: 'balance',
         title: 'accounts.balance',
         textAlign: 'right',
-        render: (row) => {
+        render: (value: unknown, row: AccountFull) => {
           const balance = parseFloat(String(row.balance));
           const isNegative = balance < 0;
           const colorClass = isNegative
@@ -102,7 +109,7 @@ const AccountTable = ({
         accessor: 'creditLimit',
         title: 'accounts.creditLimit',
         textAlign: 'right',
-        render: (row) => {
+        render: (value: unknown, row: AccountFull) => {
           if (!row.creditLimit) return null;
           const currencySymbol = row.currency.symbol || '';
           return (
@@ -119,7 +126,7 @@ const AccountTable = ({
         title: 'accounts.actions',
         textAlign: 'right',
         width: '8rem',
-        render: (row) => (
+        render: (value: unknown, row: AccountFull) => (
           <div className="flex items-center justify-end gap-2">
             <ActionIcon
               variant="subtle"

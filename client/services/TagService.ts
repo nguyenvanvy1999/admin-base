@@ -25,6 +25,12 @@ export class TagService extends ServiceBase {
     return this.post<TagResponse>(data);
   }
 
+  updateTag(data: TagFormData & { id: string }): Promise<TagResponse> {
+    return this.patch<TagResponse>(data, {
+      endpoint: data.id,
+    });
+  }
+
   deleteTag(tagId: string): Promise<TagDeleteResponse> {
     return this.delete<TagDeleteResponse>({
       endpoint: tagId,

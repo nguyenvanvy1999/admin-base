@@ -17,6 +17,20 @@ export const useCreateTagMutation = () => {
   });
 };
 
+export const useUpdateTagMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: TagFormData & { id: string }) => {
+      return tagService.updateTag(data);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['tags'] });
+      toast.success('Tag updated successfully');
+    },
+  });
+};
+
 export const useDeleteTagMutation = () => {
   const queryClient = useQueryClient();
 

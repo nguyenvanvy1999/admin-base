@@ -197,7 +197,7 @@ const AddContributionDialog = ({
                   })}
                   error={error}
                   value={dateValue}
-                  onChange={(value) => {
+                  onChange={(value: Date | string | null) => {
                     if (value) {
                       field.onChange(
                         (value instanceof Date

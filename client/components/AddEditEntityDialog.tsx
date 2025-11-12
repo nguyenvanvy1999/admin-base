@@ -14,7 +14,7 @@ const schema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, 'entities.nameRequired'),
   type: z.nativeEnum(EntityType, {
-    required_error: 'entities.typeRequired',
+    message: 'entities.typeRequired',
   }),
   phone: z.string().optional(),
   email: z.string().email('entities.emailInvalid').optional().or(z.literal('')),

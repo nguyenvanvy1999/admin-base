@@ -91,7 +91,9 @@ const TagPage = () => {
   const handleSubmitForm = async (formData: TagFormData) => {
     try {
       if (formData.id) {
-        await updateMutation.mutateAsync(formData);
+        await updateMutation.mutateAsync(
+          formData as TagFormData & { id: string },
+        );
       } else {
         await createMutation.mutateAsync(formData);
       }
@@ -168,7 +170,14 @@ const TagPage = () => {
               ]
             : undefined
         }
-        onSortingChange={(updater) => {
+        onSortingChange={(
+          updater:
+            | { id: string; desc: boolean }[]
+            | ((prev: { id: string; desc: boolean }[]) => {
+                id: string;
+                desc: boolean;
+              }[]),
+        ) => {
           const newSorting =
             typeof updater === 'function'
               ? updater(

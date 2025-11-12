@@ -29,19 +29,17 @@ export const CategoryDto = t.Object({
   isLocked: t.Boolean(),
 });
 
-export const CategoryTreeDto = t.Recursive((Self) =>
-  t.Object({
-    id: t.String(),
-    userId: t.String(),
-    type: t.Enum(CategoryType),
-    name: t.String(),
-    parentId: t.Nullable(t.String()),
-    icon: t.Nullable(t.String()),
-    color: t.Nullable(t.String()),
-    isLocked: t.Boolean(),
-    children: t.Optional(t.Array(Self)),
-  }),
-);
+export const CategoryTreeDto = t.Object({
+  id: t.String(),
+  userId: t.String(),
+  type: t.Enum(CategoryType),
+  name: t.String(),
+  parentId: t.Nullable(t.String()),
+  icon: t.Nullable(t.String()),
+  color: t.Nullable(t.String()),
+  isLocked: t.Boolean(),
+  children: t.Optional(t.Array(t.Unknown())),
+});
 
 export const CategoryListResponseDto = t.Object({
   categories: t.Array(CategoryTreeDto),

@@ -1,3 +1,4 @@
+import type { Prisma } from '@server/generated/prisma/client';
 import { TransactionType } from '@server/generated/prisma/enums';
 import type {
   TransactionOrderByWithRelationInput,
@@ -7,24 +8,25 @@ import { prisma } from '@server/libs/db';
 import Decimal from 'decimal.js';
 import { Elysia } from 'elysia';
 import type {
+  BatchTransactionsResponse,
   IBatchTransactionsDto,
   IIncomeExpenseTransaction,
   IListTransactionsQuery,
   ILoanTransaction,
   ITransferTransaction,
   IUpsertTransaction,
+  TransactionDetail,
+  TransactionListResponse,
 } from '../dto/transaction.dto';
+import {
+  dateToIsoString,
+  dateToNullableIsoString,
+  decimalToNullableString,
+  decimalToString,
+} from '../utils/formatters';
 import { CURRENCY_SELECT_BASIC } from './selects';
 
 type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
-
-const TRANSACTION_INCLUDE = {
-  account: { include: { currency: true } },
-  toAccount: { include: { currency: true } },
-  category: true,
-  entity: true,
-  currency: true,
-} as const;
 
 const TRANSACTION_SELECT_FOR_BALANCE = {
   id: true,
@@ -41,7 +43,7 @@ const TRANSACTION_SELECT_FOR_BALANCE = {
   toAccount: { select: { currencyId: true } },
 } as const;
 
-const TRANSACTION_SELECT_FOR_LIST = {
+const TRANSACTION_SELECT = {
   id: true,
   userId: true,
   accountId: true,
@@ -104,6 +106,111 @@ const ACCOUNT_SELECT_MINIMAL = {
   userId: true,
   currencyId: true,
 } as const;
+
+type TransactionRecord = Prisma.TransactionGetPayload<{
+  select: typeof TRANSACTION_SELECT;
+}>;
+type MinimalCurrency = {
+  id: string;
+  code: string;
+  name: string;
+  symbol: string | null;
+};
+
+const formatCurrencyRecord = (currency: MinimalCurrency | null | undefined) => {
+  if (!currency) {
+    return null;
+  }
+  return {
+    id: currency.id,
+    code: currency.code,
+    name: currency.name,
+    symbol: currency.symbol ?? null,
+  };
+};
+
+const formatAccountRecord = (
+  account: NonNullable<TransactionRecord['account']>,
+) => ({
+  id: account.id,
+  name: account.name,
+  currency: formatCurrencyRecord(account.currency)!,
+});
+
+const formatOptionalAccountRecord = (
+  account: TransactionRecord['toAccount'],
+) => {
+  if (!account) {
+    return null;
+  }
+  return {
+    id: account.id,
+    name: account.name,
+    currency: formatCurrencyRecord(account.currency)!,
+  };
+};
+
+const formatCategoryRecord = (category: TransactionRecord['category']) => {
+  if (!category) {
+    return null;
+  }
+  return {
+    id: category.id,
+    name: category.name,
+    type: category.type,
+    icon: category.icon ?? null,
+    color: category.color ?? null,
+  };
+};
+
+const formatEntityRecord = (entity: TransactionRecord['entity']) => {
+  if (!entity) {
+    return null;
+  }
+  return {
+    id: entity.id,
+    name: entity.name,
+    type: entity.type,
+  };
+};
+
+const formatTransactionRecord = (
+  transaction: TransactionRecord,
+): TransactionDetail => {
+  return {
+    id: transaction.id,
+    userId: transaction.userId,
+    accountId: transaction.accountId,
+    toAccountId: transaction.toAccountId ?? null,
+    transferGroupId: transaction.transferGroupId ?? null,
+    isTransferMirror: transaction.isTransferMirror,
+    type: transaction.type,
+    categoryId: transaction.categoryId ?? null,
+    entityId: transaction.entityId ?? null,
+    investmentId: transaction.investmentId ?? null,
+    amount: decimalToString(transaction.amount),
+    currencyId: transaction.currencyId,
+    price: decimalToNullableString(transaction.price),
+    priceInBaseCurrency: decimalToNullableString(
+      transaction.priceInBaseCurrency,
+    ),
+    quantity: decimalToNullableString(transaction.quantity),
+    fee: decimalToString(transaction.fee),
+    feeInBaseCurrency: decimalToNullableString(transaction.feeInBaseCurrency),
+    date: dateToIsoString(transaction.date),
+    dueDate: dateToNullableIsoString(transaction.dueDate),
+    note: transaction.note ?? null,
+    receiptUrl: transaction.receiptUrl ?? null,
+    metadata: transaction.metadata ?? null,
+    createdAt: dateToIsoString(transaction.createdAt),
+    updatedAt: dateToIsoString(transaction.updatedAt),
+    account: formatAccountRecord(transaction.account!),
+    toAccount: formatOptionalAccountRecord(transaction.toAccount),
+    category: formatCategoryRecord(transaction.category),
+    entity: formatEntityRecord(transaction.entity),
+    currency: formatCurrencyRecord(transaction.currency),
+  };
+};
 
 class BalanceCalculator {
   private exchangeRates: Record<string, Record<string, Decimal>> = {
@@ -549,7 +656,7 @@ class TransactionHandlerFactory {
 
       return tx.transaction.create({
         data: transactionData,
-        include: TRANSACTION_INCLUDE,
+        select: TRANSACTION_SELECT,
       });
     });
   }
@@ -607,7 +714,7 @@ class TransactionHandlerFactory {
       return tx.transaction.update({
         where: { id: transactionId },
         data: transactionData,
-        include: TRANSACTION_INCLUDE,
+        select: TRANSACTION_SELECT,
       });
     });
   }
@@ -660,7 +767,7 @@ class TransactionHandlerFactory {
           transferGroupId: groupId,
           isTransferMirror: false,
         },
-        include: TRANSACTION_INCLUDE,
+        select: TRANSACTION_SELECT,
       });
 
       // Calculate mirror amount in destination currency
@@ -770,7 +877,7 @@ class TransactionHandlerFactory {
           transferGroupId: groupId,
           isTransferMirror: false,
         },
-        include: TRANSACTION_INCLUDE,
+        select: TRANSACTION_SELECT,
       });
 
       // Calculate mirror amount
@@ -953,7 +1060,10 @@ export class TransactionService {
     );
   }
 
-  async upsertTransaction(userId: string, data: IUpsertTransaction) {
+  async upsertTransaction(
+    userId: string,
+    data: IUpsertTransaction,
+  ): Promise<TransactionDetail> {
     const account = await prisma.account.findFirst({
       where: {
         id: data.accountId,
@@ -973,56 +1083,68 @@ export class TransactionService {
     });
 
     const transactionType = data.type;
+    let transaction: TransactionRecord;
     switch (transactionType) {
       case TransactionType.income:
       case TransactionType.expense:
-        return this.handlerFactory.handleIncomeExpense(
+        transaction = await this.handlerFactory.handleIncomeExpense(
           userId,
           data as IIncomeExpenseTransaction,
           account,
           user.baseCurrencyId,
         );
+        break;
 
       case TransactionType.transfer:
-        return this.handlerFactory.handleTransfer(
+        transaction = await this.handlerFactory.handleTransfer(
           userId,
           data as ITransferTransaction,
           account,
         );
+        break;
 
       case TransactionType.loan_given:
       case TransactionType.loan_received:
-        return this.handlerFactory.handleLoan(
+        transaction = await this.handlerFactory.handleLoan(
           userId,
           data as ILoanTransaction,
           account,
           user.baseCurrencyId,
         );
+        break;
 
       default: {
         throw new Error(`Invalid transaction type: ${transactionType}`);
       }
     }
+
+    return formatTransactionRecord(transaction);
   }
 
-  async getTransaction(userId: string, transactionId: string) {
+  async getTransaction(
+    userId: string,
+    transactionId: string,
+  ): Promise<TransactionDetail> {
     const transaction = await prisma.transaction.findFirst({
       where: {
         id: transactionId,
         userId,
         deletedAt: null,
       },
-      include: TRANSACTION_INCLUDE,
+      select: TRANSACTION_SELECT,
     });
 
     if (!transaction) {
       throw new Error('Transaction not found');
     }
 
-    return transaction;
+    return formatTransactionRecord(transaction);
   }
 
-  async listTransactions(userId: string, filters: IListTransactionsQuery = {}) {
+  async listTransactions(
+    userId: string,
+    filters: IListTransactionsQuery = {},
+  ): Promise<TransactionListResponse> {
     const {
       types,
       accountIds,
@@ -1082,7 +1204,7 @@ export class TransactionService {
         orderBy,
         skip,
         take: limit,
-        select: TRANSACTION_SELECT_FOR_LIST,
+        select: TRANSACTION_SELECT,
       }),
       prisma.transaction.count({ where }),
       prisma.transaction.groupBy({
@@ -1107,7 +1229,7 @@ export class TransactionService {
 
     const summaryByCurrency = new Map<
       string,
-      { currency: any; totalIncome: Decimal; totalExpense: Decimal }
+      { currency: MinimalCurrency; totalIncome: Decimal; totalExpense: Decimal }
     >();
 
     for (const group of summaryGroups) {
@@ -1137,13 +1259,13 @@ export class TransactionService {
     }
 
     const summary = Array.from(summaryByCurrency.values()).map((item) => ({
-      currency: item.currency,
+      currency: formatCurrencyRecord(item.currency)!,
       totalIncome: item.totalIncome.toNumber(),
       totalExpense: item.totalExpense.toNumber(),
     }));
 
     return {
-      transactions,
+      transactions: transactions.map(formatTransactionRecord),
       pagination: {
         page,
         limit,
@@ -1263,7 +1385,10 @@ export class TransactionService {
     return { success: true, message: 'Transaction deleted successfully' };
   }
 
-  async createBatchTransactions(userId: string, data: IBatchTransactionsDto) {
+  async createBatchTransactions(
+    userId: string,
+    data: IBatchTransactionsDto,
+  ): Promise<BatchTransactionsResponse> {
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: { id: true, baseCurrencyId: true },
@@ -1271,7 +1396,7 @@ export class TransactionService {
 
     const results: Array<{
       success: boolean;
-      data?: unknown;
+      data?: TransactionDetail;
       error?: string;
     }> = [];
 
@@ -1295,7 +1420,7 @@ export class TransactionService {
             continue;
           }
 
-          let result;
+          let result: TransactionRecord | undefined;
           switch (transactionData.type) {
             case TransactionType.income:
             case TransactionType.expense: {
@@ -1383,7 +1508,12 @@ export class TransactionService {
             }
           }
 
-          results.push({ success: true, data: result });
+          if (result) {
+            results.push({
+              success: true,
+              data: formatTransactionRecord(result),
+            });
+          }
         } catch (error) {
           results.push({
             success: false,

@@ -17,7 +17,7 @@ import {
 configSubject.next({
   apiUrl: window.location.origin,
   authApiUrl: window.location.origin,
-  isDev: import.meta.env.DEV || false,
+  isDev: Boolean(import.meta.env.DEV),
 });
 
 const token = localStorage.getItem(ACCESS_TOKEN_KEY);

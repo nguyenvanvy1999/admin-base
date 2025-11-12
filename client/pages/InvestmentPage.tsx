@@ -268,7 +268,14 @@ const InvestmentPage = () => {
               ]
             : undefined
         }
-        onSortingChange={(updater) => {
+        onSortingChange={(
+          updater:
+            | { id: string; desc: boolean }[]
+            | ((prev: { id: string; desc: boolean }[]) => {
+                id: string;
+                desc: boolean;
+              }[]),
+        ) => {
           const newSorting =
             typeof updater === 'function'
               ? updater(

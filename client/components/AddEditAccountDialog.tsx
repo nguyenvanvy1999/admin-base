@@ -15,7 +15,7 @@ const baseSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, 'accounts.nameRequired'),
   type: z.nativeEnum(AccountType, {
-    required_error: 'accounts.typeRequired',
+    message: 'accounts.typeRequired',
   }),
   currencyId: z.string().min(1, 'accounts.currencyRequired'),
   initialBalance: z.number().optional(),
@@ -75,8 +75,8 @@ const AddEditAccountDialog = ({
         initialBalance: 0,
         creditLimit: account.creditLimit ? Number(account.creditLimit) : 0,
         notifyOnDueDate: account.notifyOnDueDate ?? false,
-        paymentDay: account.paymentDay,
-        notifyDaysBefore: account.notifyDaysBefore,
+        paymentDay: account.paymentDay ?? undefined,
+        notifyDaysBefore: account.notifyDaysBefore ?? undefined,
       });
     } else {
       reset(defaultValues);

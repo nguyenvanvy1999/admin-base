@@ -1,5 +1,9 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
-import type { CurrentUserRes } from '@server/dto/user.dto';
+import type {
+  CurrentUserRes,
+  IUpdateProfileDto,
+  UpdateProfileRes,
+} from '@server/dto/user.dto';
 
 export class UserService extends ServiceBase {
   constructor() {
@@ -9,6 +13,12 @@ export class UserService extends ServiceBase {
   getCurrentUser(): Promise<CurrentUserRes> {
     return this.get<CurrentUserRes>({
       endpoint: 'me',
+    });
+  }
+
+  updateProfile(data: IUpdateProfileDto): Promise<UpdateProfileRes> {
+    return this.put<UpdateProfileRes>(data, {
+      endpoint: 'profile',
     });
   }
 }

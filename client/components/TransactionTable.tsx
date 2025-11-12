@@ -20,7 +20,14 @@ type TransactionTableProps = {
   onPageChange?: (page: number) => void;
   totalRecords?: number;
   sorting?: { id: string; desc: boolean }[];
-  onSortingChange?: (updater: { id: string; desc: boolean }[]) => void;
+  onSortingChange?: (
+    updater:
+      | { id: string; desc: boolean }[]
+      | ((prev: { id: string; desc: boolean }[]) => {
+          id: string;
+          desc: boolean;
+        }[]),
+  ) => void;
 };
 
 const TransactionTable = ({
@@ -81,7 +88,7 @@ const TransactionTable = ({
       {
         accessor: 'type',
         title: 'transactions.type',
-        render: (row) => (
+        render: (value: unknown, row: TransactionFull) => (
           <Badge color={getTransactionTypeColor(row.type)}>
             {getTransactionTypeLabel(row.type)}
           </Badge>
@@ -94,7 +101,7 @@ const TransactionTable = ({
       {
         accessor: (row) => row.category?.name,
         title: 'transactions.category',
-        render: (row) => {
+        render: (value: unknown, row: TransactionFull) => {
           const category = row.category;
           if (!category) {
             return (
@@ -139,7 +146,7 @@ const TransactionTable = ({
         accessor: 'amount',
         title: 'transactions.amount',
         textAlign: 'right',
-        render: (row) => {
+        render: (value: unknown, row: TransactionFull) => {
           const amount = parseFloat(String(row.amount));
           const isExpense = row.type === TransactionType.expense;
           const isIncome = row.type === TransactionType.income;
@@ -173,7 +180,7 @@ const TransactionTable = ({
         title: 'transactions.actions',
         textAlign: 'right',
         width: '8rem',
-        render: (row) => (
+        render: (value: unknown, row: TransactionFull) => (
           <div className="flex items-center justify-end gap-2">
             <ActionIcon
               variant="subtle"

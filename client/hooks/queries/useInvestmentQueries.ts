@@ -1,10 +1,10 @@
 import type { FormComponentRef } from '@client/components/FormComponent';
 import { investmentService } from '@client/services';
 import { DeferredPromise } from '@open-draft/deferred-promise';
-import type {
+import {
   InvestmentAssetType,
   InvestmentMode,
-  TradeSide,
+  type TradeSide,
 } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';

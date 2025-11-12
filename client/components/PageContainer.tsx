@@ -27,7 +27,7 @@ interface Props extends StackProps {
   onCurrentTabChange?: (newCurrentTab: string) => void;
   stats?: {
     titleI18nKey: ParseKeys;
-    value: number | string;
+    value: number | string | ReactNode;
     color?: string;
   }[];
   autoRefreshEnabled?: boolean;

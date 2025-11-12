@@ -1,7 +1,7 @@
 import AddContributionDialog from '@client/components/AddContributionDialog';
 import AddTradeDialog from '@client/components/AddTradeDialog';
 import AddValuationDialog from '@client/components/AddValuationDialog';
-import DataTable, { type DataTableColumn } from '@client/components/DataTable';
+import { DataTable, type DataTableColumn } from '@client/components/DataTable';
 import {
   useCreateInvestmentContributionMutation,
   useCreateInvestmentTradeMutation,
@@ -141,12 +141,12 @@ const InvestmentDetailPage = () => {
       {
         accessor: 'side',
         title: 'investments.trade.side',
-        render: (value: TradeSide) => (
+        render: (value: unknown, row: InvestmentTrade) => (
           <Badge
-            color={value === TradeSide.buy ? 'green' : 'red'}
+            color={row.side === TradeSide.buy ? 'green' : 'red'}
             variant="light"
           >
-            {value === TradeSide.buy
+            {row.side === TradeSide.buy
               ? t('investments.trade.buy', { defaultValue: 'Buy' })
               : t('investments.trade.sell', { defaultValue: 'Sell' })}
           </Badge>
@@ -190,12 +190,12 @@ const InvestmentDetailPage = () => {
       {
         accessor: 'type',
         title: 'investments.contribution.type',
-        render: (value: ContributionType) => (
+        render: (value: unknown, row: InvestmentContribution) => (
           <Badge
-            color={value === ContributionType.deposit ? 'green' : 'red'}
+            color={row.type === ContributionType.deposit ? 'green' : 'red'}
             variant="light"
           >
-            {value === ContributionType.deposit
+            {row.type === ContributionType.deposit
               ? t('investments.contribution.deposit', {
                   defaultValue: 'Deposit',
                 })
@@ -211,9 +211,9 @@ const InvestmentDetailPage = () => {
         render: (value) => formatCurrency(parseFloat(String(value))),
       },
       {
-        accessor: 'account.name',
+        accessor: (row: InvestmentContribution) => row.account?.name,
         title: 'investments.contribution.account',
-        render: (_, row) => row.account?.name || '--',
+        render: (value: unknown) => (value ? String(value) : '--'),
       },
       {
         accessor: 'note',
@@ -500,7 +500,7 @@ const InvestmentDetailPage = () => {
                           })}
                         </Text>
                         <Text size="lg" fw={600}>
-                          {position.currentExchangeRate.toFixed(6)}
+                          {position.currentExchangeRate?.toFixed(6) ?? '--'}
                         </Text>
                       </div>
                     )}
@@ -550,88 +550,55 @@ const InvestmentDetailPage = () => {
 
           <Tabs.Panel value="trades" pt="md">
             <DataTable
-              data={tradesData?.trades || []}
+              data={(tradesData?.trades || []) as unknown as InvestmentTrade[]}
               columns={tradeColumns}
-              isLoading={isTradesLoading}
-              pagination={
-                tradesData?.pagination
-                  ? {
-                      currentPage: tradePage,
-                      totalPages: tradesData.pagination.totalPages,
-                      totalItems: tradesData.pagination.total,
-                      itemsPerPage: tradeLimit,
-                      onPageChange: setTradePage,
-                    }
-                  : undefined
-              }
-              pageSize={{
-                initialSize: tradeLimit,
-                onPageSizeChange: (size: number) => {
-                  setTradeLimit(size);
-                  setTradePage(1);
-                },
+              loading={isTradesLoading}
+              page={tradePage}
+              onPageChange={setTradePage}
+              totalRecords={tradesData?.pagination?.total}
+              recordsPerPage={tradeLimit}
+              onRecordsPerPageChange={(size: number) => {
+                setTradeLimit(size);
+                setTradePage(1);
               }}
-              emptyMessage={t('investments.trade.empty', {
-                defaultValue: 'No trades yet',
-              })}
             />
           </Tabs.Panel>
 
           <Tabs.Panel value="contributions" pt="md">
             <DataTable
-              data={contributionsData?.contributions || []}
-              columns={contributionColumns}
-              isLoading={isContributionsLoading}
-              pagination={
-                contributionsData?.pagination
-                  ? {
-                      currentPage: contributionPage,
-                      totalPages: contributionsData.pagination.totalPages,
-                      totalItems: contributionsData.pagination.total,
-                      itemsPerPage: contributionLimit,
-                      onPageChange: setContributionPage,
-                    }
-                  : undefined
+              data={
+                (contributionsData?.contributions ||
+                  []) as unknown as InvestmentContribution[]
               }
-              pageSize={{
-                initialSize: contributionLimit,
-                onPageSizeChange: (size: number) => {
-                  setContributionLimit(size);
-                  setContributionPage(1);
-                },
+              columns={contributionColumns}
+              loading={isContributionsLoading}
+              page={contributionPage}
+              onPageChange={setContributionPage}
+              totalRecords={contributionsData?.pagination?.total}
+              recordsPerPage={contributionLimit}
+              onRecordsPerPageChange={(size: number) => {
+                setContributionLimit(size);
+                setContributionPage(1);
               }}
-              emptyMessage={t('investments.contribution.empty', {
-                defaultValue: 'No contributions yet',
-              })}
             />
           </Tabs.Panel>
 
           <Tabs.Panel value="valuations" pt="md">
             <DataTable
-              data={valuationsData?.valuations || []}
-              columns={valuationColumns}
-              isLoading={isValuationsLoading}
-              pagination={
-                valuationsData?.pagination
-                  ? {
-                      currentPage: valuationPage,
-                      totalPages: valuationsData.pagination.totalPages,
-                      totalItems: valuationsData.pagination.total,
-                      itemsPerPage: valuationLimit,
-                      onPageChange: setValuationPage,
-                    }
-                  : undefined
+              data={
+                (valuationsData?.valuations ||
+                  []) as unknown as InvestmentValuation[]
               }
-              pageSize={{
-                initialSize: valuationLimit,
-                onPageSizeChange: (size: number) => {
-                  setValuationLimit(size);
-                  setValuationPage(1);
-                },
+              columns={valuationColumns}
+              loading={isValuationsLoading}
+              page={valuationPage}
+              onPageChange={setValuationPage}
+              totalRecords={valuationsData?.pagination?.total}
+              recordsPerPage={valuationLimit}
+              onRecordsPerPageChange={(size: number) => {
+                setValuationLimit(size);
+                setValuationPage(1);
               }}
-              emptyMessage={t('investments.valuation.empty', {
-                defaultValue: 'No valuations yet',
-              })}
             />
           </Tabs.Panel>
         </Tabs>

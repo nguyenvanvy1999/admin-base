@@ -43,7 +43,7 @@ const transformToMUITree = (
     isLocked: category.isLocked,
     parentId: category.parentId,
     children: category.children
-      ? transformToMUITree(category.children, t)
+      ? transformToMUITree(category.children as CategoryFull[], t)
       : undefined,
   }));
 };
@@ -151,7 +151,7 @@ const CategoryPage = () => {
       for (const category of categories) {
         map.set(category.id, category);
         if (category.children) {
-          addToMap(category.children);
+          addToMap(category.children as CategoryFull[]);
         }
       }
     };

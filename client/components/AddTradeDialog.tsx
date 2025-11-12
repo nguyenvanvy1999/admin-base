@@ -194,7 +194,7 @@ const AddTradeDialog = ({
                   label={t('investments.trade.date', { defaultValue: 'Date' })}
                   error={error}
                   value={dateValue}
-                  onChange={(value) => {
+                  onChange={(value: Date | string | null) => {
                     if (value) {
                       field.onChange(
                         (value instanceof Date

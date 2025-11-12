@@ -113,7 +113,7 @@ const AddEditTransactionDialog = ({
       for (const cat of cats) {
         if (cat.id === id) return cat;
         if (cat.children) {
-          const found = findCategoryById(cat.children, id);
+          const found = findCategoryById(cat.children as typeof categories, id);
           if (found) return found;
         }
       }
@@ -386,7 +386,7 @@ const AddEditTransactionDialog = ({
                       required
                       error={error}
                       value={dateValue}
-                      onChange={(value) => {
+                      onChange={(value: Date | string | null) => {
                         if (value) {
                           field.onChange(
                             (value instanceof Date
@@ -448,7 +448,7 @@ const AddEditTransactionDialog = ({
                         onChange={(value) => {
                           field.onChange(value ?? '');
                         }}
-                        error={error}
+                        error={error ? String(error) : undefined}
                         filterType={transactionType}
                         searchable
                         categories={categories}

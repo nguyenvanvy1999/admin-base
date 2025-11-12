@@ -47,7 +47,13 @@ const flattenCategories = (
 
     if (!onlyLevel1 && category.children && category.children.length > 0) {
       result.push(
-        ...flattenCategories(category.children, t, excludeId, depth + 1, false),
+        ...flattenCategories(
+          category.children as CategoryFull[],
+          t,
+          excludeId,
+          depth + 1,
+          false,
+        ),
       );
     }
   }
@@ -59,7 +65,7 @@ const schema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, 'categories.nameRequired'),
   type: z.nativeEnum(CategoryType, {
-    required_error: 'categories.typeRequired',
+    message: 'categories.typeRequired',
   }),
   parentId: z.string().nullable().optional(),
   icon: z.string().optional(),

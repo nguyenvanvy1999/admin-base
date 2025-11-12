@@ -1,7 +1,6 @@
 import { userService } from '@client/services';
 import useUserStore from '@client/store/user';
 import { toast } from '@client/utils/toast';
-import type { UpdateProfileRes } from '@server/dto/user.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 type UpdateProfileData = {
@@ -17,9 +16,7 @@ export const useUpdateProfileMutation = () => {
 
   return useMutation({
     mutationFn: (data: UpdateProfileData) => {
-      return userService.put<UpdateProfileRes>(data, {
-        endpoint: 'profile',
-      });
+      return userService.updateProfile(data);
     },
     onSuccess: async (data) => {
       setUser({

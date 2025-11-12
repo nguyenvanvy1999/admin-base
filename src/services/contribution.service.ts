@@ -1,9 +1,17 @@
+import type { Prisma } from '@server/generated/prisma/client';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import type {
   ICreateInvestmentContributionDto,
   IListInvestmentContributionsQueryDto,
+  InvestmentContributionListResponse,
+  InvestmentContributionResponse,
 } from '../dto/contribution.dto';
+import {
+  dateToIsoString,
+  decimalToNullableNumber,
+  decimalToNumber,
+} from '../utils/formatters';
 import { investmentServiceInstance } from './investment.service';
 import { CURRENCY_SELECT_BASIC } from './selects';
 
@@ -36,6 +44,41 @@ const CONTRIBUTION_SELECT = {
   },
 } as const;
 
+type ContributionRecord = Prisma.InvestmentContributionGetPayload<{
+  select: typeof CONTRIBUTION_SELECT;
+}>;
+
+const formatContribution = (
+  contribution: ContributionRecord,
+): InvestmentContributionResponse => {
+  return {
+    id: contribution.id,
+    userId: contribution.userId,
+    investmentId: contribution.investmentId,
+    accountId: contribution.accountId ?? null,
+    amount: decimalToNumber(contribution.amount),
+    currencyId: contribution.currencyId,
+    type: contribution.type,
+    amountInBaseCurrency: decimalToNullableNumber(
+      contribution.amountInBaseCurrency,
+    ),
+    exchangeRate: decimalToNullableNumber(contribution.exchangeRate),
+    baseCurrencyId: contribution.baseCurrencyId ?? null,
+    timestamp: dateToIsoString(contribution.timestamp),
+    note: contribution.note ?? null,
+    createdAt: dateToIsoString(contribution.createdAt),
+    updatedAt: dateToIsoString(contribution.updatedAt),
+    account: contribution.account
+      ? {
+          id: contribution.account.id,
+          name: contribution.account.name,
+        }
+      : null,
+    currency: contribution.currency,
+    baseCurrency: contribution.baseCurrency ?? null,
+  };
+};
+
 export class InvestmentContributionService {
   private readonly investmentService = investmentServiceInstance;
 
@@ -52,7 +95,7 @@ export class InvestmentContributionService {
     userId: string,
     investmentId: string,
     data: ICreateInvestmentContributionDto,
-  ) {
+  ): Promise<InvestmentContributionResponse> {
     await this.investmentService.validateContribution(
       userId,
       investmentId,
@@ -61,7 +104,7 @@ export class InvestmentContributionService {
 
     const timestamp = this.parseDate(data.timestamp);
 
-    return prisma.investmentContribution.create({
+    const contribution = await prisma.investmentContribution.create({
       data: {
         userId,
         investmentId,
@@ -77,13 +120,15 @@ export class InvestmentContributionService {
       },
       select: CONTRIBUTION_SELECT,
     });
+
+    return formatContribution(contribution);
   }
 
   async listContributions(
     userId: string,
     investmentId: string,
     query: IListInvestmentContributionsQueryDto = {},
-  ) {
+  ): Promise<InvestmentContributionListResponse> {
     await this.investmentService.ensureInvestment(userId, investmentId);
 
     const {
@@ -125,7 +170,7 @@ export class InvestmentContributionService {
     ]);
 
     return {
-      contributions,
+      contributions: contributions.map(formatContribution),
       pagination: {
         page,
         limit,

@@ -11,7 +11,7 @@ export interface DataTableColumn<T> {
   // Accessor: either string key or function
   accessor?: string | AccessorFn<T>;
   // Custom cell render overrides auto format
-  render?: (row: T, rowIndex: number) => React.ReactNode;
+  render?: (value: unknown, row: T, rowIndex: number) => React.ReactNode;
   // Width constraints (rem-based to keep current API)
   width?: `${number}rem`;
   minWidth?: `${number}rem`;
@@ -27,4 +27,15 @@ export interface DataTableColumn<T> {
   filterVariant?: FilterVariant;
   // For select filter, provide options
   filterOptions?: { label: string; value: string | number | boolean }[];
+  // Format options for auto-formatting
+  format?: 'date' | 'number' | 'currency' | 'boolean' | 'array' | 'auto';
+  currency?: string | ((row: T) => string | null | undefined);
+  dateFormat?: string;
+  numberFormat?: {
+    decimalScale?: number;
+    thousandSeparator?: string;
+    prefix?: string;
+    suffix?: string;
+  };
+  autoFormatDisabled?: boolean;
 }

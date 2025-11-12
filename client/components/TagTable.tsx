@@ -18,7 +18,14 @@ type TagTableProps = {
   onPageChange?: (page: number) => void;
   totalRecords?: number;
   sorting?: { id: string; desc: boolean }[];
-  onSortingChange?: (updater: { id: string; desc: boolean }[]) => void;
+  onSortingChange?: (
+    updater:
+      | { id: string; desc: boolean }[]
+      | ((prev: { id: string; desc: boolean }[]) => {
+          id: string;
+          desc: boolean;
+        }[]),
+  ) => void;
 };
 
 const TagTable = ({
@@ -53,7 +60,7 @@ const TagTable = ({
         title: 'tags.actions',
         textAlign: 'right',
         width: '8rem',
-        render: (row) => (
+        render: (value: unknown, row: TagFull) => (
           <div className="flex items-center justify-end gap-2">
             <ActionIcon
               variant="subtle"

@@ -164,7 +164,7 @@ export const flattenCategories = (
       if (category.children && category.children.length > 0) {
         result.push(
           ...flattenCategories(
-            category.children,
+            category.children as CategoryFull[],
             t,
             filterType,
             excludeId,
@@ -187,7 +187,7 @@ export const flattenCategories = (
     if (category.children && category.children.length > 0) {
       result.push(
         ...flattenCategories(
-          category.children,
+          category.children as CategoryFull[],
           t,
           filterType,
           excludeId,
