@@ -14,7 +14,7 @@ import transactionController from './controllers/transaction.controller';
 import userController from './controllers/user.controller';
 import valuationController from './controllers/valuation.controller';
 import { logger } from './libs/logger';
-import errorMiddleware from './middlewares/error-middleware';
+import { errorHandler } from './middlewares/error-middleware';
 
 export const app = new Elysia()
   .use(
@@ -51,7 +51,7 @@ export const app = new Elysia()
   )
   .group('/api', (group) =>
     group
-      .onError(errorMiddleware)
+      .use(errorHandler)
       .use(userController)
       .use(accountController)
       .use(categoryController)

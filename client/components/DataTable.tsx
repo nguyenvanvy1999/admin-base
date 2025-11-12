@@ -1,5 +1,12 @@
 import { booleanStatusMap } from '@client/utils/booleanStatusMap';
-import { Text } from '@mantine/core';
+import {
+  Group,
+  Pagination,
+  Select,
+  Text,
+  useMantineColorScheme,
+  useMantineTheme,
+} from '@mantine/core';
 import {
   MantineReactTable,
   useMantineReactTable,
@@ -61,6 +68,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
   recordsPerPage,
   recordsPerPageOptions,
   onRecordsPerPageChange,
+  recordsPerPageLabel,
   page,
   onPageChange,
   totalRecords,
@@ -71,6 +79,8 @@ export function DataTable<T extends { id: string } = { id: string }>({
   ...props
 }: Props<T>) {
   const { t } = useTranslation();
+  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
   const safeData: T[] = useMemo(() => {
     if (data && Array.isArray(data)) {
       return data;
@@ -203,6 +213,14 @@ export function DataTable<T extends { id: string } = { id: string }>({
         // filter UI hints (MRT will be manual filtering if wired)
         filterVariant: col.filterVariant,
         filterSelectOptions: col.filterOptions,
+        // enable/disable sorting
+        enableSorting: col.enableSorting !== false,
+        // customize sort button
+        mantineTableHeadCellProps: {
+          style: {
+            padding: theme.spacing.xs,
+          },
+        },
       };
     });
 
@@ -212,6 +230,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
         header: '#',
         accessorFn: () => '',
         size: 64,
+        enableSorting: false,
         mantineTableBodyCellProps: { style: { textAlign: 'center' } },
         Cell: ({ row }: any) => {
           // page-based numbering if page/pageSize provided
@@ -262,6 +281,10 @@ export function DataTable<T extends { id: string } = { id: string }>({
     }
     return tableData.length;
   }, [totalRecords, tableData.length]);
+
+  const totalPages = useMemo(() => {
+    return Math.ceil(rowCount / pageSize);
+  }, [rowCount, pageSize]);
 
   const table = useMantineReactTable({
     columns: orderedColumns as any,
@@ -334,6 +357,44 @@ export function DataTable<T extends { id: string } = { id: string }>({
       : undefined,
     // height
     mantineTableContainerProps: height ? { style: { height } } : undefined,
+    // top toolbar styling
+    mantineTopToolbarProps: {
+      style: {
+        padding: theme.spacing.md,
+        backgroundColor: 'transparent',
+        borderBottom: `1px solid ${
+          colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]
+        }`,
+        gap: theme.spacing.sm,
+      },
+    },
+    // use custom bottom toolbar instead of default pagination
+    enablePagination: true,
+    paginationDisplayMode: 'pages',
+    mantinePaginationProps: {
+      radius: 'xl',
+      size: 'lg',
+    },
+    // bottom toolbar styling
+    mantineBottomToolbarProps: {
+      style: {
+        padding: theme.spacing.xs,
+        backgroundColor: 'transparent',
+        borderTop: `1px solid ${
+          colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]
+        }`,
+        gap: theme.spacing.xs,
+        justifyContent: 'flex-end',
+        display: 'flex',
+        flexWrap: 'nowrap',
+      },
+    },
+    // sort button styling
+    mantineTableHeadCellProps: {
+      style: {
+        padding: theme.spacing.xs,
+      },
+    },
     // empty rows fallback
     renderEmptyRowsFallback: () => (
       <Text ta="center" c="dimmed">
@@ -343,29 +404,122 @@ export function DataTable<T extends { id: string } = { id: string }>({
   });
 
   return (
-    <MantineReactTable
-      table={table}
-      renderBottomToolbarCustom={() => {
-        const start =
-          rowCount === 0 ? 0 : currentPage * pageSize + (rowCount > 0 ? 1 : 0);
-        const end = Math.min((currentPage + 1) * pageSize, rowCount);
-        return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {storeColumnsKey ? (
-              <ColumnOrdering
-                columns={mappedColumns}
-                storeColumnsKey={storeColumnsKey}
-                onOrdered={setOrderedColumns as any}
-              />
-            ) : null}
-            <div>
-              {start || 0} - {end || 0} of {rowCount}
+    <>
+      <style>{`
+        .mrt-table-head-sort-button {
+          width: 20px !important;
+          height: 20px !important;
+          min-width: 20px !important;
+          padding: 0 !important;
+        }
+        .mrt-table-head-sort-button svg {
+          width: 14px !important;
+          height: 14px !important;
+        }
+      `}</style>
+      <MantineReactTable
+        table={table}
+        renderBottomToolbarCustom={() => {
+          const start =
+            rowCount === 0
+              ? 0
+              : currentPage * pageSize + (rowCount > 0 ? 1 : 0);
+          const end = Math.min((currentPage + 1) * pageSize, rowCount);
+
+          return (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: theme.spacing.xs,
+                width: '100%',
+                flexWrap: 'nowrap',
+              }}
+            >
+              {storeColumnsKey ? (
+                <div style={{ flexShrink: 0 }}>
+                  <ColumnOrdering
+                    columns={mappedColumns}
+                    storeColumnsKey={storeColumnsKey}
+                    onOrdered={setOrderedColumns as any}
+                  />
+                </div>
+              ) : null}
+              {recordsPerPageOptions && recordsPerPageOptions.length > 0 && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    flexShrink: 0,
+                  }}
+                >
+                  <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+                    {recordsPerPageLabel ||
+                      t('common.pageSizeLabel', { defaultValue: 'Hiển thị' })}
+                  </Text>
+                  <Select
+                    value={pageSize.toString()}
+                    onChange={(value) => {
+                      if (value) {
+                        onRecordsPerPageChange?.(parseInt(value, 10));
+                      }
+                    }}
+                    data={recordsPerPageOptions.map((size) => ({
+                      value: size.toString(),
+                      label: size.toString(),
+                    }))}
+                    disabled={!!loading}
+                    size="xs"
+                    style={{ width: 60, flexShrink: 0 }}
+                    styles={{
+                      input: {
+                        minHeight: '24px',
+                        height: '24px',
+                        fontSize: '12px',
+                      },
+                    }}
+                  />
+                </div>
+              )}
+              <Text
+                size="xs"
+                c="dimmed"
+                style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
+                <Text component="span" fw={500} c="var(--mantine-color-text)">
+                  {start || 0}
+                </Text>
+                {' - '}
+                <Text component="span" fw={500} c="var(--mantine-color-text)">
+                  {end || 0}
+                </Text>{' '}
+                {t('common.of', { defaultValue: 'of' })}{' '}
+                <Text component="span" fw={500} c="var(--mantine-color-text)">
+                  {rowCount}
+                </Text>
+              </Text>
+              {totalPages > 0 && (
+                <div style={{ flexShrink: 0 }}>
+                  <Pagination
+                    total={totalPages}
+                    value={page || 1}
+                    onChange={(newPage: number) => {
+                      onPageChange?.(newPage);
+                    }}
+                    disabled={!!loading}
+                    size="lg"
+                    radius="xl"
+                  />
+                </div>
+              )}
             </div>
-          </div>
-        );
-      }}
-      {...(props as any)}
-    />
+          );
+        }}
+        {...(props as any)}
+      />
+    </>
   );
 }
 

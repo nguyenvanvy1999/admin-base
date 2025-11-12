@@ -63,7 +63,7 @@ export const PageContainer: FC<Props> = ({
             {onReset && (
               <Button
                 variant="light"
-                size="xs"
+                size="sm"
                 leftSection={<IconX size={16} />}
                 onClick={onReset}
               >
@@ -71,7 +71,7 @@ export const PageContainer: FC<Props> = ({
               </Button>
             )}
             {onAdvancedFilter && (
-              <Button variant="light" size="xs" onClick={onAdvancedFilter}>
+              <Button variant="light" size="sm" onClick={onAdvancedFilter}>
                 {t('common.advancedFilter', {
                   defaultValue: 'Advanced Filter',
                 })}
@@ -80,7 +80,7 @@ export const PageContainer: FC<Props> = ({
             {onRefresh && (
               <Button
                 variant="light"
-                size="xs"
+                size="sm"
                 leftSection={<IconRefresh size={16} />}
                 onClick={onRefresh}
                 loading={refreshing}

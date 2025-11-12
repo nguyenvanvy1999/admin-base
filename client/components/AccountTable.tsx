@@ -66,10 +66,12 @@ const AccountTable = ({
       {
         accessor: 'name',
         title: 'accounts.name',
+        enableSorting: true,
       },
       {
         accessor: 'type',
         title: 'accounts.type',
+        enableSorting: false,
         render: (value: unknown, row: AccountFull) => (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
             {getAccountTypeLabel(row.type)}
@@ -79,11 +81,13 @@ const AccountTable = ({
       {
         accessor: (row) => row.currency?.code ?? '',
         title: 'accounts.currency',
+        enableSorting: false,
       },
       {
         accessor: 'balance',
         title: 'accounts.balance',
         textAlign: 'right',
+        enableSorting: true,
         render: (value: unknown, row: AccountFull) => {
           const balance = parseFloat(String(row.balance));
           const isNegative = balance < 0;
@@ -109,6 +113,7 @@ const AccountTable = ({
         accessor: 'creditLimit',
         title: 'accounts.creditLimit',
         textAlign: 'right',
+        enableSorting: false,
         render: (value: unknown, row: AccountFull) => {
           if (!row.creditLimit) return null;
           const currencySymbol = row.currency?.symbol || '';
@@ -123,9 +128,15 @@ const AccountTable = ({
         },
       },
       {
+        accessor: 'createdAt',
+        title: 'accounts.createdAt',
+        enableSorting: true,
+      },
+      {
         title: 'accounts.actions',
         textAlign: 'right',
         width: '8rem',
+        enableSorting: false,
         render: (value: unknown, row: AccountFull) => (
           <div className="flex items-center justify-end gap-2">
             <ActionIcon

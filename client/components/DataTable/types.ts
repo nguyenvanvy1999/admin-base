@@ -38,4 +38,6 @@ export interface DataTableColumn<T> {
     suffix?: string;
   };
   autoFormatDisabled?: boolean;
+  // Enable/disable sorting for this column
+  enableSorting?: boolean;
 }
