@@ -1,33 +1,32 @@
 import { AccountType } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
+import { z } from 'zod';
 
-export const UpsertAccountDto = t.Object({
-  id: t.Optional(t.String()),
-  type: t.Enum(AccountType),
-  name: t.String(),
-  currencyId: t.String(),
-  initialBalance: t.Optional(t.Number()),
-  creditLimit: t.Optional(t.Number({ minimum: 0 })),
-  notifyOnDueDate: t.Optional(t.Boolean()),
-  paymentDay: t.Optional(t.Integer({ minimum: 1, maximum: 31 })),
-  notifyDaysBefore: t.Optional(t.Integer({ minimum: 0 })),
-  meta: t.Optional(t.Any()),
+export const UpsertAccountDto = z.object({
+  id: z.string().optional(),
+  type: z.nativeEnum(AccountType),
+  name: z.string().min(1),
+  currencyId: z.string().min(1),
+  initialBalance: z.number().optional(),
+  creditLimit: z.number().min(0).optional(),
+  notifyOnDueDate: z.boolean().optional(),
+  paymentDay: z.number().int().min(1).max(31).optional(),
+  notifyDaysBefore: z.number().int().min(0).optional(),
+  meta: z.any().optional(),
 });
 
-export const ListAccountsQueryDto = t.Object({
-  type: t.Optional(t.Array(t.Enum(AccountType))),
-  currencyId: t.Optional(t.Array(t.String())),
-  search: t.Optional(t.String()),
-  page: t.Optional(t.Integer({ minimum: 1, default: 1 })),
-  limit: t.Optional(t.Integer({ minimum: 1, default: 20 })),
-  sortBy: t.Optional(
-    t.Union([t.Literal('name'), t.Literal('createdAt'), t.Literal('balance')]),
-  ),
-  sortOrder: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
+export const ListAccountsQueryDto = z.object({
+  type: z.array(z.nativeEnum(AccountType)).optional(),
+  currencyId: z.array(z.string()).optional(),
+  search: z.string().optional(),
+  page: z.number().int().min(1).default(1).optional(),
+  limit: z.number().int().min(1).default(20).optional(),
+  sortBy: z.enum(['name', 'createdAt', 'balance']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
-export type IUpsertAccountDto = typeof UpsertAccountDto.static;
-export type IListAccountsQueryDto = typeof ListAccountsQueryDto.static;
+export type IUpsertAccountDto = z.infer<typeof UpsertAccountDto>;
+export type IListAccountsQueryDto = z.infer<typeof ListAccountsQueryDto>;
 
 const accountCurrencyShape = {
   id: t.String(),

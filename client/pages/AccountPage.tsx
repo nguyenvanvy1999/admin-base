@@ -27,19 +27,19 @@ import {
   Text,
   useMantineColorScheme,
 } from '@mantine/core';
-import type {
-  AccountResponse,
-  IUpsertAccountDto,
+import {
+  type AccountResponse,
+  type IUpsertAccountDto,
+  ListAccountsQueryDto,
 } from '@server/dto/account.dto';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
 
-const filterSchema = z.object({
-  search: z.string().optional(),
-  type: z.array(z.nativeEnum(AccountType)).optional(),
-  currencyId: z.array(z.string()).optional(),
+const filterSchema = ListAccountsQueryDto.pick({
+  search: true,
+  type: true,
+  currencyId: true,
 });
 
 const defaultFilterValues: FilterFormValue = {

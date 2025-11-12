@@ -1,31 +1,34 @@
 import { ContributionType } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
+import { z } from 'zod';
 
-export const CreateInvestmentContributionDto = t.Object({
-  amount: t.Number(),
-  currencyId: t.String(),
-  type: t.Enum(ContributionType),
-  timestamp: t.String({ format: 'date-time' }),
-  accountId: t.Optional(t.String()),
-  note: t.Optional(t.String()),
-  amountInBaseCurrency: t.Optional(t.Number()),
-  exchangeRate: t.Optional(t.Number()),
-  baseCurrencyId: t.Optional(t.String()),
+export const CreateInvestmentContributionDto = z.object({
+  amount: z.number(),
+  currencyId: z.string().min(1),
+  type: z.nativeEnum(ContributionType),
+  timestamp: z.string().datetime(),
+  accountId: z.string().optional(),
+  note: z.string().optional(),
+  amountInBaseCurrency: z.number().optional(),
+  exchangeRate: z.number().optional(),
+  baseCurrencyId: z.string().optional(),
 });
 
-export const ListInvestmentContributionsQueryDto = t.Object({
-  accountIds: t.Optional(t.Array(t.String())),
-  dateFrom: t.Optional(t.String({ format: 'date-time' })),
-  dateTo: t.Optional(t.String({ format: 'date-time' })),
-  page: t.Optional(t.Integer({ minimum: 1, default: 1 })),
-  limit: t.Optional(t.Integer({ minimum: 1, default: 50 })),
-  sortOrder: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
+export const ListInvestmentContributionsQueryDto = z.object({
+  accountIds: z.array(z.string()).optional(),
+  dateFrom: z.string().datetime().optional(),
+  dateTo: z.string().datetime().optional(),
+  page: z.number().int().min(1).default(1).optional(),
+  limit: z.number().int().min(1).default(50).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
-export type ICreateInvestmentContributionDto =
-  typeof CreateInvestmentContributionDto.static;
-export type IListInvestmentContributionsQueryDto =
-  typeof ListInvestmentContributionsQueryDto.static;
+export type ICreateInvestmentContributionDto = z.infer<
+  typeof CreateInvestmentContributionDto
+>;
+export type IListInvestmentContributionsQueryDto = z.infer<
+  typeof ListInvestmentContributionsQueryDto
+>;
 
 export const InvestmentContributionAccountDto = t.NoValidate(
   t.Object({

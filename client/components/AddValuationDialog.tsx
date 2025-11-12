@@ -2,7 +2,10 @@ import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Group, Modal, Stack } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { InvestmentResponse } from '@server/dto/investment.dto';
-import type { IUpsertInvestmentValuationDto } from '@server/dto/valuation.dto';
+import {
+  type IUpsertInvestmentValuationDto,
+  UpsertInvestmentValuationDto,
+} from '@server/dto/valuation.dto';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -10,14 +13,9 @@ import { NumberInput } from './NumberInput';
 import { TextInput } from './TextInput';
 import { ZodFormController } from './ZodFormController';
 
-const baseSchema = z.object({
+const baseSchema = UpsertInvestmentValuationDto.extend({
   price: z.number().min(0.01, 'investments.valuation.priceRequired'),
   timestamp: z.string().min(1, 'investments.valuation.dateRequired'),
-  source: z.string().optional(),
-  fetchedAt: z.string().optional(),
-  priceInBaseCurrency: z.number().optional(),
-  exchangeRate: z.number().optional(),
-  baseCurrencyId: z.string().optional(),
 });
 
 type FormValue = z.infer<typeof baseSchema>;
@@ -51,6 +49,7 @@ const AddValuationDialog = ({
 
   const defaultValues: FormValue = {
     price: 0,
+    currencyId: investment.currencyId,
     timestamp: new Date().toISOString(),
     source: '',
     fetchedAt: '',

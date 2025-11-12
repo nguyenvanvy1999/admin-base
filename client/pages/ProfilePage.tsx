@@ -14,18 +14,14 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
+import { UpdateProfileDto } from '@server/dto/user.dto';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-const profileSchema = z
-  .object({
-    name: z.string().optional(),
-    baseCurrencyId: z.string().optional(),
-    oldPassword: z.string().optional(),
-    newPassword: z.string().optional(),
-    confirmPassword: z.string().optional(),
-  })
+const profileSchema = UpdateProfileDto.extend({
+  confirmPassword: z.string().optional(),
+})
   .refine(
     (data) => {
       if (data.newPassword && !data.oldPassword) {
@@ -36,18 +32,6 @@ const profileSchema = z
     {
       message: 'profile.oldPasswordRequired',
       path: ['oldPassword'],
-    },
-  )
-  .refine(
-    (data) => {
-      if (data.newPassword && data.newPassword.length < 6) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'register.passwordMinLength',
-      path: ['newPassword'],
     },
   )
   .refine(

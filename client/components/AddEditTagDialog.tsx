@@ -1,6 +1,10 @@
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Group, Modal, Stack } from '@mantine/core';
-import type { IUpsertTagDto, TagResponse } from '@server/dto/tag.dto';
+import {
+  type IUpsertTagDto,
+  type TagResponse,
+  UpsertTagDto,
+} from '@server/dto/tag.dto';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -8,10 +12,8 @@ import { Textarea } from './Textarea';
 import { TextInput } from './TextInput';
 import { ZodFormController } from './ZodFormController';
 
-const schema = z.object({
-  id: z.string().optional(),
+const schema = UpsertTagDto.extend({
   name: z.string().min(1, 'tags.nameRequired'),
-  description: z.string().optional(),
 });
 
 type FormValue = z.infer<typeof schema>;

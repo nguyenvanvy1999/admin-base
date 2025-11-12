@@ -1,92 +1,91 @@
 import { t } from 'elysia';
+import { z } from 'zod';
 import {
   CategoryType,
   EntityType,
   TransactionType,
 } from '../generated/prisma/enums';
 
-const BaseTransactionDto = t.Object({
-  id: t.Optional(t.String()),
-  accountId: t.String(),
-  amount: t.Number({ minimum: 0.01 }),
-  currencyId: t.Optional(t.String()),
-  fee: t.Optional(t.Number({ minimum: 0 })),
-  feeInBaseCurrency: t.Optional(t.Number({ minimum: 0 })),
-  date: t.String({ format: 'date-time' }),
-  dueDate: t.Optional(t.String({ format: 'date-time' })),
-  note: t.Optional(t.String()),
-  receiptUrl: t.Optional(t.String()),
-  metadata: t.Optional(t.Any()),
+const BaseTransactionDto = z.object({
+  id: z.string().optional(),
+  accountId: z.string().min(1),
+  amount: z.number().min(0.01),
+  currencyId: z.string().optional(),
+  fee: z.number().min(0).optional(),
+  feeInBaseCurrency: z.number().min(0).optional(),
+  date: z.string().datetime(),
+  dueDate: z.string().datetime().optional(),
+  note: z.string().optional(),
+  receiptUrl: z.string().optional(),
+  metadata: z.any().optional(),
 });
 
-export const IncomeExpenseTransactionDto = t.Composite([
-  BaseTransactionDto,
-  t.Object({
-    type: t.Union([
-      t.Literal(TransactionType.income),
-      t.Literal(TransactionType.expense),
-    ]),
-    categoryId: t.String(),
-  }),
-]);
+export const IncomeTransactionDto = BaseTransactionDto.extend({
+  type: z.literal(TransactionType.income),
+  categoryId: z.string().min(1),
+});
 
-export const TransferTransactionDto = t.Composite([
-  BaseTransactionDto,
-  t.Object({
-    type: t.Literal(TransactionType.transfer),
-    toAccountId: t.String(),
-    toAmount: t.Optional(t.Number({ minimum: 0.01 })),
-  }),
-]);
+export const ExpenseTransactionDto = BaseTransactionDto.extend({
+  type: z.literal(TransactionType.expense),
+  categoryId: z.string().min(1),
+});
 
-export const LoanTransactionDto = t.Composite([
-  BaseTransactionDto,
-  t.Object({
-    type: t.Union([
-      t.Literal(TransactionType.loan_given),
-      t.Literal(TransactionType.loan_received),
-    ]),
-    entityId: t.String(),
-  }),
-]);
+export const TransferTransactionDto = BaseTransactionDto.extend({
+  type: z.literal(TransactionType.transfer),
+  toAccountId: z.string().min(1),
+  toAmount: z.number().min(0.01).optional(),
+});
 
-export const UpsertTransactionDto = t.Union([
-  IncomeExpenseTransactionDto,
+export const LoanGivenTransactionDto = BaseTransactionDto.extend({
+  type: z.literal(TransactionType.loan_given),
+  entityId: z.string().min(1),
+});
+
+export const LoanReceivedTransactionDto = BaseTransactionDto.extend({
+  type: z.literal(TransactionType.loan_received),
+  entityId: z.string().min(1),
+});
+
+export const UpsertTransactionDto = z.discriminatedUnion('type', [
+  IncomeTransactionDto,
+  ExpenseTransactionDto,
   TransferTransactionDto,
-  LoanTransactionDto,
+  LoanGivenTransactionDto,
+  LoanReceivedTransactionDto,
 ]);
 
-export const BatchTransactionsDto = t.Object({
-  transactions: t.Array(UpsertTransactionDto, { minItems: 1 }),
+export const IncomeExpenseTransactionDto = z.union([
+  IncomeTransactionDto,
+  ExpenseTransactionDto,
+]);
+
+export const BatchTransactionsDto = z.object({
+  transactions: z.array(UpsertTransactionDto).min(1),
 });
 
-export const ListTransactionsQueryDto = t.Object({
-  types: t.Optional(t.Array(t.Enum(TransactionType))),
-  accountIds: t.Optional(t.Array(t.String())),
-  categoryIds: t.Optional(t.Array(t.String())),
-  entityIds: t.Optional(t.Array(t.String())),
-  dateFrom: t.Optional(t.String({ format: 'date-time' })),
-  dateTo: t.Optional(t.String({ format: 'date-time' })),
-  page: t.Optional(t.Integer({ minimum: 1, examples: [1], default: 1 })),
-  limit: t.Optional(t.Integer({ minimum: 1, examples: [20], default: 20 })),
-  sortBy: t.Optional(
-    t.Union([
-      t.Literal('date'),
-      t.Literal('amount'),
-      t.Literal('type'),
-      t.Literal('accountId'),
-    ]),
-  ),
-  sortOrder: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
+export const ListTransactionsQueryDto = z.object({
+  types: z.array(z.nativeEnum(TransactionType)).optional(),
+  accountIds: z.array(z.string()).optional(),
+  categoryIds: z.array(z.string()).optional(),
+  entityIds: z.array(z.string()).optional(),
+  dateFrom: z.string().datetime().optional(),
+  dateTo: z.string().datetime().optional(),
+  page: z.number().int().min(1).default(1).optional(),
+  limit: z.number().int().min(1).default(20).optional(),
+  sortBy: z.enum(['date', 'amount', 'type', 'accountId']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
-export type IUpsertTransaction = typeof UpsertTransactionDto.static;
-export type IListTransactionsQuery = typeof ListTransactionsQueryDto.static;
-export type IIncomeExpenseTransaction =
-  typeof IncomeExpenseTransactionDto.static;
-export type ITransferTransaction = typeof TransferTransactionDto.static;
-export type ILoanTransaction = typeof LoanTransactionDto.static;
-export type IBatchTransactionsDto = typeof BatchTransactionsDto.static;
+export type IUpsertTransaction = z.infer<typeof UpsertTransactionDto>;
+export type IListTransactionsQuery = z.infer<typeof ListTransactionsQueryDto>;
+export type IIncomeExpenseTransaction = z.infer<
+  typeof IncomeExpenseTransactionDto
+>;
+export type ITransferTransaction = z.infer<typeof TransferTransactionDto>;
+export type ILoanTransaction = z.infer<
+  typeof LoanGivenTransactionDto | typeof LoanReceivedTransactionDto
+>;
+export type IBatchTransactionsDto = z.infer<typeof BatchTransactionsDto>;
 
 const transactionCurrencyShape = {
   id: t.String(),

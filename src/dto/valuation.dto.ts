@@ -1,28 +1,31 @@
 import { t } from 'elysia';
+import { z } from 'zod';
 
-export const UpsertInvestmentValuationDto = t.Object({
-  price: t.Number({ minimum: 0 }),
-  currencyId: t.String(),
-  timestamp: t.String({ format: 'date-time' }),
-  source: t.Optional(t.String()),
-  fetchedAt: t.Optional(t.String({ format: 'date-time' })),
-  priceInBaseCurrency: t.Optional(t.Number()),
-  exchangeRate: t.Optional(t.Number()),
-  baseCurrencyId: t.Optional(t.String()),
+export const UpsertInvestmentValuationDto = z.object({
+  price: z.number().min(0),
+  currencyId: z.string().min(1),
+  timestamp: z.string().datetime(),
+  source: z.string().optional(),
+  fetchedAt: z.string().datetime().optional(),
+  priceInBaseCurrency: z.number().optional(),
+  exchangeRate: z.number().optional(),
+  baseCurrencyId: z.string().optional(),
 });
 
-export const ListInvestmentValuationsQueryDto = t.Object({
-  dateFrom: t.Optional(t.String({ format: 'date-time' })),
-  dateTo: t.Optional(t.String({ format: 'date-time' })),
-  page: t.Optional(t.Integer({ minimum: 1, default: 1 })),
-  limit: t.Optional(t.Integer({ minimum: 1, default: 50 })),
-  sortOrder: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
+export const ListInvestmentValuationsQueryDto = z.object({
+  dateFrom: z.string().datetime().optional(),
+  dateTo: z.string().datetime().optional(),
+  page: z.number().int().min(1).default(1).optional(),
+  limit: z.number().int().min(1).default(50).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
-export type IUpsertInvestmentValuationDto =
-  typeof UpsertInvestmentValuationDto.static;
-export type IListInvestmentValuationsQueryDto =
-  typeof ListInvestmentValuationsQueryDto.static;
+export type IUpsertInvestmentValuationDto = z.infer<
+  typeof UpsertInvestmentValuationDto
+>;
+export type IListInvestmentValuationsQueryDto = z.infer<
+  typeof ListInvestmentValuationsQueryDto
+>;
 
 export const InvestmentValuationCurrencyDto = t.NoValidate(
   t.Object({

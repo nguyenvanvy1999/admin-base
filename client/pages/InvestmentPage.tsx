@@ -22,6 +22,7 @@ import type {
   InvestmentResponse,
   IUpsertInvestmentDto,
 } from '@server/dto/investment.dto';
+import { ListInvestmentsQueryDto } from '@server/dto/investment.dto';
 import {
   InvestmentAssetType,
   InvestmentMode,
@@ -29,13 +30,12 @@ import {
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { z } from 'zod';
 
-const filterSchema = z.object({
-  search: z.string().optional(),
-  assetTypes: z.array(z.nativeEnum(InvestmentAssetType)).optional(),
-  modes: z.array(z.nativeEnum(InvestmentMode)).optional(),
-  currencyIds: z.array(z.string()).optional(),
+const filterSchema = ListInvestmentsQueryDto.pick({
+  search: true,
+  assetTypes: true,
+  modes: true,
+  currencyIds: true,
 });
 
 const defaultFilterValues: FilterFormValue = {

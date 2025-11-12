@@ -10,7 +10,10 @@ import {
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { InvestmentResponse } from '@server/dto/investment.dto';
-import type { ICreateInvestmentTradeDto } from '@server/dto/trade.dto';
+import {
+  CreateInvestmentTradeDto,
+  type ICreateInvestmentTradeDto,
+} from '@server/dto/trade.dto';
 import { TradeSide } from '@server/generated/prisma/enums';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,17 +22,12 @@ import { NumberInput } from './NumberInput';
 import { Select } from './Select';
 import { ZodFormController } from './ZodFormController';
 
-const baseSchema = z.object({
-  side: z.nativeEnum(TradeSide),
+const baseSchema = CreateInvestmentTradeDto.extend({
   timestamp: z.string().min(1, 'investments.trade.dateRequired'),
   accountId: z.string().min(1, 'investments.trade.accountRequired'),
   price: z.number().min(0.01, 'investments.trade.priceRequired'),
   quantity: z.number().min(0.01, 'investments.trade.quantityRequired'),
   amount: z.number().min(0.01, 'investments.trade.amountRequired'),
-  fee: z.number().optional(),
-  amountInBaseCurrency: z.number().optional(),
-  exchangeRate: z.number().optional(),
-  baseCurrencyId: z.string().optional(),
 });
 
 type FormValue = z.infer<typeof baseSchema>;
@@ -87,6 +85,7 @@ const AddTradeDialog = ({
 
   const defaultValues: FormValue = {
     side: TradeSide.buy,
+    currencyId: investment.currencyId,
     timestamp: new Date().toISOString(),
     accountId: '',
     price: 0,

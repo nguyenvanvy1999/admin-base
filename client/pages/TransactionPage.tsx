@@ -34,17 +34,16 @@ import type {
   IUpsertTransaction,
   TransactionDetail,
 } from '@server/dto/transaction.dto';
+import { ListTransactionsQueryDto } from '@server/dto/transaction.dto';
 import { TransactionType } from '@server/generated/prisma/enums';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
 
-const filterSchema = z.object({
-  search: z.string().optional(),
-  types: z.array(z.nativeEnum(TransactionType)).optional(),
-  accountIds: z.array(z.string()).optional(),
-  categoryIds: z.array(z.string()).optional(),
-  entityIds: z.array(z.string()).optional(),
+const filterSchema = ListTransactionsQueryDto.pick({
+  types: true,
+  accountIds: true,
+  categoryIds: true,
+  entityIds: true,
 });
 
 const defaultFilterValues: FilterFormValue = {

@@ -18,15 +18,18 @@ import {
 } from '@client/hooks/queries/useEntityQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Group, Modal, MultiSelect, Text } from '@mantine/core';
-import type { EntityResponse, IUpsertEntityDto } from '@server/dto/entity.dto';
+import {
+  type EntityResponse,
+  type IUpsertEntityDto,
+  ListEntitiesQueryDto,
+} from '@server/dto/entity.dto';
 import { EntityType } from '@server/generated/prisma/enums';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
 
-const filterSchema = z.object({
-  search: z.string().optional(),
-  type: z.array(z.nativeEnum(EntityType)).optional(),
+const filterSchema = ListEntitiesQueryDto.pick({
+  search: true,
+  type: true,
 });
 
 const defaultFilterValues: FilterFormValue = {

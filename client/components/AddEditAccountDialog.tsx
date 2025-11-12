@@ -1,9 +1,10 @@
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Checkbox, Group, Modal, Stack } from '@mantine/core';
-import type {
-  AccountResponse,
-  IUpsertAccountDto,
+import {
+  type AccountResponse,
+  type IUpsertAccountDto,
+  UpsertAccountDto,
 } from '@server/dto/account.dto';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useEffect } from 'react';
@@ -14,18 +15,12 @@ import { Select } from './Select';
 import { TextInput } from './TextInput';
 import { ZodFormController } from './ZodFormController';
 
-const baseSchema = z.object({
-  id: z.string().optional(),
+const baseSchema = UpsertAccountDto.extend({
   name: z.string().min(1, 'accounts.nameRequired'),
   type: z.nativeEnum(AccountType, {
     message: 'accounts.typeRequired',
   }),
   currencyId: z.string().min(1, 'accounts.currencyRequired'),
-  initialBalance: z.number().optional(),
-  creditLimit: z.number().optional(),
-  notifyOnDueDate: z.boolean().optional(),
-  paymentDay: z.number().min(1).max(31).optional(),
-  notifyDaysBefore: z.number().min(0).optional(),
 });
 
 type FormValue = z.infer<typeof baseSchema>;

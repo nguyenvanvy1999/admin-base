@@ -18,14 +18,15 @@ import {
 } from '@client/hooks/queries/useTagQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Group, Modal, Text } from '@mantine/core';
-import type { IUpsertTagDto, TagResponse } from '@server/dto/tag.dto';
+import {
+  type IUpsertTagDto,
+  ListTagsQueryDto,
+  type TagResponse,
+} from '@server/dto/tag.dto';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
 
-const filterSchema = z.object({
-  search: z.string().optional(),
-});
+const filterSchema = ListTagsQueryDto.pick({ search: true });
 
 const defaultFilterValues: FilterFormValue = {
   search: '',

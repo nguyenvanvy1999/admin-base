@@ -1,6 +1,10 @@
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Group, Modal, Stack } from '@mantine/core';
-import type { EntityResponse, IUpsertEntityDto } from '@server/dto/entity.dto';
+import {
+  type EntityResponse,
+  type IUpsertEntityDto,
+  UpsertEntityDto,
+} from '@server/dto/entity.dto';
 import { EntityType } from '@server/generated/prisma/enums';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,16 +14,11 @@ import { Textarea } from './Textarea';
 import { TextInput } from './TextInput';
 import { ZodFormController } from './ZodFormController';
 
-const schema = z.object({
-  id: z.string().optional(),
+const schema = UpsertEntityDto.extend({
   name: z.string().min(1, 'entities.nameRequired'),
   type: z.nativeEnum(EntityType, {
     message: 'entities.typeRequired',
   }),
-  phone: z.string().optional(),
-  email: z.string().email('entities.emailInvalid').optional().or(z.literal('')),
-  address: z.string().optional(),
-  note: z.string().optional(),
 });
 
 type FormValue = z.infer<typeof schema>;

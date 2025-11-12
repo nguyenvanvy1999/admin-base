@@ -6,19 +6,18 @@ import { ZodFormController } from '@client/components/ZodFormController';
 import { useRegisterMutation } from '@client/hooks/mutations/useAuthMutations';
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Loader, Stack } from '@mantine/core';
+import { RegisterDto } from '@server/dto/user.dto';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-const schema = z
-  .object({
-    username: z.string().min(1, 'register.username'),
-    password: z.string().min(6, 'register.passwordMinLength'),
-    confirmPassword: z.string().min(1, 'register.confirmPasswordRequired'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'register.passwordsDoNotMatch',
-    path: ['confirmPassword'],
-  });
+const schema = RegisterDto.extend({
+  username: z.string().min(1, 'register.username'),
+  password: z.string().min(6, 'register.passwordMinLength'),
+  confirmPassword: z.string().min(1, 'register.confirmPasswordRequired'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'register.passwordsDoNotMatch',
+  path: ['confirmPassword'],
+});
 
 const RegisterPage = () => {
   const { t } = useTranslation();

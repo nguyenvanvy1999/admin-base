@@ -3,7 +3,10 @@ import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Group, Modal, Stack } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { AccountResponse } from '@server/dto/account.dto';
-import type { ICreateInvestmentContributionDto } from '@server/dto/contribution.dto';
+import {
+  CreateInvestmentContributionDto,
+  type ICreateInvestmentContributionDto,
+} from '@server/dto/contribution.dto';
 import type { InvestmentResponse } from '@server/dto/investment.dto';
 import { ContributionType } from '@server/generated/prisma/enums';
 import { useEffect, useMemo } from 'react';
@@ -14,15 +17,9 @@ import { Select } from './Select';
 import { Textarea } from './Textarea';
 import { ZodFormController } from './ZodFormController';
 
-const baseSchema = z.object({
+const baseSchema = CreateInvestmentContributionDto.extend({
   amount: z.number().min(0.01, 'investments.contribution.amountRequired'),
-  type: z.nativeEnum(ContributionType),
   timestamp: z.string().min(1, 'investments.contribution.dateRequired'),
-  accountId: z.string().optional(),
-  note: z.string().optional(),
-  amountInBaseCurrency: z.number().optional(),
-  exchangeRate: z.number().optional(),
-  baseCurrencyId: z.string().optional(),
 });
 
 type FormValue = z.infer<typeof baseSchema>;
@@ -80,6 +77,7 @@ const AddContributionDialog = ({
 
   const defaultValues: FormValue = {
     amount: 0,
+    currencyId: investment.currencyId,
     type: ContributionType.deposit,
     timestamp: new Date().toISOString(),
     accountId: '',

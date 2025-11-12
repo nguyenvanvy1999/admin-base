@@ -1,9 +1,10 @@
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Group, Modal, Stack } from '@mantine/core';
-import type {
-  InvestmentResponse,
-  IUpsertInvestmentDto,
+import {
+  type InvestmentResponse,
+  type IUpsertInvestmentDto,
+  UpsertInvestmentDto,
 } from '@server/dto/investment.dto';
 import {
   InvestmentAssetType,
@@ -17,15 +18,12 @@ import { Textarea } from './Textarea';
 import { TextInput } from './TextInput';
 import { ZodFormController } from './ZodFormController';
 
-const schema = z.object({
-  id: z.string().optional(),
+const schema = UpsertInvestmentDto.extend({
   name: z.string().min(1, 'investments.nameRequired'),
   symbol: z.string().min(1, 'investments.symbolRequired'),
   assetType: z.nativeEnum(InvestmentAssetType),
   mode: z.nativeEnum(InvestmentMode),
   currencyId: z.string().min(1, 'investments.currencyRequired'),
-  baseCurrencyId: z.string().optional(),
-  extra: z.string().optional(),
 });
 
 type FormValue = z.infer<typeof schema>;

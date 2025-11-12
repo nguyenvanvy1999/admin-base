@@ -1,9 +1,10 @@
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Group, Modal, Stack } from '@mantine/core';
-import type {
-  CategoryTreeResponse,
-  IUpsertCategoryDto,
+import {
+  type CategoryTreeResponse,
+  type IUpsertCategoryDto,
+  UpsertCategoryDto,
 } from '@server/dto/category.dto';
 import { CategoryType } from '@server/generated/prisma/enums';
 import { useEffect, useMemo } from 'react';
@@ -64,15 +65,12 @@ const flattenCategories = (
   return result;
 };
 
-const schema = z.object({
-  id: z.string().optional(),
+const schema = UpsertCategoryDto.extend({
   name: z.string().min(1, 'categories.nameRequired'),
   type: z.nativeEnum(CategoryType, {
     message: 'categories.typeRequired',
   }),
   parentId: z.string().nullable().optional(),
-  icon: z.string().optional(),
-  color: z.string().optional(),
 });
 
 type FormValue = z.infer<typeof schema>;
@@ -158,8 +156,6 @@ const AddEditCategoryDialog = ({
 
     if (data.parentId) {
       submitData.parentId = data.parentId;
-    } else {
-      submitData.parentId = undefined;
     }
 
     if (data.icon && data.icon.trim() !== '') {

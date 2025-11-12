@@ -3,37 +3,32 @@ import {
   InvestmentMode,
 } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
+import { z } from 'zod';
 
-export const UpsertInvestmentDto = t.Object({
-  id: t.Optional(t.String()),
-  symbol: t.String({ minLength: 1 }),
-  name: t.String({ minLength: 1 }),
-  assetType: t.Enum(InvestmentAssetType),
-  mode: t.Optional(t.Enum(InvestmentMode)),
-  currencyId: t.String(),
-  baseCurrencyId: t.Optional(t.String()),
-  extra: t.Optional(t.Any()),
+export const UpsertInvestmentDto = z.object({
+  id: z.string().optional(),
+  symbol: z.string().min(1),
+  name: z.string().min(1),
+  assetType: z.nativeEnum(InvestmentAssetType),
+  mode: z.nativeEnum(InvestmentMode).optional(),
+  currencyId: z.string().min(1),
+  baseCurrencyId: z.string().optional(),
+  extra: z.any().optional(),
 });
 
-export const ListInvestmentsQueryDto = t.Object({
-  assetTypes: t.Optional(t.Array(t.Enum(InvestmentAssetType))),
-  modes: t.Optional(t.Array(t.Enum(InvestmentMode))),
-  currencyIds: t.Optional(t.Array(t.String())),
-  search: t.Optional(t.String()),
-  page: t.Optional(t.Integer({ minimum: 1, default: 1 })),
-  limit: t.Optional(t.Integer({ minimum: 1, default: 20 })),
-  sortBy: t.Optional(
-    t.Union([
-      t.Literal('name'),
-      t.Literal('createdAt'),
-      t.Literal('updatedAt'),
-    ]),
-  ),
-  sortOrder: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
+export const ListInvestmentsQueryDto = z.object({
+  assetTypes: z.array(z.nativeEnum(InvestmentAssetType)).optional(),
+  modes: z.array(z.nativeEnum(InvestmentMode)).optional(),
+  currencyIds: z.array(z.string()).optional(),
+  search: z.string().optional(),
+  page: z.number().int().min(1).default(1).optional(),
+  limit: z.number().int().min(1).default(20).optional(),
+  sortBy: z.enum(['name', 'createdAt', 'updatedAt']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
-export type IUpsertInvestmentDto = typeof UpsertInvestmentDto.static;
-export type IListInvestmentsQueryDto = typeof ListInvestmentsQueryDto.static;
+export type IUpsertInvestmentDto = z.infer<typeof UpsertInvestmentDto>;
+export type IListInvestmentsQueryDto = z.infer<typeof ListInvestmentsQueryDto>;
 
 const investmentCurrencyShape = {
   id: t.String(),

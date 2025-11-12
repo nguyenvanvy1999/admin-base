@@ -262,8 +262,6 @@ const AddEditTransactionDialog = ({
         }
       }
 
-      let submitData: IUpsertTransaction;
-
       const baseData = {
         accountId: data.accountId,
         amount: data.amount,
@@ -282,6 +280,8 @@ const AddEditTransactionDialog = ({
           : {}),
       };
 
+      let submitData: IUpsertTransaction;
+
       if (transactionType === TransactionType.transfer) {
         if (!data.toAccountId) {
           return;
@@ -293,7 +293,7 @@ const AddEditTransactionDialog = ({
           ...(data.toAmount && data.toAmount > 0
             ? { toAmount: data.toAmount }
             : {}),
-        };
+        } as IUpsertTransaction;
       } else if (
         transactionType === TransactionType.income ||
         transactionType === TransactionType.expense
@@ -302,14 +302,13 @@ const AddEditTransactionDialog = ({
           ...baseData,
           type: transactionType,
           categoryId: data.categoryId || '',
-          ...(data.entityId ? { entityId: data.entityId } : {}),
-        };
+        } as IUpsertTransaction;
       } else {
         submitData = {
           ...baseData,
           type: transactionType,
           entityId: data.entityId || '',
-        };
+        } as IUpsertTransaction;
       }
 
       onSubmit(submitData, shouldSaveAndAdd);

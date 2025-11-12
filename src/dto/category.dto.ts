@@ -1,22 +1,23 @@
 import { CategoryType } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
+import { z } from 'zod';
 
-export const UpsertCategoryDto = t.Object({
-  id: t.Optional(t.String()),
-  name: t.String(),
-  type: t.Enum(CategoryType),
-  parentId: t.Optional(t.String()),
-  icon: t.Optional(t.String()),
-  color: t.Optional(t.String()),
+export const UpsertCategoryDto = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1),
+  type: z.nativeEnum(CategoryType),
+  parentId: z.string().optional(),
+  icon: z.string().optional(),
+  color: z.string().optional(),
 });
 
-export const ListCategoriesQueryDto = t.Object({
-  type: t.Optional(t.Array(t.Enum(CategoryType))),
-  includeDeleted: t.Optional(t.Boolean({ default: false })),
+export const ListCategoriesQueryDto = z.object({
+  type: z.array(z.nativeEnum(CategoryType)).optional(),
+  includeDeleted: z.boolean().default(false).optional(),
 });
 
-export type IUpsertCategoryDto = typeof UpsertCategoryDto.static;
-export type IListCategoriesQueryDto = typeof ListCategoriesQueryDto.static;
+export type IUpsertCategoryDto = z.infer<typeof UpsertCategoryDto>;
+export type IListCategoriesQueryDto = z.infer<typeof ListCategoriesQueryDto>;
 
 export const CategoryDto = t.NoValidate(
   t.Object({

@@ -1,39 +1,43 @@
 import { TradeSide } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
+import { z } from 'zod';
 
-export const CreateInvestmentTradeDto = t.Object({
-  side: t.Enum(TradeSide),
-  timestamp: t.String({ format: 'date-time' }),
-  price: t.Number({ minimum: 0 }),
-  quantity: t.Number({ minimum: 0 }),
-  amount: t.Number(),
-  fee: t.Optional(t.Number({ minimum: 0 })),
-  currencyId: t.String(),
-  accountId: t.String(),
-  transactionId: t.Optional(t.String()),
-  priceCurrency: t.Optional(t.String()),
-  priceInBaseCurrency: t.Optional(t.Number()),
-  amountInBaseCurrency: t.Optional(t.Number()),
-  exchangeRate: t.Optional(t.Number()),
-  baseCurrencyId: t.Optional(t.String()),
-  priceSource: t.Optional(t.String()),
-  priceFetchedAt: t.Optional(t.String({ format: 'date-time' })),
-  meta: t.Optional(t.Any()),
+export const CreateInvestmentTradeDto = z.object({
+  side: z.nativeEnum(TradeSide),
+  timestamp: z.string().datetime(),
+  price: z.number().min(0),
+  quantity: z.number().min(0),
+  amount: z.number(),
+  fee: z.number().min(0).optional(),
+  currencyId: z.string().min(1),
+  accountId: z.string().min(1),
+  transactionId: z.string().optional(),
+  priceCurrency: z.string().optional(),
+  priceInBaseCurrency: z.number().optional(),
+  amountInBaseCurrency: z.number().optional(),
+  exchangeRate: z.number().optional(),
+  baseCurrencyId: z.string().optional(),
+  priceSource: z.string().optional(),
+  priceFetchedAt: z.string().datetime().optional(),
+  meta: z.any().optional(),
 });
 
-export const ListInvestmentTradesQueryDto = t.Object({
-  side: t.Optional(t.Enum(TradeSide)),
-  accountIds: t.Optional(t.Array(t.String())),
-  dateFrom: t.Optional(t.String({ format: 'date-time' })),
-  dateTo: t.Optional(t.String({ format: 'date-time' })),
-  page: t.Optional(t.Integer({ minimum: 1, default: 1 })),
-  limit: t.Optional(t.Integer({ minimum: 1, default: 50 })),
-  sortOrder: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
+export const ListInvestmentTradesQueryDto = z.object({
+  side: z.nativeEnum(TradeSide).optional(),
+  accountIds: z.array(z.string()).optional(),
+  dateFrom: z.string().datetime().optional(),
+  dateTo: z.string().datetime().optional(),
+  page: z.number().int().min(1).default(1).optional(),
+  limit: z.number().int().min(1).default(50).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
-export type ICreateInvestmentTradeDto = typeof CreateInvestmentTradeDto.static;
-export type IListInvestmentTradesQueryDto =
-  typeof ListInvestmentTradesQueryDto.static;
+export type ICreateInvestmentTradeDto = z.infer<
+  typeof CreateInvestmentTradeDto
+>;
+export type IListInvestmentTradesQueryDto = z.infer<
+  typeof ListInvestmentTradesQueryDto
+>;
 
 export const InvestmentTradeAccountDto = t.NoValidate(
   t.Object({

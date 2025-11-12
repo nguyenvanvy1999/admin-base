@@ -6,10 +6,11 @@ import { ZodFormController } from '@client/components/ZodFormController';
 import { useLoginMutation } from '@client/hooks/mutations/useAuthMutations';
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Loader, Stack } from '@mantine/core';
+import { LoginDto } from '@server/dto/user.dto';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-const schema = z.object({
+const schema = LoginDto.extend({
   username: z.string().min(1, 'login.username'),
   password: z.string().min(1, 'login.password'),
 });
