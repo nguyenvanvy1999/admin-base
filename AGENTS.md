@@ -187,7 +187,7 @@ const accountController = new Elysia()
             .use(accountService)
             .use(authMacro)
             .post("/", async ({ user, body, accountService }) => {
-                return await accountService.upsertAccount(user.id, body);
+                return accountService.upsertAccount(user.id, body);
             }, {
                 checkAuth: ["user"],
                 body: UpsertAccountDto,
@@ -198,7 +198,7 @@ const accountController = new Elysia()
                 },
             })
             .get("/", async ({ user, query, accountService }) => {
-                return await accountService.listAccounts(user.id, query);
+                return accountService.listAccounts(user.id, query);
             }, {
                 checkAuth: ["user"],
                 query: ListAccountsQueryDto,
@@ -224,7 +224,7 @@ import type { IUpsertAccountDto } from "../dto/account.dto";
 export class AccountService {
     async upsertAccount(userId: string, data: IUpsertAccountDto) {
         if (data.id) {
-            return await prisma.account.update({
+            return prisma.account.update({
                 where: { id: data.id, userId },
                 data: {
                     name: data.name,
@@ -234,7 +234,7 @@ export class AccountService {
                 },
             });
         }
-        return await prisma.account.create({
+        return prisma.account.create({
             data: {
                 userId,
                 name: data.name,
@@ -350,7 +350,7 @@ type ListAccountsQuery = {
 export const useAccountsQuery = (query: ListAccountsQuery = {}) => {
     return useQuery({
         queryKey: ["accounts", query],
-        queryFn: async () => {
+        queryFn:() => {
             const response = await api.api.accounts.get({ query });
 
             if (response.error) {
@@ -652,7 +652,7 @@ export type ICreateMyEntityDto = typeof CreateMyEntityDto.static;
 export class MyEntityService {
     async createMyEntity(userId: string, data: ICreateMyEntityDto) {
         // Business logic here
-        return await prisma.myEntity.create({
+        return prisma.myEntity.create({
             data: { userId, ...data },
         });
     }
@@ -671,7 +671,7 @@ const myEntityController = new Elysia()
             .use(myEntityService)
             .use(authMacro)
             .post("/", async ({ user, body, myEntityService }) => {
-                return await myEntityService.createMyEntity(user.id, body);
+                return myEntityService.createMyEntity(user.id, body);
             }, {
                 checkAuth: ["user"],
                 body: CreateMyEntityDto,
@@ -715,7 +715,7 @@ export type MyEntityFormData = {
 export const useMyEntitiesQuery = (query = {}) => {
     return useQuery({
         queryKey: ["myentities", query],
-        queryFn: async () => {
+        queryFn:() => {
             const response = await api.api.myentities.get({ query });
             if (response.error) throw new Error(response.error.value?.message);
             return response.data;

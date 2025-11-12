@@ -32,8 +32,8 @@ const transactionController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        async ({ user, body, transactionService }) => {
-          return await transactionService.upsertTransaction(user.id, body);
+        ({ user, body, transactionService }) => {
+          return transactionService.upsertTransaction(user.id, body);
         },
         {
           checkAuth: [UserRole.user],
@@ -51,11 +51,8 @@ const transactionController = new Elysia().group(
       )
       .post(
         '/batch',
-        async ({ user, body, transactionService }) => {
-          return await transactionService.createBatchTransactions(
-            user.id,
-            body,
-          );
+        ({ user, body, transactionService }) => {
+          return transactionService.createBatchTransactions(user.id, body);
         },
         {
           checkAuth: [UserRole.user],
@@ -73,8 +70,8 @@ const transactionController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ user, params, transactionService }) => {
-          return await transactionService.getTransaction(user.id, params.id);
+        ({ user, params, transactionService }) => {
+          return transactionService.getTransaction(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],
@@ -92,8 +89,8 @@ const transactionController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ user, query, transactionService }) => {
-          return await transactionService.listTransactions(user.id, query);
+        ({ user, query, transactionService }) => {
+          return transactionService.listTransactions(user.id, query);
         },
         {
           checkAuth: [UserRole.user],
@@ -111,8 +108,8 @@ const transactionController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ user, params, transactionService }) => {
-          return await transactionService.deleteTransaction(user.id, params.id);
+        ({ user, params, transactionService }) => {
+          return transactionService.deleteTransaction(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],

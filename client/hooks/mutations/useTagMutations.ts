@@ -9,11 +9,8 @@ export const useCreateTagMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Omit<TagFormData, 'id'>) => {
-      return await post<TagResponse, Omit<TagFormData, 'id'>>(
-        '/api/tags',
-        data,
-      );
+    mutationFn: (data: Omit<TagFormData, 'id'>) => {
+      return post<TagResponse, Omit<TagFormData, 'id'>>('/api/tags', data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['tags'] });
@@ -30,12 +27,12 @@ export const useUpdateTagMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: TagFormData) => {
+    mutationFn: (data: TagFormData) => {
       if (!data.id) {
         throw new Error('Tag ID is required for update');
       }
 
-      return await post<TagResponse, TagFormData>('/api/tags', data);
+      return post<TagResponse, TagFormData>('/api/tags', data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['tags'] });
@@ -53,8 +50,8 @@ export const useDeleteTagMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (tagId: string) => {
-      return await del<TagDeleteResponse>(`/api/tags/${tagId}`);
+    mutationFn: (tagId: string) => {
+      return del<TagDeleteResponse>(`/api/tags/${tagId}`);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['tags'] });

@@ -12,17 +12,14 @@ export const useCreateCategoryMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Omit<CategoryFormData, 'id'>) => {
+    mutationFn: (data: Omit<CategoryFormData, 'id'>) => {
       const payload = {
         ...data,
         parentId: data.parentId ?? undefined,
         icon: data.icon ?? undefined,
         color: data.color ?? undefined,
       };
-      return await post<CategoryResponse, typeof payload>(
-        '/api/categories',
-        payload,
-      );
+      return post<CategoryResponse, typeof payload>('/api/categories', payload);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -39,7 +36,7 @@ export const useUpdateCategoryMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: CategoryFormData) => {
+    mutationFn: (data: CategoryFormData) => {
       if (!data.id) {
         throw new Error('Category ID is required for update');
       }
@@ -51,7 +48,7 @@ export const useUpdateCategoryMutation = () => {
         icon: rest.icon ?? undefined,
         color: rest.color ?? undefined,
       };
-      return await put<CategoryResponse, typeof updateData>(
+      return put<CategoryResponse, typeof updateData>(
         `/api/categories/${id}`,
         updateData,
       );
@@ -72,8 +69,8 @@ export const useDeleteCategoryMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (categoryId: string) => {
-      return await del<CategoryDeleteResponse>(`/api/categories/${categoryId}`);
+    mutationFn: (categoryId: string) => {
+      return del<CategoryDeleteResponse>(`/api/categories/${categoryId}`);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['categories'] });

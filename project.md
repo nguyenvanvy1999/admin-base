@@ -374,7 +374,7 @@ import { api } from '@client/libs/api';
 export const useAccountsQuery = (query: ListAccountsQuery = {}) => {
   return useQuery({
     queryKey: ['accounts', query],
-    queryFn: async () => {
+    queryFn:() => {
       const response = await api.api.accounts.get({ query });
 
       if (response.error) {
@@ -604,7 +604,7 @@ export type IUpsertAccountDto = typeof UpsertAccountDto.static;
   '/',
   async ({ body }) => {
     // body có type IUpsertAccountDto
-    return await accountService.upsertAccount(user.id, body);
+    return accountService.upsertAccount(user.id, body);
   },
   {
     body: UpsertAccountDto, // Validation schema

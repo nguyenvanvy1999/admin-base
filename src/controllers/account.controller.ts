@@ -30,8 +30,8 @@ const accountController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        async ({ user, body, accountService }) => {
-          return await accountService.upsertAccount(user.id, body);
+        ({ user, body, accountService }) => {
+          return accountService.upsertAccount(user.id, body);
         },
         {
           checkAuth: [UserRole.user],
@@ -49,8 +49,8 @@ const accountController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ user, params, accountService }) => {
-          return await accountService.getAccount(user.id, params.id);
+        ({ user, params, accountService }) => {
+          return accountService.getAccount(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],
@@ -68,8 +68,8 @@ const accountController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ user, query, accountService }) => {
-          return await accountService.listAccounts(user.id, query);
+        ({ user, query, accountService }) => {
+          return accountService.listAccounts(user.id, query);
         },
         {
           checkAuth: [UserRole.user],
@@ -87,8 +87,8 @@ const accountController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ user, params, accountService }) => {
-          return await accountService.deleteAccount(user.id, params.id);
+        ({ user, params, accountService }) => {
+          return accountService.deleteAccount(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],

@@ -18,14 +18,10 @@ export const useCategoriesQuery = (
 ) => {
   return useQuery({
     queryKey: ['categories', query],
-    queryFn: async () => {
-      const data = await get<CategoryListResponse>('/api/categories', {
+    queryFn: () => {
+      return get<CategoryListResponse>('/api/categories', {
         query,
       });
-
-      return {
-        categories: data.categories as CategoryFull[],
-      };
     },
     ...options,
   });

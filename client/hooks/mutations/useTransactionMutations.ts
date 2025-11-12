@@ -12,14 +12,14 @@ export const useCreateTransactionMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Omit<TransactionFormData, 'id'>) => {
+    mutationFn: (data: Omit<TransactionFormData, 'id'>) => {
       const payload = {
         ...data,
         note: data.note ?? undefined,
         entityId: data.entityId ?? undefined,
         metadata: data.metadata ?? undefined,
       };
-      return await post<TransactionDetail, typeof payload>(
+      return post<TransactionDetail, typeof payload>(
         '/api/transactions',
         payload,
       );
@@ -39,7 +39,7 @@ export const useUpdateTransactionMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: TransactionFormData) => {
+    mutationFn: (data: TransactionFormData) => {
       if (!data.id) {
         throw new Error('Transaction ID is required for update');
       }
@@ -50,7 +50,7 @@ export const useUpdateTransactionMutation = () => {
         entityId: data.entityId ?? undefined,
         metadata: data.metadata ?? undefined,
       };
-      return await post<TransactionDetail, typeof payload>(
+      return post<TransactionDetail, typeof payload>(
         '/api/transactions',
         payload,
       );
@@ -71,8 +71,8 @@ export const useDeleteTransactionMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (transactionId: string) => {
-      return await del<TransactionDeleteResponse>(
+    mutationFn: (transactionId: string) => {
+      return del<TransactionDeleteResponse>(
         `/api/transactions/${transactionId}`,
       );
     },

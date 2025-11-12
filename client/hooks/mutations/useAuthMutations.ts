@@ -24,8 +24,8 @@ export const useLoginMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: LoginData) => {
-      return await post<LoginResponse, LoginData>('/api/users/login', data);
+    mutationFn: (data: LoginData) => {
+      return post<LoginResponse, LoginData>('/api/users/login', data);
     },
     onSuccess: async (data) => {
       localStorage.setItem(ACCESS_TOKEN_KEY, data.jwt);
@@ -58,7 +58,7 @@ export const useRegisterMutation = () => {
         name: data.name,
       });
 
-      return await post<LoginResponse, LoginData>('/api/users/login', data);
+      return post<LoginResponse, LoginData>('/api/users/login', data);
     },
     onSuccess: async (data) => {
       localStorage.setItem(ACCESS_TOKEN_KEY, data.jwt);

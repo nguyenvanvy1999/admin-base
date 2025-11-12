@@ -12,8 +12,8 @@ export const useCreateAccountMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Omit<AccountFormData, 'id'>) => {
-      return await post<AccountResponse, Omit<AccountFormData, 'id'>>(
+    mutationFn: (data: Omit<AccountFormData, 'id'>) => {
+      return post<AccountResponse, Omit<AccountFormData, 'id'>>(
         '/api/accounts',
         data,
       );
@@ -33,15 +33,12 @@ export const useUpdateAccountMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: AccountFormData) => {
+    mutationFn: (data: AccountFormData) => {
       if (!data.id) {
         throw new Error('Account ID is required for update');
       }
 
-      return await post<AccountResponse, AccountFormData>(
-        '/api/accounts',
-        data,
-      );
+      return post<AccountResponse, AccountFormData>('/api/accounts', data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['accounts'] });
@@ -59,8 +56,8 @@ export const useDeleteAccountMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (accountId: string) => {
-      return await del<AccountDeleteResponse>(`/api/accounts/${accountId}`);
+    mutationFn: (accountId: string) => {
+      return del<AccountDeleteResponse>(`/api/accounts/${accountId}`);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['accounts'] });

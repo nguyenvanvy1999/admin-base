@@ -37,8 +37,8 @@ export const useCreateInvestmentMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Omit<InvestmentFormData, 'id'>) => {
-      return await post<InvestmentResponse, Omit<InvestmentFormData, 'id'>>(
+    mutationFn: (data: Omit<InvestmentFormData, 'id'>) => {
+      return post<InvestmentResponse, Omit<InvestmentFormData, 'id'>>(
         '/api/investments',
         data,
       );
@@ -56,12 +56,12 @@ export const useUpdateInvestmentMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: InvestmentFormData) => {
+    mutationFn: (data: InvestmentFormData) => {
       if (!data.id) {
         throw new Error('Investment ID is required for update');
       }
 
-      return await post<InvestmentResponse, InvestmentFormData>(
+      return post<InvestmentResponse, InvestmentFormData>(
         '/api/investments',
         data,
       );
@@ -84,8 +84,8 @@ export const useCreateInvestmentTradeMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ investmentId, data }: TradeMutationVariables) => {
-      return await post<InvestmentTradeResponse, InvestmentTradeFormData>(
+    mutationFn: ({ investmentId, data }: TradeMutationVariables) => {
+      return post<InvestmentTradeResponse, InvestmentTradeFormData>(
         `/api/investments/${investmentId}/trades`,
         data,
       );
@@ -108,11 +108,8 @@ export const useCreateInvestmentContributionMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      investmentId,
-      data,
-    }: ContributionMutationVariables) => {
-      return await post<
+    mutationFn: ({ investmentId, data }: ContributionMutationVariables) => {
+      return post<
         InvestmentContributionResponse,
         InvestmentContributionFormData
       >(`/api/investments/${investmentId}/contributions`, data);
@@ -135,11 +132,11 @@ export const useUpsertInvestmentValuationMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ investmentId, data }: ValuationMutationVariables) => {
-      return await post<
-        InvestmentValuationResponse,
-        InvestmentValuationFormData
-      >(`/api/investments/${investmentId}/valuations`, data);
+    mutationFn: ({ investmentId, data }: ValuationMutationVariables) => {
+      return post<InvestmentValuationResponse, InvestmentValuationFormData>(
+        `/api/investments/${investmentId}/valuations`,
+        data,
+      );
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({

@@ -36,8 +36,8 @@ const userController = new Elysia().group(
       .use(authMacro)
       .post(
         '/register',
-        async ({ body, userService }) => {
-          return await userService.register(body);
+        ({ body, userService }) => {
+          return userService.register(body);
         },
         {
           detail: {
@@ -54,8 +54,8 @@ const userController = new Elysia().group(
       )
       .post(
         '/login',
-        async ({ body, userService }) => {
-          return await userService.login(body);
+        ({ body, userService }) => {
+          return userService.login(body);
         },
         {
           detail: {
@@ -72,8 +72,8 @@ const userController = new Elysia().group(
       )
       .get(
         '/me',
-        async ({ user, userService }) => {
-          return await userService.getUserInfo(user.id);
+        ({ user, userService }) => {
+          return userService.getUserInfo(user.id);
         },
         {
           checkAuth: [UserRole.user],
@@ -90,8 +90,8 @@ const userController = new Elysia().group(
       )
       .put(
         '/profile',
-        async ({ user, body, userService }) => {
-          return await userService.updateProfile(user.id, body);
+        ({ user, body, userService }) => {
+          return userService.updateProfile(user.id, body);
         },
         {
           checkAuth: [UserRole.user],

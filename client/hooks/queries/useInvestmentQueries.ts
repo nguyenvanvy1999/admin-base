@@ -1,11 +1,4 @@
 import { get } from '@client/libs/http';
-import type {
-  InvestmentContribution,
-  InvestmentFull,
-  InvestmentPosition,
-  InvestmentTrade,
-  InvestmentValuation,
-} from '@client/types/investment';
 import type { InvestmentContributionListResponse } from '@server/dto/contribution.dto';
 import type {
   InvestmentListResponse,
@@ -62,49 +55,13 @@ type ListValuationsQuery = {
   sortOrder?: 'asc' | 'desc';
 };
 
-const normalizeDate = (value: unknown) => {
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-  if (typeof value === 'string') {
-    return value;
-  }
-  return null;
-};
-
-const normalizeDecimal = (value: unknown) => {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  if (typeof value === 'number') {
-    return value.toString();
-  }
-  if (typeof value === 'object' && value !== null && 'toString' in value) {
-    return String(value);
-  }
-  return String(value);
-};
-
 export const useInvestmentsQuery = (query: ListInvestmentsQuery = {}) => {
   return useQuery({
     queryKey: ['investments', query],
-    queryFn: async () => {
-      const data = await get<InvestmentListResponse>('/api/investments', {
+    queryFn: () => {
+      return get<InvestmentListResponse>('/api/investments', {
         query,
       });
-
-      return {
-        investments: data.investments.map((investment) => ({
-          ...investment,
-          extra:
-            investment.extra && typeof investment.extra === 'object'
-              ? (investment.extra as Record<string, unknown>)
-              : null,
-          createdAt: normalizeDate(investment.createdAt) ?? '',
-          updatedAt: normalizeDate(investment.updatedAt) ?? '',
-        })) satisfies InvestmentFull[],
-        pagination: data.pagination,
-      };
     },
   });
 };
@@ -112,22 +69,8 @@ export const useInvestmentsQuery = (query: ListInvestmentsQuery = {}) => {
 export const useInvestmentQuery = (investmentId: string) => {
   return useQuery({
     queryKey: ['investment', investmentId],
-    queryFn: async () => {
-      const investment = await get<InvestmentResponse>(
-        `/api/investments/${investmentId}`,
-      );
-
-      return {
-        ...investment,
-        baseCurrencyId: investment.baseCurrencyId || null,
-        baseCurrency: investment.baseCurrency || null,
-        extra:
-          investment.extra && typeof investment.extra === 'object'
-            ? (investment.extra as Record<string, unknown>)
-            : null,
-        createdAt: normalizeDate(investment.createdAt) ?? '',
-        updatedAt: normalizeDate(investment.updatedAt) ?? '',
-      } satisfies InvestmentFull;
+    queryFn: () => {
+      return get<InvestmentResponse>(`/api/investments/${investmentId}`);
     },
   });
 };
@@ -135,61 +78,10 @@ export const useInvestmentQuery = (investmentId: string) => {
 export const useInvestmentPositionQuery = (investmentId: string) => {
   return useQuery({
     queryKey: ['investment-position', investmentId],
-    queryFn: async () => {
-      const position = await get<InvestmentPositionResponse>(
+    queryFn: () => {
+      return get<InvestmentPositionResponse>(
         `/api/investments/${investmentId}/holdings`,
       );
-
-      return {
-        quantity:
-          position.quantity === null || position.quantity === undefined
-            ? null
-            : Number(position.quantity),
-        avgCost:
-          position.avgCost === null || position.avgCost === undefined
-            ? null
-            : Number(position.avgCost),
-        costBasis: Number(position.costBasis),
-        realizedPnl: Number(position.realizedPnl),
-        unrealizedPnl: Number(position.unrealizedPnl),
-        lastPrice:
-          position.lastPrice === null || position.lastPrice === undefined
-            ? null
-            : Number(position.lastPrice),
-        lastValue:
-          position.lastValue === null || position.lastValue === undefined
-            ? null
-            : Number(position.lastValue),
-        lastValuationAt: normalizeDate(position.lastValuationAt),
-        netContributions: Number(position.netContributions),
-        costBasisInBaseCurrency:
-          position.costBasisInBaseCurrency !== undefined
-            ? Number(position.costBasisInBaseCurrency)
-            : undefined,
-        realizedPnlInBaseCurrency:
-          position.realizedPnlInBaseCurrency !== undefined
-            ? Number(position.realizedPnlInBaseCurrency)
-            : undefined,
-        unrealizedPnlInBaseCurrency:
-          position.unrealizedPnlInBaseCurrency !== undefined
-            ? Number(position.unrealizedPnlInBaseCurrency)
-            : undefined,
-        lastValueInBaseCurrency:
-          position.lastValueInBaseCurrency !== undefined &&
-          position.lastValueInBaseCurrency !== null
-            ? Number(position.lastValueInBaseCurrency)
-            : undefined,
-        currentExchangeRate:
-          position.currentExchangeRate !== undefined &&
-          position.currentExchangeRate !== null
-            ? Number(position.currentExchangeRate)
-            : undefined,
-        exchangeRateGainLoss:
-          position.exchangeRateGainLoss !== undefined &&
-          position.exchangeRateGainLoss !== null
-            ? Number(position.exchangeRateGainLoss)
-            : undefined,
-      } satisfies InvestmentPosition;
     },
   });
 };
@@ -200,32 +92,11 @@ export const useInvestmentTradesQuery = (
 ) => {
   return useQuery({
     queryKey: ['investment-trades', investmentId, query],
-    queryFn: async () => {
-      const data = await get<InvestmentTradeListResponse>(
+    queryFn: () => {
+      return get<InvestmentTradeListResponse>(
         `/api/investments/${investmentId}/trades`,
         { query },
       );
-
-      return {
-        trades: data.trades.map((trade) => ({
-          ...trade,
-          timestamp: normalizeDate(trade.timestamp) ?? '',
-          price: normalizeDecimal(trade.price) ?? '0',
-          quantity: normalizeDecimal(trade.quantity) ?? '0',
-          amount: normalizeDecimal(trade.amount) ?? '0',
-          fee: normalizeDecimal(trade.fee) ?? '0',
-          priceInBaseCurrency: normalizeDecimal(trade.priceInBaseCurrency),
-          amountInBaseCurrency: normalizeDecimal(trade.amountInBaseCurrency),
-          exchangeRate: normalizeDecimal(trade.exchangeRate),
-          baseCurrency: trade.baseCurrency || null,
-          priceFetchedAt: normalizeDate(trade.priceFetchedAt),
-          meta:
-            trade.meta && typeof trade.meta === 'object'
-              ? (trade.meta as Record<string, unknown>)
-              : null,
-        })) satisfies InvestmentTrade[],
-        pagination: data.pagination,
-      };
     },
   });
 };
@@ -236,28 +107,11 @@ export const useInvestmentContributionsQuery = (
 ) => {
   return useQuery({
     queryKey: ['investment-contributions', investmentId, query],
-    queryFn: async () => {
-      const data = await get<InvestmentContributionListResponse>(
+    queryFn: () => {
+      return get<InvestmentContributionListResponse>(
         `/api/investments/${investmentId}/contributions`,
         { query },
       );
-
-      return {
-        contributions: data.contributions.map((contribution) => ({
-          ...contribution,
-          amount: normalizeDecimal(contribution.amount) ?? '0',
-          type: contribution.type,
-          amountInBaseCurrency: normalizeDecimal(
-            contribution.amountInBaseCurrency,
-          ),
-          exchangeRate: normalizeDecimal(contribution.exchangeRate),
-          baseCurrency: contribution.baseCurrency || null,
-          timestamp: normalizeDate(contribution.timestamp) ?? '',
-          createdAt: normalizeDate(contribution.createdAt) ?? '',
-          updatedAt: normalizeDate(contribution.updatedAt) ?? '',
-        })) satisfies InvestmentContribution[],
-        pagination: data.pagination,
-      };
     },
   });
 };
@@ -268,26 +122,11 @@ export const useInvestmentValuationsQuery = (
 ) => {
   return useQuery({
     queryKey: ['investment-valuations', investmentId, query],
-    queryFn: async () => {
-      const data = await get<InvestmentValuationListResponse>(
+    queryFn: () => {
+      return get<InvestmentValuationListResponse>(
         `/api/investments/${investmentId}/valuations`,
         { query },
       );
-
-      return {
-        valuations: data.valuations.map((valuation) => ({
-          ...valuation,
-          price: normalizeDecimal(valuation.price) ?? '0',
-          priceInBaseCurrency: normalizeDecimal(valuation.priceInBaseCurrency),
-          exchangeRate: normalizeDecimal(valuation.exchangeRate),
-          baseCurrency: valuation.baseCurrency || null,
-          timestamp: normalizeDate(valuation.timestamp) ?? '',
-          fetchedAt: normalizeDate(valuation.fetchedAt),
-          createdAt: normalizeDate(valuation.createdAt) ?? '',
-          updatedAt: normalizeDate(valuation.updatedAt) ?? '',
-        })) satisfies InvestmentValuation[],
-        pagination: data.pagination,
-      };
     },
   });
 };
@@ -295,23 +134,10 @@ export const useInvestmentValuationsQuery = (
 export const useLatestInvestmentValuationQuery = (investmentId: string) => {
   return useQuery({
     queryKey: ['investment-latest-valuation', investmentId],
-    queryFn: async () => {
-      const valuation = await get<InvestmentValuationResponse | null>(
+    queryFn: () => {
+      return get<InvestmentValuationResponse | null>(
         `/api/investments/${investmentId}/valuations/latest`,
       );
-
-      if (!valuation) {
-        return null;
-      }
-
-      return {
-        ...valuation,
-        price: normalizeDecimal(valuation.price) ?? '0',
-        timestamp: normalizeDate(valuation.timestamp) ?? '',
-        fetchedAt: normalizeDate(valuation.fetchedAt),
-        createdAt: normalizeDate(valuation.createdAt) ?? '',
-        updatedAt: normalizeDate(valuation.updatedAt) ?? '',
-      } satisfies InvestmentValuation;
     },
   });
 };

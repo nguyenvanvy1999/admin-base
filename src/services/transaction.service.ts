@@ -197,15 +197,15 @@ class BalanceCalculator {
     return { amountInAccountCurrency, feeInAccountCurrency };
   }
 
-  async convertAmountToToAccountCurrency(
+  convertAmountToToAccountCurrency(
     amount: Decimal | number,
     currencyId: string,
     toAccountCurrencyId?: string,
   ): Promise<Decimal> {
     if (!toAccountCurrencyId || currencyId === toAccountCurrencyId) {
-      return new Decimal(amount);
+      return new Promise((resolve) => resolve(new Decimal(amount)));
     }
-    return await this.convertCurrency(amount, currencyId, toAccountCurrencyId);
+    return this.convertCurrency(amount, currencyId, toAccountCurrencyId);
   }
 }
 

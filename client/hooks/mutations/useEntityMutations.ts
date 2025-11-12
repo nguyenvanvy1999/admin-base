@@ -12,8 +12,8 @@ export const useCreateEntityMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Omit<EntityFormData, 'id'>) => {
-      return await post<EntityResponse, Omit<EntityFormData, 'id'>>(
+    mutationFn: (data: Omit<EntityFormData, 'id'>) => {
+      return post<EntityResponse, Omit<EntityFormData, 'id'>>(
         '/api/entities',
         data,
       );
@@ -33,12 +33,12 @@ export const useUpdateEntityMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: EntityFormData) => {
+    mutationFn: (data: EntityFormData) => {
       if (!data.id) {
         throw new Error('Entity ID is required for update');
       }
 
-      return await post<EntityResponse, EntityFormData>('/api/entities', data);
+      return post<EntityResponse, EntityFormData>('/api/entities', data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['entities'] });
@@ -56,8 +56,8 @@ export const useDeleteEntityMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (entityId: string) => {
-      return await del<EntityDeleteResponse>(`/api/entities/${entityId}`);
+    mutationFn: (entityId: string) => {
+      return del<EntityDeleteResponse>(`/api/entities/${entityId}`);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['entities'] });

@@ -10,8 +10,8 @@ export type Currency = CurrencyResponse;
 export const useCurrenciesQuery = () => {
   return useQuery({
     queryKey: ['currencies'],
-    queryFn: async () => {
-      return await get<CurrencyListResponse>('/api/currencies');
+    queryFn: () => {
+      return get<CurrencyListResponse>('/api/currencies');
     },
     staleTime: 1000 * 60 * 60,
   });

@@ -17,8 +17,8 @@ export const useUpdateProfileMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: UpdateProfileData) => {
-      return await put<UpdateProfileResponse, UpdateProfileData>(
+    mutationFn: (data: UpdateProfileData) => {
+      return put<UpdateProfileResponse, UpdateProfileData>(
         '/api/users/profile',
         data,
       );

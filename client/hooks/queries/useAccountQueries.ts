@@ -1,5 +1,4 @@
 import { get } from '@client/libs/http';
-import type { AccountFull } from '@client/types/account';
 import type { AccountListResponse } from '@server/dto/account.dto';
 import type { AccountType } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
@@ -17,27 +16,10 @@ type ListAccountsQuery = {
 export const useAccountsQuery = (query: ListAccountsQuery = {}) => {
   return useQuery({
     queryKey: ['accounts', query],
-    queryFn: async () => {
-      const data = await get<AccountListResponse>('/api/accounts', {
+    queryFn: () => {
+      return get<AccountListResponse>('/api/accounts', {
         query,
       });
-
-      return {
-        accounts: data.accounts.map((account) => ({
-          ...account,
-          balance:
-            typeof account.balance === 'string'
-              ? account.balance
-              : (account.balance?.toString() ?? '0'),
-          creditLimit:
-            typeof account.creditLimit === 'string' ||
-            account.creditLimit === null
-              ? account.creditLimit
-              : (account.creditLimit?.toString() ?? null),
-        })) satisfies AccountFull[],
-        pagination: data.pagination,
-        summary: data.summary || [],
-      };
     },
   });
 };

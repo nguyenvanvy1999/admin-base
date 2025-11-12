@@ -30,8 +30,8 @@ const categoryController = new Elysia().group(
       .use(authMacro)
       .get(
         '/',
-        async ({ user, query, categoryService }) => {
-          return await categoryService.getAllCategories(user.id, query);
+        ({ user, query, categoryService }) => {
+          return categoryService.getAllCategories(user.id, query);
         },
         {
           checkAuth: [UserRole.user],
@@ -49,8 +49,8 @@ const categoryController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ user, params, categoryService }) => {
-          return await categoryService.getCategoryById(user.id, params.id);
+        ({ user, params, categoryService }) => {
+          return categoryService.getCategoryById(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],
@@ -68,8 +68,8 @@ const categoryController = new Elysia().group(
       )
       .post(
         '/',
-        async ({ user, body, categoryService }) => {
-          return await categoryService.createCategory(user.id, body);
+        ({ user, body, categoryService }) => {
+          return categoryService.createCategory(user.id, body);
         },
         {
           checkAuth: [UserRole.user],
@@ -87,8 +87,8 @@ const categoryController = new Elysia().group(
       )
       .put(
         '/:id',
-        async ({ user, params, body, categoryService }) => {
-          return await categoryService.updateCategory(user.id, params.id, body);
+        ({ user, params, body, categoryService }) => {
+          return categoryService.updateCategory(user.id, params.id, body);
         },
         {
           checkAuth: [UserRole.user],
@@ -107,8 +107,8 @@ const categoryController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ user, params, categoryService }) => {
-          return await categoryService.deleteCategory(user.id, params.id);
+        ({ user, params, categoryService }) => {
+          return categoryService.deleteCategory(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],

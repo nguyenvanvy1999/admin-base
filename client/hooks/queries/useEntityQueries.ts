@@ -15,8 +15,8 @@ type ListEntitiesQuery = {
 export const useEntitiesQuery = (query: ListEntitiesQuery = {}) => {
   return useQuery({
     queryKey: ['entities', query],
-    queryFn: async () => {
-      return await get<EntityListResponse>('/api/entities', {
+    queryFn: () => {
+      return get<EntityListResponse>('/api/entities', {
         query,
       });
     },

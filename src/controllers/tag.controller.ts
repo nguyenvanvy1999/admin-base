@@ -30,8 +30,8 @@ const tagController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        async ({ user, body, tagService }) => {
-          return await tagService.upsertTag(user.id, body);
+        ({ user, body, tagService }) => {
+          return tagService.upsertTag(user.id, body);
         },
         {
           checkAuth: [UserRole.user],
@@ -49,8 +49,8 @@ const tagController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ user, params, tagService }) => {
-          return await tagService.getTag(user.id, params.id);
+        ({ user, params, tagService }) => {
+          return tagService.getTag(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],
@@ -68,8 +68,8 @@ const tagController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ user, query, tagService }) => {
-          return await tagService.listTags(user.id, query);
+        ({ user, query, tagService }) => {
+          return tagService.listTags(user.id, query);
         },
         {
           checkAuth: [UserRole.user],
@@ -87,8 +87,8 @@ const tagController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ user, params, tagService }) => {
-          return await tagService.deleteTag(user.id, params.id);
+        ({ user, params, tagService }) => {
+          return tagService.deleteTag(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],
