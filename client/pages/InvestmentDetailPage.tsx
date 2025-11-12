@@ -33,13 +33,15 @@ import {
   InvestmentMode,
   TradeSide,
 } from '@server/generated/prisma/enums';
+import { IconArrowLeft } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 
 const InvestmentDetailPage = () => {
   const { investmentId } = useParams();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   if (!investmentId) {
     return (
@@ -261,19 +263,28 @@ const InvestmentDetailPage = () => {
     <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {investment?.name ??
-                t('investments.detailTitle', {
-                  defaultValue: 'Investment detail',
-                })}
-            </h1>
-            <Text size="sm" c="dimmed">
-              {investment?.symbol && (
-                <span className="mr-2">{investment.symbol}</span>
-              )}
-              {investment?.assetType.toString().toUpperCase()}
-            </Text>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="subtle"
+              leftSection={<IconArrowLeft size={18} />}
+              onClick={() => navigate('/investments')}
+            >
+              {t('common.back', { defaultValue: 'Back' })}
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {investment?.name ??
+                  t('investments.detailTitle', {
+                    defaultValue: 'Investment detail',
+                  })}
+              </h1>
+              <Text size="sm" c="dimmed">
+                {investment?.symbol && (
+                  <span className="mr-2">{investment.symbol}</span>
+                )}
+                {investment?.assetType.toString().toUpperCase()}
+              </Text>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button

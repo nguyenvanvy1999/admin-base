@@ -28,7 +28,8 @@
     "noData": "Không có dữ liệu",
     "createdAt": "Ngày tạo",
     "updatedAt": "Ngày cập nhật",
-    "deletedAt": "Ngày xóa"
+    "deletedAt": "Ngày xóa",
+    "back": "Quay lại"
   },
   "login": {
     "title": "FinTrack",

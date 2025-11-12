@@ -28,7 +28,8 @@
     "noData": "No data available",
     "createdAt": "Created At",
     "updatedAt": "Updated At",
-    "deletedAt": "Deleted At"
+    "deletedAt": "Deleted At",
+    "back": "Back"
   },
   "login": {
     "title": "FinTrack",
