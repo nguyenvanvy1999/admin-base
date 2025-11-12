@@ -1,35 +1,23 @@
-import useToast from '@client/hooks/useToast';
-import { del, post } from '@client/libs/http';
+import { accountService } from '@client/services';
 import type { AccountFormData } from '@client/types/account';
-import type {
-  AccountDeleteResponse,
-  AccountResponse,
-} from '@server/dto/account.dto';
+import { toast } from '@client/utils/toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateAccountMutation = () => {
-  const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: Omit<AccountFormData, 'id'>) => {
-      return post<AccountResponse, Omit<AccountFormData, 'id'>>(
-        '/api/accounts',
-        data,
-      );
+      return accountService.createAccount(data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      showSuccess('Account created successfully');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
+      toast.success('Account created successfully');
     },
   });
 };
 
 export const useUpdateAccountMutation = () => {
-  const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -38,33 +26,26 @@ export const useUpdateAccountMutation = () => {
         throw new Error('Account ID is required for update');
       }
 
-      return post<AccountResponse, AccountFormData>('/api/accounts', data);
+      return accountService.updateAccount(data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['accounts'] });
       await queryClient.invalidateQueries({ queryKey: ['account'] });
-      showSuccess('Account updated successfully');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
+      toast.success('Account updated successfully');
     },
   });
 };
 
 export const useDeleteAccountMutation = () => {
-  const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (accountId: string) => {
-      return del<AccountDeleteResponse>(`/api/accounts/${accountId}`);
+      return accountService.deleteAccount(accountId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      showSuccess('Account deleted successfully');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
+      toast.success('Account deleted successfully');
     },
   });
 };

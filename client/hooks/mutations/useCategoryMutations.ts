@@ -1,14 +1,9 @@
-import useToast from '@client/hooks/useToast';
-import { del, post, put } from '@client/libs/http';
+import { categoryService } from '@client/services';
 import type { CategoryFormData } from '@client/types/category';
-import type {
-  CategoryDeleteResponse,
-  CategoryResponse,
-} from '@server/dto/category.dto';
+import { toast } from '@client/utils/toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateCategoryMutation = () => {
-  const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -19,20 +14,16 @@ export const useCreateCategoryMutation = () => {
         icon: data.icon ?? undefined,
         color: data.color ?? undefined,
       };
-      return post<CategoryResponse, typeof payload>('/api/categories', payload);
+      return categoryService.createCategory(payload);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['categories'] });
-      showSuccess('Category created successfully');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
+      toast.success('Category created successfully');
     },
   });
 };
 
 export const useUpdateCategoryMutation = () => {
-  const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -41,43 +32,26 @@ export const useUpdateCategoryMutation = () => {
         throw new Error('Category ID is required for update');
       }
 
-      const { id, ...rest } = data;
-      const updateData = {
-        ...rest,
-        parentId: rest.parentId ?? undefined,
-        icon: rest.icon ?? undefined,
-        color: rest.color ?? undefined,
-      };
-      return put<CategoryResponse, typeof updateData>(
-        `/api/categories/${id}`,
-        updateData,
-      );
+      return categoryService.updateCategory(data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['categories'] });
       await queryClient.invalidateQueries({ queryKey: ['category'] });
-      showSuccess('Category updated successfully');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
+      toast.success('Category updated successfully');
     },
   });
 };
 
 export const useDeleteCategoryMutation = () => {
-  const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (categoryId: string) => {
-      return del<CategoryDeleteResponse>(`/api/categories/${categoryId}`);
+      return categoryService.deleteCategory(categoryId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['categories'] });
-      showSuccess('Category deleted successfully');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
+      toast.success('Category deleted successfully');
     },
   });
 };

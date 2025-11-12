@@ -1,472 +1,345 @@
-import { ActionIcon, Button, TextInput } from '@mantine/core';
-import { Close, KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
-import type { ColumnDef } from '@tanstack/react-table';
+import { booleanStatusMap } from '@client/utils/booleanStatusMap';
 import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { useCallback, useMemo, useState } from 'react';
+  MantineReactTable,
+  useMantineReactTable,
+} from 'mantine-react-table-open';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { reorderColumns, useColumnOrder } from './DataTable/columnPersistence';
-import {
-  convertToTanStackColumn,
-  createIndexColumn,
-} from './DataTable/columnUtils';
-import type { ColumnOrderConfig, DataTableColumn } from './DataTable/types';
-import {
-  type ActionColumnOptions,
-  createActionColumn,
-} from './DataTable/utils';
-import Pagination from './Pagination';
+import { ColumnOrdering } from './DataTable/ColumnOrdering';
+import type { DataTableColumn } from './DataTable/types';
+import { MetaVisualizer } from './MetaVisualizer';
 
-export type { ColumnOrderConfig, DataTableColumn } from './DataTable/types';
-export type { ActionColumnOptions } from './DataTable/utils';
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
 
-export type DataTableProps<T extends Record<string, any>> = {
+type SortingState = { id: string; desc: boolean }[];
+type ColumnFilter = { id: string; value: unknown };
+
+type Props<T> = {
+  columns: DataTableColumn<T>[];
   data: T[];
-  columns: ColumnDef<T>[] | DataTableColumn<T>[];
-  isLoading?: boolean;
+  loading?: boolean;
   showIndexColumn?: boolean;
-  columnOrder?: ColumnOrderConfig;
   autoFormatDisabled?: boolean;
-  pagination?: {
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-    itemsPerPage: number;
-    onPageChange: (page: number) => void;
-  };
-  search?: {
-    placeholder?: string;
-    onSearch: (searchValue: string) => void;
-  };
-  pageSize?: {
-    initialSize?: number;
-    options?: number[];
-    onPageSizeChange: (size: number) => void;
-  };
-  filters?: {
-    slots?: React.ReactNode[];
-    onReset?: () => void;
-    hasActive?: boolean;
-  };
-  summary?: React.ReactNode;
-  actions?: ActionColumnOptions<T>;
-  onRowClick?: (row: T) => void;
-  emptyMessage?: string;
-  sorting?: {
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-    onSortChange?: (sortBy: string, sortOrder: 'asc' | 'desc') => void;
-  };
+  // pagination (server)
+  recordsPerPage?: number;
+  recordsPerPageOptions?: number[];
+  onRecordsPerPageChange?: (size: number) => void;
+  recordsPerPageLabel?: string;
+  page?: number;
+  onPageChange?: (page: number) => void;
+  totalRecords?: number;
+  // selection
+  selectedRecords?: T[];
+  onSelectedRecordsChange?: (records: T[]) => void;
+  // misc
+  pinLastColumn?: boolean;
+  height?: string | number;
+  storeColumnsKey?: string;
+  idAccessor?: keyof T & string;
+  // server sorting/filtering (optional)
+  sorting?: SortingState;
+  onSortingChange?: (updater: SortingState) => void;
+  columnFilters?: ColumnFilter[];
+  onColumnFiltersChange?: (updater: ColumnFilter[]) => void;
 };
 
-function DataTable<T extends Record<string, any>>({
-  data,
+export function DataTable<T extends { id: string } = { id: string }>({
+  idAccessor = 'id',
   columns,
-  isLoading = false,
-  showIndexColumn = true,
-  columnOrder,
-  autoFormatDisabled = false,
-  pagination,
-  search,
-  pageSize,
-  filters,
-  summary,
-  actions,
-  onRowClick,
-  emptyMessage,
+  data,
+  loading,
+  showIndexColumn,
+  pinLastColumn,
+  height,
+  selectedRecords,
+  onSelectedRecordsChange,
+  storeColumnsKey,
+  autoFormatDisabled,
+  recordsPerPage,
+  recordsPerPageOptions,
+  onRecordsPerPageChange,
+  page,
+  onPageChange,
+  totalRecords,
   sorting,
-}: DataTableProps<T>) {
+  onSortingChange,
+  columnFilters,
+  onColumnFiltersChange,
+  ...props
+}: Props<T>) {
   const { t } = useTranslation();
 
-  const isDataTableColumn = (
-    col: ColumnDef<T> | DataTableColumn<T>,
-  ): col is DataTableColumn<T> => {
-    return 'format' in col || 'title' in col || 'onClick' in col;
+  const autoFormat = (value: any): any => {
+    if (value instanceof Date) {
+      return t('common.date', { value });
+    }
+
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    const valueType = typeof value;
+
+    if (valueType === 'boolean') {
+      return (
+        <MetaVisualizer
+          k={String(value) as 'true' | 'false'}
+          map={booleanStatusMap}
+        />
+      );
+    }
+
+    if (valueType === 'object') {
+      if (Array.isArray(value)) {
+        if (value.every((item) => typeof item === 'string')) {
+          return value.join(', ');
+        }
+      }
+      return JSON.stringify(value);
+    }
+
+    if (valueType === 'string') {
+      if (ISO_DATE_REGEX.test(value)) {
+        return t('common.date', { value });
+      }
+      if (value !== '' && Number.isFinite(+value) && !autoFormatDisabled) {
+        return value.includes('.')
+          ? t('common.decimal', { value: +value })
+          : t('common.int', { value: +value });
+      }
+    }
+
+    if (valueType === 'number' && !autoFormatDisabled) {
+      return Number.isInteger(value)
+        ? t('common.int', { value })
+        : t('common.decimal', { value });
+    }
+
+    return value;
   };
 
-  const defaultColumnIds = useMemo(() => {
-    return columns.map((col, index) => {
-      if (isDataTableColumn(col)) {
-        return (
-          (typeof col.accessor === 'string' ? col.accessor : col.id) ||
-          `col-${index}`
-        );
-      }
-      const colDef = col as ColumnDef<T>;
-      return colDef.id || (colDef as any).accessorKey || `col-${index}`;
+  // map our column defs to MRT v2 column definitions
+  const mappedColumns = useMemo(() => {
+    const toPx = (rem?: string) => {
+      if (!rem) return undefined;
+      const num = parseFloat(rem.replace('rem', ''));
+      return Number.isFinite(num) ? Math.round(num * 16) : undefined;
+    };
+
+    const baseCols = columns.map((col, idx) => {
+      const hasAccessorFn = typeof col.accessor === 'function';
+      const accessorKey =
+        col.accessor && typeof col.accessor === 'string'
+          ? (col.accessor as string)
+          : undefined;
+      const id =
+        accessorKey ||
+        (col.title ? String(col.title) : undefined) ||
+        `col_${idx}`;
+
+      return {
+        id,
+        header: col.title ? t(col.title) : '',
+        accessorKey,
+        accessorFn: hasAccessorFn
+          ? (row: T) => (col.accessor as (r: T) => unknown)(row)
+          : undefined,
+        Cell: ({ row, cell }: any) => {
+          const record = row.original as T;
+          const value = cell.getValue();
+          let content: any;
+          if (col.render) {
+            content = col.render(record, row.index);
+          } else if (!autoFormatDisabled) {
+            content =
+              typeof col.accessor === 'function'
+                ? autoFormat((col.accessor as (r: T) => unknown)(record))
+                : autoFormat(value);
+          } else {
+            content = value;
+          }
+          const style: React.CSSProperties = {
+            ...(col.textAlign && col.textAlign !== 'left'
+              ? { textAlign: col.textAlign }
+              : undefined),
+            ...(col.ellipsis
+              ? {
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  width: '100%',
+                  display: 'inline-block',
+                }
+              : undefined),
+            ...(col.cellsStyle ? col.cellsStyle(record) : undefined),
+          };
+          return (
+            <span
+              role={col.onClick ? 'button' : undefined}
+              style={{
+                cursor: col.onClick ? 'pointer' : undefined,
+                display: 'inline-block',
+                width: '100%',
+                ...style,
+              }}
+              onClick={col.onClick ? () => col.onClick?.(record) : undefined}
+            >
+              {content}
+            </span>
+          );
+        },
+        size: toPx(col.width),
+        minSize: toPx(col.minWidth),
+        // text align/ellipsis/styles handled in Cell wrapper above
+        // filter UI hints (MRT will be manual filtering if wired)
+        filterVariant: col.filterVariant,
+        filterSelectOptions: col.filterOptions,
+      };
     });
-  }, [columns]);
-
-  const [columnOrderState, _setColumnOrderState] = useColumnOrder(
-    columnOrder?.storeKey,
-    columnOrder?.defaultOrder || defaultColumnIds,
-  );
-
-  const processedColumns = useMemo(() => {
-    const converted = columns.map((col) => {
-      if (isDataTableColumn(col)) {
-        return convertToTanStackColumn(
-          {
-            ...col,
-            autoFormatDisabled: col.autoFormatDisabled ?? autoFormatDisabled,
-          },
-          t,
-        );
-      }
-      return col as ColumnDef<T>;
-    });
-
-    if (columnOrder?.storeKey && columnOrderState.length > 0) {
-      return reorderColumns(
-        converted,
-        columnOrderState,
-        (col) => col.id || (col as any).accessorKey || '',
-      );
-    }
-
-    return converted;
-  }, [columns, columnOrder, columnOrderState, autoFormatDisabled, t]);
-
-  const [searchInput, setSearchInput] = useState('');
-
-  const handleSearch = useCallback(() => {
-    if (search?.onSearch) {
-      search.onSearch(searchInput);
-      if (pagination) {
-        pagination.onPageChange(1);
-      }
-    }
-  }, [search, searchInput, pagination]);
-
-  const handleClearSearch = useCallback(() => {
-    setSearchInput('');
-    if (search?.onSearch) {
-      search.onSearch('');
-    }
-    if (pagination) {
-      pagination.onPageChange(1);
-    }
-  }, [search, pagination]);
-
-  const handleReset = useCallback(() => {
-    setSearchInput('');
-    if (filters?.onReset) {
-      filters.onReset();
-    }
-    if (pagination) {
-      pagination.onPageChange(1);
-    }
-  }, [filters, pagination]);
-
-  const hasActiveFilters = useMemo(() => {
-    return (
-      searchInput.trim() !== '' ||
-      (filters?.hasActive !== undefined && filters.hasActive)
-    );
-  }, [searchInput, filters?.hasActive]);
-
-  const handleSort = useCallback(
-    (columnId: string) => {
-      if (!sorting?.onSortChange) return;
-
-      const currentSortBy = sorting.sortBy;
-      const currentSortOrder = sorting.sortOrder || 'asc';
-
-      if (currentSortBy === columnId) {
-        const newOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
-        sorting.onSortChange(columnId, newOrder);
-      } else {
-        sorting.onSortChange(columnId, 'asc');
-      }
-
-      if (pagination) {
-        pagination.onPageChange(1);
-      }
-    },
-    [sorting, pagination],
-  );
-
-  const finalColumns = useMemo(() => {
-    const cols: ColumnDef<T>[] = [];
 
     if (showIndexColumn) {
-      cols.push(
-        createIndexColumn<T>(
-          pagination?.currentPage || 1,
-          pagination?.itemsPerPage || pageSize?.initialSize || 20,
-          t,
-        ),
-      );
+      baseCols.unshift({
+        id: '_index',
+        header: '#',
+        accessorFn: () => '',
+        size: 64,
+        mantineTableBodyCellProps: { style: { textAlign: 'center' } },
+        Cell: ({ row }: any) => {
+          // page-based numbering if page/pageSize provided
+          const indexInPage = row.index;
+          const start =
+            recordsPerPage && page ? (page - 1) * recordsPerPage : 0;
+          return start + indexInPage + 1;
+        },
+      } as any);
     }
 
-    cols.push(...processedColumns);
+    return baseCols as any[];
+  }, [columns, t, showIndexColumn, autoFormatDisabled, recordsPerPage, page]);
 
-    if (actions) {
-      cols.push(createActionColumn(actions));
+  const [orderedColumns, setOrderedColumns] = useState(mappedColumns);
+
+  useEffect(() => {
+    setOrderedColumns(mappedColumns);
+  }, [mappedColumns]);
+
+  // selection state mapping
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    if (selectedRecords && onSelectedRecordsChange) {
+      // keep controlled parity if needed
+      const map: Record<string, boolean> = {};
+      selectedRecords.forEach((r) => {
+        const id = (r as any)[idAccessor];
+        if (id) map[String(id)] = true;
+      });
+      setRowSelection(map);
     }
+  }, [selectedRecords, onSelectedRecordsChange, idAccessor]);
 
-    return cols;
-  }, [showIndexColumn, processedColumns, actions, pagination, pageSize, t]);
+  // compute pagination
+  const pageSize = recordsPerPage || 20;
+  const currentPage = page ? page - 1 : 0; // MRT zero-based
+  const rowCount = totalRecords || data.length;
 
-  const table = useReactTable({
+  const table = useMantineReactTable({
+    columns: orderedColumns as any,
     data,
-    columns: finalColumns,
-    getCoreRowModel: getCoreRowModel(),
+    getRowId: (row: any) => String(row[idAccessor]),
+    state: {
+      isLoading: !!loading,
+      pagination: { pageIndex: currentPage, pageSize },
+      rowSelection,
+      sorting: (sorting as any) || [],
+      columnFilters,
+    },
+    manualPagination: true,
+    rowCount,
+    onPaginationChange: (updater: any) => {
+      const current = { pageIndex: currentPage, pageSize };
+      const next =
+        typeof updater === 'function' ? updater(current) : updater || current;
+      if (typeof next?.pageIndex === 'number') {
+        onPageChange?.(next.pageIndex + 1);
+      }
+      if (typeof next?.pageSize === 'number' && next.pageSize !== pageSize) {
+        onRecordsPerPageChange?.(next.pageSize);
+      }
+    },
+    // selection
+    enableRowSelection: !!onSelectedRecordsChange,
+    onRowSelectionChange: (updater: any) => {
+      const next =
+        typeof updater === 'function' ? updater(rowSelection) : updater;
+      setRowSelection(next);
+      if (onSelectedRecordsChange) {
+        const selected = Object.keys(next)
+          .filter((k) => next[k])
+          .map((k) => data.find((r: any) => String(r[idAccessor]) === k))
+          .filter(Boolean) as T[];
+        onSelectedRecordsChange(selected);
+      }
+    },
+    // sorting/filtering (server when provided)
+    manualSorting: !!onSortingChange,
+    onSortingChange: (updater: any) => {
+      const next =
+        typeof updater === 'function'
+          ? updater((sorting as any) || [])
+          : updater;
+      onSortingChange?.(next as SortingState);
+    },
+    manualFiltering: !!onColumnFiltersChange,
+    onColumnFiltersChange: (updater: any) => {
+      const next =
+        typeof updater === 'function' ? updater(columnFilters || []) : updater;
+      onColumnFiltersChange?.(next);
+    },
+    // pinning last column
+    enableColumnPinning: !!pinLastColumn,
+    initialState: pinLastColumn
+      ? {
+          columnPinning: {
+            right:
+              orderedColumns.length > 0
+                ? [
+                    String(
+                      (orderedColumns as any)[orderedColumns.length - 1].id,
+                    ),
+                  ]
+                : [],
+          },
+        }
+      : undefined,
+    // height
+    mantineTableContainerProps: height ? { style: { height } } : undefined,
   });
 
-  const hasFilters = filters && (hasActiveFilters || filters.slots?.length);
-
   return (
-    <div className="space-y-4">
-      {(search || hasFilters) && (
-        <div className="flex flex-col md:flex-row gap-4">
-          {search && (
-            <div className="w-full md:w-64">
-              <TextInput
-                value={searchInput}
-                onChange={(e) =>
-                  setSearchInput((e.target as HTMLInputElement).value)
-                }
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
-                  }
-                }}
-                placeholder={search.placeholder || t('common.search')}
-                rightSection={
-                  searchInput.trim() !== '' ? (
-                    <ActionIcon
-                      size="sm"
-                      variant="transparent"
-                      onClick={handleClearSearch}
-                      disabled={isLoading}
-                    >
-                      <Close fontSize="small" />
-                    </ActionIcon>
-                  ) : null
-                }
+    <MantineReactTable
+      table={table}
+      renderBottomToolbarCustom={() => {
+        const start =
+          rowCount === 0 ? 0 : currentPage * pageSize + (rowCount > 0 ? 1 : 0);
+        const end = Math.min((currentPage + 1) * pageSize, rowCount);
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {storeColumnsKey ? (
+              <ColumnOrdering
+                columns={mappedColumns}
+                storeColumnsKey={storeColumnsKey}
+                onOrdered={setOrderedColumns as any}
               />
+            ) : null}
+            <div>
+              {start || 0} - {end || 0} of {rowCount}
             </div>
-          )}
-
-          {filters?.slots?.map((slot, index) => (
-            <div key={index} className="w-full md:w-48">
-              {slot}
-            </div>
-          ))}
-
-          <div className="w-full md:w-auto flex gap-2">
-            {search && (
-              <Button onClick={handleSearch} disabled={isLoading}>
-                {t('common.search')}
-              </Button>
-            )}
-            {filters && hasActiveFilters && (
-              <Button
-                variant="outline"
-                onClick={handleReset}
-                disabled={isLoading}
-              >
-                {t('common.reset', { defaultValue: 'Reset' })}
-              </Button>
-            )}
           </div>
-        </div>
-      )}
-
-      {summary && (
-        <div className="flex flex-wrap items-center gap-4 text-sm py-2 border-b border-gray-200 dark:border-gray-700">
-          {summary}
-        </div>
-      )}
-
-      <div className="overflow-x-auto shadow-md rounded-lg">
-        {isLoading ? (
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                {table.getHeaderGroups()[0]?.headers.map((header) => {
-                  const columnDef = header.column.columnDef;
-                  const isSortable =
-                    sorting?.onSortChange && columnDef.enableSorting !== false;
-                  const columnId = header.column.id;
-                  const isSorted =
-                    sorting?.sortBy === columnId && sorting?.sortOrder;
-                  const sortOrder = isSorted ? sorting.sortOrder : null;
-
-                  return (
-                    <th
-                      key={header.id}
-                      className={`px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ${
-                        isSortable
-                          ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none'
-                          : ''
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(columnDef.header, header.getContext())}
-                        {isSortable && (
-                          <span className="flex flex-col">
-                            {sortOrder === 'asc' ? (
-                              <KeyboardArrowUp
-                                fontSize="inherit"
-                                className="text-blue-600 dark:text-blue-400"
-                              />
-                            ) : sortOrder === 'desc' ? (
-                              <KeyboardArrowDown
-                                fontSize="inherit"
-                                className="text-blue-600 dark:text-blue-400"
-                              />
-                            ) : (
-                              <span className="flex flex-col opacity-30">
-                                <KeyboardArrowUp fontSize="inherit" />
-                                <KeyboardArrowDown
-                                  fontSize="inherit"
-                                  className="-mt-1"
-                                />
-                              </span>
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {[...Array(5)].map((_, i) => (
-                <tr key={i} className="animate-pulse">
-                  {table.getHeaderGroups()[0]?.headers.map((header) => (
-                    <td key={header.id} className="px-6 py-4 whitespace-nowrap">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : data.length === 0 ? (
-          <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-lg">
-            <p className="text-gray-500 dark:text-gray-400">
-              {emptyMessage || t('common.noData', { defaultValue: 'No data' })}
-            </p>
-          </div>
-        ) : (
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    const columnDef = header.column.columnDef;
-                    const isSortable =
-                      sorting?.onSortChange &&
-                      columnDef.enableSorting !== false;
-                    const columnId = header.column.id;
-                    const isSorted =
-                      sorting?.sortBy === columnId && sorting?.sortOrder;
-                    const sortOrder = isSorted ? sorting.sortOrder : null;
-
-                    return (
-                      <th
-                        key={header.id}
-                        className={`px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ${
-                          isSortable
-                            ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none'
-                            : ''
-                        }`}
-                        onClick={() => isSortable && handleSort(columnId)}
-                      >
-                        <div className="flex items-center gap-2">
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(columnDef.header, header.getContext())}
-                          {isSortable && (
-                            <span className="flex flex-col">
-                              {sortOrder === 'asc' ? (
-                                <KeyboardArrowUp
-                                  fontSize="inherit"
-                                  className="text-blue-600 dark:text-blue-400"
-                                />
-                              ) : sortOrder === 'desc' ? (
-                                <KeyboardArrowDown
-                                  fontSize="inherit"
-                                  className="text-blue-600 dark:text-blue-400"
-                                />
-                              ) : (
-                                <span className="flex flex-col opacity-30">
-                                  <KeyboardArrowUp fontSize="inherit" />
-                                  <KeyboardArrowDown
-                                    fontSize="inherit"
-                                    className="-mt-1"
-                                  />
-                                </span>
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                    );
-                  })}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className={`${
-                    onRowClick
-                      ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors'
-                      : ''
-                  }`}
-                  onClick={() => onRowClick?.(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {pagination && pagination.totalPages > 0 && (
-        <Pagination
-          currentPage={pagination.currentPage}
-          totalPages={pagination.totalPages}
-          totalItems={pagination.totalItems}
-          itemsPerPage={pagination.itemsPerPage}
-          onPageChange={pagination.onPageChange}
-          isLoading={isLoading}
-          pageSize={
-            pageSize
-              ? {
-                  options: pageSize.options,
-                  onPageSizeChange: (size: number) => {
-                    pageSize.onPageSizeChange(size);
-                    if (pagination) {
-                      pagination.onPageChange(1);
-                    }
-                  },
-                }
-              : undefined
-          }
-        />
-      )}
-    </div>
+        );
+      }}
+      {...(props as any)}
+    />
   );
 }
 
-export default DataTable;
+export type { DataTableColumn } from './DataTable/types';

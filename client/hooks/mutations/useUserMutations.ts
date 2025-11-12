@@ -1,6 +1,6 @@
-import useToast from '@client/hooks/useToast';
-import { put } from '@client/libs/http';
+import { userService } from '@client/services';
 import useUserStore from '@client/store/user';
+import { toast } from '@client/utils/toast';
 import type { UpdateProfileRes } from '@server/dto/user.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -13,15 +13,13 @@ type UpdateProfileData = {
 
 export const useUpdateProfileMutation = () => {
   const { setUser } = useUserStore();
-  const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: UpdateProfileData) => {
-      return put<UpdateProfileRes, UpdateProfileData>(
-        '/api/users/profile',
-        data,
-      );
+      return userService.put<UpdateProfileRes>(data, {
+        endpoint: 'profile',
+      });
     },
     onSuccess: async (data) => {
       setUser({
@@ -31,10 +29,7 @@ export const useUpdateProfileMutation = () => {
         role: data.role,
       });
       await queryClient.invalidateQueries({ queryKey: ['user'] });
-      showSuccess('Profile updated successfully');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
+      toast.success('Profile updated successfully');
     },
   });
 };

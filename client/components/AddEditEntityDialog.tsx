@@ -1,18 +1,28 @@
+import { useZodForm } from '@client/hooks/useZodForm';
 import type { EntityFormData, EntityFull } from '@client/types/entity';
-import {
-  Button,
-  Group,
-  Modal,
-  Select,
-  Stack,
-  Textarea,
-  TextInput,
-} from '@mantine/core';
+import { Button, Group, Modal, Stack } from '@mantine/core';
 import { EntityType } from '@server/generated/prisma/enums';
-import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useValidation } from './utils/validation';
+import { z } from 'zod';
+import { Select } from './Select';
+import { Textarea } from './Textarea';
+import { TextInput } from './TextInput';
+import { ZodFormController } from './ZodFormController';
+
+const schema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, 'entities.nameRequired'),
+  type: z.nativeEnum(EntityType, {
+    required_error: 'entities.typeRequired',
+  }),
+  phone: z.string().optional(),
+  email: z.string().email('entities.emailInvalid').optional().or(z.literal('')),
+  address: z.string().optional(),
+  note: z.string().optional(),
+});
+
+type FormValue = z.infer<typeof schema>;
 
 type AddEditEntityDialogProps = {
   isOpen: boolean;
@@ -31,59 +41,65 @@ const AddEditEntityDialog = ({
 }: AddEditEntityDialogProps) => {
   const { t } = useTranslation();
   const isEditMode = !!entity;
-  const validation = useValidation();
 
-  const form = useForm({
-    defaultValues: {
-      name: '',
-      type: '',
-      phone: '',
-      email: '',
-      address: '',
-      note: '',
-    },
-    onSubmit: ({ value }) => {
-      const submitData: EntityFormData = {
-        name: value.name.trim(),
-        type: value.type as EntityType,
-      };
+  const defaultValues: FormValue = {
+    name: '',
+    type: EntityType.individual,
+    phone: '',
+    email: '',
+    address: '',
+    note: '',
+  };
 
-      if (isEditMode && entity) {
-        submitData.id = entity.id;
-      }
-
-      if (value.phone && value.phone.trim() !== '') {
-        submitData.phone = value.phone.trim();
-      }
-
-      if (value.email && value.email.trim() !== '') {
-        submitData.email = value.email.trim();
-      }
-
-      if (value.address && value.address.trim() !== '') {
-        submitData.address = value.address.trim();
-      }
-
-      if (value.note && value.note.trim() !== '') {
-        submitData.note = value.note.trim();
-      }
-
-      onSubmit(submitData);
-    },
+  const { control, handleSubmit, reset } = useZodForm({
+    zod: schema,
+    defaultValues,
   });
 
   useEffect(() => {
     if (entity) {
-      form.setFieldValue('name', entity.name);
-      form.setFieldValue('type', entity.type || '');
-      form.setFieldValue('phone', entity.phone || '');
-      form.setFieldValue('email', entity.email || '');
-      form.setFieldValue('address', entity.address || '');
-      form.setFieldValue('note', entity.note || '');
+      reset({
+        id: entity.id,
+        name: entity.name,
+        type: entity.type || EntityType.individual,
+        phone: entity.phone || '',
+        email: entity.email || '',
+        address: entity.address || '',
+        note: entity.note || '',
+      });
     } else {
-      form.reset();
+      reset(defaultValues);
     }
-  }, [entity, isOpen, form]);
+  }, [entity, isOpen, reset]);
+
+  const onSubmitForm = handleSubmit((data) => {
+    const submitData: EntityFormData = {
+      name: data.name.trim(),
+      type: data.type,
+    };
+
+    if (isEditMode && entity) {
+      submitData.id = entity.id;
+    }
+
+    if (data.phone && data.phone.trim() !== '') {
+      submitData.phone = data.phone.trim();
+    }
+
+    if (data.email && data.email.trim() !== '') {
+      submitData.email = data.email.trim();
+    }
+
+    if (data.address && data.address.trim() !== '') {
+      submitData.address = data.address.trim();
+    }
+
+    if (data.note && data.note.trim() !== '') {
+      submitData.note = data.note.trim();
+    }
+
+    onSubmit(submitData);
+  });
 
   return (
     <Modal
@@ -92,168 +108,117 @@ const AddEditEntityDialog = ({
       title={isEditMode ? t('entities.editEntity') : t('entities.addEntity')}
       size="md"
     >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
-      >
+      <form onSubmit={onSubmitForm}>
         <Stack gap="md">
-          <form.Field
+          <ZodFormController
+            control={control}
             name="name"
-            validators={{
-              onChange: validation.required('entities.nameRequired'),
-            }}
-          >
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <TextInput
-                  label={t('entities.name')}
-                  placeholder={t('entities.namePlaceholder')}
-                  required
-                  value={field.state.value ?? ''}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+            render={({ field, fieldState: { error } }) => (
+              <TextInput
+                label={t('entities.name')}
+                placeholder={t('entities.namePlaceholder')}
+                required
+                error={error}
+                {...field}
+              />
+            )}
+          />
 
-          <form.Field
+          <ZodFormController
+            control={control}
             name="type"
-            validators={{
-              onChange: validation.required('entities.typeRequired'),
-            }}
-          >
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <Select
-                  label={t('entities.type')}
-                  placeholder={t('entities.typePlaceholder')}
-                  required
-                  data={[
-                    {
-                      value: EntityType.individual,
-                      label: t('entities.individual'),
-                    },
-                    {
-                      value: EntityType.organization,
-                      label: t('entities.organization'),
-                    },
-                  ]}
-                  value={field.state.value ?? null}
-                  onChange={(value) => field.handleChange(value ?? '')}
-                  onBlur={field.handleBlur}
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+            render={({ field, fieldState: { error } }) => (
+              <Select
+                label={t('entities.type')}
+                placeholder={t('entities.typePlaceholder')}
+                required
+                error={error}
+                items={[
+                  {
+                    value: EntityType.individual,
+                    label: t('entities.individual'),
+                  },
+                  {
+                    value: EntityType.organization,
+                    label: t('entities.organization'),
+                  },
+                ]}
+                value={field.value || ''}
+                onChange={field.onChange}
+              />
+            )}
+          />
 
-          <form.Field name="phone">
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <TextInput
-                  label={t('entities.phone')}
-                  placeholder={t('entities.phonePlaceholder')}
-                  value={field.state.value ?? ''}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+          <ZodFormController
+            control={control}
+            name="phone"
+            render={({ field, fieldState: { error } }) => (
+              <TextInput
+                label={t('entities.phone')}
+                placeholder={t('entities.phonePlaceholder')}
+                error={error}
+                {...field}
+              />
+            )}
+          />
 
-          <form.Field name="email">
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <TextInput
-                  type="email"
-                  label={t('entities.email')}
-                  placeholder={t('entities.emailPlaceholder')}
-                  value={field.state.value ?? ''}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+          <ZodFormController
+            control={control}
+            name="email"
+            render={({ field, fieldState: { error } }) => (
+              <TextInput
+                label={t('entities.email')}
+                placeholder={t('entities.emailPlaceholder')}
+                error={error}
+                {...field}
+              />
+            )}
+          />
 
-          <form.Field name="address">
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <TextInput
-                  label={t('entities.address')}
-                  placeholder={t('entities.addressPlaceholder')}
-                  value={field.state.value ?? ''}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+          <ZodFormController
+            control={control}
+            name="address"
+            render={({ field, fieldState: { error } }) => (
+              <TextInput
+                label={t('entities.address')}
+                placeholder={t('entities.addressPlaceholder')}
+                error={error}
+                {...field}
+              />
+            )}
+          />
 
-          <form.Field name="note">
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <Textarea
-                  label={t('entities.note')}
-                  placeholder={t('entities.notePlaceholder')}
-                  value={field.state.value ?? ''}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  error={error}
-                  rows={3}
-                />
-              );
-            }}
-          </form.Field>
+          <ZodFormController
+            control={control}
+            name="note"
+            render={({ field, fieldState: { error } }) => (
+              <Textarea
+                label={t('entities.note')}
+                placeholder={t('entities.notePlaceholder')}
+                error={error}
+                rows={3}
+                {...field}
+              />
+            )}
+          />
 
-          <form.Subscribe
-            selector={(state) => ({
-              isValid: state.isValid,
-              values: state.values,
-            })}
-          >
-            {({ isValid, values }) => {
-              const isFormValid =
-                isValid &&
-                values.name?.trim() !== '' &&
-                values.type &&
-                values.type.trim() !== '';
-
-              return (
-                <Group justify="flex-end" mt="md">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onClose}
-                    disabled={isLoading}
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" disabled={isLoading || !isFormValid}>
-                    {isLoading
-                      ? t('common.saving', { defaultValue: 'Saving...' })
-                      : isEditMode
-                        ? t('common.save')
-                        : t('common.add')}
-                  </Button>
-                </Group>
-              );
-            }}
-          </form.Subscribe>
+          <Group justify="flex-end" mt="md">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading
+                ? t('common.saving', { defaultValue: 'Saving...' })
+                : isEditMode
+                  ? t('common.save')
+                  : t('common.add')}
+            </Button>
+          </Group>
         </Stack>
       </form>
     </Modal>

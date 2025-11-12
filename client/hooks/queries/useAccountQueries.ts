@@ -1,5 +1,4 @@
-import { get } from '@client/libs/http';
-import type { AccountListResponse } from '@server/dto/account.dto';
+import { accountService } from '@client/services';
 import type { AccountType } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
 
@@ -17,9 +16,7 @@ export const useAccountsQuery = (query: ListAccountsQuery = {}) => {
   return useQuery({
     queryKey: ['accounts', query],
     queryFn: () => {
-      return get<AccountListResponse>('/api/accounts', {
-        query,
-      });
+      return accountService.listAccounts(query);
     },
   });
 };

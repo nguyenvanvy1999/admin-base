@@ -1,41 +1,23 @@
-import useToast from '@client/hooks/useToast';
-import { del, post } from '@client/libs/http';
+import { transactionService } from '@client/services';
 import type { TransactionFormData } from '@client/types/transaction';
-import type {
-  TransactionDeleteResponse,
-  TransactionDetail,
-} from '@server/dto/transaction.dto';
+import { toast } from '@client/utils/toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateTransactionMutation = () => {
-  const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: Omit<TransactionFormData, 'id'>) => {
-      const payload = {
-        ...data,
-        note: data.note ?? undefined,
-        entityId: data.entityId ?? undefined,
-        metadata: data.metadata ?? undefined,
-      };
-      return post<TransactionDetail, typeof payload>(
-        '/api/transactions',
-        payload,
-      );
+      return transactionService.createTransaction(data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      showSuccess('Transaction created successfully');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
+      toast.success('Transaction created successfully');
     },
   });
 };
 
 export const useUpdateTransactionMutation = () => {
-  const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -44,44 +26,26 @@ export const useUpdateTransactionMutation = () => {
         throw new Error('Transaction ID is required for update');
       }
 
-      const payload = {
-        ...data,
-        note: data.note ?? undefined,
-        entityId: data.entityId ?? undefined,
-        metadata: data.metadata ?? undefined,
-      };
-      return post<TransactionDetail, typeof payload>(
-        '/api/transactions',
-        payload,
-      );
+      return transactionService.updateTransaction(data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
       await queryClient.invalidateQueries({ queryKey: ['transaction'] });
-      showSuccess('Transaction updated successfully');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
+      toast.success('Transaction updated successfully');
     },
   });
 };
 
 export const useDeleteTransactionMutation = () => {
-  const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (transactionId: string) => {
-      return del<TransactionDeleteResponse>(
-        `/api/transactions/${transactionId}`,
-      );
+      return transactionService.deleteTransaction(transactionId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      showSuccess('Transaction deleted successfully');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
+      toast.success('Transaction deleted successfully');
     },
   });
 };

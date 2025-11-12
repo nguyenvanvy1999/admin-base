@@ -1,5 +1,6 @@
 import AddEditTransactionDialog from '@client/components/AddEditTransactionDialog';
 import CategoryMultiSelect from '@client/components/CategoryMultiSelect';
+import { TextInput } from '@client/components/TextInput';
 import TransactionTable from '@client/components/TransactionTable';
 import {
   useCreateTransactionMutation,
@@ -245,128 +246,155 @@ const TransactionPage = () => {
             </Button>
           </div>
 
-          <TransactionTable
-            transactions={data?.transactions || []}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            isLoading={isLoading}
-            summary={summaryContent}
-            search={{
-              onSearch: (searchValue: string) => {
-                setSearchQuery(searchValue);
-                setTypeFilterIds(typeFilterInput);
-                setAccountFilterIds(accountFilterInput);
-                setCategoryFilterIds(categoryFilterInput);
-                setEntityFilterIds(entityFilterInput);
-                setPage(1);
-              },
-              placeholder: t('transactions.search'),
-            }}
-            pageSize={{
-              initialSize: limit,
-              onPageSizeChange: (size: number) => {
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <TextInput
+                placeholder={t('transactions.search')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setTypeFilterIds(typeFilterInput);
+                    setAccountFilterIds(accountFilterInput);
+                    setCategoryFilterIds(categoryFilterInput);
+                    setEntityFilterIds(entityFilterInput);
+                    setPage(1);
+                  }
+                }}
+                style={{ flex: 1, maxWidth: '300px' }}
+              />
+              <MultiSelect
+                value={typeFilterInput}
+                onChange={(value) => {
+                  setTypeFilterInput(value as TransactionType[]);
+                  setTypeFilterIds(value as TransactionType[]);
+                }}
+                placeholder={t('transactions.typePlaceholder')}
+                data={[
+                  {
+                    value: TransactionType.income,
+                    label: t('transactions.income'),
+                  },
+                  {
+                    value: TransactionType.expense,
+                    label: t('transactions.expense'),
+                  },
+                  {
+                    value: TransactionType.transfer,
+                    label: t('transactions.transfer'),
+                  },
+                ]}
+                style={{ maxWidth: '200px' }}
+              />
+              <MultiSelect
+                value={accountFilterInput}
+                onChange={(value) => {
+                  setAccountFilterInput(value);
+                  setAccountFilterIds(value);
+                }}
+                placeholder={t('transactions.accountPlaceholder')}
+                data={accountOptions}
+                style={{ maxWidth: '200px' }}
+              />
+              <CategoryMultiSelect
+                value={categoryFilterInput}
+                onChange={(value) => {
+                  setCategoryFilterInput(value);
+                  setCategoryFilterIds(value);
+                }}
+                placeholder={t('transactions.categoryPlaceholder')}
+                style={{ maxWidth: '200px' }}
+              />
+              <MultiSelect
+                value={entityFilterInput}
+                onChange={(value) => {
+                  setEntityFilterInput(value);
+                  setEntityFilterIds(value);
+                }}
+                placeholder={t('transactions.entityPlaceholder', {
+                  defaultValue: 'Select entities',
+                })}
+                data={entityOptions}
+                searchable
+                style={{ maxWidth: '200px' }}
+              />
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setTypeFilterInput([]);
+                    setTypeFilterIds([]);
+                    setAccountFilterInput([]);
+                    setAccountFilterIds([]);
+                    setCategoryFilterInput([]);
+                    setCategoryFilterIds([]);
+                    setEntityFilterInput([]);
+                    setEntityFilterIds([]);
+                    setPage(1);
+                  }}
+                >
+                  {t('common.reset', { defaultValue: 'Reset' })}
+                </Button>
+              )}
+            </div>
+
+            {summaryContent && (
+              <div className="flex flex-wrap items-center gap-4 text-sm py-2 border-b border-gray-200 dark:border-gray-700">
+                {summaryContent}
+              </div>
+            )}
+
+            <TransactionTable
+              transactions={data?.transactions || []}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              isLoading={isLoading}
+              recordsPerPage={limit}
+              recordsPerPageOptions={[10, 20, 50, 100]}
+              onRecordsPerPageChange={(size) => {
                 setLimit(size);
                 setPage(1);
-              },
-            }}
-            filters={{
-              hasActive: hasActiveFilters,
-              onReset: () => {
-                setSearchQuery('');
-                setTypeFilterInput([]);
-                setTypeFilterIds([]);
-                setAccountFilterInput([]);
-                setAccountFilterIds([]);
-                setCategoryFilterInput([]);
-                setCategoryFilterIds([]);
-                setEntityFilterInput([]);
-                setEntityFilterIds([]);
+              }}
+              page={page}
+              onPageChange={setPage}
+              totalRecords={data?.pagination?.total}
+              sorting={
+                sortBy
+                  ? [
+                      {
+                        id: sortBy,
+                        desc: sortOrder === 'desc',
+                      },
+                    ]
+                  : undefined
+              }
+              onSortingChange={(updater) => {
+                const newSorting =
+                  typeof updater === 'function'
+                    ? updater(
+                        sortBy
+                          ? [{ id: sortBy, desc: sortOrder === 'desc' }]
+                          : [],
+                      )
+                    : updater;
+                if (newSorting.length > 0) {
+                  setSortBy(
+                    newSorting[0].id as
+                      | 'date'
+                      | 'amount'
+                      | 'type'
+                      | 'accountId',
+                  );
+                  setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
+                } else {
+                  setSortBy('date');
+                  setSortOrder('desc');
+                }
                 setPage(1);
-              },
-              slots: [
-                <MultiSelect
-                  key="type-filter"
-                  value={typeFilterInput}
-                  onChange={(value) => {
-                    setTypeFilterInput(value as TransactionType[]);
-                    setTypeFilterIds(value as TransactionType[]);
-                  }}
-                  placeholder={t('transactions.typePlaceholder')}
-                  data={[
-                    {
-                      value: TransactionType.income,
-                      label: t('transactions.income'),
-                    },
-                    {
-                      value: TransactionType.expense,
-                      label: t('transactions.expense'),
-                    },
-                    {
-                      value: TransactionType.transfer,
-                      label: t('transactions.transfer'),
-                    },
-                  ]}
-                />,
-                <MultiSelect
-                  key="account-filter"
-                  value={accountFilterInput}
-                  onChange={(value) => {
-                    setAccountFilterInput(value);
-                    setAccountFilterIds(value);
-                  }}
-                  placeholder={t('transactions.accountPlaceholder')}
-                  data={accountOptions}
-                />,
-                <CategoryMultiSelect
-                  key="category-filter"
-                  value={categoryFilterInput}
-                  onChange={(value) => {
-                    setCategoryFilterInput(value);
-                    setCategoryFilterIds(value);
-                  }}
-                  placeholder={t('transactions.categoryPlaceholder')}
-                />,
-                <MultiSelect
-                  key="entity-filter"
-                  value={entityFilterInput}
-                  onChange={(value) => {
-                    setEntityFilterInput(value);
-                    setEntityFilterIds(value);
-                  }}
-                  placeholder={t('transactions.entityPlaceholder', {
-                    defaultValue: 'Select entities',
-                  })}
-                  data={entityOptions}
-                  searchable
-                />,
-              ],
-            }}
-            pagination={
-              data?.pagination && data.pagination.totalPages > 0
-                ? {
-                    currentPage: page,
-                    totalPages: data.pagination.totalPages,
-                    totalItems: data.pagination.total,
-                    itemsPerPage: limit,
-                    onPageChange: setPage,
-                  }
-                : undefined
-            }
-            sorting={{
-              sortBy,
-              sortOrder,
-              onSortChange: (
-                newSortBy: string,
-                newSortOrder: 'asc' | 'desc',
-              ) => {
-                setSortBy(
-                  newSortBy as 'date' | 'amount' | 'type' | 'accountId',
-                );
-                setSortOrder(newSortOrder);
-                setPage(1);
-              },
-            }}
-          />
+              }}
+            />
+          </div>
         </div>
 
         {isDialogOpen && (

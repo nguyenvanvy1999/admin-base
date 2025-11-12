@@ -1,25 +1,34 @@
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
+import { useZodForm } from '@client/hooks/useZodForm';
 import type {
   InvestmentFormData,
   InvestmentFull,
 } from '@client/types/investment';
-import {
-  Button,
-  Group,
-  Modal,
-  Select,
-  Stack,
-  Textarea,
-  TextInput,
-} from '@mantine/core';
+import { Button, Group, Modal, Stack } from '@mantine/core';
 import {
   InvestmentAssetType,
   InvestmentMode,
 } from '@server/generated/prisma/enums';
-import { useForm } from '@tanstack/react-form';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useValidation } from './utils/validation';
+import { z } from 'zod';
+import { Select } from './Select';
+import { Textarea } from './Textarea';
+import { TextInput } from './TextInput';
+import { ZodFormController } from './ZodFormController';
+
+const schema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, 'investments.nameRequired'),
+  symbol: z.string().min(1, 'investments.symbolRequired'),
+  assetType: z.nativeEnum(InvestmentAssetType),
+  mode: z.nativeEnum(InvestmentMode),
+  currencyId: z.string().min(1, 'investments.currencyRequired'),
+  baseCurrencyId: z.string().optional(),
+  extra: z.string().optional(),
+});
+
+type FormValue = z.infer<typeof schema>;
 
 type AddEditInvestmentDialogProps = {
   isOpen: boolean;
@@ -38,75 +47,77 @@ const AddEditInvestmentDialog = ({
 }: AddEditInvestmentDialogProps) => {
   const { t } = useTranslation();
   const { data: currencies = [] } = useCurrenciesQuery();
-  const validation = useValidation();
   const isEditMode = Boolean(investment);
   const [extraError, setExtraError] = useState<string | null>(null);
 
-  const form = useForm({
-    defaultValues: {
-      name: '',
-      symbol: '',
-      assetType: InvestmentAssetType.coin,
-      mode: InvestmentMode.priced,
-      currencyId: '',
-      baseCurrencyId: '',
-      extra: '',
-    },
-    onSubmit: async ({ value }) => {
-      setExtraError(null);
-      if (!value.currencyId || !value.name.trim()) {
-        return;
-      }
+  const defaultValues: FormValue = {
+    name: '',
+    symbol: '',
+    assetType: InvestmentAssetType.coin,
+    mode: InvestmentMode.priced,
+    currencyId: '',
+    baseCurrencyId: '',
+    extra: '',
+  };
 
-      let parsedExtra: Record<string, unknown> | null = null;
-      if (value.extra && value.extra.trim() !== '') {
-        try {
-          parsedExtra = JSON.parse(value.extra);
-        } catch {
-          setExtraError(
-            t('investments.extraInvalid', {
-              defaultValue: 'Extra metadata must be valid JSON.',
-            }),
-          );
-          return;
-        }
-      }
-
-      const payload: InvestmentFormData = {
-        name: value.name.trim(),
-        symbol: value.symbol.trim(),
-        assetType: value.assetType as InvestmentAssetType,
-        mode: value.mode as InvestmentMode,
-        currencyId: value.currencyId,
-        baseCurrencyId: value.baseCurrencyId || undefined,
-        extra: parsedExtra ?? undefined,
-      };
-
-      if (isEditMode && investment) {
-        payload.id = investment.id;
-      }
-
-      await onSubmit(payload);
-    },
+  const { control, handleSubmit, reset } = useZodForm({
+    zod: schema,
+    defaultValues,
   });
 
   useEffect(() => {
     if (investment) {
-      form.setFieldValue('name', investment.name);
-      form.setFieldValue('symbol', investment.symbol);
-      form.setFieldValue('assetType', investment.assetType);
-      form.setFieldValue('mode', investment.mode);
-      form.setFieldValue('currencyId', investment.currencyId);
-      form.setFieldValue('baseCurrencyId', investment.baseCurrencyId || '');
-      form.setFieldValue(
-        'extra',
-        investment.extra ? JSON.stringify(investment.extra, null, 2) : '',
-      );
+      reset({
+        id: investment.id,
+        name: investment.name,
+        symbol: investment.symbol,
+        assetType: investment.assetType,
+        mode: investment.mode,
+        currencyId: investment.currencyId,
+        baseCurrencyId: investment.baseCurrencyId || '',
+        extra: investment.extra
+          ? JSON.stringify(investment.extra, null, 2)
+          : '',
+      });
     } else {
-      form.reset();
+      reset(defaultValues);
     }
     setExtraError(null);
-  }, [investment, isOpen, form]);
+  }, [investment, isOpen, reset]);
+
+  const onSubmitForm = handleSubmit(async (data) => {
+    setExtraError(null);
+
+    let parsedExtra: Record<string, unknown> | null = null;
+    if (data.extra && data.extra.trim() !== '') {
+      try {
+        parsedExtra = JSON.parse(data.extra);
+      } catch {
+        setExtraError(
+          t('investments.extraInvalid', {
+            defaultValue: 'Extra metadata must be valid JSON.',
+          }),
+        );
+        return;
+      }
+    }
+
+    const payload: InvestmentFormData = {
+      name: data.name.trim(),
+      symbol: data.symbol.trim(),
+      assetType: data.assetType,
+      mode: data.mode,
+      currencyId: data.currencyId,
+      baseCurrencyId: data.baseCurrencyId || undefined,
+      extra: parsedExtra ?? undefined,
+    };
+
+    if (isEditMode && investment) {
+      payload.id = investment.id;
+    }
+
+    await onSubmit(payload);
+  });
 
   return (
     <Modal
@@ -119,68 +130,50 @@ const AddEditInvestmentDialog = ({
       }
       size="md"
     >
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          form.handleSubmit();
-        }}
-      >
+      <form onSubmit={onSubmitForm}>
         <Stack gap="md">
-          <form.Field
+          <ZodFormController
+            control={control}
             name="name"
-            validators={{
-              onChange: validation.required('investments.nameRequired'),
-            }}
-          >
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <TextInput
-                  required
-                  label={t('investments.name', { defaultValue: 'Name' })}
-                  placeholder={t('investments.namePlaceholder', {
-                    defaultValue: 'Enter investment name',
-                  })}
-                  value={field.state.value ?? ''}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  onBlur={field.handleBlur}
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+            render={({ field, fieldState: { error } }) => (
+              <TextInput
+                required
+                label={t('investments.name', { defaultValue: 'Name' })}
+                placeholder={t('investments.namePlaceholder', {
+                  defaultValue: 'Enter investment name',
+                })}
+                error={error}
+                {...field}
+              />
+            )}
+          />
 
-          <form.Field
+          <ZodFormController
+            control={control}
             name="symbol"
-            validators={{
-              onChange: validation.required('investments.symbolRequired'),
-            }}
-          >
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <TextInput
-                  required
-                  label={t('investments.symbol', { defaultValue: 'Symbol' })}
-                  placeholder={t('investments.symbolPlaceholder', {
-                    defaultValue: 'Ticker or identifier',
-                  })}
-                  value={field.state.value ?? ''}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  onBlur={field.handleBlur}
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+            render={({ field, fieldState: { error } }) => (
+              <TextInput
+                required
+                label={t('investments.symbol', { defaultValue: 'Symbol' })}
+                placeholder={t('investments.symbolPlaceholder', {
+                  defaultValue: 'Ticker or identifier',
+                })}
+                error={error}
+                {...field}
+              />
+            )}
+          />
 
-          <form.Field name="assetType">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="assetType"
+            render={({ field, fieldState: { error } }) => (
               <Select
                 label={t('investments.assetType', {
                   defaultValue: 'Asset type',
                 })}
-                data={[
+                error={error}
+                items={[
                   {
                     value: InvestmentAssetType.coin,
                     label: t('investments.asset.coin', {
@@ -200,24 +193,20 @@ const AddEditInvestmentDialog = ({
                     }),
                   },
                 ]}
-                value={
-                  (field.state.value as string) ?? InvestmentAssetType.coin
-                }
-                onChange={(value) =>
-                  field.handleChange(
-                    (value as InvestmentAssetType) ?? InvestmentAssetType.coin,
-                  )
-                }
-                onBlur={field.handleBlur}
+                value={field.value || InvestmentAssetType.coin}
+                onChange={field.onChange}
               />
             )}
-          </form.Field>
+          />
 
-          <form.Field name="mode">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="mode"
+            render={({ field, fieldState: { error } }) => (
               <Select
                 label={t('investments.mode', { defaultValue: 'Mode' })}
-                data={[
+                error={error}
+                items={[
                   {
                     value: InvestmentMode.priced,
                     label: t('investments.mode.priced', {
@@ -231,50 +220,40 @@ const AddEditInvestmentDialog = ({
                     }),
                   },
                 ]}
-                value={(field.state.value as string) ?? InvestmentMode.priced}
-                onChange={(value) =>
-                  field.handleChange(
-                    (value as InvestmentMode) ?? InvestmentMode.priced,
-                  )
-                }
-                onBlur={field.handleBlur}
+                value={field.value || InvestmentMode.priced}
+                onChange={field.onChange}
               />
             )}
-          </form.Field>
+          />
 
-          <form.Field
+          <ZodFormController
+            control={control}
             name="currencyId"
-            validators={{
-              onChange: validation.required('investments.currencyRequired'),
-            }}
-          >
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <Select
-                  required
-                  label={t('investments.currency', {
-                    defaultValue: 'Currency',
-                  })}
-                  placeholder={t('investments.currencyPlaceholder', {
-                    defaultValue: 'Select currency',
-                  })}
-                  data={currencies.map((currency) => ({
-                    value: currency.id,
-                    label: `${currency.code} - ${currency.name}`,
-                  }))}
-                  value={field.state.value ?? null}
-                  onChange={(value) => field.handleChange(value ?? '')}
-                  onBlur={field.handleBlur}
-                  searchable
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+            render={({ field, fieldState: { error } }) => (
+              <Select
+                required
+                label={t('investments.currency', {
+                  defaultValue: 'Currency',
+                })}
+                placeholder={t('investments.currencyPlaceholder', {
+                  defaultValue: 'Select currency',
+                })}
+                error={error}
+                items={currencies.map((currency) => ({
+                  value: currency.id,
+                  label: `${currency.code} - ${currency.name}`,
+                }))}
+                value={field.value || ''}
+                onChange={field.onChange}
+                searchable
+              />
+            )}
+          />
 
-          <form.Field name="baseCurrencyId">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="baseCurrencyId"
+            render={({ field, fieldState: { error } }) => (
               <Select
                 label={t('investments.baseCurrency', {
                   defaultValue: 'Base Currency (Optional)',
@@ -283,21 +262,23 @@ const AddEditInvestmentDialog = ({
                   defaultValue:
                     'Select base currency for multi-currency tracking',
                 })}
-                data={currencies.map((currency) => ({
+                error={error}
+                items={currencies.map((currency) => ({
                   value: currency.id,
                   label: `${currency.code} - ${currency.name}`,
                 }))}
-                value={field.state.value || null}
-                onChange={(value) => field.handleChange(value || '')}
-                onBlur={field.handleBlur}
+                value={field.value || ''}
+                onChange={field.onChange}
                 searchable
                 clearable
               />
             )}
-          </form.Field>
+          />
 
-          <form.Field name="extra">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="extra"
+            render={({ field, fieldState: { error } }) => (
               <Textarea
                 label={t('investments.extra', {
                   defaultValue: 'Metadata (JSON)',
@@ -306,48 +287,29 @@ const AddEditInvestmentDialog = ({
                   defaultValue: 'Optional metadata in JSON format',
                 })}
                 minRows={4}
-                value={field.state.value ?? ''}
-                onChange={(event) => field.handleChange(event.target.value)}
-                onBlur={field.handleBlur}
-                error={extraError ?? undefined}
+                error={extraError || error}
+                {...field}
               />
             )}
-          </form.Field>
+          />
 
-          <form.Subscribe
-            selector={(state) => ({
-              isValid: state.isValid,
-              values: state.values,
-            })}
-          >
-            {({ isValid, values }) => {
-              const canSubmit =
-                isValid &&
-                values.name.trim() !== '' &&
-                values.symbol.trim() !== '' &&
-                values.currencyId.trim() !== '';
-
-              return (
-                <Group justify="flex-end">
-                  <Button
-                    variant="outline"
-                    onClick={onClose}
-                    type="button"
-                    disabled={isLoading}
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" disabled={isLoading || !canSubmit}>
-                    {isLoading
-                      ? t('common.saving', { defaultValue: 'Saving...' })
-                      : isEditMode
-                        ? t('common.save')
-                        : t('common.add')}
-                  </Button>
-                </Group>
-              );
-            }}
-          </form.Subscribe>
+          <Group justify="flex-end">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              type="button"
+              disabled={isLoading}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading
+                ? t('common.saving', { defaultValue: 'Saving...' })
+                : isEditMode
+                  ? t('common.save')
+                  : t('common.add')}
+            </Button>
+          </Group>
         </Stack>
       </form>
     </Modal>

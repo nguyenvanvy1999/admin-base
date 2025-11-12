@@ -1,37 +1,44 @@
 import type { InvestmentFull } from '@client/types/investment';
-import { Badge } from '@mantine/core';
+import { ActionIcon, Badge } from '@mantine/core';
 import {
   InvestmentAssetType,
   InvestmentMode,
 } from '@server/generated/prisma/enums';
+import { IconEdit, IconEye } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import DataTable, {
-  type DataTableColumn,
-  type DataTableProps,
-} from './DataTable';
+import { DataTable, type DataTableColumn } from './DataTable';
 
 type InvestmentTableProps = {
   investments: InvestmentFull[];
   onEdit: (investment: InvestmentFull) => void;
   onView: (investment: InvestmentFull) => void;
   isLoading?: boolean;
-} & Pick<
-  DataTableProps<InvestmentFull>,
-  'search' | 'pageSize' | 'filters' | 'pagination' | 'sorting' | 'summary'
->;
+  showIndexColumn?: boolean;
+  recordsPerPage?: number;
+  recordsPerPageOptions?: number[];
+  onRecordsPerPageChange?: (size: number) => void;
+  page?: number;
+  onPageChange?: (page: number) => void;
+  totalRecords?: number;
+  sorting?: { id: string; desc: boolean }[];
+  onSortingChange?: (updater: { id: string; desc: boolean }[]) => void;
+};
 
 const InvestmentTable = ({
   investments,
   onEdit,
   onView,
   isLoading = false,
-  search,
-  pageSize,
-  filters,
-  pagination,
+  showIndexColumn = true,
+  recordsPerPage,
+  recordsPerPageOptions,
+  onRecordsPerPageChange,
+  page,
+  onPageChange,
+  totalRecords,
   sorting,
-  summary,
+  onSortingChange,
 }: InvestmentTableProps) => {
   const { t } = useTranslation();
 
@@ -40,20 +47,19 @@ const InvestmentTable = ({
       {
         accessor: 'name',
         title: 'investments.name',
-        enableSorting: true,
+        onClick: onView,
       },
       {
         accessor: 'symbol',
         title: 'investments.symbol',
-        enableSorting: true,
       },
       {
         accessor: 'assetType',
         title: 'investments.assetType',
-        render: (value: InvestmentAssetType) => (
+        render: (row) => (
           <Badge color="blue" variant="light">
             {(() => {
-              switch (value) {
+              switch (row.assetType) {
                 case InvestmentAssetType.coin:
                   return t('investments.asset.coin', { defaultValue: 'Coin' });
                 case InvestmentAssetType.ccq:
@@ -73,9 +79,11 @@ const InvestmentTable = ({
       {
         accessor: 'mode',
         title: 'investments.mode',
-        render: (value: InvestmentMode) => (
-          <Badge color={value === InvestmentMode.priced ? 'green' : 'yellow'}>
-            {value === InvestmentMode.priced
+        render: (row) => (
+          <Badge
+            color={row.mode === InvestmentMode.priced ? 'green' : 'yellow'}
+          >
+            {row.mode === InvestmentMode.priced
               ? t('investments.mode.priced', { defaultValue: 'Market priced' })
               : t('investments.mode.manual', {
                   defaultValue: 'Manual valuation',
@@ -84,43 +92,60 @@ const InvestmentTable = ({
         ),
       },
       {
-        accessor: 'currency.code',
+        accessor: (row) => row.currency.code,
         title: 'investments.currency',
       },
       {
         accessor: 'updatedAt',
         title: 'investments.updatedAt',
-        format: 'date',
+      },
+      {
+        title: 'investments.actions',
+        textAlign: 'right',
+        width: '8rem',
+        render: (row) => (
+          <div className="flex items-center justify-end gap-2">
+            <ActionIcon
+              variant="subtle"
+              color="blue"
+              onClick={(e) => {
+                e.stopPropagation();
+                onView(row);
+              }}
+            >
+              <IconEye size={16} />
+            </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(row);
+              }}
+            >
+              <IconEdit size={16} />
+            </ActionIcon>
+          </div>
+        ),
       },
     ],
-    [t],
+    [t, onEdit, onView],
   );
 
   return (
     <DataTable
       data={investments}
       columns={columns}
-      isLoading={isLoading}
-      actions={{
-        onEdit,
-        headerLabel: t('investments.actions', { defaultValue: 'Actions' }),
-        custom: [
-          {
-            label: t('investments.viewDetail', { defaultValue: 'View' }),
-            onClick: onView,
-          },
-        ],
-      }}
-      onRowClick={onView}
-      emptyMessage={t('investments.empty', {
-        defaultValue: 'No investments yet',
-      })}
-      search={search}
-      pageSize={pageSize}
-      filters={filters}
-      pagination={pagination}
+      loading={isLoading}
+      showIndexColumn={showIndexColumn}
+      recordsPerPage={recordsPerPage}
+      recordsPerPageOptions={recordsPerPageOptions}
+      onRecordsPerPageChange={onRecordsPerPageChange}
+      page={page}
+      onPageChange={onPageChange}
+      totalRecords={totalRecords}
       sorting={sorting}
-      summary={summary}
+      onSortingChange={onSortingChange}
     />
   );
 };

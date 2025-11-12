@@ -1,5 +1,4 @@
-import { get } from '@client/libs/http';
-import type { TransactionListResponse } from '@server/dto/transaction.dto';
+import { transactionService } from '@client/services';
 import type { TransactionType } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
 
@@ -21,9 +20,7 @@ export const useTransactionsQuery = (query: ListTransactionsQuery = {}) => {
   return useQuery({
     queryKey: ['transactions', query],
     queryFn: () => {
-      return get<TransactionListResponse>('/api/transactions', {
-        query,
-      });
+      return transactionService.listTransactions(query);
     },
   });
 };

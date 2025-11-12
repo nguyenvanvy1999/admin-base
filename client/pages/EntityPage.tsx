@@ -1,5 +1,6 @@
 import AddEditEntityDialog from '@client/components/AddEditEntityDialog';
 import EntityTable from '@client/components/EntityTable';
+import { TextInput } from '@client/components/TextInput';
 import {
   useCreateEntityMutation,
   useDeleteEntityMutation,
@@ -121,79 +122,95 @@ const EntityPage = () => {
             </Button>
           </div>
 
-          <EntityTable
-            entities={data?.entities || []}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            isLoading={isLoading}
-            search={{
-              onSearch: (searchValue: string) => {
-                setSearchQuery(searchValue);
-                setTypeFilter(typeFilterInput);
-                setPage(1);
-              },
-              placeholder: t('entities.search'),
-            }}
-            pageSize={{
-              initialSize: limit,
-              onPageSizeChange: (size: number) => {
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <TextInput
+                placeholder={t('entities.search')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setTypeFilter(typeFilterInput);
+                    setPage(1);
+                  }
+                }}
+                style={{ flex: 1, maxWidth: '300px' }}
+              />
+              <MultiSelect
+                value={typeFilterInput}
+                onChange={(value) => setTypeFilterInput(value as EntityType[])}
+                placeholder={t('entities.typePlaceholder')}
+                data={[
+                  {
+                    value: EntityType.individual,
+                    label: t('entities.individual'),
+                  },
+                  {
+                    value: EntityType.organization,
+                    label: t('entities.organization'),
+                  },
+                ]}
+                style={{ maxWidth: '200px' }}
+              />
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setTypeFilterInput([]);
+                    setTypeFilter([]);
+                    setPage(1);
+                  }}
+                >
+                  {t('common.reset', { defaultValue: 'Reset' })}
+                </Button>
+              )}
+            </div>
+
+            <EntityTable
+              entities={data?.entities || []}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              isLoading={isLoading}
+              recordsPerPage={limit}
+              recordsPerPageOptions={[10, 20, 50, 100]}
+              onRecordsPerPageChange={(size) => {
                 setLimit(size);
                 setPage(1);
-              },
-            }}
-            filters={{
-              hasActive: hasActiveFilters,
-              onReset: () => {
-                setSearchQuery('');
-                setTypeFilterInput([]);
-                setTypeFilter([]);
+              }}
+              page={page}
+              onPageChange={setPage}
+              totalRecords={data?.pagination?.total}
+              sorting={
+                sortBy
+                  ? [
+                      {
+                        id: sortBy,
+                        desc: sortOrder === 'desc',
+                      },
+                    ]
+                  : undefined
+              }
+              onSortingChange={(updater) => {
+                const newSorting =
+                  typeof updater === 'function'
+                    ? updater(
+                        sortBy
+                          ? [{ id: sortBy, desc: sortOrder === 'desc' }]
+                          : [],
+                      )
+                    : updater;
+                if (newSorting.length > 0) {
+                  setSortBy(newSorting[0].id as 'name' | 'type' | 'createdAt');
+                  setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
+                } else {
+                  setSortBy('createdAt');
+                  setSortOrder('desc');
+                }
                 setPage(1);
-              },
-              slots: [
-                <MultiSelect
-                  key="type-filter"
-                  value={typeFilterInput}
-                  onChange={(value) =>
-                    setTypeFilterInput(value as EntityType[])
-                  }
-                  placeholder={t('entities.typePlaceholder')}
-                  data={[
-                    {
-                      value: EntityType.individual,
-                      label: t('entities.individual'),
-                    },
-                    {
-                      value: EntityType.organization,
-                      label: t('entities.organization'),
-                    },
-                  ]}
-                />,
-              ],
-            }}
-            pagination={
-              data?.pagination && data.pagination.totalPages > 0
-                ? {
-                    currentPage: page,
-                    totalPages: data.pagination.totalPages,
-                    totalItems: data.pagination.total,
-                    itemsPerPage: limit,
-                    onPageChange: setPage,
-                  }
-                : undefined
-            }
-            sorting={{
-              sortBy,
-              sortOrder,
-              onSortChange: (
-                newSortBy: string,
-                newSortOrder: 'asc' | 'desc',
-              ) => {
-                setSortBy(newSortBy as 'name' | 'type' | 'createdAt');
-                setSortOrder(newSortOrder);
-                setPage(1);
-              },
-            }}
-          />
+              }}
+            />
+          </div>
         </div>
 
         {isDialogOpen && (

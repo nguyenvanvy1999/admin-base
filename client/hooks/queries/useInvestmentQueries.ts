@@ -1,15 +1,4 @@
-import { get } from '@client/libs/http';
-import type { InvestmentContributionListResponse } from '@server/dto/contribution.dto';
-import type {
-  InvestmentListResponse,
-  InvestmentPositionResponse,
-  InvestmentResponse,
-} from '@server/dto/investment.dto';
-import type { InvestmentTradeListResponse } from '@server/dto/trade.dto';
-import type {
-  InvestmentValuationListResponse,
-  InvestmentValuationResponse,
-} from '@server/dto/valuation.dto';
+import { investmentService } from '@client/services';
 import type {
   InvestmentAssetType,
   InvestmentMode,
@@ -59,9 +48,7 @@ export const useInvestmentsQuery = (query: ListInvestmentsQuery = {}) => {
   return useQuery({
     queryKey: ['investments', query],
     queryFn: () => {
-      return get<InvestmentListResponse>('/api/investments', {
-        query,
-      });
+      return investmentService.listInvestments(query);
     },
   });
 };
@@ -70,7 +57,7 @@ export const useInvestmentQuery = (investmentId: string) => {
   return useQuery({
     queryKey: ['investment', investmentId],
     queryFn: () => {
-      return get<InvestmentResponse>(`/api/investments/${investmentId}`);
+      return investmentService.getInvestment(investmentId);
     },
   });
 };
@@ -79,9 +66,7 @@ export const useInvestmentPositionQuery = (investmentId: string) => {
   return useQuery({
     queryKey: ['investment-position', investmentId],
     queryFn: () => {
-      return get<InvestmentPositionResponse>(
-        `/api/investments/${investmentId}/holdings`,
-      );
+      return investmentService.getInvestmentPosition(investmentId);
     },
   });
 };
@@ -93,10 +78,7 @@ export const useInvestmentTradesQuery = (
   return useQuery({
     queryKey: ['investment-trades', investmentId, query],
     queryFn: () => {
-      return get<InvestmentTradeListResponse>(
-        `/api/investments/${investmentId}/trades`,
-        { query },
-      );
+      return investmentService.listTrades(investmentId, query);
     },
   });
 };
@@ -108,10 +90,7 @@ export const useInvestmentContributionsQuery = (
   return useQuery({
     queryKey: ['investment-contributions', investmentId, query],
     queryFn: () => {
-      return get<InvestmentContributionListResponse>(
-        `/api/investments/${investmentId}/contributions`,
-        { query },
-      );
+      return investmentService.listContributions(investmentId, query);
     },
   });
 };
@@ -123,10 +102,7 @@ export const useInvestmentValuationsQuery = (
   return useQuery({
     queryKey: ['investment-valuations', investmentId, query],
     queryFn: () => {
-      return get<InvestmentValuationListResponse>(
-        `/api/investments/${investmentId}/valuations`,
-        { query },
-      );
+      return investmentService.listValuations(investmentId, query);
     },
   });
 };
@@ -135,9 +111,7 @@ export const useLatestInvestmentValuationQuery = (investmentId: string) => {
   return useQuery({
     queryKey: ['investment-latest-valuation', investmentId],
     queryFn: () => {
-      return get<InvestmentValuationResponse | null>(
-        `/api/investments/${investmentId}/valuations/latest`,
-      );
+      return investmentService.getLatestValuation(investmentId);
     },
   });
 };

@@ -1,4 +1,4 @@
-import { get } from '@client/libs/http';
+import { entityService } from '@client/services';
 import type { EntityListResponse } from '@server/dto/entity.dto';
 import type { EntityType } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
@@ -16,9 +16,7 @@ export const useEntitiesQuery = (query: ListEntitiesQuery = {}) => {
   return useQuery({
     queryKey: ['entities', query],
     queryFn: () => {
-      return get<EntityListResponse>('/api/entities', {
-        query,
-      });
+      return entityService.listEntities(query);
     },
   });
 };

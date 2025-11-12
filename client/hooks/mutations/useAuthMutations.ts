@@ -1,8 +1,9 @@
 import { ACCESS_TOKEN_KEY } from '@client/constants';
-import useToast from '@client/hooks/useToast';
-import { post } from '@client/libs/http';
+import { authService } from '@client/services';
 import useUserStore from '@client/store/user';
-import type { ILoginDto, LoginRes, RegisterRes } from '@server/dto/user.dto';
+import { accessTokenRefreshSubject } from '@client/utils/subjects';
+import { toast } from '@client/utils/toast';
+import type { ILoginDto } from '@server/dto/user.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 
@@ -15,15 +16,15 @@ type RegisterData = {
 export const useLoginMutation = () => {
   const navigate = useNavigate();
   const { setUser } = useUserStore();
-  const { showError } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: ILoginDto) => {
-      return post<LoginRes, ILoginDto>('/api/users/login', data);
+      return authService.login(data);
     },
     onSuccess: async (data) => {
       localStorage.setItem(ACCESS_TOKEN_KEY, data.jwt);
+      accessTokenRefreshSubject.next(data.jwt);
       setUser({
         id: String(data.user.id),
         username: data.user.username,
@@ -32,9 +33,6 @@ export const useLoginMutation = () => {
       });
       await queryClient.invalidateQueries({ queryKey: ['user'] });
       navigate('/');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
     },
   });
 };
@@ -42,21 +40,21 @@ export const useLoginMutation = () => {
 export const useRegisterMutation = () => {
   const navigate = useNavigate();
   const { setUser } = useUserStore();
-  const { showError } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: RegisterData) => {
-      await post<RegisterRes, RegisterData>('/api/users/register', {
+      await authService.register({
         username: data.username,
         password: data.password,
         name: data.name,
       });
 
-      return post<LoginRes, ILoginDto>('/api/users/login', data);
+      return authService.login(data);
     },
     onSuccess: async (data) => {
       localStorage.setItem(ACCESS_TOKEN_KEY, data.jwt);
+      accessTokenRefreshSubject.next(data.jwt);
       setUser({
         id: String(data.user.id),
         username: data.user.username,
@@ -65,9 +63,6 @@ export const useRegisterMutation = () => {
       });
       await queryClient.invalidateQueries({ queryKey: ['user'] });
       navigate('/');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
     },
   });
 };

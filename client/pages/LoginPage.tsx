@@ -1,28 +1,38 @@
 import { AuthFormContainer } from '@client/components/AuthFormContainer';
 import { AuthLayout } from '@client/components/AuthLayout';
 import { AuthSwitchLink } from '@client/components/AuthSwitchLink';
-import { useValidation } from '@client/components/utils/validation';
+import { TextInput } from '@client/components/TextInput';
+import { ZodFormController } from '@client/components/ZodFormController';
 import { useLoginMutation } from '@client/hooks/mutations/useAuthMutations';
-import { Button, Loader, TextInput } from '@mantine/core';
-import { useForm } from '@tanstack/react-form';
+import { useZodForm } from '@client/hooks/useZodForm';
+import { Button, Loader, Stack } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
+import { z } from 'zod';
+
+const schema = z.object({
+  username: z.string().min(1, 'login.username'),
+  password: z.string().min(1, 'login.password'),
+});
+
+type FormValue = z.infer<typeof schema>;
 
 const LoginPage = () => {
   const { t } = useTranslation();
   const loginMutation = useLoginMutation();
-  const validation = useValidation();
 
-  const form = useForm({
+  const { control, handleSubmit } = useZodForm({
+    zod: schema,
     defaultValues: {
       username: '',
       password: '',
     },
-    onSubmit: ({ value }) => {
-      loginMutation.mutate({
-        username: value.username,
-        password: value.password,
-      });
-    },
+  });
+
+  const onSubmitForm = handleSubmit((data) => {
+    loginMutation.mutate({
+      username: data.username,
+      password: data.password,
+    });
   });
 
   return (
@@ -33,53 +43,39 @@ const LoginPage = () => {
           onSubmit={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            form.handleSubmit();
+            onSubmitForm();
           }}
         >
-          <form.Field
-            name="username"
-            validators={{
-              onChange: validation.required('login.username'),
-            }}
-          >
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
+          <Stack gap="md">
+            <ZodFormController
+              control={control}
+              name="username"
+              render={({ field, fieldState: { error } }) => (
                 <TextInput
                   label={t('login.username')}
                   placeholder={t('login.usernamePlaceholder')}
                   required
-                  value={field.state.value ?? ''}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
                   error={error}
+                  {...field}
                 />
-              );
-            }}
-          </form.Field>
+              )}
+            />
 
-          <form.Field
-            name="password"
-            validators={{
-              onChange: validation.required('login.password'),
-            }}
-          >
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
+            <ZodFormController
+              control={control}
+              name="password"
+              render={({ field, fieldState: { error } }) => (
                 <TextInput
                   type="password"
                   label={t('login.password')}
                   placeholder={t('login.passwordPlaceholder')}
                   required
-                  value={field.state.value ?? ''}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
                   error={error}
+                  {...field}
                 />
-              );
-            }}
-          </form.Field>
+              )}
+            />
+          </Stack>
 
           <Button
             type="submit"

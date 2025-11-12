@@ -1,5 +1,4 @@
-import { get } from '@client/libs/http';
-import type { TagListResponse } from '@server/dto/tag.dto';
+import { tagService } from '@client/services';
 import { useQuery } from '@tanstack/react-query';
 
 type ListTagsQuery = {
@@ -14,9 +13,7 @@ export const useTagsQuery = (query: ListTagsQuery = {}) => {
   return useQuery({
     queryKey: ['tags', query],
     queryFn: () => {
-      return get<TagListResponse>('/api/tags', {
-        query,
-      });
+      return tagService.listTags(query);
     },
   });
 };

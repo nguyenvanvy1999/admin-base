@@ -1,21 +1,14 @@
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
+import { useZodForm } from '@client/hooks/useZodForm';
 import type { CategoryFormData, CategoryFull } from '@client/types/category';
-import { Button, Group, Modal, Select, Stack, TextInput } from '@mantine/core';
+import { Button, Group, Modal, Stack } from '@mantine/core';
 import { CategoryType } from '@server/generated/prisma/enums';
-import { useForm } from '@tanstack/react-form';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useValidation } from './utils/validation';
-
-type AddEditCategoryDialogProps = {
-  isOpen: boolean;
-  onClose: () => void;
-  category: CategoryFull | null;
-  parentId?: string | null;
-  parentType?: CategoryType | null;
-  onSubmit: (data: CategoryFormData) => void;
-  isLoading?: boolean;
-};
+import { z } from 'zod';
+import { Select } from './Select';
+import { TextInput } from './TextInput';
+import { ZodFormController } from './ZodFormController';
 
 const getCategoryLabel = (
   categoryName: string,
@@ -62,6 +55,29 @@ const flattenCategories = (
   return result;
 };
 
+const schema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, 'categories.nameRequired'),
+  type: z.nativeEnum(CategoryType, {
+    required_error: 'categories.typeRequired',
+  }),
+  parentId: z.string().nullable().optional(),
+  icon: z.string().optional(),
+  color: z.string().optional(),
+});
+
+type FormValue = z.infer<typeof schema>;
+
+type AddEditCategoryDialogProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  category: CategoryFull | null;
+  parentId?: string | null;
+  parentType?: CategoryType | null;
+  onSubmit: (data: CategoryFormData) => void;
+  isLoading?: boolean;
+};
+
 const AddEditCategoryDialog = ({
   isOpen,
   onClose,
@@ -75,7 +91,6 @@ const AddEditCategoryDialog = ({
   const isEditMode = !!category;
   const isAddChildMode =
     !isEditMode && parentId !== undefined && parentId !== null;
-  const validation = useValidation();
 
   const { data: categoriesData } = useCategoriesQuery({});
 
@@ -88,62 +103,66 @@ const AddEditCategoryDialog = ({
     return flattenCategories(categoriesData.categories, t, excludeId, 0, true);
   }, [categoriesData, isEditMode, category, t]);
 
-  const filteredParentOptions = useMemo(() => {
-    return parentOptions;
-  }, [parentOptions]);
+  const defaultValues: FormValue = {
+    name: '',
+    type: CategoryType.expense,
+    parentId: null,
+    icon: '',
+    color: '',
+  };
 
-  const form = useForm({
-    defaultValues: {
-      name: '',
-      type: '',
-      parentId: null as string | null,
-      icon: '',
-      color: '',
-    },
-    onSubmit: ({ value }) => {
-      const submitData: CategoryFormData = {
-        name: value.name.trim(),
-        type: value.type as CategoryType,
-      };
-
-      if (isEditMode && category) {
-        submitData.id = category.id;
-      }
-
-      if (value.parentId) {
-        submitData.parentId = value.parentId;
-      } else {
-        submitData.parentId = null;
-      }
-
-      if (value.icon && value.icon.trim() !== '') {
-        submitData.icon = value.icon.trim();
-      }
-
-      if (value.color && value.color.trim() !== '') {
-        submitData.color = value.color.trim();
-      }
-
-      onSubmit(submitData);
-    },
+  const { control, handleSubmit, reset } = useZodForm({
+    zod: schema,
+    defaultValues,
   });
 
   useEffect(() => {
     if (category) {
-      form.setFieldValue('name', category.name);
-      form.setFieldValue('type', category.type);
-      form.setFieldValue('parentId', category.parentId);
-      form.setFieldValue('icon', category.icon || '');
-      form.setFieldValue('color', category.color || '');
+      reset({
+        id: category.id,
+        name: category.name,
+        type: category.type,
+        parentId: category.parentId,
+        icon: category.icon || '',
+        color: category.color || '',
+      });
     } else if (parentId !== undefined && parentId !== null) {
-      form.setFieldValue('parentId', parentId);
-      if (parentType) {
-        form.setFieldValue('type', parentType);
-      }
+      reset({
+        ...defaultValues,
+        parentId: parentId,
+        type: parentType || CategoryType.expense,
+      });
     } else {
-      form.reset();
+      reset(defaultValues);
     }
-  }, [category, parentId, parentType, isOpen, form]);
+  }, [category, parentId, parentType, isOpen, reset]);
+
+  const onSubmitForm = handleSubmit((data) => {
+    const submitData: CategoryFormData = {
+      name: data.name.trim(),
+      type: data.type,
+    };
+
+    if (isEditMode && category) {
+      submitData.id = category.id;
+    }
+
+    if (data.parentId) {
+      submitData.parentId = data.parentId;
+    } else {
+      submitData.parentId = null;
+    }
+
+    if (data.icon && data.icon.trim() !== '') {
+      submitData.icon = data.icon.trim();
+    }
+
+    if (data.color && data.color.trim() !== '') {
+      submitData.color = data.color.trim();
+    }
+
+    onSubmit(submitData);
+  });
 
   const categoryTypeOptions = [
     { value: CategoryType.expense, label: t('categories.expense') },
@@ -162,146 +181,100 @@ const AddEditCategoryDialog = ({
       }
       size="md"
     >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
-      >
+      <form onSubmit={onSubmitForm}>
         <Stack gap="md">
-          <form.Field
+          <ZodFormController
+            control={control}
             name="name"
-            validators={{
-              onChange: validation.required('categories.nameRequired'),
-            }}
-          >
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <TextInput
-                  label={t('categories.name')}
-                  placeholder={t('categories.namePlaceholder')}
-                  required
-                  value={field.state.value ?? ''}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+            render={({ field, fieldState: { error } }) => (
+              <TextInput
+                label={t('categories.name')}
+                placeholder={t('categories.namePlaceholder')}
+                required
+                error={error}
+                {...field}
+              />
+            )}
+          />
 
-          <form.Field
+          <ZodFormController
+            control={control}
             name="type"
-            validators={{
-              onChange: validation.required('categories.typeRequired'),
-            }}
-          >
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <Select
-                  label={t('categories.type')}
-                  placeholder={t('categories.typePlaceholder')}
-                  required
-                  data={categoryTypeOptions}
-                  value={field.state.value ?? null}
-                  onChange={(value) => field.handleChange(value ?? '')}
-                  onBlur={field.handleBlur}
-                  error={error}
-                  disabled={isEditMode || isAddChildMode}
-                />
-              );
-            }}
-          </form.Field>
+            render={({ field, fieldState: { error } }) => (
+              <Select
+                label={t('categories.type')}
+                placeholder={t('categories.typePlaceholder')}
+                required
+                error={error}
+                items={categoryTypeOptions}
+                value={field.value || ''}
+                onChange={field.onChange}
+                disabled={isEditMode || isAddChildMode}
+              />
+            )}
+          />
 
-          <form.Field name="parentId">
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <Select
-                  label={t('categories.parent')}
-                  placeholder={t('categories.parentPlaceholder')}
-                  data={filteredParentOptions}
-                  value={field.state.value}
-                  onChange={(value) => field.handleChange(value)}
-                  onBlur={field.handleBlur}
-                  error={error}
-                  clearable={!isAddChildMode}
-                  searchable
-                  disabled={isAddChildMode}
-                />
-              );
-            }}
-          </form.Field>
+          <ZodFormController
+            control={control}
+            name="parentId"
+            render={({ field, fieldState: { error } }) => (
+              <Select
+                label={t('categories.parent')}
+                placeholder={t('categories.parentPlaceholder')}
+                error={error}
+                items={parentOptions}
+                value={field.value || ''}
+                onChange={(value) => field.onChange(value || null)}
+                clearable={!isAddChildMode}
+                searchable
+                disabled={isAddChildMode}
+              />
+            )}
+          />
 
-          <form.Field name="icon">
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <TextInput
-                  label={t('categories.icon')}
-                  placeholder={t('categories.iconPlaceholder')}
-                  value={field.state.value ?? ''}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+          <ZodFormController
+            control={control}
+            name="icon"
+            render={({ field, fieldState: { error } }) => (
+              <TextInput
+                label={t('categories.icon')}
+                placeholder={t('categories.iconPlaceholder')}
+                error={error}
+                {...field}
+              />
+            )}
+          />
 
-          <form.Field name="color">
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <TextInput
-                  label={t('categories.color')}
-                  placeholder={t('categories.colorPlaceholder')}
-                  value={field.state.value ?? ''}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+          <ZodFormController
+            control={control}
+            name="color"
+            render={({ field, fieldState: { error } }) => (
+              <TextInput
+                label={t('categories.color')}
+                placeholder={t('categories.colorPlaceholder')}
+                error={error}
+                {...field}
+              />
+            )}
+          />
 
-          <form.Subscribe
-            selector={(state) => ({
-              isValid: state.isValid,
-              values: state.values,
-            })}
-          >
-            {({ isValid, values }) => {
-              const isFormValid =
-                isValid &&
-                values.name?.trim() !== '' &&
-                values.type &&
-                values.type.trim() !== '';
-
-              return (
-                <Group justify="flex-end" mt="md">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onClose}
-                    disabled={isLoading}
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" disabled={isLoading || !isFormValid}>
-                    {isLoading
-                      ? t('common.saving', { defaultValue: 'Saving...' })
-                      : isEditMode
-                        ? t('common.save')
-                        : t('common.add')}
-                  </Button>
-                </Group>
-              );
-            }}
-          </form.Subscribe>
+          <Group justify="flex-end" mt="md">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading
+                ? t('common.saving', { defaultValue: 'Saving...' })
+                : isEditMode
+                  ? t('common.save')
+                  : t('common.add')}
+            </Button>
+          </Group>
         </Stack>
       </form>
     </Modal>
