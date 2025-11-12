@@ -4,7 +4,7 @@ import type { AccountFormData } from '@client/types/account';
 import type {
   AccountDeleteResponse,
   AccountResponse,
-} from '@server/src/dto/account.dto';
+} from '@server/dto/account.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateAccountMutation = () => {

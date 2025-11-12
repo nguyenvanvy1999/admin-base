@@ -4,7 +4,7 @@ import type { EntityFormData } from '@client/types/entity';
 import type {
   EntityDeleteResponse,
   EntityResponse,
-} from '@server/src/dto/entity.dto';
+} from '@server/dto/entity.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateEntityMutation = () => {

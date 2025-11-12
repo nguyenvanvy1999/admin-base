@@ -1,7 +1,7 @@
 import { get } from '@client/libs/http';
 import type { CategoryFull } from '@client/types/category';
+import type { CategoryListResponse } from '@server/dto/category.dto';
 import type { CategoryType } from '@server/generated/prisma/enums';
-import type { CategoryListResponse } from '@server/src/dto/category.dto';
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 
 type ListCategoriesQuery = {

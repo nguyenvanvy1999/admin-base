@@ -1,7 +1,7 @@
 import { get } from '@client/libs/http';
 import type { TransactionFull } from '@client/types/transaction';
+import type { TransactionListResponse } from '@server/dto/transaction.dto';
 import type { TransactionType } from '@server/generated/prisma/enums';
-import type { TransactionListResponse } from '@server/src/dto/transaction.dto';
 import { useQuery } from '@tanstack/react-query';
 
 type ListTransactionsQuery = {

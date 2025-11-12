@@ -2,7 +2,7 @@ import { ACCESS_TOKEN_KEY } from '@client/constants';
 import useToast from '@client/hooks/useToast';
 import { post } from '@client/libs/http';
 import useUserStore from '@client/store/user';
-import type { LoginResponse, RegisterResponse } from '@server/src/dto/user.dto';
+import type { LoginResponse, RegisterResponse } from '@server/dto/user.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 

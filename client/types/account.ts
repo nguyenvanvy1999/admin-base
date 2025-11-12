@@ -1,5 +1,5 @@
+import type { AccountResponse } from '@server/dto/account.dto';
 import type { AccountType } from '@server/generated/prisma/enums';
-import type { AccountResponse } from '@server/src/dto/account.dto';
 
 export type AccountFull = AccountResponse;
 

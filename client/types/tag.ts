@@ -1,4 +1,4 @@
-import type { TagResponse } from '@server/src/dto/tag.dto';
+import type { TagResponse } from '@server/dto/tag.dto';
 
 export type TagFull = TagResponse;
 

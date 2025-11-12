@@ -2,7 +2,7 @@ import { get } from '@client/libs/http';
 import type {
   CurrencyListResponse,
   Currency as CurrencyResponse,
-} from '@server/src/dto/currency.dto';
+} from '@server/dto/currency.dto';
 import { useQuery } from '@tanstack/react-query';
 
 export type Currency = CurrencyResponse;

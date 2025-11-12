@@ -1,7 +1,7 @@
 import { get } from '@client/libs/http';
 import type { AccountFull } from '@client/types/account';
+import type { AccountListResponse } from '@server/dto/account.dto';
 import type { AccountType } from '@server/generated/prisma/enums';
-import type { AccountListResponse } from '@server/src/dto/account.dto';
 import { useQuery } from '@tanstack/react-query';
 
 type ListAccountsQuery = {

@@ -4,7 +4,7 @@ import type { CategoryFormData } from '@client/types/category';
 import type {
   CategoryDeleteResponse,
   CategoryResponse,
-} from '@server/src/dto/category.dto';
+} from '@server/dto/category.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateCategoryMutation = () => {

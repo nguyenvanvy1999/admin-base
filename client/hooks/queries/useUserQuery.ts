@@ -1,7 +1,7 @@
 import { ACCESS_TOKEN_KEY } from '@client/constants';
 import { get } from '@client/libs/http';
 import useUserStore from '@client/store/user';
-import type { CurrentUserResponse } from '@server/src/dto/user.dto';
+import type { CurrentUserResponse } from '@server/dto/user.dto';
 import { useQuery } from '@tanstack/react-query';
 
 export const useUserQuery = () => {

@@ -4,7 +4,7 @@ import type { TransactionFormData } from '@client/types/transaction';
 import type {
   TransactionDeleteResponse,
   TransactionDetail,
-} from '@server/src/dto/transaction.dto';
+} from '@server/dto/transaction.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateTransactionMutation = () => {

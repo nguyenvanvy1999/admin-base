@@ -1,5 +1,5 @@
+import type { EntityResponse } from '@server/dto/entity.dto';
 import type { EntityType } from '@server/generated/prisma/enums';
-import type { EntityResponse } from '@server/src/dto/entity.dto';
 
 export type EntityFull = EntityResponse;
 

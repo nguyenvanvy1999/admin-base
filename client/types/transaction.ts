@@ -1,4 +1,4 @@
-import type { TransactionDetail } from '@server/src/dto/transaction.dto';
+import type { TransactionDetail } from '@server/dto/transaction.dto';
 
 export type TransactionFull = TransactionDetail & {
   metadata: Record<string, unknown> | null;

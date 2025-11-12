@@ -1,7 +1,7 @@
 import useToast from '@client/hooks/useToast';
 import { del, post } from '@client/libs/http';
 import type { TagFormData } from '@client/types/tag';
-import type { TagDeleteResponse, TagResponse } from '@server/src/dto/tag.dto';
+import type { TagDeleteResponse, TagResponse } from '@server/dto/tag.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateTagMutation = () => {

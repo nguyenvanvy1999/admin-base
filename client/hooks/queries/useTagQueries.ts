@@ -1,6 +1,6 @@
 import { get } from '@client/libs/http';
 import type { TagFull } from '@client/types/tag';
-import type { TagListResponse } from '@server/src/dto/tag.dto';
+import type { TagListResponse } from '@server/dto/tag.dto';
 import { useQuery } from '@tanstack/react-query';
 
 type ListTagsQuery = {

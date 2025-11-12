@@ -6,10 +6,10 @@ import type {
   InvestmentTradeFormData,
   InvestmentValuationFormData,
 } from '@client/types/investment';
-import type { InvestmentContributionResponse } from '@server/src/dto/contribution.dto';
-import type { InvestmentResponse } from '@server/src/dto/investment.dto';
-import type { InvestmentTradeResponse } from '@server/src/dto/trade.dto';
-import type { InvestmentValuationResponse } from '@server/src/dto/valuation.dto';
+import type { InvestmentContributionResponse } from '@server/dto/contribution.dto';
+import type { InvestmentResponse } from '@server/dto/investment.dto';
+import type { InvestmentTradeResponse } from '@server/dto/trade.dto';
+import type { InvestmentValuationResponse } from '@server/dto/valuation.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 type TradeMutationVariables = {

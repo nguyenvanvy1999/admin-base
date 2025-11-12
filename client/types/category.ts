@@ -1,5 +1,5 @@
+import type { CategoryTreeResponse } from '@server/dto/category.dto';
 import type { CategoryType } from '@server/generated/prisma/enums';
-import type { CategoryTreeResponse } from '@server/src/dto/category.dto';
 
 export type CategoryFull = CategoryTreeResponse;
 

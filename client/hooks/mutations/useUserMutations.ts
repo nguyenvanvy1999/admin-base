@@ -1,7 +1,7 @@
 import useToast from '@client/hooks/useToast';
 import { put } from '@client/libs/http';
 import useUserStore from '@client/store/user';
-import type { UpdateProfileResponse } from '@server/src/dto/user.dto';
+import type { UpdateProfileResponse } from '@server/dto/user.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 type UpdateProfileData = {

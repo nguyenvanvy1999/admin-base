@@ -6,22 +6,22 @@ import type {
   InvestmentTrade,
   InvestmentValuation,
 } from '@client/types/investment';
+import type { InvestmentContributionListResponse } from '@server/dto/contribution.dto';
+import type {
+  InvestmentListResponse,
+  InvestmentPositionResponse,
+  InvestmentResponse,
+} from '@server/dto/investment.dto';
+import type { InvestmentTradeListResponse } from '@server/dto/trade.dto';
+import type {
+  InvestmentValuationListResponse,
+  InvestmentValuationResponse,
+} from '@server/dto/valuation.dto';
 import type {
   InvestmentAssetType,
   InvestmentMode,
   TradeSide,
 } from '@server/generated/prisma/enums';
-import type { InvestmentContributionListResponse } from '@server/src/dto/contribution.dto';
-import type {
-  InvestmentListResponse,
-  InvestmentPositionResponse,
-  InvestmentResponse,
-} from '@server/src/dto/investment.dto';
-import type { InvestmentTradeListResponse } from '@server/src/dto/trade.dto';
-import type {
-  InvestmentValuationListResponse,
-  InvestmentValuationResponse,
-} from '@server/src/dto/valuation.dto';
 import { useQuery } from '@tanstack/react-query';
 
 type ListInvestmentsQuery = {
