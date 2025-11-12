@@ -49,10 +49,12 @@ const EventPage = () => {
   >('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const { control, reset } = useZodForm({
+  const { control, reset, watch } = useZodForm({
     zod: filterSchema,
     defaultValues: defaultFilterValues,
   });
+
+  const searchValue = watch('search');
 
   const queryParams = useMemo(
     () => ({
@@ -60,14 +62,12 @@ const EventPage = () => {
       limit,
       sortBy,
       sortOrder,
+      search: searchValue?.trim() || undefined,
     }),
-    [page, limit, sortBy, sortOrder],
+    [page, limit, sortBy, sortOrder, searchValue],
   );
 
-  const { data, isLoading } = useEventsQuery({
-    ...queryParams,
-    search: formRef.current?.getValues()?.search || undefined,
-  });
+  const { data, isLoading } = useEventsQuery(queryParams);
   const createMutation = useCreateEventMutation();
   const updateMutation = useUpdateEventMutation();
   const deleteMutation = useDeleteEventMutation();

@@ -18,7 +18,6 @@ import { NumberInput } from './NumberInput';
 import { Select } from './Select';
 import { Switch } from './Switch';
 import { Textarea } from './Textarea';
-import { TextInput } from './TextInput';
 import { flattenCategories, getCategoryIcon } from './utils/category';
 import { ZodFormController } from './ZodFormController';
 
@@ -496,10 +495,10 @@ const AddEditTransactionDialog = ({
                 name="eventId"
                 render={({ field, fieldState: { error } }) => (
                   <EventSelect
-                    value={field.value}
+                    value={field.value ?? null}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
-                    error={error?.message}
+                    error={typeof error === 'string' ? error : undefined}
                     clearable
                   />
                 )}

@@ -173,12 +173,15 @@ const formatEntityRecord = (entity: TransactionRecord['entity']) => {
   return { ...entity };
 };
 
-const formatEventRecord = (event: TransactionRecord['event']) => {
+const formatEventRecord = (
+  event: TransactionRecord['event'],
+): TransactionDetail['event'] => {
   if (!event) {
     return null;
   }
   return {
-    ...event,
+    id: event.id,
+    name: event.name,
     startAt: event.startAt.toISOString(),
     endAt: event.endAt ? event.endAt.toISOString() : null,
   };

@@ -49,7 +49,6 @@ const AddEditEventDialog = ({
   });
 
   const startAtValue = watch('startAt');
-  const endAtValue = watch('endAt');
 
   useEffect(() => {
     if (event) {
@@ -112,10 +111,16 @@ const AddEditEventDialog = ({
                 label={t('events.startAt')}
                 placeholder={t('events.startAtPlaceholder')}
                 required
-                error={error?.message}
+                error={error}
                 value={field.value ? new Date(field.value) : null}
-                onChange={(date) => {
-                  field.onChange(date ? date.toISOString() : '');
+                onChange={(value: Date | string | null) => {
+                  if (value instanceof Date) {
+                    field.onChange(value.toISOString());
+                  } else if (typeof value === 'string') {
+                    field.onChange(value);
+                  } else {
+                    field.onChange('');
+                  }
                 }}
                 onBlur={field.onBlur}
               />
@@ -129,10 +134,16 @@ const AddEditEventDialog = ({
               <DateTimePicker
                 label={t('events.endAt')}
                 placeholder={t('events.endAtPlaceholder')}
-                error={error?.message}
+                error={error}
                 value={field.value ? new Date(field.value) : null}
-                onChange={(date) => {
-                  field.onChange(date ? date.toISOString() : undefined);
+                onChange={(value: Date | string | null) => {
+                  if (value instanceof Date) {
+                    field.onChange(value.toISOString());
+                  } else if (typeof value === 'string') {
+                    field.onChange(value);
+                  } else {
+                    field.onChange(undefined);
+                  }
                 }}
                 onBlur={field.onBlur}
                 minDate={startAtValue ? new Date(startAtValue) : new Date()}

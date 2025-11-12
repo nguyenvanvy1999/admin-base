@@ -2,7 +2,6 @@ import { ActionIcon } from '@mantine/core';
 import type { EventResponse } from '@server/dto/event.dto';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { DataTable, type DataTableColumn } from './DataTable';
 import { formatDate } from './DataTable/formatters';
 
@@ -44,8 +43,6 @@ const EventTable = ({
   sorting,
   onSortingChange,
 }: EventTableProps) => {
-  const { t } = useTranslation();
-
   const columns = useMemo(
     (): DataTableColumn<EventResponse>[] => [
       {
