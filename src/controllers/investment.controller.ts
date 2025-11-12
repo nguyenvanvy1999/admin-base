@@ -1,6 +1,7 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
+  InvestmentDeleteResponseDto,
   InvestmentDto,
   InvestmentLatestValuationDto,
   InvestmentListResponseDto,
@@ -121,6 +122,25 @@ const investmentController = new Elysia().group(
           params: t.Object({ id: t.String() }),
           response: {
             200: t.Nullable(InvestmentLatestValuationDto),
+          },
+        },
+      )
+      .delete(
+        '/:id',
+        ({ user, params, investmentService }) => {
+          return investmentService.deleteInvestment(user.id, params.id);
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...INVESTMENT_DETAIL,
+            summary: 'Delete investment',
+            description:
+              'Soft delete an investment by its ID. This will mark the investment as deleted.',
+          },
+          params: t.Object({ id: t.String() }),
+          response: {
+            200: InvestmentDeleteResponseDto,
           },
         },
       ),

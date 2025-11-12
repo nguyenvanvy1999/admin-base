@@ -547,7 +547,7 @@ export class InvestmentService {
     if (investment.mode === InvestmentMode.priced) {
       const [trades, valuation] = await Promise.all([
         prisma.investmentTrade.findMany({
-          where: { userId, investmentId },
+          where: { userId, investmentId, deletedAt: null },
           orderBy: { timestamp: 'asc' },
           select: {
             side: true,
@@ -586,7 +586,7 @@ export class InvestmentService {
 
     const [contributions, valuation] = await Promise.all([
       prisma.investmentContribution.findMany({
-        where: { userId, investmentId },
+        where: { userId, investmentId, deletedAt: null },
         orderBy: { timestamp: 'asc' },
         select: {
           amount: true,
@@ -707,6 +707,17 @@ export class InvestmentService {
     }
 
     return investment;
+  }
+
+  async deleteInvestment(userId: string, investmentId: string) {
+    await this.ensureInvestment(userId, investmentId);
+
+    await prisma.investment.update({
+      where: { id: investmentId },
+      data: { deletedAt: new Date() },
+    });
+
+    return { success: true, message: 'Investment deleted successfully' };
   }
 }
 

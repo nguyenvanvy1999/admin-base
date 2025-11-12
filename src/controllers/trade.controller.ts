@@ -5,6 +5,7 @@ import {
   InvestmentTradeDto,
   InvestmentTradeListResponseDto,
   ListInvestmentTradesQueryDto,
+  TradeDeleteResponseDto,
 } from '../dto/trade.dto';
 import authMacro from '../macros/auth';
 import investmentTradeService from '../services/trade.service';
@@ -64,6 +65,29 @@ const tradeController = new Elysia().group(
           query: ListInvestmentTradesQueryDto,
           response: {
             200: InvestmentTradeListResponseDto,
+          },
+        },
+      )
+      .delete(
+        '/:tradeId',
+        ({ user, params, investmentTradeService }) => {
+          return investmentTradeService.deleteTrade(
+            user.id,
+            params.id,
+            params.tradeId,
+          );
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...TRADE_DETAIL,
+            summary: 'Delete investment trade',
+            description:
+              'Delete a trade by its ID. This will revert the balance effects of the trade.',
+          },
+          params: t.Object({ id: t.String(), tradeId: t.String() }),
+          response: {
+            200: TradeDeleteResponseDto,
           },
         },
       ),

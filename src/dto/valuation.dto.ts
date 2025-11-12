@@ -72,6 +72,14 @@ export const InvestmentValuationListResponseDto = t.NoValidate(
   }),
 );
 
+export const ValuationDeleteResponseDto = t.NoValidate(
+  t.Object({
+    success: t.Boolean(),
+    message: t.String(),
+  }),
+);
+
 export type InvestmentValuationResponse = typeof InvestmentValuationDto.static;
 export type InvestmentValuationListResponse =
   typeof InvestmentValuationListResponseDto.static;
+export type ValuationDeleteResponse = typeof ValuationDeleteResponseDto.static;

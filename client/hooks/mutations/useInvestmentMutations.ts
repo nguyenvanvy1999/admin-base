@@ -117,3 +117,95 @@ export const useUpsertInvestmentValuationMutation = () => {
     },
   });
 };
+
+export const useDeleteInvestmentMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (investmentId: string) => {
+      return investmentService.deleteInvestment(investmentId);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['investments'] });
+      toast.success('Investment deleted successfully');
+    },
+  });
+};
+
+export const useDeleteInvestmentTradeMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      investmentId,
+      tradeId,
+    }: {
+      investmentId: string;
+      tradeId: string;
+    }) => {
+      return investmentService.deleteTrade(investmentId, tradeId);
+    },
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: ['investment-trades', variables.investmentId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['investment-position', variables.investmentId],
+      });
+      toast.success('Trade deleted successfully');
+    },
+  });
+};
+
+export const useDeleteInvestmentContributionMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      investmentId,
+      contributionId,
+    }: {
+      investmentId: string;
+      contributionId: string;
+    }) => {
+      return investmentService.deleteContribution(investmentId, contributionId);
+    },
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: ['investment-contributions', variables.investmentId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['investment-position', variables.investmentId],
+      });
+      toast.success('Contribution deleted successfully');
+    },
+  });
+};
+
+export const useDeleteInvestmentValuationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      investmentId,
+      valuationId,
+    }: {
+      investmentId: string;
+      valuationId: string;
+    }) => {
+      return investmentService.deleteValuation(investmentId, valuationId);
+    },
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: ['investment-valuations', variables.investmentId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['investment-latest-valuation', variables.investmentId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['investment-position', variables.investmentId],
+      });
+      toast.success('Valuation deleted successfully');
+    },
+  });
+};

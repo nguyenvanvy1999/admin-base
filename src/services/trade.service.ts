@@ -197,6 +197,7 @@ export class InvestmentTradeService {
     const where: InvestmentTradeWhereInput = {
       userId,
       investmentId,
+      deletedAt: null,
     };
 
     if (side) {
@@ -236,6 +237,64 @@ export class InvestmentTradeService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async deleteTrade(userId: string, investmentId: string, tradeId: string) {
+    await this.investmentService.ensureInvestment(userId, investmentId);
+
+    const trade = await prisma.investmentTrade.findFirst({
+      where: {
+        id: tradeId,
+        userId,
+        investmentId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        side: true,
+        amount: true,
+        fee: true,
+        accountId: true,
+      },
+    });
+
+    if (!trade) {
+      throw new Error('Trade not found');
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const amountDecimal = new Decimal(trade.amount);
+      const feeDecimal = new Decimal(trade.fee);
+
+      if (trade.side === TradeSide.buy) {
+        const totalCost = amountDecimal.plus(feeDecimal);
+        await tx.account.update({
+          where: { id: trade.accountId },
+          data: {
+            balance: {
+              increment: totalCost.toNumber(),
+            },
+          },
+        });
+      } else {
+        const proceeds = amountDecimal.minus(feeDecimal);
+        await tx.account.update({
+          where: { id: trade.accountId },
+          data: {
+            balance: {
+              decrement: proceeds.toNumber(),
+            },
+          },
+        });
+      }
+
+      await tx.investmentTrade.update({
+        where: { id: tradeId },
+        data: { deletedAt: new Date() },
+      });
+
+      return { success: true, message: 'Trade deleted successfully' };
+    });
   }
 }
 

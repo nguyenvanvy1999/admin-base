@@ -5,6 +5,9 @@ import { DataTable, type DataTableColumn } from '@client/components/DataTable';
 import {
   useCreateInvestmentContributionMutation,
   useCreateInvestmentTradeMutation,
+  useDeleteInvestmentContributionMutation,
+  useDeleteInvestmentTradeMutation,
+  useDeleteInvestmentValuationMutation,
   useUpsertInvestmentValuationMutation,
 } from '@client/hooks/mutations/useInvestmentMutations';
 import {
@@ -15,10 +18,12 @@ import {
   useInvestmentValuationsQuery,
 } from '@client/hooks/queries/useInvestmentQueries';
 import {
+  ActionIcon,
   Badge,
   Button,
   Card,
   Group,
+  Modal,
   NumberFormatter,
   Tabs,
   Text,
@@ -31,7 +36,7 @@ import {
   InvestmentMode,
   TradeSide,
 } from '@server/generated/prisma/enums';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconArrowLeft, IconTrash } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';
@@ -95,6 +100,16 @@ const InvestmentDetailPage = () => {
   const tradeMutation = useCreateInvestmentTradeMutation();
   const contributionMutation = useCreateInvestmentContributionMutation();
   const valuationMutation = useUpsertInvestmentValuationMutation();
+  const deleteTradeMutation = useDeleteInvestmentTradeMutation();
+  const deleteContributionMutation = useDeleteInvestmentContributionMutation();
+  const deleteValuationMutation = useDeleteInvestmentValuationMutation();
+
+  const [tradeToDelete, setTradeToDelete] =
+    useState<InvestmentTradeResponse | null>(null);
+  const [contributionToDelete, setContributionToDelete] =
+    useState<InvestmentContributionResponse | null>(null);
+  const [valuationToDelete, setValuationToDelete] =
+    useState<InvestmentValuationResponse | null>(null);
 
   const currencySymbol = investment?.currency.symbol
     ? `${investment.currency.symbol} `
@@ -129,6 +144,62 @@ const InvestmentDetailPage = () => {
         allowNegative
       />
     );
+  };
+
+  const handleDeleteTrade = (trade: InvestmentTradeResponse) => {
+    setTradeToDelete(trade);
+  };
+
+  const handleDeleteContribution = (
+    contribution: InvestmentContributionResponse,
+  ) => {
+    setContributionToDelete(contribution);
+  };
+
+  const handleDeleteValuation = (valuation: InvestmentValuationResponse) => {
+    setValuationToDelete(valuation);
+  };
+
+  const handleConfirmDeleteTrade = async () => {
+    if (tradeToDelete && investmentId) {
+      try {
+        await deleteTradeMutation.mutateAsync({
+          investmentId,
+          tradeId: tradeToDelete.id,
+        });
+        setTradeToDelete(null);
+      } catch {
+        // Error is already handled by mutation's onError callback
+      }
+    }
+  };
+
+  const handleConfirmDeleteContribution = async () => {
+    if (contributionToDelete && investmentId) {
+      try {
+        await deleteContributionMutation.mutateAsync({
+          investmentId,
+          contributionId: contributionToDelete.id,
+        });
+        setContributionToDelete(null);
+      } catch {
+        // Error is already handled by mutation's onError callback
+      }
+    }
+  };
+
+  const handleConfirmDeleteValuation = async () => {
+    if (valuationToDelete && investmentId) {
+      try {
+        await deleteValuationMutation.mutateAsync({
+          investmentId,
+          valuationId: valuationToDelete.id,
+        });
+        setValuationToDelete(null);
+      } catch {
+        // Error is already handled by mutation's onError callback
+      }
+    }
   };
 
   const tradeColumns = useMemo(
@@ -176,8 +247,27 @@ const InvestmentDetailPage = () => {
         title: 'investments.trade.fee',
         render: (value) => formatCurrency(parseFloat(String(value))),
       },
+      {
+        title: 'common.actions',
+        textAlign: 'center',
+        width: '8rem',
+        render: (value: unknown, row: InvestmentTradeResponse) => (
+          <div className="flex items-center justify-center gap-2">
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteTrade(row);
+              }}
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </div>
+        ),
+      },
     ],
-    [formatCurrency, formatNumber, t],
+    [formatCurrency, formatNumber, t, handleDeleteTrade],
   );
 
   const contributionColumns = useMemo(
@@ -220,8 +310,27 @@ const InvestmentDetailPage = () => {
         title: 'investments.contribution.note',
         ellipsis: true,
       },
+      {
+        title: 'common.actions',
+        textAlign: 'center',
+        width: '8rem',
+        render: (value: unknown, row: InvestmentContributionResponse) => (
+          <div className="flex items-center justify-center gap-2">
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteContribution(row);
+              }}
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </div>
+        ),
+      },
     ],
-    [formatCurrency, t],
+    [formatCurrency, t, handleDeleteContribution],
   );
 
   const valuationColumns = useMemo(
@@ -241,8 +350,27 @@ const InvestmentDetailPage = () => {
         title: 'investments.valuation.source',
         ellipsis: true,
       },
+      {
+        title: 'common.actions',
+        textAlign: 'center',
+        width: '8rem',
+        render: (value: unknown, row: InvestmentValuationResponse) => (
+          <div className="flex items-center justify-center gap-2">
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteValuation(row);
+              }}
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </div>
+        ),
+      },
     ],
-    [formatCurrency],
+    [formatCurrency, handleDeleteValuation],
   );
 
   const isLoading =
@@ -255,7 +383,10 @@ const InvestmentDetailPage = () => {
   const isMutationPending =
     tradeMutation.isPending ||
     contributionMutation.isPending ||
-    valuationMutation.isPending;
+    valuationMutation.isPending ||
+    deleteTradeMutation.isPending ||
+    deleteContributionMutation.isPending ||
+    deleteValuationMutation.isPending;
 
   return (
     <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
@@ -644,6 +775,112 @@ const InvestmentDetailPage = () => {
           }}
           isLoading={valuationMutation.isPending || isLoading}
         />
+      )}
+
+      {tradeToDelete && (
+        <Modal
+          opened={!!tradeToDelete}
+          onClose={() => setTradeToDelete(null)}
+          title={t('investments.trade.deleteConfirmTitle', {
+            defaultValue: 'Delete Trade',
+          })}
+          size="md"
+        >
+          <Text mb="md">
+            {t('investments.trade.deleteConfirmMessage', {
+              defaultValue: 'Are you sure you want to delete this trade?',
+            })}
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={() => setTradeToDelete(null)}
+              disabled={isMutationPending}
+            >
+              {t('common.cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDeleteTrade}
+              disabled={isMutationPending}
+            >
+              {isMutationPending
+                ? t('common.deleting', { defaultValue: 'Deleting...' })
+                : t('common.delete', { defaultValue: 'Delete' })}
+            </Button>
+          </Group>
+        </Modal>
+      )}
+
+      {contributionToDelete && (
+        <Modal
+          opened={!!contributionToDelete}
+          onClose={() => setContributionToDelete(null)}
+          title={t('investments.contribution.deleteConfirmTitle', {
+            defaultValue: 'Delete Contribution',
+          })}
+          size="md"
+        >
+          <Text mb="md">
+            {t('investments.contribution.deleteConfirmMessage', {
+              defaultValue:
+                'Are you sure you want to delete this contribution?',
+            })}
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={() => setContributionToDelete(null)}
+              disabled={isMutationPending}
+            >
+              {t('common.cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDeleteContribution}
+              disabled={isMutationPending}
+            >
+              {isMutationPending
+                ? t('common.deleting', { defaultValue: 'Deleting...' })
+                : t('common.delete', { defaultValue: 'Delete' })}
+            </Button>
+          </Group>
+        </Modal>
+      )}
+
+      {valuationToDelete && (
+        <Modal
+          opened={!!valuationToDelete}
+          onClose={() => setValuationToDelete(null)}
+          title={t('investments.valuation.deleteConfirmTitle', {
+            defaultValue: 'Delete Valuation',
+          })}
+          size="md"
+        >
+          <Text mb="md">
+            {t('investments.valuation.deleteConfirmMessage', {
+              defaultValue: 'Are you sure you want to delete this valuation?',
+            })}
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={() => setValuationToDelete(null)}
+              disabled={isMutationPending}
+            >
+              {t('common.cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDeleteValuation}
+              disabled={isMutationPending}
+            >
+              {isMutationPending
+                ? t('common.deleting', { defaultValue: 'Deleting...' })
+                : t('common.delete', { defaultValue: 'Delete' })}
+            </Button>
+          </Group>
+        </Modal>
       )}
     </div>
   );

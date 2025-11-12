@@ -9,6 +9,7 @@ import { TextInput } from '@client/components/TextInput';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateInvestmentMutation,
+  useDeleteInvestmentMutation,
   useUpdateInvestmentMutation,
 } from '@client/hooks/mutations/useInvestmentMutations';
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
@@ -17,7 +18,7 @@ import {
   useInvestmentsQuery,
 } from '@client/hooks/queries/useInvestmentQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group, MultiSelect } from '@mantine/core';
+import { Button, Group, Modal, MultiSelect, Text } from '@mantine/core';
 import type {
   InvestmentResponse,
   IUpsertInvestmentDto,
@@ -52,6 +53,9 @@ const InvestmentPage = () => {
   const [selectedInvestment, setSelectedInvestment] =
     useState<InvestmentResponse | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [investmentToDelete, setInvestmentToDelete] =
+    useState<InvestmentResponse | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'updatedAt'>(
@@ -82,6 +86,7 @@ const InvestmentPage = () => {
   const { data: currencies = [] } = useCurrenciesQuery();
   const createMutation = useCreateInvestmentMutation();
   const updateMutation = useUpdateInvestmentMutation();
+  const deleteMutation = useDeleteInvestmentMutation();
 
   const handleAdd = () => {
     setSelectedInvestment(null);
@@ -95,6 +100,27 @@ const InvestmentPage = () => {
 
   const handleView = (investment: InvestmentResponse) => {
     navigate(`/investments/${investment.id}`);
+  };
+
+  const handleDelete = (investment: InvestmentResponse) => {
+    setInvestmentToDelete(investment);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteDialogClose = () => {
+    setIsDeleteDialogOpen(false);
+    setInvestmentToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (investmentToDelete) {
+      try {
+        await deleteMutation.mutateAsync(investmentToDelete.id);
+        handleDeleteDialogClose();
+      } catch {
+        // Error is already handled by mutation's onError callback
+      }
+    }
   };
 
   const handleDialogClose = () => {
@@ -112,7 +138,10 @@ const InvestmentPage = () => {
   };
 
   const isSubmitting =
-    createMutation.isPending || updateMutation.isPending || isLoading;
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    isLoading;
 
   const stats = useMemo(() => {
     if (!data?.pagination) return undefined;
@@ -249,6 +278,7 @@ const InvestmentPage = () => {
         isLoading={isLoading}
         onEdit={handleEdit}
         onView={handleView}
+        onDelete={handleDelete}
         recordsPerPage={limit}
         recordsPerPageOptions={[10, 20, 50, 100]}
         onRecordsPerPageChange={(size) => {
@@ -301,6 +331,43 @@ const InvestmentPage = () => {
           onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
         />
+      )}
+
+      {isDeleteDialogOpen && investmentToDelete && (
+        <Modal
+          opened={isDeleteDialogOpen}
+          onClose={handleDeleteDialogClose}
+          title={t('investments.deleteConfirmTitle', {
+            defaultValue: 'Delete Investment',
+          })}
+          size="md"
+        >
+          <Text mb="md">
+            {t('investments.deleteConfirmMessage', {
+              defaultValue: 'Are you sure you want to delete this investment?',
+            })}
+            <br />
+            <strong>{investmentToDelete.name}</strong>
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={handleDeleteDialogClose}
+              disabled={isSubmitting}
+            >
+              {t('common.cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDelete}
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? t('common.deleting', { defaultValue: 'Deleting...' })
+                : t('common.delete', { defaultValue: 'Delete' })}
+            </Button>
+          </Group>
+        </Modal>
       )}
     </PageContainer>
   );

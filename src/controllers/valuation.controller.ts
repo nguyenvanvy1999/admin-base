@@ -5,6 +5,7 @@ import {
   InvestmentValuationListResponseDto,
   ListInvestmentValuationsQueryDto,
   UpsertInvestmentValuationDto,
+  ValuationDeleteResponseDto,
 } from '../dto/valuation.dto';
 import authMacro from '../macros/auth';
 import investmentValuationService from '../services/valuation.service';
@@ -94,6 +95,29 @@ const valuationController = new Elysia().group(
           params: t.Object({ id: t.String() }),
           response: {
             200: t.Nullable(InvestmentValuationDto),
+          },
+        },
+      )
+      .delete(
+        '/:valuationId',
+        ({ user, params, investmentValuationService }) => {
+          return investmentValuationService.deleteValuation(
+            user.id,
+            params.id,
+            params.valuationId,
+          );
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...VALUATION_DETAIL,
+            summary: 'Delete investment valuation',
+            description:
+              'Delete a valuation snapshot by its ID. This action does not affect account balances.',
+          },
+          params: t.Object({ id: t.String(), valuationId: t.String() }),
+          response: {
+            200: ValuationDeleteResponseDto,
           },
         },
       ),

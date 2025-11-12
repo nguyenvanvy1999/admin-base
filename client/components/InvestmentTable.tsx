@@ -4,7 +4,7 @@ import {
   InvestmentAssetType,
   InvestmentMode,
 } from '@server/generated/prisma/enums';
-import { IconEdit, IconEye } from '@tabler/icons-react';
+import { IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTable, type DataTableColumn } from './DataTable';
@@ -13,6 +13,7 @@ type InvestmentTableProps = {
   investments: InvestmentResponse[];
   onEdit: (investment: InvestmentResponse) => void;
   onView: (investment: InvestmentResponse) => void;
+  onDelete: (investment: InvestmentResponse) => void;
   isLoading?: boolean;
   showIndexColumn?: boolean;
   recordsPerPage?: number;
@@ -36,6 +37,7 @@ const InvestmentTable = ({
   investments,
   onEdit,
   onView,
+  onDelete,
   isLoading = false,
   showIndexColumn = true,
   recordsPerPage,
@@ -140,11 +142,21 @@ const InvestmentTable = ({
             >
               <IconEdit size={16} />
             </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(row);
+              }}
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
           </div>
         ),
       },
     ],
-    [t, onEdit, onView],
+    [t, onEdit, onView, onDelete],
   );
 
   return (

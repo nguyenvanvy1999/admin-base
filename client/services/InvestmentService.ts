@@ -155,6 +155,41 @@ export class InvestmentService extends ServiceBase {
       endpoint: `${investmentId}/valuations`,
     });
   }
+
+  deleteInvestment(
+    investmentId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    return this.delete<{ success: boolean; message: string }>({
+      endpoint: investmentId,
+    });
+  }
+
+  deleteTrade(
+    investmentId: string,
+    tradeId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    return this.delete<{ success: boolean; message: string }>({
+      endpoint: `${investmentId}/trades/${tradeId}`,
+    });
+  }
+
+  deleteContribution(
+    investmentId: string,
+    contributionId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    return this.delete<{ success: boolean; message: string }>({
+      endpoint: `${investmentId}/contributions/${contributionId}`,
+    });
+  }
+
+  deleteValuation(
+    investmentId: string,
+    valuationId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    return this.delete<{ success: boolean; message: string }>({
+      endpoint: `${investmentId}/valuations/${valuationId}`,
+    });
+  }
 }
 
 export const investmentService = new InvestmentService();

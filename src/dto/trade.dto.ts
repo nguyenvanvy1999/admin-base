@@ -99,6 +99,14 @@ export const InvestmentTradeListResponseDto = t.NoValidate(
   }),
 );
 
+export const TradeDeleteResponseDto = t.NoValidate(
+  t.Object({
+    success: t.Boolean(),
+    message: t.String(),
+  }),
+);
+
 export type InvestmentTradeResponse = typeof InvestmentTradeDto.static;
 export type InvestmentTradeListResponse =
   typeof InvestmentTradeListResponseDto.static;
+export type TradeDeleteResponse = typeof TradeDeleteResponseDto.static;

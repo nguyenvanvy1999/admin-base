@@ -233,7 +233,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
         filterVariant:
           col.filterVariant || (col.filterOptions ? 'select' : 'text'),
         filterSelectOptions: col.filterOptions,
-        enableSorting: col.enableSorting !== false,
+        enableSorting: col.enableSorting ?? false,
         mantineTableHeadCellProps: {
           align: 'center',
           style: {

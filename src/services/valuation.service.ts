@@ -57,6 +57,7 @@ export class InvestmentValuationService {
         userId,
         investmentId,
         timestamp,
+        deletedAt: null,
       },
       select: { id: true },
     });
@@ -73,6 +74,7 @@ export class InvestmentValuationService {
             baseCurrencyId: data.baseCurrencyId ?? null,
             source: data.source ?? null,
             fetchedAt,
+            deletedAt: null,
           },
           select: VALUATION_SELECT,
         }),
@@ -133,6 +135,7 @@ export class InvestmentValuationService {
     const where: Record<string, unknown> = {
       userId,
       investmentId,
+      deletedAt: null,
     };
 
     if (dateFrom || dateTo) {
@@ -170,7 +173,7 @@ export class InvestmentValuationService {
     await this.investmentService.ensureInvestment(userId, investmentId);
 
     const valuation = await prisma.investmentValuation.findFirst({
-      where: { userId, investmentId },
+      where: { userId, investmentId, deletedAt: null },
       orderBy: { timestamp: 'desc' },
       select: VALUATION_SELECT,
     });
@@ -179,6 +182,35 @@ export class InvestmentValuationService {
       return null;
     }
     return this.mapValuation(valuation);
+  }
+
+  async deleteValuation(
+    userId: string,
+    investmentId: string,
+    valuationId: string,
+  ) {
+    await this.investmentService.ensureInvestment(userId, investmentId);
+
+    const valuation = await prisma.investmentValuation.findFirst({
+      where: {
+        id: valuationId,
+        userId,
+        investmentId,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+
+    if (!valuation) {
+      throw new Error('Valuation not found');
+    }
+
+    await prisma.investmentValuation.update({
+      where: { id: valuationId },
+      data: { deletedAt: new Date() },
+    });
+
+    return { success: true, message: 'Valuation deleted successfully' };
   }
 }
 

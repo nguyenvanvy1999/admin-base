@@ -179,6 +179,7 @@ export class InvestmentContributionService {
     const where: Record<string, unknown> = {
       userId,
       investmentId,
+      deletedAt: null,
     };
 
     if (accountIds && accountIds.length > 0) {
@@ -214,6 +215,66 @@ export class InvestmentContributionService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async deleteContribution(
+    userId: string,
+    investmentId: string,
+    contributionId: string,
+  ) {
+    await this.investmentService.ensureInvestment(userId, investmentId);
+
+    const contribution = await prisma.investmentContribution.findFirst({
+      where: {
+        id: contributionId,
+        userId,
+        investmentId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        type: true,
+        amount: true,
+        accountId: true,
+      },
+    });
+
+    if (!contribution) {
+      throw new Error('Contribution not found');
+    }
+
+    return prisma.$transaction(async (tx) => {
+      if (contribution.accountId) {
+        const amountDecimal = new Decimal(contribution.amount);
+
+        if (contribution.type === ContributionType.deposit) {
+          await tx.account.update({
+            where: { id: contribution.accountId },
+            data: {
+              balance: {
+                increment: amountDecimal.toNumber(),
+              },
+            },
+          });
+        } else {
+          await tx.account.update({
+            where: { id: contribution.accountId },
+            data: {
+              balance: {
+                decrement: amountDecimal.toNumber(),
+              },
+            },
+          });
+        }
+      }
+
+      await tx.investmentContribution.update({
+        where: { id: contributionId },
+        data: { deletedAt: new Date() },
+      });
+
+      return { success: true, message: 'Contribution deleted successfully' };
+    });
   }
 }
 
