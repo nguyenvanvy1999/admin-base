@@ -50,14 +50,10 @@ const formatCategory = (
     | 'isLocked'
   >,
 ): CategoryResponse => ({
-  id: category.id,
-  userId: category.userId,
-  type: category.type,
-  name: category.name,
+  ...category,
   parentId: category.parentId ?? null,
   icon: category.icon ?? null,
   color: category.color ?? null,
-  isLocked: category.isLocked,
 });
 
 const formatCategoryTree = (

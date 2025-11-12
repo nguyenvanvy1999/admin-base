@@ -43,23 +43,17 @@ type AccountRecord = Prisma.AccountGetPayload<{
   select: typeof ACCOUNT_SELECT_FULL;
 }>;
 
-const formatAccount = (account: AccountRecord): AccountResponse => {
-  return {
-    id: account.id,
-    type: account.type,
-    name: account.name,
-    currencyId: account.currencyId,
-    balance: decimalToString(account.balance),
-    creditLimit: decimalToNullableString(account.creditLimit),
-    notifyOnDueDate: account.notifyOnDueDate ?? null,
-    paymentDay: account.paymentDay ?? null,
-    notifyDaysBefore: account.notifyDaysBefore ?? null,
-    meta: account.meta ?? null,
-    createdAt: dateToIsoString(account.createdAt),
-    updatedAt: dateToIsoString(account.updatedAt),
-    currency: account.currency,
-  };
-};
+const formatAccount = (account: AccountRecord): AccountResponse => ({
+  ...account,
+  balance: decimalToString(account.balance),
+  creditLimit: decimalToNullableString(account.creditLimit),
+  notifyOnDueDate: account.notifyOnDueDate ?? null,
+  paymentDay: account.paymentDay ?? null,
+  notifyDaysBefore: account.notifyDaysBefore ?? null,
+  meta: account.meta ?? null,
+  createdAt: dateToIsoString(account.createdAt),
+  updatedAt: dateToIsoString(account.updatedAt),
+});
 
 export class AccountService {
   private async validateAccountOwnership(userId: string, accountId: string) {

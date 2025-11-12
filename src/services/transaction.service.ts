@@ -122,9 +122,7 @@ const formatCurrencyRecord = (currency: MinimalCurrency | null | undefined) => {
     return null;
   }
   return {
-    id: currency.id,
-    code: currency.code,
-    name: currency.name,
+    ...currency,
     symbol: currency.symbol ?? null,
   };
 };
@@ -132,8 +130,7 @@ const formatCurrencyRecord = (currency: MinimalCurrency | null | undefined) => {
 const formatAccountRecord = (
   account: NonNullable<TransactionRecord['account']>,
 ) => ({
-  id: account.id,
-  name: account.name,
+  ...account,
   currency: formatCurrencyRecord(account.currency)!,
 });
 
@@ -144,8 +141,7 @@ const formatOptionalAccountRecord = (
     return null;
   }
   return {
-    id: account.id,
-    name: account.name,
+    ...account,
     currency: formatCurrencyRecord(account.currency)!,
   };
 };
@@ -155,9 +151,7 @@ const formatCategoryRecord = (category: TransactionRecord['category']) => {
     return null;
   }
   return {
-    id: category.id,
-    name: category.name,
-    type: category.type,
+    ...category,
     icon: category.icon ?? null,
     color: category.color ?? null,
   };
@@ -167,50 +161,37 @@ const formatEntityRecord = (entity: TransactionRecord['entity']) => {
   if (!entity) {
     return null;
   }
-  return {
-    id: entity.id,
-    name: entity.name,
-    type: entity.type,
-  };
+  return { ...entity };
 };
 
 const formatTransactionRecord = (
   transaction: TransactionRecord,
-): TransactionDetail => {
-  return {
-    id: transaction.id,
-    userId: transaction.userId,
-    accountId: transaction.accountId,
-    toAccountId: transaction.toAccountId ?? null,
-    transferGroupId: transaction.transferGroupId ?? null,
-    isTransferMirror: transaction.isTransferMirror,
-    type: transaction.type,
-    categoryId: transaction.categoryId ?? null,
-    entityId: transaction.entityId ?? null,
-    investmentId: transaction.investmentId ?? null,
-    amount: decimalToString(transaction.amount),
-    currencyId: transaction.currencyId,
-    price: decimalToNullableString(transaction.price),
-    priceInBaseCurrency: decimalToNullableString(
-      transaction.priceInBaseCurrency,
-    ),
-    quantity: decimalToNullableString(transaction.quantity),
-    fee: decimalToString(transaction.fee),
-    feeInBaseCurrency: decimalToNullableString(transaction.feeInBaseCurrency),
-    date: dateToIsoString(transaction.date),
-    dueDate: dateToNullableIsoString(transaction.dueDate),
-    note: transaction.note ?? null,
-    receiptUrl: transaction.receiptUrl ?? null,
-    metadata: transaction.metadata ?? null,
-    createdAt: dateToIsoString(transaction.createdAt),
-    updatedAt: dateToIsoString(transaction.updatedAt),
-    account: formatAccountRecord(transaction.account!),
-    toAccount: formatOptionalAccountRecord(transaction.toAccount),
-    category: formatCategoryRecord(transaction.category),
-    entity: formatEntityRecord(transaction.entity),
-    currency: formatCurrencyRecord(transaction.currency),
-  };
-};
+): TransactionDetail => ({
+  ...transaction,
+  toAccountId: transaction.toAccountId ?? null,
+  transferGroupId: transaction.transferGroupId ?? null,
+  categoryId: transaction.categoryId ?? null,
+  entityId: transaction.entityId ?? null,
+  investmentId: transaction.investmentId ?? null,
+  amount: decimalToString(transaction.amount),
+  price: decimalToNullableString(transaction.price),
+  priceInBaseCurrency: decimalToNullableString(transaction.priceInBaseCurrency),
+  quantity: decimalToNullableString(transaction.quantity),
+  fee: decimalToString(transaction.fee),
+  feeInBaseCurrency: decimalToNullableString(transaction.feeInBaseCurrency),
+  date: dateToIsoString(transaction.date),
+  dueDate: dateToNullableIsoString(transaction.dueDate),
+  note: transaction.note ?? null,
+  receiptUrl: transaction.receiptUrl ?? null,
+  metadata: transaction.metadata ?? null,
+  createdAt: dateToIsoString(transaction.createdAt),
+  updatedAt: dateToIsoString(transaction.updatedAt),
+  account: formatAccountRecord(transaction.account!),
+  toAccount: formatOptionalAccountRecord(transaction.toAccount),
+  category: formatCategoryRecord(transaction.category),
+  entity: formatEntityRecord(transaction.entity),
+  currency: formatCurrencyRecord(transaction.currency),
+});
 
 class BalanceCalculator {
   private exchangeRates: Record<string, Record<string, Decimal>> = {

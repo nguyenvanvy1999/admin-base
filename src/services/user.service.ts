@@ -35,6 +35,18 @@ const USER_SELECT_FOR_LOGIN = {
   password: true,
 } as const;
 
+const formatUser = (user: {
+  id: string;
+  username: string;
+  name: string | null;
+  role: UserRole;
+  baseCurrencyId: string | null;
+}): AuthUserRes => ({
+  ...user,
+  name: user.name ?? null,
+  baseCurrencyId: user.baseCurrencyId ?? null,
+});
+
 export class UserService {
   private categoryService = new CategoryService();
 
@@ -63,13 +75,7 @@ export class UserService {
       return newUser;
     });
 
-    return {
-      id: user.id,
-      username: user.username,
-      name: user.name ?? null,
-      role: user.role,
-      baseCurrencyId: user.baseCurrencyId ?? null,
-    } satisfies AuthUserRes;
+    return formatUser(user);
   }
 
   async login(data: ILoginDto) {
@@ -94,13 +100,7 @@ export class UserService {
     );
 
     return {
-      user: {
-        id: user.id,
-        username: user.username,
-        name: user.name ?? null,
-        role: user.role,
-        baseCurrencyId: user.baseCurrencyId ?? null,
-      },
+      user: formatUser(user),
       jwt: token,
     } satisfies LoginRes;
   }
@@ -113,13 +113,7 @@ export class UserService {
     if (!user) {
       throw new Error('User not found');
     }
-    return {
-      id: user.id,
-      username: user.username,
-      name: user.name ?? null,
-      role: user.role,
-      baseCurrencyId: user.baseCurrencyId ?? null,
-    } satisfies AuthUserRes;
+    return formatUser(user);
   }
 
   async updateProfile(userId: string, data: IUpdateProfileDto) {
@@ -178,13 +172,7 @@ export class UserService {
       },
     });
 
-    return {
-      id: updatedUser.id,
-      username: updatedUser.username,
-      name: updatedUser.name ?? null,
-      role: updatedUser.role,
-      baseCurrencyId: updatedUser.baseCurrencyId ?? null,
-    } satisfies AuthUserRes;
+    return formatUser(updatedUser);
   }
 }
 

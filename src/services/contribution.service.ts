@@ -52,34 +52,27 @@ type ContributionRecord = Prisma.InvestmentContributionGetPayload<{
 
 const formatContribution = (
   contribution: ContributionRecord,
-): InvestmentContributionResponse => {
-  return {
-    id: contribution.id,
-    userId: contribution.userId,
-    investmentId: contribution.investmentId,
-    accountId: contribution.accountId ?? null,
-    amount: decimalToNumber(contribution.amount),
-    currencyId: contribution.currencyId,
-    type: contribution.type,
-    amountInBaseCurrency: decimalToNullableNumber(
-      contribution.amountInBaseCurrency,
-    ),
-    exchangeRate: decimalToNullableNumber(contribution.exchangeRate),
-    baseCurrencyId: contribution.baseCurrencyId ?? null,
-    timestamp: dateToIsoString(contribution.timestamp),
-    note: contribution.note ?? null,
-    createdAt: dateToIsoString(contribution.createdAt),
-    updatedAt: dateToIsoString(contribution.updatedAt),
-    account: contribution.account
-      ? {
-          id: contribution.account.id,
-          name: contribution.account.name,
-        }
-      : null,
-    currency: contribution.currency,
-    baseCurrency: contribution.baseCurrency ?? null,
-  };
-};
+): InvestmentContributionResponse => ({
+  ...contribution,
+  accountId: contribution.accountId ?? null,
+  amount: decimalToNumber(contribution.amount),
+  amountInBaseCurrency: decimalToNullableNumber(
+    contribution.amountInBaseCurrency,
+  ),
+  exchangeRate: decimalToNullableNumber(contribution.exchangeRate),
+  baseCurrencyId: contribution.baseCurrencyId ?? null,
+  timestamp: dateToIsoString(contribution.timestamp),
+  note: contribution.note ?? null,
+  createdAt: dateToIsoString(contribution.createdAt),
+  updatedAt: dateToIsoString(contribution.updatedAt),
+  account: contribution.account
+    ? {
+        id: contribution.account.id,
+        name: contribution.account.name,
+      }
+    : null,
+  baseCurrency: contribution.baseCurrency ?? null,
+});
 
 export class InvestmentContributionService {
   private readonly investmentService = investmentServiceInstance;

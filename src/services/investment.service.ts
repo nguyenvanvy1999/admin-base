@@ -113,20 +113,11 @@ const serializeInvestment = (investment: {
     symbol: string | null;
   } | null;
 }): InvestmentResponse => ({
-  id: investment.id,
-  userId: investment.userId,
-  symbol: investment.symbol,
-  name: investment.name,
-  assetType: investment.assetType,
-  mode: investment.mode,
-  currencyId: investment.currencyId,
-  baseCurrencyId: investment.baseCurrencyId,
+  ...investment,
   extra: investment.extra ?? null,
   deletedAt: investment.deletedAt ? investment.deletedAt.toISOString() : null,
   createdAt: investment.createdAt.toISOString(),
   updatedAt: investment.updatedAt.toISOString(),
-  currency: investment.currency,
-  baseCurrency: investment.baseCurrency,
 });
 
 export class InvestmentService {

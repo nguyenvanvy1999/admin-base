@@ -28,8 +28,7 @@ const TAG_SELECT_MINIMAL = {
 type TagRecord = Prisma.TagGetPayload<{ select: typeof TAG_SELECT_FULL }>;
 
 const formatTag = (tag: TagRecord): TagResponse => ({
-  id: tag.id,
-  name: tag.name,
+  ...tag,
   description: tag.description ?? null,
   createdAt: dateToIsoString(tag.createdAt),
   updatedAt: dateToIsoString(tag.updatedAt),

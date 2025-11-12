@@ -32,13 +32,7 @@ const mapEntity = (
     select: typeof ENTITY_SELECT_FULL;
   }>,
 ) => ({
-  id: entity.id,
-  name: entity.name,
-  type: entity.type,
-  phone: entity.phone,
-  email: entity.email,
-  address: entity.address,
-  note: entity.note,
+  ...entity,
   createdAt: entity.createdAt.toISOString(),
   updatedAt: entity.updatedAt.toISOString(),
 });

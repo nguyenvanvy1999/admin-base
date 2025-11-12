@@ -1,11 +1,11 @@
 @import "tailwindcss";
 @import "./styles/tokens.css";
 @custom-variant dark (&:where(
-  .dark,
-  .dark *,
-  [data-mantine-color-scheme="dark"],
-  [data-mantine-color-scheme="dark"] *
-));
+    .dark,
+    .dark *,
+    [data-mantine-color-scheme="dark"],
+    [data-mantine-color-scheme="dark"] *
+  ));
 
 @layer base {
   :root {
