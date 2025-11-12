@@ -1,7 +1,6 @@
 import { booleanStatusMap } from '@client/utils/booleanStatusMap';
 import { formatDate, formatDecimal, formatInt } from '@client/utils/format';
 import {
-  Box,
   Group,
   Pagination,
   Select,
@@ -9,13 +8,13 @@ import {
   useMantineColorScheme,
   useMantineTheme,
 } from '@mantine/core';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
   MantineReactTable,
   useMantineReactTable,
 } from 'mantine-react-table-open';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ColumnOrdering } from './DataTable/ColumnOrdering';
 import type { DataTableColumn } from './DataTable/types';
 import { MetaVisualizer } from './MetaVisualizer';
 
@@ -27,26 +26,27 @@ type ColumnFilter = { id: string; value: unknown };
 type Props<T> = {
   columns: DataTableColumn<T>[];
   data?: T[];
+  isLoading?: boolean;
   loading?: boolean;
   showIndexColumn?: boolean;
   autoFormatDisabled?: boolean;
-  // pagination (server)
+  pageSize?: number;
   recordsPerPage?: number;
+  pageSizeOptions?: number[];
   recordsPerPageOptions?: number[];
+  onPageSizeChange?: (size: number) => void;
   onRecordsPerPageChange?: (size: number) => void;
   recordsPerPageLabel?: string;
   page?: number;
   onPageChange?: (page: number) => void;
+  rowCount?: number;
   totalRecords?: number;
-  // selection
   selectedRecords?: T[];
   onSelectedRecordsChange?: (records: T[]) => void;
-  // misc
   pinLastColumn?: boolean;
   height?: string | number;
   storeColumnsKey?: string;
   idAccessor?: keyof T & string;
-  // server sorting/filtering (optional)
   sorting?: SortingState;
   onSortingChange?: (
     updater: SortingState | ((prev: SortingState) => SortingState),
@@ -60,6 +60,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
   idAccessor = 'id',
   columns,
   data,
+  isLoading: isLoadingProp,
   loading,
   enableRowNumbers = true,
   pinLastColumn,
@@ -68,12 +69,16 @@ export function DataTable<T extends { id: string } = { id: string }>({
   onSelectedRecordsChange,
   storeColumnsKey,
   autoFormatDisabled,
+  pageSize: pageSizeProp,
   recordsPerPage,
+  pageSizeOptions: pageSizeOptionsProp,
   recordsPerPageOptions,
+  onPageSizeChange,
   onRecordsPerPageChange,
   recordsPerPageLabel,
   page,
   onPageChange,
+  rowCount: rowCountProp,
   totalRecords,
   sorting,
   onSortingChange,
@@ -84,6 +89,12 @@ export function DataTable<T extends { id: string } = { id: string }>({
   const { t } = useTranslation();
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
+
+  const isLoading = isLoadingProp ?? loading ?? false;
+  const pageSize = pageSizeProp ?? recordsPerPage ?? 20;
+  const pageSizeOptions = pageSizeOptionsProp ?? recordsPerPageOptions ?? [];
+  const rowCount = rowCountProp ?? totalRecords;
+
   const safeData: T[] = useMemo(() => {
     if (data && Array.isArray(data)) {
       return data;
@@ -136,15 +147,14 @@ export function DataTable<T extends { id: string } = { id: string }>({
     return value;
   };
 
-  // map our column defs to MRT v2 column definitions
-  const mappedColumns = useMemo(() => {
-    const toPx = (rem?: string) => {
-      if (!rem) return undefined;
-      const num = parseFloat(rem.replace('rem', ''));
-      return Number.isFinite(num) ? Math.round(num * 16) : undefined;
-    };
+  const toPx = (rem?: string) => {
+    if (!rem) return undefined;
+    const num = parseFloat(rem.replace('rem', ''));
+    return Number.isFinite(num) ? Math.round(num * 16) : undefined;
+  };
 
-    const baseCols = columns.map((col, idx) => {
+  const mappedColumns = useMemo<ColumnDef<T>[]>(() => {
+    return columns.map((col, idx) => {
       const hasAccessorFn = typeof col.accessor === 'function';
       const accessorKey =
         col.accessor && typeof col.accessor === 'string'
@@ -162,10 +172,16 @@ export function DataTable<T extends { id: string } = { id: string }>({
         accessorFn: hasAccessorFn
           ? (row: T) => (col.accessor as (r: T) => unknown)(row)
           : undefined,
-        Cell: ({ row, cell }: any) => {
-          const record = row.original as T;
+        Cell: ({
+          row,
+          cell,
+        }: {
+          row: { original: T; index: number };
+          cell: { getValue: () => unknown };
+        }) => {
+          const record = row.original;
           const value = cell.getValue();
-          let content: any;
+          let content: React.ReactNode;
           if (col.render) {
             content = col.render(value, record, row.index);
           } else if (!autoFormatDisabled) {
@@ -174,7 +190,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
                 ? autoFormat((col.accessor as (r: T) => unknown)(record))
                 : autoFormat(value);
           } else {
-            content = value;
+            content = value as React.ReactNode;
           }
           const style: React.CSSProperties = {
             textAlign: col.textAlign || 'center',
@@ -219,7 +235,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
         mantineTableHeadCellProps: {
           align: 'center',
           style: {
-            padding: theme.spacing.md,
+            padding: theme.spacing.xs,
             textAlign: 'center',
           },
         },
@@ -231,17 +247,34 @@ export function DataTable<T extends { id: string } = { id: string }>({
         },
       };
     });
+  }, [columns, t, autoFormatDisabled, theme]);
 
-    return baseCols as any[];
-  }, [columns, t, enableRowNumbers, autoFormatDisabled, recordsPerPage, page]);
-
-  const [orderedColumns, setOrderedColumns] = useState(mappedColumns);
+  const [columnVisibility, setColumnVisibility] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
-    setOrderedColumns(mappedColumns);
-  }, [mappedColumns]);
+    if (storeColumnsKey) {
+      const storageKey = `${storeColumnsKey}_columns`;
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        try {
+          const visibility = JSON.parse(stored);
+          setColumnVisibility(visibility);
+        } catch {
+          // ignore parse errors
+        }
+      }
+    }
+  }, [storeColumnsKey]);
 
-  // selection state mapping
+  useEffect(() => {
+    if (storeColumnsKey && Object.keys(columnVisibility).length > 0) {
+      const storageKey = `${storeColumnsKey}_columns`;
+      localStorage.setItem(storageKey, JSON.stringify(columnVisibility));
+    }
+  }, [columnVisibility, storeColumnsKey]);
+
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   useEffect(() => {
     if (selectedRecords && onSelectedRecordsChange) {
@@ -254,8 +287,6 @@ export function DataTable<T extends { id: string } = { id: string }>({
     }
   }, [selectedRecords, onSelectedRecordsChange, idAccessor]);
 
-  // compute pagination
-  const pageSize = recordsPerPage || 20;
   const currentPage = page ? page - 1 : 0;
   const tableData = useMemo(() => {
     if (!safeData || !Array.isArray(safeData)) {
@@ -264,40 +295,48 @@ export function DataTable<T extends { id: string } = { id: string }>({
     return safeData;
   }, [safeData]);
 
-  const rowCount = useMemo(() => {
-    if (typeof totalRecords === 'number') {
-      return totalRecords;
+  const computedRowCount = useMemo(() => {
+    if (typeof rowCount === 'number') {
+      return rowCount;
     }
     return tableData.length;
-  }, [totalRecords, tableData.length]);
+  }, [rowCount, tableData.length]);
 
-  const totalPages = useMemo(() => {
-    return Math.ceil(rowCount / pageSize);
-  }, [rowCount, pageSize]);
+  const handlePageSizeChange = (newPageSize: number) => {
+    onPageSizeChange?.(newPageSize);
+    onRecordsPerPageChange?.(newPageSize);
+  };
 
   const table = useMantineReactTable({
-    columns: orderedColumns as any,
+    columns: mappedColumns as any,
     data: tableData,
     ...(enableRowNumbers
       ? { enableRowNumbers: true, rowNumberDisplayMode: 'static' }
       : {}),
-    getRowId: (row: any) => String(row[idAccessor]),
+    getRowId: (row) => String(row[idAccessor]),
     enableColumnResizing: false,
+    ...(storeColumnsKey
+      ? {
+          enableColumnVisibility: true,
+          onColumnVisibilityChange: setColumnVisibility,
+          columnVisibility,
+        }
+      : {}),
     mantineTableProps: {
       style: {
         width: '100%',
       },
     },
     state: {
-      isLoading: !!loading,
+      isLoading,
       pagination: { pageIndex: currentPage, pageSize },
       rowSelection,
-      sorting: (sorting as any) || [],
-      columnFilters,
+      sorting: sorting || [],
+      columnFilters: columnFilters || [],
     },
     manualPagination: true,
-    rowCount,
-    onPaginationChange: (updater: any) => {
+    rowCount: computedRowCount,
+    onPaginationChange: (updater) => {
       const current = { pageIndex: currentPage, pageSize };
       const next =
         typeof updater === 'function' ? updater(current) : updater || current;
@@ -305,57 +344,46 @@ export function DataTable<T extends { id: string } = { id: string }>({
         onPageChange?.(next.pageIndex + 1);
       }
       if (typeof next?.pageSize === 'number' && next.pageSize !== pageSize) {
-        onRecordsPerPageChange?.(next.pageSize);
+        handlePageSizeChange(next.pageSize);
       }
     },
-    // selection
     enableRowSelection: !!onSelectedRecordsChange,
-    onRowSelectionChange: (updater: any) => {
+    onRowSelectionChange: (updater) => {
       const next =
         typeof updater === 'function' ? updater(rowSelection) : updater;
       setRowSelection(next);
       if (onSelectedRecordsChange) {
         const selected = Object.keys(next)
           .filter((k) => next[k])
-          .map((k) => tableData.find((r: any) => String(r[idAccessor]) === k))
+          .map((k) => tableData.find((r) => String(r[idAccessor]) === k))
           .filter(Boolean) as T[];
         onSelectedRecordsChange(selected);
       }
     },
-    // sorting/filtering (server when provided)
     manualSorting: !!onSortingChange,
-    onSortingChange: (updater: any) => {
+    onSortingChange: (updater) => {
       const next =
-        typeof updater === 'function'
-          ? updater((sorting as any) || [])
-          : updater;
+        typeof updater === 'function' ? updater(sorting || []) : updater;
       onSortingChange?.(next as SortingState);
     },
     manualFiltering: !!onColumnFiltersChange,
-    onColumnFiltersChange: (updater: any) => {
+    onColumnFiltersChange: (updater) => {
       const next =
         typeof updater === 'function' ? updater(columnFilters || []) : updater;
       onColumnFiltersChange?.(next);
     },
-    // pinning last column
     enableColumnPinning: !!pinLastColumn,
     initialState: pinLastColumn
       ? {
           columnPinning: {
             right:
-              orderedColumns.length > 0
-                ? [
-                    String(
-                      (orderedColumns as any)[orderedColumns.length - 1].id,
-                    ),
-                  ]
+              mappedColumns.length > 0
+                ? [String(mappedColumns[mappedColumns.length - 1].id)]
                 : [],
           },
         }
       : undefined,
-    // height
     mantineTableContainerProps: height ? { style: { height } } : undefined,
-    // top toolbar styling
     mantineTopToolbarProps: {
       style: {
         padding: theme.spacing.md,
@@ -390,14 +418,13 @@ export function DataTable<T extends { id: string } = { id: string }>({
         minHeight: '28px',
       },
     },
-    // use custom bottom toolbar instead of default pagination
     enablePagination: true,
     paginationDisplayMode: 'pages',
+    pageCount: computedRowCount ? Math.ceil(computedRowCount / pageSize) : 0,
     mantinePaginationProps: {
       radius: 'xl',
       size: 'lg',
     },
-    // bottom toolbar styling
     mantineBottomToolbarProps: {
       style: {
         padding: theme.spacing.xs,
@@ -411,7 +438,6 @@ export function DataTable<T extends { id: string } = { id: string }>({
         flexWrap: 'nowrap',
       },
     },
-    // table cell styling - ensure header and body cells have same padding
     mantineTableHeadCellProps: {
       style: {
         padding: theme.spacing.xs,
@@ -422,93 +448,45 @@ export function DataTable<T extends { id: string } = { id: string }>({
         padding: theme.spacing.xs,
       },
     },
-    // empty rows fallback
     renderEmptyRowsFallback: () => (
       <Text ta="center" c="dimmed">
         {t('common.noData', { defaultValue: 'Không có dữ liệu' })}
       </Text>
     ),
-  });
-
-  const start =
-    rowCount === 0 ? 0 : currentPage * pageSize + (rowCount > 0 ? 1 : 0);
-  const end = Math.min((currentPage + 1) * pageSize, rowCount);
-
-  // Sync column widths between header and body cells to fix alignment
-  useEffect(() => {
-    const syncColumnWidths = () => {
-      const headerCells = document.querySelectorAll(
-        '.mrt-table-head th[data-index]',
+    renderBottomToolbar: ({ table: tableInstance }) => {
+      const pagination = tableInstance.getState().pagination;
+      const start =
+        computedRowCount === 0
+          ? 0
+          : pagination.pageIndex * pagination.pageSize + 1;
+      const end = Math.min(
+        (pagination.pageIndex + 1) * pagination.pageSize,
+        computedRowCount,
       );
-      const bodyCells = document.querySelectorAll(
-        '.mrt-table-body td[data-index]',
-      );
+      const totalPages = computedRowCount
+        ? Math.ceil(computedRowCount / pagination.pageSize)
+        : 0;
 
-      if (headerCells.length === 0 || bodyCells.length === 0) return;
-
-      headerCells.forEach((headerCell, colIndex) => {
-        const headerStyle = window.getComputedStyle(headerCell);
-        const headerWidth = headerStyle.width;
-
-        if (headerWidth && headerWidth !== 'auto' && headerWidth !== '0px') {
-          // Apply to all body cells in the same column
-          bodyCells.forEach((bodyCell) => {
-            const cellIndex = (bodyCell as HTMLElement).getAttribute(
-              'data-index',
-            );
-            if (cellIndex === String(colIndex)) {
-              const bodyStyle = window.getComputedStyle(bodyCell);
-              const bodyWidth = bodyStyle.width;
-
-              // Only sync if widths are significantly different
-              if (
-                Math.abs(parseFloat(headerWidth) - parseFloat(bodyWidth)) > 1
-              ) {
-                (bodyCell as HTMLElement).style.width = headerWidth;
-                (bodyCell as HTMLElement).style.minWidth = headerWidth;
-              }
-            }
-          });
-        }
-      });
-    };
-
-    const timer = setTimeout(syncColumnWidths, 100);
-    return () => clearTimeout(timer);
-  }, [tableData, orderedColumns, loading]);
-
-  return (
-    <MantineReactTable
-      table={table}
-      renderBottomToolbarCustom={() => (
+      return (
         <Group justify="flex-end" gap="xs" wrap="nowrap" w="100%">
-          {storeColumnsKey && (
-            <Box style={{ flexShrink: 0 }}>
-              <ColumnOrdering
-                columns={mappedColumns}
-                storeColumnsKey={storeColumnsKey}
-                onOrdered={setOrderedColumns as any}
-              />
-            </Box>
-          )}
-          {recordsPerPageOptions && recordsPerPageOptions.length > 0 && (
+          {pageSizeOptions.length > 0 && (
             <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
               <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
                 {recordsPerPageLabel ||
                   t('common.pageSizeLabel', { defaultValue: 'Hiển thị' })}
               </Text>
               <Select
-                value={pageSize.toString()}
+                value={pagination.pageSize.toString()}
                 onChange={(value) => {
                   if (value) {
-                    onRecordsPerPageChange?.(parseInt(value, 10));
+                    handlePageSizeChange(parseInt(value, 10));
                   }
                 }}
-                data={recordsPerPageOptions.map((size) => ({
+                data={pageSizeOptions.map((size) => ({
                   value: size.toString(),
                   label: size.toString(),
                 }))}
-                disabled={!!loading}
+                disabled={isLoading}
                 size="xs"
                 w={60}
                 styles={{
@@ -531,28 +509,27 @@ export function DataTable<T extends { id: string } = { id: string }>({
             </Text>{' '}
             {t('common.of', { defaultValue: 'of' })}{' '}
             <Text component="span" fw={500}>
-              {rowCount}
+              {computedRowCount}
             </Text>
           </Text>
           {totalPages > 0 && (
-            <Box style={{ flexShrink: 0 }}>
-              <Pagination
-                total={totalPages}
-                value={page || 1}
-                onChange={(newPage: number) => {
-                  onPageChange?.(newPage);
-                }}
-                disabled={!!loading}
-                size="lg"
-                radius="xl"
-              />
-            </Box>
+            <Pagination
+              total={totalPages}
+              value={pagination.pageIndex + 1}
+              onChange={(newPage: number) => {
+                onPageChange?.(newPage);
+              }}
+              disabled={isLoading}
+              size="lg"
+              radius="xl"
+            />
           )}
         </Group>
-      )}
-      {...(props as any)}
-    />
-  );
+      );
+    },
+  });
+
+  return <MantineReactTable table={table} {...(props as any)} />;
 }
 
 export type { DataTableColumn };

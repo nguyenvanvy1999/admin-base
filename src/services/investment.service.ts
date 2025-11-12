@@ -84,9 +84,7 @@ type PositionResult = {
 
 const safeNumber = (value: unknown) =>
   value && typeof value === 'object' && 'toNumber' in value
-    ? // Prisma Decimal implements toNumber
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (value as any).toNumber()
+    ? (value as any).toNumber()
     : Number(value ?? 0);
 
 const serializeInvestment = (investment: {
