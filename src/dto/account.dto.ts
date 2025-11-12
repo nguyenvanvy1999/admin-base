@@ -36,46 +36,56 @@ const accountCurrencyShape = {
   symbol: t.Nullable(t.String()),
 } as const;
 
-export const AccountCurrencyDto = t.Object(accountCurrencyShape);
+export const AccountCurrencyDto = t.NoValidate(t.Object(accountCurrencyShape));
 
-export const AccountDto = t.Object({
-  id: t.String(),
-  type: t.Enum(AccountType),
-  name: t.String(),
-  currencyId: t.String(),
-  balance: t.String(),
-  creditLimit: t.Nullable(t.String()),
-  notifyOnDueDate: t.Nullable(t.Boolean()),
-  paymentDay: t.Nullable(t.Integer()),
-  notifyDaysBefore: t.Nullable(t.Integer()),
-  meta: t.Nullable(t.Any()),
-  createdAt: t.String(),
-  updatedAt: t.String(),
-  currency: AccountCurrencyDto,
-});
+export const AccountDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    type: t.Enum(AccountType),
+    name: t.String(),
+    currencyId: t.String(),
+    balance: t.String(),
+    creditLimit: t.Nullable(t.String()),
+    notifyOnDueDate: t.Nullable(t.Boolean()),
+    paymentDay: t.Nullable(t.Integer()),
+    notifyDaysBefore: t.Nullable(t.Integer()),
+    meta: t.Nullable(t.Any()),
+    createdAt: t.String(),
+    updatedAt: t.String(),
+    currency: AccountCurrencyDto,
+  }),
+);
 
-export const AccountSummaryDto = t.Object({
-  currency: AccountCurrencyDto,
-  totalBalance: t.Number(),
-});
+export const AccountSummaryDto = t.NoValidate(
+  t.Object({
+    currency: AccountCurrencyDto,
+    totalBalance: t.Number(),
+  }),
+);
 
-export const AccountPaginationDto = t.Object({
-  page: t.Integer(),
-  limit: t.Integer(),
-  total: t.Integer(),
-  totalPages: t.Integer(),
-});
+export const AccountPaginationDto = t.NoValidate(
+  t.Object({
+    page: t.Integer(),
+    limit: t.Integer(),
+    total: t.Integer(),
+    totalPages: t.Integer(),
+  }),
+);
 
-export const AccountListResponseDto = t.Object({
-  accounts: t.Array(AccountDto),
-  pagination: AccountPaginationDto,
-  summary: t.Array(AccountSummaryDto),
-});
+export const AccountListResponseDto = t.NoValidate(
+  t.Object({
+    accounts: t.Array(AccountDto),
+    pagination: AccountPaginationDto,
+    summary: t.Array(AccountSummaryDto),
+  }),
+);
 
-export const AccountDeleteResponseDto = t.Object({
-  success: t.Boolean(),
-  message: t.String(),
-});
+export const AccountDeleteResponseDto = t.NoValidate(
+  t.Object({
+    success: t.Boolean(),
+    message: t.String(),
+  }),
+);
 
 export type AccountResponse = typeof AccountDto.static;
 export type AccountSummary = typeof AccountSummaryDto.static;

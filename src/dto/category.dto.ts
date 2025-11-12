@@ -18,37 +18,45 @@ export const ListCategoriesQueryDto = t.Object({
 export type IUpsertCategoryDto = typeof UpsertCategoryDto.static;
 export type IListCategoriesQueryDto = typeof ListCategoriesQueryDto.static;
 
-export const CategoryDto = t.Object({
-  id: t.String(),
-  userId: t.String(),
-  type: t.Enum(CategoryType),
-  name: t.String(),
-  parentId: t.Nullable(t.String()),
-  icon: t.Nullable(t.String()),
-  color: t.Nullable(t.String()),
-  isLocked: t.Boolean(),
-});
+export const CategoryDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    userId: t.String(),
+    type: t.Enum(CategoryType),
+    name: t.String(),
+    parentId: t.Nullable(t.String()),
+    icon: t.Nullable(t.String()),
+    color: t.Nullable(t.String()),
+    isLocked: t.Boolean(),
+  }),
+);
 
-export const CategoryTreeDto = t.Object({
-  id: t.String(),
-  userId: t.String(),
-  type: t.Enum(CategoryType),
-  name: t.String(),
-  parentId: t.Nullable(t.String()),
-  icon: t.Nullable(t.String()),
-  color: t.Nullable(t.String()),
-  isLocked: t.Boolean(),
-  children: t.Optional(t.Array(t.Unknown())),
-});
+export const CategoryTreeDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    userId: t.String(),
+    type: t.Enum(CategoryType),
+    name: t.String(),
+    parentId: t.Nullable(t.String()),
+    icon: t.Nullable(t.String()),
+    color: t.Nullable(t.String()),
+    isLocked: t.Boolean(),
+    children: t.Optional(t.Array(t.Unknown())),
+  }),
+);
 
-export const CategoryListResponseDto = t.Object({
-  categories: t.Array(CategoryTreeDto),
-});
+export const CategoryListResponseDto = t.NoValidate(
+  t.Object({
+    categories: t.Array(CategoryTreeDto),
+  }),
+);
 
-export const CategoryDeleteResponseDto = t.Object({
-  success: t.Boolean(),
-  message: t.String(),
-});
+export const CategoryDeleteResponseDto = t.NoValidate(
+  t.Object({
+    success: t.Boolean(),
+    message: t.String(),
+  }),
+);
 
 export type CategoryResponse = typeof CategoryDto.static;
 export type CategoryTreeResponse = typeof CategoryTreeDto.static;

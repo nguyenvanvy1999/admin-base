@@ -27,49 +27,59 @@ export type ICreateInvestmentContributionDto =
 export type IListInvestmentContributionsQueryDto =
   typeof ListInvestmentContributionsQueryDto.static;
 
-export const InvestmentContributionAccountDto = t.Object({
-  id: t.String(),
-  name: t.String(),
-});
+export const InvestmentContributionAccountDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    name: t.String(),
+  }),
+);
 
-export const InvestmentContributionCurrencyDto = t.Object({
-  id: t.String(),
-  code: t.String(),
-  name: t.String(),
-  symbol: t.Nullable(t.String()),
-});
+export const InvestmentContributionCurrencyDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    code: t.String(),
+    name: t.String(),
+    symbol: t.Nullable(t.String()),
+  }),
+);
 
-export const InvestmentContributionDto = t.Object({
-  id: t.String(),
-  userId: t.String(),
-  investmentId: t.String(),
-  accountId: t.Nullable(t.String()),
-  amount: t.Number(),
-  currencyId: t.String(),
-  type: t.Enum(ContributionType),
-  amountInBaseCurrency: t.Nullable(t.Number()),
-  exchangeRate: t.Nullable(t.Number()),
-  baseCurrencyId: t.Nullable(t.String()),
-  timestamp: t.String(),
-  note: t.Nullable(t.String()),
-  createdAt: t.String(),
-  updatedAt: t.String(),
-  account: t.Nullable(InvestmentContributionAccountDto),
-  currency: InvestmentContributionCurrencyDto,
-  baseCurrency: t.Nullable(InvestmentContributionCurrencyDto),
-});
+export const InvestmentContributionDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    userId: t.String(),
+    investmentId: t.String(),
+    accountId: t.Nullable(t.String()),
+    amount: t.Number(),
+    currencyId: t.String(),
+    type: t.Enum(ContributionType),
+    amountInBaseCurrency: t.Nullable(t.Number()),
+    exchangeRate: t.Nullable(t.Number()),
+    baseCurrencyId: t.Nullable(t.String()),
+    timestamp: t.String(),
+    note: t.Nullable(t.String()),
+    createdAt: t.String(),
+    updatedAt: t.String(),
+    account: t.Nullable(InvestmentContributionAccountDto),
+    currency: InvestmentContributionCurrencyDto,
+    baseCurrency: t.Nullable(InvestmentContributionCurrencyDto),
+  }),
+);
 
-export const InvestmentContributionPaginationDto = t.Object({
-  page: t.Integer(),
-  limit: t.Integer(),
-  total: t.Integer(),
-  totalPages: t.Integer(),
-});
+export const InvestmentContributionPaginationDto = t.NoValidate(
+  t.Object({
+    page: t.Integer(),
+    limit: t.Integer(),
+    total: t.Integer(),
+    totalPages: t.Integer(),
+  }),
+);
 
-export const InvestmentContributionListResponseDto = t.Object({
-  contributions: t.Array(InvestmentContributionDto),
-  pagination: InvestmentContributionPaginationDto,
-});
+export const InvestmentContributionListResponseDto = t.NoValidate(
+  t.Object({
+    contributions: t.Array(InvestmentContributionDto),
+    pagination: InvestmentContributionPaginationDto,
+  }),
+);
 
 export type InvestmentContributionResponse =
   typeof InvestmentContributionDto.static;

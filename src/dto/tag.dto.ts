@@ -17,30 +17,38 @@ export const ListTagsQueryDto = t.Object({
 export type IUpsertTagDto = typeof UpsertTagDto.static;
 export type IListTagsQueryDto = typeof ListTagsQueryDto.static;
 
-export const TagDto = t.Object({
-  id: t.String(),
-  name: t.String(),
-  description: t.Nullable(t.String()),
-  createdAt: t.String(),
-  updatedAt: t.String(),
-});
+export const TagDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    name: t.String(),
+    description: t.Nullable(t.String()),
+    createdAt: t.String(),
+    updatedAt: t.String(),
+  }),
+);
 
-export const TagPaginationDto = t.Object({
-  page: t.Integer(),
-  limit: t.Integer(),
-  total: t.Integer(),
-  totalPages: t.Integer(),
-});
+export const TagPaginationDto = t.NoValidate(
+  t.Object({
+    page: t.Integer(),
+    limit: t.Integer(),
+    total: t.Integer(),
+    totalPages: t.Integer(),
+  }),
+);
 
-export const TagListResponseDto = t.Object({
-  tags: t.Array(TagDto),
-  pagination: TagPaginationDto,
-});
+export const TagListResponseDto = t.NoValidate(
+  t.Object({
+    tags: t.Array(TagDto),
+    pagination: TagPaginationDto,
+  }),
+);
 
-export const TagDeleteResponseDto = t.Object({
-  success: t.Boolean(),
-  message: t.String(),
-});
+export const TagDeleteResponseDto = t.NoValidate(
+  t.Object({
+    success: t.Boolean(),
+    message: t.String(),
+  }),
+);
 
 export type TagResponse = typeof TagDto.static;
 export type TagListResponse = typeof TagListResponseDto.static;

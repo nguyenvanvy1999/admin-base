@@ -1,6 +1,8 @@
 import { booleanStatusMap } from '@client/utils/booleanStatusMap';
 import { formatDate, formatDecimal, formatInt } from '@client/utils/format';
 import {
+  Box,
+  Group,
   Pagination,
   Select,
   Text,
@@ -404,111 +406,85 @@ export function DataTable<T extends { id: string } = { id: string }>({
     ),
   });
 
-  return (
-    <>
-      <MantineReactTable
-        table={table}
-        renderBottomToolbarCustom={() => {
-          const start =
-            rowCount === 0
-              ? 0
-              : currentPage * pageSize + (rowCount > 0 ? 1 : 0);
-          const end = Math.min((currentPage + 1) * pageSize, rowCount);
+  const start =
+    rowCount === 0 ? 0 : currentPage * pageSize + (rowCount > 0 ? 1 : 0);
+  const end = Math.min((currentPage + 1) * pageSize, rowCount);
 
-          return (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                gap: theme.spacing.xs,
-                width: '100%',
-                flexWrap: 'nowrap',
-              }}
-            >
-              {storeColumnsKey ? (
-                <div style={{ flexShrink: 0 }}>
-                  <ColumnOrdering
-                    columns={mappedColumns}
-                    storeColumnsKey={storeColumnsKey}
-                    onOrdered={setOrderedColumns as any}
-                  />
-                </div>
-              ) : null}
-              {recordsPerPageOptions && recordsPerPageOptions.length > 0 && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    flexShrink: 0,
-                  }}
-                >
-                  <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                    {recordsPerPageLabel ||
-                      t('common.pageSizeLabel', { defaultValue: 'Hiển thị' })}
-                  </Text>
-                  <Select
-                    value={pageSize.toString()}
-                    onChange={(value) => {
-                      if (value) {
-                        onRecordsPerPageChange?.(parseInt(value, 10));
-                      }
-                    }}
-                    data={recordsPerPageOptions.map((size) => ({
-                      value: size.toString(),
-                      label: size.toString(),
-                    }))}
-                    disabled={!!loading}
-                    size="xs"
-                    style={{ width: 60, flexShrink: 0 }}
-                    styles={{
-                      input: {
-                        minHeight: '24px',
-                        height: '24px',
-                        fontSize: '12px',
-                      },
-                    }}
-                  />
-                </div>
-              )}
-              <Text
-                size="xs"
-                c="dimmed"
-                style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-              >
-                <Text component="span" fw={500} c="var(--mantine-color-text)">
-                  {start || 0}
-                </Text>
-                {' - '}
-                <Text component="span" fw={500} c="var(--mantine-color-text)">
-                  {end || 0}
-                </Text>{' '}
-                {t('common.of', { defaultValue: 'of' })}{' '}
-                <Text component="span" fw={500} c="var(--mantine-color-text)">
-                  {rowCount}
-                </Text>
+  return (
+    <MantineReactTable
+      table={table}
+      renderBottomToolbarCustom={() => (
+        <Group justify="flex-end" gap="xs" wrap="nowrap" w="100%">
+          {storeColumnsKey && (
+            <Box style={{ flexShrink: 0 }}>
+              <ColumnOrdering
+                columns={mappedColumns}
+                storeColumnsKey={storeColumnsKey}
+                onOrdered={setOrderedColumns as any}
+              />
+            </Box>
+          )}
+          {recordsPerPageOptions && recordsPerPageOptions.length > 0 && (
+            <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
+              <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+                {recordsPerPageLabel ||
+                  t('common.pageSizeLabel', { defaultValue: 'Hiển thị' })}
               </Text>
-              {totalPages > 0 && (
-                <div style={{ flexShrink: 0 }}>
-                  <Pagination
-                    total={totalPages}
-                    value={page || 1}
-                    onChange={(newPage: number) => {
-                      onPageChange?.(newPage);
-                    }}
-                    disabled={!!loading}
-                    size="lg"
-                    radius="xl"
-                  />
-                </div>
-              )}
-            </div>
-          );
-        }}
-        {...(props as any)}
-      />
-    </>
+              <Select
+                value={pageSize.toString()}
+                onChange={(value) => {
+                  if (value) {
+                    onRecordsPerPageChange?.(parseInt(value, 10));
+                  }
+                }}
+                data={recordsPerPageOptions.map((size) => ({
+                  value: size.toString(),
+                  label: size.toString(),
+                }))}
+                disabled={!!loading}
+                size="xs"
+                w={60}
+                styles={{
+                  input: {
+                    minHeight: '24px',
+                    height: '24px',
+                    fontSize: '12px',
+                  },
+                }}
+              />
+            </Group>
+          )}
+          <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+            <Text component="span" fw={500}>
+              {start || 0}
+            </Text>
+            {' - '}
+            <Text component="span" fw={500}>
+              {end || 0}
+            </Text>{' '}
+            {t('common.of', { defaultValue: 'of' })}{' '}
+            <Text component="span" fw={500}>
+              {rowCount}
+            </Text>
+          </Text>
+          {totalPages > 0 && (
+            <Box style={{ flexShrink: 0 }}>
+              <Pagination
+                total={totalPages}
+                value={page || 1}
+                onChange={(newPage: number) => {
+                  onPageChange?.(newPage);
+                }}
+                disabled={!!loading}
+                size="lg"
+                radius="xl"
+              />
+            </Box>
+          )}
+        </Group>
+      )}
+      {...(props as any)}
+    />
   );
 }
 

@@ -23,19 +23,23 @@ export type IRegisterDto = typeof RegisterDto.static;
 export type ILoginDto = typeof LoginDto.static;
 export type IUpdateProfileDto = typeof UpdateProfileDto.static;
 
-export const AuthUserDto = t.Object({
-  id: t.String(),
-  username: t.String(),
-  name: t.Nullable(t.String()),
-  role: t.Enum(UserRole),
-  baseCurrencyId: t.Nullable(t.String()),
-});
+export const AuthUserDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    username: t.String(),
+    name: t.Nullable(t.String()),
+    role: t.Enum(UserRole),
+    baseCurrencyId: t.Nullable(t.String()),
+  }),
+);
 export type AuthUserRes = typeof AuthUserDto.static;
 
-export const LoginResponseDto = t.Object({
-  user: AuthUserDto,
-  jwt: t.String(),
-});
+export const LoginResponseDto = t.NoValidate(
+  t.Object({
+    user: AuthUserDto,
+    jwt: t.String(),
+  }),
+);
 export type LoginRes = typeof LoginResponseDto.static;
 
 export type CurrentUserRes = typeof AuthUserDto.static;

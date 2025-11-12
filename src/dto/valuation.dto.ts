@@ -24,42 +24,50 @@ export type IUpsertInvestmentValuationDto =
 export type IListInvestmentValuationsQueryDto =
   typeof ListInvestmentValuationsQueryDto.static;
 
-export const InvestmentValuationCurrencyDto = t.Object({
-  id: t.String(),
-  code: t.String(),
-  name: t.String(),
-  symbol: t.Nullable(t.String()),
-});
+export const InvestmentValuationCurrencyDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    code: t.String(),
+    name: t.String(),
+    symbol: t.Nullable(t.String()),
+  }),
+);
 
-export const InvestmentValuationDto = t.Object({
-  id: t.String(),
-  userId: t.String(),
-  investmentId: t.String(),
-  currencyId: t.String(),
-  price: t.Number(),
-  priceInBaseCurrency: t.Nullable(t.Number()),
-  exchangeRate: t.Nullable(t.Number()),
-  baseCurrencyId: t.Nullable(t.String()),
-  timestamp: t.String(),
-  source: t.Nullable(t.String()),
-  fetchedAt: t.Nullable(t.String()),
-  createdAt: t.String(),
-  updatedAt: t.String(),
-  currency: InvestmentValuationCurrencyDto,
-  baseCurrency: t.Nullable(InvestmentValuationCurrencyDto),
-});
+export const InvestmentValuationDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    userId: t.String(),
+    investmentId: t.String(),
+    currencyId: t.String(),
+    price: t.Number(),
+    priceInBaseCurrency: t.Nullable(t.Number()),
+    exchangeRate: t.Nullable(t.Number()),
+    baseCurrencyId: t.Nullable(t.String()),
+    timestamp: t.String(),
+    source: t.Nullable(t.String()),
+    fetchedAt: t.Nullable(t.String()),
+    createdAt: t.String(),
+    updatedAt: t.String(),
+    currency: InvestmentValuationCurrencyDto,
+    baseCurrency: t.Nullable(InvestmentValuationCurrencyDto),
+  }),
+);
 
-export const InvestmentValuationPaginationDto = t.Object({
-  page: t.Integer(),
-  limit: t.Integer(),
-  total: t.Integer(),
-  totalPages: t.Integer(),
-});
+export const InvestmentValuationPaginationDto = t.NoValidate(
+  t.Object({
+    page: t.Integer(),
+    limit: t.Integer(),
+    total: t.Integer(),
+    totalPages: t.Integer(),
+  }),
+);
 
-export const InvestmentValuationListResponseDto = t.Object({
-  valuations: t.Array(InvestmentValuationDto),
-  pagination: InvestmentValuationPaginationDto,
-});
+export const InvestmentValuationListResponseDto = t.NoValidate(
+  t.Object({
+    valuations: t.Array(InvestmentValuationDto),
+    pagination: InvestmentValuationPaginationDto,
+  }),
+);
 
 export type InvestmentValuationResponse = typeof InvestmentValuationDto.static;
 export type InvestmentValuationListResponse =
