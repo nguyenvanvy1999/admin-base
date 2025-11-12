@@ -256,8 +256,8 @@ const AddEditInvestmentDialog = ({
                   value: currency.id,
                   label: `${currency.code} - ${currency.name}`,
                 }))}
-                value={field.value || ''}
-                onChange={field.onChange}
+                value={field.value || null}
+                onChange={(value) => field.onChange(value || '')}
                 searchable
               />
             )}
@@ -280,8 +280,8 @@ const AddEditInvestmentDialog = ({
                   value: currency.id,
                   label: `${currency.code} - ${currency.name}`,
                 }))}
-                value={field.value || ''}
-                onChange={field.onChange}
+                value={field.value || null}
+                onChange={(value) => field.onChange(value || '')}
                 searchable
                 clearable
               />

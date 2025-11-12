@@ -57,12 +57,15 @@ const AddTradeDialog = ({
 
   const filteredAccounts = useMemo(() => {
     if (!accountsResponse?.accounts) return [];
-    const targetCurrencyId = investment.baseCurrencyId
-      ? investment.baseCurrencyId
-      : investment.currencyId;
-    return accountsResponse.accounts.filter(
+    // Filter by investment currencyId (not baseCurrencyId)
+    // Trades are executed in the investment's currency
+    const targetCurrencyId = investment.currencyId;
+    const matched = accountsResponse.accounts.filter(
       (account) => account.currencyId === targetCurrencyId,
     );
+    // If no accounts match the investment currency, show all accounts
+    // This allows users to select any account even if currency doesn't match
+    return matched.length > 0 ? matched : accountsResponse.accounts;
   }, [accountsResponse, investment]);
 
   const accountOptions = useMemo(
@@ -225,8 +228,8 @@ const AddTradeDialog = ({
                 })}
                 error={error}
                 items={accountOptions}
-                value={field.value || ''}
-                onChange={field.onChange}
+                value={field.value || null}
+                onChange={(value) => field.onChange(value || '')}
                 searchable
               />
             )}

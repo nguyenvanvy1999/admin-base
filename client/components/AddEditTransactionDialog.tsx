@@ -341,8 +341,8 @@ const AddEditTransactionDialog = ({
                     required
                     error={error}
                     items={accountOptions}
-                    value={field.value || ''}
-                    onChange={field.onChange}
+                    value={field.value || null}
+                    onChange={(value) => field.onChange(value || '')}
                     searchable
                   />
                 )}
@@ -363,8 +363,8 @@ const AddEditTransactionDialog = ({
                         required
                         error={error}
                         items={toAccountOptions}
-                        value={field.value || ''}
-                        onChange={field.onChange}
+                        value={field.value || null}
+                        onChange={(value) => field.onChange(value || '')}
                         searchable
                       />
                     );
@@ -424,7 +424,7 @@ const AddEditTransactionDialog = ({
                     placeholder={t('transactions.spendForPlaceholder')}
                     error={error}
                     items={entityOptions}
-                    value={field.value || ''}
+                    value={field.value || null}
                     onChange={(value) => field.onChange(value || null)}
                     searchable
                     clearable

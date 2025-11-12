@@ -1,6 +1,8 @@
 import type { Prisma } from '@server/generated/prisma/client';
+import { TradeSide } from '@server/generated/prisma/enums';
 import type { InvestmentTradeWhereInput } from '@server/generated/prisma/models';
 import { prisma } from '@server/libs/db';
+import Decimal from 'decimal.js';
 import { Elysia } from 'elysia';
 import type {
   ICreateInvestmentTradeDto,
@@ -106,31 +108,73 @@ export class InvestmentTradeService {
       await this.validateTransactionOwnership(userId, data.transactionId);
     }
 
-    const trade = await prisma.investmentTrade.create({
-      data: {
-        userId,
-        investmentId,
-        accountId: data.accountId,
-        side: data.side,
-        timestamp,
-        price: data.price,
-        quantity: data.quantity,
-        amount: data.amount,
-        fee: data.fee ?? 0,
-        currencyId: data.currencyId,
-        transactionId: data.transactionId ?? null,
-        priceCurrency: data.priceCurrency ?? null,
-        priceInBaseCurrency: data.priceInBaseCurrency ?? null,
-        amountInBaseCurrency: data.amountInBaseCurrency ?? null,
-        exchangeRate: data.exchangeRate ?? null,
-        baseCurrencyId: data.baseCurrencyId ?? null,
-        priceSource: data.priceSource ?? null,
-        priceFetchedAt: priceFetchedAt ?? null,
-        meta: data.meta ?? null,
-      },
-      select: TRADE_SELECT,
+    const account = await prisma.account.findFirst({
+      where: { id: data.accountId, userId },
+      select: { id: true, currencyId: true },
     });
-    return mapTrade(trade);
+
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const trade = await tx.investmentTrade.create({
+        data: {
+          userId,
+          investmentId,
+          accountId: data.accountId,
+          side: data.side,
+          timestamp,
+          price: data.price,
+          quantity: data.quantity,
+          amount: data.amount,
+          fee: data.fee ?? 0,
+          currencyId: data.currencyId,
+          transactionId: data.transactionId ?? null,
+          priceCurrency: data.priceCurrency ?? null,
+          priceInBaseCurrency: data.priceInBaseCurrency ?? null,
+          amountInBaseCurrency: data.amountInBaseCurrency ?? null,
+          exchangeRate: data.exchangeRate ?? null,
+          baseCurrencyId: data.baseCurrencyId ?? null,
+          priceSource: data.priceSource ?? null,
+          priceFetchedAt: priceFetchedAt ?? null,
+          meta: data.meta ?? null,
+        },
+        select: TRADE_SELECT,
+      });
+
+      // Update account balance based on trade side
+      // Buy: deduct amount + fee from account (money goes out)
+      // Sell: add amount - fee to account (money comes in)
+      const amountDecimal = new Decimal(data.amount);
+      const feeDecimal = new Decimal(data.fee ?? 0);
+
+      if (data.side === TradeSide.buy) {
+        // Buying: deduct total cost (amount + fee) from account
+        const totalCost = amountDecimal.plus(feeDecimal);
+        await tx.account.update({
+          where: { id: data.accountId },
+          data: {
+            balance: {
+              decrement: totalCost.toNumber(),
+            },
+          },
+        });
+      } else {
+        // Selling: add proceeds (amount - fee) to account
+        const proceeds = amountDecimal.minus(feeDecimal);
+        await tx.account.update({
+          where: { id: data.accountId },
+          data: {
+            balance: {
+              increment: proceeds.toNumber(),
+            },
+          },
+        });
+      }
+
+      return mapTrade(trade);
+    });
   }
 
   async listTrades(

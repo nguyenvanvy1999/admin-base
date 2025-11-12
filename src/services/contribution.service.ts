@@ -1,5 +1,7 @@
 import type { Prisma } from '@server/generated/prisma/client';
+import { ContributionType } from '@server/generated/prisma/enums';
 import { prisma } from '@server/libs/db';
+import Decimal from 'decimal.js';
 import { Elysia } from 'elysia';
 import type {
   ICreateInvestmentContributionDto,
@@ -104,24 +106,65 @@ export class InvestmentContributionService {
 
     const timestamp = this.parseDate(data.timestamp);
 
-    const contribution = await prisma.investmentContribution.create({
-      data: {
-        userId,
-        investmentId,
-        accountId: data.accountId ?? null,
-        amount: data.amount,
-        currencyId: data.currencyId,
-        type: data.type,
-        amountInBaseCurrency: data.amountInBaseCurrency ?? null,
-        exchangeRate: data.exchangeRate ?? null,
-        baseCurrencyId: data.baseCurrencyId ?? null,
-        timestamp,
-        note: data.note ?? null,
-      },
-      select: CONTRIBUTION_SELECT,
-    });
+    // Only update balance if accountId is provided
+    if (data.accountId) {
+      const account = await prisma.account.findFirst({
+        where: { id: data.accountId, userId },
+        select: { id: true },
+      });
 
-    return formatContribution(contribution);
+      if (!account) {
+        throw new Error('Account not found');
+      }
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const contribution = await tx.investmentContribution.create({
+        data: {
+          userId,
+          investmentId,
+          accountId: data.accountId ?? null,
+          amount: data.amount,
+          currencyId: data.currencyId,
+          type: data.type,
+          amountInBaseCurrency: data.amountInBaseCurrency ?? null,
+          exchangeRate: data.exchangeRate ?? null,
+          baseCurrencyId: data.baseCurrencyId ?? null,
+          timestamp,
+          note: data.note ?? null,
+        },
+        select: CONTRIBUTION_SELECT,
+      });
+
+      // Update account balance if accountId is provided
+      if (data.accountId) {
+        const amountDecimal = new Decimal(data.amount);
+
+        if (data.type === ContributionType.deposit) {
+          // Deposit: deduct amount from account (money goes into investment)
+          await tx.account.update({
+            where: { id: data.accountId },
+            data: {
+              balance: {
+                decrement: amountDecimal.toNumber(),
+              },
+            },
+          });
+        } else {
+          // Withdrawal: add amount to account (money comes out of investment)
+          await tx.account.update({
+            where: { id: data.accountId },
+            data: {
+              balance: {
+                increment: amountDecimal.toNumber(),
+              },
+            },
+          });
+        }
+      }
+
+      return formatContribution(contribution);
+    });
   }
 
   async listContributions(

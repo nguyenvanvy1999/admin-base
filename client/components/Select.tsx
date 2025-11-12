@@ -9,7 +9,7 @@ export interface SelectItem {
 export interface SelectProps<T extends SelectItem = SelectItem>
   extends InputBaseProps {
   items: T[];
-  value?: string;
+  value?: string | null;
   onChange?: (value: string | null) => void;
   optionRenderer?: (item: T) => ReactNode;
   onDropdownClose?: VoidFunction;
@@ -23,7 +23,13 @@ function SelectInner<T extends SelectItem>(
   props: SelectProps<T>,
   ref: ForwardedRef<HTMLInputElement>,
 ) {
-  const { items, optionRenderer: _optionRenderer, ...rest } = props;
+  const {
+    items,
+    optionRenderer: _optionRenderer,
+    value,
+    onChange,
+    ...rest
+  } = props;
   return (
     <MantineSelect
       ref={ref}
@@ -31,6 +37,8 @@ function SelectInner<T extends SelectItem>(
         value: item.value,
         label: String(item.label),
       }))}
+      value={value ?? undefined}
+      onChange={(val) => onChange?.(val ?? null)}
       {...rest}
     />
   );
