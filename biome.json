@@ -13,6 +13,7 @@
       "client/**/*.tsx",
       "client/**/*.json",
       "client/**/*.css",
+      "docs/**/*.md",
       "prisma.config.ts",
       "!src/generated/prisma"
     ]
