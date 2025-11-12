@@ -14,6 +14,9 @@ CREATE TYPE "TransactionType" AS ENUM ('income', 'expense', 'transfer', 'loan_gi
 CREATE TYPE "InvestmentAssetType" AS ENUM ('coin', 'ccq', 'custom');
 
 -- CreateEnum
+CREATE TYPE "InvestmentMode" AS ENUM ('priced', 'manual');
+
+-- CreateEnum
 CREATE TYPE "EntityType" AS ENUM ('individual', 'organization');
 
 -- CreateEnum
@@ -24,6 +27,9 @@ CREATE TYPE "RecurringFrequency" AS ENUM ('daily', 'weekly', 'monthly');
 
 -- CreateEnum
 CREATE TYPE "TradeSide" AS ENUM ('buy', 'sell');
+
+-- CreateEnum
+CREATE TYPE "ContributionType" AS ENUM ('deposit', 'withdrawal');
 
 -- CreateTable
 CREATE TABLE "currencies" (
@@ -98,7 +104,9 @@ CREATE TABLE "investments" (
     "symbol" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "asset_type" "InvestmentAssetType" NOT NULL,
+    "mode" "InvestmentMode" NOT NULL DEFAULT 'priced',
     "currency_id" TEXT NOT NULL,
+    "base_currency_id" TEXT,
     "extra" JSONB,
     "deleted_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -113,6 +121,8 @@ CREATE TABLE "transactions" (
     "user_id" TEXT NOT NULL,
     "account_id" TEXT NOT NULL,
     "to_account_id" TEXT,
+    "transfer_group_id" TEXT,
+    "is_transfer_mirror" BOOLEAN NOT NULL DEFAULT false,
     "type" "TransactionType" NOT NULL,
     "category_id" TEXT,
     "investment_id" TEXT,
@@ -157,7 +167,7 @@ CREATE TABLE "entities" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "type" "EntityType",
+    "type" "EntityType" NOT NULL DEFAULT 'individual',
     "phone" TEXT,
     "email" TEXT,
     "address" TEXT,
@@ -203,6 +213,9 @@ CREATE TABLE "investment_trades" (
     "currency_id" TEXT NOT NULL,
     "price_currency" TEXT,
     "price_in_base_currency" DECIMAL(30,10),
+    "amount_in_base_currency" DECIMAL(30,10),
+    "exchange_rate" DECIMAL(30,10),
+    "base_currency_id" TEXT,
     "price_source" TEXT,
     "price_fetched_at" TIMESTAMP(3),
     "external_id" TEXT,
@@ -212,6 +225,45 @@ CREATE TABLE "investment_trades" (
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "investment_trades_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "investment_contributions" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "investment_id" TEXT NOT NULL,
+    "account_id" TEXT,
+    "amount" DECIMAL(30,10) NOT NULL,
+    "currency_id" TEXT NOT NULL,
+    "type" "ContributionType" NOT NULL DEFAULT 'deposit',
+    "amount_in_base_currency" DECIMAL(30,10),
+    "exchange_rate" DECIMAL(30,10),
+    "base_currency_id" TEXT,
+    "timestamp" TIMESTAMP(3) NOT NULL,
+    "note" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "investment_contributions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "investment_valuations" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "investment_id" TEXT NOT NULL,
+    "currency_id" TEXT NOT NULL,
+    "price" DECIMAL(30,10) NOT NULL,
+    "price_in_base_currency" DECIMAL(30,10),
+    "exchange_rate" DECIMAL(30,10),
+    "base_currency_id" TEXT,
+    "timestamp" TIMESTAMP(3) NOT NULL,
+    "source" TEXT,
+    "fetched_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "investment_valuations_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -290,6 +342,9 @@ CREATE INDEX "investment_symbol_idx" ON "investments"("symbol");
 CREATE INDEX "investment_currencyId_idx" ON "investments"("currency_id");
 
 -- CreateIndex
+CREATE INDEX "investment_baseCurrencyId_idx" ON "investments"("base_currency_id");
+
+-- CreateIndex
 CREATE INDEX "transaction_userId_idx" ON "transactions"("user_id");
 
 -- CreateIndex
@@ -327,6 +382,9 @@ CREATE INDEX "transaction_user_account_date_idx" ON "transactions"("user_id", "a
 
 -- CreateIndex
 CREATE INDEX "transaction_user_investment_date_idx" ON "transactions"("user_id", "investment_id", "date");
+
+-- CreateIndex
+CREATE INDEX "transaction_transferGroupId_idx" ON "transactions"("transfer_group_id");
 
 -- CreateIndex
 CREATE INDEX "budget_userId_idx" ON "budgets"("user_id");
@@ -371,6 +429,39 @@ CREATE INDEX "trade_currencyId_idx" ON "investment_trades"("currency_id");
 CREATE INDEX "trade_externalId_idx" ON "investment_trades"("external_id");
 
 -- CreateIndex
+CREATE INDEX "trade_baseCurrencyId_idx" ON "investment_trades"("base_currency_id");
+
+-- CreateIndex
+CREATE INDEX "investmentContribution_userId_idx" ON "investment_contributions"("user_id");
+
+-- CreateIndex
+CREATE INDEX "investmentContribution_investmentId_idx" ON "investment_contributions"("investment_id");
+
+-- CreateIndex
+CREATE INDEX "investmentContribution_accountId_idx" ON "investment_contributions"("account_id");
+
+-- CreateIndex
+CREATE INDEX "investmentContribution_currencyId_idx" ON "investment_contributions"("currency_id");
+
+-- CreateIndex
+CREATE INDEX "investmentContribution_baseCurrencyId_idx" ON "investment_contributions"("base_currency_id");
+
+-- CreateIndex
+CREATE INDEX "investmentValuation_userId_idx" ON "investment_valuations"("user_id");
+
+-- CreateIndex
+CREATE INDEX "investmentValuation_investmentId_idx" ON "investment_valuations"("investment_id");
+
+-- CreateIndex
+CREATE INDEX "investmentValuation_currencyId_idx" ON "investment_valuations"("currency_id");
+
+-- CreateIndex
+CREATE INDEX "investmentValuation_timestamp_idx" ON "investment_valuations"("timestamp");
+
+-- CreateIndex
+CREATE INDEX "investmentValuation_baseCurrencyId_idx" ON "investment_valuations"("base_currency_id");
+
+-- CreateIndex
 CREATE INDEX "holding_user_investment_idx" ON "holdings"("user_id", "investment_id");
 
 -- CreateIndex
@@ -399,6 +490,9 @@ ALTER TABLE "categories" ADD CONSTRAINT "categories_parent_id_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "investments" ADD CONSTRAINT "investments_currency_id_fkey" FOREIGN KEY ("currency_id") REFERENCES "currencies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "investments" ADD CONSTRAINT "investments_base_currency_id_fkey" FOREIGN KEY ("base_currency_id") REFERENCES "currencies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "investments" ADD CONSTRAINT "investments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -449,6 +543,9 @@ ALTER TABLE "recurring_transactions" ADD CONSTRAINT "recurring_transactions_cate
 ALTER TABLE "investment_trades" ADD CONSTRAINT "investment_trades_currency_id_fkey" FOREIGN KEY ("currency_id") REFERENCES "currencies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "investment_trades" ADD CONSTRAINT "investment_trades_base_currency_id_fkey" FOREIGN KEY ("base_currency_id") REFERENCES "currencies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "investment_trades" ADD CONSTRAINT "investment_trades_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -459,6 +556,33 @@ ALTER TABLE "investment_trades" ADD CONSTRAINT "investment_trades_account_id_fke
 
 -- AddForeignKey
 ALTER TABLE "investment_trades" ADD CONSTRAINT "investment_trades_transaction_id_fkey" FOREIGN KEY ("transaction_id") REFERENCES "transactions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "investment_contributions" ADD CONSTRAINT "investment_contributions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "investment_contributions" ADD CONSTRAINT "investment_contributions_investment_id_fkey" FOREIGN KEY ("investment_id") REFERENCES "investments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "investment_contributions" ADD CONSTRAINT "investment_contributions_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "accounts"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "investment_contributions" ADD CONSTRAINT "investment_contributions_currency_id_fkey" FOREIGN KEY ("currency_id") REFERENCES "currencies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "investment_contributions" ADD CONSTRAINT "investment_contributions_base_currency_id_fkey" FOREIGN KEY ("base_currency_id") REFERENCES "currencies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "investment_valuations" ADD CONSTRAINT "investment_valuations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "investment_valuations" ADD CONSTRAINT "investment_valuations_investment_id_fkey" FOREIGN KEY ("investment_id") REFERENCES "investments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "investment_valuations" ADD CONSTRAINT "investment_valuations_currency_id_fkey" FOREIGN KEY ("currency_id") REFERENCES "currencies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "investment_valuations" ADD CONSTRAINT "investment_valuations_base_currency_id_fkey" FOREIGN KEY ("base_currency_id") REFERENCES "currencies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "holdings" ADD CONSTRAINT "holdings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

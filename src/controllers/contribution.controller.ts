@@ -15,7 +15,7 @@ const CONTRIBUTION_DETAIL = {
 };
 
 const contributionController = new Elysia().group(
-  '/investments/:investmentId/contributions',
+  '/investments/:id/contributions',
   {
     detail: {
       tags: ['Investment Contribution'],
@@ -32,7 +32,7 @@ const contributionController = new Elysia().group(
         ({ user, params, body, investmentContributionService }) => {
           return investmentContributionService.createContribution(
             user.id,
-            params.investmentId,
+            params.id,
             body,
           );
         },
@@ -44,7 +44,7 @@ const contributionController = new Elysia().group(
             description:
               'Record a new cash contribution or withdrawal for the specified investment.',
           },
-          params: t.Object({ investmentId: t.String() }),
+          params: t.Object({ id: t.String() }),
           body: CreateInvestmentContributionDto,
           response: {
             200: InvestmentContributionDto,
@@ -56,7 +56,7 @@ const contributionController = new Elysia().group(
         ({ user, params, query, investmentContributionService }) => {
           return investmentContributionService.listContributions(
             user.id,
-            params.investmentId,
+            params.id,
             query,
           );
         },
@@ -68,7 +68,7 @@ const contributionController = new Elysia().group(
             description:
               'Return contributions associated with the specified investment. Supports filtering and pagination.',
           },
-          params: t.Object({ investmentId: t.String() }),
+          params: t.Object({ id: t.String() }),
           query: ListInvestmentContributionsQueryDto,
           response: {
             200: InvestmentContributionListResponseDto,

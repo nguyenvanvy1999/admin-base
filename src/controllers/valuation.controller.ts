@@ -15,7 +15,7 @@ const VALUATION_DETAIL = {
 };
 
 const valuationController = new Elysia().group(
-  '/investments/:investmentId/valuations',
+  '/investments/:id/valuations',
   {
     detail: {
       tags: ['Investment Valuation'],
@@ -32,7 +32,7 @@ const valuationController = new Elysia().group(
         ({ user, params, body, investmentValuationService }) => {
           return investmentValuationService.upsertValuation(
             user.id,
-            params.investmentId,
+            params.id,
             body,
           );
         },
@@ -44,7 +44,7 @@ const valuationController = new Elysia().group(
             description:
               'Create or update a valuation snapshot for the specified investment at a given timestamp.',
           },
-          params: t.Object({ investmentId: t.String() }),
+          params: t.Object({ id: t.String() }),
           body: UpsertInvestmentValuationDto,
           response: {
             200: InvestmentValuationDto,
@@ -56,7 +56,7 @@ const valuationController = new Elysia().group(
         ({ user, params, query, investmentValuationService }) => {
           return investmentValuationService.listValuations(
             user.id,
-            params.investmentId,
+            params.id,
             query,
           );
         },
@@ -68,7 +68,7 @@ const valuationController = new Elysia().group(
             description:
               'Return valuation snapshots associated with the specified investment. Supports filtering and pagination.',
           },
-          params: t.Object({ investmentId: t.String() }),
+          params: t.Object({ id: t.String() }),
           query: ListInvestmentValuationsQueryDto,
           response: {
             200: InvestmentValuationListResponseDto,
@@ -80,7 +80,7 @@ const valuationController = new Elysia().group(
         ({ user, params, investmentValuationService }) => {
           return investmentValuationService.getLatestValuation(
             user.id,
-            params.investmentId,
+            params.id,
           );
         },
         {
@@ -91,7 +91,7 @@ const valuationController = new Elysia().group(
             description:
               'Return the most recent valuation snapshot for the specified investment.',
           },
-          params: t.Object({ investmentId: t.String() }),
+          params: t.Object({ id: t.String() }),
           response: {
             200: t.Nullable(InvestmentValuationDto),
           },
