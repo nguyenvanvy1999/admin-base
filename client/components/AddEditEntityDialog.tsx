@@ -16,7 +16,7 @@ import { ZodFormController } from './ZodFormController';
 
 const schema = UpsertEntityDto.extend({
   name: z.string().min(1, 'entities.nameRequired'),
-  type: z.nativeEnum(EntityType, {
+  type: z.enum(Object.values(EntityType) as [string, ...string[]], {
     message: 'entities.typeRequired',
   }),
 });

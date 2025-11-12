@@ -7,7 +7,9 @@ import { z } from 'zod';
 
 const filterSchema = z.object({
   search: z.string().optional(),
-  type: z.array(z.nativeEnum(EntityType)).optional(),
+  type: z
+    .array(z.enum(Object.values(EntityType) as [string, ...string[]]))
+    .optional(),
 });
 
 export type FilterFormValue = z.infer<typeof filterSchema>;
@@ -54,7 +56,7 @@ export const useEntitiesQuery = (
           search: criteria.search?.trim() || undefined,
           type:
             criteria.type && criteria.type.length > 0
-              ? criteria.type
+              ? (criteria.type as EntityType[])
               : undefined,
         };
       }

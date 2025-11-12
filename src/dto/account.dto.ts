@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 export const UpsertAccountDto = z.object({
   id: z.string().optional(),
-  type: z.nativeEnum(AccountType),
+  type: z.enum(Object.values(AccountType) as [string, ...string[]]),
   name: z.string().min(1),
   currencyId: z.string().min(1),
   initialBalance: z.number().optional(),
@@ -12,11 +12,13 @@ export const UpsertAccountDto = z.object({
   notifyOnDueDate: z.boolean().optional(),
   paymentDay: z.number().int().min(1).max(31).optional(),
   notifyDaysBefore: z.number().int().min(0).optional(),
-  meta: z.any().optional(),
+  meta: z.unknown().optional(),
 });
 
 export const ListAccountsQueryDto = z.object({
-  type: z.array(z.nativeEnum(AccountType)).optional(),
+  type: z
+    .array(z.enum(Object.values(AccountType) as [string, ...string[]]))
+    .optional(),
   currencyId: z.array(z.string()).optional(),
   search: z.string().optional(),
   page: z.number().int().min(1).default(1).optional(),

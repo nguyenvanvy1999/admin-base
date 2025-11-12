@@ -11,8 +11,12 @@ import { z } from 'zod';
 
 const filterSchema = z.object({
   search: z.string().optional(),
-  assetTypes: z.array(z.nativeEnum(InvestmentAssetType)).optional(),
-  modes: z.array(z.nativeEnum(InvestmentMode)).optional(),
+  assetTypes: z
+    .array(z.enum(Object.values(InvestmentAssetType) as [string, ...string[]]))
+    .optional(),
+  modes: z
+    .array(z.enum(Object.values(InvestmentMode) as [string, ...string[]]))
+    .optional(),
   currencyIds: z.array(z.string()).optional(),
 });
 
@@ -89,11 +93,11 @@ export const useInvestmentsQuery = (
           search: criteria.search?.trim() || undefined,
           assetTypes:
             criteria.assetTypes && criteria.assetTypes.length > 0
-              ? criteria.assetTypes
+              ? (criteria.assetTypes as InvestmentAssetType[])
               : undefined,
           modes:
             criteria.modes && criteria.modes.length > 0
-              ? criteria.modes
+              ? (criteria.modes as InvestmentMode[])
               : undefined,
           currencyIds:
             criteria.currencyIds && criteria.currencyIds.length > 0

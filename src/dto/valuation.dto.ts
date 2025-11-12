@@ -4,17 +4,17 @@ import { z } from 'zod';
 export const UpsertInvestmentValuationDto = z.object({
   price: z.number().min(0),
   currencyId: z.string().min(1),
-  timestamp: z.string().datetime(),
+  timestamp: z.iso.datetime(),
   source: z.string().optional(),
-  fetchedAt: z.string().datetime().optional(),
+  fetchedAt: z.iso.datetime().optional(),
   priceInBaseCurrency: z.number().optional(),
   exchangeRate: z.number().optional(),
   baseCurrencyId: z.string().optional(),
 });
 
 export const ListInvestmentValuationsQueryDto = z.object({
-  dateFrom: z.string().datetime().optional(),
-  dateTo: z.string().datetime().optional(),
+  dateFrom: z.iso.datetime().optional(),
+  dateTo: z.iso.datetime().optional(),
   page: z.number().int().min(1).default(1).optional(),
   limit: z.number().int().min(1).default(50).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),

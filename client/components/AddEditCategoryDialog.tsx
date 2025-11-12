@@ -67,7 +67,7 @@ const flattenCategories = (
 
 const schema = UpsertCategoryDto.extend({
   name: z.string().min(1, 'categories.nameRequired'),
-  type: z.nativeEnum(CategoryType, {
+  type: z.enum(Object.values(CategoryType) as [string, ...string[]], {
     message: 'categories.typeRequired',
   }),
   parentId: z.string().nullable().optional(),

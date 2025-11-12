@@ -92,7 +92,7 @@ export class EntityService {
         where: { id: data.id },
         data: {
           name: data.name,
-          type: data.type,
+          type: data.type as EntityType,
           phone: data.phone ?? null,
           email: data.email ?? null,
           address: data.address ?? null,
@@ -106,7 +106,7 @@ export class EntityService {
         data: {
           userId,
           name: data.name,
-          type: data.type,
+          type: data.type as EntityType,
           phone: data.phone ?? null,
           email: data.email ?? null,
           address: data.address ?? null,
@@ -151,7 +151,7 @@ export class EntityService {
     };
 
     if (type && type.length > 0) {
-      where.type = { in: type };
+      where.type = { in: type as EntityType[] };
     }
 
     if (search && search.trim()) {

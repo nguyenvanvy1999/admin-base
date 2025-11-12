@@ -7,7 +7,9 @@ import { z } from 'zod';
 
 const filterSchema = z.object({
   search: z.string().optional(),
-  type: z.array(z.nativeEnum(AccountType)).optional(),
+  type: z
+    .array(z.enum(Object.values(AccountType) as [string, ...string[]]))
+    .optional(),
   currencyId: z.array(z.string()).optional(),
 });
 
@@ -56,7 +58,7 @@ export const useAccountsQuery = (
           search: criteria.search?.trim() || undefined,
           type:
             criteria.type && criteria.type.length > 0
-              ? criteria.type
+              ? (criteria.type as AccountType[])
               : undefined,
           currencyId:
             criteria.currencyId && criteria.currencyId.length > 0

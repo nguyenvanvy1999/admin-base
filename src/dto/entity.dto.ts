@@ -5,7 +5,7 @@ import { z } from 'zod';
 export const UpsertEntityDto = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
-  type: z.nativeEnum(EntityType),
+  type: z.enum(Object.values(EntityType) as [string, ...string[]]),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
   address: z.string().optional(),
@@ -14,7 +14,9 @@ export const UpsertEntityDto = z.object({
 
 export const ListEntitiesQueryDto = z.object({
   search: z.string().optional(),
-  type: z.array(z.nativeEnum(EntityType)).optional(),
+  type: z
+    .array(z.enum(Object.values(EntityType) as [string, ...string[]]))
+    .optional(),
   page: z.number().int().min(1).default(1).optional(),
   limit: z.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['name', 'type', 'createdAt']).optional(),

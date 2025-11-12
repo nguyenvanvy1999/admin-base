@@ -7,7 +7,9 @@ import { z } from 'zod';
 
 const filterSchema = z.object({
   search: z.string().optional(),
-  types: z.array(z.nativeEnum(TransactionType)).optional(),
+  types: z
+    .array(z.enum(Object.values(TransactionType) as [string, ...string[]]))
+    .optional(),
   accountIds: z.array(z.string()).optional(),
   categoryIds: z.array(z.string()).optional(),
   entityIds: z.array(z.string()).optional(),
@@ -62,7 +64,7 @@ export const useTransactionsQuery = (
           search: criteria.search?.trim() || undefined,
           types:
             criteria.types && criteria.types.length > 0
-              ? criteria.types
+              ? (criteria.types as TransactionType[])
               : undefined,
           accountIds:
             criteria.accountIds && criteria.accountIds.length > 0

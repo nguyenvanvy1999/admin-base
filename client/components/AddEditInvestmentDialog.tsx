@@ -21,8 +21,10 @@ import { ZodFormController } from './ZodFormController';
 const schema = UpsertInvestmentDto.extend({
   name: z.string().min(1, 'investments.nameRequired'),
   symbol: z.string().min(1, 'investments.symbolRequired'),
-  assetType: z.nativeEnum(InvestmentAssetType),
-  mode: z.nativeEnum(InvestmentMode),
+  assetType: z.enum(
+    Object.values(InvestmentAssetType) as [string, ...string[]],
+  ),
+  mode: z.enum(Object.values(InvestmentMode) as [string, ...string[]]),
   currencyId: z.string().min(1, 'investments.currencyRequired'),
 });
 
@@ -91,7 +93,11 @@ const AddEditInvestmentDialog = ({
     setExtraError(null);
 
     let parsedExtra: Record<string, unknown> | null = null;
-    if (data.extra && data.extra.trim() !== '') {
+    if (
+      data.extra &&
+      typeof data.extra === 'string' &&
+      data.extra.trim() !== ''
+    ) {
       try {
         parsedExtra = JSON.parse(data.extra);
       } catch {

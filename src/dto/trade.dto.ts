@@ -3,8 +3,8 @@ import { t } from 'elysia';
 import { z } from 'zod';
 
 export const CreateInvestmentTradeDto = z.object({
-  side: z.nativeEnum(TradeSide),
-  timestamp: z.string().datetime(),
+  side: z.enum(Object.values(TradeSide) as [string, ...string[]]),
+  timestamp: z.iso.datetime(),
   price: z.number().min(0),
   quantity: z.number().min(0),
   amount: z.number(),
@@ -18,15 +18,15 @@ export const CreateInvestmentTradeDto = z.object({
   exchangeRate: z.number().optional(),
   baseCurrencyId: z.string().optional(),
   priceSource: z.string().optional(),
-  priceFetchedAt: z.string().datetime().optional(),
-  meta: z.any().optional(),
+  priceFetchedAt: z.iso.datetime().optional(),
+  meta: z.unknown().optional(),
 });
 
 export const ListInvestmentTradesQueryDto = z.object({
-  side: z.nativeEnum(TradeSide).optional(),
+  side: z.enum(Object.values(TradeSide) as [string, ...string[]]).optional(),
   accountIds: z.array(z.string()).optional(),
-  dateFrom: z.string().datetime().optional(),
-  dateTo: z.string().datetime().optional(),
+  dateFrom: z.iso.datetime().optional(),
+  dateTo: z.iso.datetime().optional(),
   page: z.number().int().min(1).default(1).optional(),
   limit: z.number().int().min(1).default(50).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),

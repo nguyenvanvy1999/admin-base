@@ -126,7 +126,7 @@ export class InvestmentContributionService {
           accountId: data.accountId ?? null,
           amount: data.amount,
           currencyId: data.currencyId,
-          type: data.type,
+          type: data.type as ContributionType,
           amountInBaseCurrency: data.amountInBaseCurrency ?? null,
           exchangeRate: data.exchangeRate ?? null,
           baseCurrencyId: data.baseCurrencyId ?? null,

@@ -9,16 +9,24 @@ export const UpsertInvestmentDto = z.object({
   id: z.string().optional(),
   symbol: z.string().min(1),
   name: z.string().min(1),
-  assetType: z.nativeEnum(InvestmentAssetType),
-  mode: z.nativeEnum(InvestmentMode).optional(),
+  assetType: z.enum(
+    Object.values(InvestmentAssetType) as [string, ...string[]],
+  ),
+  mode: z
+    .enum(Object.values(InvestmentMode) as [string, ...string[]])
+    .optional(),
   currencyId: z.string().min(1),
   baseCurrencyId: z.string().optional(),
-  extra: z.any().optional(),
+  extra: z.unknown().optional(),
 });
 
 export const ListInvestmentsQueryDto = z.object({
-  assetTypes: z.array(z.nativeEnum(InvestmentAssetType)).optional(),
-  modes: z.array(z.nativeEnum(InvestmentMode)).optional(),
+  assetTypes: z
+    .array(z.enum(Object.values(InvestmentAssetType) as [string, ...string[]]))
+    .optional(),
+  modes: z
+    .array(z.enum(Object.values(InvestmentMode) as [string, ...string[]]))
+    .optional(),
   currencyIds: z.array(z.string()).optional(),
   search: z.string().optional(),
   page: z.number().int().min(1).default(1).optional(),

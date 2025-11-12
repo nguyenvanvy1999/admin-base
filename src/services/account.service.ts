@@ -110,14 +110,14 @@ export class AccountService {
       const account = await prisma.account.update({
         where: { id: data.id },
         data: {
-          type: data.type,
+          type: data.type as AccountType,
           name: data.name,
           currencyId: data.currencyId,
           creditLimit: data.creditLimit ?? null,
           notifyOnDueDate: data.notifyOnDueDate ?? null,
           paymentDay: data.paymentDay ?? null,
           notifyDaysBefore: data.notifyDaysBefore ?? null,
-          meta: data.meta ?? null,
+          meta: (data.meta ?? null) as any,
         },
         select: ACCOUNT_SELECT_FULL,
       });
@@ -125,14 +125,14 @@ export class AccountService {
     } else {
       const account = await prisma.account.create({
         data: {
-          type: data.type,
+          type: data.type as AccountType,
           name: data.name,
           currencyId: data.currencyId,
           creditLimit: data.creditLimit ?? null,
           notifyOnDueDate: data.notifyOnDueDate ?? null,
           paymentDay: data.paymentDay ?? null,
           notifyDaysBefore: data.notifyDaysBefore ?? null,
-          meta: data.meta ?? null,
+          meta: (data.meta ?? null) as any,
           userId,
           balance: data.initialBalance ?? 0,
         },
@@ -182,7 +182,7 @@ export class AccountService {
     };
 
     if (type && type.length > 0) {
-      where.type = { in: type };
+      where.type = { in: type as AccountType[] };
     }
 
     if (currencyId && currencyId.length > 0) {

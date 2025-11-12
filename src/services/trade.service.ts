@@ -123,7 +123,7 @@ export class InvestmentTradeService {
           userId,
           investmentId,
           accountId: data.accountId,
-          side: data.side,
+          side: data.side as TradeSide,
           timestamp,
           price: data.price,
           quantity: data.quantity,
@@ -138,7 +138,7 @@ export class InvestmentTradeService {
           baseCurrencyId: data.baseCurrencyId ?? null,
           priceSource: data.priceSource ?? null,
           priceFetchedAt: priceFetchedAt ?? null,
-          meta: data.meta ?? null,
+          meta: (data.meta ?? null) as any,
         },
         select: TRADE_SELECT,
       });

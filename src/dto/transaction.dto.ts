@@ -13,11 +13,11 @@ const BaseTransactionDto = z.object({
   currencyId: z.string().optional(),
   fee: z.number().min(0).optional(),
   feeInBaseCurrency: z.number().min(0).optional(),
-  date: z.string().datetime(),
-  dueDate: z.string().datetime().optional(),
+  date: z.iso.datetime(),
+  dueDate: z.iso.datetime().optional(),
   note: z.string().optional(),
   receiptUrl: z.string().optional(),
-  metadata: z.any().optional(),
+  metadata: z.unknown().optional(),
 });
 
 export const IncomeTransactionDto = BaseTransactionDto.extend({
@@ -64,12 +64,14 @@ export const BatchTransactionsDto = z.object({
 });
 
 export const ListTransactionsQueryDto = z.object({
-  types: z.array(z.nativeEnum(TransactionType)).optional(),
+  types: z
+    .array(z.enum(Object.values(TransactionType) as [string, ...string[]]))
+    .optional(),
   accountIds: z.array(z.string()).optional(),
   categoryIds: z.array(z.string()).optional(),
   entityIds: z.array(z.string()).optional(),
-  dateFrom: z.string().datetime().optional(),
-  dateTo: z.string().datetime().optional(),
+  dateFrom: z.iso.datetime().optional(),
+  dateTo: z.iso.datetime().optional(),
   page: z.number().int().min(1).default(1).optional(),
   limit: z.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['date', 'amount', 'type', 'accountId']).optional(),

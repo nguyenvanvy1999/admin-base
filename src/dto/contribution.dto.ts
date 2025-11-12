@@ -5,8 +5,8 @@ import { z } from 'zod';
 export const CreateInvestmentContributionDto = z.object({
   amount: z.number(),
   currencyId: z.string().min(1),
-  type: z.nativeEnum(ContributionType),
-  timestamp: z.string().datetime(),
+  type: z.enum(Object.values(ContributionType) as [string, ...string[]]),
+  timestamp: z.iso.datetime(),
   accountId: z.string().optional(),
   note: z.string().optional(),
   amountInBaseCurrency: z.number().optional(),
@@ -16,8 +16,8 @@ export const CreateInvestmentContributionDto = z.object({
 
 export const ListInvestmentContributionsQueryDto = z.object({
   accountIds: z.array(z.string()).optional(),
-  dateFrom: z.string().datetime().optional(),
-  dateTo: z.string().datetime().optional(),
+  dateFrom: z.iso.datetime().optional(),
+  dateTo: z.iso.datetime().optional(),
   page: z.number().int().min(1).default(1).optional(),
   limit: z.number().int().min(1).default(50).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
