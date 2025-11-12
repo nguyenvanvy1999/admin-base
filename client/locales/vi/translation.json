@@ -29,7 +29,10 @@
     "createdAt": "Ngày tạo",
     "updatedAt": "Ngày cập nhật",
     "deletedAt": "Ngày xóa",
-    "back": "Quay lại"
+    "back": "Quay lại",
+    "saveAndAdd": "Lưu và thêm",
+    "advancedFilter": "Bộ lọc nâng cao",
+    "refresh": "Làm mới"
   },
   "login": {
     "title": "FinTrack",
@@ -404,7 +407,6 @@
     "fee": "Phí",
     "feePlaceholder": "Nhập phí",
     "borrowToPay": "Đi vay để trả khoản này",
-    "saveAndAdd": "Lưu và thêm",
     "typePlaceholder": "Chọn loại giao dịch",
     "accountPlaceholder": "Chọn tài khoản",
     "categoryPlaceholder": "Chọn hạng mục",

@@ -29,7 +29,10 @@
     "createdAt": "Created At",
     "updatedAt": "Updated At",
     "deletedAt": "Deleted At",
-    "back": "Back"
+    "back": "Back",
+    "saveAndAdd": "Save and Add",
+    "advancedFilter": "Advanced Filter",
+    "refresh": "Refresh"
   },
   "login": {
     "title": "FinTrack",
@@ -404,7 +407,6 @@
     "fee": "Fee",
     "feePlaceholder": "Enter fee",
     "borrowToPay": "Borrow to pay this loan",
-    "saveAndAdd": "Save and Add",
     "typePlaceholder": "Select transaction type",
     "accountPlaceholder": "Select account",
     "categoryPlaceholder": "Select category",
