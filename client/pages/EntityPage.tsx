@@ -7,7 +7,6 @@ import {
   type FormComponentRef,
 } from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
-import { TextInput } from '@client/components/TextInput';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateEntityMutation,
@@ -22,7 +21,7 @@ import {
 import { usePageDelete } from '@client/hooks/usePageDelete';
 import { usePageDialog } from '@client/hooks/usePageDialog';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group, MultiSelect } from '@mantine/core';
+import { Button, Group, MultiSelect, TextInput } from '@mantine/core';
 import {
   type EntityResponse,
   type IUpsertEntityDto,

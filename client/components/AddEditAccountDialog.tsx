@@ -1,6 +1,6 @@
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Checkbox, Modal, Stack } from '@mantine/core';
+import { Checkbox, Modal, NumberInput, Stack, TextInput } from '@mantine/core';
 import {
   type AccountResponse,
   type IUpsertAccountDto,
@@ -11,9 +11,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { DialogFooterButtons } from './DialogFooterButtons';
-import { NumberInput } from './NumberInput';
 import { Select } from './Select';
-import { TextInput } from './TextInput';
 import { ZodFormController } from './ZodFormController';
 
 const baseSchema = UpsertAccountDto.extend({

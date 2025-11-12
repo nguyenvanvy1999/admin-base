@@ -1,11 +1,10 @@
 import { AuthFormContainer } from '@client/components/AuthFormContainer';
 import { AuthLayout } from '@client/components/AuthLayout';
 import { AuthSwitchLink } from '@client/components/AuthSwitchLink';
-import { TextInput } from '@client/components/TextInput';
 import { ZodFormController } from '@client/components/ZodFormController';
 import { useLoginMutation } from '@client/hooks/mutations/useAuthMutations';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Loader, Stack } from '@mantine/core';
+import { Button, Loader, Stack, TextInput } from '@mantine/core';
 import { LoginDto } from '@server/dto/user.dto';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';

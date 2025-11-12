@@ -1,5 +1,5 @@
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Modal, Stack } from '@mantine/core';
+import { Modal, Stack, TextInput } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import {
   type EventResponse,
@@ -10,7 +10,6 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { DialogFooterButtons } from './DialogFooterButtons';
-import { TextInput } from './TextInput';
 import { ZodFormController } from './ZodFormController';
 
 const schema = UpsertEventDto.extend({

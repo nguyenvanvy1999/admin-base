@@ -1,6 +1,12 @@
 import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Modal, SegmentedControl, Stack, Text } from '@mantine/core';
+import {
+  Modal,
+  NumberInput,
+  SegmentedControl,
+  Stack,
+  Text,
+} from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { InvestmentResponse } from '@server/dto/investment.dto';
 import {
@@ -12,7 +18,6 @@ import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { DialogFooterButtons } from './DialogFooterButtons';
-import { NumberInput } from './NumberInput';
 import { Select } from './Select';
 import { ZodFormController } from './ZodFormController';
 

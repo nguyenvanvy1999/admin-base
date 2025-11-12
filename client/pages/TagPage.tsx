@@ -7,7 +7,6 @@ import {
 } from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
 import TagTable from '@client/components/TagTable';
-import { TextInput } from '@client/components/TextInput';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateTagMutation,
@@ -22,7 +21,7 @@ import {
 import { usePageDelete } from '@client/hooks/usePageDelete';
 import { usePageDialog } from '@client/hooks/usePageDialog';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group } from '@mantine/core';
+import { Button, Group, TextInput } from '@mantine/core';
 import {
   type IUpsertTagDto,
   ListTagsQueryDto,

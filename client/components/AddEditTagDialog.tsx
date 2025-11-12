@@ -1,5 +1,5 @@
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Modal, Stack } from '@mantine/core';
+import { Modal, Stack, Textarea, TextInput } from '@mantine/core';
 import {
   type IUpsertTagDto,
   type TagResponse,
@@ -9,8 +9,6 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { DialogFooterButtons } from './DialogFooterButtons';
-import { Textarea } from './Textarea';
-import { TextInput } from './TextInput';
 import { ZodFormController } from './ZodFormController';
 
 const schema = UpsertTagDto.extend({

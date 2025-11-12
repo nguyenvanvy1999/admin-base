@@ -1,5 +1,5 @@
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Modal, Stack } from '@mantine/core';
+import { Modal, Stack, Textarea, TextInput } from '@mantine/core';
 import {
   type EntityResponse,
   type IUpsertEntityDto,
@@ -11,8 +11,6 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { DialogFooterButtons } from './DialogFooterButtons';
 import { Select } from './Select';
-import { Textarea } from './Textarea';
-import { TextInput } from './TextInput';
 import { ZodFormController } from './ZodFormController';
 
 const schema = UpsertEntityDto.extend({

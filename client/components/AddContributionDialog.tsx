@@ -1,6 +1,6 @@
 import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Modal, Stack } from '@mantine/core';
+import { Modal, NumberInput, Stack, Textarea } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { AccountResponse } from '@server/dto/account.dto';
 import {
@@ -13,9 +13,7 @@ import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { DialogFooterButtons } from './DialogFooterButtons';
-import { NumberInput } from './NumberInput';
 import { Select } from './Select';
-import { Textarea } from './Textarea';
 import { ZodFormController } from './ZodFormController';
 
 const baseSchema = CreateInvestmentContributionDto.extend({

@@ -5,7 +5,6 @@ import {
 } from '@client/components/FormComponent';
 import InvestmentTable from '@client/components/InvestmentTable';
 import { PageContainer } from '@client/components/PageContainer';
-import { TextInput } from '@client/components/TextInput';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateInvestmentMutation,
@@ -18,7 +17,14 @@ import {
   useInvestmentsQuery,
 } from '@client/hooks/queries/useInvestmentQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group, Modal, MultiSelect, Text } from '@mantine/core';
+import {
+  Button,
+  Group,
+  Modal,
+  MultiSelect,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import type {
   InvestmentResponse,
   IUpsertInvestmentDto,

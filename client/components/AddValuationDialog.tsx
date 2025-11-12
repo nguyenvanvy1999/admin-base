@@ -1,5 +1,5 @@
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Modal, Stack } from '@mantine/core';
+import { Modal, NumberInput, Stack, TextInput } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { InvestmentResponse } from '@server/dto/investment.dto';
 import {
@@ -10,8 +10,6 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { DialogFooterButtons } from './DialogFooterButtons';
-import { NumberInput } from './NumberInput';
-import { TextInput } from './TextInput';
 import { ZodFormController } from './ZodFormController';
 
 const baseSchema = UpsertInvestmentValuationDto.extend({

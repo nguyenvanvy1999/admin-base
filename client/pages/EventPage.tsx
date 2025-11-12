@@ -7,7 +7,6 @@ import {
   type FormComponentRef,
 } from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
-import { TextInput } from '@client/components/TextInput';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateEventMutation,
@@ -19,7 +18,7 @@ import { useEventsQuery } from '@client/hooks/queries/useEventQueries';
 import { usePageDelete } from '@client/hooks/usePageDelete';
 import { usePageDialog } from '@client/hooks/usePageDialog';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group } from '@mantine/core';
+import { Button, Group, TextInput } from '@mantine/core';
 import {
   type EventResponse,
   type IUpsertEventDto,

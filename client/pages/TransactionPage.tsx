@@ -5,7 +5,6 @@ import {
   type FormComponentRef,
 } from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
-import { TextInput } from '@client/components/TextInput';
 import TransactionTable from '@client/components/TransactionTable';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
@@ -28,6 +27,7 @@ import {
   MultiSelect,
   NumberFormatter,
   Text,
+  TextInput,
   useMantineColorScheme,
 } from '@mantine/core';
 import type {

@@ -1,5 +1,12 @@
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Modal, Stack, Tabs } from '@mantine/core';
+import {
+  Button,
+  Modal,
+  NumberInput,
+  Stack,
+  Tabs,
+  Textarea,
+} from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { AccountResponse } from '@server/dto/account.dto';
 import type { CategoryTreeResponse } from '@server/dto/category.dto';
@@ -15,10 +22,8 @@ import { z } from 'zod';
 import CategorySelect from './CategorySelect';
 import { DialogFooterButtons } from './DialogFooterButtons';
 import EventSelect from './EventSelect';
-import { NumberInput } from './NumberInput';
 import { Select } from './Select';
 import { Switch } from './Switch';
-import { Textarea } from './Textarea';
 import { flattenCategories, getCategoryIcon } from './utils/category';
 import { ZodFormController } from './ZodFormController';
 
