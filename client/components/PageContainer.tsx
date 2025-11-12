@@ -57,7 +57,7 @@ export const PageContainer: FC<Props> = ({
         onRefresh ||
         onReset ||
         onAdvancedFilter) && (
-        <Group justify="space-between" align="flex-start">
+        <Group justify="space-between" align="flex-start" mt={0}>
           {filterGroup && <Group>{filterGroup}</Group>}
           <Group>
             {onReset && (

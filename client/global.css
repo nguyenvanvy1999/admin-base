@@ -114,3 +114,19 @@
   width: 14px !important;
   height: 14px !important;
 }
+
+/* Fix column alignment between header and body */
+.mrt-table-paper table {
+  width: 100%;
+}
+
+.mrt-table-head th,
+.mrt-table-body td {
+  padding: var(--mantine-spacing-xs) !important;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.mrt-table-head th {
+  text-align: center !important;
+}

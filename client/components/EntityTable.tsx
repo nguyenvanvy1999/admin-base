@@ -92,10 +92,10 @@ const EntityTable = ({
       },
       {
         title: 'entities.actions',
-        textAlign: 'right',
+        textAlign: 'center',
         width: '8rem',
         render: (value: unknown, row: EntityFull) => (
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-center gap-2">
             <ActionIcon
               variant="subtle"
               color="blue"

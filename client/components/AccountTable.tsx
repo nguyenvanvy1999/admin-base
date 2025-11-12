@@ -86,7 +86,6 @@ const AccountTable = ({
       {
         accessor: 'balance',
         title: 'accounts.balance',
-        textAlign: 'right',
         enableSorting: true,
         render: (value: unknown, row: AccountFull) => {
           const balance = parseFloat(String(row.balance));
@@ -112,7 +111,6 @@ const AccountTable = ({
       {
         accessor: 'creditLimit',
         title: 'accounts.creditLimit',
-        textAlign: 'right',
         enableSorting: false,
         render: (value: unknown, row: AccountFull) => {
           if (!row.creditLimit) return null;
@@ -134,11 +132,11 @@ const AccountTable = ({
       },
       {
         title: 'accounts.actions',
-        textAlign: 'right',
+        textAlign: 'center',
         width: '8rem',
         enableSorting: false,
         render: (value: unknown, row: AccountFull) => (
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-center gap-2">
             <ActionIcon
               variant="subtle"
               color="blue"

@@ -177,9 +177,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
             content = value;
           }
           const style: React.CSSProperties = {
-            ...(col.textAlign && col.textAlign !== 'left'
-              ? { textAlign: col.textAlign }
-              : undefined),
+            textAlign: col.textAlign || 'center',
             ...(col.ellipsis
               ? {
                   whiteSpace: 'nowrap',
@@ -196,7 +194,14 @@ export function DataTable<T extends { id: string } = { id: string }>({
               role={col.onClick ? 'button' : undefined}
               style={{
                 cursor: col.onClick ? 'pointer' : undefined,
-                display: 'inline-block',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent:
+                  col.textAlign === 'right'
+                    ? 'flex-end'
+                    : col.textAlign === 'left'
+                      ? 'flex-start'
+                      : 'center',
                 width: '100%',
                 ...style,
               }}
@@ -212,8 +217,16 @@ export function DataTable<T extends { id: string } = { id: string }>({
         filterSelectOptions: col.filterOptions,
         enableSorting: col.enableSorting !== false,
         mantineTableHeadCellProps: {
+          align: 'center',
+          style: {
+            padding: theme.spacing.md,
+            textAlign: 'center',
+          },
+        },
+        mantineTableBodyCellProps: {
           style: {
             padding: theme.spacing.xs,
+            textAlign: col.textAlign || 'center',
           },
         },
       };
@@ -269,6 +282,12 @@ export function DataTable<T extends { id: string } = { id: string }>({
       ? { enableRowNumbers: true, rowNumberDisplayMode: 'static' }
       : {}),
     getRowId: (row: any) => String(row[idAccessor]),
+    enableColumnResizing: false,
+    mantineTableProps: {
+      style: {
+        width: '100%',
+      },
+    },
     state: {
       isLoading: !!loading,
       pagination: { pageIndex: currentPage, pageSize },
@@ -392,8 +411,13 @@ export function DataTable<T extends { id: string } = { id: string }>({
         flexWrap: 'nowrap',
       },
     },
-    // sort button styling
+    // table cell styling - ensure header and body cells have same padding
     mantineTableHeadCellProps: {
+      style: {
+        padding: theme.spacing.xs,
+      },
+    },
+    mantineTableBodyCellProps: {
       style: {
         padding: theme.spacing.xs,
       },
@@ -409,6 +433,49 @@ export function DataTable<T extends { id: string } = { id: string }>({
   const start =
     rowCount === 0 ? 0 : currentPage * pageSize + (rowCount > 0 ? 1 : 0);
   const end = Math.min((currentPage + 1) * pageSize, rowCount);
+
+  // Sync column widths between header and body cells to fix alignment
+  useEffect(() => {
+    const syncColumnWidths = () => {
+      const headerCells = document.querySelectorAll(
+        '.mrt-table-head th[data-index]',
+      );
+      const bodyCells = document.querySelectorAll(
+        '.mrt-table-body td[data-index]',
+      );
+
+      if (headerCells.length === 0 || bodyCells.length === 0) return;
+
+      headerCells.forEach((headerCell, colIndex) => {
+        const headerStyle = window.getComputedStyle(headerCell);
+        const headerWidth = headerStyle.width;
+
+        if (headerWidth && headerWidth !== 'auto' && headerWidth !== '0px') {
+          // Apply to all body cells in the same column
+          bodyCells.forEach((bodyCell) => {
+            const cellIndex = (bodyCell as HTMLElement).getAttribute(
+              'data-index',
+            );
+            if (cellIndex === String(colIndex)) {
+              const bodyStyle = window.getComputedStyle(bodyCell);
+              const bodyWidth = bodyStyle.width;
+
+              // Only sync if widths are significantly different
+              if (
+                Math.abs(parseFloat(headerWidth) - parseFloat(bodyWidth)) > 1
+              ) {
+                (bodyCell as HTMLElement).style.width = headerWidth;
+                (bodyCell as HTMLElement).style.minWidth = headerWidth;
+              }
+            }
+          });
+        }
+      });
+    };
+
+    const timer = setTimeout(syncColumnWidths, 100);
+    return () => clearTimeout(timer);
+  }, [tableData, orderedColumns, loading]);
 
   return (
     <MantineReactTable

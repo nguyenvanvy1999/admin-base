@@ -115,7 +115,7 @@ const TransactionTable = ({
           const categoryLabel = getCategoryLabel(category.name, t);
 
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               {IconComponent && (
                 <IconComponent
                   style={{
@@ -145,7 +145,6 @@ const TransactionTable = ({
       {
         accessor: 'amount',
         title: 'transactions.amount',
-        textAlign: 'right',
         render: (value: unknown, row: TransactionFull) => {
           const amount = parseFloat(String(row.amount));
           const isExpense = row.type === TransactionType.expense;
@@ -178,10 +177,10 @@ const TransactionTable = ({
       },
       {
         title: 'transactions.actions',
-        textAlign: 'right',
+        textAlign: 'center',
         width: '8rem',
         render: (value: unknown, row: TransactionFull) => (
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-center gap-2">
             <ActionIcon
               variant="subtle"
               color="blue"
