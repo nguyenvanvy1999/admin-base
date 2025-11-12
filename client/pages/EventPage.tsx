@@ -282,7 +282,8 @@ const EventPage = () => {
         >
           <Text mb="md">
             {t('events.deleteManyConfirmMessage', {
-              defaultValue: 'Are you sure you want to delete {count} event(s)?',
+              defaultValue:
+                'Are you sure you want to delete {{count}} event(s)?',
               count: eventsToDeleteMany.length,
             })}
           </Text>

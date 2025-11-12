@@ -281,7 +281,7 @@ const TagPage = () => {
         >
           <Text mb="md">
             {t('tags.deleteManyConfirmMessage', {
-              defaultValue: 'Are you sure you want to delete {count} tag(s)?',
+              defaultValue: 'Are you sure you want to delete {{count}} tag(s)?',
               count: tagsToDeleteMany.length,
             })}
           </Text>

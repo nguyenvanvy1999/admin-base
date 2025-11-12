@@ -313,7 +313,7 @@ const EntityPage = () => {
           <Text mb="md">
             {t('entities.deleteManyConfirmMessage', {
               defaultValue:
-                'Are you sure you want to delete {count} entity(ies)?',
+                'Are you sure you want to delete {{count}} entity(ies)?',
               count: entitiesToDeleteMany.length,
             })}
           </Text>
