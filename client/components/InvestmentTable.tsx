@@ -99,7 +99,7 @@ const InvestmentTable = ({
         ),
       },
       {
-        accessor: (row) => row.currency.code,
+        accessor: (row) => row.currency?.code ?? '',
         title: 'investments.currency',
       },
       {

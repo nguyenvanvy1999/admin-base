@@ -1,6 +1,7 @@
 import { logger } from '../libs/logger';
 
 const errorMiddleware = ({ code, error, set }: any) => {
+  logger.error(`Request error occurred ${JSON.stringify({ code, error })}`);
   if (code === 'UNKNOWN') {
     //user throw error
     set.status = 400;
@@ -32,7 +33,6 @@ const errorMiddleware = ({ code, error, set }: any) => {
     };
   }
 
-  logger.error(`Request error occurred ${JSON.stringify({ code, error })}`);
   set.status = 500;
   return {
     message: error.message,

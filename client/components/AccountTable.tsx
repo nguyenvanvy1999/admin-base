@@ -77,7 +77,7 @@ const AccountTable = ({
         ),
       },
       {
-        accessor: (row) => row.currency.code,
+        accessor: (row) => row.currency?.code ?? '',
         title: 'accounts.currency',
       },
       {
@@ -90,7 +90,7 @@ const AccountTable = ({
           const colorClass = isNegative
             ? 'text-red-600 dark:text-red-400'
             : 'text-green-600 dark:text-green-400';
-          const currencySymbol = row.currency.symbol || '';
+          const currencySymbol = row.currency?.symbol || '';
 
           return (
             <div className={`text-sm font-medium ${colorClass}`}>
@@ -111,7 +111,7 @@ const AccountTable = ({
         textAlign: 'right',
         render: (value: unknown, row: AccountFull) => {
           if (!row.creditLimit) return null;
-          const currencySymbol = row.currency.symbol || '';
+          const currencySymbol = row.currency?.symbol || '';
           return (
             <NumberFormatter
               value={parseFloat(String(row.creditLimit))}

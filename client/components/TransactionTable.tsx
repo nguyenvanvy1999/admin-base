@@ -95,7 +95,7 @@ const TransactionTable = ({
         ),
       },
       {
-        accessor: (row) => row.account.name,
+        accessor: (row) => row.account?.name ?? '',
         title: 'transactions.account',
       },
       {
@@ -155,7 +155,7 @@ const TransactionTable = ({
             : isIncome
               ? 'text-green-600 dark:text-green-400'
               : 'text-gray-900 dark:text-gray-100';
-          const currencySymbol = row.account.currency.symbol || '';
+          const currencySymbol = row.account?.currency?.symbol || '';
 
           return (
             <div className={`text-sm font-medium ${colorClass}`}>

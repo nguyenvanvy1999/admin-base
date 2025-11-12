@@ -1,4 +1,5 @@
 import { booleanStatusMap } from '@client/utils/booleanStatusMap';
+import { Text } from '@mantine/core';
 import {
   MantineReactTable,
   useMantineReactTable,
@@ -16,7 +17,7 @@ type ColumnFilter = { id: string; value: unknown };
 
 type Props<T> = {
   columns: DataTableColumn<T>[];
-  data: T[];
+  data?: T[];
   loading?: boolean;
   showIndexColumn?: boolean;
   autoFormatDisabled?: boolean;
@@ -70,6 +71,12 @@ export function DataTable<T extends { id: string } = { id: string }>({
   ...props
 }: Props<T>) {
   const { t } = useTranslation();
+  const safeData: T[] = useMemo(() => {
+    if (data && Array.isArray(data)) {
+      return data;
+    }
+    return [] as T[];
+  }, [data]);
 
   const autoFormat = (value: any): any => {
     if (value instanceof Date) {
@@ -242,11 +249,23 @@ export function DataTable<T extends { id: string } = { id: string }>({
   // compute pagination
   const pageSize = recordsPerPage || 20;
   const currentPage = page ? page - 1 : 0; // MRT zero-based
-  const rowCount = totalRecords || data.length;
+  const tableData = useMemo(() => {
+    if (!safeData || !Array.isArray(safeData)) {
+      return [] as T[];
+    }
+    return safeData;
+  }, [safeData]);
+
+  const rowCount = useMemo(() => {
+    if (typeof totalRecords === 'number') {
+      return totalRecords;
+    }
+    return tableData.length;
+  }, [totalRecords, tableData.length]);
 
   const table = useMantineReactTable({
     columns: orderedColumns as any,
-    data,
+    data: tableData,
     getRowId: (row: any) => String(row[idAccessor]),
     state: {
       isLoading: !!loading,
@@ -277,7 +296,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
       if (onSelectedRecordsChange) {
         const selected = Object.keys(next)
           .filter((k) => next[k])
-          .map((k) => data.find((r: any) => String(r[idAccessor]) === k))
+          .map((k) => tableData.find((r: any) => String(r[idAccessor]) === k))
           .filter(Boolean) as T[];
         onSelectedRecordsChange(selected);
       }
@@ -315,6 +334,12 @@ export function DataTable<T extends { id: string } = { id: string }>({
       : undefined,
     // height
     mantineTableContainerProps: height ? { style: { height } } : undefined,
+    // empty rows fallback
+    renderEmptyRowsFallback: () => (
+      <Text ta="center" c="dimmed">
+        {t('common.noData', { defaultValue: 'Không có dữ liệu' })}
+      </Text>
+    ),
   });
 
   return (
@@ -344,4 +369,4 @@ export function DataTable<T extends { id: string } = { id: string }>({
   );
 }
 
-export type { DataTableColumn } from './DataTable/types';
+export type { DataTableColumn };

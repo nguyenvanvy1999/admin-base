@@ -36,8 +36,13 @@ function FormComponentInner(props: Props, ref: ForwardedRef<FormComponentRef>) {
     },
   }));
 
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
-    <Box {...props} component="form" ref={formRef}>
+    <Box {...props} component="form" ref={formRef} onSubmit={handleSubmit}>
       {props.children}
     </Box>
   );
