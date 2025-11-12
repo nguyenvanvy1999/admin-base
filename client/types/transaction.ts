@@ -11,6 +11,7 @@ export type TransactionFormData = {
   categoryId?: string;
   toAccountId?: string;
   amount: number;
+  toAmount?: number;
   currencyId?: string;
   fee?: number;
   date: string;

@@ -377,7 +377,10 @@
     "accountPlaceholder": "Select account",
     "categoryPlaceholder": "Select category",
     "totalIncome": "Total Income",
-    "totalExpense": "Total Expense"
+    "totalExpense": "Total Expense",
+    "amountFrom": "Amount From",
+    "amountTo": "Amount To",
+    "transferTo": "Transfer To"
   },
   "investments": {
     "name": "Name",

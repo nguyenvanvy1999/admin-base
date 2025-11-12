@@ -35,6 +35,7 @@ export const TransferTransactionDto = t.Composite([
   t.Object({
     type: t.Literal(TransactionType.transfer),
     toAccountId: t.String(),
+    toAmount: t.Optional(t.Number({ minimum: 0.01 })),
   }),
 ]);
 

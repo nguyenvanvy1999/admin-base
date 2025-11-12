@@ -9,7 +9,7 @@ import type {
 import { Button, Group, Modal, Stack, Tabs } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { TransactionType } from '@server/generated/prisma/enums';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import CategorySelect from './CategorySelect';
@@ -26,6 +26,7 @@ const baseSchema = z.object({
   amount: z.number().min(0.01, 'transactions.amountRequired'),
   accountId: z.string().min(1, 'transactions.accountRequired'),
   toAccountId: z.string().optional(),
+  toAmount: z.number().optional(),
   date: z.string().min(1, 'transactions.dateRequired'),
   categoryId: z.string().optional(),
   entityId: z.string().nullable().optional(),
@@ -141,6 +142,7 @@ const AddEditTransactionDialog = ({
     amount: 0,
     accountId: '',
     toAccountId: '',
+    toAmount: 0,
     date: new Date().toISOString(),
     categoryId: '',
     entityId: null,
@@ -150,19 +152,66 @@ const AddEditTransactionDialog = ({
     borrowToPay: false,
   };
 
-  const { control, handleSubmit, reset, watch } = useZodForm({
+  const { control, handleSubmit, reset, watch, setValue } = useZodForm({
     zod: baseSchema,
     defaultValues,
   });
 
   const accountIdValue = watch('accountId');
+  const toAccountIdValue = watch('toAccountId');
+  const amountValue = watch('amount');
+  const toAmountValue = watch('toAmount');
+
   const selectedAccount = useMemo(() => {
     if (!accountIdValue) return null;
     return accounts.find((acc) => acc.id === accountIdValue);
   }, [accountIdValue, accounts]);
 
+  const selectedToAccount = useMemo(() => {
+    if (!toAccountIdValue) return null;
+    return accounts.find((acc) => acc.id === toAccountIdValue);
+  }, [toAccountIdValue, accounts]);
+
   const currencySymbol = selectedAccount?.currency.symbol || '';
+  const toCurrencySymbol = selectedToAccount?.currency.symbol || '';
   const categoryIdValue = watch('categoryId');
+
+  const isTransfer = transactionType === TransactionType.transfer;
+  const currenciesMatch =
+    isTransfer &&
+    selectedAccount &&
+    selectedToAccount &&
+    selectedAccount.currencyId === selectedToAccount.currencyId;
+
+  const isSyncingRef = useRef(false);
+
+  useEffect(() => {
+    if (!isTransfer || !currenciesMatch || isSyncingRef.current) {
+      return;
+    }
+
+    if (amountValue && amountValue > 0 && toAmountValue !== amountValue) {
+      isSyncingRef.current = true;
+      setValue('toAmount', amountValue, { shouldValidate: false });
+      setTimeout(() => {
+        isSyncingRef.current = false;
+      }, 0);
+    }
+  }, [amountValue, isTransfer, currenciesMatch, setValue, toAmountValue]);
+
+  useEffect(() => {
+    if (!isTransfer || !currenciesMatch || isSyncingRef.current) {
+      return;
+    }
+
+    if (toAmountValue && toAmountValue > 0 && amountValue !== toAmountValue) {
+      isSyncingRef.current = true;
+      setValue('amount', toAmountValue, { shouldValidate: false });
+      setTimeout(() => {
+        isSyncingRef.current = false;
+      }, 0);
+    }
+  }, [toAmountValue, isTransfer, currenciesMatch, setValue, amountValue]);
 
   const handleClose = () => {
     reset(defaultValues);
@@ -186,6 +235,7 @@ const AddEditTransactionDialog = ({
         amount: parseFloat(transaction.amount),
         accountId: transaction.accountId,
         toAccountId: transaction.toAccountId || '',
+        toAmount: 0,
         date: transaction.date
           ? new Date(transaction.date).toISOString()
           : new Date().toISOString(),
@@ -241,6 +291,9 @@ const AddEditTransactionDialog = ({
 
       if (transactionType === TransactionType.transfer) {
         (submitData as any).toAccountId = data.toAccountId;
+        if (data.toAmount && data.toAmount > 0) {
+          submitData.toAmount = data.toAmount;
+        }
       }
 
       if (data.tripEvent || data.borrowToPay) {
@@ -317,7 +370,13 @@ const AddEditTransactionDialog = ({
                 name="amount"
                 render={({ field, fieldState: { error } }) => (
                   <NumberInput
-                    label={t('transactions.amount')}
+                    label={
+                      isTransfer
+                        ? t('transactions.amountFrom', {
+                            defaultValue: 'Amount From',
+                          })
+                        : t('transactions.amount')
+                    }
                     placeholder={`0 ${currencySymbol}`}
                     required
                     error={error}
@@ -330,6 +389,28 @@ const AddEditTransactionDialog = ({
                   />
                 )}
               />
+
+              {isTransfer && (
+                <ZodFormController
+                  control={control}
+                  name="toAmount"
+                  render={({ field, fieldState: { error } }) => (
+                    <NumberInput
+                      label={t('transactions.amountTo', {
+                        defaultValue: 'Amount To',
+                      })}
+                      placeholder={`0 ${toCurrencySymbol}`}
+                      error={error}
+                      value={field.value ?? 0}
+                      onChange={(value) => field.onChange(Number(value) || 0)}
+                      thousandSeparator=","
+                      decimalScale={2}
+                      min={0}
+                      prefix={toCurrencySymbol ? `${toCurrencySymbol} ` : ''}
+                    />
+                  )}
+                />
+              )}
 
               <ZodFormController
                 control={control}

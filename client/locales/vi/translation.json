@@ -377,7 +377,10 @@
     "accountPlaceholder": "Chọn tài khoản",
     "categoryPlaceholder": "Chọn hạng mục",
     "totalIncome": "Tổng thu",
-    "totalExpense": "Tổng chi"
+    "totalExpense": "Tổng chi",
+    "amountFrom": "Số tiền đi",
+    "amountTo": "Số tiền đến",
+    "transferTo": "Chuyển đến"
   },
   "investments": {
     "name": "Tên",
