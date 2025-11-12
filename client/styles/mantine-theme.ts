@@ -1,71 +1,84 @@
-import { createTheme, type MantineColorsTuple } from '@mantine/core';
+import type { MantineThemeOverride } from '@mantine/core';
+import {
+  Card,
+  Container,
+  createTheme,
+  Paper,
+  rem,
+  Select,
+} from '@mantine/core';
 
-const primaryColor: MantineColorsTuple = [
-  '#e0f7ff',
-  '#b3eaff',
-  '#80ddff',
-  '#4dd0ff',
-  '#1ac3ff',
-  '#00a8e8',
-  '#008FD3',
-  '#0070a8',
-  '#00527d',
-  '#003452',
-];
+const CONTAINER_SIZES: Record<string, string> = {
+  xxs: rem('200px'),
+  xs: rem('300px'),
+  sm: rem('400px'),
+  md: rem('500px'),
+  lg: rem('600px'),
+  xl: rem('1400px'),
+  xxl: rem('1600px'),
+};
 
-const incomeColor: MantineColorsTuple = [
-  '#e8f9f0',
-  '#c4f0d4',
-  '#9de7b5',
-  '#76de96',
-  '#4fd577',
-  '#22C55E',
-  '#16A34A',
-  '#0f7a35',
-  '#085120',
-  '#03280b',
-];
-
-const expenseColor: MantineColorsTuple = [
-  '#fee2e2',
-  '#fecaca',
-  '#fca5a5',
-  '#f87171',
-  '#ef4444',
-  '#EB4444',
-  '#dc2626',
-  '#b91c1c',
-  '#991b1b',
-  '#7f1d1d',
-];
-
-export const mantineTheme = createTheme({
-  primaryColor: 'primary',
-  colors: {
-    primary: primaryColor,
-    income: incomeColor,
-    expense: expenseColor,
-  },
-  defaultRadius: 'md',
-  fontFamily:
-    'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  headings: {
-    fontFamily:
-      'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-    fontWeight: '600',
+export const mantineTheme: MantineThemeOverride = createTheme({
+  /** Put your mantine theme override here */
+  fontSizes: {
+    xs: rem('12px'),
+    sm: rem('14px'),
+    md: rem('16px'),
+    lg: rem('18px'),
+    xl: rem('20px'),
+    '2xl': rem('24px'),
+    '3xl': rem('30px'),
+    '4xl': rem('36px'),
+    '5xl': rem('48px'),
   },
   spacing: {
-    xs: '0.25rem',
-    sm: '0.5rem',
-    md: '0.75rem',
-    lg: '1rem',
-    xl: '1.5rem',
+    '3xs': rem('4px'),
+    '2xs': rem('8px'),
+    xs: rem('10px'),
+    sm: rem('12px'),
+    md: rem('16px'),
+    lg: rem('20px'),
+    xl: rem('24px'),
+    '2xl': rem('28px'),
+    '3xl': rem('32px'),
   },
-  shadows: {
-    xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-    sm: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-    md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-    lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-    xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+  primaryColor: 'blue',
+  components: {
+    Container: Container.extend({
+      vars: (_, { size, fluid }) => ({
+        root: {
+          '--container-size': fluid
+            ? '100%'
+            : size !== undefined && size in CONTAINER_SIZES
+              ? CONTAINER_SIZES[size]
+              : rem(size),
+        },
+      }),
+    }),
+    Paper: Paper.extend({
+      defaultProps: {
+        p: 'md',
+        shadow: 'xl',
+        radius: 'md',
+        withBorder: true,
+      },
+    }),
+
+    Card: Card.extend({
+      defaultProps: {
+        p: 'xl',
+        shadow: 'xl',
+        radius: 'var(--mantine-radius-default)',
+        withBorder: true,
+      },
+    }),
+    Select: Select.extend({
+      defaultProps: {
+        checkIconPosition: 'right',
+      },
+    }),
+  },
+  other: {
+    style: 'mantine',
   },
 });

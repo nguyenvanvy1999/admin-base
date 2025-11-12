@@ -1,6 +1,5 @@
 import { booleanStatusMap } from '@client/utils/booleanStatusMap';
 import {
-  Group,
   Pagination,
   Select,
   Text,
@@ -51,6 +50,7 @@ type Props<T> = {
   ) => void;
   columnFilters?: ColumnFilter[];
   onColumnFiltersChange?: (updater: ColumnFilter[]) => void;
+  enableRowNumbers?: boolean;
 };
 
 export function DataTable<T extends { id: string } = { id: string }>({
@@ -58,7 +58,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
   columns,
   data,
   loading,
-  showIndexColumn,
+  enableRowNumbers = true,
   pinLastColumn,
   height,
   selectedRecords,
@@ -209,13 +209,9 @@ export function DataTable<T extends { id: string } = { id: string }>({
         },
         size: toPx(col.width),
         minSize: toPx(col.minWidth),
-        // text align/ellipsis/styles handled in Cell wrapper above
-        // filter UI hints (MRT will be manual filtering if wired)
         filterVariant: col.filterVariant,
         filterSelectOptions: col.filterOptions,
-        // enable/disable sorting
         enableSorting: col.enableSorting !== false,
-        // customize sort button
         mantineTableHeadCellProps: {
           style: {
             padding: theme.spacing.xs,
@@ -224,26 +220,8 @@ export function DataTable<T extends { id: string } = { id: string }>({
       };
     });
 
-    if (showIndexColumn) {
-      baseCols.unshift({
-        id: '_index',
-        header: '#',
-        accessorFn: () => '',
-        size: 64,
-        enableSorting: false,
-        mantineTableBodyCellProps: { style: { textAlign: 'center' } },
-        Cell: ({ row }: any) => {
-          // page-based numbering if page/pageSize provided
-          const indexInPage = row.index;
-          const start =
-            recordsPerPage && page ? (page - 1) * recordsPerPage : 0;
-          return start + indexInPage + 1;
-        },
-      } as any);
-    }
-
     return baseCols as any[];
-  }, [columns, t, showIndexColumn, autoFormatDisabled, recordsPerPage, page]);
+  }, [columns, t, enableRowNumbers, autoFormatDisabled, recordsPerPage, page]);
 
   const [orderedColumns, setOrderedColumns] = useState(mappedColumns);
 
@@ -255,7 +233,6 @@ export function DataTable<T extends { id: string } = { id: string }>({
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   useEffect(() => {
     if (selectedRecords && onSelectedRecordsChange) {
-      // keep controlled parity if needed
       const map: Record<string, boolean> = {};
       selectedRecords.forEach((r) => {
         const id = (r as any)[idAccessor];
@@ -267,7 +244,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
 
   // compute pagination
   const pageSize = recordsPerPage || 20;
-  const currentPage = page ? page - 1 : 0; // MRT zero-based
+  const currentPage = page ? page - 1 : 0;
   const tableData = useMemo(() => {
     if (!safeData || !Array.isArray(safeData)) {
       return [] as T[];
@@ -289,6 +266,9 @@ export function DataTable<T extends { id: string } = { id: string }>({
   const table = useMantineReactTable({
     columns: orderedColumns as any,
     data: tableData,
+    ...(enableRowNumbers
+      ? { enableRowNumbers: true, rowNumberDisplayMode: 'static' }
+      : {}),
     getRowId: (row: any) => String(row[idAccessor]),
     state: {
       isLoading: !!loading,
@@ -405,18 +385,6 @@ export function DataTable<T extends { id: string } = { id: string }>({
 
   return (
     <>
-      <style>{`
-        .mrt-table-head-sort-button {
-          width: 20px !important;
-          height: 20px !important;
-          min-width: 20px !important;
-          padding: 0 !important;
-        }
-        .mrt-table-head-sort-button svg {
-          width: 14px !important;
-          height: 14px !important;
-        }
-      `}</style>
       <MantineReactTable
         table={table}
         renderBottomToolbarCustom={() => {
