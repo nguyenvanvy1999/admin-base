@@ -222,6 +222,37 @@ export class EventService {
 
     return { success: true, message: 'Event deleted successfully' };
   }
+
+  async deleteManyEvents(userId: string, ids: string[]) {
+    const events = await prisma.event.findMany({
+      where: {
+        id: { in: ids },
+        userId,
+        deletedAt: null,
+      },
+      select: EVENT_SELECT_MINIMAL,
+    });
+
+    if (events.length !== ids.length) {
+      throw new Error('Some events were not found or do not belong to you');
+    }
+
+    const result = await prisma.event.updateMany({
+      where: {
+        id: { in: ids },
+        userId,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      message: `${result.count} event(s) deleted successfully`,
+    };
+  }
 }
 
 export default new Elysia().decorate('eventService', new EventService());

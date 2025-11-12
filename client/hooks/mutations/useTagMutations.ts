@@ -44,3 +44,17 @@ export const useDeleteTagMutation = () => {
     },
   });
 };
+
+export const useDeleteManyTagsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => {
+      return tagService.deleteManyTags(ids);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['tags'] });
+      toast.success('Tags deleted successfully');
+    },
+  });
+};

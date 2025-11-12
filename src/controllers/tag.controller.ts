@@ -1,6 +1,7 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
+  DeleteManyTagsDto,
   ListTagsQueryDto,
   TagDeleteResponseDto,
   TagDto,
@@ -99,6 +100,25 @@ const tagController = new Elysia().group(
               'Permanently delete a tag by its ID. This action cannot be undone.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: TagDeleteResponseDto,
+          },
+        },
+      )
+      .post(
+        '/delete-many',
+        ({ user, body, tagService }) => {
+          return tagService.deleteManyTags(user.id, body.ids);
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...TAG_DETAIL,
+            summary: 'Delete many tags',
+            description:
+              'Permanently delete multiple tags by their IDs. This action cannot be undone.',
+          },
+          body: DeleteManyTagsDto,
           response: {
             200: TagDeleteResponseDto,
           },

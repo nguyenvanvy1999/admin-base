@@ -201,6 +201,37 @@ export class EntityService {
 
     return { success: true, message: 'Entity deleted successfully' };
   }
+
+  async deleteManyEntities(userId: string, ids: string[]) {
+    const entities = await prisma.entity.findMany({
+      where: {
+        id: { in: ids },
+        userId,
+        deletedAt: null,
+      },
+      select: ENTITY_SELECT_MINIMAL,
+    });
+
+    if (entities.length !== ids.length) {
+      throw new Error('Some entities were not found or do not belong to you');
+    }
+
+    const result = await prisma.entity.updateMany({
+      where: {
+        id: { in: ids },
+        userId,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      message: `${result.count} entity(ies) deleted successfully`,
+    };
+  }
 }
 
 export default new Elysia().decorate('entityService', new EntityService());

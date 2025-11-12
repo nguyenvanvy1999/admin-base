@@ -49,3 +49,17 @@ export const useDeleteEntityMutation = () => {
     },
   });
 };
+
+export const useDeleteManyEntitiesMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => {
+      return entityService.deleteManyEntities(ids);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['entities'] });
+      toast.success('Entities deleted successfully');
+    },
+  });
+};

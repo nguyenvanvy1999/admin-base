@@ -188,6 +188,37 @@ export class TagService {
 
     return { success: true, message: 'Tag deleted successfully' };
   }
+
+  async deleteManyTags(userId: string, ids: string[]) {
+    const tags = await prisma.tag.findMany({
+      where: {
+        id: { in: ids },
+        userId,
+        deletedAt: null,
+      },
+      select: TAG_SELECT_MINIMAL,
+    });
+
+    if (tags.length !== ids.length) {
+      throw new Error('Some tags were not found or do not belong to you');
+    }
+
+    const result = await prisma.tag.updateMany({
+      where: {
+        id: { in: ids },
+        userId,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      message: `${result.count} tag(s) deleted successfully`,
+    };
+  }
 }
 
 export default new Elysia().decorate('tagService', new TagService());

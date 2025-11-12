@@ -1,4 +1,4 @@
-import { ActionIcon } from '@mantine/core';
+import { ActionIcon, Button } from '@mantine/core';
 import type { EntityResponse } from '@server/dto/entity.dto';
 import { EntityType } from '@server/generated/prisma/enums';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
@@ -10,6 +10,7 @@ type EntityTableProps = {
   entities: EntityResponse[];
   onEdit: (entity: EntityResponse) => void;
   onDelete: (entity: EntityResponse) => void;
+  onDeleteMany?: (ids: string[]) => void;
   isLoading?: boolean;
   showIndexColumn?: boolean;
   recordsPerPage?: number;
@@ -27,12 +28,15 @@ type EntityTableProps = {
           desc: boolean;
         }[]),
   ) => void;
+  selectedRecords?: EntityResponse[];
+  onSelectedRecordsChange?: (records: EntityResponse[]) => void;
 };
 
 const EntityTable = ({
   entities,
   onEdit,
   onDelete,
+  onDeleteMany,
   isLoading = false,
   showIndexColumn = true,
   recordsPerPage,
@@ -43,6 +47,8 @@ const EntityTable = ({
   totalRecords,
   sorting,
   onSortingChange,
+  selectedRecords,
+  onSelectedRecordsChange,
 }: EntityTableProps) => {
   const { t } = useTranslation();
 
@@ -123,6 +129,8 @@ const EntityTable = ({
     [t, onEdit, onDelete],
   );
 
+  const selectedCount = selectedRecords?.length || 0;
+
   return (
     <DataTable
       data={entities}
@@ -137,6 +145,31 @@ const EntityTable = ({
       totalRecords={totalRecords}
       sorting={sorting}
       onSortingChange={onSortingChange}
+      selectedRecords={selectedRecords}
+      onSelectedRecordsChange={onSelectedRecordsChange}
+      renderTopToolbarCustomActions={
+        onDeleteMany && selectedCount > 0
+          ? ({ table }) => (
+              <Button
+                color="red"
+                variant="filled"
+                leftSection={<IconTrash size={16} />}
+                onClick={() => {
+                  const selectedIds = selectedRecords?.map((r) => r.id) || [];
+                  if (selectedIds.length > 0 && onDeleteMany) {
+                    onDeleteMany(selectedIds);
+                  }
+                }}
+                disabled={isLoading}
+              >
+                {t('common.deleteSelected', {
+                  defaultValue: `Delete ${selectedCount}`,
+                  count: selectedCount,
+                })}
+              </Button>
+            )
+          : undefined
+      }
     />
   );
 };

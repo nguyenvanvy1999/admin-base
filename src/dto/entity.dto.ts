@@ -1,6 +1,7 @@
 import { EntityType } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
 import { z } from 'zod';
+import { DeleteManyDto, type IDeleteManyDto } from './common.dto';
 
 export const UpsertEntityDto = z.object({
   id: z.string().optional(),
@@ -23,8 +24,11 @@ export const ListEntitiesQueryDto = z.object({
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
+export const DeleteManyEntitiesDto = DeleteManyDto;
+
 export type IUpsertEntityDto = z.infer<typeof UpsertEntityDto>;
 export type IListEntitiesQueryDto = z.infer<typeof ListEntitiesQueryDto>;
+export type IDeleteManyEntitiesDto = IDeleteManyDto;
 
 export const EntityDto = t.NoValidate(
   t.Object({

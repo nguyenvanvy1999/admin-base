@@ -54,6 +54,7 @@ type Props<T> = {
   columnFilters?: ColumnFilter[];
   onColumnFiltersChange?: (updater: ColumnFilter[]) => void;
   enableRowNumbers?: boolean;
+  renderTopToolbarCustomActions?: (props: { table: any }) => React.ReactNode;
 };
 
 export function DataTable<T extends { id: string } = { id: string }>({
@@ -84,6 +85,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
   onSortingChange,
   columnFilters,
   onColumnFiltersChange,
+  renderTopToolbarCustomActions,
   ...props
 }: Props<T>) {
   const { t } = useTranslation();
@@ -401,8 +403,27 @@ export function DataTable<T extends { id: string } = { id: string }>({
           colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]
         }`,
         gap: theme.spacing.sm,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
       },
     },
+    ...(renderTopToolbarCustomActions
+      ? {
+          renderTopToolbar: ({ table }) => (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                width: '100%',
+              }}
+            >
+              {renderTopToolbarCustomActions({ table })}
+            </div>
+          ),
+        }
+      : {}),
     mantineSearchTextInputProps: {
       size: 'xs',
       style: {

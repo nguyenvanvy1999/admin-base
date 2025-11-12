@@ -1,5 +1,6 @@
 import { t } from 'elysia';
 import { z } from 'zod';
+import { DeleteManyDto, type IDeleteManyDto } from './common.dto';
 
 export const UpsertEventDto = z.object({
   id: z.string().optional(),
@@ -20,8 +21,11 @@ export const ListEventsQueryDto = z.object({
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
+export const DeleteManyEventsDto = DeleteManyDto;
+
 export type IUpsertEventDto = z.infer<typeof UpsertEventDto>;
 export type IListEventsQueryDto = z.infer<typeof ListEventsQueryDto>;
+export type IDeleteManyEventsDto = IDeleteManyDto;
 
 export const EventDto = t.NoValidate(
   t.Object({

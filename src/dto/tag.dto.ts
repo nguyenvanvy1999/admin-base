@@ -1,5 +1,6 @@
 import { t } from 'elysia';
 import { z } from 'zod';
+import { DeleteManyDto, type IDeleteManyDto } from './common.dto';
 
 export const UpsertTagDto = z.object({
   id: z.string().optional(),
@@ -15,8 +16,11 @@ export const ListTagsQueryDto = z.object({
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
+export const DeleteManyTagsDto = DeleteManyDto;
+
 export type IUpsertTagDto = z.infer<typeof UpsertTagDto>;
 export type IListTagsQueryDto = z.infer<typeof ListTagsQueryDto>;
+export type IDeleteManyTagsDto = IDeleteManyDto;
 
 export const TagDto = t.NoValidate(
   t.Object({

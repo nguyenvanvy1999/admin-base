@@ -10,6 +10,7 @@ import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateEventMutation,
   useDeleteEventMutation,
+  useDeleteManyEventsMutation,
   useUpdateEventMutation,
 } from '@client/hooks/mutations/useEventMutations';
 import { useEventsQuery } from '@client/hooks/queries/useEventQueries';
@@ -42,6 +43,9 @@ const EventPage = () => {
   const [eventToDelete, setEventToDelete] = useState<EventResponse | null>(
     null,
   );
+  const [isDeleteManyDialogOpen, setIsDeleteManyDialogOpen] = useState(false);
+  const [eventsToDeleteMany, setEventsToDeleteMany] = useState<string[]>([]);
+  const [selectedRecords, setSelectedRecords] = useState<EventResponse[]>([]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<
@@ -71,6 +75,7 @@ const EventPage = () => {
   const createMutation = useCreateEventMutation();
   const updateMutation = useUpdateEventMutation();
   const deleteMutation = useDeleteEventMutation();
+  const deleteManyMutation = useDeleteManyEventsMutation();
 
   const handleAdd = () => {
     setSelectedEvent(null);
@@ -121,10 +126,33 @@ const EventPage = () => {
     }
   };
 
+  const handleDeleteMany = (ids: string[]) => {
+    setEventsToDeleteMany(ids);
+    setIsDeleteManyDialogOpen(true);
+  };
+
+  const handleDeleteManyDialogClose = () => {
+    setIsDeleteManyDialogOpen(false);
+    setEventsToDeleteMany([]);
+    setSelectedRecords([]);
+  };
+
+  const handleConfirmDeleteMany = async () => {
+    if (eventsToDeleteMany.length > 0) {
+      try {
+        await deleteManyMutation.mutateAsync(eventsToDeleteMany);
+        handleDeleteManyDialogClose();
+      } catch {
+        // Error is already handled by mutation's onError callback
+      }
+    }
+  };
+
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending;
+    deleteMutation.isPending ||
+    deleteManyMutation.isPending;
 
   return (
     <PageContainer
@@ -157,6 +185,7 @@ const EventPage = () => {
         events={data?.events || []}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onDeleteMany={handleDeleteMany}
         isLoading={isLoading}
         recordsPerPage={limit}
         recordsPerPageOptions={[10, 20, 50, 100]}
@@ -195,6 +224,8 @@ const EventPage = () => {
           }
           setPage(1);
         }}
+        selectedRecords={selectedRecords}
+        onSelectedRecordsChange={setSelectedRecords}
       />
 
       {isDialogOpen && (
@@ -230,6 +261,42 @@ const EventPage = () => {
             <Button
               color="red"
               onClick={handleConfirmDelete}
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? t('common.deleting', { defaultValue: 'Deleting...' })
+                : t('common.delete')}
+            </Button>
+          </Group>
+        </Modal>
+      )}
+
+      {isDeleteManyDialogOpen && eventsToDeleteMany.length > 0 && (
+        <Modal
+          opened={isDeleteManyDialogOpen}
+          onClose={handleDeleteManyDialogClose}
+          title={t('events.deleteManyConfirmTitle', {
+            defaultValue: 'Delete Multiple Events',
+          })}
+          size="md"
+        >
+          <Text mb="md">
+            {t('events.deleteManyConfirmMessage', {
+              defaultValue: 'Are you sure you want to delete {count} event(s)?',
+              count: eventsToDeleteMany.length,
+            })}
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={handleDeleteManyDialogClose}
+              disabled={isSubmitting}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDeleteMany}
               disabled={isSubmitting}
             >
               {isSubmitting

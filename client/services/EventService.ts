@@ -46,6 +46,15 @@ export class EventService extends ServiceBase {
       endpoint: eventId,
     });
   }
+
+  deleteManyEvents(ids: string[]): Promise<EventDeleteResponse> {
+    return this.post<EventDeleteResponse>(
+      { ids },
+      {
+        endpoint: 'delete-many',
+      },
+    );
+  }
 }
 
 export const eventService = new EventService();

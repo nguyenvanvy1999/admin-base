@@ -53,3 +53,19 @@ export const useDeleteEventMutation = () => {
     },
   });
 };
+
+export const useDeleteManyEventsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => {
+      return eventService.deleteManyEvents(ids);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['events'] });
+      await queryClient.invalidateQueries({ queryKey: ['events-options'] });
+      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast.success('Events deleted successfully');
+    },
+  });
+};

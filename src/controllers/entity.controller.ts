@@ -1,6 +1,7 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
+  DeleteManyEntitiesDto,
   EntityDeleteResponseDto,
   EntityDto,
   EntityListResponseDto,
@@ -99,6 +100,25 @@ const entityController = new Elysia().group(
               'Permanently delete a financial entity by its ID. This action cannot be undone.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: EntityDeleteResponseDto,
+          },
+        },
+      )
+      .post(
+        '/delete-many',
+        ({ user, body, entityService }) => {
+          return entityService.deleteManyEntities(user.id, body.ids);
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...ENTITY_DETAIL,
+            summary: 'Delete many entities',
+            description:
+              'Permanently delete multiple financial entities by their IDs. This action cannot be undone.',
+          },
+          body: DeleteManyEntitiesDto,
           response: {
             200: EntityDeleteResponseDto,
           },

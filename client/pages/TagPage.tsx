@@ -9,6 +9,7 @@ import { TextInput } from '@client/components/TextInput';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateTagMutation,
+  useDeleteManyTagsMutation,
   useDeleteTagMutation,
   useUpdateTagMutation,
 } from '@client/hooks/mutations/useTagMutations';
@@ -39,6 +40,9 @@ const TagPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [tagToDelete, setTagToDelete] = useState<TagResponse | null>(null);
+  const [isDeleteManyDialogOpen, setIsDeleteManyDialogOpen] = useState(false);
+  const [tagsToDeleteMany, setTagsToDeleteMany] = useState<string[]>([]);
+  const [selectedRecords, setSelectedRecords] = useState<TagResponse[]>([]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'createdAt'>('createdAt');
@@ -63,6 +67,7 @@ const TagPage = () => {
   const createMutation = useCreateTagMutation();
   const updateMutation = useUpdateTagMutation();
   const deleteMutation = useDeleteTagMutation();
+  const deleteManyMutation = useDeleteManyTagsMutation();
 
   const handleAdd = () => {
     setSelectedTag(null);
@@ -115,10 +120,33 @@ const TagPage = () => {
     }
   };
 
+  const handleDeleteMany = (ids: string[]) => {
+    setTagsToDeleteMany(ids);
+    setIsDeleteManyDialogOpen(true);
+  };
+
+  const handleDeleteManyDialogClose = () => {
+    setIsDeleteManyDialogOpen(false);
+    setTagsToDeleteMany([]);
+    setSelectedRecords([]);
+  };
+
+  const handleConfirmDeleteMany = async () => {
+    if (tagsToDeleteMany.length > 0) {
+      try {
+        await deleteManyMutation.mutateAsync(tagsToDeleteMany);
+        handleDeleteManyDialogClose();
+      } catch {
+        // Error is already handled by mutation's onError callback
+      }
+    }
+  };
+
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending;
+    deleteMutation.isPending ||
+    deleteManyMutation.isPending;
 
   return (
     <PageContainer
@@ -151,6 +179,7 @@ const TagPage = () => {
         tags={data?.tags || []}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onDeleteMany={handleDeleteMany}
         isLoading={isLoading}
         recordsPerPage={limit}
         recordsPerPageOptions={[10, 20, 50, 100]}
@@ -194,6 +223,8 @@ const TagPage = () => {
           }
           setPage(1);
         }}
+        selectedRecords={selectedRecords}
+        onSelectedRecordsChange={setSelectedRecords}
       />
 
       {isDialogOpen && (
@@ -229,6 +260,42 @@ const TagPage = () => {
             <Button
               color="red"
               onClick={handleConfirmDelete}
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? t('common.deleting', { defaultValue: 'Deleting...' })
+                : t('common.delete')}
+            </Button>
+          </Group>
+        </Modal>
+      )}
+
+      {isDeleteManyDialogOpen && tagsToDeleteMany.length > 0 && (
+        <Modal
+          opened={isDeleteManyDialogOpen}
+          onClose={handleDeleteManyDialogClose}
+          title={t('tags.deleteManyConfirmTitle', {
+            defaultValue: 'Delete Multiple Tags',
+          })}
+          size="md"
+        >
+          <Text mb="md">
+            {t('tags.deleteManyConfirmMessage', {
+              defaultValue: 'Are you sure you want to delete {count} tag(s)?',
+              count: tagsToDeleteMany.length,
+            })}
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={handleDeleteManyDialogClose}
+              disabled={isSubmitting}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDeleteMany}
               disabled={isSubmitting}
             >
               {isSubmitting

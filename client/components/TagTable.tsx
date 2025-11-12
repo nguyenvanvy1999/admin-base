@@ -1,4 +1,4 @@
-import { ActionIcon } from '@mantine/core';
+import { ActionIcon, Button } from '@mantine/core';
 import type { TagResponse } from '@server/dto/tag.dto';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
@@ -9,6 +9,7 @@ type TagTableProps = {
   tags: TagResponse[];
   onEdit: (tag: TagResponse) => void;
   onDelete: (tag: TagResponse) => void;
+  onDeleteMany?: (ids: string[]) => void;
   isLoading?: boolean;
   showIndexColumn?: boolean;
   recordsPerPage?: number;
@@ -26,12 +27,15 @@ type TagTableProps = {
           desc: boolean;
         }[]),
   ) => void;
+  selectedRecords?: TagResponse[];
+  onSelectedRecordsChange?: (records: TagResponse[]) => void;
 };
 
 const TagTable = ({
   tags,
   onEdit,
   onDelete,
+  onDeleteMany,
   isLoading = false,
   showIndexColumn = true,
   recordsPerPage,
@@ -42,6 +46,8 @@ const TagTable = ({
   totalRecords,
   sorting,
   onSortingChange,
+  selectedRecords,
+  onSelectedRecordsChange,
 }: TagTableProps) => {
   const { t } = useTranslation();
 
@@ -90,6 +96,8 @@ const TagTable = ({
     [t, onEdit, onDelete],
   );
 
+  const selectedCount = selectedRecords?.length || 0;
+
   return (
     <DataTable
       data={tags}
@@ -104,6 +112,31 @@ const TagTable = ({
       totalRecords={totalRecords}
       sorting={sorting}
       onSortingChange={onSortingChange}
+      selectedRecords={selectedRecords}
+      onSelectedRecordsChange={onSelectedRecordsChange}
+      renderTopToolbarCustomActions={
+        onDeleteMany && selectedCount > 0
+          ? ({ table }) => (
+              <Button
+                color="red"
+                variant="filled"
+                leftSection={<IconTrash size={16} />}
+                onClick={() => {
+                  const selectedIds = selectedRecords?.map((r) => r.id) || [];
+                  if (selectedIds.length > 0 && onDeleteMany) {
+                    onDeleteMany(selectedIds);
+                  }
+                }}
+                disabled={isLoading}
+              >
+                {t('common.deleteSelected', {
+                  defaultValue: `Delete ${selectedCount}`,
+                  count: selectedCount,
+                })}
+              </Button>
+            )
+          : undefined
+      }
     />
   );
 };

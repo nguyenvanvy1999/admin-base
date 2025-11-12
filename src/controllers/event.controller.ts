@@ -1,6 +1,7 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
+  DeleteManyEventsDto,
   EventDeleteResponseDto,
   EventDto,
   EventListResponseDto,
@@ -99,6 +100,25 @@ const eventController = new Elysia().group(
               'Soft delete an event by its ID. This action cannot be undone.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: EventDeleteResponseDto,
+          },
+        },
+      )
+      .post(
+        '/delete-many',
+        ({ user, body, eventService }) => {
+          return eventService.deleteManyEvents(user.id, body.ids);
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...EVENT_DETAIL,
+            summary: 'Delete many events',
+            description:
+              'Soft delete multiple events by their IDs. This action cannot be undone.',
+          },
+          body: DeleteManyEventsDto,
           response: {
             200: EventDeleteResponseDto,
           },

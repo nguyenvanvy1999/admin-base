@@ -34,6 +34,15 @@ export class EntityService extends ServiceBase {
       endpoint: entityId,
     });
   }
+
+  deleteManyEntities(ids: string[]): Promise<EntityDeleteResponse> {
+    return this.post<EntityDeleteResponse>(
+      { ids },
+      {
+        endpoint: 'delete-many',
+      },
+    );
+  }
 }
 
 export const entityService = new EntityService();
