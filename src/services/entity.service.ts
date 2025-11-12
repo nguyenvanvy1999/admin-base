@@ -1,5 +1,4 @@
 import type { Prisma } from '@server/generated/prisma/client';
-import type { EntityType } from '@server/generated/prisma/enums';
 import type {
   EntityOrderByWithRelationInput,
   EntityWhereInput,
@@ -87,7 +86,7 @@ export class EntityService {
         where: { id: data.id },
         data: {
           name: data.name,
-          type: data.type as EntityType,
+          type: data.type,
           phone: data.phone ?? null,
           email: data.email ?? null,
           address: data.address ?? null,
@@ -101,7 +100,7 @@ export class EntityService {
         data: {
           userId,
           name: data.name,
-          type: data.type as EntityType,
+          type: data.type,
           phone: data.phone ?? null,
           email: data.email ?? null,
           address: data.address ?? null,
@@ -146,7 +145,7 @@ export class EntityService {
     };
 
     if (type && type.length > 0) {
-      where.type = { in: type as EntityType[] };
+      where.type = { in: type };
     }
 
     if (search && search.trim()) {

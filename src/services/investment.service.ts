@@ -157,8 +157,8 @@ export class InvestmentService {
     const payload = {
       symbol: data.symbol,
       name: data.name,
-      assetType: data.assetType as InvestmentAssetType,
-      mode: (data.mode ?? InvestmentMode.priced) as InvestmentMode,
+      assetType: data.assetType,
+      mode: data.mode ?? InvestmentMode.priced,
       currencyId: data.currencyId,
       baseCurrencyId: data.baseCurrencyId ?? null,
       extra: (data.extra ?? null) as any,
@@ -200,11 +200,9 @@ export class InvestmentService {
       userId,
       deletedAt: null,
       ...(assetTypes && assetTypes.length > 0
-        ? { assetType: { in: assetTypes as InvestmentAssetType[] } }
+        ? { assetType: { in: assetTypes } }
         : {}),
-      ...(modes && modes.length > 0
-        ? { mode: { in: modes as InvestmentMode[] } }
-        : {}),
+      ...(modes && modes.length > 0 ? { mode: { in: modes } } : {}),
       ...(currencyIds && currencyIds.length > 0
         ? { currencyId: { in: currencyIds } }
         : {}),

@@ -215,7 +215,7 @@ export class CategoryService {
     }
 
     if (type && type.length > 0) {
-      where.type = { in: type as CategoryType[] };
+      where.type = { in: type };
     }
 
     const categories = await prisma.category.findMany({
@@ -296,7 +296,7 @@ export class CategoryService {
       data: {
         userId,
         name: data.name,
-        type: data.type as CategoryType,
+        type: data.type,
         parentId: data.parentId ?? null,
         icon: data.icon ?? null,
         color: data.color ?? null,
@@ -364,7 +364,7 @@ export class CategoryService {
       where: { id: categoryId },
       data: {
         name: data.name,
-        type: data.type as CategoryType,
+        type: data.type,
         parentId: data.parentId ?? null,
         icon: data.icon ?? null,
         color: data.color ?? null,

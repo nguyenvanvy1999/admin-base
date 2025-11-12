@@ -1,5 +1,4 @@
 import type { Prisma } from '@server/generated/prisma/client';
-import type { AccountType } from '@server/generated/prisma/enums';
 import type { AccountWhereInput } from '@server/generated/prisma/models/Account';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
@@ -105,7 +104,7 @@ export class AccountService {
       const account = await prisma.account.update({
         where: { id: data.id },
         data: {
-          type: data.type as AccountType,
+          type: data.type,
           name: data.name,
           currencyId: data.currencyId,
           creditLimit: data.creditLimit ?? null,
@@ -120,7 +119,7 @@ export class AccountService {
     } else {
       const account = await prisma.account.create({
         data: {
-          type: data.type as AccountType,
+          type: data.type,
           name: data.name,
           currencyId: data.currencyId,
           creditLimit: data.creditLimit ?? null,
@@ -177,7 +176,7 @@ export class AccountService {
     };
 
     if (type && type.length > 0) {
-      where.type = { in: type as AccountType[] };
+      where.type = { in: type };
     }
 
     if (currencyId && currencyId.length > 0) {

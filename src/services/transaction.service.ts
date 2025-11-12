@@ -1228,7 +1228,7 @@ export class TransactionService {
     };
 
     if (types && types.length > 0) {
-      where.type = { in: types as TransactionType[] };
+      where.type = { in: types };
     }
     if (accountIds && accountIds.length > 0) {
       where.accountId = { in: accountIds };
