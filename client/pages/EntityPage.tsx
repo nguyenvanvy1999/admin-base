@@ -1,28 +1,46 @@
 import AddEditEntityDialog from '@client/components/AddEditEntityDialog';
 import EntityTable from '@client/components/EntityTable';
+import {
+  FormComponent,
+  type FormComponentRef,
+} from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
 import { TextInput } from '@client/components/TextInput';
+import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateEntityMutation,
   useDeleteEntityMutation,
   useUpdateEntityMutation,
 } from '@client/hooks/mutations/useEntityMutations';
-import { useEntitiesQuery } from '@client/hooks/queries/useEntityQueries';
+import {
+  type FilterFormValue,
+  useEntitiesQuery,
+} from '@client/hooks/queries/useEntityQueries';
+import { useZodForm } from '@client/hooks/useZodForm';
 import type { EntityFormData, EntityFull } from '@client/types/entity';
 import { Button, Group, Modal, MultiSelect, Text } from '@mantine/core';
 import { EntityType } from '@server/generated/prisma/enums';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { z } from 'zod';
+
+const filterSchema = z.object({
+  search: z.string().optional(),
+  type: z.array(z.nativeEnum(EntityType)).optional(),
+});
+
+const defaultFilterValues: FilterFormValue = {
+  search: '',
+  type: [],
+};
 
 const EntityPage = () => {
   const { t } = useTranslation();
+  const formRef = useRef<FormComponentRef>(null);
   const [selectedEntity, setSelectedEntity] = useState<EntityFull | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [entityToDelete, setEntityToDelete] = useState<EntityFull | null>(null);
-  const [typeFilterInput, setTypeFilterInput] = useState<EntityType[]>([]);
-  const [typeFilter, setTypeFilter] = useState<EntityType[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'type' | 'createdAt'>(
@@ -30,19 +48,26 @@ const EntityPage = () => {
   );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  const { handleSubmit, control, reset } = useZodForm({
+    zod: filterSchema,
+    defaultValues: defaultFilterValues,
+  });
+
   const queryParams = useMemo(
     () => ({
-      type: typeFilter.length > 0 ? typeFilter : undefined,
-      search: searchQuery.trim() || undefined,
       page,
       limit,
       sortBy,
       sortOrder,
     }),
-    [typeFilter, searchQuery, page, limit, sortBy, sortOrder],
+    [page, limit, sortBy, sortOrder],
   );
 
-  const { data, isLoading } = useEntitiesQuery(queryParams);
+  const { data, isLoading } = useEntitiesQuery(
+    queryParams,
+    formRef,
+    handleSubmit,
+  );
   const createMutation = useCreateEntityMutation();
   const updateMutation = useUpdateEntityMutation();
   const deleteMutation = useDeleteEntityMutation();
@@ -72,7 +97,7 @@ const EntityPage = () => {
     setEntityToDelete(null);
   };
 
-  const handleSubmit = async (formData: EntityFormData) => {
+  const handleSubmitForm = async (formData: EntityFormData) => {
     try {
       if (formData.id) {
         await updateMutation.mutateAsync(formData);
@@ -96,10 +121,6 @@ const EntityPage = () => {
     }
   };
 
-  const hasActiveFilters = useMemo(() => {
-    return searchQuery.trim() !== '' || typeFilter.length > 0;
-  }, [searchQuery, typeFilter]);
-
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
@@ -108,52 +129,52 @@ const EntityPage = () => {
   return (
     <PageContainer
       filterGroup={
-        <>
-          <TextInput
-            placeholder={t('entities.search')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                setTypeFilter(typeFilterInput);
-                setPage(1);
-              }
-            }}
-            style={{ flex: 1, maxWidth: '300px' }}
-          />
-          <MultiSelect
-            value={typeFilterInput}
-            onChange={(value) => setTypeFilterInput(value as EntityType[])}
-            placeholder={t('entities.typePlaceholder')}
-            data={[
-              {
-                value: EntityType.individual,
-                label: t('entities.individual'),
-              },
-              {
-                value: EntityType.organization,
-                label: t('entities.organization'),
-              },
-            ]}
-            style={{ maxWidth: '200px' }}
-          />
-        </>
+        <FormComponent ref={formRef}>
+          <Group>
+            <ZodFormController
+              control={control}
+              name="search"
+              render={({ field, fieldState: { error } }) => (
+                <TextInput
+                  placeholder={t('entities.search')}
+                  error={error}
+                  style={{ flex: 1, maxWidth: '300px' }}
+                  {...field}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="type"
+              render={({ field, fieldState: { error } }) => (
+                <MultiSelect
+                  placeholder={t('entities.typePlaceholder')}
+                  error={error}
+                  data={[
+                    {
+                      value: EntityType.individual,
+                      label: t('entities.individual'),
+                    },
+                    {
+                      value: EntityType.organization,
+                      label: t('entities.organization'),
+                    },
+                  ]}
+                  value={field.value || []}
+                  onChange={(value) => field.onChange(value as EntityType[])}
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+          </Group>
+        </FormComponent>
       }
       buttonGroups={
         <Button onClick={handleAdd} disabled={isSubmitting}>
           {t('entities.addEntity')}
         </Button>
       }
-      onReset={
-        hasActiveFilters
-          ? () => {
-              setSearchQuery('');
-              setTypeFilterInput([]);
-              setTypeFilter([]);
-              setPage(1);
-            }
-          : undefined
-      }
+      onReset={() => reset(defaultFilterValues)}
     >
       <EntityTable
         entities={data?.entities || []}
@@ -202,7 +223,7 @@ const EntityPage = () => {
           isOpen={isDialogOpen}
           onClose={handleDialogClose}
           entity={selectedEntity}
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
         />
       )}

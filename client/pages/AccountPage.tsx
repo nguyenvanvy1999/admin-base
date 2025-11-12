@@ -1,14 +1,23 @@
 import AccountTable from '@client/components/AccountTable';
 import AddEditAccountDialog from '@client/components/AddEditAccountDialog';
+import {
+  FormComponent,
+  type FormComponentRef,
+} from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
 import { TextInput } from '@client/components/TextInput';
+import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateAccountMutation,
   useDeleteAccountMutation,
   useUpdateAccountMutation,
 } from '@client/hooks/mutations/useAccountMutations';
-import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
+import {
+  type FilterFormValue,
+  useAccountsQuery,
+} from '@client/hooks/queries/useAccountQueries';
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
+import { useZodForm } from '@client/hooks/useZodForm';
 import type { AccountFormData, AccountFull } from '@client/types/account';
 import {
   Button,
@@ -17,17 +26,30 @@ import {
   MultiSelect,
   NumberFormatter,
   Text,
-  Title,
   useMantineColorScheme,
 } from '@mantine/core';
 import { AccountType } from '@server/generated/prisma/enums';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { z } from 'zod';
+
+const filterSchema = z.object({
+  search: z.string().optional(),
+  type: z.array(z.nativeEnum(AccountType)).optional(),
+  currencyId: z.array(z.string()).optional(),
+});
+
+const defaultFilterValues: FilterFormValue = {
+  search: '',
+  type: [],
+  currencyId: [],
+};
 
 const AccountPage = () => {
   const { t } = useTranslation();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
+  const formRef = useRef<FormComponentRef>(null);
   const [selectedAccount, setSelectedAccount] = useState<AccountFull | null>(
     null,
   );
@@ -36,11 +58,6 @@ const AccountPage = () => {
   const [accountToDelete, setAccountToDelete] = useState<AccountFull | null>(
     null,
   );
-  const [typeFilterInput, setTypeFilterInput] = useState<AccountType[]>([]);
-  const [typeFilter, setTypeFilter] = useState<AccountType[]>([]);
-  const [currencyFilterInput, setCurrencyFilterInput] = useState<string[]>([]);
-  const [currencyFilter, setCurrencyFilter] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'balance'>(
@@ -48,20 +65,26 @@ const AccountPage = () => {
   );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  const { handleSubmit, control, reset } = useZodForm({
+    zod: filterSchema,
+    defaultValues: defaultFilterValues,
+  });
+
   const queryParams = useMemo(
     () => ({
-      type: typeFilter.length > 0 ? typeFilter : undefined,
-      currencyId: currencyFilter.length > 0 ? currencyFilter : undefined,
-      search: searchQuery.trim() || undefined,
       page,
       limit,
       sortBy,
       sortOrder,
     }),
-    [typeFilter, currencyFilter, searchQuery, page, limit, sortBy, sortOrder],
+    [page, limit, sortBy, sortOrder],
   );
 
-  const { data, isLoading } = useAccountsQuery(queryParams);
+  const { data, isLoading } = useAccountsQuery(
+    queryParams,
+    formRef,
+    handleSubmit,
+  );
   const { data: currencies = [] } = useCurrenciesQuery();
   const createMutation = useCreateAccountMutation();
   const updateMutation = useUpdateAccountMutation();
@@ -92,7 +115,7 @@ const AccountPage = () => {
     setAccountToDelete(null);
   };
 
-  const handleSubmit = async (formData: AccountFormData) => {
+  const handleSubmitForm = async (formData: AccountFormData) => {
     if (formData.id) {
       await updateMutation.mutateAsync(formData);
     } else {
@@ -107,14 +130,6 @@ const AccountPage = () => {
       handleDeleteDialogClose();
     }
   };
-
-  const hasActiveFilters = useMemo(() => {
-    return (
-      searchQuery.trim() !== '' ||
-      typeFilter.length > 0 ||
-      currencyFilter.length > 0
-    );
-  }, [searchQuery, typeFilter, currencyFilter]);
 
   const isSubmitting =
     createMutation.isPending ||
@@ -153,69 +168,73 @@ const AccountPage = () => {
   return (
     <PageContainer
       filterGroup={
-        <>
-          <TextInput
-            placeholder={t('accounts.search')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                setTypeFilter(typeFilterInput);
-                setCurrencyFilter(currencyFilterInput);
-                setPage(1);
-              }
-            }}
-            style={{ flex: 1, maxWidth: '300px' }}
-          />
-          <MultiSelect
-            value={typeFilterInput}
-            onChange={(value) => setTypeFilterInput(value as AccountType[])}
-            placeholder={t('accounts.typePlaceholder')}
-            data={[
-              { value: AccountType.cash, label: t('accounts.cash') },
-              { value: AccountType.bank, label: t('accounts.bank') },
-              {
-                value: AccountType.credit_card,
-                label: t('accounts.credit_card'),
-              },
-              {
-                value: AccountType.investment,
-                label: t('accounts.investment'),
-              },
-            ]}
-            style={{ maxWidth: '200px' }}
-          />
-          <MultiSelect
-            value={currencyFilterInput}
-            onChange={(value) => setCurrencyFilterInput(value)}
-            placeholder={t('accounts.currencyPlaceholder', {
-              defaultValue: 'Currency',
-            })}
-            data={currencies.map((currency) => ({
-              value: currency.id,
-              label: `${currency.code} - ${currency.name}`,
-            }))}
-            style={{ maxWidth: '200px' }}
-          />
-        </>
+        <FormComponent ref={formRef}>
+          <Group>
+            <ZodFormController
+              control={control}
+              name="search"
+              render={({ field, fieldState: { error } }) => (
+                <TextInput
+                  placeholder={t('accounts.search')}
+                  error={error}
+                  style={{ flex: 1, maxWidth: '300px' }}
+                  {...field}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="type"
+              render={({ field, fieldState: { error } }) => (
+                <MultiSelect
+                  placeholder={t('accounts.typePlaceholder')}
+                  error={error}
+                  data={[
+                    { value: AccountType.cash, label: t('accounts.cash') },
+                    { value: AccountType.bank, label: t('accounts.bank') },
+                    {
+                      value: AccountType.credit_card,
+                      label: t('accounts.credit_card'),
+                    },
+                    {
+                      value: AccountType.investment,
+                      label: t('accounts.investment'),
+                    },
+                  ]}
+                  value={field.value || []}
+                  onChange={(value) => field.onChange(value as AccountType[])}
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="currencyId"
+              render={({ field, fieldState: { error } }) => (
+                <MultiSelect
+                  placeholder={t('accounts.currencyPlaceholder', {
+                    defaultValue: 'Currency',
+                  })}
+                  error={error}
+                  data={currencies.map((currency) => ({
+                    value: currency.id,
+                    label: `${currency.code} - ${currency.name}`,
+                  }))}
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+          </Group>
+        </FormComponent>
       }
       buttonGroups={
         <Button onClick={handleAdd} disabled={isSubmitting}>
           {t('accounts.addAccount')}
         </Button>
       }
-      onReset={
-        hasActiveFilters
-          ? () => {
-              setSearchQuery('');
-              setTypeFilterInput([]);
-              setTypeFilter([]);
-              setCurrencyFilterInput([]);
-              setCurrencyFilter([]);
-              setPage(1);
-            }
-          : undefined
-      }
+      onReset={() => reset(defaultFilterValues)}
       stats={stats}
     >
       <AccountTable
@@ -265,7 +284,7 @@ const AccountPage = () => {
           isOpen={isDialogOpen}
           onClose={handleDialogClose}
           account={selectedAccount}
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
         />
       )}

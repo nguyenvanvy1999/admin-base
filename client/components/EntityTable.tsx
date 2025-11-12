@@ -19,7 +19,14 @@ type EntityTableProps = {
   onPageChange?: (page: number) => void;
   totalRecords?: number;
   sorting?: { id: string; desc: boolean }[];
-  onSortingChange?: (updater: { id: string; desc: boolean }[]) => void;
+  onSortingChange?: (
+    updater:
+      | { id: string; desc: boolean }[]
+      | ((prev: { id: string; desc: boolean }[]) => {
+          id: string;
+          desc: boolean;
+        }[]),
+  ) => void;
 };
 
 const EntityTable = ({

@@ -1,6 +1,7 @@
 export * from './DataTable';
 export * from './DataTable/ColumnOrdering';
 export * from './DataTable/types';
+export * from './FormComponent';
 export * from './MetaVisualizer';
 export * from './NumberInput';
 export * from './PageContainer';

@@ -1,10 +1,22 @@
+import type { FormComponentRef } from '@client/components/FormComponent';
 import { investmentService } from '@client/services';
+import { DeferredPromise } from '@open-draft/deferred-promise';
 import type {
   InvestmentAssetType,
   InvestmentMode,
   TradeSide,
 } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
+
+const filterSchema = z.object({
+  search: z.string().optional(),
+  assetTypes: z.array(z.nativeEnum(InvestmentAssetType)).optional(),
+  modes: z.array(z.nativeEnum(InvestmentMode)).optional(),
+  currencyIds: z.array(z.string()).optional(),
+});
+
+export type FilterFormValue = z.infer<typeof filterSchema>;
 
 type ListInvestmentsQuery = {
   assetTypes?: InvestmentAssetType[];
@@ -44,10 +56,52 @@ type ListValuationsQuery = {
   sortOrder?: 'asc' | 'desc';
 };
 
-export const useInvestmentsQuery = (query: ListInvestmentsQuery = {}) => {
+export const useInvestmentsQuery = (
+  queryParams: {
+    page?: number;
+    limit?: number;
+    sortBy?: 'name' | 'createdAt' | 'updatedAt';
+    sortOrder?: 'asc' | 'desc';
+  },
+  formRef: React.RefObject<FormComponentRef | null>,
+  handleSubmit: (
+    onValid: (data: FilterFormValue) => void,
+    onInvalid?: (errors: any) => void,
+  ) => (e?: React.BaseSyntheticEvent) => Promise<void>,
+) => {
   return useQuery({
-    queryKey: ['investments', query],
-    queryFn: () => {
+    queryKey: ['investments', queryParams],
+    queryFn: async () => {
+      let query: ListInvestmentsQuery = {
+        ...queryParams,
+      };
+
+      if (formRef.current) {
+        const valueDeferred = new DeferredPromise<FilterFormValue>();
+        formRef.current.submit(
+          handleSubmit(valueDeferred.resolve, valueDeferred.reject),
+        );
+
+        const criteria = await valueDeferred;
+
+        query = {
+          ...query,
+          search: criteria.search?.trim() || undefined,
+          assetTypes:
+            criteria.assetTypes && criteria.assetTypes.length > 0
+              ? criteria.assetTypes
+              : undefined,
+          modes:
+            criteria.modes && criteria.modes.length > 0
+              ? criteria.modes
+              : undefined,
+          currencyIds:
+            criteria.currencyIds && criteria.currencyIds.length > 0
+              ? criteria.currencyIds
+              : undefined,
+        };
+      }
+
       return investmentService.listInvestments(query);
     },
   });

@@ -1,4 +1,4 @@
-import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
+import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
 import type {
   InvestmentFull,
@@ -53,20 +53,25 @@ const AddTradeDialog = ({
 }: AddTradeDialogProps) => {
   const { t } = useTranslation();
 
-  const { data: accountsResponse } = useAccountsQuery({
-    currencyId: investment.baseCurrencyId
-      ? [investment.baseCurrencyId]
-      : [investment.currencyId],
-    limit: 100,
-  });
+  const { data: accountsResponse } = useAccountsOptionsQuery();
+
+  const filteredAccounts = useMemo(() => {
+    if (!accountsResponse?.accounts) return [];
+    const targetCurrencyId = investment.baseCurrencyId
+      ? investment.baseCurrencyId
+      : investment.currencyId;
+    return accountsResponse.accounts.filter(
+      (account) => account.currencyId === targetCurrencyId,
+    );
+  }, [accountsResponse, investment]);
 
   const accountOptions = useMemo(
     () =>
-      (accountsResponse?.accounts || []).map((account) => ({
+      filteredAccounts.map((account) => ({
         value: account.id,
         label: `${account.name} (${account.currency.code})`,
       })),
-    [accountsResponse],
+    [filteredAccounts],
   );
 
   const hasBaseCurrency = Boolean(investment.baseCurrencyId);

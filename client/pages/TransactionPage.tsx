@@ -1,17 +1,26 @@
 import AddEditTransactionDialog from '@client/components/AddEditTransactionDialog';
 import CategoryMultiSelect from '@client/components/CategoryMultiSelect';
+import {
+  FormComponent,
+  type FormComponentRef,
+} from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
 import { TextInput } from '@client/components/TextInput';
 import TransactionTable from '@client/components/TransactionTable';
+import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateTransactionMutation,
   useDeleteTransactionMutation,
   useUpdateTransactionMutation,
 } from '@client/hooks/mutations/useTransactionMutations';
-import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
+import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
-import { useEntitiesQuery } from '@client/hooks/queries/useEntityQueries';
-import { useTransactionsQuery } from '@client/hooks/queries/useTransactionQueries';
+import { useEntitiesOptionsQuery } from '@client/hooks/queries/useEntityQueries';
+import {
+  type FilterFormValue,
+  useTransactionsQuery,
+} from '@client/hooks/queries/useTransactionQueries';
+import { useZodForm } from '@client/hooks/useZodForm';
 import type {
   TransactionFormData,
   TransactionFull,
@@ -26,28 +35,37 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { TransactionType } from '@server/generated/prisma/enums';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { z } from 'zod';
+
+const filterSchema = z.object({
+  search: z.string().optional(),
+  types: z.array(z.nativeEnum(TransactionType)).optional(),
+  accountIds: z.array(z.string()).optional(),
+  categoryIds: z.array(z.string()).optional(),
+  entityIds: z.array(z.string()).optional(),
+});
+
+const defaultFilterValues: FilterFormValue = {
+  search: '',
+  types: [],
+  accountIds: [],
+  categoryIds: [],
+  entityIds: [],
+};
 
 const TransactionPage = () => {
   const { t } = useTranslation();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
+  const formRef = useRef<FormComponentRef>(null);
   const [selectedTransaction, setSelectedTransaction] =
     useState<TransactionFull | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] =
     useState<TransactionFull | null>(null);
-  const [typeFilterInput, setTypeFilterInput] = useState<TransactionType[]>([]);
-  const [typeFilterIds, setTypeFilterIds] = useState<TransactionType[]>([]);
-  const [accountFilterInput, setAccountFilterInput] = useState<string[]>([]);
-  const [accountFilterIds, setAccountFilterIds] = useState<string[]>([]);
-  const [categoryFilterInput, setCategoryFilterInput] = useState<string[]>([]);
-  const [categoryFilterIds, setCategoryFilterIds] = useState<string[]>([]);
-  const [entityFilterInput, setEntityFilterInput] = useState<string[]>([]);
-  const [entityFilterIds, setEntityFilterIds] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<
@@ -55,35 +73,29 @@ const TransactionPage = () => {
   >('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  const { handleSubmit, control, reset } = useZodForm({
+    zod: filterSchema,
+    defaultValues: defaultFilterValues,
+  });
+
   const queryParams = useMemo(
     () => ({
-      types: typeFilterIds.length > 0 ? typeFilterIds : undefined,
-      accountIds: accountFilterIds.length > 0 ? accountFilterIds : undefined,
-      categoryIds: categoryFilterIds.length > 0 ? categoryFilterIds : undefined,
-      entityIds: entityFilterIds.length > 0 ? entityFilterIds : undefined,
-      search: searchQuery.trim() || undefined,
       page,
       limit,
       sortBy,
       sortOrder,
     }),
-    [
-      typeFilterIds,
-      accountFilterIds,
-      categoryFilterIds,
-      entityFilterIds,
-      searchQuery,
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-    ],
+    [page, limit, sortBy, sortOrder],
   );
 
-  const { data, isLoading } = useTransactionsQuery(queryParams);
-  const { data: accountsData } = useAccountsQuery({});
+  const { data, isLoading } = useTransactionsQuery(
+    queryParams,
+    formRef,
+    handleSubmit,
+  );
+  const { data: accountsData } = useAccountsOptionsQuery();
   const { data: categoriesData } = useCategoriesQuery({});
-  const { data: entitiesData } = useEntitiesQuery({});
+  const { data: entitiesData } = useEntitiesOptionsQuery();
 
   const accounts = accountsData?.accounts || [];
   const categories = categoriesData?.categories || [];
@@ -118,7 +130,7 @@ const TransactionPage = () => {
     setTransactionToDelete(null);
   };
 
-  const handleSubmit = async (
+  const handleSubmitForm = async (
     formData: TransactionFormData,
     saveAndAdd: boolean,
   ) => {
@@ -138,22 +150,6 @@ const TransactionPage = () => {
       handleDeleteDialogClose();
     }
   };
-
-  const hasActiveFilters = useMemo(() => {
-    return (
-      searchQuery.trim() !== '' ||
-      typeFilterIds.length > 0 ||
-      accountFilterIds.length > 0 ||
-      categoryFilterIds.length > 0 ||
-      entityFilterIds.length > 0
-    );
-  }, [
-    searchQuery,
-    typeFilterIds,
-    accountFilterIds,
-    categoryFilterIds,
-    entityFilterIds,
-  ]);
 
   const isSubmitting =
     createMutation.isPending ||
@@ -209,100 +205,102 @@ const TransactionPage = () => {
   return (
     <PageContainer
       filterGroup={
-        <>
-          <TextInput
-            placeholder={t('transactions.search')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                setTypeFilterIds(typeFilterInput);
-                setAccountFilterIds(accountFilterInput);
-                setCategoryFilterIds(categoryFilterInput);
-                setEntityFilterIds(entityFilterInput);
-                setPage(1);
-              }
-            }}
-            style={{ flex: 1, maxWidth: '300px' }}
-          />
-          <MultiSelect
-            value={typeFilterInput}
-            onChange={(value) => {
-              setTypeFilterInput(value as TransactionType[]);
-              setTypeFilterIds(value as TransactionType[]);
-            }}
-            placeholder={t('transactions.typePlaceholder')}
-            data={[
-              {
-                value: TransactionType.income,
-                label: t('transactions.income'),
-              },
-              {
-                value: TransactionType.expense,
-                label: t('transactions.expense'),
-              },
-              {
-                value: TransactionType.transfer,
-                label: t('transactions.transfer'),
-              },
-            ]}
-            style={{ maxWidth: '200px' }}
-          />
-          <MultiSelect
-            value={accountFilterInput}
-            onChange={(value) => {
-              setAccountFilterInput(value);
-              setAccountFilterIds(value);
-            }}
-            placeholder={t('transactions.accountPlaceholder')}
-            data={accountOptions}
-            style={{ maxWidth: '200px' }}
-          />
-          <CategoryMultiSelect
-            value={categoryFilterInput}
-            onChange={(value) => {
-              setCategoryFilterInput(value);
-              setCategoryFilterIds(value);
-            }}
-            placeholder={t('transactions.categoryPlaceholder')}
-            style={{ maxWidth: '200px' }}
-          />
-          <MultiSelect
-            value={entityFilterInput}
-            onChange={(value) => {
-              setEntityFilterInput(value);
-              setEntityFilterIds(value);
-            }}
-            placeholder={t('transactions.entityPlaceholder', {
-              defaultValue: 'Select entities',
-            })}
-            data={entityOptions}
-            searchable
-            style={{ maxWidth: '200px' }}
-          />
-        </>
+        <FormComponent ref={formRef}>
+          <Group>
+            <ZodFormController
+              control={control}
+              name="search"
+              render={({ field, fieldState: { error } }) => (
+                <TextInput
+                  placeholder={t('transactions.search')}
+                  error={error}
+                  style={{ flex: 1, maxWidth: '300px' }}
+                  {...field}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="types"
+              render={({ field, fieldState: { error } }) => (
+                <MultiSelect
+                  placeholder={t('transactions.typePlaceholder')}
+                  error={error}
+                  data={[
+                    {
+                      value: TransactionType.income,
+                      label: t('transactions.income'),
+                    },
+                    {
+                      value: TransactionType.expense,
+                      label: t('transactions.expense'),
+                    },
+                    {
+                      value: TransactionType.transfer,
+                      label: t('transactions.transfer'),
+                    },
+                  ]}
+                  value={field.value || []}
+                  onChange={(value) =>
+                    field.onChange(value as TransactionType[])
+                  }
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="accountIds"
+              render={({ field, fieldState: { error } }) => (
+                <MultiSelect
+                  placeholder={t('transactions.accountPlaceholder')}
+                  error={error}
+                  data={accountOptions}
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="categoryIds"
+              render={({ field, fieldState: { error } }) => (
+                <CategoryMultiSelect
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  placeholder={t('transactions.categoryPlaceholder')}
+                  error={error}
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="entityIds"
+              render={({ field, fieldState: { error } }) => (
+                <MultiSelect
+                  placeholder={t('transactions.entityPlaceholder', {
+                    defaultValue: 'Select entities',
+                  })}
+                  error={error}
+                  data={entityOptions}
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  searchable
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+          </Group>
+        </FormComponent>
       }
       buttonGroups={
         <Button onClick={handleAdd} disabled={isSubmitting}>
           {t('transactions.addTransaction')}
         </Button>
       }
-      onReset={
-        hasActiveFilters
-          ? () => {
-              setSearchQuery('');
-              setTypeFilterInput([]);
-              setTypeFilterIds([]);
-              setAccountFilterInput([]);
-              setAccountFilterIds([]);
-              setCategoryFilterInput([]);
-              setCategoryFilterIds([]);
-              setEntityFilterInput([]);
-              setEntityFilterIds([]);
-              setPage(1);
-            }
-          : undefined
-      }
+      onReset={() => reset(defaultFilterValues)}
       stats={stats}
     >
       <TransactionTable
@@ -354,7 +352,7 @@ const TransactionPage = () => {
           isOpen={isDialogOpen}
           onClose={handleDialogClose}
           transaction={selectedTransaction}
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
           accounts={accounts}
           categories={categories}

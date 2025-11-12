@@ -1,38 +1,57 @@
 import AddEditInvestmentDialog from '@client/components/AddEditInvestmentDialog';
+import {
+  FormComponent,
+  type FormComponentRef,
+} from '@client/components/FormComponent';
 import InvestmentTable from '@client/components/InvestmentTable';
 import { PageContainer } from '@client/components/PageContainer';
 import { TextInput } from '@client/components/TextInput';
+import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateInvestmentMutation,
   useUpdateInvestmentMutation,
 } from '@client/hooks/mutations/useInvestmentMutations';
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
-import { useInvestmentsQuery } from '@client/hooks/queries/useInvestmentQueries';
+import {
+  type FilterFormValue,
+  useInvestmentsQuery,
+} from '@client/hooks/queries/useInvestmentQueries';
+import { useZodForm } from '@client/hooks/useZodForm';
 import type {
   InvestmentFormData,
   InvestmentFull,
 } from '@client/types/investment';
-import { Button, MultiSelect, Text } from '@mantine/core';
+import { Button, Group, MultiSelect, Text } from '@mantine/core';
 import {
   InvestmentAssetType,
   InvestmentMode,
 } from '@server/generated/prisma/enums';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
+import { z } from 'zod';
+
+const filterSchema = z.object({
+  search: z.string().optional(),
+  assetTypes: z.array(z.nativeEnum(InvestmentAssetType)).optional(),
+  modes: z.array(z.nativeEnum(InvestmentMode)).optional(),
+  currencyIds: z.array(z.string()).optional(),
+});
+
+const defaultFilterValues: FilterFormValue = {
+  search: '',
+  assetTypes: [],
+  modes: [],
+  currencyIds: [],
+};
 
 const InvestmentPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-
+  const formRef = useRef<FormComponentRef>(null);
   const [selectedInvestment, setSelectedInvestment] =
     useState<InvestmentFull | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const [assetTypes, setAssetTypes] = useState<InvestmentAssetType[]>([]);
-  const [modes, setModes] = useState<InvestmentMode[]>([]);
-  const [currencyIds, setCurrencyIds] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'updatedAt'>(
@@ -40,30 +59,26 @@ const InvestmentPage = () => {
   );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  const { handleSubmit, control, reset } = useZodForm({
+    zod: filterSchema,
+    defaultValues: defaultFilterValues,
+  });
+
   const queryParams = useMemo(
     () => ({
-      assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
-      modes: modes.length > 0 ? modes : undefined,
-      currencyIds: currencyIds.length > 0 ? currencyIds : undefined,
-      search: searchQuery.trim() || undefined,
       page,
       limit,
       sortBy,
       sortOrder,
     }),
-    [
-      assetTypes,
-      modes,
-      currencyIds,
-      searchQuery,
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-    ],
+    [page, limit, sortBy, sortOrder],
   );
 
-  const { data, isLoading } = useInvestmentsQuery(queryParams);
+  const { data, isLoading } = useInvestmentsQuery(
+    queryParams,
+    formRef,
+    handleSubmit,
+  );
   const { data: currencies = [] } = useCurrenciesQuery();
   const createMutation = useCreateInvestmentMutation();
   const updateMutation = useUpdateInvestmentMutation();
@@ -87,7 +102,7 @@ const InvestmentPage = () => {
     setSelectedInvestment(null);
   };
 
-  const handleSubmit = async (formData: InvestmentFormData) => {
+  const handleSubmitForm = async (formData: InvestmentFormData) => {
     if (formData.id) {
       await updateMutation.mutateAsync(formData);
     } else {
@@ -95,12 +110,6 @@ const InvestmentPage = () => {
     }
     handleDialogClose();
   };
-
-  const hasActiveFilters =
-    searchQuery.trim() !== '' ||
-    assetTypes.length > 0 ||
-    modes.length > 0 ||
-    currencyIds.length > 0;
 
   const isSubmitting =
     createMutation.isPending || updateMutation.isPending || isLoading;
@@ -119,83 +128,111 @@ const InvestmentPage = () => {
   return (
     <PageContainer
       filterGroup={
-        <>
-          <TextInput
-            placeholder={t('investments.search', {
-              defaultValue: 'Search investments',
-            })}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                setPage(1);
-              }
-            }}
-            style={{ flex: 1, maxWidth: '300px' }}
-          />
-          <MultiSelect
-            value={assetTypes}
-            onChange={(value) => setAssetTypes(value as InvestmentAssetType[])}
-            placeholder={t('investments.assetFilter', {
-              defaultValue: 'Asset type',
-            })}
-            data={[
-              {
-                value: InvestmentAssetType.coin,
-                label: t('investments.asset.coin', {
-                  defaultValue: 'Coin',
-                }),
-              },
-              {
-                value: InvestmentAssetType.ccq,
-                label: t('investments.asset.ccq', {
-                  defaultValue: 'Mutual fund',
-                }),
-              },
-              {
-                value: InvestmentAssetType.custom,
-                label: t('investments.asset.custom', {
-                  defaultValue: 'Custom',
-                }),
-              },
-            ]}
-            style={{ maxWidth: '200px' }}
-          />
-          <MultiSelect
-            value={modes}
-            onChange={(value) => setModes(value as InvestmentMode[])}
-            placeholder={t('investments.modeFilter', {
-              defaultValue: 'Mode',
-            })}
-            data={[
-              {
-                value: InvestmentMode.priced,
-                label: t('investments.mode.priced', {
-                  defaultValue: 'Market priced',
-                }),
-              },
-              {
-                value: InvestmentMode.manual,
-                label: t('investments.mode.manual', {
-                  defaultValue: 'Manual valuation',
-                }),
-              },
-            ]}
-            style={{ maxWidth: '200px' }}
-          />
-          <MultiSelect
-            value={currencyIds}
-            onChange={setCurrencyIds}
-            placeholder={t('investments.currencyFilter', {
-              defaultValue: 'Currency',
-            })}
-            data={currencies.map((currency) => ({
-              value: currency.id,
-              label: `${currency.code} - ${currency.name}`,
-            }))}
-            style={{ maxWidth: '200px' }}
-          />
-        </>
+        <FormComponent ref={formRef}>
+          <Group>
+            <ZodFormController
+              control={control}
+              name="search"
+              render={({ field, fieldState: { error } }) => (
+                <TextInput
+                  placeholder={t('investments.search', {
+                    defaultValue: 'Search investments',
+                  })}
+                  error={error}
+                  style={{ flex: 1, maxWidth: '300px' }}
+                  {...field}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="assetTypes"
+              render={({ field, fieldState: { error } }) => (
+                <MultiSelect
+                  placeholder={t('investments.assetFilter', {
+                    defaultValue: 'Asset type',
+                  })}
+                  error={error}
+                  data={[
+                    {
+                      value: InvestmentAssetType.coin,
+                      label: t('investments.asset.coin', {
+                        defaultValue: 'Coin',
+                      }),
+                    },
+                    {
+                      value: InvestmentAssetType.ccq,
+                      label: t('investments.asset.ccq', {
+                        defaultValue: 'Mutual fund',
+                      }),
+                    },
+                    {
+                      value: InvestmentAssetType.custom,
+                      label: t('investments.asset.custom', {
+                        defaultValue: 'Custom',
+                      }),
+                    },
+                  ]}
+                  value={field.value || []}
+                  onChange={(value) =>
+                    field.onChange(value as InvestmentAssetType[])
+                  }
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="modes"
+              render={({ field, fieldState: { error } }) => (
+                <MultiSelect
+                  placeholder={t('investments.modeFilter', {
+                    defaultValue: 'Mode',
+                  })}
+                  error={error}
+                  data={[
+                    {
+                      value: InvestmentMode.priced,
+                      label: t('investments.mode.priced', {
+                        defaultValue: 'Market priced',
+                      }),
+                    },
+                    {
+                      value: InvestmentMode.manual,
+                      label: t('investments.mode.manual', {
+                        defaultValue: 'Manual valuation',
+                      }),
+                    },
+                  ]}
+                  value={field.value || []}
+                  onChange={(value) =>
+                    field.onChange(value as InvestmentMode[])
+                  }
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="currencyIds"
+              render={({ field, fieldState: { error } }) => (
+                <MultiSelect
+                  placeholder={t('investments.currencyFilter', {
+                    defaultValue: 'Currency',
+                  })}
+                  error={error}
+                  data={currencies.map((currency) => ({
+                    value: currency.id,
+                    label: `${currency.code} - ${currency.name}`,
+                  }))}
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+          </Group>
+        </FormComponent>
       }
       buttonGroups={
         <Button onClick={handleAdd} disabled={isSubmitting}>
@@ -204,17 +241,7 @@ const InvestmentPage = () => {
           })}
         </Button>
       }
-      onReset={
-        hasActiveFilters
-          ? () => {
-              setAssetTypes([]);
-              setModes([]);
-              setCurrencyIds([]);
-              setSearchQuery('');
-              setPage(1);
-            }
-          : undefined
-      }
+      onReset={() => reset(defaultFilterValues)}
       stats={stats}
     >
       <InvestmentTable
@@ -264,7 +291,7 @@ const InvestmentPage = () => {
           isOpen={isDialogOpen}
           onClose={handleDialogClose}
           investment={selectedInvestment}
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
         />
       )}

@@ -46,20 +46,25 @@ const AddContributionDialog = ({
 }: AddContributionDialogProps) => {
   const { t } = useTranslation();
 
-  const { data: accountsResponse } = useAccountsQuery({
-    currencyId: investment.baseCurrencyId
-      ? [investment.baseCurrencyId]
-      : [investment.currencyId],
-    limit: 100,
-  });
+  const { data: accountsResponse } = useAccountsOptionsQuery();
+
+  const filteredAccounts = useMemo(() => {
+    if (!accountsResponse?.accounts) return [];
+    const targetCurrencyId = investment.baseCurrencyId
+      ? investment.baseCurrencyId
+      : investment.currencyId;
+    return accountsResponse.accounts.filter(
+      (account) => account.currencyId === targetCurrencyId,
+    );
+  }, [accountsResponse, investment]);
 
   const accountOptions = useMemo(
     () =>
-      (accountsResponse?.accounts || []).map((account: AccountFull) => ({
+      filteredAccounts.map((account: AccountFull) => ({
         value: account.id,
         label: `${account.name} (${account.currency.code})`,
       })),
-    [accountsResponse],
+    [filteredAccounts],
   );
 
   const hasBaseCurrency = Boolean(investment.baseCurrencyId);

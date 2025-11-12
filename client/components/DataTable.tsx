@@ -38,7 +38,9 @@ type Props<T> = {
   idAccessor?: keyof T & string;
   // server sorting/filtering (optional)
   sorting?: SortingState;
-  onSortingChange?: (updater: SortingState) => void;
+  onSortingChange?: (
+    updater: SortingState | ((prev: SortingState) => SortingState),
+  ) => void;
   columnFilters?: ColumnFilter[];
   onColumnFiltersChange?: (updater: ColumnFilter[]) => void;
 };

@@ -1,42 +1,64 @@
 import AddEditTagDialog from '@client/components/AddEditTagDialog';
+import {
+  FormComponent,
+  type FormComponentRef,
+} from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
 import TagTable from '@client/components/TagTable';
 import { TextInput } from '@client/components/TextInput';
+import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateTagMutation,
   useDeleteTagMutation,
   useUpdateTagMutation,
 } from '@client/hooks/mutations/useTagMutations';
-import { useTagsQuery } from '@client/hooks/queries/useTagQueries';
+import {
+  type FilterFormValue,
+  useTagsQuery,
+} from '@client/hooks/queries/useTagQueries';
+import { useZodForm } from '@client/hooks/useZodForm';
 import type { TagFormData, TagFull } from '@client/types/tag';
 import { Button, Group, Modal, Text } from '@mantine/core';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { z } from 'zod';
+
+const filterSchema = z.object({
+  search: z.string().optional(),
+});
+
+const defaultFilterValues: FilterFormValue = {
+  search: '',
+};
 
 const TagPage = () => {
   const { t } = useTranslation();
+  const formRef = useRef<FormComponentRef>(null);
   const [selectedTag, setSelectedTag] = useState<TagFull | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [tagToDelete, setTagToDelete] = useState<TagFull | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'createdAt'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  const { handleSubmit, control, reset } = useZodForm({
+    zod: filterSchema,
+    defaultValues: defaultFilterValues,
+  });
+
   const queryParams = useMemo(
     () => ({
-      search: searchQuery.trim() || undefined,
       page,
       limit,
       sortBy,
       sortOrder,
     }),
-    [searchQuery, page, limit, sortBy, sortOrder],
+    [page, limit, sortBy, sortOrder],
   );
 
-  const { data, isLoading } = useTagsQuery(queryParams);
+  const { data, isLoading } = useTagsQuery(queryParams, formRef, handleSubmit);
   const createMutation = useCreateTagMutation();
   const updateMutation = useUpdateTagMutation();
   const deleteMutation = useDeleteTagMutation();
@@ -66,7 +88,7 @@ const TagPage = () => {
     setTagToDelete(null);
   };
 
-  const handleSubmit = async (formData: TagFormData) => {
+  const handleSubmitForm = async (formData: TagFormData) => {
     try {
       if (formData.id) {
         await updateMutation.mutateAsync(formData);
@@ -90,10 +112,6 @@ const TagPage = () => {
     }
   };
 
-  const hasActiveFilters = useMemo(() => {
-    return searchQuery.trim() !== '';
-  }, [searchQuery]);
-
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
@@ -102,31 +120,29 @@ const TagPage = () => {
   return (
     <PageContainer
       filterGroup={
-        <TextInput
-          placeholder={t('tags.search')}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              setPage(1);
-            }
-          }}
-          style={{ flex: 1, maxWidth: '300px' }}
-        />
+        <FormComponent ref={formRef}>
+          <Group>
+            <ZodFormController
+              control={control}
+              name="search"
+              render={({ field, fieldState: { error } }) => (
+                <TextInput
+                  placeholder={t('tags.search')}
+                  error={error}
+                  style={{ flex: 1, maxWidth: '300px' }}
+                  {...field}
+                />
+              )}
+            />
+          </Group>
+        </FormComponent>
       }
       buttonGroups={
         <Button onClick={handleAdd} disabled={isSubmitting}>
           {t('tags.addTag')}
         </Button>
       }
-      onReset={
-        hasActiveFilters
-          ? () => {
-              setSearchQuery('');
-              setPage(1);
-            }
-          : undefined
-      }
+      onReset={() => reset(defaultFilterValues)}
     >
       <TagTable
         tags={data?.tags || []}
@@ -175,7 +191,7 @@ const TagPage = () => {
           isOpen={isDialogOpen}
           onClose={handleDialogClose}
           tag={selectedTag}
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
         />
       )}
