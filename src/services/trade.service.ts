@@ -1,3 +1,5 @@
+import type { Prisma } from '@server/generated/prisma/client';
+import type { InvestmentTradeWhereInput } from '@server/generated/prisma/models';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import type {
@@ -40,7 +42,28 @@ const TRADE_SELECT = {
   baseCurrency: {
     select: CURRENCY_SELECT_BASIC,
   },
+  createdAt: true,
+  updatedAt: true,
 } as const;
+
+const mapTrade = (
+  trade: Prisma.InvestmentTradeGetPayload<{
+    select: typeof TRADE_SELECT;
+  }>,
+) => ({
+  ...trade,
+  timestamp: trade.timestamp.toISOString(),
+  price: trade.price.toNumber(),
+  quantity: trade.quantity.toNumber(),
+  amount: trade.amount.toNumber(),
+  fee: trade.fee.toNumber(),
+  priceInBaseCurrency: trade.priceInBaseCurrency?.toNumber() ?? null,
+  amountInBaseCurrency: trade.amountInBaseCurrency?.toNumber() ?? null,
+  exchangeRate: trade.exchangeRate?.toNumber() ?? null,
+  priceFetchedAt: trade.priceFetchedAt?.toISOString() ?? null,
+  createdAt: trade.createdAt.toISOString(),
+  updatedAt: trade.updatedAt.toISOString(),
+});
 
 export class InvestmentTradeService {
   private readonly investmentService = investmentServiceInstance;
@@ -83,7 +106,7 @@ export class InvestmentTradeService {
       await this.validateTransactionOwnership(userId, data.transactionId);
     }
 
-    return prisma.investmentTrade.create({
+    const trade = await prisma.investmentTrade.create({
       data: {
         userId,
         investmentId,
@@ -107,6 +130,7 @@ export class InvestmentTradeService {
       },
       select: TRADE_SELECT,
     });
+    return mapTrade(trade);
   }
 
   async listTrades(
@@ -126,7 +150,7 @@ export class InvestmentTradeService {
       sortOrder = 'desc',
     } = query;
 
-    const where: Record<string, unknown> = {
+    const where: InvestmentTradeWhereInput = {
       userId,
       investmentId,
     };
@@ -160,7 +184,7 @@ export class InvestmentTradeService {
     ]);
 
     return {
-      trades,
+      trades: trades.map(mapTrade),
       pagination: {
         page,
         limit,
