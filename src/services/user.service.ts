@@ -5,11 +5,11 @@ import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
 import { CURRENCY_IDS } from '../constants/currency';
 import type {
-  AuthUserResponse,
+  AuthUserRes,
   ILoginDto,
   IRegisterDto,
   IUpdateProfileDto,
-  LoginResponse,
+  LoginRes,
 } from '../dto/user.dto';
 import { CategoryService } from './category.service';
 
@@ -69,7 +69,7 @@ export class UserService {
       name: user.name ?? null,
       role: user.role,
       baseCurrencyId: user.baseCurrencyId ?? null,
-    } satisfies AuthUserResponse;
+    } satisfies AuthUserRes;
   }
 
   async login(data: ILoginDto) {
@@ -102,7 +102,7 @@ export class UserService {
         baseCurrencyId: user.baseCurrencyId ?? null,
       },
       jwt: token,
-    } satisfies LoginResponse;
+    } satisfies LoginRes;
   }
 
   async getUserInfo(id: string) {
@@ -119,7 +119,7 @@ export class UserService {
       name: user.name ?? null,
       role: user.role,
       baseCurrencyId: user.baseCurrencyId ?? null,
-    } satisfies AuthUserResponse;
+    } satisfies AuthUserRes;
   }
 
   async updateProfile(userId: string, data: IUpdateProfileDto) {
@@ -184,7 +184,7 @@ export class UserService {
       name: updatedUser.name ?? null,
       role: updatedUser.role,
       baseCurrencyId: updatedUser.baseCurrencyId ?? null,
-    } satisfies AuthUserResponse;
+    } satisfies AuthUserRes;
   }
 }
 

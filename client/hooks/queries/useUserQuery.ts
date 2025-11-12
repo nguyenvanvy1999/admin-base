@@ -1,7 +1,7 @@
 import { ACCESS_TOKEN_KEY } from '@client/constants';
 import { get } from '@client/libs/http';
 import useUserStore from '@client/store/user';
-import type { CurrentUserResponse } from '@server/dto/user.dto';
+import type { CurrentUserRes } from '@server/dto/user.dto';
 import { useQuery } from '@tanstack/react-query';
 
 export const useUserQuery = () => {
@@ -15,7 +15,7 @@ export const useUserQuery = () => {
         return null;
       }
 
-      const user = await get<CurrentUserResponse>('/api/users/me');
+      const user = await get<CurrentUserRes>('/api/users/me');
 
       setUser({
         id: user.id,

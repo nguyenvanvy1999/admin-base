@@ -70,28 +70,14 @@ const TRANSACTION_SELECT_FOR_LIST = {
     select: {
       id: true,
       name: true,
-      currency: {
-        select: {
-          id: true,
-          code: true,
-          name: true,
-          symbol: true,
-        },
-      },
+      currency: { select: CURRENCY_SELECT_BASIC },
     },
   },
   toAccount: {
     select: {
       id: true,
       name: true,
-      currency: {
-        select: {
-          id: true,
-          code: true,
-          name: true,
-          symbol: true,
-        },
-      },
+      currency: { select: CURRENCY_SELECT_BASIC },
     },
   },
   category: {
@@ -110,14 +96,7 @@ const TRANSACTION_SELECT_FOR_LIST = {
       type: true,
     },
   },
-  currency: {
-    select: {
-      id: true,
-      code: true,
-      name: true,
-      symbol: true,
-    },
-  },
+  currency: { select: CURRENCY_SELECT_BASIC },
 } as const;
 
 const ACCOUNT_SELECT_MINIMAL = {
@@ -537,7 +516,6 @@ class TransactionHandlerFactory {
       }
 
       default: {
-        const _exhaustive: never = data;
         throw new Error(
           `Invalid transaction type: ${(data as IUpsertTransaction).type}`,
         );
@@ -962,8 +940,8 @@ class TransactionHandlerFactory {
 }
 
 export class TransactionService {
-  private calculator: BalanceCalculator;
-  private balanceUpdater: BalanceUpdater;
+  private readonly calculator: BalanceCalculator;
+  private readonly balanceUpdater: BalanceUpdater;
   private handlerFactory: TransactionHandlerFactory;
 
   constructor() {
@@ -1022,7 +1000,6 @@ export class TransactionService {
         );
 
       default: {
-        const _exhaustive: never = data;
         throw new Error(`Invalid transaction type: ${transactionType}`);
       }
     }
@@ -1398,7 +1375,6 @@ export class TransactionService {
             }
 
             default: {
-              const _exhaustive: never = transactionData;
               results.push({
                 success: false,
                 error: `Invalid transaction type: ${(transactionData as IUpsertTransaction).type}`,

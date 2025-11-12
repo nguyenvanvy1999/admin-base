@@ -1,13 +1,11 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia } from 'elysia';
 import {
-  CurrentUserResponseDto,
+  AuthUserDto,
   LoginDto,
   LoginResponseDto,
   RegisterDto,
-  RegisterResponseDto,
   UpdateProfileDto,
-  UpdateProfileResponseDto,
 } from '../dto/user.dto';
 import authMacro from '../macros/auth';
 import userService from '../services/user.service';
@@ -48,7 +46,7 @@ const userController = new Elysia().group(
           },
           body: RegisterDto,
           response: {
-            200: RegisterResponseDto,
+            200: AuthUserDto,
           },
         },
       )
@@ -84,7 +82,7 @@ const userController = new Elysia().group(
               "Retrieve the authenticated user's profile information including username, email, and account details.",
           },
           response: {
-            200: CurrentUserResponseDto,
+            200: AuthUserDto,
           },
         },
       )
@@ -103,7 +101,7 @@ const userController = new Elysia().group(
           },
           body: UpdateProfileDto,
           response: {
-            200: UpdateProfileResponseDto,
+            200: AuthUserDto,
           },
         },
       ),

@@ -2,14 +2,9 @@ import { ACCESS_TOKEN_KEY } from '@client/constants';
 import useToast from '@client/hooks/useToast';
 import { post } from '@client/libs/http';
 import useUserStore from '@client/store/user';
-import type { LoginResponse, RegisterResponse } from '@server/dto/user.dto';
+import type { ILoginDto, LoginRes, RegisterRes } from '@server/dto/user.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-
-type LoginData = {
-  username: string;
-  password: string;
-};
 
 type RegisterData = {
   username: string;
@@ -24,8 +19,8 @@ export const useLoginMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: LoginData) => {
-      return post<LoginResponse, LoginData>('/api/users/login', data);
+    mutationFn: (data: ILoginDto) => {
+      return post<LoginRes, ILoginDto>('/api/users/login', data);
     },
     onSuccess: async (data) => {
       localStorage.setItem(ACCESS_TOKEN_KEY, data.jwt);
@@ -52,13 +47,13 @@ export const useRegisterMutation = () => {
 
   return useMutation({
     mutationFn: async (data: RegisterData) => {
-      await post<RegisterResponse, RegisterData>('/api/users/register', {
+      await post<RegisterRes, RegisterData>('/api/users/register', {
         username: data.username,
         password: data.password,
         name: data.name,
       });
 
-      return post<LoginResponse, LoginData>('/api/users/login', data);
+      return post<LoginRes, ILoginDto>('/api/users/login', data);
     },
     onSuccess: async (data) => {
       localStorage.setItem(ACCESS_TOKEN_KEY, data.jwt);

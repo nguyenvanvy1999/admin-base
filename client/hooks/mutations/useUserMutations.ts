@@ -1,7 +1,7 @@
 import useToast from '@client/hooks/useToast';
 import { put } from '@client/libs/http';
 import useUserStore from '@client/store/user';
-import type { UpdateProfileResponse } from '@server/dto/user.dto';
+import type { UpdateProfileRes } from '@server/dto/user.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 type UpdateProfileData = {
@@ -18,7 +18,7 @@ export const useUpdateProfileMutation = () => {
 
   return useMutation({
     mutationFn: (data: UpdateProfileData) => {
-      return put<UpdateProfileResponse, UpdateProfileData>(
+      return put<UpdateProfileRes, UpdateProfileData>(
         '/api/users/profile',
         data,
       );

@@ -23,28 +23,23 @@ export type IRegisterDto = typeof RegisterDto.static;
 export type ILoginDto = typeof LoginDto.static;
 export type IUpdateProfileDto = typeof UpdateProfileDto.static;
 
-const authUserShape = {
+export const AuthUserDto = t.Object({
   id: t.String(),
   username: t.String(),
   name: t.Nullable(t.String()),
   role: t.Enum(UserRole),
   baseCurrencyId: t.Nullable(t.String()),
-} as const;
-
-export const AuthUserDto = t.Object(authUserShape);
-export type AuthUserResponse = typeof AuthUserDto.static;
+});
+export type AuthUserRes = typeof AuthUserDto.static;
 
 export const LoginResponseDto = t.Object({
   user: AuthUserDto,
   jwt: t.String(),
 });
-export type LoginResponse = typeof LoginResponseDto.static;
+export type LoginRes = typeof LoginResponseDto.static;
 
-export const CurrentUserResponseDto = AuthUserDto;
-export type CurrentUserResponse = typeof CurrentUserResponseDto.static;
+export type CurrentUserRes = typeof AuthUserDto.static;
 
-export const RegisterResponseDto = AuthUserDto;
-export type RegisterResponse = typeof RegisterResponseDto.static;
+export type RegisterRes = typeof AuthUserDto.static;
 
-export const UpdateProfileResponseDto = AuthUserDto;
-export type UpdateProfileResponse = typeof UpdateProfileResponseDto.static;
+export type UpdateProfileRes = typeof AuthUserDto.static;
