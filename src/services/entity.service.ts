@@ -1,3 +1,4 @@
+import type { Prisma } from '@server/generated/prisma/client';
 import type {
   EntityOrderByWithRelationInput,
   EntityWhereInput,
@@ -24,6 +25,22 @@ const ENTITY_SELECT_FULL = {
 const ENTITY_SELECT_MINIMAL = {
   id: true,
 } as const;
+
+const mapEntity = (
+  entity: Prisma.EntityGetPayload<{
+    select: typeof ENTITY_SELECT_FULL;
+  }>,
+) => ({
+  id: entity.id,
+  name: entity.name,
+  type: entity.type,
+  phone: entity.phone,
+  email: entity.email,
+  address: entity.address,
+  note: entity.note,
+  createdAt: entity.createdAt.toISOString(),
+  updatedAt: entity.updatedAt.toISOString(),
+});
 
 export class EntityService {
   private async validateEntityOwnership(userId: string, entityId: string) {
@@ -71,7 +88,7 @@ export class EntityService {
     await this.validateUniqueName(userId, data.name, data.id);
 
     if (data.id) {
-      return prisma.entity.update({
+      const entity = await prisma.entity.update({
         where: { id: data.id },
         data: {
           name: data.name,
@@ -83,8 +100,9 @@ export class EntityService {
         },
         select: ENTITY_SELECT_FULL,
       });
+      return mapEntity(entity);
     } else {
-      return prisma.entity.create({
+      const entity = await prisma.entity.create({
         data: {
           userId,
           name: data.name,
@@ -96,6 +114,7 @@ export class EntityService {
         },
         select: ENTITY_SELECT_FULL,
       });
+      return mapEntity(entity);
     }
   }
 
@@ -113,7 +132,7 @@ export class EntityService {
       throw new Error('Entity not found');
     }
 
-    return entity;
+    return mapEntity(entity);
   }
 
   async listEntities(userId: string, query: IListEntitiesQueryDto = {}) {
@@ -165,7 +184,7 @@ export class EntityService {
     ]);
 
     return {
-      entities,
+      entities: entities.map(mapEntity),
       pagination: {
         page,
         limit,

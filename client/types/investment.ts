@@ -1,10 +1,10 @@
+import type { Currency } from '@server/dto/currency.dto';
 import type {
   ContributionType,
   InvestmentAssetType,
   InvestmentMode,
   TradeSide,
 } from '@server/generated/prisma/enums';
-import type { Currency } from './account';
 
 export type InvestmentFull = {
   id: string;
