@@ -93,7 +93,7 @@ const valuationController = new Elysia().group(
           },
           params: t.Object({ investmentId: t.String() }),
           response: {
-            200: InvestmentValuationDto,
+            200: t.Nullable(InvestmentValuationDto),
           },
         },
       ),

@@ -258,10 +258,9 @@ export class InvestmentService {
     };
   }
 
-  getInvestment(userId: string, investmentId: string) {
-    return this.ensureInvestment(userId, investmentId).then(
-      serializeInvestment,
-    );
+  async getInvestment(userId: string, investmentId: string) {
+    const investment = await this.ensureInvestment(userId, investmentId);
+    return serializeInvestment(investment);
   }
 
   getLatestValuation(userId: string, investmentId: string) {

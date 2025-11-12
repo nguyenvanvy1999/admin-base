@@ -1,3 +1,4 @@
+import type { Prisma } from '@server/generated/prisma/client';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import type {
@@ -61,36 +62,57 @@ export class InvestmentValuationService {
     });
 
     if (existing) {
-      return prisma.investmentValuation.update({
-        where: { id: existing.id },
+      return this.mapValuation(
+        await prisma.investmentValuation.update({
+          where: { id: existing.id },
+          data: {
+            price: data.price,
+            currencyId: data.currencyId,
+            priceInBaseCurrency: data.priceInBaseCurrency ?? null,
+            exchangeRate: data.exchangeRate ?? null,
+            baseCurrencyId: data.baseCurrencyId ?? null,
+            source: data.source ?? null,
+            fetchedAt,
+          },
+          select: VALUATION_SELECT,
+        }),
+      );
+    }
+
+    return this.mapValuation(
+      await prisma.investmentValuation.create({
         data: {
+          userId,
+          investmentId,
           price: data.price,
           currencyId: data.currencyId,
           priceInBaseCurrency: data.priceInBaseCurrency ?? null,
           exchangeRate: data.exchangeRate ?? null,
           baseCurrencyId: data.baseCurrencyId ?? null,
+          timestamp,
           source: data.source ?? null,
           fetchedAt,
         },
         select: VALUATION_SELECT,
-      });
-    }
+      }),
+    );
+  }
 
-    return prisma.investmentValuation.create({
-      data: {
-        userId,
-        investmentId,
-        price: data.price,
-        currencyId: data.currencyId,
-        priceInBaseCurrency: data.priceInBaseCurrency ?? null,
-        exchangeRate: data.exchangeRate ?? null,
-        baseCurrencyId: data.baseCurrencyId ?? null,
-        timestamp,
-        source: data.source ?? null,
-        fetchedAt,
-      },
-      select: VALUATION_SELECT,
-    });
+  mapValuation(
+    valuation: Prisma.InvestmentValuationGetPayload<{
+      select: typeof VALUATION_SELECT;
+    }>,
+  ) {
+    return {
+      ...valuation,
+      price: valuation.price.toNumber(),
+      timestamp: valuation.timestamp.toISOString(),
+      fetchedAt: valuation.fetchedAt?.toISOString() ?? null,
+      priceInBaseCurrency: valuation.priceInBaseCurrency?.toNumber() ?? null,
+      exchangeRate: valuation.exchangeRate?.toNumber() ?? null,
+      createdAt: valuation.createdAt.toISOString(),
+      updatedAt: valuation.updatedAt.toISOString(),
+    };
   }
 
   async listValuations(
@@ -134,7 +156,7 @@ export class InvestmentValuationService {
     ]);
 
     return {
-      valuations,
+      valuations: valuations.map(this.mapValuation),
       pagination: {
         page,
         limit,
@@ -147,11 +169,16 @@ export class InvestmentValuationService {
   async getLatestValuation(userId: string, investmentId: string) {
     await this.investmentService.ensureInvestment(userId, investmentId);
 
-    return prisma.investmentValuation.findFirst({
+    const valuation = await prisma.investmentValuation.findFirst({
       where: { userId, investmentId },
       orderBy: { timestamp: 'desc' },
       select: VALUATION_SELECT,
     });
+
+    if (!valuation) {
+      return null;
+    }
+    return this.mapValuation(valuation);
   }
 }
 
