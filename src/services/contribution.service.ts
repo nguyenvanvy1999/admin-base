@@ -1,9 +1,19 @@
+import type { Prisma } from '@server/generated/prisma/client';
+import { ContributionType } from '@server/generated/prisma/enums';
 import { prisma } from '@server/libs/db';
+import Decimal from 'decimal.js';
 import { Elysia } from 'elysia';
 import type {
   ICreateInvestmentContributionDto,
   IListInvestmentContributionsQueryDto,
+  InvestmentContributionListResponse,
+  InvestmentContributionResponse,
 } from '../dto/contribution.dto';
+import {
+  dateToIsoString,
+  decimalToNullableNumber,
+  decimalToNumber,
+} from '../utils/formatters';
 import { investmentServiceInstance } from './investment.service';
 import { CURRENCY_SELECT_BASIC } from './selects';
 
@@ -14,6 +24,10 @@ const CONTRIBUTION_SELECT = {
   accountId: true,
   amount: true,
   currencyId: true,
+  type: true,
+  amountInBaseCurrency: true,
+  exchangeRate: true,
+  baseCurrencyId: true,
   timestamp: true,
   note: true,
   createdAt: true,
@@ -27,7 +41,38 @@ const CONTRIBUTION_SELECT = {
   currency: {
     select: CURRENCY_SELECT_BASIC,
   },
+  baseCurrency: {
+    select: CURRENCY_SELECT_BASIC,
+  },
 } as const;
+
+type ContributionRecord = Prisma.InvestmentContributionGetPayload<{
+  select: typeof CONTRIBUTION_SELECT;
+}>;
+
+const formatContribution = (
+  contribution: ContributionRecord,
+): InvestmentContributionResponse => ({
+  ...contribution,
+  accountId: contribution.accountId ?? null,
+  amount: decimalToNumber(contribution.amount),
+  amountInBaseCurrency: decimalToNullableNumber(
+    contribution.amountInBaseCurrency,
+  ),
+  exchangeRate: decimalToNullableNumber(contribution.exchangeRate),
+  baseCurrencyId: contribution.baseCurrencyId ?? null,
+  timestamp: dateToIsoString(contribution.timestamp),
+  note: contribution.note ?? null,
+  createdAt: dateToIsoString(contribution.createdAt),
+  updatedAt: dateToIsoString(contribution.updatedAt),
+  account: contribution.account
+    ? {
+        id: contribution.account.id,
+        name: contribution.account.name,
+      }
+    : null,
+  baseCurrency: contribution.baseCurrency ?? null,
+});
 
 export class InvestmentContributionService {
   private readonly investmentService = investmentServiceInstance;
@@ -45,7 +90,7 @@ export class InvestmentContributionService {
     userId: string,
     investmentId: string,
     data: ICreateInvestmentContributionDto,
-  ) {
+  ): Promise<InvestmentContributionResponse> {
     await this.investmentService.validateContribution(
       userId,
       investmentId,
@@ -54,17 +99,64 @@ export class InvestmentContributionService {
 
     const timestamp = this.parseDate(data.timestamp);
 
-    return prisma.investmentContribution.create({
-      data: {
-        userId,
-        investmentId,
-        accountId: data.accountId ?? null,
-        amount: data.amount,
-        currencyId: data.currencyId,
-        timestamp,
-        note: data.note ?? null,
-      },
-      select: CONTRIBUTION_SELECT,
+    // Only update balance if accountId is provided
+    if (data.accountId) {
+      const account = await prisma.account.findFirst({
+        where: { id: data.accountId, userId },
+        select: { id: true },
+      });
+
+      if (!account) {
+        throw new Error('Account not found');
+      }
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const contribution = await tx.investmentContribution.create({
+        data: {
+          userId,
+          investmentId,
+          accountId: data.accountId ?? null,
+          amount: data.amount,
+          currencyId: data.currencyId,
+          type: data.type as ContributionType,
+          amountInBaseCurrency: data.amountInBaseCurrency ?? null,
+          exchangeRate: data.exchangeRate ?? null,
+          baseCurrencyId: data.baseCurrencyId ?? null,
+          timestamp,
+          note: data.note ?? null,
+        },
+        select: CONTRIBUTION_SELECT,
+      });
+
+      // Update account balance if accountId is provided
+      if (data.accountId) {
+        const amountDecimal = new Decimal(data.amount);
+
+        if (data.type === ContributionType.deposit) {
+          // Deposit: deduct amount from account (money goes into investment)
+          await tx.account.update({
+            where: { id: data.accountId },
+            data: {
+              balance: {
+                decrement: amountDecimal.toNumber(),
+              },
+            },
+          });
+        } else {
+          // Withdrawal: add amount to account (money comes out of investment)
+          await tx.account.update({
+            where: { id: data.accountId },
+            data: {
+              balance: {
+                increment: amountDecimal.toNumber(),
+              },
+            },
+          });
+        }
+      }
+
+      return formatContribution(contribution);
     });
   }
 
@@ -72,7 +164,7 @@ export class InvestmentContributionService {
     userId: string,
     investmentId: string,
     query: IListInvestmentContributionsQueryDto = {},
-  ) {
+  ): Promise<InvestmentContributionListResponse> {
     await this.investmentService.ensureInvestment(userId, investmentId);
 
     const {
@@ -87,6 +179,7 @@ export class InvestmentContributionService {
     const where: Record<string, unknown> = {
       userId,
       investmentId,
+      deletedAt: null,
     };
 
     if (accountIds && accountIds.length > 0) {
@@ -114,7 +207,7 @@ export class InvestmentContributionService {
     ]);
 
     return {
-      contributions,
+      contributions: contributions.map(formatContribution),
       pagination: {
         page,
         limit,
@@ -122,6 +215,66 @@ export class InvestmentContributionService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async deleteContribution(
+    userId: string,
+    investmentId: string,
+    contributionId: string,
+  ) {
+    await this.investmentService.ensureInvestment(userId, investmentId);
+
+    const contribution = await prisma.investmentContribution.findFirst({
+      where: {
+        id: contributionId,
+        userId,
+        investmentId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        type: true,
+        amount: true,
+        accountId: true,
+      },
+    });
+
+    if (!contribution) {
+      throw new Error('Contribution not found');
+    }
+
+    return prisma.$transaction(async (tx) => {
+      if (contribution.accountId) {
+        const amountDecimal = new Decimal(contribution.amount);
+
+        if (contribution.type === ContributionType.deposit) {
+          await tx.account.update({
+            where: { id: contribution.accountId },
+            data: {
+              balance: {
+                increment: amountDecimal.toNumber(),
+              },
+            },
+          });
+        } else {
+          await tx.account.update({
+            where: { id: contribution.accountId },
+            data: {
+              balance: {
+                decrement: amountDecimal.toNumber(),
+              },
+            },
+          });
+        }
+      }
+
+      await tx.investmentContribution.update({
+        where: { id: contributionId },
+        data: { deletedAt: new Date() },
+      });
+
+      return { success: true, message: 'Contribution deleted successfully' };
+    });
   }
 }
 

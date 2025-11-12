@@ -1,35 +1,49 @@
-import type { TransactionFull } from '@client/types/transaction';
-import { Badge, Box, NumberFormatter } from '@mantine/core';
+import { ActionIcon, Badge, Box, NumberFormatter } from '@mantine/core';
+import type { TransactionDetail } from '@server/dto/transaction.dto';
 import { TransactionType } from '@server/generated/prisma/enums';
+import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import DataTable, {
-  type DataTableColumn,
-  type DataTableProps,
-} from './DataTable';
+import { DataTable, type DataTableColumn } from './DataTable';
 import { getCategoryIcon, getCategoryLabel } from './utils/category';
 
 type TransactionTableProps = {
-  transactions: TransactionFull[];
-  onEdit: (transaction: TransactionFull) => void;
-  onDelete: (transaction: TransactionFull) => void;
+  transactions: TransactionDetail[];
+  onEdit: (transaction: TransactionDetail) => void;
+  onDelete: (transaction: TransactionDetail) => void;
   isLoading?: boolean;
-} & Pick<
-  DataTableProps<TransactionFull>,
-  'search' | 'pageSize' | 'filters' | 'pagination' | 'sorting' | 'summary'
->;
+  showIndexColumn?: boolean;
+  recordsPerPage?: number;
+  recordsPerPageOptions?: number[];
+  onRecordsPerPageChange?: (size: number) => void;
+  page?: number;
+  onPageChange?: (page: number) => void;
+  totalRecords?: number;
+  sorting?: { id: string; desc: boolean }[];
+  onSortingChange?: (
+    updater:
+      | { id: string; desc: boolean }[]
+      | ((prev: { id: string; desc: boolean }[]) => {
+          id: string;
+          desc: boolean;
+        }[]),
+  ) => void;
+};
 
 const TransactionTable = ({
   transactions,
   onEdit,
   onDelete,
   isLoading = false,
-  search,
-  pageSize,
-  filters,
-  pagination,
+  showIndexColumn = true,
+  recordsPerPage,
+  recordsPerPageOptions,
+  onRecordsPerPageChange,
+  page,
+  onPageChange,
+  totalRecords,
   sorting,
-  summary,
+  onSortingChange,
 }: TransactionTableProps) => {
   const { t } = useTranslation();
 
@@ -66,34 +80,31 @@ const TransactionTable = ({
   };
 
   const columns = useMemo(
-    (): DataTableColumn<TransactionFull>[] => [
+    (): DataTableColumn<TransactionDetail>[] => [
       {
         accessor: 'date',
         title: 'transactions.date',
-        enableSorting: true,
-        format: 'date',
       },
       {
         accessor: 'type',
         title: 'transactions.type',
-        enableSorting: true,
-        render: (value) => (
-          <Badge color={getTransactionTypeColor(value)}>
-            {getTransactionTypeLabel(value)}
+        render: (value: unknown, row: TransactionDetail) => (
+          <Badge color={getTransactionTypeColor(row.type)}>
+            {getTransactionTypeLabel(row.type)}
           </Badge>
         ),
-      },
-      {
-        accessor: 'account.name',
-        id: 'accountId',
-        title: 'transactions.account',
-        enableSorting: true,
-      },
-      {
-        accessor: 'category.name',
-        title: 'transactions.category',
         enableSorting: false,
-        render: (value, row) => {
+      },
+      {
+        accessor: (row) => row.account?.name ?? '',
+        title: 'transactions.account',
+        enableSorting: false,
+      },
+      {
+        enableSorting: false,
+        accessor: (row) => row.category?.name,
+        title: 'transactions.category',
+        render: (value: unknown, row: TransactionDetail) => {
           const category = row.category;
           if (!category) {
             return (
@@ -107,7 +118,7 @@ const TransactionTable = ({
           const categoryLabel = getCategoryLabel(category.name, t);
 
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               {IconComponent && (
                 <IconComponent
                   style={{
@@ -137,15 +148,8 @@ const TransactionTable = ({
       {
         accessor: 'amount',
         title: 'transactions.amount',
-        enableSorting: true,
-        format: 'currency',
-        currency: (row) => row.account.currency.symbol || null,
-        numberFormat: {
-          decimalScale: 2,
-          thousandSeparator: ',',
-        },
-        render: (value, row) => {
-          const amount = parseFloat(String(value));
+        render: (value: unknown, row: TransactionDetail) => {
+          const amount = parseFloat(String(row.amount));
           const isExpense = row.type === TransactionType.expense;
           const isIncome = row.type === TransactionType.income;
           const colorClass = isExpense
@@ -153,7 +157,7 @@ const TransactionTable = ({
             : isIncome
               ? 'text-green-600 dark:text-green-400'
               : 'text-gray-900 dark:text-gray-100';
-          const currencySymbol = row.account.currency.symbol || '';
+          const currencySymbol = row.account?.currency?.symbol || '';
 
           return (
             <div className={`text-sm font-medium ${colorClass}`}>
@@ -170,33 +174,77 @@ const TransactionTable = ({
         },
       },
       {
+        enableSorting: false,
+        accessor: (row) => row.event?.name,
+        title: 'transactions.event',
+        render: (value: unknown, row: TransactionDetail) => {
+          const event = row.event;
+          if (!event) {
+            return (
+              <div className="text-sm text-gray-500 dark:text-gray-400">-</div>
+            );
+          }
+
+          return (
+            <div className="text-sm text-gray-900 dark:text-gray-100">
+              {event.name}
+            </div>
+          );
+        },
+      },
+      {
         accessor: 'note',
         title: 'transactions.description',
-        enableSorting: false,
         ellipsis: true,
+        enableSorting: false,
+      },
+      {
+        title: 'transactions.actions',
+        textAlign: 'center',
+        width: '8rem',
+        render: (value: unknown, row: TransactionDetail) => (
+          <div className="flex items-center justify-center gap-2">
+            <ActionIcon
+              variant="subtle"
+              color="blue"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(row);
+              }}
+            >
+              <IconEdit size={16} />
+            </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(row);
+              }}
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </div>
+        ),
       },
     ],
-    [t],
+    [t, onEdit, onDelete],
   );
 
   return (
     <DataTable
       data={transactions}
       columns={columns}
-      isLoading={isLoading}
-      actions={{
-        onEdit,
-        onDelete,
-        headerLabel: t('transactions.actions'),
-      }}
-      onRowClick={onEdit}
-      emptyMessage={t('transactions.noTransactions')}
-      search={search}
-      pageSize={pageSize}
-      filters={filters}
-      pagination={pagination}
+      loading={isLoading}
+      showIndexColumn={showIndexColumn}
+      recordsPerPage={recordsPerPage}
+      recordsPerPageOptions={recordsPerPageOptions}
+      onRecordsPerPageChange={onRecordsPerPageChange}
+      page={page}
+      onPageChange={onPageChange}
+      totalRecords={totalRecords}
       sorting={sorting}
-      summary={summary}
+      onSortingChange={onSortingChange}
     />
   );
 };

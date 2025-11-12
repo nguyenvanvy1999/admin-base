@@ -1,11 +1,11 @@
 @import "tailwindcss";
 @import "./styles/tokens.css";
 @custom-variant dark (&:where(
-  .dark,
-  .dark *,
-  [data-mantine-color-scheme="dark"],
-  [data-mantine-color-scheme="dark"] *
-));
+    .dark,
+    .dark *,
+    [data-mantine-color-scheme="dark"],
+    [data-mantine-color-scheme="dark"] *
+  ));
 
 @layer base {
   :root {
@@ -66,4 +66,67 @@
 .dark .sidebar-nav::-webkit-scrollbar-thumb,
 [data-mantine-color-scheme="dark"] .sidebar-nav::-webkit-scrollbar-thumb {
   background-color: rgb(55 65 81);
+}
+
+/* Fix sort button visibility in light mode and reduce size */
+.mrt-table-head-sort-button {
+  --ai-color: var(--mantine-color-gray-7) !important;
+  --ai-size: 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+}
+
+[data-mantine-color-scheme="dark"] .mrt-table-head-sort-button {
+  --ai-color: var(--mantine-color-gray-0) !important;
+}
+
+.mrt-table-head-sort-button svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+/* Reduce size of search and filter inputs */
+.mrt-top-toolbar input,
+.mrt-top-toolbar .mantine-TextInput-input,
+.mrt-top-toolbar .mantine-Select-input {
+  font-size: 12px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 4px 8px !important;
+}
+
+.mrt-top-toolbar .mantine-Select-input {
+  padding-right: 28px !important;
+}
+
+.mrt-top-toolbar button,
+.mrt-top-toolbar .mantine-ActionIcon-root {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+}
+
+.mrt-top-toolbar button svg,
+.mrt-top-toolbar .mantine-ActionIcon-root svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+/* Fix column alignment between header and body */
+.mrt-table-paper table {
+  width: 100%;
+}
+
+.mrt-table-head th,
+.mrt-table-body td {
+  padding: var(--mantine-spacing-xs) !important;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.mrt-table-head th {
+  text-align: center !important;
 }

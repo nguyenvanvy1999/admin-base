@@ -7,6 +7,7 @@ import categoryController from './controllers/category.controller';
 import contributionController from './controllers/contribution.controller';
 import currencyController from './controllers/currency.controller';
 import entityController from './controllers/entity.controller';
+import eventController from './controllers/event.controller';
 import investmentController from './controllers/investment.controller';
 import tagController from './controllers/tag.controller';
 import tradeController from './controllers/trade.controller';
@@ -14,7 +15,7 @@ import transactionController from './controllers/transaction.controller';
 import userController from './controllers/user.controller';
 import valuationController from './controllers/valuation.controller';
 import { logger } from './libs/logger';
-import errorMiddleware from './middlewares/error-middleware';
+import { errorHandler } from './middlewares/error-middleware';
 
 export const app = new Elysia()
   .use(
@@ -51,12 +52,13 @@ export const app = new Elysia()
   )
   .group('/api', (group) =>
     group
-      .onError(errorMiddleware)
+      .use(errorHandler)
       .use(userController)
       .use(accountController)
       .use(categoryController)
       .use(currencyController)
       .use(entityController)
+      .use(eventController)
       .use(tagController)
       .use(transactionController)
       .use(investmentController)

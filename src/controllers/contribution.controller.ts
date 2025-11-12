@@ -1,7 +1,10 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
+  ContributionDeleteResponseDto,
   CreateInvestmentContributionDto,
+  InvestmentContributionDto,
+  InvestmentContributionListResponseDto,
   ListInvestmentContributionsQueryDto,
 } from '../dto/contribution.dto';
 import authMacro from '../macros/auth';
@@ -13,7 +16,7 @@ const CONTRIBUTION_DETAIL = {
 };
 
 const contributionController = new Elysia().group(
-  '/investments/:investmentId/contributions',
+  '/investments/:id/contributions',
   {
     detail: {
       tags: ['Investment Contribution'],
@@ -30,7 +33,7 @@ const contributionController = new Elysia().group(
         ({ user, params, body, investmentContributionService }) => {
           return investmentContributionService.createContribution(
             user.id,
-            params.investmentId,
+            params.id,
             body,
           );
         },
@@ -42,8 +45,11 @@ const contributionController = new Elysia().group(
             description:
               'Record a new cash contribution or withdrawal for the specified investment.',
           },
-          params: t.Object({ investmentId: t.String() }),
+          params: t.Object({ id: t.String() }),
           body: CreateInvestmentContributionDto,
+          response: {
+            200: InvestmentContributionDto,
+          },
         },
       )
       .get(
@@ -51,7 +57,7 @@ const contributionController = new Elysia().group(
         ({ user, params, query, investmentContributionService }) => {
           return investmentContributionService.listContributions(
             user.id,
-            params.investmentId,
+            params.id,
             query,
           );
         },
@@ -63,8 +69,34 @@ const contributionController = new Elysia().group(
             description:
               'Return contributions associated with the specified investment. Supports filtering and pagination.',
           },
-          params: t.Object({ investmentId: t.String() }),
+          params: t.Object({ id: t.String() }),
           query: ListInvestmentContributionsQueryDto,
+          response: {
+            200: InvestmentContributionListResponseDto,
+          },
+        },
+      )
+      .delete(
+        '/:contributionId',
+        ({ user, params, investmentContributionService }) => {
+          return investmentContributionService.deleteContribution(
+            user.id,
+            params.id,
+            params.contributionId,
+          );
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...CONTRIBUTION_DETAIL,
+            summary: 'Delete investment contribution',
+            description:
+              'Delete a contribution by its ID. This will revert the balance effects of the contribution.',
+          },
+          params: t.Object({ id: t.String(), contributionId: t.String() }),
+          response: {
+            200: ContributionDeleteResponseDto,
+          },
         },
       ),
 );

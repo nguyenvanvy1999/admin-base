@@ -1,7 +1,19 @@
-import { api } from '@client/libs/api';
-import type { TransactionFull } from '@client/types/transaction';
-import type { TransactionType } from '@server/generated/prisma/enums';
+import type { FormComponentRef } from '@client/components/FormComponent';
+import { transactionService } from '@client/services';
+import { DeferredPromise } from '@open-draft/deferred-promise';
+import { TransactionType } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
+
+const filterSchema = z.object({
+  search: z.string().optional(),
+  types: z.array(z.enum(TransactionType)).optional(),
+  accountIds: z.array(z.string()).optional(),
+  categoryIds: z.array(z.string()).optional(),
+  entityIds: z.array(z.string()).optional(),
+});
+
+export type FilterFormValue = z.infer<typeof filterSchema>;
 
 type ListTransactionsQuery = {
   types?: TransactionType[];
@@ -17,56 +29,57 @@ type ListTransactionsQuery = {
   sortOrder?: 'asc' | 'desc';
 };
 
-export const useTransactionsQuery = (query: ListTransactionsQuery = {}) => {
+export const useTransactionsQuery = (
+  queryParams: {
+    page?: number;
+    limit?: number;
+    sortBy?: 'date' | 'amount' | 'type' | 'accountId';
+    sortOrder?: 'asc' | 'desc';
+  },
+  formRef: React.RefObject<FormComponentRef | null>,
+  handleSubmit: (
+    onValid: (data: FilterFormValue) => void,
+    onInvalid?: (errors: any) => void,
+  ) => (e?: React.BaseSyntheticEvent) => Promise<void>,
+) => {
   return useQuery({
-    queryKey: ['transactions', query],
+    queryKey: ['transactions', queryParams],
     queryFn: async () => {
-      const response = await api.api.transactions.get({
-        query: query,
-      });
+      let query: ListTransactionsQuery = {
+        ...queryParams,
+      };
 
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to fetch transactions',
+      if (formRef.current) {
+        const valueDeferred = new DeferredPromise<FilterFormValue>();
+        formRef.current.submit(
+          handleSubmit(valueDeferred.resolve, valueDeferred.reject),
         );
+
+        const criteria = await valueDeferred;
+
+        query = {
+          ...query,
+          search: criteria.search?.trim() || undefined,
+          types:
+            criteria.types && criteria.types.length > 0
+              ? (criteria.types as TransactionType[])
+              : undefined,
+          accountIds:
+            criteria.accountIds && criteria.accountIds.length > 0
+              ? criteria.accountIds
+              : undefined,
+          categoryIds:
+            criteria.categoryIds && criteria.categoryIds.length > 0
+              ? criteria.categoryIds
+              : undefined,
+          entityIds:
+            criteria.entityIds && criteria.entityIds.length > 0
+              ? criteria.entityIds
+              : undefined,
+        };
       }
 
-      const data = response.data;
-
-      return {
-        transactions: data.transactions.map((transaction) => ({
-          ...transaction,
-          amount: transaction.amount.toString(),
-          fee: transaction.fee.toString(),
-          price: transaction.price?.toString() ?? null,
-          priceInBaseCurrency:
-            transaction.priceInBaseCurrency?.toString() ?? null,
-          quantity: transaction.quantity?.toString() ?? null,
-          feeInBaseCurrency: transaction.feeInBaseCurrency?.toString() ?? null,
-          date:
-            transaction.date instanceof Date
-              ? transaction.date.toISOString()
-              : transaction.date,
-          dueDate:
-            transaction.dueDate instanceof Date
-              ? transaction.dueDate.toISOString()
-              : (transaction.dueDate ?? null),
-          createdAt:
-            transaction.createdAt instanceof Date
-              ? transaction.createdAt.toISOString()
-              : transaction.createdAt,
-          updatedAt:
-            transaction.updatedAt instanceof Date
-              ? transaction.updatedAt.toISOString()
-              : transaction.updatedAt,
-          metadata:
-            transaction.metadata && typeof transaction.metadata === 'object'
-              ? (transaction.metadata as Record<string, any>)
-              : null,
-        })) satisfies TransactionFull[],
-        pagination: data.pagination,
-        summary: data.summary || [],
-      };
+      return transactionService.listTransactions(query);
     },
   });
 };

@@ -1,7 +1,16 @@
-import { api } from '@client/libs/api';
-import type { EntityFull } from '@client/types/entity';
-import type { EntityType } from '@server/generated/prisma/enums';
+import type { FormComponentRef } from '@client/components/FormComponent';
+import { entityService } from '@client/services';
+import { DeferredPromise } from '@open-draft/deferred-promise';
+import { EntityType } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
+
+const filterSchema = z.object({
+  search: z.string().optional(),
+  type: z.array(z.enum(EntityType)).optional(),
+});
+
+export type FilterFormValue = z.infer<typeof filterSchema>;
 
 type ListEntitiesQuery = {
   type?: EntityType[];
@@ -12,36 +21,54 @@ type ListEntitiesQuery = {
   sortOrder?: 'asc' | 'desc';
 };
 
-export const useEntitiesQuery = (query: ListEntitiesQuery = {}) => {
+export const useEntitiesQuery = (
+  queryParams: {
+    page?: number;
+    limit?: number;
+    sortBy?: 'name' | 'type' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
+  },
+  formRef: React.RefObject<FormComponentRef | null>,
+  handleSubmit: (
+    onValid: (data: FilterFormValue) => void,
+    onInvalid?: (errors: any) => void,
+  ) => (e?: React.BaseSyntheticEvent) => Promise<void>,
+) => {
   return useQuery({
-    queryKey: ['entities', query],
+    queryKey: ['entities', queryParams],
     queryFn: async () => {
-      const response = await api.api.entities.get({
-        query: query,
-      });
+      let query: ListEntitiesQuery = {
+        ...queryParams,
+      };
 
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to fetch entities',
+      if (formRef.current) {
+        const valueDeferred = new DeferredPromise<FilterFormValue>();
+        formRef.current.submit(
+          handleSubmit(valueDeferred.resolve, valueDeferred.reject),
         );
+
+        const criteria = await valueDeferred;
+
+        query = {
+          ...query,
+          search: criteria.search?.trim() || undefined,
+          type:
+            criteria.type && criteria.type.length > 0
+              ? (criteria.type as EntityType[])
+              : undefined,
+        };
       }
 
-      const data = response.data;
+      return entityService.listEntities(query);
+    },
+  });
+};
 
-      return {
-        entities: data.entities.map((entity) => ({
-          ...entity,
-          createdAt:
-            entity.createdAt instanceof Date
-              ? entity.createdAt.toISOString()
-              : entity.createdAt,
-          updatedAt:
-            entity.updatedAt instanceof Date
-              ? entity.updatedAt.toISOString()
-              : entity.updatedAt,
-        })) satisfies EntityFull[],
-        pagination: data.pagination,
-      };
+export const useEntitiesOptionsQuery = () => {
+  return useQuery({
+    queryKey: ['entities-options'],
+    queryFn: () => {
+      return entityService.listEntities({ limit: 1000 });
     },
   });
 };

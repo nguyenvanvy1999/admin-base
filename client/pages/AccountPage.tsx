@@ -1,13 +1,22 @@
 import AccountTable from '@client/components/AccountTable';
 import AddEditAccountDialog from '@client/components/AddEditAccountDialog';
 import {
+  FormComponent,
+  type FormComponentRef,
+} from '@client/components/FormComponent';
+import { PageContainer } from '@client/components/PageContainer';
+import { ZodFormController } from '@client/components/ZodFormController';
+import {
   useCreateAccountMutation,
   useDeleteAccountMutation,
   useUpdateAccountMutation,
 } from '@client/hooks/mutations/useAccountMutations';
-import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
+import {
+  type FilterFormValue,
+  useAccountsQuery,
+} from '@client/hooks/queries/useAccountQueries';
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
-import type { AccountFormData, AccountFull } from '@client/types/account';
+import { useZodForm } from '@client/hooks/useZodForm';
 import {
   Button,
   Group,
@@ -15,29 +24,41 @@ import {
   MultiSelect,
   NumberFormatter,
   Text,
+  TextInput,
   useMantineColorScheme,
 } from '@mantine/core';
+import {
+  type AccountResponse,
+  type IUpsertAccountDto,
+  ListAccountsQueryDto,
+} from '@server/dto/account.dto';
 import { AccountType } from '@server/generated/prisma/enums';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+const filterSchema = ListAccountsQueryDto.pick({
+  search: true,
+  type: true,
+  currencyId: true,
+});
+
+const defaultFilterValues: FilterFormValue = {
+  search: '',
+  type: [],
+  currencyId: [],
+};
 
 const AccountPage = () => {
   const { t } = useTranslation();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
-  const [selectedAccount, setSelectedAccount] = useState<AccountFull | null>(
-    null,
-  );
+  const formRef = useRef<FormComponentRef>(null);
+  const [selectedAccount, setSelectedAccount] =
+    useState<AccountResponse | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [accountToDelete, setAccountToDelete] = useState<AccountFull | null>(
-    null,
-  );
-  const [typeFilterInput, setTypeFilterInput] = useState<AccountType[]>([]);
-  const [typeFilter, setTypeFilter] = useState<AccountType[]>([]);
-  const [currencyFilterInput, setCurrencyFilterInput] = useState<string[]>([]);
-  const [currencyFilter, setCurrencyFilter] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [accountToDelete, setAccountToDelete] =
+    useState<AccountResponse | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'balance'>(
@@ -45,20 +66,26 @@ const AccountPage = () => {
   );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  const { handleSubmit, control, reset } = useZodForm({
+    zod: filterSchema,
+    defaultValues: defaultFilterValues,
+  });
+
   const queryParams = useMemo(
     () => ({
-      type: typeFilter.length > 0 ? typeFilter : undefined,
-      currencyId: currencyFilter.length > 0 ? currencyFilter : undefined,
-      search: searchQuery.trim() || undefined,
       page,
       limit,
       sortBy,
       sortOrder,
     }),
-    [typeFilter, currencyFilter, searchQuery, page, limit, sortBy, sortOrder],
+    [page, limit, sortBy, sortOrder],
   );
 
-  const { data, isLoading } = useAccountsQuery(queryParams);
+  const { data, isLoading, refetch } = useAccountsQuery(
+    queryParams,
+    formRef,
+    handleSubmit,
+  );
   const { data: currencies = [] } = useCurrenciesQuery();
   const createMutation = useCreateAccountMutation();
   const updateMutation = useUpdateAccountMutation();
@@ -69,12 +96,12 @@ const AccountPage = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (account: AccountFull) => {
+  const handleEdit = (account: AccountResponse) => {
     setSelectedAccount(account);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (account: AccountFull) => {
+  const handleDelete = (account: AccountResponse) => {
     setAccountToDelete(account);
     setIsDeleteDialogOpen(true);
   };
@@ -89,7 +116,7 @@ const AccountPage = () => {
     setAccountToDelete(null);
   };
 
-  const handleSubmit = async (formData: AccountFormData) => {
+  const handleSubmitForm = async (formData: IUpsertAccountDto) => {
     if (formData.id) {
       await updateMutation.mutateAsync(formData);
     } else {
@@ -105,13 +132,9 @@ const AccountPage = () => {
     }
   };
 
-  const hasActiveFilters = useMemo(() => {
-    return (
-      searchQuery.trim() !== '' ||
-      typeFilter.length > 0 ||
-      currencyFilter.length > 0
-    );
-  }, [searchQuery, typeFilter, currencyFilter]);
+  const handleSearch = () => {
+    refetch();
+  };
 
   const isSubmitting =
     createMutation.isPending ||
@@ -120,104 +143,57 @@ const AccountPage = () => {
 
   const statistics = data?.summary || [];
 
-  const summaryContent = useMemo(() => {
-    if (statistics.length === 0) return null;
-
-    return (
-      <>
-        {statistics.map((item) => {
-          const isNegative = item.totalBalance < 0;
-          const color = isNegative
-            ? isDark
-              ? 'rgb(248 113 113)'
-              : 'rgb(185 28 28)'
-            : isDark
-              ? 'rgb(34 197 94)'
-              : 'rgb(21 128 61)';
-
-          return (
-            <div key={item.currency.id} className="flex items-center gap-2">
-              <Text size="sm" className="text-gray-600 dark:text-gray-400">
-                {t('accounts.totalAssets', {
-                  defaultValue: 'Tổng tài sản',
-                })}{' '}
-                ({item.currency.code}):
-              </Text>
-              <span className="font-bold" style={{ color }}>
-                <NumberFormatter
-                  value={item.totalBalance}
-                  prefix={
-                    item.currency.symbol ? `${item.currency.symbol} ` : ''
-                  }
-                  thousandSeparator=","
-                  decimalScale={2}
-                  allowNegative={true}
-                />
-              </span>
-            </div>
-          );
-        })}
-      </>
-    );
-  }, [statistics, isDark, t]);
+  const stats = useMemo(() => {
+    if (!statistics || statistics.length === 0) return undefined;
+    return statistics.map((item) => {
+      const isNegative = item.totalBalance < 0;
+      const color = isNegative
+        ? isDark
+          ? 'rgb(248 113 113)'
+          : 'rgb(185 28 28)'
+        : isDark
+          ? 'rgb(34 197 94)'
+          : 'rgb(21 128 61)';
+      return {
+        titleI18nKey: 'accounts.totalAssets' as const,
+        value: (
+          <NumberFormatter
+            value={item.totalBalance}
+            prefix={item.currency.symbol ? `${item.currency.symbol} ` : ''}
+            thousandSeparator=","
+            decimalScale={2}
+            allowNegative={true}
+          />
+        ),
+        color,
+      };
+    });
+  }, [statistics, isDark]);
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {t('accounts.title')}
-              </h1>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                {t('accounts.subtitle')}
-              </p>
-            </div>
-            <Button onClick={handleAdd} disabled={isSubmitting}>
-              {t('accounts.addAccount')}
-            </Button>
-          </div>
-
-          <AccountTable
-            accounts={data?.accounts || []}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            isLoading={isLoading}
-            search={{
-              onSearch: (searchValue: string) => {
-                setSearchQuery(searchValue);
-                setTypeFilter(typeFilterInput);
-                setCurrencyFilter(currencyFilterInput);
-                setPage(1);
-              },
-              placeholder: t('accounts.search'),
-            }}
-            pageSize={{
-              initialSize: limit,
-              onPageSizeChange: (size: number) => {
-                setLimit(size);
-                setPage(1);
-              },
-            }}
-            filters={{
-              hasActive: hasActiveFilters,
-              onReset: () => {
-                setSearchQuery('');
-                setTypeFilterInput([]);
-                setTypeFilter([]);
-                setCurrencyFilterInput([]);
-                setCurrencyFilter([]);
-                setPage(1);
-              },
-              slots: [
+    <PageContainer
+      filterGroup={
+        <FormComponent ref={formRef}>
+          <Group>
+            <ZodFormController
+              control={control}
+              name="search"
+              render={({ field, fieldState: { error } }) => (
+                <TextInput
+                  placeholder={t('accounts.search')}
+                  error={error}
+                  style={{ flex: 1, maxWidth: '300px' }}
+                  {...field}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="type"
+              render={({ field, fieldState: { error } }) => (
                 <MultiSelect
-                  key="type-filter"
-                  value={typeFilterInput}
-                  onChange={(value) =>
-                    setTypeFilterInput(value as AccountType[])
-                  }
                   placeholder={t('accounts.typePlaceholder')}
+                  error={error}
                   data={[
                     { value: AccountType.cash, label: t('accounts.cash') },
                     { value: AccountType.bank, label: t('accounts.bank') },
@@ -230,92 +206,135 @@ const AccountPage = () => {
                       label: t('accounts.investment'),
                     },
                   ]}
-                />,
+                  value={field.value || []}
+                  onChange={(value) => field.onChange(value as AccountType[])}
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="currencyId"
+              render={({ field, fieldState: { error } }) => (
                 <MultiSelect
-                  key="currency-filter"
-                  value={currencyFilterInput}
-                  onChange={(value) => setCurrencyFilterInput(value)}
                   placeholder={t('accounts.currencyPlaceholder', {
                     defaultValue: 'Currency',
                   })}
+                  error={error}
                   data={currencies.map((currency) => ({
                     value: currency.id,
                     label: `${currency.code} - ${currency.name}`,
                   }))}
-                />,
-              ],
-            }}
-            pagination={
-              data?.pagination && data.pagination.totalPages > 0
-                ? {
-                    currentPage: page,
-                    totalPages: data.pagination.totalPages,
-                    totalItems: data.pagination.total,
-                    itemsPerPage: limit,
-                    onPageChange: setPage,
-                  }
-                : undefined
-            }
-            sorting={{
-              sortBy,
-              sortOrder,
-              onSortChange: (
-                newSortBy: string,
-                newSortOrder: 'asc' | 'desc',
-              ) => {
-                setSortBy(newSortBy as 'name' | 'createdAt' | 'balance');
-                setSortOrder(newSortOrder);
-                setPage(1);
-              },
-            }}
-            summary={summaryContent}
-          />
-        </div>
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+          </Group>
+        </FormComponent>
+      }
+      buttonGroups={
+        <Button onClick={handleAdd} disabled={isSubmitting}>
+          {t('accounts.addAccount')}
+        </Button>
+      }
+      onSearch={handleSearch}
+      onReset={() => reset(defaultFilterValues)}
+      stats={stats}
+    >
+      <AccountTable
+        accounts={data?.accounts || []}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        isLoading={isLoading}
+        recordsPerPage={limit}
+        recordsPerPageOptions={[10, 20, 50, 100]}
+        onRecordsPerPageChange={(size) => {
+          setLimit(size);
+          setPage(1);
+        }}
+        page={page}
+        onPageChange={setPage}
+        totalRecords={data?.pagination?.total}
+        sorting={
+          sortBy
+            ? [
+                {
+                  id: sortBy,
+                  desc: sortOrder === 'desc',
+                },
+              ]
+            : undefined
+        }
+        onSortingChange={(
+          updater:
+            | { id: string; desc: boolean }[]
+            | ((prev: { id: string; desc: boolean }[]) => {
+                id: string;
+                desc: boolean;
+              }[]),
+        ) => {
+          const newSorting =
+            typeof updater === 'function'
+              ? updater(
+                  sortBy ? [{ id: sortBy, desc: sortOrder === 'desc' }] : [],
+                )
+              : updater;
+          if (newSorting.length > 0) {
+            setSortBy(newSorting[0].id as 'name' | 'createdAt' | 'balance');
+            setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
+          } else {
+            setSortBy('createdAt');
+            setSortOrder('desc');
+          }
+          setPage(1);
+        }}
+      />
 
-        {isDialogOpen && (
-          <AddEditAccountDialog
-            isOpen={isDialogOpen}
-            onClose={handleDialogClose}
-            account={selectedAccount}
-            onSubmit={handleSubmit}
-            isLoading={isSubmitting}
-          />
-        )}
+      {isDialogOpen && (
+        <AddEditAccountDialog
+          isOpen={isDialogOpen}
+          onClose={handleDialogClose}
+          account={selectedAccount}
+          onSubmit={handleSubmitForm}
+          isLoading={isSubmitting}
+        />
+      )}
 
-        {isDeleteDialogOpen && accountToDelete && (
-          <Modal
-            opened={isDeleteDialogOpen}
-            onClose={handleDeleteDialogClose}
-            title={t('accounts.deleteConfirmTitle')}
-            size="md"
-          >
-            <Text mb="md">
-              {t('accounts.deleteConfirmMessage')}
-              <br />
-              <strong>{accountToDelete.name}</strong>
-            </Text>
-            <Group justify="flex-end" mt="md">
-              <Button
-                variant="outline"
-                onClick={handleDeleteDialogClose}
-                disabled={isSubmitting}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
-                color="red"
-                onClick={handleConfirmDelete}
-                disabled={isSubmitting}
-              >
-                {isSubmitting
-                  ? t('common.deleting', { defaultValue: 'Deleting...' })
-                  : t('common.delete')}
-              </Button>
-            </Group>
-          </Modal>
-        )}
-      </div>
-    </div>
+      {isDeleteDialogOpen && accountToDelete && (
+        <Modal
+          opened={isDeleteDialogOpen}
+          onClose={handleDeleteDialogClose}
+          title={t('accounts.deleteConfirmTitle')}
+          size="md"
+        >
+          <Text mb="md">
+            {t('accounts.deleteConfirmMessage')}
+            <br />
+            <strong>{accountToDelete.name}</strong>
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={handleDeleteDialogClose}
+              disabled={isSubmitting}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDelete}
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? t('common.deleting', { defaultValue: 'Deleting...' })
+                : t('common.delete')}
+            </Button>
+          </Group>
+        </Modal>
+      )}
+    </PageContainer>
   );
 };
 

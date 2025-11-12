@@ -1,3 +1,4 @@
+import type { CategoryType } from '@server/generated/prisma/enums';
 import type { CategoryWhereInput } from '@server/generated/prisma/models/Category';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
@@ -10,6 +11,9 @@ import {
   TRANSFER_CATEGORY,
 } from '../constants/category';
 import type {
+  CategoryListResponse,
+  CategoryResponse,
+  CategoryTreeResponse,
   IListCategoriesQueryDto,
   IUpsertCategoryDto,
 } from '../dto/category.dto';
@@ -17,10 +21,12 @@ import type {
 type CategoryWithChildren = {
   id: string;
   userId: string;
-  type: string;
+  type: CategoryType;
   name: string;
   parentId: string | null;
   isLocked: boolean;
+  icon: string | null;
+  color: string | null;
   children?: CategoryWithChildren[];
 };
 
@@ -30,6 +36,39 @@ const CATEGORY_SELECT_MINIMAL = {
   type: true,
   parentId: true,
 } as const;
+
+const formatCategory = (
+  category: Pick<
+    CategoryWithChildren,
+    | 'id'
+    | 'userId'
+    | 'type'
+    | 'name'
+    | 'parentId'
+    | 'icon'
+    | 'color'
+    | 'isLocked'
+  >,
+): CategoryResponse => ({
+  ...category,
+  parentId: category.parentId ?? null,
+  icon: category.icon ?? null,
+  color: category.color ?? null,
+});
+
+const formatCategoryTree = (
+  category: CategoryWithChildren,
+): CategoryTreeResponse => {
+  const children =
+    category.children && category.children.length > 0
+      ? category.children.map(formatCategoryTree)
+      : undefined;
+
+  return {
+    ...formatCategory(category),
+    children,
+  } as CategoryTreeResponse;
+};
 
 export class CategoryService {
   private flattenCategories(
@@ -164,7 +203,7 @@ export class CategoryService {
   async getAllCategories(
     userId: string,
     query: IListCategoriesQueryDto = {},
-  ): Promise<{ categories: CategoryWithChildren[] }> {
+  ): Promise<CategoryListResponse> {
     const { type, includeDeleted = false } = query;
 
     const where: CategoryWhereInput = {
@@ -188,6 +227,8 @@ export class CategoryService {
         name: true,
         parentId: true,
         isLocked: true,
+        icon: true,
+        color: true,
       },
       orderBy: {
         createdAt: 'asc',
@@ -196,10 +237,13 @@ export class CategoryService {
 
     const tree = this.buildCategoryTree(categories as CategoryWithChildren[]);
 
-    return { categories: tree };
+    return { categories: tree.map(formatCategoryTree) } as CategoryListResponse;
   }
 
-  async getCategoryById(userId: string, categoryId: string) {
+  async getCategoryById(
+    userId: string,
+    categoryId: string,
+  ): Promise<CategoryResponse> {
     const category = await prisma.category.findFirst({
       where: {
         id: categoryId,
@@ -213,6 +257,8 @@ export class CategoryService {
         name: true,
         parentId: true,
         isLocked: true,
+        icon: true,
+        color: true,
       },
     });
 
@@ -220,10 +266,13 @@ export class CategoryService {
       throw new Error('Category not found');
     }
 
-    return category;
+    return formatCategory(category);
   }
 
-  async createCategory(userId: string, data: IUpsertCategoryDto) {
+  async createCategory(
+    userId: string,
+    data: IUpsertCategoryDto,
+  ): Promise<CategoryResponse> {
     if (data.parentId) {
       const parent = await this.validateCategoryOwnership(
         userId,
@@ -243,7 +292,7 @@ export class CategoryService {
       }
     }
 
-    return prisma.category.create({
+    const category = await prisma.category.create({
       data: {
         userId,
         name: data.name,
@@ -259,15 +308,19 @@ export class CategoryService {
         name: true,
         parentId: true,
         isLocked: true,
+        icon: true,
+        color: true,
       },
     });
+
+    return formatCategory(category);
   }
 
   async updateCategory(
     userId: string,
     categoryId: string,
     data: IUpsertCategoryDto,
-  ) {
+  ): Promise<CategoryResponse> {
     const category = await this.validateCategoryOwnership(userId, categoryId);
 
     if (category.isLocked) {
@@ -307,7 +360,7 @@ export class CategoryService {
       }
     }
 
-    return prisma.category.update({
+    const updatedCategory = await prisma.category.update({
       where: { id: categoryId },
       data: {
         name: data.name,
@@ -323,8 +376,12 @@ export class CategoryService {
         name: true,
         parentId: true,
         isLocked: true,
+        icon: true,
+        color: true,
       },
     });
+
+    return formatCategory(updatedCategory);
   }
 
   private async checkCircularReference(

@@ -5,9 +5,11 @@ import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
 import { CURRENCY_IDS } from '../constants/currency';
 import type {
+  AuthUserRes,
   ILoginDto,
   IRegisterDto,
   IUpdateProfileDto,
+  LoginRes,
 } from '../dto/user.dto';
 import { CategoryService } from './category.service';
 
@@ -28,8 +30,22 @@ const USER_SELECT_FOR_LOGIN = {
   id: true,
   username: true,
   role: true,
+  name: true,
+  baseCurrencyId: true,
   password: true,
 } as const;
+
+const formatUser = (user: {
+  id: string;
+  username: string;
+  name: string | null;
+  role: UserRole;
+  baseCurrencyId: string | null;
+}): AuthUserRes => ({
+  ...user,
+  name: user.name ?? null,
+  baseCurrencyId: user.baseCurrencyId ?? null,
+});
 
 export class UserService {
   private categoryService = new CategoryService();
@@ -59,7 +75,7 @@ export class UserService {
       return newUser;
     });
 
-    return user;
+    return formatUser(user);
   }
 
   async login(data: ILoginDto) {
@@ -84,13 +100,9 @@ export class UserService {
     );
 
     return {
-      user: {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-      },
+      user: formatUser(user),
       jwt: token,
-    };
+    } satisfies LoginRes;
   }
 
   async getUserInfo(id: string) {
@@ -101,7 +113,7 @@ export class UserService {
     if (!user) {
       throw new Error('User not found');
     }
-    return user;
+    return formatUser(user);
   }
 
   async updateProfile(userId: string, data: IUpdateProfileDto) {
@@ -156,10 +168,11 @@ export class UserService {
         username: true,
         name: true,
         role: true,
+        baseCurrencyId: true,
       },
     });
 
-    return updatedUser;
+    return formatUser(updatedUser);
   }
 }
 

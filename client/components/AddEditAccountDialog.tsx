@@ -1,26 +1,34 @@
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
-import type { AccountFormData, AccountFull } from '@client/types/account';
+import { useZodForm } from '@client/hooks/useZodForm';
+import { Checkbox, Modal, NumberInput, Stack, TextInput } from '@mantine/core';
 import {
-  Button,
-  Checkbox,
-  Group,
-  Modal,
-  NumberInput,
-  Select,
-  Stack,
-  TextInput,
-} from '@mantine/core';
+  type AccountResponse,
+  type IUpsertAccountDto,
+  UpsertAccountDto,
+} from '@server/dto/account.dto';
 import { AccountType } from '@server/generated/prisma/enums';
-import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useValidation } from './utils/validation';
+import { z } from 'zod';
+import { DialogFooterButtons } from './DialogFooterButtons';
+import { Select } from './Select';
+import { ZodFormController } from './ZodFormController';
+
+const baseSchema = UpsertAccountDto.extend({
+  name: z.string().min(1, 'accounts.nameRequired'),
+  type: z.enum(AccountType, {
+    message: 'accounts.typeRequired',
+  }),
+  currencyId: z.string().min(1, 'accounts.currencyRequired'),
+});
+
+type FormValue = z.infer<typeof baseSchema>;
 
 type AddEditAccountDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  account: AccountFull | null;
-  onSubmit: (data: AccountFormData) => void;
+  account: AccountResponse | null;
+  onSubmit: (data: IUpsertAccountDto) => void;
   isLoading?: boolean;
 };
 
@@ -34,93 +42,79 @@ const AddEditAccountDialog = ({
   const { t } = useTranslation();
   const { data: currencies = [] } = useCurrenciesQuery();
   const isEditMode = !!account;
-  const validation = useValidation();
 
-  const form = useForm({
-    defaultValues: {
-      name: '',
-      type: '',
-      currencyId: '',
-      initialBalance: 0,
-      creditLimit: 0,
-      notifyOnDueDate: false,
-      paymentDay: '',
-      notifyDaysBefore: '',
-    },
-    onSubmit: ({ value }) => {
-      if (!value.currencyId || value.currencyId.trim() === '') {
-        return;
-      }
+  const defaultValues: FormValue = {
+    name: '',
+    type: AccountType.cash,
+    currencyId: '',
+    initialBalance: 0,
+    creditLimit: 0,
+    notifyOnDueDate: false,
+    paymentDay: undefined,
+    notifyDaysBefore: undefined,
+  };
 
-      const submitData: AccountFormData = {
-        name: value.name.trim(),
-        type: value.type as AccountType,
-        currencyId: value.currencyId,
-      };
-
-      if (isEditMode && account) {
-        submitData.id = account.id;
-      } else {
-        if (
-          value.initialBalance !== undefined &&
-          value.initialBalance !== null
-        ) {
-          submitData.initialBalance = Number(value.initialBalance);
-        }
-      }
-
-      if (value.type === AccountType.credit_card) {
-        if (value.creditLimit !== undefined && value.creditLimit !== null) {
-          submitData.creditLimit = Number(value.creditLimit);
-        }
-        if (value.notifyOnDueDate !== undefined) {
-          submitData.notifyOnDueDate = value.notifyOnDueDate;
-        }
-        if (value.paymentDay && value.paymentDay !== '') {
-          const day = parseInt(value.paymentDay.toString(), 10);
-          if (!isNaN(day) && day >= 1 && day <= 31) {
-            submitData.paymentDay = day;
-          }
-        }
-        if (value.notifyDaysBefore && value.notifyDaysBefore !== '') {
-          const days = parseInt(value.notifyDaysBefore.toString(), 10);
-          if (!isNaN(days) && days >= 0) {
-            submitData.notifyDaysBefore = days;
-          }
-        }
-      }
-
-      onSubmit(submitData);
-    },
+  const { control, handleSubmit, reset, watch } = useZodForm({
+    zod: baseSchema,
+    defaultValues,
   });
+
+  const typeValue = watch('type');
+  const isCreditCard = typeValue === AccountType.credit_card;
 
   useEffect(() => {
     if (account) {
-      form.setFieldValue('name', account.name);
-      form.setFieldValue('type', account.type);
-      form.setFieldValue('currencyId', account.currencyId);
-      form.setFieldValue('initialBalance', 0);
-      form.setFieldValue(
-        'creditLimit',
-        account.creditLimit ? Number(account.creditLimit) : 0,
-      );
-      form.setFieldValue('notifyOnDueDate', account.notifyOnDueDate ?? false);
-      form.setFieldValue('paymentDay', account.paymentDay?.toString() || '');
-      form.setFieldValue(
-        'notifyDaysBefore',
-        account.notifyDaysBefore?.toString() || '',
-      );
+      reset({
+        id: account.id,
+        name: account.name,
+        type: account.type,
+        currencyId: account.currencyId,
+        initialBalance: 0,
+        creditLimit: account.creditLimit ? Number(account.creditLimit) : 0,
+        notifyOnDueDate: account.notifyOnDueDate ?? false,
+        paymentDay: account.paymentDay ?? undefined,
+        notifyDaysBefore: account.notifyDaysBefore ?? undefined,
+      });
     } else {
-      form.setFieldValue('name', '');
-      form.setFieldValue('type', '');
-      form.setFieldValue('currencyId', '');
-      form.setFieldValue('initialBalance', 0);
-      form.setFieldValue('creditLimit', 0);
-      form.setFieldValue('notifyOnDueDate', false);
-      form.setFieldValue('paymentDay', '');
-      form.setFieldValue('notifyDaysBefore', '');
+      reset(defaultValues);
     }
-  }, [account, isOpen, form]);
+  }, [account, isOpen, reset]);
+
+  const onSubmitForm = handleSubmit((data) => {
+    const submitData: IUpsertAccountDto = {
+      name: data.name.trim(),
+      type: data.type,
+      currencyId: data.currencyId,
+    };
+
+    if (isEditMode && account) {
+      submitData.id = account.id;
+    } else {
+      if (data.initialBalance !== undefined && data.initialBalance !== null) {
+        submitData.initialBalance = data.initialBalance;
+      }
+    }
+
+    if (isCreditCard) {
+      if (data.creditLimit !== undefined && data.creditLimit !== null) {
+        submitData.creditLimit = data.creditLimit;
+      }
+      if (data.notifyOnDueDate !== undefined) {
+        submitData.notifyOnDueDate = data.notifyOnDueDate;
+      }
+      if (data.paymentDay !== undefined && data.paymentDay !== null) {
+        submitData.paymentDay = data.paymentDay;
+      }
+      if (
+        data.notifyDaysBefore !== undefined &&
+        data.notifyDaysBefore !== null
+      ) {
+        submitData.notifyDaysBefore = data.notifyDaysBefore;
+      }
+    }
+
+    onSubmit(submitData);
+  });
 
   return (
     <Modal
@@ -129,273 +123,182 @@ const AddEditAccountDialog = ({
       title={isEditMode ? t('accounts.editAccount') : t('accounts.addAccount')}
       size="md"
     >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
-      >
+      <form onSubmit={onSubmitForm}>
         <Stack gap="md">
-          <form.Field
+          <ZodFormController
+            control={control}
             name="name"
-            validators={{
-              onChange: validation.required('accounts.nameRequired'),
-            }}
-          >
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <TextInput
-                  label={t('accounts.name')}
-                  placeholder={t('accounts.namePlaceholder')}
-                  required
-                  value={field.state.value ?? ''}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+            render={({ field, fieldState: { error } }) => (
+              <TextInput
+                label={t('accounts.name')}
+                placeholder={t('accounts.namePlaceholder')}
+                required
+                error={error}
+                {...field}
+              />
+            )}
+          />
 
-          <form.Field
+          <ZodFormController
+            control={control}
             name="type"
-            validators={{
-              onChange: validation.required('accounts.typeRequired'),
-            }}
-          >
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <Select
-                  label={t('accounts.type')}
-                  placeholder={t('accounts.typePlaceholder')}
-                  required
-                  data={[
-                    { value: AccountType.cash, label: t('accounts.cash') },
-                    { value: AccountType.bank, label: t('accounts.bank') },
-                    {
-                      value: AccountType.credit_card,
-                      label: t('accounts.credit_card'),
-                    },
-                    {
-                      value: AccountType.investment,
-                      label: t('accounts.investment'),
-                    },
-                  ]}
-                  value={field.state.value ?? null}
-                  onChange={(value) => field.handleChange(value ?? '')}
-                  onBlur={field.handleBlur}
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+            render={({ field, fieldState: { error } }) => (
+              <Select
+                label={t('accounts.type')}
+                placeholder={t('accounts.typePlaceholder')}
+                required
+                error={error}
+                items={[
+                  { value: AccountType.cash, label: t('accounts.cash') },
+                  { value: AccountType.bank, label: t('accounts.bank') },
+                  {
+                    value: AccountType.credit_card,
+                    label: t('accounts.credit_card'),
+                  },
+                  {
+                    value: AccountType.investment,
+                    label: t('accounts.investment'),
+                  },
+                ]}
+                value={field.value || ''}
+                onChange={field.onChange}
+              />
+            )}
+          />
 
-          <form.Field
+          <ZodFormController
+            control={control}
             name="currencyId"
-            validators={{
-              onChange: validation.required('accounts.currencyRequired'),
-            }}
-          >
-            {(field) => {
-              const error = field.state.meta.errors[0];
-              return (
-                <Select
-                  label={t('accounts.currency')}
-                  placeholder={t('accounts.currencyPlaceholder')}
-                  required
-                  data={currencies.map((currency) => ({
-                    value: currency.id,
-                    label: `${currency.code} - ${currency.name}`,
-                  }))}
-                  value={field.state.value ?? null}
-                  onChange={(value) => field.handleChange(value ?? '')}
-                  onBlur={field.handleBlur}
-                  error={error}
-                />
-              );
-            }}
-          </form.Field>
+            render={({ field, fieldState: { error } }) => (
+              <Select
+                label={t('accounts.currency')}
+                placeholder={t('accounts.currencyPlaceholder')}
+                required
+                error={error}
+                items={currencies.map((currency) => ({
+                  value: currency.id,
+                  label: `${currency.code} - ${currency.name}`,
+                }))}
+                value={field.value || ''}
+                onChange={field.onChange}
+              />
+            )}
+          />
 
           {!isEditMode && (
-            <form.Field name="initialBalance">
-              {(field) => {
-                const error = field.state.meta.errors[0];
-                return (
+            <ZodFormController
+              control={control}
+              name="initialBalance"
+              render={({ field, fieldState: { error } }) => (
+                <NumberInput
+                  label={t('accounts.initialBalance')}
+                  placeholder={t('accounts.initialBalancePlaceholder')}
+                  error={error}
+                  value={field.value ?? 0}
+                  onChange={(value) =>
+                    field.onChange(
+                      value !== '' && value !== null ? Number(value) : 0,
+                    )
+                  }
+                  thousandSeparator=","
+                  decimalScale={2}
+                  min={0}
+                />
+              )}
+            />
+          )}
+
+          {isCreditCard && (
+            <>
+              <ZodFormController
+                control={control}
+                name="creditLimit"
+                render={({ field, fieldState: { error } }) => (
                   <NumberInput
-                    label={t('accounts.initialBalance')}
-                    placeholder={t('accounts.initialBalancePlaceholder')}
-                    value={
-                      typeof field.state.value === 'number'
-                        ? field.state.value
-                        : 0
-                    }
-                    onChange={(value) => {
-                      field.handleChange(
-                        value !== '' && value !== null ? Number(value) : 0,
-                      );
-                    }}
-                    onBlur={field.handleBlur}
+                    label={t('accounts.creditLimit')}
+                    placeholder={t('accounts.creditLimitPlaceholder')}
                     error={error}
+                    value={field.value ?? 0}
+                    onChange={(value) =>
+                      field.onChange(
+                        value !== '' && value !== null ? Number(value) : 0,
+                      )
+                    }
                     thousandSeparator=","
                     decimalScale={2}
                     min={0}
                   />
-                );
-              }}
-            </form.Field>
+                )}
+              />
+
+              <ZodFormController
+                control={control}
+                name="notifyOnDueDate"
+                render={({
+                  field: { value, ...field },
+                  fieldState: { error },
+                }) => (
+                  <Checkbox
+                    label={t('accounts.notifyOnDueDate')}
+                    error={error}
+                    checked={value ?? false}
+                    onChange={(e) => field.onChange(e.currentTarget.checked)}
+                  />
+                )}
+              />
+
+              <ZodFormController
+                control={control}
+                name="paymentDay"
+                render={({ field, fieldState: { error } }) => (
+                  <NumberInput
+                    label={t('accounts.paymentDay')}
+                    placeholder={t('accounts.paymentDayPlaceholder')}
+                    error={error}
+                    min={1}
+                    max={31}
+                    value={field.value ?? undefined}
+                    onChange={(value) =>
+                      field.onChange(
+                        value !== '' && value !== null
+                          ? Number(value)
+                          : undefined,
+                      )
+                    }
+                  />
+                )}
+              />
+
+              <ZodFormController
+                control={control}
+                name="notifyDaysBefore"
+                render={({ field, fieldState: { error } }) => (
+                  <NumberInput
+                    label={t('accounts.notifyDaysBefore')}
+                    placeholder={t('accounts.notifyDaysBeforePlaceholder')}
+                    error={error}
+                    min={0}
+                    value={field.value ?? undefined}
+                    onChange={(value) =>
+                      field.onChange(
+                        value !== '' && value !== null
+                          ? Number(value)
+                          : undefined,
+                      )
+                    }
+                  />
+                )}
+              />
+            </>
           )}
 
-          <form.Subscribe
-            selector={(state) => state.values.type}
-            children={(typeValue) => {
-              const isCreditCard = typeValue === AccountType.credit_card;
-              if (!isCreditCard) return null;
-              return (
-                <>
-                  <form.Field name="creditLimit">
-                    {(field) => {
-                      const error = field.state.meta.errors[0];
-                      return (
-                        <NumberInput
-                          label={t('accounts.creditLimit')}
-                          placeholder={t('accounts.creditLimitPlaceholder')}
-                          value={
-                            typeof field.state.value === 'number'
-                              ? field.state.value
-                              : 0
-                          }
-                          onChange={(value) => {
-                            field.handleChange(
-                              value !== '' && value !== null
-                                ? Number(value)
-                                : 0,
-                            );
-                          }}
-                          onBlur={field.handleBlur}
-                          error={error}
-                          thousandSeparator=","
-                          decimalScale={2}
-                          min={0}
-                        />
-                      );
-                    }}
-                  </form.Field>
-
-                  <form.Field name="notifyOnDueDate">
-                    {(field) => {
-                      const error = field.state.meta.errors[0];
-                      return (
-                        <Checkbox
-                          label={t('accounts.notifyOnDueDate')}
-                          checked={field.state.value ?? false}
-                          onChange={(e) =>
-                            field.handleChange(e.currentTarget.checked)
-                          }
-                          onBlur={field.handleBlur}
-                          error={error}
-                        />
-                      );
-                    }}
-                  </form.Field>
-
-                  <form.Field name="paymentDay">
-                    {(field) => {
-                      const error = field.state.meta.errors[0];
-                      return (
-                        <NumberInput
-                          label={t('accounts.paymentDay')}
-                          placeholder={t('accounts.paymentDayPlaceholder')}
-                          min={1}
-                          max={31}
-                          value={
-                            field.state.value && field.state.value !== ''
-                              ? Number(field.state.value)
-                              : undefined
-                          }
-                          onChange={(value) =>
-                            field.handleChange(
-                              value !== '' && value !== null
-                                ? value.toString()
-                                : '',
-                            )
-                          }
-                          onBlur={field.handleBlur}
-                          error={error}
-                        />
-                      );
-                    }}
-                  </form.Field>
-
-                  <form.Field name="notifyDaysBefore">
-                    {(field) => {
-                      const error = field.state.meta.errors[0];
-                      return (
-                        <NumberInput
-                          label={t('accounts.notifyDaysBefore')}
-                          placeholder={t(
-                            'accounts.notifyDaysBeforePlaceholder',
-                          )}
-                          min={0}
-                          value={
-                            field.state.value && field.state.value !== ''
-                              ? Number(field.state.value)
-                              : undefined
-                          }
-                          onChange={(value) =>
-                            field.handleChange(
-                              value !== '' && value !== null
-                                ? value.toString()
-                                : '',
-                            )
-                          }
-                          onBlur={field.handleBlur}
-                          error={error}
-                        />
-                      );
-                    }}
-                  </form.Field>
-                </>
-              );
-            }}
+          <DialogFooterButtons
+            isEditMode={isEditMode}
+            isLoading={isLoading}
+            onCancel={onClose}
+            onSave={onSubmitForm}
+            showSaveAndAdd={false}
           />
-
-          <form.Subscribe
-            selector={(state) => ({
-              isValid: state.isValid,
-              values: state.values,
-            })}
-          >
-            {({ isValid, values }) => {
-              const isFormValid =
-                isValid &&
-                values.name?.trim() !== '' &&
-                values.type !== '' &&
-                values.currencyId !== '';
-
-              return (
-                <Group justify="flex-end" mt="md">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onClose}
-                    disabled={isLoading}
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" disabled={isLoading || !isFormValid}>
-                    {isLoading
-                      ? t('common.saving', { defaultValue: 'Saving...' })
-                      : isEditMode
-                        ? t('common.save')
-                        : t('common.add')}
-                  </Button>
-                </Group>
-              );
-            }}
-          </form.Subscribe>
         </Stack>
       </form>
     </Modal>

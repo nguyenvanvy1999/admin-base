@@ -2,7 +2,11 @@ import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   BatchTransactionsDto,
+  BatchTransactionsResponseDto,
   ListTransactionsQueryDto,
+  TransactionDeleteResponseDto,
+  TransactionDetailDto,
+  TransactionListResponseDto,
   UpsertTransactionDto,
 } from '../dto/transaction.dto';
 import authMacro from '../macros/auth';
@@ -28,8 +32,8 @@ const transactionController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        async ({ user, body, transactionService }) => {
-          return await transactionService.upsertTransaction(user.id, body);
+        ({ user, body, transactionService }) => {
+          return transactionService.upsertTransaction(user.id, body);
         },
         {
           checkAuth: [UserRole.user],
@@ -40,15 +44,15 @@ const transactionController = new Elysia().group(
               'Create a new transaction or update an existing transaction for the authenticated user. If a transaction ID is provided, it will update the existing transaction; otherwise, it creates a new one.',
           },
           body: UpsertTransactionDto,
+          response: {
+            200: TransactionDetailDto,
+          },
         },
       )
       .post(
         '/batch',
-        async ({ user, body, transactionService }) => {
-          return await transactionService.createBatchTransactions(
-            user.id,
-            body,
-          );
+        ({ user, body, transactionService }) => {
+          return transactionService.createBatchTransactions(user.id, body);
         },
         {
           checkAuth: [UserRole.user],
@@ -59,12 +63,15 @@ const transactionController = new Elysia().group(
               'Create multiple transactions in a single batch operation. All transactions are processed in a single database transaction.',
           },
           body: BatchTransactionsDto,
+          response: {
+            200: BatchTransactionsResponseDto,
+          },
         },
       )
       .get(
         '/:id',
-        async ({ user, params, transactionService }) => {
-          return await transactionService.getTransaction(user.id, params.id);
+        ({ user, params, transactionService }) => {
+          return transactionService.getTransaction(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],
@@ -75,12 +82,15 @@ const transactionController = new Elysia().group(
               'Retrieve detailed information about a specific transaction by its ID for the authenticated user.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: TransactionDetailDto,
+          },
         },
       )
       .get(
         '/',
-        async ({ user, query, transactionService }) => {
-          return await transactionService.listTransactions(user.id, query);
+        ({ user, query, transactionService }) => {
+          return transactionService.listTransactions(user.id, query);
         },
         {
           checkAuth: [UserRole.user],
@@ -91,12 +101,15 @@ const transactionController = new Elysia().group(
               'Get a paginated list of all transactions belonging to the authenticated user. Supports filtering and sorting.',
           },
           query: ListTransactionsQueryDto,
+          response: {
+            200: TransactionListResponseDto,
+          },
         },
       )
       .delete(
         '/:id',
-        async ({ user, params, transactionService }) => {
-          return await transactionService.deleteTransaction(user.id, params.id);
+        ({ user, params, transactionService }) => {
+          return transactionService.deleteTransaction(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],
@@ -107,6 +120,9 @@ const transactionController = new Elysia().group(
               'Delete a transaction by its ID. This will revert the balance effects of the transaction.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: TransactionDeleteResponseDto,
+          },
         },
       ),
 );

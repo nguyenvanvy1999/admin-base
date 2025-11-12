@@ -25,7 +25,7 @@ const ProtectedPageLayout = () => {
         className="flex flex-col transition-all duration-300"
         style={{ marginLeft: `${sidebarWidth}px` }}
       >
-        <main className="flex-1 overflow-y-auto min-h-[calc(100vh-64px)]">
+        <main className="flex-1 overflow-y-auto min-h-[calc(100vh-64px)] p-4 md:p-6">
           <Outlet />
         </main>
         <Footer />

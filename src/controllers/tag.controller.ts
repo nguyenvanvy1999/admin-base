@@ -1,6 +1,13 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
-import { ListTagsQueryDto, UpsertTagDto } from '../dto/tag.dto';
+import {
+  DeleteManyTagsDto,
+  ListTagsQueryDto,
+  TagDeleteResponseDto,
+  TagDto,
+  TagListResponseDto,
+  UpsertTagDto,
+} from '../dto/tag.dto';
 import authMacro from '../macros/auth';
 import tagService from '../services/tag.service';
 
@@ -24,8 +31,8 @@ const tagController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        async ({ user, body, tagService }) => {
-          return await tagService.upsertTag(user.id, body);
+        ({ user, body, tagService }) => {
+          return tagService.upsertTag(user.id, body);
         },
         {
           checkAuth: [UserRole.user],
@@ -36,12 +43,15 @@ const tagController = new Elysia().group(
               'Create a new tag or update an existing tag for the authenticated user. If a tag ID is provided, it will update the existing tag; otherwise, it creates a new one.',
           },
           body: UpsertTagDto,
+          response: {
+            200: TagDto,
+          },
         },
       )
       .get(
         '/:id',
-        async ({ user, params, tagService }) => {
-          return await tagService.getTag(user.id, params.id);
+        ({ user, params, tagService }) => {
+          return tagService.getTag(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],
@@ -52,12 +62,15 @@ const tagController = new Elysia().group(
               'Retrieve detailed information about a specific tag by its ID for the authenticated user.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: TagDto,
+          },
         },
       )
       .get(
         '/',
-        async ({ user, query, tagService }) => {
-          return await tagService.listTags(user.id, query);
+        ({ user, query, tagService }) => {
+          return tagService.listTags(user.id, query);
         },
         {
           checkAuth: [UserRole.user],
@@ -68,12 +81,15 @@ const tagController = new Elysia().group(
               'Get a paginated list of all tags belonging to the authenticated user. Supports filtering and sorting.',
           },
           query: ListTagsQueryDto,
+          response: {
+            200: TagListResponseDto,
+          },
         },
       )
       .delete(
         '/:id',
-        async ({ user, params, tagService }) => {
-          return await tagService.deleteTag(user.id, params.id);
+        ({ user, params, tagService }) => {
+          return tagService.deleteTag(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],
@@ -84,6 +100,28 @@ const tagController = new Elysia().group(
               'Permanently delete a tag by its ID. This action cannot be undone.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: TagDeleteResponseDto,
+          },
+        },
+      )
+      .post(
+        '/delete-many',
+        ({ user, body, tagService }) => {
+          return tagService.deleteManyTags(user.id, body.ids);
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...TAG_DETAIL,
+            summary: 'Delete many tags',
+            description:
+              'Permanently delete multiple tags by their IDs. This action cannot be undone.',
+          },
+          body: DeleteManyTagsDto,
+          response: {
+            200: TagDeleteResponseDto,
+          },
         },
       ),
 );
