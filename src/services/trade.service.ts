@@ -200,7 +200,7 @@ export class InvestmentTradeService {
     };
 
     if (side) {
-      where.side = side;
+      where.side = side as TradeSide;
     }
 
     if (accountIds && accountIds.length > 0) {

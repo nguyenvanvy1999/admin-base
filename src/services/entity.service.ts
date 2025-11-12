@@ -1,4 +1,5 @@
 import type { Prisma } from '@server/generated/prisma/client';
+import type { EntityType } from '@server/generated/prisma/enums';
 import type {
   EntityOrderByWithRelationInput,
   EntityWhereInput,

@@ -306,6 +306,7 @@ const AddEditInvestmentDialog = ({
                 minRows={4}
                 error={extraError || error}
                 {...field}
+                value={typeof field.value === 'string' ? field.value : ''}
               />
             )}
           />

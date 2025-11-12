@@ -1,4 +1,5 @@
 import type { Prisma } from '@server/generated/prisma/client';
+import type { AccountType } from '@server/generated/prisma/enums';
 import type { AccountWhereInput } from '@server/generated/prisma/models/Account';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';

@@ -581,7 +581,7 @@ class TransactionHandlerFactory {
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
       note: data.note ?? null,
       receiptUrl: data.receiptUrl ?? null,
-      metadata: data.metadata ?? null,
+      metadata: (data.metadata ?? null) as any,
     };
 
     switch (data.type) {
@@ -771,7 +771,7 @@ class TransactionHandlerFactory {
           dueDate: data.dueDate ? new Date(data.dueDate) : null,
           note: data.note ?? null,
           receiptUrl: data.receiptUrl ?? null,
-          metadata: data.metadata ?? null,
+          metadata: (data.metadata ?? null) as any,
           transferGroupId: groupId,
           isTransferMirror: false,
         },
@@ -802,7 +802,7 @@ class TransactionHandlerFactory {
           dueDate: data.dueDate ? new Date(data.dueDate) : null,
           note: data.note ?? null,
           receiptUrl: data.receiptUrl ?? null,
-          metadata: data.metadata ?? null,
+          metadata: (data.metadata ?? null) as any,
           transferGroupId: groupId,
           isTransferMirror: true,
         },
@@ -905,7 +905,7 @@ class TransactionHandlerFactory {
           dueDate: data.dueDate ? new Date(data.dueDate) : null,
           note: data.note ?? null,
           receiptUrl: data.receiptUrl ?? null,
-          metadata: data.metadata ?? null,
+          metadata: (data.metadata ?? null) as any,
           transferGroupId: groupId,
           isTransferMirror: false,
         },
@@ -947,7 +947,7 @@ class TransactionHandlerFactory {
             dueDate: data.dueDate ? new Date(data.dueDate) : null,
             note: data.note ?? null,
             receiptUrl: data.receiptUrl ?? null,
-            metadata: data.metadata ?? null,
+            metadata: (data.metadata ?? null) as any,
             transferGroupId: groupId,
             isTransferMirror: true,
           },
@@ -966,7 +966,7 @@ class TransactionHandlerFactory {
             dueDate: data.dueDate ? new Date(data.dueDate) : null,
             note: data.note ?? null,
             receiptUrl: data.receiptUrl ?? null,
-            metadata: data.metadata ?? null,
+            metadata: (data.metadata ?? null) as any,
             transferGroupId: groupId,
             isTransferMirror: true,
           },
@@ -1197,7 +1197,7 @@ export class TransactionService {
     };
 
     if (types && types.length > 0) {
-      where.type = { in: types };
+      where.type = { in: types as TransactionType[] };
     }
     if (accountIds && accountIds.length > 0) {
       where.accountId = { in: accountIds };
