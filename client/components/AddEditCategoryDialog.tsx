@@ -159,7 +159,7 @@ const AddEditCategoryDialog = ({
     if (data.parentId) {
       submitData.parentId = data.parentId;
     } else {
-      submitData.parentId = null;
+      submitData.parentId = undefined;
     }
 
     if (data.icon && data.icon.trim() !== '') {

@@ -88,7 +88,7 @@ const TransactionTable = ({
       {
         accessor: 'type',
         title: 'transactions.type',
-        render: (value: unknown, row: TransactionFull) => (
+        render: (value: unknown, row: TransactionDetail) => (
           <Badge color={getTransactionTypeColor(row.type)}>
             {getTransactionTypeLabel(row.type)}
           </Badge>
@@ -183,7 +183,7 @@ const TransactionTable = ({
         title: 'transactions.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value: unknown, row: TransactionFull) => (
+        render: (value: unknown, row: TransactionDetail) => (
           <div className="flex items-center justify-center gap-2">
             <ActionIcon
               variant="subtle"

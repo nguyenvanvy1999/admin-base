@@ -1356,6 +1356,7 @@ export class TransactionService {
               amount: true,
               fee: true,
               currencyId: true,
+              transferGroupId: true,
               account: { select: { currencyId: true } },
               toAccount: { select: { currencyId: true } },
             },

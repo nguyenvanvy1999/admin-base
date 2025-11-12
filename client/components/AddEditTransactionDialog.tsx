@@ -262,45 +262,53 @@ const AddEditTransactionDialog = ({
         }
       }
 
-      const submitData: IUpsertTransaction = {
-        type: transactionType,
+      let submitData: IUpsertTransaction;
+
+      const baseData = {
         accountId: data.accountId,
         amount: data.amount,
         date: data.date,
+        ...(isEditMode && transaction ? { id: transaction.id } : {}),
+        ...(data.note && data.note.trim() ? { note: data.note.trim() } : {}),
+        ...(data.fee && data.fee > 0 ? { fee: data.fee } : {}),
+        ...(data.tripEvent || data.borrowToPay
+          ? {
+              metadata: {
+                ...(transaction?.metadata || {}),
+                tripEvent: data.tripEvent || undefined,
+                borrowToPay: data.borrowToPay || undefined,
+              },
+            }
+          : {}),
       };
 
-      if (isEditMode && transaction) {
-        submitData.id = transaction.id;
-      }
-
-      if (transactionType !== TransactionType.transfer && data.categoryId) {
-        submitData.categoryId = data.categoryId;
-      }
-
-      if (transactionType !== TransactionType.transfer && data.entityId) {
-        submitData.entityId = data.entityId;
-      }
-
-      if (data.note && data.note.trim()) {
-        submitData.note = data.note.trim();
-      }
-
-      if (data.fee && data.fee > 0) {
-        submitData.fee = data.fee;
-      }
-
       if (transactionType === TransactionType.transfer) {
-        (submitData as any).toAccountId = data.toAccountId;
-        if (data.toAmount && data.toAmount > 0) {
-          submitData.toAmount = data.toAmount;
+        if (!data.toAccountId) {
+          return;
         }
-      }
-
-      if (data.tripEvent || data.borrowToPay) {
-        submitData.metadata = {
-          ...(transaction?.metadata || {}),
-          tripEvent: data.tripEvent || undefined,
-          borrowToPay: data.borrowToPay || undefined,
+        submitData = {
+          ...baseData,
+          type: TransactionType.transfer,
+          toAccountId: data.toAccountId,
+          ...(data.toAmount && data.toAmount > 0
+            ? { toAmount: data.toAmount }
+            : {}),
+        };
+      } else if (
+        transactionType === TransactionType.income ||
+        transactionType === TransactionType.expense
+      ) {
+        submitData = {
+          ...baseData,
+          type: transactionType,
+          categoryId: data.categoryId || '',
+          ...(data.entityId ? { entityId: data.entityId } : {}),
+        };
+      } else {
+        submitData = {
+          ...baseData,
+          type: transactionType,
+          entityId: data.entityId || '',
         };
       }
 

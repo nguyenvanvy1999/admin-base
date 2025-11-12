@@ -33,23 +33,11 @@ export class TransactionService extends ServiceBase {
   createTransaction(
     data: Omit<IUpsertTransaction, 'id'>,
   ): Promise<TransactionDetail> {
-    const payload = {
-      ...data,
-      note: data.note ?? undefined,
-      entityId: data.entityId ?? undefined,
-      metadata: data.metadata ?? undefined,
-    };
-    return this.post<TransactionDetail>(payload);
+    return this.post<TransactionDetail>(data);
   }
 
   updateTransaction(data: IUpsertTransaction): Promise<TransactionDetail> {
-    const payload = {
-      ...data,
-      note: data.note ?? undefined,
-      entityId: data.entityId ?? undefined,
-      metadata: data.metadata ?? undefined,
-    };
-    return this.post<TransactionDetail>(payload);
+    return this.post<TransactionDetail>(data);
   }
 
   deleteTransaction(transactionId: string): Promise<TransactionDeleteResponse> {
