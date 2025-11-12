@@ -119,6 +119,8 @@ export const useInvestmentQuery = (investmentId: string) => {
 
       return {
         ...investment,
+        baseCurrencyId: investment.baseCurrencyId || null,
+        baseCurrency: investment.baseCurrency || null,
         extra:
           investment.extra && typeof investment.extra === 'object'
             ? (investment.extra as Record<string, unknown>)
@@ -160,6 +162,33 @@ export const useInvestmentPositionQuery = (investmentId: string) => {
             : Number(position.lastValue),
         lastValuationAt: normalizeDate(position.lastValuationAt),
         netContributions: Number(position.netContributions),
+        costBasisInBaseCurrency:
+          position.costBasisInBaseCurrency !== undefined
+            ? Number(position.costBasisInBaseCurrency)
+            : undefined,
+        realizedPnlInBaseCurrency:
+          position.realizedPnlInBaseCurrency !== undefined
+            ? Number(position.realizedPnlInBaseCurrency)
+            : undefined,
+        unrealizedPnlInBaseCurrency:
+          position.unrealizedPnlInBaseCurrency !== undefined
+            ? Number(position.unrealizedPnlInBaseCurrency)
+            : undefined,
+        lastValueInBaseCurrency:
+          position.lastValueInBaseCurrency !== undefined &&
+          position.lastValueInBaseCurrency !== null
+            ? Number(position.lastValueInBaseCurrency)
+            : undefined,
+        currentExchangeRate:
+          position.currentExchangeRate !== undefined &&
+          position.currentExchangeRate !== null
+            ? Number(position.currentExchangeRate)
+            : undefined,
+        exchangeRateGainLoss:
+          position.exchangeRateGainLoss !== undefined &&
+          position.exchangeRateGainLoss !== null
+            ? Number(position.exchangeRateGainLoss)
+            : undefined,
       } satisfies InvestmentPosition;
     },
   });
@@ -186,6 +215,9 @@ export const useInvestmentTradesQuery = (
           amount: normalizeDecimal(trade.amount) ?? '0',
           fee: normalizeDecimal(trade.fee) ?? '0',
           priceInBaseCurrency: normalizeDecimal(trade.priceInBaseCurrency),
+          amountInBaseCurrency: normalizeDecimal(trade.amountInBaseCurrency),
+          exchangeRate: normalizeDecimal(trade.exchangeRate),
+          baseCurrency: trade.baseCurrency || null,
           priceFetchedAt: normalizeDate(trade.priceFetchedAt),
           meta:
             trade.meta && typeof trade.meta === 'object'
@@ -214,6 +246,12 @@ export const useInvestmentContributionsQuery = (
         contributions: data.contributions.map((contribution) => ({
           ...contribution,
           amount: normalizeDecimal(contribution.amount) ?? '0',
+          type: contribution.type,
+          amountInBaseCurrency: normalizeDecimal(
+            contribution.amountInBaseCurrency,
+          ),
+          exchangeRate: normalizeDecimal(contribution.exchangeRate),
+          baseCurrency: contribution.baseCurrency || null,
           timestamp: normalizeDate(contribution.timestamp) ?? '',
           createdAt: normalizeDate(contribution.createdAt) ?? '',
           updatedAt: normalizeDate(contribution.updatedAt) ?? '',
@@ -240,6 +278,9 @@ export const useInvestmentValuationsQuery = (
         valuations: data.valuations.map((valuation) => ({
           ...valuation,
           price: normalizeDecimal(valuation.price) ?? '0',
+          priceInBaseCurrency: normalizeDecimal(valuation.priceInBaseCurrency),
+          exchangeRate: normalizeDecimal(valuation.exchangeRate),
+          baseCurrency: valuation.baseCurrency || null,
           timestamp: normalizeDate(valuation.timestamp) ?? '',
           fetchedAt: normalizeDate(valuation.fetchedAt),
           createdAt: normalizeDate(valuation.createdAt) ?? '',

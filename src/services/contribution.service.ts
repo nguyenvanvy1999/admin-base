@@ -14,6 +14,10 @@ const CONTRIBUTION_SELECT = {
   accountId: true,
   amount: true,
   currencyId: true,
+  type: true,
+  amountInBaseCurrency: true,
+  exchangeRate: true,
+  baseCurrencyId: true,
   timestamp: true,
   note: true,
   createdAt: true,
@@ -25,6 +29,9 @@ const CONTRIBUTION_SELECT = {
     },
   },
   currency: {
+    select: CURRENCY_SELECT_BASIC,
+  },
+  baseCurrency: {
     select: CURRENCY_SELECT_BASIC,
   },
 } as const;
@@ -61,6 +68,10 @@ export class InvestmentContributionService {
         accountId: data.accountId ?? null,
         amount: data.amount,
         currencyId: data.currencyId,
+        type: data.type,
+        amountInBaseCurrency: data.amountInBaseCurrency ?? null,
+        exchangeRate: data.exchangeRate ?? null,
+        baseCurrencyId: data.baseCurrencyId ?? null,
         timestamp,
         note: data.note ?? null,
       },

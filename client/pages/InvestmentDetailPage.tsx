@@ -28,7 +28,11 @@ import {
   Tabs,
   Text,
 } from '@mantine/core';
-import { InvestmentMode, TradeSide } from '@server/generated/prisma/enums';
+import {
+  ContributionType,
+  InvestmentMode,
+  TradeSide,
+} from '@server/generated/prisma/enums';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
@@ -96,12 +100,19 @@ const InvestmentDetailPage = () => {
     ? `${investment.currency.symbol} `
     : '';
 
-  const formatCurrency = (value: number | null | undefined) => {
+  const baseCurrencySymbol = investment?.baseCurrency?.symbol
+    ? `${investment.baseCurrency.symbol} `
+    : '';
+
+  const formatCurrency = (
+    value: number | null | undefined,
+    prefix?: string,
+  ) => {
     if (value === null || value === undefined) return '--';
     return (
       <NumberFormatter
         value={value}
-        prefix={currencySymbol}
+        prefix={prefix ?? currencySymbol}
         thousandSeparator=","
         decimalScale={2}
       />
@@ -177,6 +188,24 @@ const InvestmentDetailPage = () => {
         format: 'date',
       },
       {
+        accessor: 'type',
+        title: 'investments.contribution.type',
+        render: (value: ContributionType) => (
+          <Badge
+            color={value === ContributionType.deposit ? 'green' : 'red'}
+            variant="light"
+          >
+            {value === ContributionType.deposit
+              ? t('investments.contribution.deposit', {
+                  defaultValue: 'Deposit',
+                })
+              : t('investments.contribution.withdrawal', {
+                  defaultValue: 'Withdrawal',
+                })}
+          </Badge>
+        ),
+      },
+      {
         accessor: 'amount',
         title: 'investments.contribution.amount',
         render: (value) => formatCurrency(parseFloat(String(value))),
@@ -192,7 +221,7 @@ const InvestmentDetailPage = () => {
         ellipsis: true,
       },
     ],
-    [formatCurrency],
+    [formatCurrency, t],
   );
 
   const valuationColumns = useMemo(
@@ -356,6 +385,128 @@ const InvestmentDetailPage = () => {
                 </Text>
               </Card>
             </div>
+
+            {investment?.baseCurrencyId && position && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
+                <Card shadow="sm" padding="lg" withBorder>
+                  <Text size="sm" c="dimmed">
+                    {t('investments.position.costBasisInBaseCurrency', {
+                      defaultValue: 'Cost Basis (Base Currency)',
+                    })}
+                  </Text>
+                  <Text size="lg" fw={600}>
+                    {position.costBasisInBaseCurrency !== undefined
+                      ? formatCurrency(
+                          position.costBasisInBaseCurrency,
+                          baseCurrencySymbol,
+                        )
+                      : '--'}
+                  </Text>
+                </Card>
+                <Card shadow="sm" padding="lg" withBorder>
+                  <Text size="sm" c="dimmed">
+                    {t('investments.position.realizedPnlInBaseCurrency', {
+                      defaultValue: 'Realized PnL (Base Currency)',
+                    })}
+                  </Text>
+                  <Text
+                    size="lg"
+                    fw={600}
+                    className={
+                      (position.realizedPnlInBaseCurrency ?? 0) >= 0
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }
+                  >
+                    {position.realizedPnlInBaseCurrency !== undefined
+                      ? formatCurrency(
+                          position.realizedPnlInBaseCurrency,
+                          baseCurrencySymbol,
+                        )
+                      : '--'}
+                  </Text>
+                </Card>
+                <Card shadow="sm" padding="lg" withBorder>
+                  <Text size="sm" c="dimmed">
+                    {t('investments.position.unrealizedPnlInBaseCurrency', {
+                      defaultValue: 'Unrealized PnL (Base Currency)',
+                    })}
+                  </Text>
+                  <Text
+                    size="lg"
+                    fw={600}
+                    className={
+                      (position.unrealizedPnlInBaseCurrency ?? 0) >= 0
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }
+                  >
+                    {position.unrealizedPnlInBaseCurrency !== undefined
+                      ? formatCurrency(
+                          position.unrealizedPnlInBaseCurrency,
+                          baseCurrencySymbol,
+                        )
+                      : '--'}
+                  </Text>
+                </Card>
+                <Card shadow="sm" padding="lg" withBorder>
+                  <Text size="sm" c="dimmed">
+                    {t('investments.position.exchangeRateGainLoss', {
+                      defaultValue: 'Exchange Rate Impact',
+                    })}
+                  </Text>
+                  <Text
+                    size="lg"
+                    fw={600}
+                    className={
+                      (position.exchangeRateGainLoss ?? 0) >= 0
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }
+                  >
+                    {position.exchangeRateGainLoss !== undefined
+                      ? formatCurrency(
+                          position.exchangeRateGainLoss,
+                          baseCurrencySymbol,
+                        )
+                      : '--'}
+                  </Text>
+                </Card>
+              </div>
+            )}
+
+            {investment?.baseCurrencyId &&
+              position?.lastValueInBaseCurrency !== undefined && (
+                <Card shadow="sm" padding="lg" withBorder mt="md">
+                  <Group justify="space-between">
+                    <div>
+                      <Text size="sm" c="dimmed">
+                        {t('investments.position.lastValueInBaseCurrency', {
+                          defaultValue: 'Market value (Base Currency)',
+                        })}
+                      </Text>
+                      <Text size="xl" fw={600}>
+                        {formatCurrency(
+                          position.lastValueInBaseCurrency,
+                          baseCurrencySymbol,
+                        )}
+                      </Text>
+                    </div>
+                    {position.currentExchangeRate !== undefined && (
+                      <div>
+                        <Text size="sm" c="dimmed">
+                          {t('investments.position.currentExchangeRate', {
+                            defaultValue: 'Current Exchange Rate',
+                          })}
+                        </Text>
+                        <Text size="lg" fw={600}>
+                          {position.currentExchangeRate.toFixed(6)}
+                        </Text>
+                      </div>
+                    )}
+                  </Group>
+                </Card>
+              )}
 
             <Card shadow="sm" padding="lg" withBorder mt="md">
               <Group justify="space-between">

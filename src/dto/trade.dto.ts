@@ -13,6 +13,9 @@ export const CreateInvestmentTradeDto = t.Object({
   transactionId: t.Optional(t.String()),
   priceCurrency: t.Optional(t.String()),
   priceInBaseCurrency: t.Optional(t.Number()),
+  amountInBaseCurrency: t.Optional(t.Number()),
+  exchangeRate: t.Optional(t.Number()),
+  baseCurrencyId: t.Optional(t.String()),
   priceSource: t.Optional(t.String()),
   priceFetchedAt: t.Optional(t.String({ format: 'date-time' })),
   meta: t.Optional(t.Any()),
@@ -59,11 +62,15 @@ export const InvestmentTradeDto = t.Object({
   transactionId: t.Nullable(t.String()),
   priceCurrency: t.Nullable(t.String()),
   priceInBaseCurrency: t.Nullable(t.Number()),
+  amountInBaseCurrency: t.Nullable(t.Number()),
+  exchangeRate: t.Nullable(t.Number()),
+  baseCurrencyId: t.Nullable(t.String()),
   priceSource: t.Nullable(t.String()),
   priceFetchedAt: t.Nullable(t.String()),
   meta: t.Nullable(t.Any()),
   account: InvestmentTradeAccountDto,
   currency: InvestmentTradeCurrencyDto,
+  baseCurrency: t.Nullable(InvestmentTradeCurrencyDto),
 });
 
 export const InvestmentTradePaginationDto = t.Object({

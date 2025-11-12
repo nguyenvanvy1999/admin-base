@@ -22,6 +22,9 @@ const TRADE_SELECT = {
   transactionId: true,
   priceCurrency: true,
   priceInBaseCurrency: true,
+  amountInBaseCurrency: true,
+  exchangeRate: true,
+  baseCurrencyId: true,
   priceSource: true,
   priceFetchedAt: true,
   meta: true,
@@ -32,6 +35,9 @@ const TRADE_SELECT = {
     },
   },
   currency: {
+    select: CURRENCY_SELECT_BASIC,
+  },
+  baseCurrency: {
     select: CURRENCY_SELECT_BASIC,
   },
 } as const;
@@ -92,6 +98,9 @@ export class InvestmentTradeService {
         transactionId: data.transactionId ?? null,
         priceCurrency: data.priceCurrency ?? null,
         priceInBaseCurrency: data.priceInBaseCurrency ?? null,
+        amountInBaseCurrency: data.amountInBaseCurrency ?? null,
+        exchangeRate: data.exchangeRate ?? null,
+        baseCurrencyId: data.baseCurrencyId ?? null,
         priceSource: data.priceSource ?? null,
         priceFetchedAt: priceFetchedAt ?? null,
         meta: data.meta ?? null,

@@ -49,6 +49,7 @@ const AddEditInvestmentDialog = ({
       assetType: InvestmentAssetType.coin,
       mode: InvestmentMode.priced,
       currencyId: '',
+      baseCurrencyId: '',
       extra: '',
     },
     onSubmit: async ({ value }) => {
@@ -77,6 +78,7 @@ const AddEditInvestmentDialog = ({
         assetType: value.assetType as InvestmentAssetType,
         mode: value.mode as InvestmentMode,
         currencyId: value.currencyId,
+        baseCurrencyId: value.baseCurrencyId || undefined,
         extra: parsedExtra ?? undefined,
       };
 
@@ -95,6 +97,7 @@ const AddEditInvestmentDialog = ({
       form.setFieldValue('assetType', investment.assetType);
       form.setFieldValue('mode', investment.mode);
       form.setFieldValue('currencyId', investment.currencyId);
+      form.setFieldValue('baseCurrencyId', investment.baseCurrencyId || '');
       form.setFieldValue(
         'extra',
         investment.extra ? JSON.stringify(investment.extra, null, 2) : '',
@@ -268,6 +271,29 @@ const AddEditInvestmentDialog = ({
                 />
               );
             }}
+          </form.Field>
+
+          <form.Field name="baseCurrencyId">
+            {(field) => (
+              <Select
+                label={t('investments.baseCurrency', {
+                  defaultValue: 'Base Currency (Optional)',
+                })}
+                placeholder={t('investments.baseCurrencyPlaceholder', {
+                  defaultValue:
+                    'Select base currency for multi-currency tracking',
+                })}
+                data={currencies.map((currency) => ({
+                  value: currency.id,
+                  label: `${currency.code} - ${currency.name}`,
+                }))}
+                value={field.state.value || null}
+                onChange={(value) => field.handleChange(value || '')}
+                onBlur={field.handleBlur}
+                searchable
+                clearable
+              />
+            )}
           </form.Field>
 
           <form.Field name="extra">

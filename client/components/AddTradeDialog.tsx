@@ -37,7 +37,9 @@ const AddTradeDialog = ({
   const { t } = useTranslation();
 
   const { data: accountsResponse } = useAccountsQuery({
-    currencyId: [investment.currencyId],
+    currencyId: investment.baseCurrencyId
+      ? [investment.baseCurrencyId]
+      : [investment.currencyId],
     limit: 100,
   });
 
@@ -50,6 +52,8 @@ const AddTradeDialog = ({
     [accountsResponse],
   );
 
+  const hasBaseCurrency = Boolean(investment.baseCurrencyId);
+
   const form = useForm({
     defaultValues: {
       side: TradeSide.buy,
@@ -59,6 +63,9 @@ const AddTradeDialog = ({
       quantity: 0,
       amount: 0,
       fee: 0,
+      amountInBaseCurrency: 0,
+      exchangeRate: 0,
+      baseCurrencyId: investment.baseCurrencyId || '',
     },
     onSubmit: async ({ value }) => {
       const payload: InvestmentTradeFormData = {
@@ -70,6 +77,17 @@ const AddTradeDialog = ({
         fee: Number(value.fee ?? 0),
         currencyId: investment.currencyId,
         accountId: value.accountId,
+        amountInBaseCurrency:
+          hasBaseCurrency && value.amountInBaseCurrency
+            ? Number(value.amountInBaseCurrency)
+            : undefined,
+        exchangeRate:
+          hasBaseCurrency && value.exchangeRate
+            ? Number(value.exchangeRate)
+            : undefined,
+        baseCurrencyId: hasBaseCurrency
+          ? investment.baseCurrencyId || undefined
+          : undefined,
       };
 
       await onSubmit(payload);
@@ -85,8 +103,11 @@ const AddTradeDialog = ({
       form.setFieldValue('quantity', 0);
       form.setFieldValue('amount', 0);
       form.setFieldValue('fee', 0);
+      form.setFieldValue('amountInBaseCurrency', 0);
+      form.setFieldValue('exchangeRate', 0);
+      form.setFieldValue('baseCurrencyId', investment.baseCurrencyId || '');
     }
-  }, [isOpen, form, accountOptions]);
+  }, [isOpen, form, accountOptions, investment.baseCurrencyId]);
 
   const handleAmountRecalculate = (price: number, quantity: number) => {
     const computed = Number(price) * Number(quantity);
@@ -248,6 +269,45 @@ const AddTradeDialog = ({
               />
             )}
           </form.Field>
+
+          {hasBaseCurrency && (
+            <>
+              <form.Field name="amountInBaseCurrency">
+                {(field) => (
+                  <NumberInput
+                    label={t('investments.trade.amountInBaseCurrency', {
+                      defaultValue: 'Amount in Base Currency',
+                    })}
+                    value={Number(field.state.value) || 0}
+                    min={0}
+                    decimalScale={2}
+                    thousandSeparator=","
+                    onChange={(value) =>
+                      field.handleChange(value !== null ? Number(value) : 0)
+                    }
+                    onBlur={field.handleBlur}
+                  />
+                )}
+              </form.Field>
+
+              <form.Field name="exchangeRate">
+                {(field) => (
+                  <NumberInput
+                    label={t('investments.trade.exchangeRate', {
+                      defaultValue: 'Exchange Rate',
+                    })}
+                    value={Number(field.state.value) || 0}
+                    min={0}
+                    decimalScale={6}
+                    onChange={(value) =>
+                      field.handleChange(value !== null ? Number(value) : 0)
+                    }
+                    onBlur={field.handleBlur}
+                  />
+                )}
+              </form.Field>
+            </>
+          )}
 
           <Text size="xs" c="dimmed">
             {t('investments.trade.currencyHint', {

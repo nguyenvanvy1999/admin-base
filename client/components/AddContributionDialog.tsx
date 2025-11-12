@@ -1,4 +1,5 @@
 import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
+import type { AccountFull } from '@client/types/account';
 import type {
   InvestmentContributionFormData,
   InvestmentFull,
@@ -13,6 +14,7 @@ import {
   Textarea,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
+import { ContributionType } from '@server/generated/prisma/enums';
 import { useForm } from '@tanstack/react-form';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -35,33 +37,53 @@ const AddContributionDialog = ({
   const { t } = useTranslation();
 
   const { data: accountsResponse } = useAccountsQuery({
-    currencyId: [investment.currencyId],
+    currencyId: investment.baseCurrencyId
+      ? [investment.baseCurrencyId]
+      : [investment.currencyId],
     limit: 100,
   });
 
   const accountOptions = useMemo(
     () =>
-      (accountsResponse?.accounts || []).map((account) => ({
+      (accountsResponse?.accounts || []).map((account: AccountFull) => ({
         value: account.id,
         label: `${account.name} (${account.currency.code})`,
       })),
     [accountsResponse],
   );
 
+  const hasBaseCurrency = Boolean(investment.baseCurrencyId);
+
   const form = useForm({
     defaultValues: {
       amount: 0,
+      type: ContributionType.deposit as ContributionType,
       timestamp: new Date().toISOString(),
       accountId: '',
       note: '',
+      amountInBaseCurrency: 0,
+      exchangeRate: 0,
+      baseCurrencyId: investment.baseCurrencyId || '',
     },
     onSubmit: async ({ value }) => {
       const payload: InvestmentContributionFormData = {
         amount: Number(value.amount),
         currencyId: investment.currencyId,
+        type: value.type as ContributionType,
         timestamp: value.timestamp,
         accountId: value.accountId ? value.accountId : undefined,
         note: value.note?.trim() ? value.note.trim() : undefined,
+        amountInBaseCurrency:
+          hasBaseCurrency && value.amountInBaseCurrency
+            ? Number(value.amountInBaseCurrency)
+            : undefined,
+        exchangeRate:
+          hasBaseCurrency && value.exchangeRate
+            ? Number(value.exchangeRate)
+            : undefined,
+        baseCurrencyId: hasBaseCurrency
+          ? investment.baseCurrencyId || undefined
+          : undefined,
       };
 
       await onSubmit(payload);
@@ -71,11 +93,15 @@ const AddContributionDialog = ({
   useEffect(() => {
     if (isOpen) {
       form.setFieldValue('amount', 0);
+      form.setFieldValue('type', ContributionType.deposit);
       form.setFieldValue('timestamp', new Date().toISOString());
       form.setFieldValue('accountId', accountOptions[0]?.value || '');
       form.setFieldValue('note', '');
+      form.setFieldValue('amountInBaseCurrency', 0);
+      form.setFieldValue('exchangeRate', 0);
+      form.setFieldValue('baseCurrencyId', investment.baseCurrencyId || '');
     }
-  }, [isOpen, form, accountOptions]);
+  }, [isOpen, form, accountOptions, investment.baseCurrencyId]);
 
   return (
     <Modal
@@ -93,6 +119,38 @@ const AddContributionDialog = ({
         }}
       >
         <Stack gap="md">
+          <form.Field name="type">
+            {(field) => (
+              <Select
+                label={t('investments.contribution.type', {
+                  defaultValue: 'Type',
+                })}
+                data={[
+                  {
+                    value: ContributionType.deposit,
+                    label: t('investments.contribution.deposit', {
+                      defaultValue: 'Deposit',
+                    }),
+                  },
+                  {
+                    value: ContributionType.withdrawal,
+                    label: t('investments.contribution.withdrawal', {
+                      defaultValue: 'Withdrawal',
+                    }),
+                  },
+                ]}
+                value={field.state.value || ContributionType.deposit}
+                onChange={(value) => {
+                  const selectedType =
+                    (value as ContributionType) || ContributionType.deposit;
+                  field.handleChange(selectedType);
+                }}
+                onBlur={field.handleBlur}
+                required
+              />
+            )}
+          </form.Field>
+
           <form.Field name="amount">
             {(field) => (
               <NumberInput
@@ -121,12 +179,18 @@ const AddContributionDialog = ({
                   field.state.value ? new Date(field.state.value) : new Date()
                 }
                 onChange={(value) => {
-                  const dateValue =
-                    value && value instanceof Date
-                      ? value.toISOString()
-                      : value
-                        ? new Date(value).toISOString()
-                        : new Date().toISOString();
+                  let dateValue: string;
+                  if (
+                    value &&
+                    typeof value === 'object' &&
+                    'toISOString' in value
+                  ) {
+                    dateValue = (value as Date).toISOString();
+                  } else if (value) {
+                    dateValue = new Date(value as string | Date).toISOString();
+                  } else {
+                    dateValue = new Date().toISOString();
+                  }
                   field.handleChange(dateValue);
                 }}
                 onBlur={field.handleBlur}
@@ -153,6 +217,43 @@ const AddContributionDialog = ({
               />
             )}
           </form.Field>
+
+          {hasBaseCurrency && (
+            <>
+              <form.Field name="amountInBaseCurrency">
+                {(field) => (
+                  <NumberInput
+                    label={t('investments.contribution.amountInBaseCurrency', {
+                      defaultValue: 'Amount in Base Currency',
+                    })}
+                    value={Number(field.state.value) || 0}
+                    decimalScale={2}
+                    thousandSeparator=","
+                    onChange={(value) =>
+                      field.handleChange(value !== null ? Number(value) : 0)
+                    }
+                    onBlur={field.handleBlur}
+                  />
+                )}
+              </form.Field>
+
+              <form.Field name="exchangeRate">
+                {(field) => (
+                  <NumberInput
+                    label={t('investments.contribution.exchangeRate', {
+                      defaultValue: 'Exchange Rate',
+                    })}
+                    value={Number(field.state.value) || 0}
+                    decimalScale={6}
+                    onChange={(value) =>
+                      field.handleChange(value !== null ? Number(value) : 0)
+                    }
+                    onBlur={field.handleBlur}
+                  />
+                )}
+              </form.Field>
+            </>
+          )}
 
           <form.Field name="note">
             {(field) => (

@@ -6,6 +6,9 @@ export const UpsertInvestmentValuationDto = t.Object({
   timestamp: t.String({ format: 'date-time' }),
   source: t.Optional(t.String()),
   fetchedAt: t.Optional(t.String({ format: 'date-time' })),
+  priceInBaseCurrency: t.Optional(t.Number()),
+  exchangeRate: t.Optional(t.Number()),
+  baseCurrencyId: t.Optional(t.String()),
 });
 
 export const ListInvestmentValuationsQueryDto = t.Object({
@@ -34,12 +37,16 @@ export const InvestmentValuationDto = t.Object({
   investmentId: t.String(),
   currencyId: t.String(),
   price: t.Number(),
+  priceInBaseCurrency: t.Nullable(t.Number()),
+  exchangeRate: t.Nullable(t.Number()),
+  baseCurrencyId: t.Nullable(t.String()),
   timestamp: t.String(),
   source: t.Nullable(t.String()),
   fetchedAt: t.Nullable(t.String()),
   createdAt: t.String(),
   updatedAt: t.String(),
   currency: InvestmentValuationCurrencyDto,
+  baseCurrency: t.Nullable(InvestmentValuationCurrencyDto),
 });
 
 export const InvestmentValuationPaginationDto = t.Object({

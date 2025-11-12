@@ -32,12 +32,17 @@ const AddValuationDialog = ({
 }: AddValuationDialogProps) => {
   const { t } = useTranslation();
 
+  const hasBaseCurrency = Boolean(investment.baseCurrencyId);
+
   const form = useForm({
     defaultValues: {
       price: 0,
       timestamp: new Date().toISOString(),
       source: '',
       fetchedAt: '',
+      priceInBaseCurrency: 0,
+      exchangeRate: 0,
+      baseCurrencyId: investment.baseCurrencyId || '',
     },
     onSubmit: async ({ value }) => {
       const payload: InvestmentValuationFormData = {
@@ -46,6 +51,17 @@ const AddValuationDialog = ({
         timestamp: value.timestamp,
         source: value.source?.trim() ? value.source.trim() : undefined,
         fetchedAt: value.fetchedAt?.trim() ? value.fetchedAt : undefined,
+        priceInBaseCurrency:
+          hasBaseCurrency && value.priceInBaseCurrency
+            ? Number(value.priceInBaseCurrency)
+            : undefined,
+        exchangeRate:
+          hasBaseCurrency && value.exchangeRate
+            ? Number(value.exchangeRate)
+            : undefined,
+        baseCurrencyId: hasBaseCurrency
+          ? investment.baseCurrencyId || undefined
+          : undefined,
       };
 
       await onSubmit(payload);
@@ -58,8 +74,11 @@ const AddValuationDialog = ({
       form.setFieldValue('timestamp', new Date().toISOString());
       form.setFieldValue('source', '');
       form.setFieldValue('fetchedAt', '');
+      form.setFieldValue('priceInBaseCurrency', 0);
+      form.setFieldValue('exchangeRate', 0);
+      form.setFieldValue('baseCurrencyId', investment.baseCurrencyId || '');
     }
-  }, [isOpen, form]);
+  }, [isOpen, form, investment.baseCurrencyId]);
 
   return (
     <Modal
@@ -119,6 +138,45 @@ const AddValuationDialog = ({
               />
             )}
           </form.Field>
+
+          {hasBaseCurrency && (
+            <>
+              <form.Field name="priceInBaseCurrency">
+                {(field) => (
+                  <NumberInput
+                    label={t('investments.valuation.priceInBaseCurrency', {
+                      defaultValue: 'Price in Base Currency',
+                    })}
+                    value={Number(field.state.value) || 0}
+                    min={0}
+                    decimalScale={6}
+                    thousandSeparator=","
+                    onChange={(value) =>
+                      field.handleChange(value !== null ? Number(value) : 0)
+                    }
+                    onBlur={field.handleBlur}
+                  />
+                )}
+              </form.Field>
+
+              <form.Field name="exchangeRate">
+                {(field) => (
+                  <NumberInput
+                    label={t('investments.valuation.exchangeRate', {
+                      defaultValue: 'Exchange Rate',
+                    })}
+                    value={Number(field.state.value) || 0}
+                    min={0}
+                    decimalScale={6}
+                    onChange={(value) =>
+                      field.handleChange(value !== null ? Number(value) : 0)
+                    }
+                    onBlur={field.handleBlur}
+                  />
+                )}
+              </form.Field>
+            </>
+          )}
 
           <form.Field name="source">
             {(field) => (

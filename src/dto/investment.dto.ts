@@ -11,6 +11,7 @@ export const UpsertInvestmentDto = t.Object({
   assetType: t.Enum(InvestmentAssetType),
   mode: t.Optional(t.Enum(InvestmentMode)),
   currencyId: t.String(),
+  baseCurrencyId: t.Optional(t.String()),
   extra: t.Optional(t.Any()),
 });
 
@@ -51,11 +52,13 @@ export const InvestmentDto = t.Object({
   assetType: t.Enum(InvestmentAssetType),
   mode: t.Enum(InvestmentMode),
   currencyId: t.String(),
+  baseCurrencyId: t.Nullable(t.String()),
   extra: t.Nullable(t.Any()),
   deletedAt: t.Nullable(t.String()),
   createdAt: t.String(),
   updatedAt: t.String(),
   currency: InvestmentCurrencyDto,
+  baseCurrency: t.Nullable(InvestmentCurrencyDto),
 });
 
 export const InvestmentPaginationDto = t.Object({
@@ -80,6 +83,12 @@ export const InvestmentPositionDto = t.Object({
   lastValue: t.Nullable(t.Number()),
   lastValuationAt: t.Nullable(t.String()),
   netContributions: t.Number(),
+  costBasisInBaseCurrency: t.Optional(t.Number()),
+  realizedPnlInBaseCurrency: t.Optional(t.Number()),
+  unrealizedPnlInBaseCurrency: t.Optional(t.Number()),
+  lastValueInBaseCurrency: t.Optional(t.Nullable(t.Number())),
+  currentExchangeRate: t.Optional(t.Nullable(t.Number())),
+  exchangeRateGainLoss: t.Optional(t.Nullable(t.Number())),
 });
 
 export const InvestmentLatestValuationDto = t.Object({
@@ -89,6 +98,8 @@ export const InvestmentLatestValuationDto = t.Object({
   currencyId: t.String(),
   source: t.Nullable(t.String()),
   fetchedAt: t.Nullable(t.String()),
+  priceInBaseCurrency: t.Nullable(t.String()),
+  exchangeRate: t.Nullable(t.String()),
 });
 
 export type InvestmentResponse = typeof InvestmentDto.static;

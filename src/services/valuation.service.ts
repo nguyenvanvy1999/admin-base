@@ -13,12 +13,18 @@ const VALUATION_SELECT = {
   investmentId: true,
   currencyId: true,
   price: true,
+  priceInBaseCurrency: true,
+  exchangeRate: true,
+  baseCurrencyId: true,
   timestamp: true,
   source: true,
   fetchedAt: true,
   createdAt: true,
   updatedAt: true,
   currency: {
+    select: CURRENCY_SELECT_BASIC,
+  },
+  baseCurrency: {
     select: CURRENCY_SELECT_BASIC,
   },
 } as const;
@@ -60,6 +66,9 @@ export class InvestmentValuationService {
         data: {
           price: data.price,
           currencyId: data.currencyId,
+          priceInBaseCurrency: data.priceInBaseCurrency ?? null,
+          exchangeRate: data.exchangeRate ?? null,
+          baseCurrencyId: data.baseCurrencyId ?? null,
           source: data.source ?? null,
           fetchedAt,
         },
@@ -73,6 +82,9 @@ export class InvestmentValuationService {
         investmentId,
         price: data.price,
         currencyId: data.currencyId,
+        priceInBaseCurrency: data.priceInBaseCurrency ?? null,
+        exchangeRate: data.exchangeRate ?? null,
+        baseCurrencyId: data.baseCurrencyId ?? null,
         timestamp,
         source: data.source ?? null,
         fetchedAt,

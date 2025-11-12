@@ -1,11 +1,16 @@
+import { ContributionType } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
 
 export const CreateInvestmentContributionDto = t.Object({
   amount: t.Number(),
   currencyId: t.String(),
+  type: t.Enum(ContributionType),
   timestamp: t.String({ format: 'date-time' }),
   accountId: t.Optional(t.String()),
   note: t.Optional(t.String()),
+  amountInBaseCurrency: t.Optional(t.Number()),
+  exchangeRate: t.Optional(t.Number()),
+  baseCurrencyId: t.Optional(t.String()),
 });
 
 export const ListInvestmentContributionsQueryDto = t.Object({
@@ -41,12 +46,17 @@ export const InvestmentContributionDto = t.Object({
   accountId: t.Nullable(t.String()),
   amount: t.Number(),
   currencyId: t.String(),
+  type: t.Enum(ContributionType),
+  amountInBaseCurrency: t.Nullable(t.Number()),
+  exchangeRate: t.Nullable(t.Number()),
+  baseCurrencyId: t.Nullable(t.String()),
   timestamp: t.String(),
   note: t.Nullable(t.String()),
   createdAt: t.String(),
   updatedAt: t.String(),
   account: t.Nullable(InvestmentContributionAccountDto),
   currency: InvestmentContributionCurrencyDto,
+  baseCurrency: t.Nullable(InvestmentContributionCurrencyDto),
 });
 
 export const InvestmentContributionPaginationDto = t.Object({
