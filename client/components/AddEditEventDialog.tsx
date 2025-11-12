@@ -23,8 +23,9 @@ type AddEditEventDialogProps = {
   isOpen: boolean;
   onClose: () => void;
   event: EventResponse | null;
-  onSubmit: (data: IUpsertEventDto) => void;
+  onSubmit: (data: IUpsertEventDto, saveAndAdd?: boolean) => void;
   isLoading?: boolean;
+  resetTrigger?: number;
 };
 
 const AddEditEventDialog = ({
@@ -33,6 +34,7 @@ const AddEditEventDialog = ({
   event,
   onSubmit,
   isLoading = false,
+  resetTrigger,
 }: AddEditEventDialogProps) => {
   const { t } = useTranslation();
   const isEditMode = !!event;
@@ -63,6 +65,12 @@ const AddEditEventDialog = ({
     }
   }, [event, isOpen, reset]);
 
+  useEffect(() => {
+    if (resetTrigger && resetTrigger > 0 && !event && isOpen) {
+      reset(defaultValues);
+    }
+  }, [resetTrigger, event, isOpen, reset]);
+
   const onSubmitForm = handleSubmit((data) => {
     const submitData: IUpsertEventDto = {
       name: data.name.trim(),
@@ -77,7 +85,20 @@ const AddEditEventDialog = ({
       submitData.endAt = data.endAt;
     }
 
-    onSubmit(submitData);
+    onSubmit(submitData, false);
+  });
+
+  const onSubmitFormAndAdd = handleSubmit((data) => {
+    const submitData: IUpsertEventDto = {
+      name: data.name.trim(),
+      startAt: data.startAt,
+    };
+
+    if (data.endAt && data.endAt.trim() !== '') {
+      submitData.endAt = data.endAt;
+    }
+
+    onSubmit(submitData, true);
   });
 
   return (
@@ -160,6 +181,19 @@ const AddEditEventDialog = ({
             >
               {t('common.cancel')}
             </Button>
+            {!isEditMode && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSubmitFormAndAdd();
+                }}
+                disabled={isLoading}
+              >
+                {t('common.saveAndAdd')}
+              </Button>
+            )}
             <Button type="submit" disabled={isLoading}>
               {isLoading
                 ? t('common.saving', { defaultValue: 'Saving...' })

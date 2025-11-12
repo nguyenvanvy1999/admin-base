@@ -54,6 +54,7 @@ const EntityPage = () => {
     [],
   );
   const [selectedRecords, setSelectedRecords] = useState<EntityResponse[]>([]);
+  const [resetTrigger, setResetTrigger] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'type' | 'createdAt'>(
@@ -111,14 +112,22 @@ const EntityPage = () => {
     setEntityToDelete(null);
   };
 
-  const handleSubmitForm = async (formData: IUpsertEntityDto) => {
+  const handleSubmitForm = async (
+    formData: IUpsertEntityDto,
+    saveAndAdd?: boolean,
+  ) => {
     try {
       if (formData.id) {
         await updateMutation.mutateAsync(formData);
       } else {
         await createMutation.mutateAsync(formData);
       }
-      handleDialogClose();
+      if (saveAndAdd) {
+        setSelectedEntity(null);
+        setResetTrigger((prev) => prev + 1);
+      } else {
+        handleDialogClose();
+      }
     } catch {
       // Error is already handled by mutation's onError callback
     }
@@ -265,6 +274,7 @@ const EntityPage = () => {
           entity={selectedEntity}
           onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
+          resetTrigger={resetTrigger}
         />
       )}
 

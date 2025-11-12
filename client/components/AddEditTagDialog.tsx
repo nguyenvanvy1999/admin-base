@@ -22,8 +22,9 @@ type AddEditTagDialogProps = {
   isOpen: boolean;
   onClose: () => void;
   tag: TagResponse | null;
-  onSubmit: (data: IUpsertTagDto) => void;
+  onSubmit: (data: IUpsertTagDto, saveAndAdd?: boolean) => void;
   isLoading?: boolean;
+  resetTrigger?: number;
 };
 
 const AddEditTagDialog = ({
@@ -32,6 +33,7 @@ const AddEditTagDialog = ({
   tag,
   onSubmit,
   isLoading = false,
+  resetTrigger,
 }: AddEditTagDialogProps) => {
   const { t } = useTranslation();
   const isEditMode = !!tag;
@@ -58,6 +60,12 @@ const AddEditTagDialog = ({
     }
   }, [tag, isOpen, reset]);
 
+  useEffect(() => {
+    if (resetTrigger && resetTrigger > 0 && !tag && isOpen) {
+      reset(defaultValues);
+    }
+  }, [resetTrigger, tag, isOpen, reset]);
+
   const onSubmitForm = handleSubmit((data) => {
     const submitData: IUpsertTagDto = {
       name: data.name.trim(),
@@ -71,7 +79,19 @@ const AddEditTagDialog = ({
       submitData.description = data.description.trim();
     }
 
-    onSubmit(submitData);
+    onSubmit(submitData, false);
+  });
+
+  const onSubmitFormAndAdd = handleSubmit((data) => {
+    const submitData: IUpsertTagDto = {
+      name: data.name.trim(),
+    };
+
+    if (data.description && data.description.trim() !== '') {
+      submitData.description = data.description.trim();
+    }
+
+    onSubmit(submitData, true);
   });
 
   return (
@@ -120,6 +140,19 @@ const AddEditTagDialog = ({
             >
               {t('common.cancel')}
             </Button>
+            {!isEditMode && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSubmitFormAndAdd();
+                }}
+                disabled={isLoading}
+              >
+                {t('common.saveAndAdd')}
+              </Button>
+            )}
             <Button type="submit" disabled={isLoading}>
               {isLoading
                 ? t('common.saving', { defaultValue: 'Saving...' })

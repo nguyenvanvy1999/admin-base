@@ -27,8 +27,9 @@ type AddEditEntityDialogProps = {
   isOpen: boolean;
   onClose: () => void;
   entity: EntityResponse | null;
-  onSubmit: (data: IUpsertEntityDto) => void;
+  onSubmit: (data: IUpsertEntityDto, saveAndAdd?: boolean) => void;
   isLoading?: boolean;
+  resetTrigger?: number;
 };
 
 const AddEditEntityDialog = ({
@@ -37,6 +38,7 @@ const AddEditEntityDialog = ({
   entity,
   onSubmit,
   isLoading = false,
+  resetTrigger,
 }: AddEditEntityDialogProps) => {
   const { t } = useTranslation();
   const isEditMode = !!entity;
@@ -71,6 +73,12 @@ const AddEditEntityDialog = ({
     }
   }, [entity, isOpen, reset]);
 
+  useEffect(() => {
+    if (resetTrigger && resetTrigger > 0 && !entity && isOpen) {
+      reset(defaultValues);
+    }
+  }, [resetTrigger, entity, isOpen, reset]);
+
   const onSubmitForm = handleSubmit((data) => {
     const submitData: IUpsertEntityDto = {
       name: data.name.trim(),
@@ -97,7 +105,32 @@ const AddEditEntityDialog = ({
       submitData.note = data.note.trim();
     }
 
-    onSubmit(submitData);
+    onSubmit(submitData, false);
+  });
+
+  const onSubmitFormAndAdd = handleSubmit((data) => {
+    const submitData: IUpsertEntityDto = {
+      name: data.name.trim(),
+      type: data.type,
+    };
+
+    if (data.phone && data.phone.trim() !== '') {
+      submitData.phone = data.phone.trim();
+    }
+
+    if (data.email && data.email.trim() !== '') {
+      submitData.email = data.email.trim();
+    }
+
+    if (data.address && data.address.trim() !== '') {
+      submitData.address = data.address.trim();
+    }
+
+    if (data.note && data.note.trim() !== '') {
+      submitData.note = data.note.trim();
+    }
+
+    onSubmit(submitData, true);
   });
 
   return (
@@ -210,6 +243,19 @@ const AddEditEntityDialog = ({
             >
               {t('common.cancel')}
             </Button>
+            {!isEditMode && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSubmitFormAndAdd();
+                }}
+                disabled={isLoading}
+              >
+                {t('common.saveAndAdd')}
+              </Button>
+            )}
             <Button type="submit" disabled={isLoading}>
               {isLoading
                 ? t('common.saving', { defaultValue: 'Saving...' })

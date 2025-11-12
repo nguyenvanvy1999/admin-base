@@ -46,6 +46,7 @@ const EventPage = () => {
   const [isDeleteManyDialogOpen, setIsDeleteManyDialogOpen] = useState(false);
   const [eventsToDeleteMany, setEventsToDeleteMany] = useState<string[]>([]);
   const [selectedRecords, setSelectedRecords] = useState<EventResponse[]>([]);
+  const [resetTrigger, setResetTrigger] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<
@@ -102,14 +103,22 @@ const EventPage = () => {
     setEventToDelete(null);
   };
 
-  const handleSubmitForm = async (formData: IUpsertEventDto) => {
+  const handleSubmitForm = async (
+    formData: IUpsertEventDto,
+    saveAndAdd?: boolean,
+  ) => {
     try {
       if (formData.id) {
         await updateMutation.mutateAsync(formData);
       } else {
         await createMutation.mutateAsync(formData);
       }
-      handleDialogClose();
+      if (saveAndAdd) {
+        setSelectedEvent(null);
+        setResetTrigger((prev) => prev + 1);
+      } else {
+        handleDialogClose();
+      }
     } catch {
       // Error is already handled by mutation's onError callback
     }
@@ -235,6 +244,7 @@ const EventPage = () => {
           event={selectedEvent}
           onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
+          resetTrigger={resetTrigger}
         />
       )}
 

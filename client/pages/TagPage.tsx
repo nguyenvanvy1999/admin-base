@@ -43,6 +43,7 @@ const TagPage = () => {
   const [isDeleteManyDialogOpen, setIsDeleteManyDialogOpen] = useState(false);
   const [tagsToDeleteMany, setTagsToDeleteMany] = useState<string[]>([]);
   const [selectedRecords, setSelectedRecords] = useState<TagResponse[]>([]);
+  const [resetTrigger, setResetTrigger] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'createdAt'>('createdAt');
@@ -94,7 +95,10 @@ const TagPage = () => {
     setTagToDelete(null);
   };
 
-  const handleSubmitForm = async (formData: IUpsertTagDto) => {
+  const handleSubmitForm = async (
+    formData: IUpsertTagDto,
+    saveAndAdd?: boolean,
+  ) => {
     try {
       if (formData.id) {
         await updateMutation.mutateAsync(
@@ -103,7 +107,12 @@ const TagPage = () => {
       } else {
         await createMutation.mutateAsync(formData);
       }
-      handleDialogClose();
+      if (saveAndAdd) {
+        setSelectedTag(null);
+        setResetTrigger((prev) => prev + 1);
+      } else {
+        handleDialogClose();
+      }
     } catch {
       // Error is already handled by mutation's onError callback
     }
@@ -234,6 +243,7 @@ const TagPage = () => {
           tag={selectedTag}
           onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
+          resetTrigger={resetTrigger}
         />
       )}
 
