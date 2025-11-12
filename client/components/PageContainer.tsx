@@ -7,7 +7,7 @@ import {
   Tabs,
   Text,
 } from '@mantine/core';
-import { IconRefresh, IconX } from '@tabler/icons-react';
+import { IconRefresh, IconSearch, IconX } from '@tabler/icons-react';
 import type { ParseKeys } from 'i18next';
 import type { FC, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,7 @@ interface Props extends StackProps {
   onRefresh?: () => Promise<void>;
   refreshing?: boolean;
   onReset?: VoidFunction;
+  onSearch?: VoidFunction;
   onAdvancedFilter?: VoidFunction;
   tabs?: {
     key: string;
@@ -39,6 +40,7 @@ export const PageContainer: FC<Props> = ({
   onRefresh,
   refreshing,
   onReset,
+  onSearch,
   onAdvancedFilter,
   tabs,
   currentTabKey,
@@ -56,10 +58,21 @@ export const PageContainer: FC<Props> = ({
         buttonGroups ||
         onRefresh ||
         onReset ||
+        onSearch ||
         onAdvancedFilter) && (
         <Group justify="space-between" align="flex-start" mt={0}>
           {filterGroup && <Group>{filterGroup}</Group>}
           <Group>
+            {onSearch && (
+              <Button
+                variant="light"
+                size="sm"
+                leftSection={<IconSearch size={16} />}
+                onClick={onSearch}
+              >
+                {t('common.search', { defaultValue: 'Search' })}
+              </Button>
+            )}
             {onReset && (
               <Button
                 variant="light"

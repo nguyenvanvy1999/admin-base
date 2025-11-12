@@ -81,7 +81,7 @@ const AccountPage = () => {
     [page, limit, sortBy, sortOrder],
   );
 
-  const { data, isLoading } = useAccountsQuery(
+  const { data, isLoading, refetch } = useAccountsQuery(
     queryParams,
     formRef,
     handleSubmit,
@@ -130,6 +130,10 @@ const AccountPage = () => {
       await deleteMutation.mutateAsync(accountToDelete.id);
       handleDeleteDialogClose();
     }
+  };
+
+  const handleSearch = () => {
+    refetch();
   };
 
   const isSubmitting =
@@ -235,6 +239,7 @@ const AccountPage = () => {
           {t('accounts.addAccount')}
         </Button>
       }
+      onSearch={handleSearch}
       onReset={() => reset(defaultFilterValues)}
       stats={stats}
     >

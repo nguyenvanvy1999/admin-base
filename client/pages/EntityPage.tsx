@@ -91,7 +91,7 @@ const EntityPage = () => {
     [page, limit, sortBy, sortOrder],
   );
 
-  const { data, isLoading } = useEntitiesQuery(
+  const { data, isLoading, refetch } = useEntitiesQuery(
     queryParams,
     formRef,
     handleSubmit,
@@ -127,6 +127,10 @@ const EntityPage = () => {
 
   const handleConfirmDeleteMany = () => {
     handleConfirmDeleteManyBase(deleteManyMutation.mutateAsync);
+  };
+
+  const handleSearch = () => {
+    refetch();
   };
 
   const isSubmitting =
@@ -183,6 +187,7 @@ const EntityPage = () => {
           {t('entities.addEntity')}
         </Button>
       }
+      onSearch={handleSearch}
       onReset={() => reset(defaultFilterValues)}
     >
       <EntityTable

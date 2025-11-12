@@ -87,7 +87,7 @@ const TransactionPage = () => {
     [page, limit, sortBy, sortOrder],
   );
 
-  const { data, isLoading } = useTransactionsQuery(
+  const { data, isLoading, refetch } = useTransactionsQuery(
     queryParams,
     formRef,
     handleSubmit,
@@ -148,6 +148,10 @@ const TransactionPage = () => {
       await deleteMutation.mutateAsync(transactionToDelete.id);
       handleDeleteDialogClose();
     }
+  };
+
+  const handleSearch = () => {
+    refetch();
   };
 
   const isSubmitting =
@@ -299,6 +303,7 @@ const TransactionPage = () => {
           {t('transactions.addTransaction')}
         </Button>
       }
+      onSearch={handleSearch}
       onReset={() => reset(defaultFilterValues)}
       stats={stats}
     >

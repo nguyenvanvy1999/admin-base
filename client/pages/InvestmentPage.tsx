@@ -84,7 +84,7 @@ const InvestmentPage = () => {
     [page, limit, sortBy, sortOrder],
   );
 
-  const { data, isLoading } = useInvestmentsQuery(
+  const { data, isLoading, refetch } = useInvestmentsQuery(
     queryParams,
     formRef,
     handleSubmit,
@@ -141,6 +141,10 @@ const InvestmentPage = () => {
       await createMutation.mutateAsync(formData);
     }
     handleDialogClose();
+  };
+
+  const handleSearch = () => {
+    refetch();
   };
 
   const isSubmitting =
@@ -276,6 +280,7 @@ const InvestmentPage = () => {
           })}
         </Button>
       }
+      onSearch={handleSearch}
       onReset={() => reset(defaultFilterValues)}
       stats={stats}
     >

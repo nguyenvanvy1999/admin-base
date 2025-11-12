@@ -84,7 +84,11 @@ const TagPage = () => {
     [page, limit, sortBy, sortOrder],
   );
 
-  const { data, isLoading } = useTagsQuery(queryParams, formRef, handleSubmit);
+  const { data, isLoading, refetch } = useTagsQuery(
+    queryParams,
+    formRef,
+    handleSubmit,
+  );
   const createMutation = useCreateTagMutation();
   const updateMutation = useUpdateTagMutation();
   const deleteMutation = useDeleteTagMutation();
@@ -120,6 +124,10 @@ const TagPage = () => {
     handleConfirmDeleteManyBase(deleteManyMutation.mutateAsync);
   };
 
+  const handleSearch = () => {
+    refetch();
+  };
+
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
@@ -151,6 +159,7 @@ const TagPage = () => {
           {t('tags.addTag')}
         </Button>
       }
+      onSearch={handleSearch}
       onReset={() => reset(defaultFilterValues)}
     >
       <TagTable
