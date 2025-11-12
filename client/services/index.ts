@@ -3,6 +3,7 @@ export * from './AuthService';
 export * from './CategoryService';
 export * from './CurrencyService';
 export * from './EntityService';
+export * from './EventService';
 export * from './InvestmentService';
 export * from './TagService';
 export * from './TransactionService';

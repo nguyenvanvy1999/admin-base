@@ -18,6 +18,7 @@ const BaseTransactionDto = z.object({
   note: z.string().optional(),
   receiptUrl: z.string().optional(),
   metadata: z.unknown().optional(),
+  eventId: z.string().optional(),
 });
 
 export const IncomeTransactionDto = BaseTransactionDto.extend({
@@ -126,6 +127,15 @@ export const TransactionEntityDto = t.NoValidate(
   }),
 );
 
+export const TransactionEventDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    name: t.String(),
+    startAt: t.String(),
+    endAt: t.Nullable(t.String()),
+  }),
+);
+
 export const TransactionDetailDto = t.NoValidate(
   t.Object({
     id: t.String(),
@@ -138,6 +148,7 @@ export const TransactionDetailDto = t.NoValidate(
     categoryId: t.Nullable(t.String()),
     entityId: t.Nullable(t.String()),
     investmentId: t.Nullable(t.String()),
+    eventId: t.Nullable(t.String()),
     amount: t.String(),
     currencyId: t.String(),
     price: t.Nullable(t.String()),
@@ -156,6 +167,7 @@ export const TransactionDetailDto = t.NoValidate(
     toAccount: t.Nullable(TransactionAccountDto),
     category: t.Nullable(TransactionCategoryDto),
     entity: t.Nullable(TransactionEntityDto),
+    event: t.Nullable(TransactionEventDto),
     currency: t.Nullable(TransactionCurrencyDto),
   }),
 );

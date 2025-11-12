@@ -5,6 +5,7 @@ import {
   Category,
   ChevronLeft,
   CreditCard,
+  Event,
   Home,
   KeyboardArrowDown,
   Label,
@@ -182,6 +183,14 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
                     </NavLink>
 
                     <NavLink
+                      to="/events"
+                      className={({ isActive }) => menuItemClass(isActive)}
+                    >
+                      <Event className={iconClass} />
+                      <span className="ml-3">{t('sidebar.events')}</span>
+                    </NavLink>
+
+                    <NavLink
                       to="/tags"
                       className={({ isActive }) => menuItemClass(isActive)}
                     >
@@ -216,6 +225,13 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
                   title={t('sidebar.entities')}
                 >
                   <Business className={iconClass} />
+                </NavLink>
+                <NavLink
+                  to="/events"
+                  className={({ isActive }) => menuItemClass(isActive)}
+                  title={t('sidebar.events')}
+                >
+                  <Event className={iconClass} />
                 </NavLink>
                 <NavLink
                   to="/tags"

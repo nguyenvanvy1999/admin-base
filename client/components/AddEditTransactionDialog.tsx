@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import CategorySelect from './CategorySelect';
+import EventSelect from './EventSelect';
 import { NumberInput } from './NumberInput';
 import { Select } from './Select';
 import { Switch } from './Switch';
@@ -30,7 +31,7 @@ const baseSchema = z.object({
   date: z.string().min(1, 'transactions.dateRequired'),
   categoryId: z.string().optional(),
   entityId: z.string().nullable().optional(),
-  tripEvent: z.string().optional(),
+  eventId: z.string().nullable().optional(),
   note: z.string().optional(),
   fee: z.number().optional(),
   borrowToPay: z.boolean().optional(),
@@ -146,7 +147,7 @@ const AddEditTransactionDialog = ({
     date: new Date().toISOString(),
     categoryId: '',
     entityId: null,
-    tripEvent: '',
+    eventId: null,
     note: '',
     fee: 0,
     borrowToPay: false,
@@ -243,7 +244,7 @@ const AddEditTransactionDialog = ({
         entityId: transaction.entityId || null,
         note: transaction.note || '',
         fee: feeValue,
-        tripEvent: (transaction.metadata as any)?.tripEvent || '',
+        eventId: transaction.eventId || null,
         borrowToPay: (transaction.metadata as any)?.borrowToPay || false,
       });
       setFeeEnabled(feeValue > 0);
@@ -269,11 +270,11 @@ const AddEditTransactionDialog = ({
         ...(isEditMode && transaction ? { id: transaction.id } : {}),
         ...(data.note && data.note.trim() ? { note: data.note.trim() } : {}),
         ...(data.fee && data.fee > 0 ? { fee: data.fee } : {}),
-        ...(data.tripEvent || data.borrowToPay
+        ...(data.eventId ? { eventId: data.eventId } : {}),
+        ...(data.borrowToPay
           ? {
               metadata: {
                 ...(transaction?.metadata || {}),
-                tripEvent: data.tripEvent || undefined,
                 borrowToPay: data.borrowToPay || undefined,
               },
             }
@@ -492,13 +493,14 @@ const AddEditTransactionDialog = ({
 
               <ZodFormController
                 control={control}
-                name="tripEvent"
+                name="eventId"
                 render={({ field, fieldState: { error } }) => (
-                  <TextInput
-                    label={t('transactions.tripEvent')}
-                    placeholder={t('transactions.tripEventPlaceholder')}
-                    error={error}
-                    {...field}
+                  <EventSelect
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    error={error?.message}
+                    clearable
                   />
                 )}
               />

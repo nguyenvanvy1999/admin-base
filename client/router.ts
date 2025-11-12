@@ -4,6 +4,7 @@ import ProtectedPageLayout from './layouts';
 import AccountPage from './pages/AccountPage';
 import CategoryPage from './pages/CategoryPage';
 import EntityPage from './pages/EntityPage';
+import EventPage from './pages/EventPage';
 import HomePage from './pages/HomePage';
 import InvestmentDetailPage from './pages/InvestmentDetailPage';
 import InvestmentPage from './pages/InvestmentPage';
@@ -58,6 +59,10 @@ const router = createHashRouter([
       {
         path: '/entities',
         Component: EntityPage,
+      },
+      {
+        path: '/events',
+        Component: EventPage,
       },
       {
         path: '/tags',

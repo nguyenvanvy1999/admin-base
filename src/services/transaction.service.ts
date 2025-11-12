@@ -54,6 +54,7 @@ const TRANSACTION_SELECT = {
   categoryId: true,
   entityId: true,
   investmentId: true,
+  eventId: true,
   amount: true,
   currencyId: true,
   price: true,
@@ -96,6 +97,14 @@ const TRANSACTION_SELECT = {
       id: true,
       name: true,
       type: true,
+    },
+  },
+  event: {
+    select: {
+      id: true,
+      name: true,
+      startAt: true,
+      endAt: true,
     },
   },
   currency: { select: CURRENCY_SELECT_BASIC },
@@ -164,6 +173,17 @@ const formatEntityRecord = (entity: TransactionRecord['entity']) => {
   return { ...entity };
 };
 
+const formatEventRecord = (event: TransactionRecord['event']) => {
+  if (!event) {
+    return null;
+  }
+  return {
+    ...event,
+    startAt: event.startAt.toISOString(),
+    endAt: event.endAt ? event.endAt.toISOString() : null,
+  };
+};
+
 const formatTransactionRecord = (
   transaction: TransactionRecord,
 ): TransactionDetail => ({
@@ -173,6 +193,7 @@ const formatTransactionRecord = (
   categoryId: transaction.categoryId ?? null,
   entityId: transaction.entityId ?? null,
   investmentId: transaction.investmentId ?? null,
+  eventId: transaction.eventId ?? null,
   amount: decimalToString(transaction.amount),
   price: decimalToNullableString(transaction.price),
   priceInBaseCurrency: decimalToNullableString(transaction.priceInBaseCurrency),
@@ -190,6 +211,7 @@ const formatTransactionRecord = (
   toAccount: formatOptionalAccountRecord(transaction.toAccount),
   category: formatCategoryRecord(transaction.category),
   entity: formatEntityRecord(transaction.entity),
+  event: formatEventRecord(transaction.event),
   currency: formatCurrencyRecord(transaction.currency),
 });
 
@@ -524,6 +546,26 @@ class TransactionHandlerFactory {
     }
   }
 
+  private async validateEventOwnership(
+    userId: string,
+    eventId: string | undefined,
+  ) {
+    if (!eventId) {
+      return;
+    }
+    const event = await prisma.event.findFirst({
+      where: {
+        id: eventId,
+        userId,
+        deletedAt: null,
+      },
+      select: { id: true, userId: true },
+    });
+    if (!event) {
+      throw new Error('Event not found');
+    }
+  }
+
   private async prepareTransactionData(
     userId: string,
     data: IUpsertTransaction,
@@ -533,6 +575,10 @@ class TransactionHandlerFactory {
     const currencyId = data.currencyId ?? accountCurrencyId;
     const amountDecimal = new Decimal(data.amount);
     const feeDecimal = new Decimal(data.fee ?? 0);
+
+    if (data.eventId) {
+      await this.validateEventOwnership(userId, data.eventId);
+    }
 
     let feeInBaseCurrency: Decimal | null = data.feeInBaseCurrency
       ? new Decimal(data.feeInBaseCurrency)
@@ -563,6 +609,7 @@ class TransactionHandlerFactory {
       note: data.note ?? null,
       receiptUrl: data.receiptUrl ?? null,
       metadata: (data.metadata ?? null) as any,
+      eventId: data.eventId ?? null,
     };
 
     switch (data.type) {

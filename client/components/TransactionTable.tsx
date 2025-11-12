@@ -174,6 +174,25 @@ const TransactionTable = ({
         },
       },
       {
+        enableSorting: false,
+        accessor: (row) => row.event?.name,
+        title: 'transactions.event',
+        render: (value: unknown, row: TransactionDetail) => {
+          const event = row.event;
+          if (!event) {
+            return (
+              <div className="text-sm text-gray-500 dark:text-gray-400">-</div>
+            );
+          }
+
+          return (
+            <div className="text-sm text-gray-900 dark:text-gray-100">
+              {event.name}
+            </div>
+          );
+        },
+      },
+      {
         accessor: 'note',
         title: 'transactions.description',
         ellipsis: true,
