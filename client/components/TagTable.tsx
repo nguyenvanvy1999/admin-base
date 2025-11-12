@@ -55,6 +55,7 @@ const TagTable = ({
         accessor: 'description',
         title: 'tags.description',
         ellipsis: true,
+        enableSorting: false,
       },
       {
         title: 'tags.actions',

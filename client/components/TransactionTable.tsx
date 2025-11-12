@@ -93,12 +93,15 @@ const TransactionTable = ({
             {getTransactionTypeLabel(row.type)}
           </Badge>
         ),
+        enableSorting: false,
       },
       {
         accessor: (row) => row.account?.name ?? '',
         title: 'transactions.account',
+        enableSorting: false,
       },
       {
+        enableSorting: false,
         accessor: (row) => row.category?.name,
         title: 'transactions.category',
         render: (value: unknown, row: TransactionFull) => {
@@ -174,6 +177,7 @@ const TransactionTable = ({
         accessor: 'note',
         title: 'transactions.description',
         ellipsis: true,
+        enableSorting: false,
       },
       {
         title: 'transactions.actions',

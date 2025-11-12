@@ -229,7 +229,9 @@ export function DataTable<T extends { id: string } = { id: string }>({
         },
         size: toPx(col.width),
         minSize: toPx(col.minWidth),
-        filterVariant: col.filterVariant,
+        enableColumnFilter: accessorKey !== undefined || hasAccessorFn,
+        filterVariant:
+          col.filterVariant || (col.filterOptions ? 'select' : 'text'),
         filterSelectOptions: col.filterOptions,
         enableSorting: col.enableSorting !== false,
         mantineTableHeadCellProps: {
@@ -332,7 +334,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
       pagination: { pageIndex: currentPage, pageSize },
       rowSelection,
       sorting: sorting || [],
-      columnFilters: columnFilters || [],
+      ...(onColumnFiltersChange ? { columnFilters: columnFilters || [] } : {}),
     },
     manualPagination: true,
     rowCount: computedRowCount,
@@ -366,12 +368,19 @@ export function DataTable<T extends { id: string } = { id: string }>({
         typeof updater === 'function' ? updater(sorting || []) : updater;
       onSortingChange?.(next as SortingState);
     },
+    enableColumnFilters: true,
     manualFiltering: !!onColumnFiltersChange,
-    onColumnFiltersChange: (updater) => {
-      const next =
-        typeof updater === 'function' ? updater(columnFilters || []) : updater;
-      onColumnFiltersChange?.(next);
-    },
+    ...(onColumnFiltersChange
+      ? {
+          onColumnFiltersChange: (updater) => {
+            const next =
+              typeof updater === 'function'
+                ? updater(columnFilters || [])
+                : updater;
+            onColumnFiltersChange?.(next);
+          },
+        }
+      : {}),
     enableColumnPinning: !!pinLastColumn,
     initialState: pinLastColumn
       ? {

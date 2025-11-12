@@ -59,10 +59,12 @@ const InvestmentTable = ({
       {
         accessor: 'symbol',
         title: 'investments.symbol',
+        enableSorting: false,
       },
       {
         accessor: 'assetType',
         title: 'investments.assetType',
+        enableSorting: false,
         render: (value: unknown, row: InvestmentFull) => (
           <Badge color="blue" variant="light">
             {(() => {
@@ -86,6 +88,7 @@ const InvestmentTable = ({
       {
         accessor: 'mode',
         title: 'investments.mode',
+        enableSorting: false,
         render: (value: unknown, row: InvestmentFull) => (
           <Badge
             color={row.mode === InvestmentMode.priced ? 'green' : 'yellow'}
@@ -101,6 +104,11 @@ const InvestmentTable = ({
       {
         accessor: (row) => row.currency?.code ?? '',
         title: 'investments.currency',
+        enableSorting: false,
+      },
+      {
+        accessor: 'createdAt',
+        title: 'common.createdAt',
       },
       {
         accessor: 'updatedAt',
