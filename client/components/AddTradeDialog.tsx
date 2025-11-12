@@ -1,4 +1,5 @@
 import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
+import { useZodForm } from '@client/hooks/useZodForm';
 import type {
   InvestmentFull,
   InvestmentTradeFormData,
@@ -7,17 +8,33 @@ import {
   Button,
   Group,
   Modal,
-  NumberInput,
   SegmentedControl,
-  Select,
   Stack,
   Text,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { TradeSide } from '@server/generated/prisma/enums';
-import { useForm } from '@tanstack/react-form';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { z } from 'zod';
+import { NumberInput } from './NumberInput';
+import { Select } from './Select';
+import { ZodFormController } from './ZodFormController';
+
+const baseSchema = z.object({
+  side: z.nativeEnum(TradeSide),
+  timestamp: z.string().min(1, 'investments.trade.dateRequired'),
+  accountId: z.string().min(1, 'investments.trade.accountRequired'),
+  price: z.number().min(0.01, 'investments.trade.priceRequired'),
+  quantity: z.number().min(0.01, 'investments.trade.quantityRequired'),
+  amount: z.number().min(0.01, 'investments.trade.amountRequired'),
+  fee: z.number().optional(),
+  amountInBaseCurrency: z.number().optional(),
+  exchangeRate: z.number().optional(),
+  baseCurrencyId: z.string().optional(),
+});
+
+type FormValue = z.infer<typeof baseSchema>;
 
 type AddTradeDialogProps = {
   isOpen: boolean;
@@ -54,65 +71,76 @@ const AddTradeDialog = ({
 
   const hasBaseCurrency = Boolean(investment.baseCurrencyId);
 
-  const form = useForm({
-    defaultValues: {
-      side: TradeSide.buy,
-      timestamp: new Date().toISOString(),
-      accountId: '',
-      price: 0,
-      quantity: 0,
-      amount: 0,
-      fee: 0,
-      amountInBaseCurrency: 0,
-      exchangeRate: 0,
-      baseCurrencyId: investment.baseCurrencyId || '',
-    },
-    onSubmit: async ({ value }) => {
-      const payload: InvestmentTradeFormData = {
-        side: value.side as TradeSide,
-        timestamp: value.timestamp,
-        price: Number(value.price),
-        quantity: Number(value.quantity),
-        amount: Number(value.amount),
-        fee: Number(value.fee ?? 0),
-        currencyId: investment.currencyId,
-        accountId: value.accountId,
-        amountInBaseCurrency:
-          hasBaseCurrency && value.amountInBaseCurrency
-            ? Number(value.amountInBaseCurrency)
-            : undefined,
-        exchangeRate:
-          hasBaseCurrency && value.exchangeRate
-            ? Number(value.exchangeRate)
-            : undefined,
-        baseCurrencyId: hasBaseCurrency
-          ? investment.baseCurrencyId || undefined
-          : undefined,
-      };
+  const schema = hasBaseCurrency
+    ? baseSchema
+    : baseSchema.omit({
+        amountInBaseCurrency: true,
+        exchangeRate: true,
+        baseCurrencyId: true,
+      });
 
-      await onSubmit(payload);
-    },
+  const defaultValues: FormValue = {
+    side: TradeSide.buy,
+    timestamp: new Date().toISOString(),
+    accountId: '',
+    price: 0,
+    quantity: 0,
+    amount: 0,
+    fee: 0,
+    amountInBaseCurrency: 0,
+    exchangeRate: 0,
+    baseCurrencyId: investment.baseCurrencyId || '',
+  };
+
+  const { control, handleSubmit, reset, watch, setValue } = useZodForm({
+    zod: schema,
+    defaultValues,
   });
+
+  const priceValue = watch('price');
+  const quantityValue = watch('quantity');
+
+  useEffect(() => {
+    if (priceValue && quantityValue) {
+      const computed = Number(priceValue) * Number(quantityValue);
+      if (Number.isFinite(computed)) {
+        setValue('amount', computed);
+      }
+    }
+  }, [priceValue, quantityValue, setValue]);
 
   useEffect(() => {
     if (isOpen) {
-      form.setFieldValue('side', TradeSide.buy);
-      form.setFieldValue('timestamp', new Date().toISOString());
-      form.setFieldValue('accountId', accountOptions[0]?.value || '');
-      form.setFieldValue('price', 0);
-      form.setFieldValue('quantity', 0);
-      form.setFieldValue('amount', 0);
-      form.setFieldValue('fee', 0);
-      form.setFieldValue('amountInBaseCurrency', 0);
-      form.setFieldValue('exchangeRate', 0);
-      form.setFieldValue('baseCurrencyId', investment.baseCurrencyId || '');
+      reset({
+        ...defaultValues,
+        accountId: accountOptions[0]?.value || '',
+      });
     }
-  }, [isOpen, form, accountOptions, investment.baseCurrencyId]);
+  }, [isOpen, accountOptions, reset]);
 
-  const handleAmountRecalculate = (price: number, quantity: number) => {
-    const computed = Number(price) * Number(quantity);
-    form.setFieldValue('amount', Number.isFinite(computed) ? computed : 0);
-  };
+  const onSubmitForm = handleSubmit(async (data) => {
+    const payload: InvestmentTradeFormData = {
+      side: data.side,
+      timestamp: data.timestamp,
+      price: data.price,
+      quantity: data.quantity,
+      amount: data.amount,
+      fee: data.fee || 0,
+      currencyId: investment.currencyId,
+      accountId: data.accountId,
+      amountInBaseCurrency:
+        hasBaseCurrency && data.amountInBaseCurrency
+          ? data.amountInBaseCurrency
+          : undefined,
+      exchangeRate:
+        hasBaseCurrency && data.exchangeRate ? data.exchangeRate : undefined,
+      baseCurrencyId: hasBaseCurrency
+        ? investment.baseCurrencyId || undefined
+        : undefined,
+    };
+
+    await onSubmit(payload);
+  });
 
   return (
     <Modal
@@ -121,20 +149,17 @@ const AddTradeDialog = ({
       title={t('investments.addTrade', { defaultValue: 'Add trade' })}
       size="md"
     >
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          form.handleSubmit();
-        }}
-      >
+      <form onSubmit={onSubmitForm}>
         <Stack gap="md">
-          <form.Field name="side">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="side"
+            render={({ field }) => (
               <SegmentedControl
                 fullWidth
-                value={(field.state.value as TradeSide) ?? TradeSide.buy}
+                value={field.value || TradeSide.buy}
                 onChange={(value) =>
-                  field.handleChange((value as TradeSide) ?? TradeSide.buy)
+                  field.onChange((value as TradeSide) || TradeSide.buy)
                 }
                 data={[
                   {
@@ -150,32 +175,41 @@ const AddTradeDialog = ({
                 ]}
               />
             )}
-          </form.Field>
+          />
 
-          <form.Field name="timestamp">
-            {(field) => (
-              <DateTimePicker
-                label={t('investments.trade.date', { defaultValue: 'Date' })}
-                value={
-                  field.state.value ? new Date(field.state.value) : new Date()
-                }
-                onChange={(value) => {
-                  const dateValue =
-                    value && value instanceof Date
-                      ? value.toISOString()
-                      : value
-                        ? new Date(value).toISOString()
-                        : new Date().toISOString();
-                  field.handleChange(dateValue);
-                }}
-                onBlur={field.handleBlur}
-                valueFormat="DD/MM/YYYY HH:mm"
-              />
-            )}
-          </form.Field>
+          <ZodFormController
+            control={control}
+            name="timestamp"
+            render={({ field, fieldState: { error } }) => {
+              const dateValue = field.value
+                ? new Date(field.value)
+                : new Date();
+              return (
+                <DateTimePicker
+                  label={t('investments.trade.date', { defaultValue: 'Date' })}
+                  error={error}
+                  value={dateValue}
+                  onChange={(value) => {
+                    if (value) {
+                      field.onChange(
+                        (value instanceof Date
+                          ? value
+                          : new Date(value)
+                        ).toISOString(),
+                      );
+                    }
+                  }}
+                  valueFormat="DD/MM/YYYY HH:mm"
+                  required
+                />
+              );
+            }}
+          />
 
-          <form.Field name="accountId">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="accountId"
+            render={({ field, fieldState: { error } }) => (
               <Select
                 required
                 label={t('investments.trade.account', {
@@ -184,128 +218,128 @@ const AddTradeDialog = ({
                 placeholder={t('investments.trade.accountPlaceholder', {
                   defaultValue: 'Select account',
                 })}
-                data={accountOptions}
-                value={field.state.value || null}
-                onChange={(value) => field.handleChange(value ?? '')}
-                onBlur={field.handleBlur}
+                error={error}
+                items={accountOptions}
+                value={field.value || ''}
+                onChange={field.onChange}
                 searchable
               />
             )}
-          </form.Field>
+          />
 
-          <form.Field name="price">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="price"
+            render={({ field, fieldState: { error } }) => (
               <NumberInput
                 label={t('investments.trade.price', { defaultValue: 'Price' })}
-                value={Number(field.state.value) || 0}
+                error={error}
+                value={field.value ?? 0}
+                onChange={(value) => {
+                  const numeric = Number(value) || 0;
+                  field.onChange(numeric);
+                }}
                 min={0}
                 decimalScale={6}
                 thousandSeparator=","
-                onChange={(value) => {
-                  const numeric = Number(value) || 0;
-                  field.handleChange(numeric);
-                  const quantity = Number(form.getFieldValue('quantity') || 0);
-                  handleAmountRecalculate(numeric, quantity);
-                }}
-                onBlur={field.handleBlur}
                 required
               />
             )}
-          </form.Field>
+          />
 
-          <form.Field name="quantity">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="quantity"
+            render={({ field, fieldState: { error } }) => (
               <NumberInput
                 label={t('investments.trade.quantity', {
                   defaultValue: 'Quantity',
                 })}
-                value={Number(field.state.value) || 0}
+                error={error}
+                value={field.value ?? 0}
+                onChange={(value) => {
+                  const numeric = Number(value) || 0;
+                  field.onChange(numeric);
+                }}
                 min={0}
                 decimalScale={8}
                 thousandSeparator=","
-                onChange={(value) => {
-                  const numeric = Number(value) || 0;
-                  field.handleChange(numeric);
-                  const price = Number(form.getFieldValue('price') || 0);
-                  handleAmountRecalculate(price, numeric);
-                }}
-                onBlur={field.handleBlur}
                 required
               />
             )}
-          </form.Field>
+          />
 
-          <form.Field name="amount">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="amount"
+            render={({ field, fieldState: { error } }) => (
               <NumberInput
                 label={t('investments.trade.amount', {
                   defaultValue: 'Amount',
                 })}
-                value={Number(field.state.value) || 0}
+                error={error}
+                value={field.value ?? 0}
+                onChange={(value) => field.onChange(Number(value) || 0)}
                 min={0}
                 decimalScale={2}
                 thousandSeparator=","
-                onChange={(value) =>
-                  field.handleChange(value !== null ? Number(value) : 0)
-                }
-                onBlur={field.handleBlur}
                 required
               />
             )}
-          </form.Field>
+          />
 
-          <form.Field name="fee">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="fee"
+            render={({ field, fieldState: { error } }) => (
               <NumberInput
                 label={t('investments.trade.fee', { defaultValue: 'Fee' })}
-                value={Number(field.state.value) || 0}
+                error={error}
+                value={field.value ?? 0}
+                onChange={(value) => field.onChange(Number(value) || 0)}
                 min={0}
                 decimalScale={2}
                 thousandSeparator=","
-                onChange={(value) =>
-                  field.handleChange(value !== null ? Number(value) : 0)
-                }
-                onBlur={field.handleBlur}
               />
             )}
-          </form.Field>
+          />
 
           {hasBaseCurrency && (
             <>
-              <form.Field name="amountInBaseCurrency">
-                {(field) => (
+              <ZodFormController
+                control={control}
+                name="amountInBaseCurrency"
+                render={({ field, fieldState: { error } }) => (
                   <NumberInput
                     label={t('investments.trade.amountInBaseCurrency', {
                       defaultValue: 'Amount in Base Currency',
                     })}
-                    value={Number(field.state.value) || 0}
+                    error={error}
+                    value={field.value ?? 0}
+                    onChange={(value) => field.onChange(Number(value) || 0)}
                     min={0}
                     decimalScale={2}
                     thousandSeparator=","
-                    onChange={(value) =>
-                      field.handleChange(value !== null ? Number(value) : 0)
-                    }
-                    onBlur={field.handleBlur}
                   />
                 )}
-              </form.Field>
+              />
 
-              <form.Field name="exchangeRate">
-                {(field) => (
+              <ZodFormController
+                control={control}
+                name="exchangeRate"
+                render={({ field, fieldState: { error } }) => (
                   <NumberInput
                     label={t('investments.trade.exchangeRate', {
                       defaultValue: 'Exchange Rate',
                     })}
-                    value={Number(field.state.value) || 0}
+                    error={error}
+                    value={field.value ?? 0}
+                    onChange={(value) => field.onChange(Number(value) || 0)}
                     min={0}
                     decimalScale={6}
-                    onChange={(value) =>
-                      field.handleChange(value !== null ? Number(value) : 0)
-                    }
-                    onBlur={field.handleBlur}
                   />
                 )}
-              </form.Field>
+              />
             </>
           )}
 
@@ -316,39 +350,21 @@ const AddTradeDialog = ({
             })}
           </Text>
 
-          <form.Subscribe
-            selector={(state) => ({
-              isValid: state.isValid,
-              values: state.values,
-            })}
-          >
-            {({ isValid, values }) => {
-              const canSubmit =
-                isValid &&
-                values.accountId.trim() !== '' &&
-                Number(values.price) > 0 &&
-                Number(values.quantity) > 0 &&
-                Number(values.amount) > 0;
-
-              return (
-                <Group justify="flex-end">
-                  <Button
-                    variant="outline"
-                    onClick={onClose}
-                    type="button"
-                    disabled={isLoading}
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" disabled={isLoading || !canSubmit}>
-                    {isLoading
-                      ? t('common.saving', { defaultValue: 'Saving...' })
-                      : t('common.add')}
-                  </Button>
-                </Group>
-              );
-            }}
-          </form.Subscribe>
+          <Group justify="flex-end">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              type="button"
+              disabled={isLoading}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading
+                ? t('common.saving', { defaultValue: 'Saving...' })
+                : t('common.add')}
+            </Button>
+          </Group>
         </Stack>
       </form>
     </Modal>

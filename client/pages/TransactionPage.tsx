@@ -1,5 +1,6 @@
 import AddEditTransactionDialog from '@client/components/AddEditTransactionDialog';
 import CategoryMultiSelect from '@client/components/CategoryMultiSelect';
+import { PageContainer } from '@client/components/PageContainer';
 import { TextInput } from '@client/components/TextInput';
 import TransactionTable from '@client/components/TransactionTable';
 import {
@@ -175,278 +176,228 @@ const TransactionPage = () => {
 
   const summary = data?.summary;
 
-  const summaryContent = useMemo(() => {
-    if (!summary || summary.length === 0) return null;
-
-    return (
-      <>
-        {summary.map((item) => (
-          <div key={item.currency.id} className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Text size="sm" className="text-gray-600 dark:text-gray-400">
-                {t('transactions.totalIncome', { defaultValue: 'Tổng thu' })}:
-              </Text>
-              <span
-                className="font-bold"
-                style={{
-                  color: isDark ? 'rgb(34 197 94)' : 'rgb(21 128 61)',
-                }}
-              >
-                <NumberFormatter
-                  value={item.totalIncome}
-                  prefix={
-                    item.currency.symbol ? `${item.currency.symbol} ` : ''
-                  }
-                  thousandSeparator=","
-                  decimalScale={2}
-                />
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Text size="sm" className="text-gray-600 dark:text-gray-400">
-                {t('transactions.totalExpense', { defaultValue: 'Tổng chi' })}:
-              </Text>
-              <span
-                className="font-bold"
-                style={{
-                  color: isDark ? 'rgb(248 113 113)' : 'rgb(185 28 28)',
-                }}
-              >
-                <NumberFormatter
-                  value={item.totalExpense}
-                  prefix={
-                    item.currency.symbol ? `${item.currency.symbol} ` : ''
-                  }
-                  thousandSeparator=","
-                  decimalScale={2}
-                />
-              </span>
-            </div>
-          </div>
-        ))}
-      </>
-    );
-  }, [summary, isDark, t]);
+  const stats = useMemo(() => {
+    if (!summary || summary.length === 0) return undefined;
+    return summary.flatMap((item) => [
+      {
+        titleI18nKey: `transactions.totalIncome_${item.currency.code}` as any,
+        value: (
+          <NumberFormatter
+            value={item.totalIncome}
+            prefix={item.currency.symbol ? `${item.currency.symbol} ` : ''}
+            thousandSeparator=","
+            decimalScale={2}
+          />
+        ),
+        color: isDark ? 'rgb(34 197 94)' : 'rgb(21 128 61)',
+      },
+      {
+        titleI18nKey: `transactions.totalExpense_${item.currency.code}` as any,
+        value: (
+          <NumberFormatter
+            value={item.totalExpense}
+            prefix={item.currency.symbol ? `${item.currency.symbol} ` : ''}
+            thousandSeparator=","
+            decimalScale={2}
+          />
+        ),
+        color: isDark ? 'rgb(248 113 113)' : 'rgb(185 28 28)',
+      },
+    ]);
+  }, [summary, isDark]);
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {t('transactions.title')}
-              </h1>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                {t('transactions.subtitle')}
-              </p>
-            </div>
-            <Button onClick={handleAdd} disabled={isSubmitting}>
-              {t('transactions.addTransaction')}
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <TextInput
-                placeholder={t('transactions.search')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    setTypeFilterIds(typeFilterInput);
-                    setAccountFilterIds(accountFilterInput);
-                    setCategoryFilterIds(categoryFilterInput);
-                    setEntityFilterIds(entityFilterInput);
-                    setPage(1);
-                  }
-                }}
-                style={{ flex: 1, maxWidth: '300px' }}
-              />
-              <MultiSelect
-                value={typeFilterInput}
-                onChange={(value) => {
-                  setTypeFilterInput(value as TransactionType[]);
-                  setTypeFilterIds(value as TransactionType[]);
-                }}
-                placeholder={t('transactions.typePlaceholder')}
-                data={[
-                  {
-                    value: TransactionType.income,
-                    label: t('transactions.income'),
-                  },
-                  {
-                    value: TransactionType.expense,
-                    label: t('transactions.expense'),
-                  },
-                  {
-                    value: TransactionType.transfer,
-                    label: t('transactions.transfer'),
-                  },
-                ]}
-                style={{ maxWidth: '200px' }}
-              />
-              <MultiSelect
-                value={accountFilterInput}
-                onChange={(value) => {
-                  setAccountFilterInput(value);
-                  setAccountFilterIds(value);
-                }}
-                placeholder={t('transactions.accountPlaceholder')}
-                data={accountOptions}
-                style={{ maxWidth: '200px' }}
-              />
-              <CategoryMultiSelect
-                value={categoryFilterInput}
-                onChange={(value) => {
-                  setCategoryFilterInput(value);
-                  setCategoryFilterIds(value);
-                }}
-                placeholder={t('transactions.categoryPlaceholder')}
-                style={{ maxWidth: '200px' }}
-              />
-              <MultiSelect
-                value={entityFilterInput}
-                onChange={(value) => {
-                  setEntityFilterInput(value);
-                  setEntityFilterIds(value);
-                }}
-                placeholder={t('transactions.entityPlaceholder', {
-                  defaultValue: 'Select entities',
-                })}
-                data={entityOptions}
-                searchable
-                style={{ maxWidth: '200px' }}
-              />
-              {hasActiveFilters && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setTypeFilterInput([]);
-                    setTypeFilterIds([]);
-                    setAccountFilterInput([]);
-                    setAccountFilterIds([]);
-                    setCategoryFilterInput([]);
-                    setCategoryFilterIds([]);
-                    setEntityFilterInput([]);
-                    setEntityFilterIds([]);
-                    setPage(1);
-                  }}
-                >
-                  {t('common.reset', { defaultValue: 'Reset' })}
-                </Button>
-              )}
-            </div>
-
-            {summaryContent && (
-              <div className="flex flex-wrap items-center gap-4 text-sm py-2 border-b border-gray-200 dark:border-gray-700">
-                {summaryContent}
-              </div>
-            )}
-
-            <TransactionTable
-              transactions={data?.transactions || []}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              isLoading={isLoading}
-              recordsPerPage={limit}
-              recordsPerPageOptions={[10, 20, 50, 100]}
-              onRecordsPerPageChange={(size) => {
-                setLimit(size);
+    <PageContainer
+      filterGroup={
+        <>
+          <TextInput
+            placeholder={t('transactions.search')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setTypeFilterIds(typeFilterInput);
+                setAccountFilterIds(accountFilterInput);
+                setCategoryFilterIds(categoryFilterInput);
+                setEntityFilterIds(entityFilterInput);
                 setPage(1);
-              }}
-              page={page}
-              onPageChange={setPage}
-              totalRecords={data?.pagination?.total}
-              sorting={
-                sortBy
-                  ? [
-                      {
-                        id: sortBy,
-                        desc: sortOrder === 'desc',
-                      },
-                    ]
-                  : undefined
               }
-              onSortingChange={(updater) => {
-                const newSorting =
-                  typeof updater === 'function'
-                    ? updater(
-                        sortBy
-                          ? [{ id: sortBy, desc: sortOrder === 'desc' }]
-                          : [],
-                      )
-                    : updater;
-                if (newSorting.length > 0) {
-                  setSortBy(
-                    newSorting[0].id as
-                      | 'date'
-                      | 'amount'
-                      | 'type'
-                      | 'accountId',
-                  );
-                  setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
-                } else {
-                  setSortBy('date');
-                  setSortOrder('desc');
-                }
-                setPage(1);
-              }}
-            />
-          </div>
-        </div>
-
-        {isDialogOpen && (
-          <AddEditTransactionDialog
-            isOpen={isDialogOpen}
-            onClose={handleDialogClose}
-            transaction={selectedTransaction}
-            onSubmit={handleSubmit}
-            isLoading={isSubmitting}
-            accounts={accounts}
-            categories={categories}
-            entities={entities}
+            }}
+            style={{ flex: 1, maxWidth: '300px' }}
           />
-        )}
+          <MultiSelect
+            value={typeFilterInput}
+            onChange={(value) => {
+              setTypeFilterInput(value as TransactionType[]);
+              setTypeFilterIds(value as TransactionType[]);
+            }}
+            placeholder={t('transactions.typePlaceholder')}
+            data={[
+              {
+                value: TransactionType.income,
+                label: t('transactions.income'),
+              },
+              {
+                value: TransactionType.expense,
+                label: t('transactions.expense'),
+              },
+              {
+                value: TransactionType.transfer,
+                label: t('transactions.transfer'),
+              },
+            ]}
+            style={{ maxWidth: '200px' }}
+          />
+          <MultiSelect
+            value={accountFilterInput}
+            onChange={(value) => {
+              setAccountFilterInput(value);
+              setAccountFilterIds(value);
+            }}
+            placeholder={t('transactions.accountPlaceholder')}
+            data={accountOptions}
+            style={{ maxWidth: '200px' }}
+          />
+          <CategoryMultiSelect
+            value={categoryFilterInput}
+            onChange={(value) => {
+              setCategoryFilterInput(value);
+              setCategoryFilterIds(value);
+            }}
+            placeholder={t('transactions.categoryPlaceholder')}
+            style={{ maxWidth: '200px' }}
+          />
+          <MultiSelect
+            value={entityFilterInput}
+            onChange={(value) => {
+              setEntityFilterInput(value);
+              setEntityFilterIds(value);
+            }}
+            placeholder={t('transactions.entityPlaceholder', {
+              defaultValue: 'Select entities',
+            })}
+            data={entityOptions}
+            searchable
+            style={{ maxWidth: '200px' }}
+          />
+        </>
+      }
+      buttonGroups={
+        <Button onClick={handleAdd} disabled={isSubmitting}>
+          {t('transactions.addTransaction')}
+        </Button>
+      }
+      onReset={
+        hasActiveFilters
+          ? () => {
+              setSearchQuery('');
+              setTypeFilterInput([]);
+              setTypeFilterIds([]);
+              setAccountFilterInput([]);
+              setAccountFilterIds([]);
+              setCategoryFilterInput([]);
+              setCategoryFilterIds([]);
+              setEntityFilterInput([]);
+              setEntityFilterIds([]);
+              setPage(1);
+            }
+          : undefined
+      }
+      stats={stats}
+    >
+      <TransactionTable
+        transactions={data?.transactions || []}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        isLoading={isLoading}
+        recordsPerPage={limit}
+        recordsPerPageOptions={[10, 20, 50, 100]}
+        onRecordsPerPageChange={(size) => {
+          setLimit(size);
+          setPage(1);
+        }}
+        page={page}
+        onPageChange={setPage}
+        totalRecords={data?.pagination?.total}
+        sorting={
+          sortBy
+            ? [
+                {
+                  id: sortBy,
+                  desc: sortOrder === 'desc',
+                },
+              ]
+            : undefined
+        }
+        onSortingChange={(updater) => {
+          const newSorting =
+            typeof updater === 'function'
+              ? updater(
+                  sortBy ? [{ id: sortBy, desc: sortOrder === 'desc' }] : [],
+                )
+              : updater;
+          if (newSorting.length > 0) {
+            setSortBy(
+              newSorting[0].id as 'date' | 'amount' | 'type' | 'accountId',
+            );
+            setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
+          } else {
+            setSortBy('date');
+            setSortOrder('desc');
+          }
+          setPage(1);
+        }}
+      />
 
-        {isDeleteDialogOpen && transactionToDelete && (
-          <Modal
-            opened={isDeleteDialogOpen}
-            onClose={handleDeleteDialogClose}
-            title={t('transactions.deleteConfirmTitle')}
-            size="md"
-          >
-            <Text mb="md">
-              {t('transactions.deleteConfirmMessage')}
-              <br />
-              <strong>
-                {transactionToDelete.amount}{' '}
-                {transactionToDelete.account.currency.symbol}
-              </strong>
-            </Text>
-            <Group justify="flex-end" mt="md">
-              <Button
-                variant="outline"
-                onClick={handleDeleteDialogClose}
-                disabled={isSubmitting}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
-                color="red"
-                onClick={handleConfirmDelete}
-                disabled={isSubmitting}
-              >
-                {isSubmitting
-                  ? t('common.deleting', { defaultValue: 'Deleting...' })
-                  : t('common.delete')}
-              </Button>
-            </Group>
-          </Modal>
-        )}
-      </div>
-    </div>
+      {isDialogOpen && (
+        <AddEditTransactionDialog
+          isOpen={isDialogOpen}
+          onClose={handleDialogClose}
+          transaction={selectedTransaction}
+          onSubmit={handleSubmit}
+          isLoading={isSubmitting}
+          accounts={accounts}
+          categories={categories}
+          entities={entities}
+        />
+      )}
+
+      {isDeleteDialogOpen && transactionToDelete && (
+        <Modal
+          opened={isDeleteDialogOpen}
+          onClose={handleDeleteDialogClose}
+          title={t('transactions.deleteConfirmTitle')}
+          size="md"
+        >
+          <Text mb="md">
+            {t('transactions.deleteConfirmMessage')}
+            <br />
+            <strong>
+              {transactionToDelete.amount}{' '}
+              {transactionToDelete.account.currency.symbol}
+            </strong>
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={handleDeleteDialogClose}
+              disabled={isSubmitting}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDelete}
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? t('common.deleting', { defaultValue: 'Deleting...' })
+                : t('common.delete')}
+            </Button>
+          </Group>
+        </Modal>
+      )}
+    </PageContainer>
   );
 };
 

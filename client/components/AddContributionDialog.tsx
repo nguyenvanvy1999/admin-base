@@ -1,23 +1,33 @@
 import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
+import { useZodForm } from '@client/hooks/useZodForm';
 import type { AccountFull } from '@client/types/account';
 import type {
   InvestmentContributionFormData,
   InvestmentFull,
 } from '@client/types/investment';
-import {
-  Button,
-  Group,
-  Modal,
-  NumberInput,
-  Select,
-  Stack,
-  Textarea,
-} from '@mantine/core';
+import { Button, Group, Modal, Stack } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { ContributionType } from '@server/generated/prisma/enums';
-import { useForm } from '@tanstack/react-form';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { z } from 'zod';
+import { NumberInput } from './NumberInput';
+import { Select } from './Select';
+import { Textarea } from './Textarea';
+import { ZodFormController } from './ZodFormController';
+
+const baseSchema = z.object({
+  amount: z.number().min(0.01, 'investments.contribution.amountRequired'),
+  type: z.nativeEnum(ContributionType),
+  timestamp: z.string().min(1, 'investments.contribution.dateRequired'),
+  accountId: z.string().optional(),
+  note: z.string().optional(),
+  amountInBaseCurrency: z.number().optional(),
+  exchangeRate: z.number().optional(),
+  baseCurrencyId: z.string().optional(),
+});
+
+type FormValue = z.infer<typeof baseSchema>;
 
 type AddContributionDialogProps = {
   isOpen: boolean;
@@ -54,54 +64,60 @@ const AddContributionDialog = ({
 
   const hasBaseCurrency = Boolean(investment.baseCurrencyId);
 
-  const form = useForm({
-    defaultValues: {
-      amount: 0,
-      type: ContributionType.deposit as ContributionType,
-      timestamp: new Date().toISOString(),
-      accountId: '',
-      note: '',
-      amountInBaseCurrency: 0,
-      exchangeRate: 0,
-      baseCurrencyId: investment.baseCurrencyId || '',
-    },
-    onSubmit: async ({ value }) => {
-      const payload: InvestmentContributionFormData = {
-        amount: Number(value.amount),
-        currencyId: investment.currencyId,
-        type: value.type as ContributionType,
-        timestamp: value.timestamp,
-        accountId: value.accountId ? value.accountId : undefined,
-        note: value.note?.trim() ? value.note.trim() : undefined,
-        amountInBaseCurrency:
-          hasBaseCurrency && value.amountInBaseCurrency
-            ? Number(value.amountInBaseCurrency)
-            : undefined,
-        exchangeRate:
-          hasBaseCurrency && value.exchangeRate
-            ? Number(value.exchangeRate)
-            : undefined,
-        baseCurrencyId: hasBaseCurrency
-          ? investment.baseCurrencyId || undefined
-          : undefined,
-      };
+  const schema = hasBaseCurrency
+    ? baseSchema
+    : baseSchema.omit({
+        amountInBaseCurrency: true,
+        exchangeRate: true,
+        baseCurrencyId: true,
+      });
 
-      await onSubmit(payload);
-    },
+  const defaultValues: FormValue = {
+    amount: 0,
+    type: ContributionType.deposit,
+    timestamp: new Date().toISOString(),
+    accountId: '',
+    note: '',
+    amountInBaseCurrency: 0,
+    exchangeRate: 0,
+    baseCurrencyId: investment.baseCurrencyId || '',
+  };
+
+  const { control, handleSubmit, reset, watch } = useZodForm({
+    zod: schema,
+    defaultValues,
   });
 
   useEffect(() => {
     if (isOpen) {
-      form.setFieldValue('amount', 0);
-      form.setFieldValue('type', ContributionType.deposit);
-      form.setFieldValue('timestamp', new Date().toISOString());
-      form.setFieldValue('accountId', accountOptions[0]?.value || '');
-      form.setFieldValue('note', '');
-      form.setFieldValue('amountInBaseCurrency', 0);
-      form.setFieldValue('exchangeRate', 0);
-      form.setFieldValue('baseCurrencyId', investment.baseCurrencyId || '');
+      reset({
+        ...defaultValues,
+        accountId: accountOptions[0]?.value || '',
+      });
     }
-  }, [isOpen, form, accountOptions, investment.baseCurrencyId]);
+  }, [isOpen, accountOptions, reset]);
+
+  const onSubmitForm = handleSubmit(async (data) => {
+    const payload: InvestmentContributionFormData = {
+      amount: data.amount,
+      currencyId: investment.currencyId,
+      type: data.type,
+      timestamp: data.timestamp,
+      accountId: data.accountId || undefined,
+      note: data.note?.trim() || undefined,
+      amountInBaseCurrency:
+        hasBaseCurrency && data.amountInBaseCurrency
+          ? data.amountInBaseCurrency
+          : undefined,
+      exchangeRate:
+        hasBaseCurrency && data.exchangeRate ? data.exchangeRate : undefined,
+      baseCurrencyId: hasBaseCurrency
+        ? investment.baseCurrencyId || undefined
+        : undefined,
+    };
+
+    await onSubmit(payload);
+  });
 
   return (
     <Modal
@@ -112,20 +128,18 @@ const AddContributionDialog = ({
       })}
       size="md"
     >
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          form.handleSubmit();
-        }}
-      >
+      <form onSubmit={onSubmitForm}>
         <Stack gap="md">
-          <form.Field name="type">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="type"
+            render={({ field, fieldState: { error } }) => (
               <Select
                 label={t('investments.contribution.type', {
                   defaultValue: 'Type',
                 })}
-                data={[
+                error={error}
+                items={[
                   {
                     value: ContributionType.deposit,
                     label: t('investments.contribution.deposit', {
@@ -139,68 +153,66 @@ const AddContributionDialog = ({
                     }),
                   },
                 ]}
-                value={field.state.value || ContributionType.deposit}
-                onChange={(value) => {
-                  const selectedType =
-                    (value as ContributionType) || ContributionType.deposit;
-                  field.handleChange(selectedType);
-                }}
-                onBlur={field.handleBlur}
+                value={field.value || ContributionType.deposit}
+                onChange={field.onChange}
                 required
               />
             )}
-          </form.Field>
+          />
 
-          <form.Field name="amount">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="amount"
+            render={({ field, fieldState: { error } }) => (
               <NumberInput
                 label={t('investments.contribution.amount', {
                   defaultValue: 'Amount',
                 })}
-                value={Number(field.state.value) || 0}
+                error={error}
+                value={field.value ?? 0}
+                onChange={(value) => field.onChange(Number(value) || 0)}
                 decimalScale={2}
                 thousandSeparator=","
-                onChange={(value) =>
-                  field.handleChange(value !== null ? Number(value) : 0)
-                }
-                onBlur={field.handleBlur}
                 required
               />
             )}
-          </form.Field>
+          />
 
-          <form.Field name="timestamp">
-            {(field) => (
-              <DateTimePicker
-                label={t('investments.contribution.date', {
-                  defaultValue: 'Date',
-                })}
-                value={
-                  field.state.value ? new Date(field.state.value) : new Date()
-                }
-                onChange={(value) => {
-                  let dateValue: string;
-                  if (
-                    value &&
-                    typeof value === 'object' &&
-                    'toISOString' in value
-                  ) {
-                    dateValue = (value as Date).toISOString();
-                  } else if (value) {
-                    dateValue = new Date(value as string | Date).toISOString();
-                  } else {
-                    dateValue = new Date().toISOString();
-                  }
-                  field.handleChange(dateValue);
-                }}
-                onBlur={field.handleBlur}
-                valueFormat="DD/MM/YYYY HH:mm"
-              />
-            )}
-          </form.Field>
+          <ZodFormController
+            control={control}
+            name="timestamp"
+            render={({ field, fieldState: { error } }) => {
+              const dateValue = field.value
+                ? new Date(field.value)
+                : new Date();
+              return (
+                <DateTimePicker
+                  label={t('investments.contribution.date', {
+                    defaultValue: 'Date',
+                  })}
+                  error={error}
+                  value={dateValue}
+                  onChange={(value) => {
+                    if (value) {
+                      field.onChange(
+                        (value instanceof Date
+                          ? value
+                          : new Date(value)
+                        ).toISOString(),
+                      );
+                    }
+                  }}
+                  valueFormat="DD/MM/YYYY HH:mm"
+                  required
+                />
+              );
+            }}
+          />
 
-          <form.Field name="accountId">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="accountId"
+            render={({ field, fieldState: { error } }) => (
               <Select
                 label={t('investments.contribution.account', {
                   defaultValue: 'Linked account',
@@ -208,55 +220,57 @@ const AddContributionDialog = ({
                 placeholder={t('investments.contribution.accountPlaceholder', {
                   defaultValue: 'Select account (optional)',
                 })}
-                data={accountOptions}
-                value={field.state.value ? field.state.value : null}
-                onChange={(value) => field.handleChange(value ?? '')}
-                onBlur={field.handleBlur}
+                error={error}
+                items={accountOptions}
+                value={field.value || ''}
+                onChange={field.onChange}
                 searchable
                 clearable
               />
             )}
-          </form.Field>
+          />
 
           {hasBaseCurrency && (
             <>
-              <form.Field name="amountInBaseCurrency">
-                {(field) => (
+              <ZodFormController
+                control={control}
+                name="amountInBaseCurrency"
+                render={({ field, fieldState: { error } }) => (
                   <NumberInput
                     label={t('investments.contribution.amountInBaseCurrency', {
                       defaultValue: 'Amount in Base Currency',
                     })}
-                    value={Number(field.state.value) || 0}
+                    error={error}
+                    value={field.value ?? 0}
+                    onChange={(value) => field.onChange(Number(value) || 0)}
                     decimalScale={2}
                     thousandSeparator=","
-                    onChange={(value) =>
-                      field.handleChange(value !== null ? Number(value) : 0)
-                    }
-                    onBlur={field.handleBlur}
                   />
                 )}
-              </form.Field>
+              />
 
-              <form.Field name="exchangeRate">
-                {(field) => (
+              <ZodFormController
+                control={control}
+                name="exchangeRate"
+                render={({ field, fieldState: { error } }) => (
                   <NumberInput
                     label={t('investments.contribution.exchangeRate', {
                       defaultValue: 'Exchange Rate',
                     })}
-                    value={Number(field.state.value) || 0}
+                    error={error}
+                    value={field.value ?? 0}
+                    onChange={(value) => field.onChange(Number(value) || 0)}
                     decimalScale={6}
-                    onChange={(value) =>
-                      field.handleChange(value !== null ? Number(value) : 0)
-                    }
-                    onBlur={field.handleBlur}
                   />
                 )}
-              </form.Field>
+              />
             </>
           )}
 
-          <form.Field name="note">
-            {(field) => (
+          <ZodFormController
+            control={control}
+            name="note"
+            render={({ field, fieldState: { error } }) => (
               <Textarea
                 label={t('investments.contribution.note', {
                   defaultValue: 'Note',
@@ -264,45 +278,28 @@ const AddContributionDialog = ({
                 placeholder={t('investments.contribution.notePlaceholder', {
                   defaultValue: 'Optional note',
                 })}
+                error={error}
                 minRows={3}
-                value={field.state.value ?? ''}
-                onChange={(event) => field.handleChange(event.target.value)}
-                onBlur={field.handleBlur}
+                {...field}
               />
             )}
-          </form.Field>
+          />
 
-          <form.Subscribe
-            selector={(state) => ({
-              isValid: state.isValid,
-              values: state.values,
-            })}
-          >
-            {({ isValid, values }) => {
-              const canSubmit =
-                isValid &&
-                Number(values.amount) !== 0 &&
-                values.timestamp !== '';
-
-              return (
-                <Group justify="flex-end">
-                  <Button
-                    variant="outline"
-                    onClick={onClose}
-                    type="button"
-                    disabled={isLoading}
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" disabled={isLoading || !canSubmit}>
-                    {isLoading
-                      ? t('common.saving', { defaultValue: 'Saving...' })
-                      : t('common.add')}
-                  </Button>
-                </Group>
-              );
-            }}
-          </form.Subscribe>
+          <Group justify="flex-end">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              type="button"
+              disabled={isLoading}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading
+                ? t('common.saving', { defaultValue: 'Saving...' })
+                : t('common.add')}
+            </Button>
+          </Group>
         </Stack>
       </form>
     </Modal>

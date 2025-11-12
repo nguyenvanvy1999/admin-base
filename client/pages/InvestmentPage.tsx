@@ -1,5 +1,6 @@
 import AddEditInvestmentDialog from '@client/components/AddEditInvestmentDialog';
 import InvestmentTable from '@client/components/InvestmentTable';
+import { PageContainer } from '@client/components/PageContainer';
 import { TextInput } from '@client/components/TextInput';
 import {
   useCreateInvestmentMutation,
@@ -104,193 +105,159 @@ const InvestmentPage = () => {
   const isSubmitting =
     createMutation.isPending || updateMutation.isPending || isLoading;
 
-  const summary = data?.pagination
-    ? [
-        <Text
-          key="total"
-          size="sm"
-          className="text-gray-600 dark:text-gray-400"
-        >
-          {t('investments.totalCount', {
-            defaultValue: 'Total investments: {{count}}',
-            count: data.pagination.total,
-          })}
-        </Text>,
-      ]
-    : null;
+  const stats = useMemo(() => {
+    if (!data?.pagination) return undefined;
+    return [
+      {
+        titleI18nKey: 'investments.totalCount' as any,
+        value: String(data.pagination.total),
+        color: undefined,
+      },
+    ];
+  }, [data?.pagination]);
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {t('investments.title', { defaultValue: 'Investments' })}
-              </h1>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                {t('investments.subtitle', {
-                  defaultValue:
-                    'Track your assets, positions, and performance in one place.',
-                })}
-              </p>
-            </div>
-            <Button onClick={handleAdd} disabled={isSubmitting}>
-              {t('investments.addInvestment', {
-                defaultValue: 'New investment',
-              })}
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <TextInput
-                placeholder={t('investments.search', {
-                  defaultValue: 'Search investments',
-                })}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    setPage(1);
-                  }
-                }}
-                style={{ flex: 1, maxWidth: '300px' }}
-              />
-              <MultiSelect
-                value={assetTypes}
-                onChange={(value) =>
-                  setAssetTypes(value as InvestmentAssetType[])
-                }
-                placeholder={t('investments.assetFilter', {
-                  defaultValue: 'Asset type',
-                })}
-                data={[
-                  {
-                    value: InvestmentAssetType.coin,
-                    label: t('investments.asset.coin', {
-                      defaultValue: 'Coin',
-                    }),
-                  },
-                  {
-                    value: InvestmentAssetType.ccq,
-                    label: t('investments.asset.ccq', {
-                      defaultValue: 'Mutual fund',
-                    }),
-                  },
-                  {
-                    value: InvestmentAssetType.custom,
-                    label: t('investments.asset.custom', {
-                      defaultValue: 'Custom',
-                    }),
-                  },
-                ]}
-                style={{ maxWidth: '200px' }}
-              />
-              <MultiSelect
-                value={modes}
-                onChange={(value) => setModes(value as InvestmentMode[])}
-                placeholder={t('investments.modeFilter', {
-                  defaultValue: 'Mode',
-                })}
-                data={[
-                  {
-                    value: InvestmentMode.priced,
-                    label: t('investments.mode.priced', {
-                      defaultValue: 'Market priced',
-                    }),
-                  },
-                  {
-                    value: InvestmentMode.manual,
-                    label: t('investments.mode.manual', {
-                      defaultValue: 'Manual valuation',
-                    }),
-                  },
-                ]}
-                style={{ maxWidth: '200px' }}
-              />
-              <MultiSelect
-                value={currencyIds}
-                onChange={setCurrencyIds}
-                placeholder={t('investments.currencyFilter', {
-                  defaultValue: 'Currency',
-                })}
-                data={currencies.map((currency) => ({
-                  value: currency.id,
-                  label: `${currency.code} - ${currency.name}`,
-                }))}
-                style={{ maxWidth: '200px' }}
-              />
-              {hasActiveFilters && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setAssetTypes([]);
-                    setModes([]);
-                    setCurrencyIds([]);
-                    setSearchQuery('');
-                    setPage(1);
-                  }}
-                >
-                  {t('common.reset', { defaultValue: 'Reset' })}
-                </Button>
-              )}
-            </div>
-
-            {summary && (
-              <div className="flex flex-wrap items-center gap-4 text-sm py-2 border-b border-gray-200 dark:border-gray-700">
-                {summary}
-              </div>
-            )}
-
-            <InvestmentTable
-              investments={data?.investments || []}
-              isLoading={isLoading}
-              onEdit={handleEdit}
-              onView={handleView}
-              recordsPerPage={limit}
-              recordsPerPageOptions={[10, 20, 50, 100]}
-              onRecordsPerPageChange={(size) => {
-                setLimit(size);
+    <PageContainer
+      filterGroup={
+        <>
+          <TextInput
+            placeholder={t('investments.search', {
+              defaultValue: 'Search investments',
+            })}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
                 setPage(1);
-              }}
-              page={page}
-              onPageChange={setPage}
-              totalRecords={data?.pagination?.total}
-              sorting={
-                sortBy
-                  ? [
-                      {
-                        id: sortBy,
-                        desc: sortOrder === 'desc',
-                      },
-                    ]
-                  : undefined
               }
-              onSortingChange={(updater) => {
-                const newSorting =
-                  typeof updater === 'function'
-                    ? updater(
-                        sortBy
-                          ? [{ id: sortBy, desc: sortOrder === 'desc' }]
-                          : [],
-                      )
-                    : updater;
-                if (newSorting.length > 0) {
-                  setSortBy(
-                    newSorting[0].id as 'name' | 'createdAt' | 'updatedAt',
-                  );
-                  setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
-                } else {
-                  setSortBy('createdAt');
-                  setSortOrder('desc');
-                }
-                setPage(1);
-              }}
-            />
-          </div>
-        </div>
-      </div>
+            }}
+            style={{ flex: 1, maxWidth: '300px' }}
+          />
+          <MultiSelect
+            value={assetTypes}
+            onChange={(value) => setAssetTypes(value as InvestmentAssetType[])}
+            placeholder={t('investments.assetFilter', {
+              defaultValue: 'Asset type',
+            })}
+            data={[
+              {
+                value: InvestmentAssetType.coin,
+                label: t('investments.asset.coin', {
+                  defaultValue: 'Coin',
+                }),
+              },
+              {
+                value: InvestmentAssetType.ccq,
+                label: t('investments.asset.ccq', {
+                  defaultValue: 'Mutual fund',
+                }),
+              },
+              {
+                value: InvestmentAssetType.custom,
+                label: t('investments.asset.custom', {
+                  defaultValue: 'Custom',
+                }),
+              },
+            ]}
+            style={{ maxWidth: '200px' }}
+          />
+          <MultiSelect
+            value={modes}
+            onChange={(value) => setModes(value as InvestmentMode[])}
+            placeholder={t('investments.modeFilter', {
+              defaultValue: 'Mode',
+            })}
+            data={[
+              {
+                value: InvestmentMode.priced,
+                label: t('investments.mode.priced', {
+                  defaultValue: 'Market priced',
+                }),
+              },
+              {
+                value: InvestmentMode.manual,
+                label: t('investments.mode.manual', {
+                  defaultValue: 'Manual valuation',
+                }),
+              },
+            ]}
+            style={{ maxWidth: '200px' }}
+          />
+          <MultiSelect
+            value={currencyIds}
+            onChange={setCurrencyIds}
+            placeholder={t('investments.currencyFilter', {
+              defaultValue: 'Currency',
+            })}
+            data={currencies.map((currency) => ({
+              value: currency.id,
+              label: `${currency.code} - ${currency.name}`,
+            }))}
+            style={{ maxWidth: '200px' }}
+          />
+        </>
+      }
+      buttonGroups={
+        <Button onClick={handleAdd} disabled={isSubmitting}>
+          {t('investments.addInvestment', {
+            defaultValue: 'New investment',
+          })}
+        </Button>
+      }
+      onReset={
+        hasActiveFilters
+          ? () => {
+              setAssetTypes([]);
+              setModes([]);
+              setCurrencyIds([]);
+              setSearchQuery('');
+              setPage(1);
+            }
+          : undefined
+      }
+      stats={stats}
+    >
+      <InvestmentTable
+        investments={data?.investments || []}
+        isLoading={isLoading}
+        onEdit={handleEdit}
+        onView={handleView}
+        recordsPerPage={limit}
+        recordsPerPageOptions={[10, 20, 50, 100]}
+        onRecordsPerPageChange={(size) => {
+          setLimit(size);
+          setPage(1);
+        }}
+        page={page}
+        onPageChange={setPage}
+        totalRecords={data?.pagination?.total}
+        sorting={
+          sortBy
+            ? [
+                {
+                  id: sortBy,
+                  desc: sortOrder === 'desc',
+                },
+              ]
+            : undefined
+        }
+        onSortingChange={(updater) => {
+          const newSorting =
+            typeof updater === 'function'
+              ? updater(
+                  sortBy ? [{ id: sortBy, desc: sortOrder === 'desc' }] : [],
+                )
+              : updater;
+          if (newSorting.length > 0) {
+            setSortBy(newSorting[0].id as 'name' | 'createdAt' | 'updatedAt');
+            setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
+          } else {
+            setSortBy('createdAt');
+            setSortOrder('desc');
+          }
+          setPage(1);
+        }}
+      />
 
       {isDialogOpen && (
         <AddEditInvestmentDialog
@@ -301,7 +268,7 @@ const InvestmentPage = () => {
           isLoading={isSubmitting}
         />
       )}
-    </div>
+    </PageContainer>
   );
 };
 
