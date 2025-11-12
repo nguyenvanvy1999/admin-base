@@ -1,6 +1,6 @@
 import { useZodForm } from '@client/hooks/useZodForm';
-import type { EntityFormData, EntityFull } from '@client/types/entity';
 import { Button, Group, Modal, Stack } from '@mantine/core';
+import type { EntityResponse, IUpsertEntityDto } from '@server/dto/entity.dto';
 import { EntityType } from '@server/generated/prisma/enums';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,8 +27,8 @@ type FormValue = z.infer<typeof schema>;
 type AddEditEntityDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  entity: EntityFull | null;
-  onSubmit: (data: EntityFormData) => void;
+  entity: EntityResponse | null;
+  onSubmit: (data: IUpsertEntityDto) => void;
   isLoading?: boolean;
 };
 
@@ -73,7 +73,7 @@ const AddEditEntityDialog = ({
   }, [entity, isOpen, reset]);
 
   const onSubmitForm = handleSubmit((data) => {
-    const submitData: EntityFormData = {
+    const submitData: IUpsertEntityDto = {
       name: data.name.trim(),
       type: data.type,
     };

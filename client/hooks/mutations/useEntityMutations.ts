@@ -1,13 +1,13 @@
 import { entityService } from '@client/services';
-import type { EntityFormData } from '@client/types/entity';
 import { toast } from '@client/utils/toast';
+import type { IUpsertEntityDto } from '@server/dto/entity.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateEntityMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Omit<EntityFormData, 'id'>) => {
+    mutationFn: (data: Omit<IUpsertEntityDto, 'id'>) => {
       return entityService.createEntity(data);
     },
     onSuccess: async () => {
@@ -21,7 +21,7 @@ export const useUpdateEntityMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: EntityFormData) => {
+    mutationFn: (data: IUpsertEntityDto) => {
       if (!data.id) {
         throw new Error('Entity ID is required for update');
       }

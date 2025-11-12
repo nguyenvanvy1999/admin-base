@@ -18,7 +18,6 @@ import {
 } from '@client/hooks/queries/useAccountQueries';
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import type { AccountFormData, AccountFull } from '@client/types/account';
 import {
   Button,
   Group,
@@ -28,6 +27,10 @@ import {
   Text,
   useMantineColorScheme,
 } from '@mantine/core';
+import type {
+  AccountResponse,
+  IUpsertAccountDto,
+} from '@server/dto/account.dto';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -50,14 +53,12 @@ const AccountPage = () => {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   const formRef = useRef<FormComponentRef>(null);
-  const [selectedAccount, setSelectedAccount] = useState<AccountFull | null>(
-    null,
-  );
+  const [selectedAccount, setSelectedAccount] =
+    useState<AccountResponse | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [accountToDelete, setAccountToDelete] = useState<AccountFull | null>(
-    null,
-  );
+  const [accountToDelete, setAccountToDelete] =
+    useState<AccountResponse | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'balance'>(
@@ -95,12 +96,12 @@ const AccountPage = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (account: AccountFull) => {
+  const handleEdit = (account: AccountResponse) => {
     setSelectedAccount(account);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (account: AccountFull) => {
+  const handleDelete = (account: AccountResponse) => {
     setAccountToDelete(account);
     setIsDeleteDialogOpen(true);
   };
@@ -115,7 +116,7 @@ const AccountPage = () => {
     setAccountToDelete(null);
   };
 
-  const handleSubmitForm = async (formData: AccountFormData) => {
+  const handleSubmitForm = async (formData: IUpsertAccountDto) => {
     if (formData.id) {
       await updateMutation.mutateAsync(formData);
     } else {

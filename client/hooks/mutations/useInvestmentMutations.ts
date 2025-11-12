@@ -1,33 +1,31 @@
 import { investmentService } from '@client/services';
-import type {
-  InvestmentContributionFormData,
-  InvestmentFormData,
-  InvestmentTradeFormData,
-  InvestmentValuationFormData,
-} from '@client/types/investment';
 import { toast } from '@client/utils/toast';
+import type { ICreateInvestmentContributionDto } from '@server/dto/contribution.dto';
+import type { IUpsertInvestmentDto } from '@server/dto/investment.dto';
+import type { ICreateInvestmentTradeDto } from '@server/dto/trade.dto';
+import type { IUpsertInvestmentValuationDto } from '@server/dto/valuation.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 type TradeMutationVariables = {
   investmentId: string;
-  data: InvestmentTradeFormData;
+  data: ICreateInvestmentTradeDto;
 };
 
 type ContributionMutationVariables = {
   investmentId: string;
-  data: InvestmentContributionFormData;
+  data: ICreateInvestmentContributionDto;
 };
 
 type ValuationMutationVariables = {
   investmentId: string;
-  data: InvestmentValuationFormData;
+  data: IUpsertInvestmentValuationDto;
 };
 
 export const useCreateInvestmentMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Omit<InvestmentFormData, 'id'>) => {
+    mutationFn: (data: Omit<IUpsertInvestmentDto, 'id'>) => {
       return investmentService.createInvestment(data);
     },
     onSuccess: async () => {
@@ -41,7 +39,7 @@ export const useUpdateInvestmentMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: InvestmentFormData) => {
+    mutationFn: (data: IUpsertInvestmentDto) => {
       if (!data.id) {
         throw new Error('Investment ID is required for update');
       }

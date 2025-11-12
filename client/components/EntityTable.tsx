@@ -1,5 +1,5 @@
-import type { EntityFull } from '@client/types/entity';
 import { ActionIcon } from '@mantine/core';
+import type { EntityResponse } from '@server/dto/entity.dto';
 import { EntityType } from '@server/generated/prisma/enums';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
@@ -7,9 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { DataTable, type DataTableColumn } from './DataTable';
 
 type EntityTableProps = {
-  entities: EntityFull[];
-  onEdit: (entity: EntityFull) => void;
-  onDelete: (entity: EntityFull) => void;
+  entities: EntityResponse[];
+  onEdit: (entity: EntityResponse) => void;
+  onDelete: (entity: EntityResponse) => void;
   isLoading?: boolean;
   showIndexColumn?: boolean;
   recordsPerPage?: number;
@@ -47,7 +47,7 @@ const EntityTable = ({
   const { t } = useTranslation();
 
   const columns = useMemo(
-    (): DataTableColumn<EntityFull>[] => [
+    (): DataTableColumn<EntityResponse>[] => [
       {
         accessor: 'name',
         title: 'entities.name',
@@ -55,7 +55,7 @@ const EntityTable = ({
       {
         accessor: 'type',
         title: 'entities.type',
-        render: (value: unknown, row: EntityFull) => {
+        render: (value: unknown, row: EntityResponse) => {
           if (!row.type) return <span className="text-gray-400">-</span>;
           const label =
             row.type === EntityType.individual

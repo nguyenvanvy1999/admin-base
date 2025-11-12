@@ -1,9 +1,5 @@
 import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import type {
-  InvestmentFull,
-  InvestmentTradeFormData,
-} from '@client/types/investment';
 import {
   Button,
   Group,
@@ -13,6 +9,8 @@ import {
   Text,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
+import type { InvestmentResponse } from '@server/dto/investment.dto';
+import type { ICreateInvestmentTradeDto } from '@server/dto/trade.dto';
 import { TradeSide } from '@server/generated/prisma/enums';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,8 +37,8 @@ type FormValue = z.infer<typeof baseSchema>;
 type AddTradeDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  investment: InvestmentFull;
-  onSubmit: (data: InvestmentTradeFormData) => Promise<void> | void;
+  investment: InvestmentResponse;
+  onSubmit: (data: ICreateInvestmentTradeDto) => Promise<void> | void;
   isLoading?: boolean;
 };
 
@@ -127,7 +125,7 @@ const AddTradeDialog = ({
   }, [isOpen, accountOptions, reset]);
 
   const onSubmitForm = handleSubmit(async (data) => {
-    const payload: InvestmentTradeFormData = {
+    const payload: ICreateInvestmentTradeDto = {
       side: data.side,
       timestamp: data.timestamp,
       price: data.price,

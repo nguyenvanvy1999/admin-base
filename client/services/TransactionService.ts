@@ -1,6 +1,6 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
-import type { TransactionFormData } from '@client/types/transaction';
 import type {
+  IUpsertTransaction,
   TransactionDeleteResponse,
   TransactionDetail,
   TransactionListResponse,
@@ -31,7 +31,7 @@ export class TransactionService extends ServiceBase {
   }
 
   createTransaction(
-    data: Omit<TransactionFormData, 'id'>,
+    data: Omit<IUpsertTransaction, 'id'>,
   ): Promise<TransactionDetail> {
     const payload = {
       ...data,
@@ -42,7 +42,7 @@ export class TransactionService extends ServiceBase {
     return this.post<TransactionDetail>(payload);
   }
 
-  updateTransaction(data: TransactionFormData): Promise<TransactionDetail> {
+  updateTransaction(data: IUpsertTransaction): Promise<TransactionDetail> {
     const payload = {
       ...data,
       note: data.note ?? undefined,

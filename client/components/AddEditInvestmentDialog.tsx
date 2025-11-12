@@ -1,10 +1,10 @@
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import type {
-  InvestmentFormData,
-  InvestmentFull,
-} from '@client/types/investment';
 import { Button, Group, Modal, Stack } from '@mantine/core';
+import type {
+  InvestmentResponse,
+  IUpsertInvestmentDto,
+} from '@server/dto/investment.dto';
 import {
   InvestmentAssetType,
   InvestmentMode,
@@ -33,8 +33,8 @@ type FormValue = z.infer<typeof schema>;
 type AddEditInvestmentDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  investment: InvestmentFull | null;
-  onSubmit: (data: InvestmentFormData) => Promise<void> | void;
+  investment: InvestmentResponse | null;
+  onSubmit: (data: IUpsertInvestmentDto) => Promise<void> | void;
   isLoading?: boolean;
 };
 
@@ -106,7 +106,7 @@ const AddEditInvestmentDialog = ({
       }
     }
 
-    const payload: InvestmentFormData = {
+    const payload: IUpsertInvestmentDto = {
       name: data.name.trim(),
       symbol: data.symbol.trim(),
       assetType: data.assetType,

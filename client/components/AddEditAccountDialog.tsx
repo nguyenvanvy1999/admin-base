@@ -1,7 +1,10 @@
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import type { AccountFormData, AccountFull } from '@client/types/account';
 import { Button, Checkbox, Group, Modal, Stack } from '@mantine/core';
+import type {
+  AccountResponse,
+  IUpsertAccountDto,
+} from '@server/dto/account.dto';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -30,8 +33,8 @@ type FormValue = z.infer<typeof baseSchema>;
 type AddEditAccountDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  account: AccountFull | null;
-  onSubmit: (data: AccountFormData) => void;
+  account: AccountResponse | null;
+  onSubmit: (data: IUpsertAccountDto) => void;
   isLoading?: boolean;
 };
 
@@ -84,7 +87,7 @@ const AddEditAccountDialog = ({
   }, [account, isOpen, reset]);
 
   const onSubmitForm = handleSubmit((data) => {
-    const submitData: AccountFormData = {
+    const submitData: IUpsertAccountDto = {
       name: data.name.trim(),
       type: data.type,
       currencyId: data.currencyId,

@@ -17,8 +17,8 @@ import {
   useEntitiesQuery,
 } from '@client/hooks/queries/useEntityQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import type { EntityFormData, EntityFull } from '@client/types/entity';
 import { Button, Group, Modal, MultiSelect, Text } from '@mantine/core';
+import type { EntityResponse, IUpsertEntityDto } from '@server/dto/entity.dto';
 import { EntityType } from '@server/generated/prisma/enums';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -37,10 +37,14 @@ const defaultFilterValues: FilterFormValue = {
 const EntityPage = () => {
   const { t } = useTranslation();
   const formRef = useRef<FormComponentRef>(null);
-  const [selectedEntity, setSelectedEntity] = useState<EntityFull | null>(null);
+  const [selectedEntity, setSelectedEntity] = useState<EntityResponse | null>(
+    null,
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [entityToDelete, setEntityToDelete] = useState<EntityFull | null>(null);
+  const [entityToDelete, setEntityToDelete] = useState<EntityResponse | null>(
+    null,
+  );
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'type' | 'createdAt'>(
@@ -77,12 +81,12 @@ const EntityPage = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (entity: EntityFull) => {
+  const handleEdit = (entity: EntityResponse) => {
     setSelectedEntity(entity);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (entity: EntityFull) => {
+  const handleDelete = (entity: EntityResponse) => {
     setEntityToDelete(entity);
     setIsDeleteDialogOpen(true);
   };
@@ -97,7 +101,7 @@ const EntityPage = () => {
     setEntityToDelete(null);
   };
 
-  const handleSubmitForm = async (formData: EntityFormData) => {
+  const handleSubmitForm = async (formData: IUpsertEntityDto) => {
     try {
       if (formData.id) {
         await updateMutation.mutateAsync(formData);

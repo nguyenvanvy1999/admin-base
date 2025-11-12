@@ -1,5 +1,5 @@
-import type { InvestmentFull } from '@client/types/investment';
 import { ActionIcon, Badge } from '@mantine/core';
+import type { InvestmentResponse } from '@server/dto/investment.dto';
 import {
   InvestmentAssetType,
   InvestmentMode,
@@ -10,9 +10,9 @@ import { useTranslation } from 'react-i18next';
 import { DataTable, type DataTableColumn } from './DataTable';
 
 type InvestmentTableProps = {
-  investments: InvestmentFull[];
-  onEdit: (investment: InvestmentFull) => void;
-  onView: (investment: InvestmentFull) => void;
+  investments: InvestmentResponse[];
+  onEdit: (investment: InvestmentResponse) => void;
+  onView: (investment: InvestmentResponse) => void;
   isLoading?: boolean;
   showIndexColumn?: boolean;
   recordsPerPage?: number;
@@ -50,7 +50,7 @@ const InvestmentTable = ({
   const { t } = useTranslation();
 
   const columns = useMemo(
-    (): DataTableColumn<InvestmentFull>[] => [
+    (): DataTableColumn<InvestmentResponse>[] => [
       {
         accessor: 'name',
         title: 'investments.name',
@@ -65,7 +65,7 @@ const InvestmentTable = ({
         accessor: 'assetType',
         title: 'investments.assetType',
         enableSorting: false,
-        render: (value: unknown, row: InvestmentFull) => (
+        render: (value: unknown, row: InvestmentResponse) => (
           <Badge color="blue" variant="light">
             {(() => {
               switch (row.assetType) {
@@ -89,7 +89,7 @@ const InvestmentTable = ({
         accessor: 'mode',
         title: 'investments.mode',
         enableSorting: false,
-        render: (value: unknown, row: InvestmentFull) => (
+        render: (value: unknown, row: InvestmentResponse) => (
           <Badge
             color={row.mode === InvestmentMode.priced ? 'green' : 'yellow'}
           >
@@ -118,7 +118,7 @@ const InvestmentTable = ({
         title: 'investments.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value: unknown, row: InvestmentFull) => (
+        render: (value: unknown, row: InvestmentResponse) => (
           <div className="flex items-center justify-center gap-2">
             <ActionIcon
               variant="subtle"

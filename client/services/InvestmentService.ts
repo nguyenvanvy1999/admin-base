@@ -1,11 +1,6 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
 import type {
-  InvestmentContributionFormData,
-  InvestmentFormData,
-  InvestmentTradeFormData,
-  InvestmentValuationFormData,
-} from '@client/types/investment';
-import type {
+  ICreateInvestmentContributionDto,
   InvestmentContributionListResponse,
   InvestmentContributionResponse,
 } from '@server/dto/contribution.dto';
@@ -13,14 +8,17 @@ import type {
   InvestmentListResponse,
   InvestmentPositionResponse,
   InvestmentResponse,
+  IUpsertInvestmentDto,
 } from '@server/dto/investment.dto';
 import type {
+  ICreateInvestmentTradeDto,
   InvestmentTradeListResponse,
   InvestmentTradeResponse,
 } from '@server/dto/trade.dto';
 import type {
   InvestmentValuationListResponse,
   InvestmentValuationResponse,
+  IUpsertInvestmentValuationDto,
 } from '@server/dto/valuation.dto';
 import type {
   InvestmentAssetType,
@@ -63,12 +61,12 @@ export class InvestmentService extends ServiceBase {
   }
 
   createInvestment(
-    data: Omit<InvestmentFormData, 'id'>,
+    data: Omit<IUpsertInvestmentDto, 'id'>,
   ): Promise<InvestmentResponse> {
     return this.post<InvestmentResponse>(data);
   }
 
-  updateInvestment(data: InvestmentFormData): Promise<InvestmentResponse> {
+  updateInvestment(data: IUpsertInvestmentDto): Promise<InvestmentResponse> {
     return this.post<InvestmentResponse>(data);
   }
 
@@ -92,7 +90,7 @@ export class InvestmentService extends ServiceBase {
 
   createTrade(
     investmentId: string,
-    data: InvestmentTradeFormData,
+    data: ICreateInvestmentTradeDto,
   ): Promise<InvestmentTradeResponse> {
     return this.post<InvestmentTradeResponse>(data, {
       endpoint: `${investmentId}/trades`,
@@ -118,7 +116,7 @@ export class InvestmentService extends ServiceBase {
 
   createContribution(
     investmentId: string,
-    data: InvestmentContributionFormData,
+    data: ICreateInvestmentContributionDto,
   ): Promise<InvestmentContributionResponse> {
     return this.post<InvestmentContributionResponse>(data, {
       endpoint: `${investmentId}/contributions`,
@@ -151,7 +149,7 @@ export class InvestmentService extends ServiceBase {
 
   upsertValuation(
     investmentId: string,
-    data: InvestmentValuationFormData,
+    data: IUpsertInvestmentValuationDto,
   ): Promise<InvestmentValuationResponse> {
     return this.post<InvestmentValuationResponse>(data, {
       endpoint: `${investmentId}/valuations`,

@@ -1,6 +1,6 @@
 import { useZodForm } from '@client/hooks/useZodForm';
-import type { TagFormData, TagFull } from '@client/types/tag';
 import { Button, Group, Modal, Stack } from '@mantine/core';
+import type { IUpsertTagDto, TagResponse } from '@server/dto/tag.dto';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -19,8 +19,8 @@ type FormValue = z.infer<typeof schema>;
 type AddEditTagDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  tag: TagFull | null;
-  onSubmit: (data: TagFormData) => void;
+  tag: TagResponse | null;
+  onSubmit: (data: IUpsertTagDto) => void;
   isLoading?: boolean;
 };
 
@@ -57,7 +57,7 @@ const AddEditTagDialog = ({
   }, [tag, isOpen, reset]);
 
   const onSubmitForm = handleSubmit((data) => {
-    const submitData: TagFormData = {
+    const submitData: IUpsertTagDto = {
       name: data.name.trim(),
     };
 

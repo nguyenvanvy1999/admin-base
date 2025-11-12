@@ -1,14 +1,14 @@
-import type { TagFull } from '@client/types/tag';
 import { ActionIcon } from '@mantine/core';
+import type { TagResponse } from '@server/dto/tag.dto';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTable, type DataTableColumn } from './DataTable';
 
 type TagTableProps = {
-  tags: TagFull[];
-  onEdit: (tag: TagFull) => void;
-  onDelete: (tag: TagFull) => void;
+  tags: TagResponse[];
+  onEdit: (tag: TagResponse) => void;
+  onDelete: (tag: TagResponse) => void;
   isLoading?: boolean;
   showIndexColumn?: boolean;
   recordsPerPage?: number;
@@ -46,7 +46,7 @@ const TagTable = ({
   const { t } = useTranslation();
 
   const columns = useMemo(
-    (): DataTableColumn<TagFull>[] => [
+    (): DataTableColumn<TagResponse>[] => [
       {
         accessor: 'name',
         title: 'tags.name',
@@ -61,7 +61,7 @@ const TagTable = ({
         title: 'tags.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value: unknown, row: TagFull) => (
+        render: (value: unknown, row: TagResponse) => (
           <div className="flex items-center justify-center gap-2">
             <ActionIcon
               variant="subtle"

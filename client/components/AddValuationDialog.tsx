@@ -1,10 +1,8 @@
 import { useZodForm } from '@client/hooks/useZodForm';
-import type {
-  InvestmentFull,
-  InvestmentValuationFormData,
-} from '@client/types/investment';
 import { Button, Group, Modal, Stack } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
+import type { InvestmentResponse } from '@server/dto/investment.dto';
+import type { IUpsertInvestmentValuationDto } from '@server/dto/valuation.dto';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -27,8 +25,8 @@ type FormValue = z.infer<typeof baseSchema>;
 type AddValuationDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  investment: InvestmentFull;
-  onSubmit: (data: InvestmentValuationFormData) => Promise<void> | void;
+  investment: InvestmentResponse;
+  onSubmit: (data: IUpsertInvestmentValuationDto) => Promise<void> | void;
   isLoading?: boolean;
 };
 
@@ -73,7 +71,7 @@ const AddValuationDialog = ({
   }, [isOpen, reset]);
 
   const onSubmitForm = handleSubmit(async (data) => {
-    const payload: InvestmentValuationFormData = {
+    const payload: IUpsertInvestmentValuationDto = {
       price: data.price,
       currencyId: investment.currencyId,
       timestamp: data.timestamp,

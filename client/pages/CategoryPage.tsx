@@ -9,11 +9,6 @@ import {
   useUpdateCategoryMutation,
 } from '@client/hooks/mutations/useCategoryMutations';
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
-import type {
-  CategoryFormData,
-  CategoryFull,
-  MUITreeItem,
-} from '@client/types/category';
 import {
   ActionIcon,
   Button,
@@ -26,12 +21,27 @@ import {
 import { Add, Category, Close, Delete, Edit, Lock } from '@mui/icons-material';
 import { Box, IconButton, Stack } from '@mui/material';
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
+import type {
+  CategoryTreeResponse,
+  IUpsertCategoryDto,
+} from '@server/dto/category.dto';
 import { CategoryType } from '@server/generated/prisma/enums';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+type MUITreeItem = {
+  id: string;
+  label: string;
+  type: CategoryType;
+  icon?: string | null;
+  color?: string | null;
+  isLocked: boolean;
+  parentId: string | null;
+  children?: MUITreeItem[];
+};
+
 const transformToMUITree = (
-  categories: CategoryFull[],
+  categories: CategoryTreeResponse[],
   t: (key: string) => string,
 ): MUITreeItem[] => {
   return categories.map((category) => ({
@@ -43,7 +53,7 @@ const transformToMUITree = (
     isLocked: category.isLocked,
     parentId: category.parentId,
     children: category.children
-      ? transformToMUITree(category.children as CategoryFull[], t)
+      ? transformToMUITree(category.children as CategoryTreeResponse[], t)
       : undefined,
   }));
 };
@@ -99,14 +109,12 @@ const filterTree = (
 
 const CategoryPage = () => {
   const { t } = useTranslation();
-  const [selectedCategory, setSelectedCategory] = useState<CategoryFull | null>(
-    null,
-  );
+  const [selectedCategory, setSelectedCategory] =
+    useState<CategoryTreeResponse | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<CategoryFull | null>(
-    null,
-  );
+  const [categoryToDelete, setCategoryToDelete] =
+    useState<CategoryTreeResponse | null>(null);
   const [parentIdForNew, setParentIdForNew] = useState<string | null>(null);
   const [typeFilterInput, setTypeFilterInput] = useState<CategoryType[]>([]);
   const [typeFilter, setTypeFilter] = useState<CategoryType[]>([]);
@@ -146,12 +154,12 @@ const CategoryPage = () => {
   }, [data, t]);
 
   const categoryMap = useMemo(() => {
-    const map = new Map<string, CategoryFull>();
-    const addToMap = (categories: CategoryFull[]) => {
+    const map = new Map<string, CategoryTreeResponse>();
+    const addToMap = (categories: CategoryTreeResponse[]) => {
       for (const category of categories) {
         map.set(category.id, category);
         if (category.children) {
-          addToMap(category.children as CategoryFull[]);
+          addToMap(category.children as CategoryTreeResponse[]);
         }
       }
     };
@@ -204,7 +212,7 @@ const CategoryPage = () => {
     setCategoryToDelete(null);
   };
 
-  const handleSubmit = async (formData: CategoryFormData) => {
+  const handleSubmit = async (formData: IUpsertCategoryDto) => {
     try {
       if (formData.id) {
         await updateMutation.mutateAsync(formData);

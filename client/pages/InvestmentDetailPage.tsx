@@ -14,11 +14,6 @@ import {
   useInvestmentTradesQuery,
   useInvestmentValuationsQuery,
 } from '@client/hooks/queries/useInvestmentQueries';
-import type {
-  InvestmentContribution,
-  InvestmentTrade,
-  InvestmentValuation,
-} from '@client/types/investment';
 import {
   Badge,
   Button,
@@ -28,6 +23,9 @@ import {
   Tabs,
   Text,
 } from '@mantine/core';
+import type { InvestmentContributionResponse } from '@server/dto/contribution.dto';
+import type { InvestmentTradeResponse } from '@server/dto/trade.dto';
+import type { InvestmentValuationResponse } from '@server/dto/valuation.dto';
 import {
   ContributionType,
   InvestmentMode,
@@ -134,7 +132,7 @@ const InvestmentDetailPage = () => {
   };
 
   const tradeColumns = useMemo(
-    (): DataTableColumn<InvestmentTrade>[] => [
+    (): DataTableColumn<InvestmentTradeResponse>[] => [
       {
         accessor: 'timestamp',
         title: 'investments.trade.date',
@@ -143,7 +141,7 @@ const InvestmentDetailPage = () => {
       {
         accessor: 'side',
         title: 'investments.trade.side',
-        render: (value: unknown, row: InvestmentTrade) => (
+        render: (value: unknown, row: InvestmentTradeResponse) => (
           <Badge
             color={row.side === TradeSide.buy ? 'green' : 'red'}
             variant="light"
@@ -183,7 +181,7 @@ const InvestmentDetailPage = () => {
   );
 
   const contributionColumns = useMemo(
-    (): DataTableColumn<InvestmentContribution>[] => [
+    (): DataTableColumn<InvestmentContributionResponse>[] => [
       {
         accessor: 'timestamp',
         title: 'investments.contribution.date',
@@ -192,7 +190,7 @@ const InvestmentDetailPage = () => {
       {
         accessor: 'type',
         title: 'investments.contribution.type',
-        render: (value: unknown, row: InvestmentContribution) => (
+        render: (value: unknown, row: InvestmentContributionResponse) => (
           <Badge
             color={row.type === ContributionType.deposit ? 'green' : 'red'}
             variant="light"
@@ -213,7 +211,7 @@ const InvestmentDetailPage = () => {
         render: (value) => formatCurrency(parseFloat(String(value))),
       },
       {
-        accessor: (row: InvestmentContribution) => row.account?.name,
+        accessor: (row: InvestmentContributionResponse) => row.account?.name,
         title: 'investments.contribution.account',
         render: (value: unknown) => (value ? String(value) : '--'),
       },
@@ -227,7 +225,7 @@ const InvestmentDetailPage = () => {
   );
 
   const valuationColumns = useMemo(
-    (): DataTableColumn<InvestmentValuation>[] => [
+    (): DataTableColumn<InvestmentValuationResponse>[] => [
       {
         accessor: 'timestamp',
         title: 'investments.valuation.date',
@@ -561,7 +559,7 @@ const InvestmentDetailPage = () => {
 
           <Tabs.Panel value="trades" pt="md">
             <DataTable
-              data={(tradesData?.trades || []) as unknown as InvestmentTrade[]}
+              data={tradesData?.trades || []}
               columns={tradeColumns}
               loading={isTradesLoading}
               page={tradePage}
@@ -577,10 +575,7 @@ const InvestmentDetailPage = () => {
 
           <Tabs.Panel value="contributions" pt="md">
             <DataTable
-              data={
-                (contributionsData?.contributions ||
-                  []) as unknown as InvestmentContribution[]
-              }
+              data={contributionsData?.contributions || []}
               columns={contributionColumns}
               loading={isContributionsLoading}
               page={contributionPage}
@@ -596,10 +591,7 @@ const InvestmentDetailPage = () => {
 
           <Tabs.Panel value="valuations" pt="md">
             <DataTable
-              data={
-                (valuationsData?.valuations ||
-                  []) as unknown as InvestmentValuation[]
-              }
+              data={valuationsData?.valuations || []}
               columns={valuationColumns}
               loading={isValuationsLoading}
               page={valuationPage}

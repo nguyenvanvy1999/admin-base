@@ -1,4 +1,3 @@
-import type { CategoryFull } from '@client/types/category';
 import type { SvgIconComponent } from '@mui/icons-material';
 import {
   AttachMoney,
@@ -32,6 +31,7 @@ import {
   WaterDrop,
   Wifi,
 } from '@mui/icons-material';
+import type { CategoryTreeResponse } from '@server/dto/category.dto';
 import type { CategoryType } from '@server/generated/prisma/enums';
 
 const getCategoryLabel = (
@@ -135,7 +135,7 @@ export const getCategoryIcon = (categoryName: string): SvgIconComponent => {
 };
 
 export const flattenCategories = (
-  categories: CategoryFull[],
+  categories: CategoryTreeResponse[],
   t: (key: string) => string,
   filterType?: CategoryType,
   excludeId?: string,
@@ -164,7 +164,7 @@ export const flattenCategories = (
       if (category.children && category.children.length > 0) {
         result.push(
           ...flattenCategories(
-            category.children as CategoryFull[],
+            category.children as CategoryTreeResponse[],
             t,
             filterType,
             excludeId,
@@ -187,7 +187,7 @@ export const flattenCategories = (
     if (category.children && category.children.length > 0) {
       result.push(
         ...flattenCategories(
-          category.children as CategoryFull[],
+          category.children as CategoryTreeResponse[],
           t,
           filterType,
           excludeId,

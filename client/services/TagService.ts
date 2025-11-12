@@ -1,6 +1,6 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
-import type { TagFormData } from '@client/types/tag';
 import type {
+  IUpsertTagDto,
   TagDeleteResponse,
   TagListResponse,
   TagResponse,
@@ -21,11 +21,11 @@ export class TagService extends ServiceBase {
     });
   }
 
-  createTag(data: Omit<TagFormData, 'id'>): Promise<TagResponse> {
+  createTag(data: Omit<IUpsertTagDto, 'id'>): Promise<TagResponse> {
     return this.post<TagResponse>(data);
   }
 
-  updateTag(data: TagFormData & { id: string }): Promise<TagResponse> {
+  updateTag(data: IUpsertTagDto & { id: string }): Promise<TagResponse> {
     return this.patch<TagResponse>(data, {
       endpoint: data.id,
     });

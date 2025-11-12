@@ -17,11 +17,11 @@ import {
   useInvestmentsQuery,
 } from '@client/hooks/queries/useInvestmentQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import type {
-  InvestmentFormData,
-  InvestmentFull,
-} from '@client/types/investment';
 import { Button, Group, MultiSelect } from '@mantine/core';
+import type {
+  InvestmentResponse,
+  IUpsertInvestmentDto,
+} from '@server/dto/investment.dto';
 import {
   InvestmentAssetType,
   InvestmentMode,
@@ -50,7 +50,7 @@ const InvestmentPage = () => {
   const navigate = useNavigate();
   const formRef = useRef<FormComponentRef>(null);
   const [selectedInvestment, setSelectedInvestment] =
-    useState<InvestmentFull | null>(null);
+    useState<InvestmentResponse | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -88,12 +88,12 @@ const InvestmentPage = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (investment: InvestmentFull) => {
+  const handleEdit = (investment: InvestmentResponse) => {
     setSelectedInvestment(investment);
     setIsDialogOpen(true);
   };
 
-  const handleView = (investment: InvestmentFull) => {
+  const handleView = (investment: InvestmentResponse) => {
     navigate(`/investments/${investment.id}`);
   };
 
@@ -102,7 +102,7 @@ const InvestmentPage = () => {
     setSelectedInvestment(null);
   };
 
-  const handleSubmitForm = async (formData: InvestmentFormData) => {
+  const handleSubmitForm = async (formData: IUpsertInvestmentDto) => {
     if (formData.id) {
       await updateMutation.mutateAsync(formData);
     } else {

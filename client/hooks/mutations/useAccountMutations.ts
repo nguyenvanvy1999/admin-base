@@ -1,13 +1,13 @@
 import { accountService } from '@client/services';
-import type { AccountFormData } from '@client/types/account';
 import { toast } from '@client/utils/toast';
+import type { IUpsertAccountDto } from '@server/dto/account.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateAccountMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Omit<AccountFormData, 'id'>) => {
+    mutationFn: (data: Omit<IUpsertAccountDto, 'id'>) => {
       return accountService.createAccount(data);
     },
     onSuccess: async () => {
@@ -21,7 +21,7 @@ export const useUpdateAccountMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: AccountFormData) => {
+    mutationFn: (data: IUpsertAccountDto) => {
       if (!data.id) {
         throw new Error('Account ID is required for update');
       }

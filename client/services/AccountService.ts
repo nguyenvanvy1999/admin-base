@@ -1,9 +1,9 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
-import type { AccountFormData } from '@client/types/account';
 import type {
   AccountDeleteResponse,
   AccountListResponse,
   AccountResponse,
+  IUpsertAccountDto,
 } from '@server/dto/account.dto';
 import type { AccountType } from '@server/generated/prisma/enums';
 
@@ -26,11 +26,11 @@ export class AccountService extends ServiceBase {
     });
   }
 
-  createAccount(data: Omit<AccountFormData, 'id'>): Promise<AccountResponse> {
+  createAccount(data: Omit<IUpsertAccountDto, 'id'>): Promise<AccountResponse> {
     return this.post<AccountResponse>(data);
   }
 
-  updateAccount(data: AccountFormData): Promise<AccountResponse> {
+  updateAccount(data: IUpsertAccountDto): Promise<AccountResponse> {
     return this.post<AccountResponse>(data);
   }
 

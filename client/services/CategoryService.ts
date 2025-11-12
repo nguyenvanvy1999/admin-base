@@ -1,9 +1,9 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
-import type { CategoryFormData } from '@client/types/category';
 import type {
   CategoryDeleteResponse,
   CategoryListResponse,
   CategoryResponse,
+  IUpsertCategoryDto,
 } from '@server/dto/category.dto';
 import type { CategoryType } from '@server/generated/prisma/enums';
 
@@ -22,12 +22,12 @@ export class CategoryService extends ServiceBase {
   }
 
   createCategory(
-    data: Omit<CategoryFormData, 'id'>,
+    data: Omit<IUpsertCategoryDto, 'id'>,
   ): Promise<CategoryResponse> {
     return this.post<CategoryResponse>(data);
   }
 
-  updateCategory(data: CategoryFormData): Promise<CategoryResponse> {
+  updateCategory(data: IUpsertCategoryDto): Promise<CategoryResponse> {
     return this.post<CategoryResponse>(data);
   }
 

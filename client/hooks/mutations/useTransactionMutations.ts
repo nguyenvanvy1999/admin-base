@@ -1,13 +1,13 @@
 import { transactionService } from '@client/services';
-import type { TransactionFormData } from '@client/types/transaction';
 import { toast } from '@client/utils/toast';
+import type { IUpsertTransaction } from '@server/dto/transaction.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateTransactionMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Omit<TransactionFormData, 'id'>) => {
+    mutationFn: (data: Omit<IUpsertTransaction, 'id'>) => {
       return transactionService.createTransaction(data);
     },
     onSuccess: async () => {
@@ -21,7 +21,7 @@ export const useUpdateTransactionMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: TransactionFormData) => {
+    mutationFn: (data: IUpsertTransaction) => {
       if (!data.id) {
         throw new Error('Transaction ID is required for update');
       }

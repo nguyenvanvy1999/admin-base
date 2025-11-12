@@ -1,13 +1,13 @@
 import { categoryService } from '@client/services';
-import type { CategoryFormData } from '@client/types/category';
 import { toast } from '@client/utils/toast';
+import type { IUpsertCategoryDto } from '@server/dto/category.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateCategoryMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Omit<CategoryFormData, 'id'>) => {
+    mutationFn: (data: Omit<IUpsertCategoryDto, 'id'>) => {
       const payload = {
         ...data,
         parentId: data.parentId ?? undefined,
@@ -27,7 +27,7 @@ export const useUpdateCategoryMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CategoryFormData) => {
+    mutationFn: (data: IUpsertCategoryDto) => {
       if (!data.id) {
         throw new Error('Category ID is required for update');
       }

@@ -1,5 +1,5 @@
-import type { TransactionFull } from '@client/types/transaction';
 import { ActionIcon, Badge, Box, NumberFormatter } from '@mantine/core';
+import type { TransactionDetail } from '@server/dto/transaction.dto';
 import { TransactionType } from '@server/generated/prisma/enums';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
@@ -8,9 +8,9 @@ import { DataTable, type DataTableColumn } from './DataTable';
 import { getCategoryIcon, getCategoryLabel } from './utils/category';
 
 type TransactionTableProps = {
-  transactions: TransactionFull[];
-  onEdit: (transaction: TransactionFull) => void;
-  onDelete: (transaction: TransactionFull) => void;
+  transactions: TransactionDetail[];
+  onEdit: (transaction: TransactionDetail) => void;
+  onDelete: (transaction: TransactionDetail) => void;
   isLoading?: boolean;
   showIndexColumn?: boolean;
   recordsPerPage?: number;
@@ -80,7 +80,7 @@ const TransactionTable = ({
   };
 
   const columns = useMemo(
-    (): DataTableColumn<TransactionFull>[] => [
+    (): DataTableColumn<TransactionDetail>[] => [
       {
         accessor: 'date',
         title: 'transactions.date',
@@ -104,7 +104,7 @@ const TransactionTable = ({
         enableSorting: false,
         accessor: (row) => row.category?.name,
         title: 'transactions.category',
-        render: (value: unknown, row: TransactionFull) => {
+        render: (value: unknown, row: TransactionDetail) => {
           const category = row.category;
           if (!category) {
             return (
@@ -148,7 +148,7 @@ const TransactionTable = ({
       {
         accessor: 'amount',
         title: 'transactions.amount',
-        render: (value: unknown, row: TransactionFull) => {
+        render: (value: unknown, row: TransactionDetail) => {
           const amount = parseFloat(String(row.amount));
           const isExpense = row.type === TransactionType.expense;
           const isIncome = row.type === TransactionType.income;

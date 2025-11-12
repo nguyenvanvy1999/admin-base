@@ -1,7 +1,10 @@
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import type { CategoryFormData, CategoryFull } from '@client/types/category';
 import { Button, Group, Modal, Stack } from '@mantine/core';
+import type {
+  CategoryTreeResponse,
+  IUpsertCategoryDto,
+} from '@server/dto/category.dto';
 import { CategoryType } from '@server/generated/prisma/enums';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +23,7 @@ const getCategoryLabel = (
 };
 
 const flattenCategories = (
-  categories: CategoryFull[],
+  categories: CategoryTreeResponse[],
   t: (key: string) => string,
   excludeId?: string,
   depth = 0,
@@ -48,7 +51,7 @@ const flattenCategories = (
     if (!onlyLevel1 && category.children && category.children.length > 0) {
       result.push(
         ...flattenCategories(
-          category.children as CategoryFull[],
+          category.children as CategoryTreeResponse[],
           t,
           excludeId,
           depth + 1,
@@ -77,10 +80,10 @@ type FormValue = z.infer<typeof schema>;
 type AddEditCategoryDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  category: CategoryFull | null;
+  category: CategoryTreeResponse | null;
   parentId?: string | null;
   parentType?: CategoryType | null;
-  onSubmit: (data: CategoryFormData) => void;
+  onSubmit: (data: IUpsertCategoryDto) => void;
   isLoading?: boolean;
 };
 
@@ -144,7 +147,7 @@ const AddEditCategoryDialog = ({
   }, [category, parentId, parentType, isOpen, reset]);
 
   const onSubmitForm = handleSubmit((data) => {
-    const submitData: CategoryFormData = {
+    const submitData: IUpsertCategoryDto = {
       name: data.name.trim(),
       type: data.type,
     };

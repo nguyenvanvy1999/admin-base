@@ -1,9 +1,9 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
-import type { EntityFormData } from '@client/types/entity';
 import type {
   EntityDeleteResponse,
   EntityListResponse,
   EntityResponse,
+  IUpsertEntityDto,
 } from '@server/dto/entity.dto';
 
 export class EntityService extends ServiceBase {
@@ -21,11 +21,11 @@ export class EntityService extends ServiceBase {
     });
   }
 
-  createEntity(data: Omit<EntityFormData, 'id'>): Promise<EntityResponse> {
+  createEntity(data: Omit<IUpsertEntityDto, 'id'>): Promise<EntityResponse> {
     return this.post<EntityResponse>(data);
   }
 
-  updateEntity(data: EntityFormData): Promise<EntityResponse> {
+  updateEntity(data: IUpsertEntityDto): Promise<EntityResponse> {
     return this.post<EntityResponse>(data);
   }
 

@@ -1,13 +1,13 @@
 import { useZodForm } from '@client/hooks/useZodForm';
-import type { AccountFull } from '@client/types/account';
-import type { CategoryFull } from '@client/types/category';
-import type { EntityFull } from '@client/types/entity';
-import type {
-  TransactionFormData,
-  TransactionFull,
-} from '@client/types/transaction';
 import { Button, Group, Modal, Stack, Tabs } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
+import type { AccountResponse } from '@server/dto/account.dto';
+import type { CategoryTreeResponse } from '@server/dto/category.dto';
+import type { EntityResponse } from '@server/dto/entity.dto';
+import type {
+  IUpsertTransaction,
+  TransactionDetail,
+} from '@server/dto/transaction.dto';
 import { TransactionType } from '@server/generated/prisma/enums';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -41,12 +41,12 @@ type FormValue = z.infer<typeof baseSchema>;
 type AddEditTransactionDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  transaction: TransactionFull | null;
-  onSubmit: (data: TransactionFormData, saveAndAdd: boolean) => void;
+  transaction: TransactionDetail | null;
+  onSubmit: (data: IUpsertTransaction, saveAndAdd: boolean) => void;
   isLoading?: boolean;
-  accounts?: AccountFull[];
-  categories?: CategoryFull[];
-  entities?: EntityFull[];
+  accounts?: AccountResponse[];
+  categories?: CategoryTreeResponse[];
+  entities?: EntityResponse[];
 };
 
 const AddEditTransactionDialog = ({
@@ -262,7 +262,7 @@ const AddEditTransactionDialog = ({
         }
       }
 
-      const submitData: TransactionFormData = {
+      const submitData: IUpsertTransaction = {
         type: transactionType,
         accountId: data.accountId,
         amount: data.amount,

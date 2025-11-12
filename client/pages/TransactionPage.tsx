@@ -21,10 +21,6 @@ import {
   useTransactionsQuery,
 } from '@client/hooks/queries/useTransactionQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import type {
-  TransactionFormData,
-  TransactionFull,
-} from '@client/types/transaction';
 import {
   Button,
   Group,
@@ -34,6 +30,10 @@ import {
   Text,
   useMantineColorScheme,
 } from '@mantine/core';
+import type {
+  IUpsertTransaction,
+  TransactionDetail,
+} from '@server/dto/transaction.dto';
 import { TransactionType } from '@server/generated/prisma/enums';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -61,11 +61,11 @@ const TransactionPage = () => {
   const isDark = colorScheme === 'dark';
   const formRef = useRef<FormComponentRef>(null);
   const [selectedTransaction, setSelectedTransaction] =
-    useState<TransactionFull | null>(null);
+    useState<TransactionDetail | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] =
-    useState<TransactionFull | null>(null);
+    useState<TransactionDetail | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<
@@ -110,12 +110,12 @@ const TransactionPage = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (transaction: TransactionFull) => {
+  const handleEdit = (transaction: TransactionDetail) => {
     setSelectedTransaction(transaction);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (transaction: TransactionFull) => {
+  const handleDelete = (transaction: TransactionDetail) => {
     setTransactionToDelete(transaction);
     setIsDeleteDialogOpen(true);
   };
@@ -131,7 +131,7 @@ const TransactionPage = () => {
   };
 
   const handleSubmitForm = async (
-    formData: TransactionFormData,
+    formData: IUpsertTransaction,
     saveAndAdd: boolean,
   ) => {
     if (formData.id) {

@@ -1,13 +1,13 @@
 import { tagService } from '@client/services';
-import type { TagFormData } from '@client/types/tag';
 import { toast } from '@client/utils/toast';
+import type { IUpsertTagDto } from '@server/dto/tag.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateTagMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Omit<TagFormData, 'id'>) => {
+    mutationFn: (data: Omit<IUpsertTagDto, 'id'>) => {
       return tagService.createTag(data);
     },
     onSuccess: async () => {
@@ -21,7 +21,7 @@ export const useUpdateTagMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: TagFormData & { id: string }) => {
+    mutationFn: (data: IUpsertTagDto & { id: string }) => {
       return tagService.updateTag(data);
     },
     onSuccess: async () => {

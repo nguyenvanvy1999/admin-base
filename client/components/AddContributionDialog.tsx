@@ -1,12 +1,10 @@
 import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import type { AccountFull } from '@client/types/account';
-import type {
-  InvestmentContributionFormData,
-  InvestmentFull,
-} from '@client/types/investment';
 import { Button, Group, Modal, Stack } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
+import type { AccountResponse } from '@server/dto/account.dto';
+import type { ICreateInvestmentContributionDto } from '@server/dto/contribution.dto';
+import type { InvestmentResponse } from '@server/dto/investment.dto';
 import { ContributionType } from '@server/generated/prisma/enums';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -32,8 +30,8 @@ type FormValue = z.infer<typeof baseSchema>;
 type AddContributionDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  investment: InvestmentFull;
-  onSubmit: (data: InvestmentContributionFormData) => Promise<void> | void;
+  investment: InvestmentResponse;
+  onSubmit: (data: ICreateInvestmentContributionDto) => Promise<void> | void;
   isLoading?: boolean;
 };
 
@@ -63,7 +61,7 @@ const AddContributionDialog = ({
 
   const accountOptions = useMemo(
     () =>
-      filteredAccounts.map((account: AccountFull) => ({
+      filteredAccounts.map((account: AccountResponse) => ({
         value: account.id,
         label: `${account.name} (${account.currency.code})`,
       })),
@@ -106,7 +104,7 @@ const AddContributionDialog = ({
   }, [isOpen, accountOptions, reset]);
 
   const onSubmitForm = handleSubmit(async (data) => {
-    const payload: InvestmentContributionFormData = {
+    const payload: ICreateInvestmentContributionDto = {
       amount: data.amount,
       currencyId: investment.currencyId,
       type: data.type,

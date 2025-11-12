@@ -17,8 +17,8 @@ import {
   useTagsQuery,
 } from '@client/hooks/queries/useTagQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import type { TagFormData, TagFull } from '@client/types/tag';
 import { Button, Group, Modal, Text } from '@mantine/core';
+import type { IUpsertTagDto, TagResponse } from '@server/dto/tag.dto';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -34,10 +34,10 @@ const defaultFilterValues: FilterFormValue = {
 const TagPage = () => {
   const { t } = useTranslation();
   const formRef = useRef<FormComponentRef>(null);
-  const [selectedTag, setSelectedTag] = useState<TagFull | null>(null);
+  const [selectedTag, setSelectedTag] = useState<TagResponse | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [tagToDelete, setTagToDelete] = useState<TagFull | null>(null);
+  const [tagToDelete, setTagToDelete] = useState<TagResponse | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'createdAt'>('createdAt');
@@ -68,12 +68,12 @@ const TagPage = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (tag: TagFull) => {
+  const handleEdit = (tag: TagResponse) => {
     setSelectedTag(tag);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (tag: TagFull) => {
+  const handleDelete = (tag: TagResponse) => {
     setTagToDelete(tag);
     setIsDeleteDialogOpen(true);
   };
@@ -88,11 +88,11 @@ const TagPage = () => {
     setTagToDelete(null);
   };
 
-  const handleSubmitForm = async (formData: TagFormData) => {
+  const handleSubmitForm = async (formData: IUpsertTagDto) => {
     try {
       if (formData.id) {
         await updateMutation.mutateAsync(
-          formData as TagFormData & { id: string },
+          formData as IUpsertTagDto & { id: string },
         );
       } else {
         await createMutation.mutateAsync(formData);
