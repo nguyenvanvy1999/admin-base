@@ -29,8 +29,8 @@ export const ListInvestmentsQueryDto = z.object({
     .optional(),
   currencyIds: z.array(z.string()).optional(),
   search: z.string().optional(),
-  page: z.number().int().min(1).default(1).optional(),
-  limit: z.number().int().min(1).default(20).optional(),
+  page: z.coerce.number().int().min(1).default(1).optional(),
+  limit: z.coerce.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['name', 'createdAt', 'updatedAt']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });

@@ -73,8 +73,8 @@ export const ListTransactionsQueryDto = z.object({
   entityIds: z.array(z.string()).optional(),
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
-  page: z.number().int().min(1).default(1).optional(),
-  limit: z.number().int().min(1).default(20).optional(),
+  page: z.coerce.number().int().min(1).default(1).optional(),
+  limit: z.coerce.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['date', 'amount', 'type', 'accountId']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });

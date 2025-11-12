@@ -17,8 +17,8 @@ export const ListEntitiesQueryDto = z.object({
   type: z
     .array(z.enum(Object.values(EntityType) as [string, ...string[]]))
     .optional(),
-  page: z.number().int().min(1).default(1).optional(),
-  limit: z.number().int().min(1).default(20).optional(),
+  page: z.coerce.number().int().min(1).default(1).optional(),
+  limit: z.coerce.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['name', 'type', 'createdAt']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });

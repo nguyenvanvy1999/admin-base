@@ -21,8 +21,8 @@ export const ListAccountsQueryDto = z.object({
     .optional(),
   currencyId: z.array(z.string()).optional(),
   search: z.string().optional(),
-  page: z.number().int().min(1).default(1).optional(),
-  limit: z.number().int().min(1).default(20).optional(),
+  page: z.coerce.number().int().min(1).default(1).optional(),
+  limit: z.coerce.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['name', 'createdAt', 'balance']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
