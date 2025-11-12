@@ -1,6 +1,6 @@
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Checkbox, Group, Modal, Stack } from '@mantine/core';
+import { Checkbox, Modal, Stack } from '@mantine/core';
 import {
   type AccountResponse,
   type IUpsertAccountDto,
@@ -10,6 +10,7 @@ import { AccountType } from '@server/generated/prisma/enums';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { DialogFooterButtons } from './DialogFooterButtons';
 import { NumberInput } from './NumberInput';
 import { Select } from './Select';
 import { TextInput } from './TextInput';
@@ -293,23 +294,13 @@ const AddEditAccountDialog = ({
             </>
           )}
 
-          <Group justify="flex-end" mt="md">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading
-                ? t('common.saving', { defaultValue: 'Saving...' })
-                : isEditMode
-                  ? t('common.save')
-                  : t('common.add')}
-            </Button>
-          </Group>
+          <DialogFooterButtons
+            isEditMode={isEditMode}
+            isLoading={isLoading}
+            onCancel={onClose}
+            onSave={onSubmitForm}
+            showSaveAndAdd={false}
+          />
         </Stack>
       </form>
     </Modal>

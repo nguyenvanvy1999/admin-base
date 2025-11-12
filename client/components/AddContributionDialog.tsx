@@ -1,6 +1,6 @@
 import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group, Modal, Stack } from '@mantine/core';
+import { Modal, Stack } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { AccountResponse } from '@server/dto/account.dto';
 import {
@@ -12,6 +12,7 @@ import { ContributionType } from '@server/generated/prisma/enums';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { DialogFooterButtons } from './DialogFooterButtons';
 import { NumberInput } from './NumberInput';
 import { Select } from './Select';
 import { Textarea } from './Textarea';
@@ -289,21 +290,13 @@ const AddContributionDialog = ({
             )}
           />
 
-          <Group justify="flex-end">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              type="button"
-              disabled={isLoading}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading
-                ? t('common.saving', { defaultValue: 'Saving...' })
-                : t('common.add')}
-            </Button>
-          </Group>
+          <DialogFooterButtons
+            isEditMode={false}
+            isLoading={isLoading}
+            onCancel={onClose}
+            onSave={onSubmitForm}
+            showSaveAndAdd={false}
+          />
         </Stack>
       </form>
     </Modal>

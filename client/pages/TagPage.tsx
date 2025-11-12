@@ -1,4 +1,6 @@
 import AddEditTagDialog from '@client/components/AddEditTagDialog';
+import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
+import { DeleteManyConfirmationModal } from '@client/components/DeleteManyConfirmationModal';
 import {
   FormComponent,
   type FormComponentRef,
@@ -17,8 +19,10 @@ import {
   type FilterFormValue,
   useTagsQuery,
 } from '@client/hooks/queries/useTagQueries';
+import { usePageDelete } from '@client/hooks/usePageDelete';
+import { usePageDialog } from '@client/hooks/usePageDialog';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group, Modal, Text } from '@mantine/core';
+import { Button, Group } from '@mantine/core';
 import {
   type IUpsertTagDto,
   ListTagsQueryDto,
@@ -36,18 +40,35 @@ const defaultFilterValues: FilterFormValue = {
 const TagPage = () => {
   const { t } = useTranslation();
   const formRef = useRef<FormComponentRef>(null);
-  const [selectedTag, setSelectedTag] = useState<TagResponse | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [tagToDelete, setTagToDelete] = useState<TagResponse | null>(null);
-  const [isDeleteManyDialogOpen, setIsDeleteManyDialogOpen] = useState(false);
-  const [tagsToDeleteMany, setTagsToDeleteMany] = useState<string[]>([]);
-  const [selectedRecords, setSelectedRecords] = useState<TagResponse[]>([]);
-  const [resetTrigger, setResetTrigger] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'createdAt'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const {
+    isDialogOpen,
+    selectedItem: selectedTag,
+    resetTrigger,
+    handleAdd,
+    handleEdit,
+    handleClose: handleDialogClose,
+    handleSaveAndAdd,
+  } = usePageDialog<TagResponse>();
+
+  const {
+    isDeleteDialogOpen,
+    itemToDelete: tagToDelete,
+    handleDelete,
+    handleDeleteDialogClose,
+    handleConfirmDelete: handleConfirmDeleteBase,
+    isDeleteManyDialogOpen,
+    itemsToDeleteMany: tagsToDeleteMany,
+    selectedRecords,
+    setSelectedRecords,
+    handleDeleteMany,
+    handleDeleteManyDialogClose,
+    handleConfirmDeleteMany: handleConfirmDeleteManyBase,
+  } = usePageDelete<TagResponse>();
 
   const { handleSubmit, control, reset } = useZodForm({
     zod: filterSchema,
@@ -70,31 +91,6 @@ const TagPage = () => {
   const deleteMutation = useDeleteTagMutation();
   const deleteManyMutation = useDeleteManyTagsMutation();
 
-  const handleAdd = () => {
-    setSelectedTag(null);
-    setIsDialogOpen(true);
-  };
-
-  const handleEdit = (tag: TagResponse) => {
-    setSelectedTag(tag);
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = (tag: TagResponse) => {
-    setTagToDelete(tag);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setIsDialogOpen(false);
-    setSelectedTag(null);
-  };
-
-  const handleDeleteDialogClose = () => {
-    setIsDeleteDialogOpen(false);
-    setTagToDelete(null);
-  };
-
   const handleSubmitForm = async (
     formData: IUpsertTagDto,
     saveAndAdd?: boolean,
@@ -108,8 +104,7 @@ const TagPage = () => {
         await createMutation.mutateAsync(formData);
       }
       if (saveAndAdd) {
-        setSelectedTag(null);
-        setResetTrigger((prev) => prev + 1);
+        handleSaveAndAdd();
       } else {
         handleDialogClose();
       }
@@ -118,37 +113,12 @@ const TagPage = () => {
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (tagToDelete) {
-      try {
-        await deleteMutation.mutateAsync(tagToDelete.id);
-        handleDeleteDialogClose();
-      } catch {
-        // Error is already handled by mutation's onError callback
-      }
-    }
+  const handleConfirmDelete = () => {
+    handleConfirmDeleteBase(deleteMutation.mutateAsync);
   };
 
-  const handleDeleteMany = (ids: string[]) => {
-    setTagsToDeleteMany(ids);
-    setIsDeleteManyDialogOpen(true);
-  };
-
-  const handleDeleteManyDialogClose = () => {
-    setIsDeleteManyDialogOpen(false);
-    setTagsToDeleteMany([]);
-    setSelectedRecords([]);
-  };
-
-  const handleConfirmDeleteMany = async () => {
-    if (tagsToDeleteMany.length > 0) {
-      try {
-        await deleteManyMutation.mutateAsync(tagsToDeleteMany);
-        handleDeleteManyDialogClose();
-      } catch {
-        // Error is already handled by mutation's onError callback
-      }
-    }
+  const handleConfirmDeleteMany = () => {
+    handleConfirmDeleteManyBase(deleteManyMutation.mutateAsync);
   };
 
   const isSubmitting =
@@ -248,72 +218,31 @@ const TagPage = () => {
       )}
 
       {isDeleteDialogOpen && tagToDelete && (
-        <Modal
-          opened={isDeleteDialogOpen}
+        <DeleteConfirmationModal
+          isOpen={isDeleteDialogOpen}
           onClose={handleDeleteDialogClose}
+          onConfirm={handleConfirmDelete}
+          isLoading={isSubmitting}
           title={t('tags.deleteConfirmTitle')}
-          size="md"
-        >
-          <Text mb="md">
-            {t('tags.deleteConfirmMessage')}
-            <br />
-            <strong>{tagToDelete.name}</strong>
-          </Text>
-          <Group justify="flex-end" mt="md">
-            <Button
-              variant="outline"
-              onClick={handleDeleteDialogClose}
-              disabled={isSubmitting}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              color="red"
-              onClick={handleConfirmDelete}
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? t('common.deleting', { defaultValue: 'Deleting...' })
-                : t('common.delete')}
-            </Button>
-          </Group>
-        </Modal>
+          message={t('tags.deleteConfirmMessage')}
+          itemName={tagToDelete.name}
+        />
       )}
 
       {isDeleteManyDialogOpen && tagsToDeleteMany.length > 0 && (
-        <Modal
-          opened={isDeleteManyDialogOpen}
+        <DeleteManyConfirmationModal
+          isOpen={isDeleteManyDialogOpen}
           onClose={handleDeleteManyDialogClose}
+          onConfirm={handleConfirmDeleteMany}
+          isLoading={isSubmitting}
           title={t('tags.deleteManyConfirmTitle', {
             defaultValue: 'Delete Multiple Tags',
           })}
-          size="md"
-        >
-          <Text mb="md">
-            {t('tags.deleteManyConfirmMessage', {
-              defaultValue: 'Are you sure you want to delete {{count}} tag(s)?',
-              count: tagsToDeleteMany.length,
-            })}
-          </Text>
-          <Group justify="flex-end" mt="md">
-            <Button
-              variant="outline"
-              onClick={handleDeleteManyDialogClose}
-              disabled={isSubmitting}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              color="red"
-              onClick={handleConfirmDeleteMany}
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? t('common.deleting', { defaultValue: 'Deleting...' })
-                : t('common.delete')}
-            </Button>
-          </Group>
-        </Modal>
+          message={t('tags.deleteManyConfirmMessage', {
+            defaultValue: 'Are you sure you want to delete {{count}} tag(s)?',
+          })}
+          count={tagsToDeleteMany.length}
+        />
       )}
     </PageContainer>
   );

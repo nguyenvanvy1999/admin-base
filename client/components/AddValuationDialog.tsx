@@ -1,5 +1,5 @@
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group, Modal, Stack } from '@mantine/core';
+import { Modal, Stack } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { InvestmentResponse } from '@server/dto/investment.dto';
 import {
@@ -9,6 +9,7 @@ import {
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { DialogFooterButtons } from './DialogFooterButtons';
 import { NumberInput } from './NumberInput';
 import { TextInput } from './TextInput';
 import { ZodFormController } from './ZodFormController';
@@ -241,21 +242,13 @@ const AddValuationDialog = ({
             }}
           />
 
-          <Group justify="flex-end">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              type="button"
-              disabled={isLoading}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading
-                ? t('common.saving', { defaultValue: 'Saving...' })
-                : t('common.add')}
-            </Button>
-          </Group>
+          <DialogFooterButtons
+            isEditMode={false}
+            isLoading={isLoading}
+            onCancel={onClose}
+            onSave={onSubmitForm}
+            showSaveAndAdd={false}
+          />
         </Stack>
       </form>
     </Modal>

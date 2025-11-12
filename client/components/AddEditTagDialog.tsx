@@ -1,5 +1,5 @@
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group, Modal, Stack } from '@mantine/core';
+import { Modal, Stack } from '@mantine/core';
 import {
   type IUpsertTagDto,
   type TagResponse,
@@ -8,6 +8,7 @@ import {
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { DialogFooterButtons } from './DialogFooterButtons';
 import { Textarea } from './Textarea';
 import { TextInput } from './TextInput';
 import { ZodFormController } from './ZodFormController';
@@ -131,36 +132,13 @@ const AddEditTagDialog = ({
             )}
           />
 
-          <Group justify="flex-end" mt="md">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              {t('common.cancel')}
-            </Button>
-            {!isEditMode && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onSubmitFormAndAdd();
-                }}
-                disabled={isLoading}
-              >
-                {t('common.saveAndAdd')}
-              </Button>
-            )}
-            <Button type="submit" disabled={isLoading}>
-              {isLoading
-                ? t('common.saving', { defaultValue: 'Saving...' })
-                : isEditMode
-                  ? t('common.save')
-                  : t('common.add')}
-            </Button>
-          </Group>
+          <DialogFooterButtons
+            isEditMode={isEditMode}
+            isLoading={isLoading}
+            onCancel={onClose}
+            onSave={onSubmitForm}
+            onSaveAndAdd={onSubmitFormAndAdd}
+          />
         </Stack>
       </form>
     </Modal>

@@ -1,13 +1,6 @@
 import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import {
-  Button,
-  Group,
-  Modal,
-  SegmentedControl,
-  Stack,
-  Text,
-} from '@mantine/core';
+import { Modal, SegmentedControl, Stack, Text } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { InvestmentResponse } from '@server/dto/investment.dto';
 import {
@@ -18,6 +11,7 @@ import { TradeSide } from '@server/generated/prisma/enums';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { DialogFooterButtons } from './DialogFooterButtons';
 import { NumberInput } from './NumberInput';
 import { Select } from './Select';
 import { ZodFormController } from './ZodFormController';
@@ -355,21 +349,13 @@ const AddTradeDialog = ({
             })}
           </Text>
 
-          <Group justify="flex-end">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              type="button"
-              disabled={isLoading}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading
-                ? t('common.saving', { defaultValue: 'Saving...' })
-                : t('common.add')}
-            </Button>
-          </Group>
+          <DialogFooterButtons
+            isEditMode={false}
+            isLoading={isLoading}
+            onCancel={onClose}
+            onSave={onSubmitForm}
+            showSaveAndAdd={false}
+          />
         </Stack>
       </form>
     </Modal>

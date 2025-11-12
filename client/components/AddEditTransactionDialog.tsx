@@ -1,5 +1,5 @@
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group, Modal, Stack, Tabs } from '@mantine/core';
+import { Button, Modal, Stack, Tabs } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { AccountResponse } from '@server/dto/account.dto';
 import type { CategoryTreeResponse } from '@server/dto/category.dto';
@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import CategorySelect from './CategorySelect';
+import { DialogFooterButtons } from './DialogFooterButtons';
 import EventSelect from './EventSelect';
 import { NumberInput } from './NumberInput';
 import { Select } from './Select';
@@ -649,32 +650,14 @@ const AddEditTransactionDialog = ({
             </div>
           </div>
 
-          <Group justify="flex-end" mt="md">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isLoading}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={(e) => {
-                e.preventDefault();
-                onSubmitFormAndAdd();
-              }}
-              disabled={isLoading}
-            >
-              {t('transactions.saveAndAdd')}
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading
-                ? t('common.saving', { defaultValue: 'Saving...' })
-                : t('common.save')}
-            </Button>
-          </Group>
+          <DialogFooterButtons
+            isEditMode={isEditMode}
+            isLoading={isLoading}
+            onCancel={handleClose}
+            onSave={onSubmitForm}
+            onSaveAndAdd={onSubmitFormAndAdd}
+            showSaveAndAdd={true}
+          />
         </Stack>
       </form>
     </Modal>

@@ -1,6 +1,6 @@
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group, Modal, Stack } from '@mantine/core';
+import { Modal, Stack } from '@mantine/core';
 import {
   type InvestmentResponse,
   type IUpsertInvestmentDto,
@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { DialogFooterButtons } from './DialogFooterButtons';
 import { Select } from './Select';
 import { Textarea } from './Textarea';
 import { TextInput } from './TextInput';
@@ -311,23 +312,13 @@ const AddEditInvestmentDialog = ({
             )}
           />
 
-          <Group justify="flex-end">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              type="button"
-              disabled={isLoading}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading
-                ? t('common.saving', { defaultValue: 'Saving...' })
-                : isEditMode
-                  ? t('common.save')
-                  : t('common.add')}
-            </Button>
-          </Group>
+          <DialogFooterButtons
+            isEditMode={isEditMode}
+            isLoading={isLoading}
+            onCancel={onClose}
+            onSave={onSubmitForm}
+            showSaveAndAdd={false}
+          />
         </Stack>
       </form>
     </Modal>

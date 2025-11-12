@@ -1,6 +1,6 @@
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group, Modal, Stack } from '@mantine/core';
+import { Modal, Stack } from '@mantine/core';
 import {
   type CategoryTreeResponse,
   type IUpsertCategoryDto,
@@ -10,6 +10,7 @@ import { CategoryType } from '@server/generated/prisma/enums';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { DialogFooterButtons } from './DialogFooterButtons';
 import { Select } from './Select';
 import { TextInput } from './TextInput';
 import { ZodFormController } from './ZodFormController';
@@ -263,23 +264,13 @@ const AddEditCategoryDialog = ({
             )}
           />
 
-          <Group justify="flex-end" mt="md">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading
-                ? t('common.saving', { defaultValue: 'Saving...' })
-                : isEditMode
-                  ? t('common.save')
-                  : t('common.add')}
-            </Button>
-          </Group>
+          <DialogFooterButtons
+            isEditMode={isEditMode}
+            isLoading={isLoading}
+            onCancel={onClose}
+            onSave={onSubmitForm}
+            showSaveAndAdd={false}
+          />
         </Stack>
       </form>
     </Modal>

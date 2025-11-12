@@ -1,4 +1,6 @@
 import AddEditEntityDialog from '@client/components/AddEditEntityDialog';
+import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
+import { DeleteManyConfirmationModal } from '@client/components/DeleteManyConfirmationModal';
 import EntityTable from '@client/components/EntityTable';
 import {
   FormComponent,
@@ -17,8 +19,10 @@ import {
   type FilterFormValue,
   useEntitiesQuery,
 } from '@client/hooks/queries/useEntityQueries';
+import { usePageDelete } from '@client/hooks/usePageDelete';
+import { usePageDialog } from '@client/hooks/usePageDialog';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group, Modal, MultiSelect, Text } from '@mantine/core';
+import { Button, Group, MultiSelect } from '@mantine/core';
 import {
   type EntityResponse,
   type IUpsertEntityDto,
@@ -41,26 +45,37 @@ const defaultFilterValues: FilterFormValue = {
 const EntityPage = () => {
   const { t } = useTranslation();
   const formRef = useRef<FormComponentRef>(null);
-  const [selectedEntity, setSelectedEntity] = useState<EntityResponse | null>(
-    null,
-  );
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [entityToDelete, setEntityToDelete] = useState<EntityResponse | null>(
-    null,
-  );
-  const [isDeleteManyDialogOpen, setIsDeleteManyDialogOpen] = useState(false);
-  const [entitiesToDeleteMany, setEntitiesToDeleteMany] = useState<string[]>(
-    [],
-  );
-  const [selectedRecords, setSelectedRecords] = useState<EntityResponse[]>([]);
-  const [resetTrigger, setResetTrigger] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'type' | 'createdAt'>(
     'createdAt',
   );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const {
+    isDialogOpen,
+    selectedItem: selectedEntity,
+    resetTrigger,
+    handleAdd,
+    handleEdit,
+    handleClose: handleDialogClose,
+    handleSaveAndAdd,
+  } = usePageDialog<EntityResponse>();
+
+  const {
+    isDeleteDialogOpen,
+    itemToDelete: entityToDelete,
+    handleDelete,
+    handleDeleteDialogClose,
+    handleConfirmDelete: handleConfirmDeleteBase,
+    isDeleteManyDialogOpen,
+    itemsToDeleteMany: entitiesToDeleteMany,
+    selectedRecords,
+    setSelectedRecords,
+    handleDeleteMany,
+    handleDeleteManyDialogClose,
+    handleConfirmDeleteMany: handleConfirmDeleteManyBase,
+  } = usePageDelete<EntityResponse>();
 
   const { handleSubmit, control, reset } = useZodForm({
     zod: filterSchema,
@@ -87,31 +102,6 @@ const EntityPage = () => {
   const deleteMutation = useDeleteEntityMutation();
   const deleteManyMutation = useDeleteManyEntitiesMutation();
 
-  const handleAdd = () => {
-    setSelectedEntity(null);
-    setIsDialogOpen(true);
-  };
-
-  const handleEdit = (entity: EntityResponse) => {
-    setSelectedEntity(entity);
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = (entity: EntityResponse) => {
-    setEntityToDelete(entity);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setIsDialogOpen(false);
-    setSelectedEntity(null);
-  };
-
-  const handleDeleteDialogClose = () => {
-    setIsDeleteDialogOpen(false);
-    setEntityToDelete(null);
-  };
-
   const handleSubmitForm = async (
     formData: IUpsertEntityDto,
     saveAndAdd?: boolean,
@@ -123,8 +113,7 @@ const EntityPage = () => {
         await createMutation.mutateAsync(formData);
       }
       if (saveAndAdd) {
-        setSelectedEntity(null);
-        setResetTrigger((prev) => prev + 1);
+        handleSaveAndAdd();
       } else {
         handleDialogClose();
       }
@@ -133,37 +122,12 @@ const EntityPage = () => {
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (entityToDelete) {
-      try {
-        await deleteMutation.mutateAsync(entityToDelete.id);
-        handleDeleteDialogClose();
-      } catch {
-        // Error is already handled by mutation's onError callback
-      }
-    }
+  const handleConfirmDelete = () => {
+    handleConfirmDeleteBase(deleteMutation.mutateAsync);
   };
 
-  const handleDeleteMany = (ids: string[]) => {
-    setEntitiesToDeleteMany(ids);
-    setIsDeleteManyDialogOpen(true);
-  };
-
-  const handleDeleteManyDialogClose = () => {
-    setIsDeleteManyDialogOpen(false);
-    setEntitiesToDeleteMany([]);
-    setSelectedRecords([]);
-  };
-
-  const handleConfirmDeleteMany = async () => {
-    if (entitiesToDeleteMany.length > 0) {
-      try {
-        await deleteManyMutation.mutateAsync(entitiesToDeleteMany);
-        handleDeleteManyDialogClose();
-      } catch {
-        // Error is already handled by mutation's onError callback
-      }
-    }
+  const handleConfirmDeleteMany = () => {
+    handleConfirmDeleteManyBase(deleteManyMutation.mutateAsync);
   };
 
   const isSubmitting =
@@ -279,73 +243,32 @@ const EntityPage = () => {
       )}
 
       {isDeleteDialogOpen && entityToDelete && (
-        <Modal
-          opened={isDeleteDialogOpen}
+        <DeleteConfirmationModal
+          isOpen={isDeleteDialogOpen}
           onClose={handleDeleteDialogClose}
+          onConfirm={handleConfirmDelete}
+          isLoading={isSubmitting}
           title={t('entities.deleteConfirmTitle')}
-          size="md"
-        >
-          <Text mb="md">
-            {t('entities.deleteConfirmMessage')}
-            <br />
-            <strong>{entityToDelete.name}</strong>
-          </Text>
-          <Group justify="flex-end" mt="md">
-            <Button
-              variant="outline"
-              onClick={handleDeleteDialogClose}
-              disabled={isSubmitting}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              color="red"
-              onClick={handleConfirmDelete}
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? t('common.deleting', { defaultValue: 'Deleting...' })
-                : t('common.delete')}
-            </Button>
-          </Group>
-        </Modal>
+          message={t('entities.deleteConfirmMessage')}
+          itemName={entityToDelete.name}
+        />
       )}
 
       {isDeleteManyDialogOpen && entitiesToDeleteMany.length > 0 && (
-        <Modal
-          opened={isDeleteManyDialogOpen}
+        <DeleteManyConfirmationModal
+          isOpen={isDeleteManyDialogOpen}
           onClose={handleDeleteManyDialogClose}
+          onConfirm={handleConfirmDeleteMany}
+          isLoading={isSubmitting}
           title={t('entities.deleteManyConfirmTitle', {
             defaultValue: 'Delete Multiple Entities',
           })}
-          size="md"
-        >
-          <Text mb="md">
-            {t('entities.deleteManyConfirmMessage', {
-              defaultValue:
-                'Are you sure you want to delete {{count}} entity(ies)?',
-              count: entitiesToDeleteMany.length,
-            })}
-          </Text>
-          <Group justify="flex-end" mt="md">
-            <Button
-              variant="outline"
-              onClick={handleDeleteManyDialogClose}
-              disabled={isSubmitting}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              color="red"
-              onClick={handleConfirmDeleteMany}
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? t('common.deleting', { defaultValue: 'Deleting...' })
-                : t('common.delete')}
-            </Button>
-          </Group>
-        </Modal>
+          message={t('entities.deleteManyConfirmMessage', {
+            defaultValue:
+              'Are you sure you want to delete {{count}} entity(ies)?',
+          })}
+          count={entitiesToDeleteMany.length}
+        />
       )}
     </PageContainer>
   );
