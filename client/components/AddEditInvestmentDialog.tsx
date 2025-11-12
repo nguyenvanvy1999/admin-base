@@ -72,7 +72,11 @@ const AddEditInvestmentDialog = ({
         name: investment.name,
         symbol: investment.symbol,
         assetType: investment.assetType,
-        mode: investment.mode,
+        mode:
+          investment.mode === InvestmentMode.priced ||
+          investment.mode === InvestmentMode.manual
+            ? investment.mode
+            : InvestmentMode.priced,
         currencyId: investment.currencyId,
         baseCurrencyId: investment.baseCurrencyId || '',
         extra: investment.extra
@@ -209,19 +213,28 @@ const AddEditInvestmentDialog = ({
                 items={[
                   {
                     value: InvestmentMode.priced,
-                    label: t('investments.mode.priced', {
+                    label: t('investments.modes.priced', {
                       defaultValue: 'Market priced',
                     }),
                   },
                   {
                     value: InvestmentMode.manual,
-                    label: t('investments.mode.manual', {
+                    label: t('investments.modes.manual', {
                       defaultValue: 'Manual valuation',
                     }),
                   },
                 ]}
-                value={field.value || InvestmentMode.priced}
-                onChange={field.onChange}
+                value={field.value ?? InvestmentMode.priced}
+                onChange={(value) => {
+                  if (
+                    value === InvestmentMode.priced ||
+                    value === InvestmentMode.manual
+                  ) {
+                    field.onChange(value);
+                  } else {
+                    field.onChange(InvestmentMode.priced);
+                  }
+                }}
               />
             )}
           />

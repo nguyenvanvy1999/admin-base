@@ -91,8 +91,8 @@ const InvestmentTable = ({
             color={row.mode === InvestmentMode.priced ? 'green' : 'yellow'}
           >
             {row.mode === InvestmentMode.priced
-              ? t('investments.mode.priced', { defaultValue: 'Market priced' })
-              : t('investments.mode.manual', {
+              ? t('investments.modes.priced', { defaultValue: 'Market priced' })
+              : t('investments.modes.manual', {
                   defaultValue: 'Manual valuation',
                 })}
           </Badge>
@@ -104,7 +104,7 @@ const InvestmentTable = ({
       },
       {
         accessor: 'updatedAt',
-        title: 'investments.updatedAt',
+        title: 'common.updatedAt',
       },
       {
         title: 'investments.actions',

@@ -193,13 +193,13 @@ const InvestmentPage = () => {
                   data={[
                     {
                       value: InvestmentMode.priced,
-                      label: t('investments.mode.priced', {
+                      label: t('investments.modes.priced', {
                         defaultValue: 'Market priced',
                       }),
                     },
                     {
                       value: InvestmentMode.manual,
-                      label: t('investments.mode.manual', {
+                      label: t('investments.modes.manual', {
                         defaultValue: 'Manual valuation',
                       }),
                     },
