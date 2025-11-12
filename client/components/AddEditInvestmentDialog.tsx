@@ -20,10 +20,8 @@ import { ZodFormController } from './ZodFormController';
 const schema = UpsertInvestmentDto.extend({
   name: z.string().min(1, 'investments.nameRequired'),
   symbol: z.string().min(1, 'investments.symbolRequired'),
-  assetType: z.enum(
-    Object.values(InvestmentAssetType) as [string, ...string[]],
-  ),
-  mode: z.enum(Object.values(InvestmentMode) as [string, ...string[]]),
+  assetType: z.enum(InvestmentAssetType),
+  mode: z.enum(InvestmentMode),
   currencyId: z.string().min(1, 'investments.currencyRequired'),
 });
 

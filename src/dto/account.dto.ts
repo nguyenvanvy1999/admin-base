@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 export const UpsertAccountDto = z.object({
   id: z.string().optional(),
-  type: z.enum(Object.values(AccountType) as [string, ...string[]]),
+  type: z.enum(AccountType),
   name: z.string().min(1),
   currencyId: z.string().min(1),
   initialBalance: z.number().optional(),
@@ -16,10 +16,14 @@ export const UpsertAccountDto = z.object({
 });
 
 export const ListAccountsQueryDto = z.object({
-  type: z
-    .array(z.enum(Object.values(AccountType) as [string, ...string[]]))
-    .optional(),
-  currencyId: z.array(z.string()).optional(),
+  type: z.preprocess((val) => {
+    if (val === undefined || val === null) return undefined;
+    return Array.isArray(val) ? val : [val];
+  }, z.array(z.enum(AccountType)).optional()),
+  currencyId: z.preprocess((val) => {
+    if (val === undefined || val === null) return undefined;
+    return Array.isArray(val) ? val : [val];
+  }, z.array(z.string()).optional()),
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1).optional(),
   limit: z.coerce.number().int().min(1).default(20).optional(),

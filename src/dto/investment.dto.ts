@@ -9,25 +9,26 @@ export const UpsertInvestmentDto = z.object({
   id: z.string().optional(),
   symbol: z.string().min(1),
   name: z.string().min(1),
-  assetType: z.enum(
-    Object.values(InvestmentAssetType) as [string, ...string[]],
-  ),
-  mode: z
-    .enum(Object.values(InvestmentMode) as [string, ...string[]])
-    .optional(),
+  assetType: z.enum(InvestmentAssetType),
+  mode: z.enum(InvestmentMode).optional(),
   currencyId: z.string().min(1),
   baseCurrencyId: z.string().optional(),
   extra: z.unknown().optional(),
 });
 
 export const ListInvestmentsQueryDto = z.object({
-  assetTypes: z
-    .array(z.enum(Object.values(InvestmentAssetType) as [string, ...string[]]))
-    .optional(),
-  modes: z
-    .array(z.enum(Object.values(InvestmentMode) as [string, ...string[]]))
-    .optional(),
-  currencyIds: z.array(z.string()).optional(),
+  assetTypes: z.preprocess((val) => {
+    if (val === undefined || val === null) return undefined;
+    return Array.isArray(val) ? val : [val];
+  }, z.array(z.enum(InvestmentAssetType)).optional()),
+  modes: z.preprocess((val) => {
+    if (val === undefined || val === null) return undefined;
+    return Array.isArray(val) ? val : [val];
+  }, z.array(z.enum(InvestmentMode)).optional()),
+  currencyIds: z.preprocess((val) => {
+    if (val === undefined || val === null) return undefined;
+    return Array.isArray(val) ? val : [val];
+  }, z.array(z.string()).optional()),
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1).optional(),
   limit: z.coerce.number().int().min(1).default(20).optional(),

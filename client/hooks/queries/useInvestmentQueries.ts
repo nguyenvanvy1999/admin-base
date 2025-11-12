@@ -11,12 +11,8 @@ import { z } from 'zod';
 
 const filterSchema = z.object({
   search: z.string().optional(),
-  assetTypes: z
-    .array(z.enum(Object.values(InvestmentAssetType) as [string, ...string[]]))
-    .optional(),
-  modes: z
-    .array(z.enum(Object.values(InvestmentMode) as [string, ...string[]]))
-    .optional(),
+  assetTypes: z.array(z.enum(InvestmentAssetType)).optional(),
+  modes: z.array(z.enum(InvestmentMode)).optional(),
   currencyIds: z.array(z.string()).optional(),
 });
 

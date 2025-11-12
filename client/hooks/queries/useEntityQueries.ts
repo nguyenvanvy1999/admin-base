@@ -7,9 +7,7 @@ import { z } from 'zod';
 
 const filterSchema = z.object({
   search: z.string().optional(),
-  type: z
-    .array(z.enum(Object.values(EntityType) as [string, ...string[]]))
-    .optional(),
+  type: z.array(z.enum(EntityType)).optional(),
 });
 
 export type FilterFormValue = z.infer<typeof filterSchema>;

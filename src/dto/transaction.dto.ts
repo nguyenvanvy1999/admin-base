@@ -65,12 +65,22 @@ export const BatchTransactionsDto = z.object({
 });
 
 export const ListTransactionsQueryDto = z.object({
-  types: z
-    .array(z.enum(Object.values(TransactionType) as [string, ...string[]]))
-    .optional(),
-  accountIds: z.array(z.string()).optional(),
-  categoryIds: z.array(z.string()).optional(),
-  entityIds: z.array(z.string()).optional(),
+  types: z.preprocess((val) => {
+    if (val === undefined || val === null) return undefined;
+    return Array.isArray(val) ? val : [val];
+  }, z.array(z.enum(TransactionType)).optional()),
+  accountIds: z.preprocess((val) => {
+    if (val === undefined || val === null) return undefined;
+    return Array.isArray(val) ? val : [val];
+  }, z.array(z.string()).optional()),
+  categoryIds: z.preprocess((val) => {
+    if (val === undefined || val === null) return undefined;
+    return Array.isArray(val) ? val : [val];
+  }, z.array(z.string()).optional()),
+  entityIds: z.preprocess((val) => {
+    if (val === undefined || val === null) return undefined;
+    return Array.isArray(val) ? val : [val];
+  }, z.array(z.string()).optional()),
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
   page: z.coerce.number().int().min(1).default(1).optional(),

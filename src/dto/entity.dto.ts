@@ -6,7 +6,7 @@ import { DeleteManyDto, type IDeleteManyDto } from './common.dto';
 export const UpsertEntityDto = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
-  type: z.enum(Object.values(EntityType) as [string, ...string[]]),
+  type: z.enum(EntityType),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
   address: z.string().optional(),
@@ -15,9 +15,10 @@ export const UpsertEntityDto = z.object({
 
 export const ListEntitiesQueryDto = z.object({
   search: z.string().optional(),
-  type: z
-    .array(z.enum(Object.values(EntityType) as [string, ...string[]]))
-    .optional(),
+  type: z.preprocess((val) => {
+    if (val === undefined || val === null) return undefined;
+    return Array.isArray(val) ? val : [val];
+  }, z.array(z.enum(EntityType)).optional()),
   page: z.coerce.number().int().min(1).default(1).optional(),
   limit: z.coerce.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['name', 'type', 'createdAt']).optional(),

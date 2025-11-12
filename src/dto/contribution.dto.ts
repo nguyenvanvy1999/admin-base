@@ -5,7 +5,7 @@ import { z } from 'zod';
 export const CreateInvestmentContributionDto = z.object({
   amount: z.number(),
   currencyId: z.string().min(1),
-  type: z.enum(Object.values(ContributionType) as [string, ...string[]]),
+  type: z.enum(ContributionType),
   timestamp: z.iso.datetime(),
   accountId: z.string().optional(),
   note: z.string().optional(),

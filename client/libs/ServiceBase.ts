@@ -51,6 +51,9 @@ export abstract class ServiceBase {
       baseURL,
       headers: { Accept: 'application/json' },
       timeout: 10000,
+      paramsSerializer: {
+        indexes: null,
+      },
       transformRequest: [
         (data, headers) => {
           const token =

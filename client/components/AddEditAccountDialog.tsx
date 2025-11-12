@@ -16,7 +16,7 @@ import { ZodFormController } from './ZodFormController';
 
 const baseSchema = UpsertAccountDto.extend({
   name: z.string().min(1, 'accounts.nameRequired'),
-  type: z.enum(Object.values(AccountType) as [string, ...string[]], {
+  type: z.enum(AccountType, {
     message: 'accounts.typeRequired',
   }),
   currencyId: z.string().min(1, 'accounts.currencyRequired'),

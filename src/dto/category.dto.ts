@@ -5,16 +5,14 @@ import { z } from 'zod';
 export const UpsertCategoryDto = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
-  type: z.enum(Object.values(CategoryType) as [string, ...string[]]),
+  type: z.enum(CategoryType),
   parentId: z.string().optional(),
   icon: z.string().optional(),
   color: z.string().optional(),
 });
 
 export const ListCategoriesQueryDto = z.object({
-  type: z
-    .array(z.enum(Object.values(CategoryType) as [string, ...string[]]))
-    .optional(),
+  type: z.array(z.enum(CategoryType)).optional(),
   includeDeleted: z.boolean().default(false).optional(),
 });
 

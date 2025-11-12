@@ -3,7 +3,7 @@ import { t } from 'elysia';
 import { z } from 'zod';
 
 export const CreateInvestmentTradeDto = z.object({
-  side: z.enum(Object.values(TradeSide) as [string, ...string[]]),
+  side: z.enum(TradeSide),
   timestamp: z.iso.datetime(),
   price: z.number().min(0),
   quantity: z.number().min(0),
@@ -23,7 +23,7 @@ export const CreateInvestmentTradeDto = z.object({
 });
 
 export const ListInvestmentTradesQueryDto = z.object({
-  side: z.enum(Object.values(TradeSide) as [string, ...string[]]).optional(),
+  side: z.enum(TradeSide).optional(),
   accountIds: z.array(z.string()).optional(),
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
