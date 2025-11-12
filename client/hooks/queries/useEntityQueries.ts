@@ -1,7 +1,6 @@
 import type { FormComponentRef } from '@client/components/FormComponent';
 import { entityService } from '@client/services';
 import { DeferredPromise } from '@open-draft/deferred-promise';
-import type { EntityListResponse } from '@server/dto/entity.dto';
 import { EntityType } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';

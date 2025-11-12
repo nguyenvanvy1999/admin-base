@@ -6,13 +6,13 @@ export class AuthService extends ServiceBase {
     super('/api/users');
   }
 
-  async login(data: ILoginDto): Promise<LoginRes> {
+  login(data: ILoginDto): Promise<LoginRes> {
     return this.post<LoginRes>(data, {
       endpoint: 'login',
     });
   }
 
-  async register(data: {
+  register(data: {
     username: string;
     password: string;
     name?: string;

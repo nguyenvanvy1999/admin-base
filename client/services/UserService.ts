@@ -6,7 +6,7 @@ export class UserService extends ServiceBase {
     super('/api/users');
   }
 
-  async getCurrentUser(): Promise<CurrentUserRes> {
+  getCurrentUser(): Promise<CurrentUserRes> {
     return this.get<CurrentUserRes>({
       endpoint: 'me',
     });

@@ -20,8 +20,6 @@ const schema = z
     path: ['confirmPassword'],
   });
 
-type FormValue = z.infer<typeof schema>;
-
 const RegisterPage = () => {
   const { t } = useTranslation();
   const registerMutation = useRegisterMutation();

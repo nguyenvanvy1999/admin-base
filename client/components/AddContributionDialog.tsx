@@ -1,4 +1,4 @@
-import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
+import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
 import type { AccountFull } from '@client/types/account';
 import type {
@@ -88,7 +88,7 @@ const AddContributionDialog = ({
     baseCurrencyId: investment.baseCurrencyId || '',
   };
 
-  const { control, handleSubmit, reset, watch } = useZodForm({
+  const { control, handleSubmit, reset } = useZodForm({
     zod: schema,
     defaultValues,
   });

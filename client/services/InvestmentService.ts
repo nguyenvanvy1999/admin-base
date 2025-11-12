@@ -33,7 +33,7 @@ export class InvestmentService extends ServiceBase {
     super('/api/investments');
   }
 
-  async listInvestments(query?: {
+  listInvestments(query?: {
     assetTypes?: InvestmentAssetType[];
     modes?: InvestmentMode[];
     currencyIds?: string[];
@@ -48,13 +48,13 @@ export class InvestmentService extends ServiceBase {
     });
   }
 
-  async getInvestment(investmentId: string): Promise<InvestmentResponse> {
+  getInvestment(investmentId: string): Promise<InvestmentResponse> {
     return this.get<InvestmentResponse>({
       endpoint: investmentId,
     });
   }
 
-  async getInvestmentPosition(
+  getInvestmentPosition(
     investmentId: string,
   ): Promise<InvestmentPositionResponse> {
     return this.get<InvestmentPositionResponse>({
@@ -62,19 +62,17 @@ export class InvestmentService extends ServiceBase {
     });
   }
 
-  async createInvestment(
+  createInvestment(
     data: Omit<InvestmentFormData, 'id'>,
   ): Promise<InvestmentResponse> {
     return this.post<InvestmentResponse>(data);
   }
 
-  async updateInvestment(
-    data: InvestmentFormData,
-  ): Promise<InvestmentResponse> {
+  updateInvestment(data: InvestmentFormData): Promise<InvestmentResponse> {
     return this.post<InvestmentResponse>(data);
   }
 
-  async listTrades(
+  listTrades(
     investmentId: string,
     query?: {
       side?: TradeSide;
@@ -92,7 +90,7 @@ export class InvestmentService extends ServiceBase {
     });
   }
 
-  async createTrade(
+  createTrade(
     investmentId: string,
     data: InvestmentTradeFormData,
   ): Promise<InvestmentTradeResponse> {
@@ -101,7 +99,7 @@ export class InvestmentService extends ServiceBase {
     });
   }
 
-  async listContributions(
+  listContributions(
     investmentId: string,
     query?: {
       accountIds?: string[];
@@ -118,7 +116,7 @@ export class InvestmentService extends ServiceBase {
     });
   }
 
-  async createContribution(
+  createContribution(
     investmentId: string,
     data: InvestmentContributionFormData,
   ): Promise<InvestmentContributionResponse> {
@@ -127,7 +125,7 @@ export class InvestmentService extends ServiceBase {
     });
   }
 
-  async listValuations(
+  listValuations(
     investmentId: string,
     query?: {
       dateFrom?: string;
@@ -143,7 +141,7 @@ export class InvestmentService extends ServiceBase {
     });
   }
 
-  async getLatestValuation(
+  getLatestValuation(
     investmentId: string,
   ): Promise<InvestmentValuationResponse | null> {
     return this.get<InvestmentValuationResponse | null>({
@@ -151,7 +149,7 @@ export class InvestmentService extends ServiceBase {
     });
   }
 
-  async upsertValuation(
+  upsertValuation(
     investmentId: string,
     data: InvestmentValuationFormData,
   ): Promise<InvestmentValuationResponse> {

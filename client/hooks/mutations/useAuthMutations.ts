@@ -2,7 +2,6 @@ import { ACCESS_TOKEN_KEY } from '@client/constants';
 import { authService } from '@client/services';
 import useUserStore from '@client/store/user';
 import { accessTokenRefreshSubject } from '@client/utils/subjects';
-import { toast } from '@client/utils/toast';
 import type { ILoginDto } from '@server/dto/user.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';

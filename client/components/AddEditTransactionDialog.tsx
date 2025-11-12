@@ -67,7 +67,7 @@ const AddEditTransactionDialog = ({
         ? TransactionType.transfer
         : TransactionType.expense,
   );
-  const [saveAndAdd, setSaveAndAdd] = useState(false);
+  const [_saveAndAdd, setSaveAndAdd] = useState(false);
   const [feeEnabled, setFeeEnabled] = useState(false);
 
   const accounts = accountsProp;

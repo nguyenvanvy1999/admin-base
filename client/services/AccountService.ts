@@ -12,7 +12,7 @@ export class AccountService extends ServiceBase {
     super('/api/accounts');
   }
 
-  async listAccounts(query?: {
+  listAccounts(query?: {
     type?: AccountType[];
     currencyId?: string[];
     search?: string;
@@ -26,17 +26,15 @@ export class AccountService extends ServiceBase {
     });
   }
 
-  async createAccount(
-    data: Omit<AccountFormData, 'id'>,
-  ): Promise<AccountResponse> {
+  createAccount(data: Omit<AccountFormData, 'id'>): Promise<AccountResponse> {
     return this.post<AccountResponse>(data);
   }
 
-  async updateAccount(data: AccountFormData): Promise<AccountResponse> {
+  updateAccount(data: AccountFormData): Promise<AccountResponse> {
     return this.post<AccountResponse>(data);
   }
 
-  async deleteAccount(accountId: string): Promise<AccountDeleteResponse> {
+  deleteAccount(accountId: string): Promise<AccountDeleteResponse> {
     return this.delete<AccountDeleteResponse>({
       endpoint: accountId,
     });

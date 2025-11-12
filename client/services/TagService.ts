@@ -11,7 +11,7 @@ export class TagService extends ServiceBase {
     super('/api/tags');
   }
 
-  async listTags(query?: {
+  listTags(query?: {
     search?: string;
     page?: number;
     limit?: number;
@@ -21,11 +21,11 @@ export class TagService extends ServiceBase {
     });
   }
 
-  async createTag(data: Omit<TagFormData, 'id'>): Promise<TagResponse> {
+  createTag(data: Omit<TagFormData, 'id'>): Promise<TagResponse> {
     return this.post<TagResponse>(data);
   }
 
-  async deleteTag(tagId: string): Promise<TagDeleteResponse> {
+  deleteTag(tagId: string): Promise<TagDeleteResponse> {
     return this.delete<TagDeleteResponse>({
       endpoint: tagId,
     });

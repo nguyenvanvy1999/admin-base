@@ -14,8 +14,6 @@ const schema = z.object({
   password: z.string().min(1, 'login.password'),
 });
 
-type FormValue = z.infer<typeof schema>;
-
 const LoginPage = () => {
   const { t } = useTranslation();
   const loginMutation = useLoginMutation();

@@ -12,7 +12,7 @@ export class TransactionService extends ServiceBase {
     super('/api/transactions');
   }
 
-  async listTransactions(query?: {
+  listTransactions(query?: {
     types?: TransactionType[];
     accountIds?: string[];
     categoryIds?: string[];
@@ -30,7 +30,7 @@ export class TransactionService extends ServiceBase {
     });
   }
 
-  async createTransaction(
+  createTransaction(
     data: Omit<TransactionFormData, 'id'>,
   ): Promise<TransactionDetail> {
     const payload = {
@@ -42,9 +42,7 @@ export class TransactionService extends ServiceBase {
     return this.post<TransactionDetail>(payload);
   }
 
-  async updateTransaction(
-    data: TransactionFormData,
-  ): Promise<TransactionDetail> {
+  updateTransaction(data: TransactionFormData): Promise<TransactionDetail> {
     const payload = {
       ...data,
       note: data.note ?? undefined,
@@ -54,9 +52,7 @@ export class TransactionService extends ServiceBase {
     return this.post<TransactionDetail>(payload);
   }
 
-  async deleteTransaction(
-    transactionId: string,
-  ): Promise<TransactionDeleteResponse> {
+  deleteTransaction(transactionId: string): Promise<TransactionDeleteResponse> {
     return this.delete<TransactionDeleteResponse>({
       endpoint: transactionId,
     });

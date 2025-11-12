@@ -29,7 +29,7 @@ export class EntityService extends ServiceBase {
     return this.post<EntityResponse>(data);
   }
 
-  async deleteEntity(entityId: string): Promise<EntityDeleteResponse> {
+  deleteEntity(entityId: string): Promise<EntityDeleteResponse> {
     return this.delete<EntityDeleteResponse>({
       endpoint: entityId,
     });

@@ -21,7 +21,7 @@ import type {
   InvestmentFormData,
   InvestmentFull,
 } from '@client/types/investment';
-import { Button, Group, MultiSelect, Text } from '@mantine/core';
+import { Button, Group, MultiSelect } from '@mantine/core';
 import {
   InvestmentAssetType,
   InvestmentMode,

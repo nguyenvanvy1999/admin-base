@@ -6,10 +6,6 @@ import type {
   InvestmentValuationFormData,
 } from '@client/types/investment';
 import { toast } from '@client/utils/toast';
-import type { InvestmentContributionResponse } from '@server/dto/contribution.dto';
-import type { InvestmentResponse } from '@server/dto/investment.dto';
-import type { InvestmentTradeResponse } from '@server/dto/trade.dto';
-import type { InvestmentValuationResponse } from '@server/dto/valuation.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 type TradeMutationVariables = {
