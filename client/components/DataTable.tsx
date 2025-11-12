@@ -1,4 +1,5 @@
 import { booleanStatusMap } from '@client/utils/booleanStatusMap';
+import { formatDate, formatDecimal, formatInt } from '@client/utils/format';
 import {
   Pagination,
   Select,
@@ -90,7 +91,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
 
   const autoFormat = (value: any): any => {
     if (value instanceof Date) {
-      return t('common.date', { value });
+      return formatDate(value);
     }
 
     if (value === null || value === undefined) {
@@ -119,19 +120,15 @@ export function DataTable<T extends { id: string } = { id: string }>({
 
     if (valueType === 'string') {
       if (ISO_DATE_REGEX.test(value)) {
-        return t('common.date', { value });
+        return formatDate(value);
       }
       if (value !== '' && Number.isFinite(+value) && !autoFormatDisabled) {
-        return value.includes('.')
-          ? t('common.decimal', { value: +value })
-          : t('common.int', { value: +value });
+        return value.includes('.') ? formatDecimal(+value) : formatInt(+value);
       }
     }
 
     if (valueType === 'number' && !autoFormatDisabled) {
-      return Number.isInteger(value)
-        ? t('common.int', { value })
-        : t('common.decimal', { value });
+      return Number.isInteger(value) ? formatInt(value) : formatDecimal(value);
     }
 
     return value;
@@ -346,6 +343,30 @@ export function DataTable<T extends { id: string } = { id: string }>({
           colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]
         }`,
         gap: theme.spacing.sm,
+      },
+    },
+    mantineSearchTextInputProps: {
+      size: 'xs',
+      style: {
+        fontSize: '12px',
+        height: '28px',
+        minHeight: '28px',
+      },
+    },
+    mantineFilterTextInputProps: {
+      size: 'xs',
+      style: {
+        fontSize: '12px',
+        height: '28px',
+        minHeight: '28px',
+      },
+    },
+    mantineFilterSelectProps: {
+      size: 'xs',
+      style: {
+        fontSize: '12px',
+        height: '28px',
+        minHeight: '28px',
       },
     },
     // use custom bottom toolbar instead of default pagination

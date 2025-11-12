@@ -24,7 +24,8 @@
     "pageSizeLabel": "Show",
     "reset": "Reset",
     "index": "No.",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "noData": "No data available"
   },
   "login": {
     "title": "FinTrack",
