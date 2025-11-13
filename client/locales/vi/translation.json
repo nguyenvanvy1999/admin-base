@@ -422,6 +422,8 @@
     "categoryPlaceholder": "Chọn hạng mục",
     "totalIncome": "Tổng thu",
     "totalExpense": "Tổng chi",
+    "totalIncome_VND": "Tổng thu (VND)",
+    "totalExpense_VND": "Tổng chi (VND)",
     "amountFrom": "Số tiền đi",
     "amountTo": "Số tiền đến",
     "transferTo": "Chuyển đến",

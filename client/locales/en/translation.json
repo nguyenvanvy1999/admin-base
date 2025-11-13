@@ -422,6 +422,8 @@
     "categoryPlaceholder": "Select category",
     "totalIncome": "Total Income",
     "totalExpense": "Total Expense",
+    "totalIncome_VND": "Total Income (VND)",
+    "totalExpense_VND": "Total Expense (VND)",
     "amountFrom": "Amount From",
     "amountTo": "Amount To",
     "transferTo": "Transfer To",
