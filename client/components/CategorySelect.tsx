@@ -1,6 +1,6 @@
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
-import type { CategoryFull } from '@client/types/category';
 import { Box, Select } from '@mantine/core';
+import type { CategoryTreeResponse } from '@server/dto/category.dto';
 import type { CategoryType } from '@server/generated/prisma/enums';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +18,7 @@ type CategorySelectProps = {
   searchable?: boolean;
   clearable?: boolean;
   disabled?: boolean;
-  categories?: CategoryFull[];
+  categories?: CategoryTreeResponse[];
 };
 
 const CategorySelect = ({
@@ -61,7 +61,7 @@ const CategorySelect = ({
       for (const cat of cats) {
         if (cat.id === value) return cat;
         if (cat.children) {
-          const found = findCategory(cat.children);
+          const found = findCategory(cat.children as typeof categories);
           if (found) return found;
         }
       }

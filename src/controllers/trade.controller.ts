@@ -2,7 +2,10 @@ import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   CreateInvestmentTradeDto,
+  InvestmentTradeDto,
+  InvestmentTradeListResponseDto,
   ListInvestmentTradesQueryDto,
+  TradeDeleteResponseDto,
 } from '../dto/trade.dto';
 import authMacro from '../macros/auth';
 import investmentTradeService from '../services/trade.service';
@@ -13,7 +16,7 @@ const TRADE_DETAIL = {
 };
 
 const tradeController = new Elysia().group(
-  '/investments/:investmentId/trades',
+  '/investments/:id/trades',
   {
     detail: {
       tags: ['Investment Trade'],
@@ -28,11 +31,7 @@ const tradeController = new Elysia().group(
       .post(
         '/',
         ({ user, params, body, investmentTradeService }) => {
-          return investmentTradeService.createTrade(
-            user.id,
-            params.investmentId,
-            body,
-          );
+          return investmentTradeService.createTrade(user.id, params.id, body);
         },
         {
           checkAuth: [UserRole.user],
@@ -42,18 +41,17 @@ const tradeController = new Elysia().group(
             description:
               'Record a new trade (buy or sell) for the specified investment.',
           },
-          params: t.Object({ investmentId: t.String() }),
+          params: t.Object({ id: t.String() }),
           body: CreateInvestmentTradeDto,
+          response: {
+            200: InvestmentTradeDto,
+          },
         },
       )
       .get(
         '/',
         ({ user, params, query, investmentTradeService }) => {
-          return investmentTradeService.listTrades(
-            user.id,
-            params.investmentId,
-            query,
-          );
+          return investmentTradeService.listTrades(user.id, params.id, query);
         },
         {
           checkAuth: [UserRole.user],
@@ -63,8 +61,34 @@ const tradeController = new Elysia().group(
             description:
               'Return trades associated with the specified investment. Supports filtering and pagination.',
           },
-          params: t.Object({ investmentId: t.String() }),
+          params: t.Object({ id: t.String() }),
           query: ListInvestmentTradesQueryDto,
+          response: {
+            200: InvestmentTradeListResponseDto,
+          },
+        },
+      )
+      .delete(
+        '/:tradeId',
+        ({ user, params, investmentTradeService }) => {
+          return investmentTradeService.deleteTrade(
+            user.id,
+            params.id,
+            params.tradeId,
+          );
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...TRADE_DETAIL,
+            summary: 'Delete investment trade',
+            description:
+              'Delete a trade by its ID. This will revert the balance effects of the trade.',
+          },
+          params: t.Object({ id: t.String(), tradeId: t.String() }),
+          response: {
+            200: TradeDeleteResponseDto,
+          },
         },
       ),
 );

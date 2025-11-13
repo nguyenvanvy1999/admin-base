@@ -1,6 +1,13 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
-import { ListEntitiesQueryDto, UpsertEntityDto } from '../dto/entity.dto';
+import {
+  DeleteManyEntitiesDto,
+  EntityDeleteResponseDto,
+  EntityDto,
+  EntityListResponseDto,
+  ListEntitiesQueryDto,
+  UpsertEntityDto,
+} from '../dto/entity.dto';
 import authMacro from '../macros/auth';
 import entityService from '../services/entity.service';
 
@@ -24,8 +31,8 @@ const entityController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        async ({ user, body, entityService }) => {
-          return await entityService.upsertEntity(user.id, body);
+        ({ user, body, entityService }) => {
+          return entityService.upsertEntity(user.id, body);
         },
         {
           checkAuth: [UserRole.user],
@@ -36,12 +43,15 @@ const entityController = new Elysia().group(
               'Create a new financial entity or update an existing entity for the authenticated user. If an entity ID is provided, it will update the existing entity; otherwise, it creates a new one.',
           },
           body: UpsertEntityDto,
+          response: {
+            200: EntityDto,
+          },
         },
       )
       .get(
         '/:id',
-        async ({ user, params, entityService }) => {
-          return await entityService.getEntity(user.id, params.id);
+        ({ user, params, entityService }) => {
+          return entityService.getEntity(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],
@@ -52,12 +62,15 @@ const entityController = new Elysia().group(
               'Retrieve detailed information about a specific financial entity by its ID for the authenticated user.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: EntityDto,
+          },
         },
       )
       .get(
         '/',
-        async ({ user, query, entityService }) => {
-          return await entityService.listEntities(user.id, query);
+        ({ user, query, entityService }) => {
+          return entityService.listEntities(user.id, query);
         },
         {
           checkAuth: [UserRole.user],
@@ -68,12 +81,15 @@ const entityController = new Elysia().group(
               'Get a paginated list of all financial entities belonging to the authenticated user. Supports filtering and sorting.',
           },
           query: ListEntitiesQueryDto,
+          response: {
+            200: EntityListResponseDto,
+          },
         },
       )
       .delete(
         '/:id',
-        async ({ user, params, entityService }) => {
-          return await entityService.deleteEntity(user.id, params.id);
+        ({ user, params, entityService }) => {
+          return entityService.deleteEntity(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],
@@ -84,6 +100,28 @@ const entityController = new Elysia().group(
               'Permanently delete a financial entity by its ID. This action cannot be undone.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: EntityDeleteResponseDto,
+          },
+        },
+      )
+      .post(
+        '/delete-many',
+        ({ user, body, entityService }) => {
+          return entityService.deleteManyEntities(user.id, body.ids);
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...ENTITY_DETAIL,
+            summary: 'Delete many entities',
+            description:
+              'Permanently delete multiple financial entities by their IDs. This action cannot be undone.',
+          },
+          body: DeleteManyEntitiesDto,
+          response: {
+            200: EntityDeleteResponseDto,
+          },
         },
       ),
 );

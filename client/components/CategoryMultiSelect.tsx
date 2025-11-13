@@ -13,6 +13,8 @@ type CategoryMultiSelectProps = {
   searchable?: boolean;
   clearable?: boolean;
   disabled?: boolean;
+  error?: React.ReactNode;
+  style?: React.CSSProperties;
 };
 
 const CategoryMultiSelect = ({
@@ -23,6 +25,8 @@ const CategoryMultiSelect = ({
   searchable = true,
   clearable = false,
   disabled = false,
+  error,
+  style,
 }: CategoryMultiSelectProps) => {
   const { t } = useTranslation();
   const { data: categoriesData } = useCategoriesQuery({});
@@ -55,6 +59,8 @@ const CategoryMultiSelect = ({
       searchable={searchable}
       clearable={clearable}
       disabled={disabled}
+      error={error}
+      style={style}
       renderOption={({ option }) => {
         const item = data.find((d) => d.value === option.value);
         if (!item) return <span>{option.label}</span>;

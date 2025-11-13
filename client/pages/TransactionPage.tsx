@@ -1,19 +1,25 @@
 import AddEditTransactionDialog from '@client/components/AddEditTransactionDialog';
 import CategoryMultiSelect from '@client/components/CategoryMultiSelect';
+import {
+  FormComponent,
+  type FormComponentRef,
+} from '@client/components/FormComponent';
+import { PageContainer } from '@client/components/PageContainer';
 import TransactionTable from '@client/components/TransactionTable';
+import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateTransactionMutation,
   useDeleteTransactionMutation,
   useUpdateTransactionMutation,
 } from '@client/hooks/mutations/useTransactionMutations';
-import { useAccountsQuery } from '@client/hooks/queries/useAccountQueries';
+import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
-import { useEntitiesQuery } from '@client/hooks/queries/useEntityQueries';
-import { useTransactionsQuery } from '@client/hooks/queries/useTransactionQueries';
-import type {
-  TransactionFormData,
-  TransactionFull,
-} from '@client/types/transaction';
+import { useEntitiesOptionsQuery } from '@client/hooks/queries/useEntityQueries';
+import {
+  type FilterFormValue,
+  useTransactionsQuery,
+} from '@client/hooks/queries/useTransactionQueries';
+import { useZodForm } from '@client/hooks/useZodForm';
 import {
   Button,
   Group,
@@ -21,31 +27,44 @@ import {
   MultiSelect,
   NumberFormatter,
   Text,
+  TextInput,
   useMantineColorScheme,
 } from '@mantine/core';
+import type {
+  IUpsertTransaction,
+  TransactionDetail,
+} from '@server/dto/transaction.dto';
+import { ListTransactionsQueryDto } from '@server/dto/transaction.dto';
 import { TransactionType } from '@server/generated/prisma/enums';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+const filterSchema = ListTransactionsQueryDto.pick({
+  types: true,
+  accountIds: true,
+  categoryIds: true,
+  entityIds: true,
+});
+
+const defaultFilterValues: FilterFormValue = {
+  search: '',
+  types: [],
+  accountIds: [],
+  categoryIds: [],
+  entityIds: [],
+};
 
 const TransactionPage = () => {
   const { t } = useTranslation();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
+  const formRef = useRef<FormComponentRef>(null);
   const [selectedTransaction, setSelectedTransaction] =
-    useState<TransactionFull | null>(null);
+    useState<TransactionDetail | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] =
-    useState<TransactionFull | null>(null);
-  const [typeFilterInput, setTypeFilterInput] = useState<TransactionType[]>([]);
-  const [typeFilterIds, setTypeFilterIds] = useState<TransactionType[]>([]);
-  const [accountFilterInput, setAccountFilterInput] = useState<string[]>([]);
-  const [accountFilterIds, setAccountFilterIds] = useState<string[]>([]);
-  const [categoryFilterInput, setCategoryFilterInput] = useState<string[]>([]);
-  const [categoryFilterIds, setCategoryFilterIds] = useState<string[]>([]);
-  const [entityFilterInput, setEntityFilterInput] = useState<string[]>([]);
-  const [entityFilterIds, setEntityFilterIds] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+    useState<TransactionDetail | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<
@@ -53,35 +72,29 @@ const TransactionPage = () => {
   >('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  const { handleSubmit, control, reset } = useZodForm({
+    zod: filterSchema,
+    defaultValues: defaultFilterValues,
+  });
+
   const queryParams = useMemo(
     () => ({
-      types: typeFilterIds.length > 0 ? typeFilterIds : undefined,
-      accountIds: accountFilterIds.length > 0 ? accountFilterIds : undefined,
-      categoryIds: categoryFilterIds.length > 0 ? categoryFilterIds : undefined,
-      entityIds: entityFilterIds.length > 0 ? entityFilterIds : undefined,
-      search: searchQuery.trim() || undefined,
       page,
       limit,
       sortBy,
       sortOrder,
     }),
-    [
-      typeFilterIds,
-      accountFilterIds,
-      categoryFilterIds,
-      entityFilterIds,
-      searchQuery,
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-    ],
+    [page, limit, sortBy, sortOrder],
   );
 
-  const { data, isLoading } = useTransactionsQuery(queryParams);
-  const { data: accountsData } = useAccountsQuery({});
+  const { data, isLoading, refetch } = useTransactionsQuery(
+    queryParams,
+    formRef,
+    handleSubmit,
+  );
+  const { data: accountsData } = useAccountsOptionsQuery();
   const { data: categoriesData } = useCategoriesQuery({});
-  const { data: entitiesData } = useEntitiesQuery({});
+  const { data: entitiesData } = useEntitiesOptionsQuery();
 
   const accounts = accountsData?.accounts || [];
   const categories = categoriesData?.categories || [];
@@ -96,12 +109,12 @@ const TransactionPage = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (transaction: TransactionFull) => {
+  const handleEdit = (transaction: TransactionDetail) => {
     setSelectedTransaction(transaction);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (transaction: TransactionFull) => {
+  const handleDelete = (transaction: TransactionDetail) => {
     setTransactionToDelete(transaction);
     setIsDeleteDialogOpen(true);
   };
@@ -116,8 +129,8 @@ const TransactionPage = () => {
     setTransactionToDelete(null);
   };
 
-  const handleSubmit = async (
-    formData: TransactionFormData,
+  const handleSubmitForm = async (
+    formData: IUpsertTransaction,
     saveAndAdd: boolean,
   ) => {
     if (formData.id) {
@@ -137,21 +150,9 @@ const TransactionPage = () => {
     }
   };
 
-  const hasActiveFilters = useMemo(() => {
-    return (
-      searchQuery.trim() !== '' ||
-      typeFilterIds.length > 0 ||
-      accountFilterIds.length > 0 ||
-      categoryFilterIds.length > 0 ||
-      entityFilterIds.length > 0
-    );
-  }, [
-    searchQuery,
-    typeFilterIds,
-    accountFilterIds,
-    categoryFilterIds,
-    entityFilterIds,
-  ]);
+  const handleSearch = () => {
+    refetch();
+  };
 
   const isSubmitting =
     createMutation.isPending ||
@@ -174,124 +175,60 @@ const TransactionPage = () => {
 
   const summary = data?.summary;
 
-  const summaryContent = useMemo(() => {
-    if (!summary || summary.length === 0) return null;
-
-    return (
-      <>
-        {summary.map((item) => (
-          <div key={item.currency.id} className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Text size="sm" className="text-gray-600 dark:text-gray-400">
-                {t('transactions.totalIncome', { defaultValue: 'Tổng thu' })}:
-              </Text>
-              <span
-                className="font-bold"
-                style={{
-                  color: isDark ? 'rgb(34 197 94)' : 'rgb(21 128 61)',
-                }}
-              >
-                <NumberFormatter
-                  value={item.totalIncome}
-                  prefix={
-                    item.currency.symbol ? `${item.currency.symbol} ` : ''
-                  }
-                  thousandSeparator=","
-                  decimalScale={2}
-                />
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Text size="sm" className="text-gray-600 dark:text-gray-400">
-                {t('transactions.totalExpense', { defaultValue: 'Tổng chi' })}:
-              </Text>
-              <span
-                className="font-bold"
-                style={{
-                  color: isDark ? 'rgb(248 113 113)' : 'rgb(185 28 28)',
-                }}
-              >
-                <NumberFormatter
-                  value={item.totalExpense}
-                  prefix={
-                    item.currency.symbol ? `${item.currency.symbol} ` : ''
-                  }
-                  thousandSeparator=","
-                  decimalScale={2}
-                />
-              </span>
-            </div>
-          </div>
-        ))}
-      </>
-    );
-  }, [summary, isDark, t]);
+  const stats = useMemo(() => {
+    if (!summary || summary.length === 0) return undefined;
+    return summary.flatMap((item) => [
+      {
+        titleI18nKey: `transactions.totalIncome_${item.currency.code}` as any,
+        value: (
+          <NumberFormatter
+            value={item.totalIncome}
+            prefix={item.currency.symbol ? `${item.currency.symbol} ` : ''}
+            thousandSeparator=","
+            decimalScale={2}
+          />
+        ),
+        color: isDark ? 'rgb(34 197 94)' : 'rgb(21 128 61)',
+      },
+      {
+        titleI18nKey: `transactions.totalExpense_${item.currency.code}` as any,
+        value: (
+          <NumberFormatter
+            value={item.totalExpense}
+            prefix={item.currency.symbol ? `${item.currency.symbol} ` : ''}
+            thousandSeparator=","
+            decimalScale={2}
+          />
+        ),
+        color: isDark ? 'rgb(248 113 113)' : 'rgb(185 28 28)',
+      },
+    ]);
+  }, [summary, isDark]);
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {t('transactions.title')}
-              </h1>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                {t('transactions.subtitle')}
-              </p>
-            </div>
-            <Button onClick={handleAdd} disabled={isSubmitting}>
-              {t('transactions.addTransaction')}
-            </Button>
-          </div>
-
-          <TransactionTable
-            transactions={data?.transactions || []}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            isLoading={isLoading}
-            summary={summaryContent}
-            search={{
-              onSearch: (searchValue: string) => {
-                setSearchQuery(searchValue);
-                setTypeFilterIds(typeFilterInput);
-                setAccountFilterIds(accountFilterInput);
-                setCategoryFilterIds(categoryFilterInput);
-                setEntityFilterIds(entityFilterInput);
-                setPage(1);
-              },
-              placeholder: t('transactions.search'),
-            }}
-            pageSize={{
-              initialSize: limit,
-              onPageSizeChange: (size: number) => {
-                setLimit(size);
-                setPage(1);
-              },
-            }}
-            filters={{
-              hasActive: hasActiveFilters,
-              onReset: () => {
-                setSearchQuery('');
-                setTypeFilterInput([]);
-                setTypeFilterIds([]);
-                setAccountFilterInput([]);
-                setAccountFilterIds([]);
-                setCategoryFilterInput([]);
-                setCategoryFilterIds([]);
-                setEntityFilterInput([]);
-                setEntityFilterIds([]);
-                setPage(1);
-              },
-              slots: [
+    <PageContainer
+      filterGroup={
+        <FormComponent ref={formRef}>
+          <Group>
+            <ZodFormController
+              control={control}
+              name="search"
+              render={({ field, fieldState: { error } }) => (
+                <TextInput
+                  placeholder={t('transactions.search')}
+                  error={error}
+                  style={{ flex: 1, maxWidth: '300px' }}
+                  {...field}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="types"
+              render={({ field, fieldState: { error } }) => (
                 <MultiSelect
-                  key="type-filter"
-                  value={typeFilterInput}
-                  onChange={(value) => {
-                    setTypeFilterInput(value as TransactionType[]);
-                    setTypeFilterIds(value as TransactionType[]);
-                  }}
                   placeholder={t('transactions.typePlaceholder')}
+                  error={error}
                   data={[
                     {
                       value: TransactionType.income,
@@ -306,119 +243,170 @@ const TransactionPage = () => {
                       label: t('transactions.transfer'),
                     },
                   ]}
-                />,
+                  value={field.value || []}
+                  onChange={(value) =>
+                    field.onChange(value as TransactionType[])
+                  }
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="accountIds"
+              render={({ field, fieldState: { error } }) => (
                 <MultiSelect
-                  key="account-filter"
-                  value={accountFilterInput}
-                  onChange={(value) => {
-                    setAccountFilterInput(value);
-                    setAccountFilterIds(value);
-                  }}
                   placeholder={t('transactions.accountPlaceholder')}
+                  error={error}
                   data={accountOptions}
-                />,
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="categoryIds"
+              render={({ field, fieldState: { error } }) => (
                 <CategoryMultiSelect
-                  key="category-filter"
-                  value={categoryFilterInput}
-                  onChange={(value) => {
-                    setCategoryFilterInput(value);
-                    setCategoryFilterIds(value);
-                  }}
+                  value={field.value || []}
+                  onChange={field.onChange}
                   placeholder={t('transactions.categoryPlaceholder')}
-                />,
+                  error={error}
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="entityIds"
+              render={({ field, fieldState: { error } }) => (
                 <MultiSelect
-                  key="entity-filter"
-                  value={entityFilterInput}
-                  onChange={(value) => {
-                    setEntityFilterInput(value);
-                    setEntityFilterIds(value);
-                  }}
                   placeholder={t('transactions.entityPlaceholder', {
                     defaultValue: 'Select entities',
                   })}
+                  error={error}
                   data={entityOptions}
+                  value={field.value || []}
+                  onChange={field.onChange}
                   searchable
-                />,
-              ],
-            }}
-            pagination={
-              data?.pagination && data.pagination.totalPages > 0
-                ? {
-                    currentPage: page,
-                    totalPages: data.pagination.totalPages,
-                    totalItems: data.pagination.total,
-                    itemsPerPage: limit,
-                    onPageChange: setPage,
-                  }
-                : undefined
-            }
-            sorting={{
-              sortBy,
-              sortOrder,
-              onSortChange: (
-                newSortBy: string,
-                newSortOrder: 'asc' | 'desc',
-              ) => {
-                setSortBy(
-                  newSortBy as 'date' | 'amount' | 'type' | 'accountId',
-                );
-                setSortOrder(newSortOrder);
-                setPage(1);
-              },
-            }}
-          />
-        </div>
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+          </Group>
+        </FormComponent>
+      }
+      buttonGroups={
+        <Button onClick={handleAdd} disabled={isSubmitting}>
+          {t('transactions.addTransaction')}
+        </Button>
+      }
+      onSearch={handleSearch}
+      onReset={() => reset(defaultFilterValues)}
+      stats={stats}
+    >
+      <TransactionTable
+        transactions={data?.transactions || []}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        isLoading={isLoading}
+        recordsPerPage={limit}
+        recordsPerPageOptions={[10, 20, 50, 100]}
+        onRecordsPerPageChange={(size) => {
+          setLimit(size);
+          setPage(1);
+        }}
+        page={page}
+        onPageChange={setPage}
+        totalRecords={data?.pagination?.total}
+        sorting={
+          sortBy
+            ? [
+                {
+                  id: sortBy,
+                  desc: sortOrder === 'desc',
+                },
+              ]
+            : undefined
+        }
+        onSortingChange={(
+          updater:
+            | { id: string; desc: boolean }[]
+            | ((prev: { id: string; desc: boolean }[]) => {
+                id: string;
+                desc: boolean;
+              }[]),
+        ) => {
+          const newSorting =
+            typeof updater === 'function'
+              ? updater(
+                  sortBy ? [{ id: sortBy, desc: sortOrder === 'desc' }] : [],
+                )
+              : updater;
+          if (newSorting.length > 0) {
+            setSortBy(
+              newSorting[0].id as 'date' | 'amount' | 'type' | 'accountId',
+            );
+            setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
+          } else {
+            setSortBy('date');
+            setSortOrder('desc');
+          }
+          setPage(1);
+        }}
+      />
 
-        {isDialogOpen && (
-          <AddEditTransactionDialog
-            isOpen={isDialogOpen}
-            onClose={handleDialogClose}
-            transaction={selectedTransaction}
-            onSubmit={handleSubmit}
-            isLoading={isSubmitting}
-            accounts={accounts}
-            categories={categories}
-            entities={entities}
-          />
-        )}
+      {isDialogOpen && (
+        <AddEditTransactionDialog
+          isOpen={isDialogOpen}
+          onClose={handleDialogClose}
+          transaction={selectedTransaction}
+          onSubmit={handleSubmitForm}
+          isLoading={isSubmitting}
+          accounts={accounts}
+          categories={categories}
+          entities={entities}
+        />
+      )}
 
-        {isDeleteDialogOpen && transactionToDelete && (
-          <Modal
-            opened={isDeleteDialogOpen}
-            onClose={handleDeleteDialogClose}
-            title={t('transactions.deleteConfirmTitle')}
-            size="md"
-          >
-            <Text mb="md">
-              {t('transactions.deleteConfirmMessage')}
-              <br />
-              <strong>
-                {transactionToDelete.amount}{' '}
-                {transactionToDelete.account.currency.symbol}
-              </strong>
-            </Text>
-            <Group justify="flex-end" mt="md">
-              <Button
-                variant="outline"
-                onClick={handleDeleteDialogClose}
-                disabled={isSubmitting}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
-                color="red"
-                onClick={handleConfirmDelete}
-                disabled={isSubmitting}
-              >
-                {isSubmitting
-                  ? t('common.deleting', { defaultValue: 'Deleting...' })
-                  : t('common.delete')}
-              </Button>
-            </Group>
-          </Modal>
-        )}
-      </div>
-    </div>
+      {isDeleteDialogOpen && transactionToDelete && (
+        <Modal
+          opened={isDeleteDialogOpen}
+          onClose={handleDeleteDialogClose}
+          title={t('transactions.deleteConfirmTitle')}
+          size="md"
+        >
+          <Text mb="md">
+            {t('transactions.deleteConfirmMessage')}
+            <br />
+            <strong>
+              {transactionToDelete.amount}{' '}
+              {transactionToDelete.account.currency.symbol}
+            </strong>
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={handleDeleteDialogClose}
+              disabled={isSubmitting}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDelete}
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? t('common.deleting', { defaultValue: 'Deleting...' })
+                : t('common.delete')}
+            </Button>
+          </Group>
+        </Modal>
+      )}
+    </PageContainer>
   );
 };
 

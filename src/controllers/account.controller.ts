@@ -1,6 +1,12 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
-import { ListAccountsQueryDto, UpsertAccountDto } from '../dto/account.dto';
+import {
+  AccountDeleteResponseDto,
+  AccountDto,
+  AccountListResponseDto,
+  ListAccountsQueryDto,
+  UpsertAccountDto,
+} from '../dto/account.dto';
 import authMacro from '../macros/auth';
 import accountService from '../services/account.service';
 
@@ -24,8 +30,8 @@ const accountController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        async ({ user, body, accountService }) => {
-          return await accountService.upsertAccount(user.id, body);
+        ({ user, body, accountService }) => {
+          return accountService.upsertAccount(user.id, body);
         },
         {
           checkAuth: [UserRole.user],
@@ -36,12 +42,15 @@ const accountController = new Elysia().group(
               'Create a new account or update an existing account for the authenticated user. If an account ID is provided, it will update the existing account; otherwise, it creates a new one.',
           },
           body: UpsertAccountDto,
+          response: {
+            200: AccountDto,
+          },
         },
       )
       .get(
         '/:id',
-        async ({ user, params, accountService }) => {
-          return await accountService.getAccount(user.id, params.id);
+        ({ user, params, accountService }) => {
+          return accountService.getAccount(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],
@@ -52,12 +61,15 @@ const accountController = new Elysia().group(
               'Retrieve detailed information about a specific account by its ID for the authenticated user.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: AccountDto,
+          },
         },
       )
       .get(
         '/',
-        async ({ user, query, accountService }) => {
-          return await accountService.listAccounts(user.id, query);
+        ({ user, query, accountService }) => {
+          return accountService.listAccounts(user.id, query);
         },
         {
           checkAuth: [UserRole.user],
@@ -68,12 +80,15 @@ const accountController = new Elysia().group(
               'Get a paginated list of all accounts belonging to the authenticated user. Supports filtering and sorting.',
           },
           query: ListAccountsQueryDto,
+          response: {
+            200: AccountListResponseDto,
+          },
         },
       )
       .delete(
         '/:id',
-        async ({ user, params, accountService }) => {
-          return await accountService.deleteAccount(user.id, params.id);
+        ({ user, params, accountService }) => {
+          return accountService.deleteAccount(user.id, params.id);
         },
         {
           checkAuth: [UserRole.user],
@@ -84,6 +99,9 @@ const accountController = new Elysia().group(
               'Permanently delete an account by its ID. This action cannot be undone.',
           },
           params: t.Object({ id: t.String() }),
+          response: {
+            200: AccountDeleteResponseDto,
+          },
         },
       ),
 );

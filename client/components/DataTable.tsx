@@ -1,472 +1,565 @@
-import { ActionIcon, Button, TextInput } from '@mantine/core';
-import { Close, KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
+import { booleanStatusMap } from '@client/utils/booleanStatusMap';
+import { formatDate, formatDecimal, formatInt } from '@client/utils/format';
+import {
+  Group,
+  Pagination,
+  Select,
+  Text,
+  useMantineColorScheme,
+  useMantineTheme,
+} from '@mantine/core';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { useCallback, useMemo, useState } from 'react';
+  MantineReactTable,
+  useMantineReactTable,
+} from 'mantine-react-table-open';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { reorderColumns, useColumnOrder } from './DataTable/columnPersistence';
-import {
-  convertToTanStackColumn,
-  createIndexColumn,
-} from './DataTable/columnUtils';
-import type { ColumnOrderConfig, DataTableColumn } from './DataTable/types';
-import {
-  type ActionColumnOptions,
-  createActionColumn,
-} from './DataTable/utils';
-import Pagination from './Pagination';
+import type { DataTableColumn } from './DataTable/types';
+import { MetaVisualizer } from './MetaVisualizer';
 
-export type { ColumnOrderConfig, DataTableColumn } from './DataTable/types';
-export type { ActionColumnOptions } from './DataTable/utils';
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
 
-export type DataTableProps<T extends Record<string, any>> = {
-  data: T[];
-  columns: ColumnDef<T>[] | DataTableColumn<T>[];
+type SortingState = { id: string; desc: boolean }[];
+type ColumnFilter = { id: string; value: unknown };
+
+type Props<T> = {
+  columns: DataTableColumn<T>[];
+  data?: T[];
   isLoading?: boolean;
+  loading?: boolean;
   showIndexColumn?: boolean;
-  columnOrder?: ColumnOrderConfig;
   autoFormatDisabled?: boolean;
-  pagination?: {
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-    itemsPerPage: number;
-    onPageChange: (page: number) => void;
-  };
-  search?: {
-    placeholder?: string;
-    onSearch: (searchValue: string) => void;
-  };
-  pageSize?: {
-    initialSize?: number;
-    options?: number[];
-    onPageSizeChange: (size: number) => void;
-  };
-  filters?: {
-    slots?: React.ReactNode[];
-    onReset?: () => void;
-    hasActive?: boolean;
-  };
-  summary?: React.ReactNode;
-  actions?: ActionColumnOptions<T>;
-  onRowClick?: (row: T) => void;
-  emptyMessage?: string;
-  sorting?: {
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-    onSortChange?: (sortBy: string, sortOrder: 'asc' | 'desc') => void;
-  };
+  pageSize?: number;
+  recordsPerPage?: number;
+  pageSizeOptions?: number[];
+  recordsPerPageOptions?: number[];
+  onPageSizeChange?: (size: number) => void;
+  onRecordsPerPageChange?: (size: number) => void;
+  recordsPerPageLabel?: string;
+  page?: number;
+  onPageChange?: (page: number) => void;
+  rowCount?: number;
+  totalRecords?: number;
+  selectedRecords?: T[];
+  onSelectedRecordsChange?: (records: T[]) => void;
+  pinLastColumn?: boolean;
+  height?: string | number;
+  storeColumnsKey?: string;
+  idAccessor?: keyof T & string;
+  sorting?: SortingState;
+  onSortingChange?: (
+    updater: SortingState | ((prev: SortingState) => SortingState),
+  ) => void;
+  columnFilters?: ColumnFilter[];
+  onColumnFiltersChange?: (updater: ColumnFilter[]) => void;
+  enableRowNumbers?: boolean;
+  renderTopToolbarCustomActions?: (props: { table: any }) => React.ReactNode;
 };
 
-function DataTable<T extends Record<string, any>>({
-  data,
+export function DataTable<T extends { id: string } = { id: string }>({
+  idAccessor = 'id',
   columns,
-  isLoading = false,
-  showIndexColumn = true,
-  columnOrder,
-  autoFormatDisabled = false,
-  pagination,
-  search,
-  pageSize,
-  filters,
-  summary,
-  actions,
-  onRowClick,
-  emptyMessage,
+  data,
+  isLoading: isLoadingProp,
+  loading,
+  enableRowNumbers = true,
+  pinLastColumn,
+  height,
+  selectedRecords,
+  onSelectedRecordsChange,
+  storeColumnsKey,
+  autoFormatDisabled,
+  pageSize: pageSizeProp,
+  recordsPerPage,
+  pageSizeOptions: pageSizeOptionsProp,
+  recordsPerPageOptions,
+  onPageSizeChange,
+  onRecordsPerPageChange,
+  recordsPerPageLabel,
+  page,
+  onPageChange,
+  rowCount: rowCountProp,
+  totalRecords,
   sorting,
-}: DataTableProps<T>) {
+  onSortingChange,
+  columnFilters,
+  onColumnFiltersChange,
+  renderTopToolbarCustomActions,
+  ...props
+}: Props<T>) {
   const { t } = useTranslation();
+  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
 
-  const isDataTableColumn = (
-    col: ColumnDef<T> | DataTableColumn<T>,
-  ): col is DataTableColumn<T> => {
-    return 'format' in col || 'title' in col || 'onClick' in col;
+  const isLoading = isLoadingProp ?? loading ?? false;
+  const pageSize = pageSizeProp ?? recordsPerPage ?? 20;
+  const pageSizeOptions = pageSizeOptionsProp ?? recordsPerPageOptions ?? [];
+  const rowCount = rowCountProp ?? totalRecords;
+
+  const safeData: T[] = useMemo(() => {
+    if (data && Array.isArray(data)) {
+      return data;
+    }
+    return [] as T[];
+  }, [data]);
+
+  const autoFormat = (value: any): any => {
+    if (value instanceof Date) {
+      return formatDate(value);
+    }
+
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    const valueType = typeof value;
+
+    if (valueType === 'boolean') {
+      return (
+        <MetaVisualizer
+          k={String(value) as 'true' | 'false'}
+          map={booleanStatusMap}
+        />
+      );
+    }
+
+    if (valueType === 'object') {
+      if (Array.isArray(value)) {
+        if (value.every((item) => typeof item === 'string')) {
+          return value.join(', ');
+        }
+      }
+      return JSON.stringify(value);
+    }
+
+    if (valueType === 'string') {
+      if (ISO_DATE_REGEX.test(value)) {
+        return formatDate(value);
+      }
+      if (value !== '' && Number.isFinite(+value) && !autoFormatDisabled) {
+        return value.includes('.') ? formatDecimal(+value) : formatInt(+value);
+      }
+    }
+
+    if (valueType === 'number' && !autoFormatDisabled) {
+      return Number.isInteger(value) ? formatInt(value) : formatDecimal(value);
+    }
+
+    return value;
   };
 
-  const defaultColumnIds = useMemo(() => {
-    return columns.map((col, index) => {
-      if (isDataTableColumn(col)) {
-        return (
-          (typeof col.accessor === 'string' ? col.accessor : col.id) ||
-          `col-${index}`
-        );
-      }
-      const colDef = col as ColumnDef<T>;
-      return colDef.id || (colDef as any).accessorKey || `col-${index}`;
-    });
-  }, [columns]);
+  const toPx = (rem?: string) => {
+    if (!rem) return undefined;
+    const num = parseFloat(rem.replace('rem', ''));
+    return Number.isFinite(num) ? Math.round(num * 16) : undefined;
+  };
 
-  const [columnOrderState, _setColumnOrderState] = useColumnOrder(
-    columnOrder?.storeKey,
-    columnOrder?.defaultOrder || defaultColumnIds,
-  );
+  const mappedColumns = useMemo<ColumnDef<T>[]>(() => {
+    return columns.map((col, idx) => {
+      const hasAccessorFn = typeof col.accessor === 'function';
+      const accessorKey =
+        col.accessor && typeof col.accessor === 'string'
+          ? (col.accessor as string)
+          : undefined;
+      const id =
+        accessorKey ||
+        (col.title ? String(col.title) : undefined) ||
+        `col_${idx}`;
 
-  const processedColumns = useMemo(() => {
-    const converted = columns.map((col) => {
-      if (isDataTableColumn(col)) {
-        return convertToTanStackColumn(
-          {
-            ...col,
-            autoFormatDisabled: col.autoFormatDisabled ?? autoFormatDisabled,
+      return {
+        id,
+        header: col.title ? t(col.title) : '',
+        accessorKey,
+        accessorFn: hasAccessorFn
+          ? (row: T) => (col.accessor as (r: T) => unknown)(row)
+          : undefined,
+        Cell: ({
+          row,
+          cell,
+        }: {
+          row: { original: T; index: number };
+          cell: { getValue: () => unknown };
+        }) => {
+          const record = row.original;
+          const value = cell.getValue();
+          let content: React.ReactNode;
+          if (col.render) {
+            content = col.render(value, record, row.index);
+          } else if (!autoFormatDisabled) {
+            content =
+              typeof col.accessor === 'function'
+                ? autoFormat((col.accessor as (r: T) => unknown)(record))
+                : autoFormat(value);
+          } else {
+            content = value as React.ReactNode;
+          }
+          const style: React.CSSProperties = {
+            textAlign: col.textAlign || 'center',
+            ...(col.ellipsis
+              ? {
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  width: '100%',
+                  display: 'inline-block',
+                }
+              : undefined),
+            ...(col.cellsStyle ? col.cellsStyle(record) : undefined),
+          };
+          return (
+            <span
+              role={col.onClick ? 'button' : undefined}
+              style={{
+                cursor: col.onClick ? 'pointer' : undefined,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent:
+                  col.textAlign === 'right'
+                    ? 'flex-end'
+                    : col.textAlign === 'left'
+                      ? 'flex-start'
+                      : 'center',
+                width: '100%',
+                ...style,
+              }}
+              onClick={col.onClick ? () => col.onClick?.(record) : undefined}
+            >
+              {content}
+            </span>
+          );
+        },
+        size: toPx(col.width),
+        minSize: toPx(col.minWidth),
+        enableColumnFilter: accessorKey !== undefined || hasAccessorFn,
+        filterVariant:
+          col.filterVariant || (col.filterOptions ? 'select' : 'text'),
+        filterSelectOptions: col.filterOptions,
+        enableSorting: col.enableSorting ?? false,
+        mantineTableHeadCellProps: {
+          align: 'center',
+          style: {
+            padding: theme.spacing.xs,
+            textAlign: 'center',
           },
-          t,
-        );
-      }
-      return col as ColumnDef<T>;
+        },
+        mantineTableBodyCellProps: {
+          style: {
+            padding: theme.spacing.xs,
+            textAlign: col.textAlign || 'center',
+          },
+        },
+      };
     });
+  }, [columns, t, autoFormatDisabled, theme]);
 
-    if (columnOrder?.storeKey && columnOrderState.length > 0) {
-      return reorderColumns(
-        converted,
-        columnOrderState,
-        (col) => col.id || (col as any).accessorKey || '',
-      );
-    }
+  const [columnVisibility, setColumnVisibility] = useState<
+    Record<string, boolean>
+  >({});
 
-    return converted;
-  }, [columns, columnOrder, columnOrderState, autoFormatDisabled, t]);
-
-  const [searchInput, setSearchInput] = useState('');
-
-  const handleSearch = useCallback(() => {
-    if (search?.onSearch) {
-      search.onSearch(searchInput);
-      if (pagination) {
-        pagination.onPageChange(1);
+  useEffect(() => {
+    if (storeColumnsKey) {
+      const storageKey = `${storeColumnsKey}_columns`;
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        try {
+          const visibility = JSON.parse(stored);
+          setColumnVisibility(visibility);
+        } catch {
+          // ignore parse errors
+        }
       }
     }
-  }, [search, searchInput, pagination]);
+  }, [storeColumnsKey]);
 
-  const handleClearSearch = useCallback(() => {
-    setSearchInput('');
-    if (search?.onSearch) {
-      search.onSearch('');
+  useEffect(() => {
+    if (storeColumnsKey && Object.keys(columnVisibility).length > 0) {
+      const storageKey = `${storeColumnsKey}_columns`;
+      localStorage.setItem(storageKey, JSON.stringify(columnVisibility));
     }
-    if (pagination) {
-      pagination.onPageChange(1);
+  }, [columnVisibility, storeColumnsKey]);
+
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    if (selectedRecords && onSelectedRecordsChange) {
+      const map: Record<string, boolean> = {};
+      selectedRecords.forEach((r) => {
+        const id = (r as any)[idAccessor];
+        if (id) map[String(id)] = true;
+      });
+      setRowSelection(map);
     }
-  }, [search, pagination]);
+  }, [selectedRecords, onSelectedRecordsChange, idAccessor]);
 
-  const handleReset = useCallback(() => {
-    setSearchInput('');
-    if (filters?.onReset) {
-      filters.onReset();
+  const currentPage = page ? page - 1 : 0;
+  const tableData = useMemo(() => {
+    if (!safeData || !Array.isArray(safeData)) {
+      return [] as T[];
     }
-    if (pagination) {
-      pagination.onPageChange(1);
+    return safeData;
+  }, [safeData]);
+
+  const computedRowCount = useMemo(() => {
+    if (typeof rowCount === 'number') {
+      return rowCount;
     }
-  }, [filters, pagination]);
+    return tableData.length;
+  }, [rowCount, tableData.length]);
 
-  const hasActiveFilters = useMemo(() => {
-    return (
-      searchInput.trim() !== '' ||
-      (filters?.hasActive !== undefined && filters.hasActive)
-    );
-  }, [searchInput, filters?.hasActive]);
+  const handlePageSizeChange = (newPageSize: number) => {
+    onPageSizeChange?.(newPageSize);
+    onRecordsPerPageChange?.(newPageSize);
+  };
 
-  const handleSort = useCallback(
-    (columnId: string) => {
-      if (!sorting?.onSortChange) return;
-
-      const currentSortBy = sorting.sortBy;
-      const currentSortOrder = sorting.sortOrder || 'asc';
-
-      if (currentSortBy === columnId) {
-        const newOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
-        sorting.onSortChange(columnId, newOrder);
-      } else {
-        sorting.onSortChange(columnId, 'asc');
+  const table = useMantineReactTable({
+    columns: mappedColumns as any,
+    data: tableData,
+    ...(enableRowNumbers
+      ? { enableRowNumbers: true, rowNumberDisplayMode: 'static' }
+      : {}),
+    getRowId: (row) => String(row[idAccessor]),
+    enableColumnResizing: false,
+    ...(storeColumnsKey
+      ? {
+          enableColumnVisibility: true,
+          onColumnVisibilityChange: setColumnVisibility,
+          columnVisibility,
+        }
+      : {}),
+    mantineTableProps: {
+      style: {
+        width: '100%',
+      },
+    },
+    state: {
+      isLoading,
+      pagination: { pageIndex: currentPage, pageSize },
+      rowSelection,
+      sorting: sorting || [],
+      ...(onColumnFiltersChange ? { columnFilters: columnFilters || [] } : {}),
+    },
+    manualPagination: true,
+    rowCount: computedRowCount,
+    onPaginationChange: (updater) => {
+      const current = { pageIndex: currentPage, pageSize };
+      const next =
+        typeof updater === 'function' ? updater(current) : updater || current;
+      if (typeof next?.pageIndex === 'number') {
+        onPageChange?.(next.pageIndex + 1);
       }
-
-      if (pagination) {
-        pagination.onPageChange(1);
+      if (typeof next?.pageSize === 'number' && next.pageSize !== pageSize) {
+        handlePageSizeChange(next.pageSize);
       }
     },
-    [sorting, pagination],
-  );
-
-  const finalColumns = useMemo(() => {
-    const cols: ColumnDef<T>[] = [];
-
-    if (showIndexColumn) {
-      cols.push(
-        createIndexColumn<T>(
-          pagination?.currentPage || 1,
-          pagination?.itemsPerPage || pageSize?.initialSize || 20,
-          t,
-        ),
+    enableRowSelection: !!onSelectedRecordsChange,
+    onRowSelectionChange: (updater) => {
+      const next =
+        typeof updater === 'function' ? updater(rowSelection) : updater;
+      setRowSelection(next);
+      if (onSelectedRecordsChange) {
+        const selected = Object.keys(next)
+          .filter((k) => next[k])
+          .map((k) => tableData.find((r) => String(r[idAccessor]) === k))
+          .filter(Boolean) as T[];
+        onSelectedRecordsChange(selected);
+      }
+    },
+    manualSorting: !!onSortingChange,
+    onSortingChange: (updater) => {
+      const next =
+        typeof updater === 'function' ? updater(sorting || []) : updater;
+      onSortingChange?.(next as SortingState);
+    },
+    enableColumnFilters: true,
+    manualFiltering: !!onColumnFiltersChange,
+    ...(onColumnFiltersChange
+      ? {
+          onColumnFiltersChange: (updater) => {
+            const next =
+              typeof updater === 'function'
+                ? updater(columnFilters || [])
+                : updater;
+            onColumnFiltersChange?.(next);
+          },
+        }
+      : {}),
+    enableColumnPinning: !!pinLastColumn,
+    initialState: pinLastColumn
+      ? {
+          columnPinning: {
+            right:
+              mappedColumns.length > 0
+                ? [String(mappedColumns[mappedColumns.length - 1].id)]
+                : [],
+          },
+        }
+      : undefined,
+    mantineTableContainerProps: height ? { style: { height } } : undefined,
+    mantineTopToolbarProps: {
+      style: {
+        padding: theme.spacing.md,
+        backgroundColor: 'transparent',
+        borderBottom: `1px solid ${
+          colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]
+        }`,
+        gap: theme.spacing.sm,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      },
+    },
+    ...(renderTopToolbarCustomActions
+      ? {
+          renderTopToolbar: ({ table }) => (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                width: '100%',
+              }}
+            >
+              {renderTopToolbarCustomActions({ table })}
+            </div>
+          ),
+        }
+      : {}),
+    mantineSearchTextInputProps: {
+      size: 'xs',
+      style: {
+        fontSize: '12px',
+        height: '28px',
+        minHeight: '28px',
+      },
+    },
+    mantineFilterTextInputProps: {
+      size: 'xs',
+      style: {
+        fontSize: '12px',
+        height: '28px',
+        minHeight: '28px',
+      },
+    },
+    mantineFilterSelectProps: {
+      size: 'xs',
+      style: {
+        fontSize: '12px',
+        height: '28px',
+        minHeight: '28px',
+      },
+    },
+    enablePagination: true,
+    paginationDisplayMode: 'pages',
+    pageCount: computedRowCount ? Math.ceil(computedRowCount / pageSize) : 0,
+    mantinePaginationProps: {
+      radius: 'xl',
+      size: 'lg',
+    },
+    mantineBottomToolbarProps: {
+      style: {
+        padding: theme.spacing.xs,
+        backgroundColor: 'transparent',
+        borderTop: `1px solid ${
+          colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]
+        }`,
+        gap: theme.spacing.xs,
+        justifyContent: 'flex-end',
+        display: 'flex',
+        flexWrap: 'nowrap',
+      },
+    },
+    mantineTableHeadCellProps: {
+      style: {
+        padding: theme.spacing.xs,
+      },
+    },
+    mantineTableBodyCellProps: {
+      style: {
+        padding: theme.spacing.xs,
+      },
+    },
+    renderEmptyRowsFallback: () => (
+      <Text ta="center" c="dimmed">
+        {t('common.noData', { defaultValue: 'Không có dữ liệu' })}
+      </Text>
+    ),
+    renderBottomToolbar: ({ table: tableInstance }) => {
+      const pagination = tableInstance.getState().pagination;
+      const start =
+        computedRowCount === 0
+          ? 0
+          : pagination.pageIndex * pagination.pageSize + 1;
+      const end = Math.min(
+        (pagination.pageIndex + 1) * pagination.pageSize,
+        computedRowCount,
       );
-    }
+      const totalPages = computedRowCount
+        ? Math.ceil(computedRowCount / pagination.pageSize)
+        : 0;
 
-    cols.push(...processedColumns);
-
-    if (actions) {
-      cols.push(createActionColumn(actions));
-    }
-
-    return cols;
-  }, [showIndexColumn, processedColumns, actions, pagination, pageSize, t]);
-
-  const table = useReactTable({
-    data,
-    columns: finalColumns,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
-  const hasFilters = filters && (hasActiveFilters || filters.slots?.length);
-
-  return (
-    <div className="space-y-4">
-      {(search || hasFilters) && (
-        <div className="flex flex-col md:flex-row gap-4">
-          {search && (
-            <div className="w-full md:w-64">
-              <TextInput
-                value={searchInput}
-                onChange={(e) =>
-                  setSearchInput((e.target as HTMLInputElement).value)
-                }
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
+      return (
+        <Group justify="flex-end" gap="xs" wrap="nowrap" w="100%">
+          {pageSizeOptions.length > 0 && (
+            <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
+              <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+                {recordsPerPageLabel ||
+                  t('common.pageSizeLabel', { defaultValue: 'Hiển thị' })}
+              </Text>
+              <Select
+                value={pagination.pageSize.toString()}
+                onChange={(value) => {
+                  if (value) {
+                    handlePageSizeChange(parseInt(value, 10));
                   }
                 }}
-                placeholder={search.placeholder || t('common.search')}
-                rightSection={
-                  searchInput.trim() !== '' ? (
-                    <ActionIcon
-                      size="sm"
-                      variant="transparent"
-                      onClick={handleClearSearch}
-                      disabled={isLoading}
-                    >
-                      <Close fontSize="small" />
-                    </ActionIcon>
-                  ) : null
-                }
-              />
-            </div>
-          )}
-
-          {filters?.slots?.map((slot, index) => (
-            <div key={index} className="w-full md:w-48">
-              {slot}
-            </div>
-          ))}
-
-          <div className="w-full md:w-auto flex gap-2">
-            {search && (
-              <Button onClick={handleSearch} disabled={isLoading}>
-                {t('common.search')}
-              </Button>
-            )}
-            {filters && hasActiveFilters && (
-              <Button
-                variant="outline"
-                onClick={handleReset}
+                data={pageSizeOptions.map((size) => ({
+                  value: size.toString(),
+                  label: size.toString(),
+                }))}
                 disabled={isLoading}
-              >
-                {t('common.reset', { defaultValue: 'Reset' })}
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {summary && (
-        <div className="flex flex-wrap items-center gap-4 text-sm py-2 border-b border-gray-200 dark:border-gray-700">
-          {summary}
-        </div>
-      )}
-
-      <div className="overflow-x-auto shadow-md rounded-lg">
-        {isLoading ? (
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                {table.getHeaderGroups()[0]?.headers.map((header) => {
-                  const columnDef = header.column.columnDef;
-                  const isSortable =
-                    sorting?.onSortChange && columnDef.enableSorting !== false;
-                  const columnId = header.column.id;
-                  const isSorted =
-                    sorting?.sortBy === columnId && sorting?.sortOrder;
-                  const sortOrder = isSorted ? sorting.sortOrder : null;
-
-                  return (
-                    <th
-                      key={header.id}
-                      className={`px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ${
-                        isSortable
-                          ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none'
-                          : ''
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(columnDef.header, header.getContext())}
-                        {isSortable && (
-                          <span className="flex flex-col">
-                            {sortOrder === 'asc' ? (
-                              <KeyboardArrowUp
-                                fontSize="inherit"
-                                className="text-blue-600 dark:text-blue-400"
-                              />
-                            ) : sortOrder === 'desc' ? (
-                              <KeyboardArrowDown
-                                fontSize="inherit"
-                                className="text-blue-600 dark:text-blue-400"
-                              />
-                            ) : (
-                              <span className="flex flex-col opacity-30">
-                                <KeyboardArrowUp fontSize="inherit" />
-                                <KeyboardArrowDown
-                                  fontSize="inherit"
-                                  className="-mt-1"
-                                />
-                              </span>
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {[...Array(5)].map((_, i) => (
-                <tr key={i} className="animate-pulse">
-                  {table.getHeaderGroups()[0]?.headers.map((header) => (
-                    <td key={header.id} className="px-6 py-4 whitespace-nowrap">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : data.length === 0 ? (
-          <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-lg">
-            <p className="text-gray-500 dark:text-gray-400">
-              {emptyMessage || t('common.noData', { defaultValue: 'No data' })}
-            </p>
-          </div>
-        ) : (
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    const columnDef = header.column.columnDef;
-                    const isSortable =
-                      sorting?.onSortChange &&
-                      columnDef.enableSorting !== false;
-                    const columnId = header.column.id;
-                    const isSorted =
-                      sorting?.sortBy === columnId && sorting?.sortOrder;
-                    const sortOrder = isSorted ? sorting.sortOrder : null;
-
-                    return (
-                      <th
-                        key={header.id}
-                        className={`px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ${
-                          isSortable
-                            ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none'
-                            : ''
-                        }`}
-                        onClick={() => isSortable && handleSort(columnId)}
-                      >
-                        <div className="flex items-center gap-2">
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(columnDef.header, header.getContext())}
-                          {isSortable && (
-                            <span className="flex flex-col">
-                              {sortOrder === 'asc' ? (
-                                <KeyboardArrowUp
-                                  fontSize="inherit"
-                                  className="text-blue-600 dark:text-blue-400"
-                                />
-                              ) : sortOrder === 'desc' ? (
-                                <KeyboardArrowDown
-                                  fontSize="inherit"
-                                  className="text-blue-600 dark:text-blue-400"
-                                />
-                              ) : (
-                                <span className="flex flex-col opacity-30">
-                                  <KeyboardArrowUp fontSize="inherit" />
-                                  <KeyboardArrowDown
-                                    fontSize="inherit"
-                                    className="-mt-1"
-                                  />
-                                </span>
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                    );
-                  })}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className={`${
-                    onRowClick
-                      ? 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors'
-                      : ''
-                  }`}
-                  onClick={() => onRowClick?.(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {pagination && pagination.totalPages > 0 && (
-        <Pagination
-          currentPage={pagination.currentPage}
-          totalPages={pagination.totalPages}
-          totalItems={pagination.totalItems}
-          itemsPerPage={pagination.itemsPerPage}
-          onPageChange={pagination.onPageChange}
-          isLoading={isLoading}
-          pageSize={
-            pageSize
-              ? {
-                  options: pageSize.options,
-                  onPageSizeChange: (size: number) => {
-                    pageSize.onPageSizeChange(size);
-                    if (pagination) {
-                      pagination.onPageChange(1);
-                    }
+                size="xs"
+                w={60}
+                styles={{
+                  input: {
+                    minHeight: '24px',
+                    height: '24px',
+                    fontSize: '12px',
                   },
-                }
-              : undefined
-          }
-        />
-      )}
-    </div>
-  );
+                }}
+              />
+            </Group>
+          )}
+          <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+            <Text component="span" fw={500}>
+              {start || 0}
+            </Text>
+            {' - '}
+            <Text component="span" fw={500}>
+              {end || 0}
+            </Text>{' '}
+            {t('common.of', { defaultValue: 'of' })}{' '}
+            <Text component="span" fw={500}>
+              {computedRowCount}
+            </Text>
+          </Text>
+          {totalPages > 0 && (
+            <Pagination
+              total={totalPages}
+              value={pagination.pageIndex + 1}
+              onChange={(newPage: number) => {
+                onPageChange?.(newPage);
+              }}
+              disabled={isLoading}
+              size="lg"
+              radius="xl"
+            />
+          )}
+        </Group>
+      );
+    },
+  });
+
+  return <MantineReactTable table={table} {...(props as any)} />;
 }
 
-export default DataTable;
+export type { DataTableColumn };

@@ -1,10 +1,13 @@
 import AddContributionDialog from '@client/components/AddContributionDialog';
 import AddTradeDialog from '@client/components/AddTradeDialog';
 import AddValuationDialog from '@client/components/AddValuationDialog';
-import DataTable, { type DataTableColumn } from '@client/components/DataTable';
+import { DataTable, type DataTableColumn } from '@client/components/DataTable';
 import {
   useCreateInvestmentContributionMutation,
   useCreateInvestmentTradeMutation,
+  useDeleteInvestmentContributionMutation,
+  useDeleteInvestmentTradeMutation,
+  useDeleteInvestmentValuationMutation,
   useUpsertInvestmentValuationMutation,
 } from '@client/hooks/mutations/useInvestmentMutations';
 import {
@@ -14,28 +17,34 @@ import {
   useInvestmentTradesQuery,
   useInvestmentValuationsQuery,
 } from '@client/hooks/queries/useInvestmentQueries';
-import type {
-  InvestmentContribution,
-  InvestmentTrade,
-  InvestmentValuation,
-} from '@client/types/investment';
 import {
+  ActionIcon,
   Badge,
   Button,
   Card,
   Group,
+  Modal,
   NumberFormatter,
   Tabs,
   Text,
 } from '@mantine/core';
-import { InvestmentMode, TradeSide } from '@server/generated/prisma/enums';
+import type { InvestmentContributionResponse } from '@server/dto/contribution.dto';
+import type { InvestmentTradeResponse } from '@server/dto/trade.dto';
+import type { InvestmentValuationResponse } from '@server/dto/valuation.dto';
+import {
+  ContributionType,
+  InvestmentMode,
+  TradeSide,
+} from '@server/generated/prisma/enums';
+import { IconArrowLeft, IconTrash } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 
 const InvestmentDetailPage = () => {
   const { investmentId } = useParams();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   if (!investmentId) {
     return (
@@ -91,17 +100,34 @@ const InvestmentDetailPage = () => {
   const tradeMutation = useCreateInvestmentTradeMutation();
   const contributionMutation = useCreateInvestmentContributionMutation();
   const valuationMutation = useUpsertInvestmentValuationMutation();
+  const deleteTradeMutation = useDeleteInvestmentTradeMutation();
+  const deleteContributionMutation = useDeleteInvestmentContributionMutation();
+  const deleteValuationMutation = useDeleteInvestmentValuationMutation();
+
+  const [tradeToDelete, setTradeToDelete] =
+    useState<InvestmentTradeResponse | null>(null);
+  const [contributionToDelete, setContributionToDelete] =
+    useState<InvestmentContributionResponse | null>(null);
+  const [valuationToDelete, setValuationToDelete] =
+    useState<InvestmentValuationResponse | null>(null);
 
   const currencySymbol = investment?.currency.symbol
     ? `${investment.currency.symbol} `
     : '';
 
-  const formatCurrency = (value: number | null | undefined) => {
+  const baseCurrencySymbol = investment?.baseCurrency?.symbol
+    ? `${investment.baseCurrency.symbol} `
+    : '';
+
+  const formatCurrency = (
+    value: number | null | undefined,
+    prefix?: string,
+  ) => {
     if (value === null || value === undefined) return '--';
     return (
       <NumberFormatter
         value={value}
-        prefix={currencySymbol}
+        prefix={prefix ?? currencySymbol}
         thousandSeparator=","
         decimalScale={2}
       />
@@ -120,8 +146,64 @@ const InvestmentDetailPage = () => {
     );
   };
 
+  const handleDeleteTrade = (trade: InvestmentTradeResponse) => {
+    setTradeToDelete(trade);
+  };
+
+  const handleDeleteContribution = (
+    contribution: InvestmentContributionResponse,
+  ) => {
+    setContributionToDelete(contribution);
+  };
+
+  const handleDeleteValuation = (valuation: InvestmentValuationResponse) => {
+    setValuationToDelete(valuation);
+  };
+
+  const handleConfirmDeleteTrade = async () => {
+    if (tradeToDelete && investmentId) {
+      try {
+        await deleteTradeMutation.mutateAsync({
+          investmentId,
+          tradeId: tradeToDelete.id,
+        });
+        setTradeToDelete(null);
+      } catch {
+        // Error is already handled by mutation's onError callback
+      }
+    }
+  };
+
+  const handleConfirmDeleteContribution = async () => {
+    if (contributionToDelete && investmentId) {
+      try {
+        await deleteContributionMutation.mutateAsync({
+          investmentId,
+          contributionId: contributionToDelete.id,
+        });
+        setContributionToDelete(null);
+      } catch {
+        // Error is already handled by mutation's onError callback
+      }
+    }
+  };
+
+  const handleConfirmDeleteValuation = async () => {
+    if (valuationToDelete && investmentId) {
+      try {
+        await deleteValuationMutation.mutateAsync({
+          investmentId,
+          valuationId: valuationToDelete.id,
+        });
+        setValuationToDelete(null);
+      } catch {
+        // Error is already handled by mutation's onError callback
+      }
+    }
+  };
+
   const tradeColumns = useMemo(
-    (): DataTableColumn<InvestmentTrade>[] => [
+    (): DataTableColumn<InvestmentTradeResponse>[] => [
       {
         accessor: 'timestamp',
         title: 'investments.trade.date',
@@ -130,12 +212,12 @@ const InvestmentDetailPage = () => {
       {
         accessor: 'side',
         title: 'investments.trade.side',
-        render: (value: TradeSide) => (
+        render: (value: unknown, row: InvestmentTradeResponse) => (
           <Badge
-            color={value === TradeSide.buy ? 'green' : 'red'}
+            color={row.side === TradeSide.buy ? 'green' : 'red'}
             variant="light"
           >
-            {value === TradeSide.buy
+            {row.side === TradeSide.buy
               ? t('investments.trade.buy', { defaultValue: 'Buy' })
               : t('investments.trade.sell', { defaultValue: 'Sell' })}
           </Badge>
@@ -165,16 +247,53 @@ const InvestmentDetailPage = () => {
         title: 'investments.trade.fee',
         render: (value) => formatCurrency(parseFloat(String(value))),
       },
+      {
+        title: 'common.actions',
+        textAlign: 'center',
+        width: '8rem',
+        render: (value: unknown, row: InvestmentTradeResponse) => (
+          <div className="flex items-center justify-center gap-2">
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteTrade(row);
+              }}
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </div>
+        ),
+      },
     ],
-    [formatCurrency, formatNumber, t],
+    [formatCurrency, formatNumber, t, handleDeleteTrade],
   );
 
   const contributionColumns = useMemo(
-    (): DataTableColumn<InvestmentContribution>[] => [
+    (): DataTableColumn<InvestmentContributionResponse>[] => [
       {
         accessor: 'timestamp',
         title: 'investments.contribution.date',
         format: 'date',
+      },
+      {
+        accessor: 'type',
+        title: 'investments.contribution.type',
+        render: (value: unknown, row: InvestmentContributionResponse) => (
+          <Badge
+            color={row.type === ContributionType.deposit ? 'green' : 'red'}
+            variant="light"
+          >
+            {row.type === ContributionType.deposit
+              ? t('investments.contribution.deposit', {
+                  defaultValue: 'Deposit',
+                })
+              : t('investments.contribution.withdrawal', {
+                  defaultValue: 'Withdrawal',
+                })}
+          </Badge>
+        ),
       },
       {
         accessor: 'amount',
@@ -182,21 +301,40 @@ const InvestmentDetailPage = () => {
         render: (value) => formatCurrency(parseFloat(String(value))),
       },
       {
-        accessor: 'account.name',
+        accessor: (row: InvestmentContributionResponse) => row.account?.name,
         title: 'investments.contribution.account',
-        render: (_, row) => row.account?.name || '--',
+        render: (value: unknown) => (value ? String(value) : '--'),
       },
       {
         accessor: 'note',
         title: 'investments.contribution.note',
         ellipsis: true,
       },
+      {
+        title: 'common.actions',
+        textAlign: 'center',
+        width: '8rem',
+        render: (value: unknown, row: InvestmentContributionResponse) => (
+          <div className="flex items-center justify-center gap-2">
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteContribution(row);
+              }}
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </div>
+        ),
+      },
     ],
-    [formatCurrency],
+    [formatCurrency, t, handleDeleteContribution],
   );
 
   const valuationColumns = useMemo(
-    (): DataTableColumn<InvestmentValuation>[] => [
+    (): DataTableColumn<InvestmentValuationResponse>[] => [
       {
         accessor: 'timestamp',
         title: 'investments.valuation.date',
@@ -212,8 +350,27 @@ const InvestmentDetailPage = () => {
         title: 'investments.valuation.source',
         ellipsis: true,
       },
+      {
+        title: 'common.actions',
+        textAlign: 'center',
+        width: '8rem',
+        render: (value: unknown, row: InvestmentValuationResponse) => (
+          <div className="flex items-center justify-center gap-2">
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteValuation(row);
+              }}
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </div>
+        ),
+      },
     ],
-    [formatCurrency],
+    [formatCurrency, handleDeleteValuation],
   );
 
   const isLoading =
@@ -226,25 +383,37 @@ const InvestmentDetailPage = () => {
   const isMutationPending =
     tradeMutation.isPending ||
     contributionMutation.isPending ||
-    valuationMutation.isPending;
+    valuationMutation.isPending ||
+    deleteTradeMutation.isPending ||
+    deleteContributionMutation.isPending ||
+    deleteValuationMutation.isPending;
 
   return (
     <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {investment?.name ??
-                t('investments.detailTitle', {
-                  defaultValue: 'Investment detail',
-                })}
-            </h1>
-            <Text size="sm" c="dimmed">
-              {investment?.symbol && (
-                <span className="mr-2">{investment.symbol}</span>
-              )}
-              {investment?.assetType.toString().toUpperCase()}
-            </Text>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="subtle"
+              leftSection={<IconArrowLeft size={18} />}
+              onClick={() => navigate('/investments')}
+            >
+              {t('common.back', { defaultValue: 'Back' })}
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {investment?.name ??
+                  t('investments.detailTitle', {
+                    defaultValue: 'Investment detail',
+                  })}
+              </h1>
+              <Text size="sm" c="dimmed">
+                {investment?.symbol && (
+                  <span className="mr-2">{investment.symbol}</span>
+                )}
+                {investment?.assetType.toString().toUpperCase()}
+              </Text>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button
@@ -357,6 +526,128 @@ const InvestmentDetailPage = () => {
               </Card>
             </div>
 
+            {investment?.baseCurrencyId && position && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
+                <Card shadow="sm" padding="lg" withBorder>
+                  <Text size="sm" c="dimmed">
+                    {t('investments.position.costBasisInBaseCurrency', {
+                      defaultValue: 'Cost Basis (Base Currency)',
+                    })}
+                  </Text>
+                  <Text size="lg" fw={600}>
+                    {position.costBasisInBaseCurrency !== undefined
+                      ? formatCurrency(
+                          position.costBasisInBaseCurrency,
+                          baseCurrencySymbol,
+                        )
+                      : '--'}
+                  </Text>
+                </Card>
+                <Card shadow="sm" padding="lg" withBorder>
+                  <Text size="sm" c="dimmed">
+                    {t('investments.position.realizedPnlInBaseCurrency', {
+                      defaultValue: 'Realized PnL (Base Currency)',
+                    })}
+                  </Text>
+                  <Text
+                    size="lg"
+                    fw={600}
+                    className={
+                      (position.realizedPnlInBaseCurrency ?? 0) >= 0
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }
+                  >
+                    {position.realizedPnlInBaseCurrency !== undefined
+                      ? formatCurrency(
+                          position.realizedPnlInBaseCurrency,
+                          baseCurrencySymbol,
+                        )
+                      : '--'}
+                  </Text>
+                </Card>
+                <Card shadow="sm" padding="lg" withBorder>
+                  <Text size="sm" c="dimmed">
+                    {t('investments.position.unrealizedPnlInBaseCurrency', {
+                      defaultValue: 'Unrealized PnL (Base Currency)',
+                    })}
+                  </Text>
+                  <Text
+                    size="lg"
+                    fw={600}
+                    className={
+                      (position.unrealizedPnlInBaseCurrency ?? 0) >= 0
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }
+                  >
+                    {position.unrealizedPnlInBaseCurrency !== undefined
+                      ? formatCurrency(
+                          position.unrealizedPnlInBaseCurrency,
+                          baseCurrencySymbol,
+                        )
+                      : '--'}
+                  </Text>
+                </Card>
+                <Card shadow="sm" padding="lg" withBorder>
+                  <Text size="sm" c="dimmed">
+                    {t('investments.position.exchangeRateGainLoss', {
+                      defaultValue: 'Exchange Rate Impact',
+                    })}
+                  </Text>
+                  <Text
+                    size="lg"
+                    fw={600}
+                    className={
+                      (position.exchangeRateGainLoss ?? 0) >= 0
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }
+                  >
+                    {position.exchangeRateGainLoss !== undefined
+                      ? formatCurrency(
+                          position.exchangeRateGainLoss,
+                          baseCurrencySymbol,
+                        )
+                      : '--'}
+                  </Text>
+                </Card>
+              </div>
+            )}
+
+            {investment?.baseCurrencyId &&
+              position?.lastValueInBaseCurrency !== undefined && (
+                <Card shadow="sm" padding="lg" withBorder mt="md">
+                  <Group justify="space-between">
+                    <div>
+                      <Text size="sm" c="dimmed">
+                        {t('investments.position.lastValueInBaseCurrency', {
+                          defaultValue: 'Market value (Base Currency)',
+                        })}
+                      </Text>
+                      <Text size="xl" fw={600}>
+                        {formatCurrency(
+                          position.lastValueInBaseCurrency,
+                          baseCurrencySymbol,
+                        )}
+                      </Text>
+                    </div>
+                    {position.currentExchangeRate !== undefined && (
+                      <div>
+                        <Text size="sm" c="dimmed">
+                          {t('investments.position.currentExchangeRate', {
+                            defaultValue: 'Current Exchange Rate',
+                          })}
+                        </Text>
+                        <Text size="lg" fw={600}>
+                          {position.currentExchangeRate?.toFixed(6) ?? '--'}
+                        </Text>
+                      </div>
+                    )}
+                  </Group>
+                </Card>
+              )}
+
             <Card shadow="sm" padding="lg" withBorder mt="md">
               <Group justify="space-between">
                 <div>
@@ -401,28 +692,15 @@ const InvestmentDetailPage = () => {
             <DataTable
               data={tradesData?.trades || []}
               columns={tradeColumns}
-              isLoading={isTradesLoading}
-              pagination={
-                tradesData?.pagination
-                  ? {
-                      currentPage: tradePage,
-                      totalPages: tradesData.pagination.totalPages,
-                      totalItems: tradesData.pagination.total,
-                      itemsPerPage: tradeLimit,
-                      onPageChange: setTradePage,
-                    }
-                  : undefined
-              }
-              pageSize={{
-                initialSize: tradeLimit,
-                onPageSizeChange: (size: number) => {
-                  setTradeLimit(size);
-                  setTradePage(1);
-                },
+              loading={isTradesLoading}
+              page={tradePage}
+              onPageChange={setTradePage}
+              totalRecords={tradesData?.pagination?.total}
+              recordsPerPage={tradeLimit}
+              onRecordsPerPageChange={(size: number) => {
+                setTradeLimit(size);
+                setTradePage(1);
               }}
-              emptyMessage={t('investments.trade.empty', {
-                defaultValue: 'No trades yet',
-              })}
             />
           </Tabs.Panel>
 
@@ -430,28 +708,15 @@ const InvestmentDetailPage = () => {
             <DataTable
               data={contributionsData?.contributions || []}
               columns={contributionColumns}
-              isLoading={isContributionsLoading}
-              pagination={
-                contributionsData?.pagination
-                  ? {
-                      currentPage: contributionPage,
-                      totalPages: contributionsData.pagination.totalPages,
-                      totalItems: contributionsData.pagination.total,
-                      itemsPerPage: contributionLimit,
-                      onPageChange: setContributionPage,
-                    }
-                  : undefined
-              }
-              pageSize={{
-                initialSize: contributionLimit,
-                onPageSizeChange: (size: number) => {
-                  setContributionLimit(size);
-                  setContributionPage(1);
-                },
+              loading={isContributionsLoading}
+              page={contributionPage}
+              onPageChange={setContributionPage}
+              totalRecords={contributionsData?.pagination?.total}
+              recordsPerPage={contributionLimit}
+              onRecordsPerPageChange={(size: number) => {
+                setContributionLimit(size);
+                setContributionPage(1);
               }}
-              emptyMessage={t('investments.contribution.empty', {
-                defaultValue: 'No contributions yet',
-              })}
             />
           </Tabs.Panel>
 
@@ -459,28 +724,15 @@ const InvestmentDetailPage = () => {
             <DataTable
               data={valuationsData?.valuations || []}
               columns={valuationColumns}
-              isLoading={isValuationsLoading}
-              pagination={
-                valuationsData?.pagination
-                  ? {
-                      currentPage: valuationPage,
-                      totalPages: valuationsData.pagination.totalPages,
-                      totalItems: valuationsData.pagination.total,
-                      itemsPerPage: valuationLimit,
-                      onPageChange: setValuationPage,
-                    }
-                  : undefined
-              }
-              pageSize={{
-                initialSize: valuationLimit,
-                onPageSizeChange: (size: number) => {
-                  setValuationLimit(size);
-                  setValuationPage(1);
-                },
+              loading={isValuationsLoading}
+              page={valuationPage}
+              onPageChange={setValuationPage}
+              totalRecords={valuationsData?.pagination?.total}
+              recordsPerPage={valuationLimit}
+              onRecordsPerPageChange={(size: number) => {
+                setValuationLimit(size);
+                setValuationPage(1);
               }}
-              emptyMessage={t('investments.valuation.empty', {
-                defaultValue: 'No valuations yet',
-              })}
             />
           </Tabs.Panel>
         </Tabs>
@@ -523,6 +775,112 @@ const InvestmentDetailPage = () => {
           }}
           isLoading={valuationMutation.isPending || isLoading}
         />
+      )}
+
+      {tradeToDelete && (
+        <Modal
+          opened={!!tradeToDelete}
+          onClose={() => setTradeToDelete(null)}
+          title={t('investments.trade.deleteConfirmTitle', {
+            defaultValue: 'Delete Trade',
+          })}
+          size="md"
+        >
+          <Text mb="md">
+            {t('investments.trade.deleteConfirmMessage', {
+              defaultValue: 'Are you sure you want to delete this trade?',
+            })}
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={() => setTradeToDelete(null)}
+              disabled={isMutationPending}
+            >
+              {t('common.cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDeleteTrade}
+              disabled={isMutationPending}
+            >
+              {isMutationPending
+                ? t('common.deleting', { defaultValue: 'Deleting...' })
+                : t('common.delete', { defaultValue: 'Delete' })}
+            </Button>
+          </Group>
+        </Modal>
+      )}
+
+      {contributionToDelete && (
+        <Modal
+          opened={!!contributionToDelete}
+          onClose={() => setContributionToDelete(null)}
+          title={t('investments.contribution.deleteConfirmTitle', {
+            defaultValue: 'Delete Contribution',
+          })}
+          size="md"
+        >
+          <Text mb="md">
+            {t('investments.contribution.deleteConfirmMessage', {
+              defaultValue:
+                'Are you sure you want to delete this contribution?',
+            })}
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={() => setContributionToDelete(null)}
+              disabled={isMutationPending}
+            >
+              {t('common.cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDeleteContribution}
+              disabled={isMutationPending}
+            >
+              {isMutationPending
+                ? t('common.deleting', { defaultValue: 'Deleting...' })
+                : t('common.delete', { defaultValue: 'Delete' })}
+            </Button>
+          </Group>
+        </Modal>
+      )}
+
+      {valuationToDelete && (
+        <Modal
+          opened={!!valuationToDelete}
+          onClose={() => setValuationToDelete(null)}
+          title={t('investments.valuation.deleteConfirmTitle', {
+            defaultValue: 'Delete Valuation',
+          })}
+          size="md"
+        >
+          <Text mb="md">
+            {t('investments.valuation.deleteConfirmMessage', {
+              defaultValue: 'Are you sure you want to delete this valuation?',
+            })}
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={() => setValuationToDelete(null)}
+              disabled={isMutationPending}
+            >
+              {t('common.cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDeleteValuation}
+              disabled={isMutationPending}
+            >
+              {isMutationPending
+                ? t('common.deleting', { defaultValue: 'Deleting...' })
+                : t('common.delete', { defaultValue: 'Delete' })}
+            </Button>
+          </Group>
+        </Modal>
       )}
     </div>
   );

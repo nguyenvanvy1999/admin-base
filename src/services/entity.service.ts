@@ -1,3 +1,4 @@
+import type { Prisma } from '@server/generated/prisma/client';
 import type {
   EntityOrderByWithRelationInput,
   EntityWhereInput,
@@ -24,6 +25,16 @@ const ENTITY_SELECT_FULL = {
 const ENTITY_SELECT_MINIMAL = {
   id: true,
 } as const;
+
+const mapEntity = (
+  entity: Prisma.EntityGetPayload<{
+    select: typeof ENTITY_SELECT_FULL;
+  }>,
+) => ({
+  ...entity,
+  createdAt: entity.createdAt.toISOString(),
+  updatedAt: entity.updatedAt.toISOString(),
+});
 
 export class EntityService {
   private async validateEntityOwnership(userId: string, entityId: string) {
@@ -71,7 +82,7 @@ export class EntityService {
     await this.validateUniqueName(userId, data.name, data.id);
 
     if (data.id) {
-      return prisma.entity.update({
+      const entity = await prisma.entity.update({
         where: { id: data.id },
         data: {
           name: data.name,
@@ -83,8 +94,9 @@ export class EntityService {
         },
         select: ENTITY_SELECT_FULL,
       });
+      return mapEntity(entity);
     } else {
-      return prisma.entity.create({
+      const entity = await prisma.entity.create({
         data: {
           userId,
           name: data.name,
@@ -96,6 +108,7 @@ export class EntityService {
         },
         select: ENTITY_SELECT_FULL,
       });
+      return mapEntity(entity);
     }
   }
 
@@ -113,7 +126,7 @@ export class EntityService {
       throw new Error('Entity not found');
     }
 
-    return entity;
+    return mapEntity(entity);
   }
 
   async listEntities(userId: string, query: IListEntitiesQueryDto = {}) {
@@ -165,7 +178,7 @@ export class EntityService {
     ]);
 
     return {
-      entities,
+      entities: entities.map(mapEntity),
       pagination: {
         page,
         limit,
@@ -186,6 +199,37 @@ export class EntityService {
     });
 
     return { success: true, message: 'Entity deleted successfully' };
+  }
+
+  async deleteManyEntities(userId: string, ids: string[]) {
+    const entities = await prisma.entity.findMany({
+      where: {
+        id: { in: ids },
+        userId,
+        deletedAt: null,
+      },
+      select: ENTITY_SELECT_MINIMAL,
+    });
+
+    if (entities.length !== ids.length) {
+      throw new Error('Some entities were not found or do not belong to you');
+    }
+
+    const result = await prisma.entity.updateMany({
+      where: {
+        id: { in: ids },
+        userId,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      message: `${result.count} entity(ies) deleted successfully`,
+    };
   }
 }
 

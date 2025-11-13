@@ -1,6 +1,14 @@
-import { api } from '@client/libs/api';
-import type { TagFull } from '@client/types/tag';
+import type { FormComponentRef } from '@client/components/FormComponent';
+import { tagService } from '@client/services';
+import { DeferredPromise } from '@open-draft/deferred-promise';
 import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
+
+const filterSchema = z.object({
+  search: z.string().optional(),
+});
+
+export type FilterFormValue = z.infer<typeof filterSchema>;
 
 type ListTagsQuery = {
   search?: string;
@@ -10,36 +18,41 @@ type ListTagsQuery = {
   sortOrder?: 'asc' | 'desc';
 };
 
-export const useTagsQuery = (query: ListTagsQuery = {}) => {
+export const useTagsQuery = (
+  queryParams: {
+    page?: number;
+    limit?: number;
+    sortBy?: 'name' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
+  },
+  formRef: React.RefObject<FormComponentRef | null>,
+  handleSubmit: (
+    onValid: (data: FilterFormValue) => void,
+    onInvalid?: (errors: any) => void,
+  ) => (e?: React.BaseSyntheticEvent) => Promise<void>,
+) => {
   return useQuery({
-    queryKey: ['tags', query],
+    queryKey: ['tags', queryParams],
     queryFn: async () => {
-      const response = await api.api.tags.get({
-        query: query,
-      });
+      let query: ListTagsQuery = {
+        ...queryParams,
+      };
 
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'Failed to fetch tags',
+      if (formRef.current) {
+        const valueDeferred = new DeferredPromise<FilterFormValue>();
+        formRef.current.submit(
+          handleSubmit(valueDeferred.resolve, valueDeferred.reject),
         );
+
+        const criteria = await valueDeferred;
+
+        query = {
+          ...query,
+          search: criteria.search?.trim() || undefined,
+        };
       }
 
-      const data = response.data;
-
-      return {
-        tags: data.tags.map((tag) => ({
-          ...tag,
-          createdAt:
-            tag.createdAt instanceof Date
-              ? tag.createdAt.toISOString()
-              : tag.createdAt,
-          updatedAt:
-            tag.updatedAt instanceof Date
-              ? tag.updatedAt.toISOString()
-              : tag.updatedAt,
-        })) satisfies TagFull[],
-        pagination: data.pagination,
-      };
+      return tagService.listTags(query);
     },
   });
 };

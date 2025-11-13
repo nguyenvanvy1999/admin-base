@@ -1,3 +1,4 @@
+import type { Prisma } from '@server/generated/prisma/client';
 import { TransactionType } from '@server/generated/prisma/enums';
 import type {
   TransactionOrderByWithRelationInput,
@@ -7,24 +8,25 @@ import { prisma } from '@server/libs/db';
 import Decimal from 'decimal.js';
 import { Elysia } from 'elysia';
 import type {
+  BatchTransactionsResponse,
   IBatchTransactionsDto,
   IIncomeExpenseTransaction,
   IListTransactionsQuery,
   ILoanTransaction,
   ITransferTransaction,
   IUpsertTransaction,
+  TransactionDetail,
+  TransactionListResponse,
 } from '../dto/transaction.dto';
+import {
+  dateToIsoString,
+  dateToNullableIsoString,
+  decimalToNullableString,
+  decimalToString,
+} from '../utils/formatters';
 import { CURRENCY_SELECT_BASIC } from './selects';
 
 type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
-
-const TRANSACTION_INCLUDE = {
-  account: { include: { currency: true } },
-  toAccount: { include: { currency: true } },
-  category: true,
-  entity: true,
-  currency: true,
-} as const;
 
 const TRANSACTION_SELECT_FOR_BALANCE = {
   id: true,
@@ -41,7 +43,7 @@ const TRANSACTION_SELECT_FOR_BALANCE = {
   toAccount: { select: { currencyId: true } },
 } as const;
 
-const TRANSACTION_SELECT_FOR_LIST = {
+const TRANSACTION_SELECT = {
   id: true,
   userId: true,
   accountId: true,
@@ -52,6 +54,7 @@ const TRANSACTION_SELECT_FOR_LIST = {
   categoryId: true,
   entityId: true,
   investmentId: true,
+  eventId: true,
   amount: true,
   currencyId: true,
   price: true,
@@ -70,28 +73,14 @@ const TRANSACTION_SELECT_FOR_LIST = {
     select: {
       id: true,
       name: true,
-      currency: {
-        select: {
-          id: true,
-          code: true,
-          name: true,
-          symbol: true,
-        },
-      },
+      currency: { select: CURRENCY_SELECT_BASIC },
     },
   },
   toAccount: {
     select: {
       id: true,
       name: true,
-      currency: {
-        select: {
-          id: true,
-          code: true,
-          name: true,
-          symbol: true,
-        },
-      },
+      currency: { select: CURRENCY_SELECT_BASIC },
     },
   },
   category: {
@@ -110,14 +99,15 @@ const TRANSACTION_SELECT_FOR_LIST = {
       type: true,
     },
   },
-  currency: {
+  event: {
     select: {
       id: true,
-      code: true,
       name: true,
-      symbol: true,
+      startAt: true,
+      endAt: true,
     },
   },
+  currency: { select: CURRENCY_SELECT_BASIC },
 } as const;
 
 const ACCOUNT_SELECT_MINIMAL = {
@@ -125,6 +115,108 @@ const ACCOUNT_SELECT_MINIMAL = {
   userId: true,
   currencyId: true,
 } as const;
+
+type TransactionRecord = Prisma.TransactionGetPayload<{
+  select: typeof TRANSACTION_SELECT;
+}>;
+type MinimalCurrency = {
+  id: string;
+  code: string;
+  name: string;
+  symbol: string | null;
+};
+
+const formatCurrencyRecord = (currency: MinimalCurrency | null | undefined) => {
+  if (!currency) {
+    return null;
+  }
+  return {
+    ...currency,
+    symbol: currency.symbol ?? null,
+  };
+};
+
+const formatAccountRecord = (
+  account: NonNullable<TransactionRecord['account']>,
+) => ({
+  ...account,
+  currency: formatCurrencyRecord(account.currency)!,
+});
+
+const formatOptionalAccountRecord = (
+  account: TransactionRecord['toAccount'],
+) => {
+  if (!account) {
+    return null;
+  }
+  return {
+    ...account,
+    currency: formatCurrencyRecord(account.currency)!,
+  };
+};
+
+const formatCategoryRecord = (category: TransactionRecord['category']) => {
+  if (!category) {
+    return null;
+  }
+  return {
+    ...category,
+    icon: category.icon ?? null,
+    color: category.color ?? null,
+  };
+};
+
+const formatEntityRecord = (entity: TransactionRecord['entity']) => {
+  if (!entity) {
+    return null;
+  }
+  return { ...entity };
+};
+
+const formatEventRecord = (
+  event: TransactionRecord['event'],
+): TransactionDetail['event'] => {
+  if (!event) {
+    return null;
+  }
+  return {
+    id: event.id,
+    name: event.name,
+    startAt: event.startAt.toISOString(),
+    endAt: event.endAt ? event.endAt.toISOString() : null,
+  };
+};
+
+const formatTransactionRecord = (
+  transaction: TransactionRecord,
+): TransactionDetail => ({
+  ...transaction,
+  toAccountId: transaction.toAccountId ?? null,
+  transferGroupId: transaction.transferGroupId ?? null,
+  categoryId: transaction.categoryId ?? null,
+  entityId: transaction.entityId ?? null,
+  investmentId: transaction.investmentId ?? null,
+  eventId: transaction.eventId ?? null,
+  amount: decimalToString(transaction.amount),
+  price: decimalToNullableString(transaction.price),
+  priceInBaseCurrency: decimalToNullableString(transaction.priceInBaseCurrency),
+  quantity: decimalToNullableString(transaction.quantity),
+  fee: decimalToString(transaction.fee),
+  feeInBaseCurrency: decimalToNullableString(transaction.feeInBaseCurrency),
+  date: dateToIsoString(transaction.date),
+  dueDate: dateToNullableIsoString(transaction.dueDate),
+  note: transaction.note ?? null,
+  receiptUrl: transaction.receiptUrl ?? null,
+  metadata: transaction.metadata ?? null,
+  createdAt: dateToIsoString(transaction.createdAt),
+  updatedAt: dateToIsoString(transaction.updatedAt),
+  account: formatAccountRecord(transaction.account!),
+  toAccount: formatOptionalAccountRecord(transaction.toAccount),
+  category: formatCategoryRecord(transaction.category),
+  entity: formatEntityRecord(transaction.entity),
+  event: formatEventRecord(transaction.event),
+  currency: formatCurrencyRecord(transaction.currency),
+});
 
 class BalanceCalculator {
   private exchangeRates: Record<string, Record<string, Decimal>> = {
@@ -197,15 +289,15 @@ class BalanceCalculator {
     return { amountInAccountCurrency, feeInAccountCurrency };
   }
 
-  async convertAmountToToAccountCurrency(
+  convertAmountToToAccountCurrency(
     amount: Decimal | number,
     currencyId: string,
     toAccountCurrencyId?: string,
   ): Promise<Decimal> {
     if (!toAccountCurrencyId || currencyId === toAccountCurrencyId) {
-      return new Decimal(amount);
+      return new Promise((resolve) => resolve(new Decimal(amount)));
     }
-    return await this.convertCurrency(amount, currencyId, toAccountCurrencyId);
+    return this.convertCurrency(amount, currencyId, toAccountCurrencyId);
   }
 }
 
@@ -255,6 +347,7 @@ class BalanceUpdater {
     currencyId: string,
     accountCurrencyId: string,
     toAccountCurrencyId?: string,
+    toAmount?: Decimal | number,
   ) {
     await tx.account.findUniqueOrThrow({
       where: { id: accountId },
@@ -308,12 +401,13 @@ class BalanceUpdater {
           where: { id: toAccountId },
         });
 
-        const amountInToAccountCurrency =
-          await this.calculator.convertAmountToToAccountCurrency(
-            amount,
-            currencyId,
-            toAccountCurrencyId,
-          );
+        const amountInToAccountCurrency = toAmount
+          ? new Decimal(toAmount)
+          : await this.calculator.convertAmountToToAccountCurrency(
+              amount,
+              currencyId,
+              toAccountCurrencyId,
+            );
 
         await this.updateTransferBalance(
           tx,
@@ -339,6 +433,7 @@ class BalanceUpdater {
     currencyId: string,
     accountCurrencyId: string,
     toAccountCurrencyId?: string,
+    toAmount?: Decimal | number,
   ) {
     const { amountInAccountCurrency, feeInAccountCurrency } =
       await this.calculator.convertAmountToAccountCurrency(
@@ -382,12 +477,13 @@ class BalanceUpdater {
           throw new Error('To account is required for transfer');
         }
 
-        const amountInToAccountCurrency =
-          await this.calculator.convertAmountToToAccountCurrency(
-            amount,
-            currencyId,
-            toAccountCurrencyId,
-          );
+        const amountInToAccountCurrency = toAmount
+          ? new Decimal(toAmount)
+          : await this.calculator.convertAmountToToAccountCurrency(
+              amount,
+              currencyId,
+              toAccountCurrencyId,
+            );
 
         await this.updateTransferBalance(
           tx,
@@ -453,6 +549,26 @@ class TransactionHandlerFactory {
     }
   }
 
+  private async validateEventOwnership(
+    userId: string,
+    eventId: string | undefined,
+  ) {
+    if (!eventId) {
+      return;
+    }
+    const event = await prisma.event.findFirst({
+      where: {
+        id: eventId,
+        userId,
+        deletedAt: null,
+      },
+      select: { id: true, userId: true },
+    });
+    if (!event) {
+      throw new Error('Event not found');
+    }
+  }
+
   private async prepareTransactionData(
     userId: string,
     data: IUpsertTransaction,
@@ -462,6 +578,10 @@ class TransactionHandlerFactory {
     const currencyId = data.currencyId ?? accountCurrencyId;
     const amountDecimal = new Decimal(data.amount);
     const feeDecimal = new Decimal(data.fee ?? 0);
+
+    if (data.eventId) {
+      await this.validateEventOwnership(userId, data.eventId);
+    }
 
     let feeInBaseCurrency: Decimal | null = data.feeInBaseCurrency
       ? new Decimal(data.feeInBaseCurrency)
@@ -491,7 +611,8 @@ class TransactionHandlerFactory {
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
       note: data.note ?? null,
       receiptUrl: data.receiptUrl ?? null,
-      metadata: data.metadata ?? null,
+      metadata: (data.metadata ?? null) as any,
+      eventId: data.eventId ?? null,
     };
 
     switch (data.type) {
@@ -537,7 +658,6 @@ class TransactionHandlerFactory {
       }
 
       default: {
-        const _exhaustive: never = data;
         throw new Error(
           `Invalid transaction type: ${(data as IUpsertTransaction).type}`,
         );
@@ -571,7 +691,7 @@ class TransactionHandlerFactory {
 
       return tx.transaction.create({
         data: transactionData,
-        include: TRANSACTION_INCLUDE,
+        select: TRANSACTION_SELECT,
       });
     });
   }
@@ -629,7 +749,7 @@ class TransactionHandlerFactory {
       return tx.transaction.update({
         where: { id: transactionId },
         data: transactionData,
-        include: TRANSACTION_INCLUDE,
+        select: TRANSACTION_SELECT,
       });
     });
   }
@@ -647,6 +767,9 @@ class TransactionHandlerFactory {
     const currencyId = data.currencyId ?? fromAccount.currencyId;
     const amountDecimal = new Decimal(data.amount);
     const feeDecimal = new Decimal(data.fee ?? 0);
+    const toAmountDecimal = data.toAmount
+      ? new Decimal(data.toAmount)
+      : undefined;
     const groupId = crypto.randomUUID();
 
     return prisma.$transaction(async (tx: PrismaTx) => {
@@ -661,6 +784,7 @@ class TransactionHandlerFactory {
         currencyId,
         fromAccount.currencyId,
         toAccount.currencyId,
+        toAmountDecimal,
       );
 
       // Create primary transaction (from -> to)
@@ -678,20 +802,21 @@ class TransactionHandlerFactory {
           dueDate: data.dueDate ? new Date(data.dueDate) : null,
           note: data.note ?? null,
           receiptUrl: data.receiptUrl ?? null,
-          metadata: data.metadata ?? null,
+          metadata: (data.metadata ?? null) as any,
           transferGroupId: groupId,
           isTransferMirror: false,
         },
-        include: TRANSACTION_INCLUDE,
+        select: TRANSACTION_SELECT,
       });
 
       // Calculate mirror amount in destination currency
-      const amountInToCurrency =
-        await this.calculator.convertAmountToToAccountCurrency(
-          amountDecimal,
-          currencyId,
-          toAccount.currencyId,
-        );
+      const amountInToCurrency = toAmountDecimal
+        ? toAmountDecimal
+        : await this.calculator.convertAmountToToAccountCurrency(
+            amountDecimal,
+            currencyId,
+            toAccount.currencyId,
+          );
 
       // Create mirror transaction (to -> from)
       await tx.transaction.create({
@@ -708,7 +833,7 @@ class TransactionHandlerFactory {
           dueDate: data.dueDate ? new Date(data.dueDate) : null,
           note: data.note ?? null,
           receiptUrl: data.receiptUrl ?? null,
-          metadata: data.metadata ?? null,
+          metadata: (data.metadata ?? null) as any,
           transferGroupId: groupId,
           isTransferMirror: true,
         },
@@ -743,11 +868,32 @@ class TransactionHandlerFactory {
     const currencyId = data.currencyId ?? fromAccount.currencyId;
     const amountDecimal = new Decimal(data.amount);
     const feeDecimal = new Decimal(data.fee ?? 0);
+    const toAmountDecimal = data.toAmount
+      ? new Decimal(data.toAmount)
+      : undefined;
 
     const groupId = existing.transferGroupId ?? crypto.randomUUID();
 
+    // Get existing mirror to get original toAmount for revert
+    const existingMirrorForRevert = existing.transferGroupId
+      ? await prisma.transaction.findFirst({
+          where: {
+            userId,
+            transferGroupId: existing.transferGroupId,
+            isTransferMirror: true,
+            deletedAt: null,
+          },
+          select: { amount: true },
+        })
+      : null;
+
     return prisma.$transaction(async (tx: PrismaTx) => {
       // Revert balances from old primary only
+      // Use existing mirror amount if available for accurate revert
+      const existingToAmount = existingMirrorForRevert
+        ? new Decimal(existingMirrorForRevert.amount)
+        : undefined;
+
       await this.balanceUpdater.revertBalanceEffect(
         tx,
         existing.type,
@@ -758,6 +904,7 @@ class TransactionHandlerFactory {
         existing.currencyId,
         existing.account.currencyId,
         existing.toAccount?.currencyId,
+        existingToAmount,
       );
 
       // Apply balance with new values once for primary
@@ -771,6 +918,7 @@ class TransactionHandlerFactory {
         currencyId,
         fromAccount.currencyId,
         toAccount.currencyId,
+        toAmountDecimal,
       );
 
       // Update primary
@@ -788,20 +936,21 @@ class TransactionHandlerFactory {
           dueDate: data.dueDate ? new Date(data.dueDate) : null,
           note: data.note ?? null,
           receiptUrl: data.receiptUrl ?? null,
-          metadata: data.metadata ?? null,
+          metadata: (data.metadata ?? null) as any,
           transferGroupId: groupId,
           isTransferMirror: false,
         },
-        include: TRANSACTION_INCLUDE,
+        select: TRANSACTION_SELECT,
       });
 
       // Calculate mirror amount
-      const amountInToCurrency =
-        await this.calculator.convertAmountToToAccountCurrency(
-          amountDecimal,
-          currencyId,
-          toAccount.currencyId,
-        );
+      const amountInToCurrency = toAmountDecimal
+        ? toAmountDecimal
+        : await this.calculator.convertAmountToToAccountCurrency(
+            amountDecimal,
+            currencyId,
+            toAccount.currencyId,
+          );
 
       // Upsert mirror using groupId
       const existingMirror = existing.transferGroupId
@@ -829,7 +978,7 @@ class TransactionHandlerFactory {
             dueDate: data.dueDate ? new Date(data.dueDate) : null,
             note: data.note ?? null,
             receiptUrl: data.receiptUrl ?? null,
-            metadata: data.metadata ?? null,
+            metadata: (data.metadata ?? null) as any,
             transferGroupId: groupId,
             isTransferMirror: true,
           },
@@ -848,7 +997,7 @@ class TransactionHandlerFactory {
             dueDate: data.dueDate ? new Date(data.dueDate) : null,
             note: data.note ?? null,
             receiptUrl: data.receiptUrl ?? null,
-            metadata: data.metadata ?? null,
+            metadata: (data.metadata ?? null) as any,
             transferGroupId: groupId,
             isTransferMirror: true,
           },
@@ -962,8 +1111,8 @@ class TransactionHandlerFactory {
 }
 
 export class TransactionService {
-  private calculator: BalanceCalculator;
-  private balanceUpdater: BalanceUpdater;
+  private readonly calculator: BalanceCalculator;
+  private readonly balanceUpdater: BalanceUpdater;
   private handlerFactory: TransactionHandlerFactory;
 
   constructor() {
@@ -975,7 +1124,10 @@ export class TransactionService {
     );
   }
 
-  async upsertTransaction(userId: string, data: IUpsertTransaction) {
+  async upsertTransaction(
+    userId: string,
+    data: IUpsertTransaction,
+  ): Promise<TransactionDetail> {
     const account = await prisma.account.findFirst({
       where: {
         id: data.accountId,
@@ -995,57 +1147,68 @@ export class TransactionService {
     });
 
     const transactionType = data.type;
+    let transaction: TransactionRecord;
     switch (transactionType) {
       case TransactionType.income:
       case TransactionType.expense:
-        return this.handlerFactory.handleIncomeExpense(
+        transaction = await this.handlerFactory.handleIncomeExpense(
           userId,
           data as IIncomeExpenseTransaction,
           account,
           user.baseCurrencyId,
         );
+        break;
 
       case TransactionType.transfer:
-        return this.handlerFactory.handleTransfer(
+        transaction = await this.handlerFactory.handleTransfer(
           userId,
           data as ITransferTransaction,
           account,
         );
+        break;
 
       case TransactionType.loan_given:
       case TransactionType.loan_received:
-        return this.handlerFactory.handleLoan(
+        transaction = await this.handlerFactory.handleLoan(
           userId,
           data as ILoanTransaction,
           account,
           user.baseCurrencyId,
         );
+        break;
 
       default: {
-        const _exhaustive: never = data;
         throw new Error(`Invalid transaction type: ${transactionType}`);
       }
     }
+
+    return formatTransactionRecord(transaction);
   }
 
-  async getTransaction(userId: string, transactionId: string) {
+  async getTransaction(
+    userId: string,
+    transactionId: string,
+  ): Promise<TransactionDetail> {
     const transaction = await prisma.transaction.findFirst({
       where: {
         id: transactionId,
         userId,
         deletedAt: null,
       },
-      include: TRANSACTION_INCLUDE,
+      select: TRANSACTION_SELECT,
     });
 
     if (!transaction) {
       throw new Error('Transaction not found');
     }
 
-    return transaction;
+    return formatTransactionRecord(transaction);
   }
 
-  async listTransactions(userId: string, filters: IListTransactionsQuery = {}) {
+  async listTransactions(
+    userId: string,
+    filters: IListTransactionsQuery = {},
+  ): Promise<TransactionListResponse> {
     const {
       types,
       accountIds,
@@ -1105,7 +1268,7 @@ export class TransactionService {
         orderBy,
         skip,
         take: limit,
-        select: TRANSACTION_SELECT_FOR_LIST,
+        select: TRANSACTION_SELECT,
       }),
       prisma.transaction.count({ where }),
       prisma.transaction.groupBy({
@@ -1130,7 +1293,7 @@ export class TransactionService {
 
     const summaryByCurrency = new Map<
       string,
-      { currency: any; totalIncome: Decimal; totalExpense: Decimal }
+      { currency: MinimalCurrency; totalIncome: Decimal; totalExpense: Decimal }
     >();
 
     for (const group of summaryGroups) {
@@ -1160,13 +1323,13 @@ export class TransactionService {
     }
 
     const summary = Array.from(summaryByCurrency.values()).map((item) => ({
-      currency: item.currency,
+      currency: formatCurrencyRecord(item.currency)!,
       totalIncome: item.totalIncome.toNumber(),
       totalExpense: item.totalExpense.toNumber(),
     }));
 
     return {
-      transactions,
+      transactions: transactions.map(formatTransactionRecord),
       pagination: {
         page,
         limit,
@@ -1224,13 +1387,30 @@ export class TransactionService {
               amount: true,
               fee: true,
               currencyId: true,
+              transferGroupId: true,
               account: { select: { currencyId: true } },
               toAccount: { select: { currencyId: true } },
             },
           });
 
+      // Get mirror transaction amount for accurate revert
+      const mirrorForRevert = primary?.transferGroupId
+        ? await prisma.transaction.findFirst({
+            where: {
+              userId,
+              transferGroupId: primary.transferGroupId,
+              isTransferMirror: true,
+              deletedAt: null,
+            },
+            select: { amount: true },
+          })
+        : null;
+
       await prisma.$transaction(async (tx: PrismaTx) => {
         if (primary) {
+          const existingToAmount = mirrorForRevert
+            ? new Decimal(mirrorForRevert.amount)
+            : undefined;
           await this.balanceUpdater.revertBalanceEffect(
             tx,
             primary.type,
@@ -1241,6 +1421,7 @@ export class TransactionService {
             primary.currencyId,
             primary.account.currencyId,
             primary.toAccount?.currencyId,
+            existingToAmount,
           );
         }
 
@@ -1286,7 +1467,10 @@ export class TransactionService {
     return { success: true, message: 'Transaction deleted successfully' };
   }
 
-  async createBatchTransactions(userId: string, data: IBatchTransactionsDto) {
+  async createBatchTransactions(
+    userId: string,
+    data: IBatchTransactionsDto,
+  ): Promise<BatchTransactionsResponse> {
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: { id: true, baseCurrencyId: true },
@@ -1294,7 +1478,7 @@ export class TransactionService {
 
     const results: Array<{
       success: boolean;
-      data?: unknown;
+      data?: TransactionDetail;
       error?: string;
     }> = [];
 
@@ -1318,7 +1502,7 @@ export class TransactionService {
             continue;
           }
 
-          let result;
+          let result: TransactionRecord | undefined;
           switch (transactionData.type) {
             case TransactionType.income:
             case TransactionType.expense: {
@@ -1398,7 +1582,6 @@ export class TransactionService {
             }
 
             default: {
-              const _exhaustive: never = transactionData;
               results.push({
                 success: false,
                 error: `Invalid transaction type: ${(transactionData as IUpsertTransaction).type}`,
@@ -1407,7 +1590,12 @@ export class TransactionService {
             }
           }
 
-          results.push({ success: true, data: result });
+          if (result) {
+            results.push({
+              success: true,
+              data: formatTransactionRecord(result),
+            });
+          }
         } catch (error) {
           results.push({
             success: false,

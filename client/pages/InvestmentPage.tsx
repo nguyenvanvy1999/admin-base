@@ -1,36 +1,67 @@
 import AddEditInvestmentDialog from '@client/components/AddEditInvestmentDialog';
+import {
+  FormComponent,
+  type FormComponentRef,
+} from '@client/components/FormComponent';
 import InvestmentTable from '@client/components/InvestmentTable';
+import { PageContainer } from '@client/components/PageContainer';
+import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateInvestmentMutation,
+  useDeleteInvestmentMutation,
   useUpdateInvestmentMutation,
 } from '@client/hooks/mutations/useInvestmentMutations';
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
-import { useInvestmentsQuery } from '@client/hooks/queries/useInvestmentQueries';
+import {
+  type FilterFormValue,
+  useInvestmentsQuery,
+} from '@client/hooks/queries/useInvestmentQueries';
+import { useZodForm } from '@client/hooks/useZodForm';
+import {
+  Button,
+  Group,
+  Modal,
+  MultiSelect,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import type {
-  InvestmentFormData,
-  InvestmentFull,
-} from '@client/types/investment';
-import { Button, MultiSelect, Text } from '@mantine/core';
+  InvestmentResponse,
+  IUpsertInvestmentDto,
+} from '@server/dto/investment.dto';
+import { ListInvestmentsQueryDto } from '@server/dto/investment.dto';
 import {
   InvestmentAssetType,
   InvestmentMode,
 } from '@server/generated/prisma/enums';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
+
+const filterSchema = ListInvestmentsQueryDto.pick({
+  search: true,
+  assetTypes: true,
+  modes: true,
+  currencyIds: true,
+});
+
+const defaultFilterValues: FilterFormValue = {
+  search: '',
+  assetTypes: [],
+  modes: [],
+  currencyIds: [],
+};
 
 const InvestmentPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-
+  const formRef = useRef<FormComponentRef>(null);
   const [selectedInvestment, setSelectedInvestment] =
-    useState<InvestmentFull | null>(null);
+    useState<InvestmentResponse | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const [assetTypes, setAssetTypes] = useState<InvestmentAssetType[]>([]);
-  const [modes, setModes] = useState<InvestmentMode[]>([]);
-  const [currencyIds, setCurrencyIds] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [investmentToDelete, setInvestmentToDelete] =
+    useState<InvestmentResponse | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'updatedAt'>(
@@ -38,46 +69,64 @@ const InvestmentPage = () => {
   );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  const { handleSubmit, control, reset } = useZodForm({
+    zod: filterSchema,
+    defaultValues: defaultFilterValues,
+  });
+
   const queryParams = useMemo(
     () => ({
-      assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
-      modes: modes.length > 0 ? modes : undefined,
-      currencyIds: currencyIds.length > 0 ? currencyIds : undefined,
-      search: searchQuery.trim() || undefined,
       page,
       limit,
       sortBy,
       sortOrder,
     }),
-    [
-      assetTypes,
-      modes,
-      currencyIds,
-      searchQuery,
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-    ],
+    [page, limit, sortBy, sortOrder],
   );
 
-  const { data, isLoading } = useInvestmentsQuery(queryParams);
+  const { data, isLoading, refetch } = useInvestmentsQuery(
+    queryParams,
+    formRef,
+    handleSubmit,
+  );
   const { data: currencies = [] } = useCurrenciesQuery();
   const createMutation = useCreateInvestmentMutation();
   const updateMutation = useUpdateInvestmentMutation();
+  const deleteMutation = useDeleteInvestmentMutation();
 
   const handleAdd = () => {
     setSelectedInvestment(null);
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (investment: InvestmentFull) => {
+  const handleEdit = (investment: InvestmentResponse) => {
     setSelectedInvestment(investment);
     setIsDialogOpen(true);
   };
 
-  const handleView = (investment: InvestmentFull) => {
+  const handleView = (investment: InvestmentResponse) => {
     navigate(`/investments/${investment.id}`);
+  };
+
+  const handleDelete = (investment: InvestmentResponse) => {
+    setInvestmentToDelete(investment);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteDialogClose = () => {
+    setIsDeleteDialogOpen(false);
+    setInvestmentToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (investmentToDelete) {
+      try {
+        await deleteMutation.mutateAsync(investmentToDelete.id);
+        handleDeleteDialogClose();
+      } catch {
+        // Error is already handled by mutation's onError callback
+      }
+    }
   };
 
   const handleDialogClose = () => {
@@ -85,7 +134,7 @@ const InvestmentPage = () => {
     setSelectedInvestment(null);
   };
 
-  const handleSubmit = async (formData: InvestmentFormData) => {
+  const handleSubmitForm = async (formData: IUpsertInvestmentDto) => {
     if (formData.id) {
       await updateMutation.mutateAsync(formData);
     } else {
@@ -94,86 +143,55 @@ const InvestmentPage = () => {
     handleDialogClose();
   };
 
-  const hasActiveFilters =
-    searchQuery.trim() !== '' ||
-    assetTypes.length > 0 ||
-    modes.length > 0 ||
-    currencyIds.length > 0;
+  const handleSearch = () => {
+    refetch();
+  };
 
   const isSubmitting =
-    createMutation.isPending || updateMutation.isPending || isLoading;
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    isLoading;
 
-  const summary = data?.pagination
-    ? [
-        <Text
-          key="total"
-          size="sm"
-          className="text-gray-600 dark:text-gray-400"
-        >
-          {t('investments.totalCount', {
-            defaultValue: 'Total investments: {{count}}',
-            count: data.pagination.total,
-          })}
-        </Text>,
-      ]
-    : null;
+  const stats = useMemo(() => {
+    if (!data?.pagination) return undefined;
+    return [
+      {
+        titleI18nKey: 'investments.totalCount' as any,
+        value: String(data.pagination.total),
+        color: undefined,
+      },
+    ];
+  }, [data?.pagination]);
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {t('investments.title', { defaultValue: 'Investments' })}
-              </h1>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                {t('investments.subtitle', {
-                  defaultValue:
-                    'Track your assets, positions, and performance in one place.',
-                })}
-              </p>
-            </div>
-            <Button onClick={handleAdd} disabled={isSubmitting}>
-              {t('investments.addInvestment', {
-                defaultValue: 'New investment',
-              })}
-            </Button>
-          </div>
-
-          <InvestmentTable
-            investments={data?.investments || []}
-            isLoading={isLoading}
-            onEdit={handleEdit}
-            onView={handleView}
-            search={{
-              onSearch: (value: string) => {
-                setSearchQuery(value);
-                setPage(1);
-              },
-              placeholder: t('investments.search', {
-                defaultValue: 'Search investments',
-              }),
-            }}
-            filters={{
-              hasActive: hasActiveFilters,
-              onReset: () => {
-                setAssetTypes([]);
-                setModes([]);
-                setCurrencyIds([]);
-                setSearchQuery('');
-                setPage(1);
-              },
-              slots: [
+    <PageContainer
+      filterGroup={
+        <FormComponent ref={formRef}>
+          <Group>
+            <ZodFormController
+              control={control}
+              name="search"
+              render={({ field, fieldState: { error } }) => (
+                <TextInput
+                  placeholder={t('investments.search', {
+                    defaultValue: 'Search investments',
+                  })}
+                  error={error}
+                  style={{ flex: 1, maxWidth: '300px' }}
+                  {...field}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="assetTypes"
+              render={({ field, fieldState: { error } }) => (
                 <MultiSelect
-                  key="asset-filter"
-                  value={assetTypes}
-                  onChange={(value) =>
-                    setAssetTypes(value as InvestmentAssetType[])
-                  }
                   placeholder={t('investments.assetFilter', {
                     defaultValue: 'Asset type',
                   })}
+                  error={error}
                   data={[
                     {
                       value: InvestmentAssetType.coin,
@@ -194,88 +212,175 @@ const InvestmentPage = () => {
                       }),
                     },
                   ]}
-                />,
+                  value={field.value || []}
+                  onChange={(value) =>
+                    field.onChange(value as InvestmentAssetType[])
+                  }
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="modes"
+              render={({ field, fieldState: { error } }) => (
                 <MultiSelect
-                  key="mode-filter"
-                  value={modes}
-                  onChange={(value) => setModes(value as InvestmentMode[])}
                   placeholder={t('investments.modeFilter', {
                     defaultValue: 'Mode',
                   })}
+                  error={error}
                   data={[
                     {
                       value: InvestmentMode.priced,
-                      label: t('investments.mode.priced', {
+                      label: t('investments.modes.priced', {
                         defaultValue: 'Market priced',
                       }),
                     },
                     {
                       value: InvestmentMode.manual,
-                      label: t('investments.mode.manual', {
+                      label: t('investments.modes.manual', {
                         defaultValue: 'Manual valuation',
                       }),
                     },
                   ]}
-                />,
+                  value={field.value || []}
+                  onChange={(value) =>
+                    field.onChange(value as InvestmentMode[])
+                  }
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+            <ZodFormController
+              control={control}
+              name="currencyIds"
+              render={({ field, fieldState: { error } }) => (
                 <MultiSelect
-                  key="currency-filter"
-                  value={currencyIds}
-                  onChange={setCurrencyIds}
                   placeholder={t('investments.currencyFilter', {
                     defaultValue: 'Currency',
                   })}
+                  error={error}
                   data={currencies.map((currency) => ({
                     value: currency.id,
                     label: `${currency.code} - ${currency.name}`,
                   }))}
-                />,
-              ],
-            }}
-            pageSize={{
-              initialSize: limit,
-              onPageSizeChange: (size: number) => {
-                setLimit(size);
-                setPage(1);
-              },
-            }}
-            pagination={
-              data?.pagination && data.pagination.totalPages > 0
-                ? {
-                    currentPage: page,
-                    totalPages: data.pagination.totalPages,
-                    totalItems: data.pagination.total,
-                    itemsPerPage: limit,
-                    onPageChange: setPage,
-                  }
-                : undefined
-            }
-            sorting={{
-              sortBy,
-              sortOrder,
-              onSortChange: (
-                newSortBy: string,
-                newSortOrder: 'asc' | 'desc',
-              ) => {
-                setSortBy(newSortBy as 'name' | 'createdAt' | 'updatedAt');
-                setSortOrder(newSortOrder);
-                setPage(1);
-              },
-            }}
-            summary={summary}
-          />
-        </div>
-      </div>
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  style={{ maxWidth: '200px' }}
+                />
+              )}
+            />
+          </Group>
+        </FormComponent>
+      }
+      buttonGroups={
+        <Button onClick={handleAdd} disabled={isSubmitting}>
+          {t('investments.addInvestment', {
+            defaultValue: 'New investment',
+          })}
+        </Button>
+      }
+      onSearch={handleSearch}
+      onReset={() => reset(defaultFilterValues)}
+      stats={stats}
+    >
+      <InvestmentTable
+        investments={data?.investments || []}
+        isLoading={isLoading}
+        onEdit={handleEdit}
+        onView={handleView}
+        onDelete={handleDelete}
+        recordsPerPage={limit}
+        recordsPerPageOptions={[10, 20, 50, 100]}
+        onRecordsPerPageChange={(size) => {
+          setLimit(size);
+          setPage(1);
+        }}
+        page={page}
+        onPageChange={setPage}
+        totalRecords={data?.pagination?.total}
+        sorting={
+          sortBy
+            ? [
+                {
+                  id: sortBy,
+                  desc: sortOrder === 'desc',
+                },
+              ]
+            : undefined
+        }
+        onSortingChange={(
+          updater:
+            | { id: string; desc: boolean }[]
+            | ((prev: { id: string; desc: boolean }[]) => {
+                id: string;
+                desc: boolean;
+              }[]),
+        ) => {
+          const newSorting =
+            typeof updater === 'function'
+              ? updater(
+                  sortBy ? [{ id: sortBy, desc: sortOrder === 'desc' }] : [],
+                )
+              : updater;
+          if (newSorting.length > 0) {
+            setSortBy(newSorting[0].id as 'name' | 'createdAt' | 'updatedAt');
+            setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
+          } else {
+            setSortBy('createdAt');
+            setSortOrder('desc');
+          }
+          setPage(1);
+        }}
+      />
 
       {isDialogOpen && (
         <AddEditInvestmentDialog
           isOpen={isDialogOpen}
           onClose={handleDialogClose}
           investment={selectedInvestment}
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
         />
       )}
-    </div>
+
+      {isDeleteDialogOpen && investmentToDelete && (
+        <Modal
+          opened={isDeleteDialogOpen}
+          onClose={handleDeleteDialogClose}
+          title={t('investments.deleteConfirmTitle', {
+            defaultValue: 'Delete Investment',
+          })}
+          size="md"
+        >
+          <Text mb="md">
+            {t('investments.deleteConfirmMessage', {
+              defaultValue: 'Are you sure you want to delete this investment?',
+            })}
+            <br />
+            <strong>{investmentToDelete.name}</strong>
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={handleDeleteDialogClose}
+              disabled={isSubmitting}
+            >
+              {t('common.cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button
+              color="red"
+              onClick={handleConfirmDelete}
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? t('common.deleting', { defaultValue: 'Deleting...' })
+                : t('common.delete', { defaultValue: 'Delete' })}
+            </Button>
+          </Group>
+        </Modal>
+      )}
+    </PageContainer>
   );
 };
 

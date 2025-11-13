@@ -1,81 +1,65 @@
-import useToast from '@client/hooks/useToast';
-import { api } from '@client/libs/api';
-import type { EntityFormData } from '@client/types/entity';
+import { entityService } from '@client/services';
+import { toast } from '@client/utils/toast';
+import type { IUpsertEntityDto } from '@server/dto/entity.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useCreateEntityMutation = () => {
-  const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Omit<EntityFormData, 'id'>) => {
-      const response = await api.api.entities.post(data);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+    mutationFn: (data: Omit<IUpsertEntityDto, 'id'>) => {
+      return entityService.createEntity(data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['entities'] });
-      showSuccess('Entity created successfully');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
+      toast.success('Entity created successfully');
     },
   });
 };
 
 export const useUpdateEntityMutation = () => {
-  const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: EntityFormData) => {
+    mutationFn: (data: IUpsertEntityDto) => {
       if (!data.id) {
         throw new Error('Entity ID is required for update');
       }
 
-      const response = await api.api.entities.post(data);
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+      return entityService.updateEntity(data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['entities'] });
       await queryClient.invalidateQueries({ queryKey: ['entity'] });
-      showSuccess('Entity updated successfully');
-    },
-    onError: (error: Error) => {
-      showError(error.message);
+      toast.success('Entity updated successfully');
     },
   });
 };
 
 export const useDeleteEntityMutation = () => {
-  const { showError, showSuccess } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (entityId: string) => {
-      const response = await api.api.entities({ id: entityId }).delete();
-      if (response.error) {
-        throw new Error(
-          response.error.value?.message ?? 'An unknown error occurred',
-        );
-      }
-      return response.data;
+    mutationFn: (entityId: string) => {
+      return entityService.deleteEntity(entityId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['entities'] });
-      showSuccess('Entity deleted successfully');
+      toast.success('Entity deleted successfully');
     },
-    onError: (error: Error) => {
-      showError(error.message);
+  });
+};
+
+export const useDeleteManyEntitiesMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => {
+      return entityService.deleteManyEntities(ids);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['entities'] });
+      toast.success('Entities deleted successfully');
     },
   });
 };
