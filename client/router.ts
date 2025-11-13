@@ -2,6 +2,7 @@ import { createHashRouter } from 'react-router';
 
 import ProtectedPageLayout from './layouts';
 import AccountPage from './pages/AccountPage';
+import BulkTransactionPage from './pages/BulkTransactionPage';
 import CategoryPage from './pages/CategoryPage';
 import DebtStatisticsPage from './pages/DebtStatisticsPage';
 import EntityPage from './pages/EntityPage';
@@ -38,6 +39,10 @@ const router = createHashRouter([
       {
         path: '/transactions',
         Component: TransactionPage,
+      },
+      {
+        path: '/transactions/bulk',
+        Component: BulkTransactionPage,
       },
       {
         path: '/budgets',

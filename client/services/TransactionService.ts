@@ -1,6 +1,8 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
 import type {
+  BatchTransactionsResponse,
   IBalanceAdjustmentDto,
+  IBatchTransactionsDto,
   IUpsertTransaction,
   TransactionDeleteResponse,
   TransactionDetail,
@@ -50,6 +52,15 @@ export class TransactionService extends ServiceBase {
   adjustBalance(data: IBalanceAdjustmentDto): Promise<TransactionDetail> {
     return this.post<TransactionDetail>({
       endpoint: 'adjust-balance',
+      data,
+    });
+  }
+
+  createBatchTransactions(
+    data: IBatchTransactionsDto,
+  ): Promise<BatchTransactionsResponse> {
+    return this.post<BatchTransactionsResponse>({
+      endpoint: 'batch',
       data,
     });
   }

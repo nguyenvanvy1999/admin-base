@@ -2,6 +2,7 @@ import { transactionService } from '@client/services';
 import { toast } from '@client/utils/toast';
 import type {
   IBalanceAdjustmentDto,
+  IBatchTransactionsDto,
   IUpsertTransaction,
 } from '@server/dto/transaction.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -64,6 +65,31 @@ export const useAdjustBalanceMutation = () => {
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
       await queryClient.invalidateQueries({ queryKey: ['accounts'] });
       toast.success('Balance adjusted successfully');
+    },
+  });
+};
+
+export const useCreateBatchTransactionsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: IBatchTransactionsDto) => {
+      return transactionService.createBatchTransactions(data);
+    },
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      await queryClient.invalidateQueries({ queryKey: ['accounts'] });
+
+      const { summary } = response;
+      if (summary.failed === 0) {
+        toast.success(
+          `Successfully created ${summary.successful} transaction(s)`,
+        );
+      } else {
+        toast.warning(
+          `Created ${summary.successful} transaction(s), ${summary.failed} failed`,
+        );
+      }
     },
   });
 };
