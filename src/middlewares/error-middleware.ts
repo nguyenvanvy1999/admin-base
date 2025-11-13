@@ -1,49 +1,63 @@
-import Elysia from 'elysia';
+import type { Elysia } from 'elysia';
 import { AppError, ErrorCode } from '../constants/error';
 import { logger } from '../libs/logger';
 
-export const errorHandler = new Elysia().onError(({ error, code, set }) => {
-  let errorCode: string;
-  let status: number;
-  let message: string;
-  let errors: unknown;
+export function withErrorHandler(
+  elysia: Elysia<any, any, any, any, any, any, any>,
+) {
+  return elysia.onError(({ error, code, set }) => {
+    logger.info(
+      `Error handler called: ${JSON.stringify({
+        errorType: error?.constructor?.name,
+        isAppError: error instanceof AppError,
+        code,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      })}`,
+    );
 
-  if (error instanceof AppError) {
-    errorCode = error.code;
-    message = error.message;
-    status = typeof set.status === 'number' ? set.status : 400;
-  } else if (code === 'UNKNOWN') {
-    errorCode = ErrorCode.VALIDATION_ERROR;
-    message = error instanceof Error ? error.message : String(error);
-    status = 400;
-  } else if (code === 'INTERNAL_SERVER_ERROR' || code === 'PARSE') {
-    logger.error(`Request error occurred ${JSON.stringify({ code, error })}`);
-    errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
-    message = error instanceof Error ? error.message : String(error);
-    status = 500;
-  } else if (code === 'VALIDATION') {
-    errorCode = ErrorCode.VALIDATION_ERROR;
-    message = error instanceof Error ? error.message : String(error);
-    errors = (error as any).errors;
-    status = 400;
-  } else if (code === 'NOT_FOUND') {
-    errorCode = ErrorCode.NOT_FOUND;
-    message = error instanceof Error ? error.message : String(error);
-    status = 404;
-  } else {
-    errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
-    message = error instanceof Error ? error.message : String(error);
-    status = 500;
-  }
+    let errorCode: string;
+    let status: number;
+    let message: string;
+    let errors: unknown;
 
-  set.status = status;
-  const response: Record<string, unknown> = {
-    code: errorCode,
-    message,
-    status,
-  };
-  if (errors) {
-    response.errors = errors;
-  }
-  return response;
-});
+    if (error instanceof AppError) {
+      errorCode = error.code;
+      message = error.message;
+      status = 400;
+    } else if (code === 'UNKNOWN') {
+      errorCode = ErrorCode.VALIDATION_ERROR;
+      message = error instanceof Error ? error.message : String(error);
+      status = 400;
+    } else if (code === 'INTERNAL_SERVER_ERROR' || code === 'PARSE') {
+      logger.error(`Request error occurred ${JSON.stringify({ code, error })}`);
+      errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+      message = error instanceof Error ? error.message : String(error);
+      status = 500;
+    } else if (code === 'VALIDATION') {
+      errorCode = ErrorCode.VALIDATION_ERROR;
+      message = error instanceof Error ? error.message : String(error);
+      errors = (error as any).errors;
+      status = 400;
+    } else if (code === 'NOT_FOUND') {
+      errorCode = ErrorCode.NOT_FOUND;
+      message = error instanceof Error ? error.message : String(error);
+      status = 404;
+    } else {
+      errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+      message = error instanceof Error ? error.message : String(error);
+      status = 500;
+    }
+
+    set.status = status;
+    set.headers['Content-Type'] = 'application/json';
+    const response: Record<string, unknown> = {
+      code: errorCode,
+      message,
+      status,
+    };
+    if (errors) {
+      response.errors = errors;
+    }
+    return response;
+  });
+}

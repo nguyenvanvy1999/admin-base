@@ -4,6 +4,7 @@ import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
 import { CURRENCY_IDS } from '../constants/currency';
+import { ErrorCode, throwAppError } from '../constants/error';
 import type {
   AuthUserRes,
   ILoginDto,
@@ -78,7 +79,7 @@ export class UserService {
       where: { username: data.username },
     });
     if (existUser) {
-      throw new Error('User already exists');
+      throwAppError(ErrorCode.USER_ALREADY_EXISTS, 'User already exists');
     }
     const hashPassword = await this.deps.passwordService.hash(data.password);
 
@@ -107,14 +108,14 @@ export class UserService {
       select: USER_SELECT_FOR_LOGIN,
     });
     if (!user) {
-      throw new Error('User not found');
+      throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
     const isValid = await this.deps.passwordService.verify(
       data.password,
       user.password,
     );
     if (!isValid) {
-      throw new Error('Invalid password');
+      throwAppError(ErrorCode.INVALID_PASSWORD, 'Invalid password');
     }
     const token = jwt.sign(
       { id: user.id, role: user.role },
@@ -133,7 +134,7 @@ export class UserService {
       select: USER_SELECT_FOR_INFO,
     });
     if (!user) {
-      throw new Error('User not found');
+      throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
     return formatUser(user);
   }
@@ -144,19 +145,22 @@ export class UserService {
       select: USER_SELECT_FOR_VALIDATION,
     });
     if (!user) {
-      throw new Error('User not found');
+      throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
 
     if (data.newPassword) {
       if (!data.oldPassword) {
-        throw new Error('Old password is required to change password');
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Old password is required to change password',
+        );
       }
       const isValid = await this.deps.passwordService.verify(
         data.oldPassword,
         user.password,
       );
       if (!isValid) {
-        throw new Error('Invalid old password');
+        throwAppError(ErrorCode.INVALID_OLD_PASSWORD, 'Invalid old password');
       }
     }
 
@@ -165,7 +169,7 @@ export class UserService {
         where: { id: data.baseCurrencyId },
       });
       if (count === 0) {
-        throw new Error('Currency not found');
+        throwAppError(ErrorCode.CURRENCY_NOT_FOUND, 'Currency not found');
       }
     }
 
