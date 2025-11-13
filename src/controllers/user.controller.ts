@@ -9,6 +9,7 @@ import {
 } from '../dto/user.dto';
 import authMacro from '../macros/auth';
 import userService from '../services/user.service';
+import { castToRes, ResWrapper } from '../share';
 
 const USER_DETAIL = {
   tags: ['User'],
@@ -34,8 +35,8 @@ const userController = new Elysia().group(
       .use(authMacro)
       .post(
         '/register',
-        ({ body, userService }) => {
-          return userService.register(body);
+        async ({ body, userService }) => {
+          return castToRes(await userService.register(body));
         },
         {
           detail: {
@@ -46,14 +47,14 @@ const userController = new Elysia().group(
           },
           body: RegisterDto,
           response: {
-            200: AuthUserDto,
+            200: ResWrapper(AuthUserDto),
           },
         },
       )
       .post(
         '/login',
-        ({ body, userService }) => {
-          return userService.login(body);
+        async ({ body, userService }) => {
+          return castToRes(await userService.login(body));
         },
         {
           detail: {
@@ -64,14 +65,14 @@ const userController = new Elysia().group(
           },
           body: LoginDto,
           response: {
-            200: LoginResponseDto,
+            200: ResWrapper(LoginResponseDto),
           },
         },
       )
       .get(
         '/me',
-        ({ user, userService }) => {
-          return userService.getUserInfo(user.id);
+        async ({ user, userService }) => {
+          return castToRes(await userService.getUserInfo(user.id));
         },
         {
           checkAuth: [UserRole.user],
@@ -82,14 +83,14 @@ const userController = new Elysia().group(
               "Retrieve the authenticated user's profile information including username, email, and account details.",
           },
           response: {
-            200: AuthUserDto,
+            200: ResWrapper(AuthUserDto),
           },
         },
       )
       .put(
         '/profile',
-        ({ user, body, userService }) => {
-          return userService.updateProfile(user.id, body);
+        async ({ user, body, userService }) => {
+          return castToRes(await userService.updateProfile(user.id, body));
         },
         {
           checkAuth: [UserRole.user],
@@ -101,7 +102,7 @@ const userController = new Elysia().group(
           },
           body: UpdateProfileDto,
           response: {
-            200: AuthUserDto,
+            200: ResWrapper(AuthUserDto),
           },
         },
       ),

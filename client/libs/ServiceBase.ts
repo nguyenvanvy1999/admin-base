@@ -107,6 +107,15 @@ export abstract class ServiceBase {
   }
 
   protected parse<T>(data: unknown): T {
+    if (
+      typeof data === 'object' &&
+      data !== null &&
+      'data' in data &&
+      't' in data &&
+      'code' in data
+    ) {
+      return (data as { data: T }).data;
+    }
     return data as T;
   }
 

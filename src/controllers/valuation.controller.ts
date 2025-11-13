@@ -9,6 +9,7 @@ import {
 } from '../dto/valuation.dto';
 import authMacro from '../macros/auth';
 import investmentValuationService from '../services/valuation.service';
+import { castToRes, ResWrapper } from '../share';
 
 const VALUATION_DETAIL = {
   tags: ['Investment Valuation'],
@@ -30,11 +31,13 @@ const valuationController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        ({ user, params, body, investmentValuationService }) => {
-          return investmentValuationService.upsertValuation(
-            user.id,
-            params.id,
-            body,
+        async ({ user, params, body, investmentValuationService }) => {
+          return castToRes(
+            await investmentValuationService.upsertValuation(
+              user.id,
+              params.id,
+              body,
+            ),
           );
         },
         {
@@ -48,17 +51,19 @@ const valuationController = new Elysia().group(
           params: t.Object({ id: t.String() }),
           body: UpsertInvestmentValuationDto,
           response: {
-            200: InvestmentValuationDto,
+            200: ResWrapper(InvestmentValuationDto),
           },
         },
       )
       .get(
         '/',
-        ({ user, params, query, investmentValuationService }) => {
-          return investmentValuationService.listValuations(
-            user.id,
-            params.id,
-            query,
+        async ({ user, params, query, investmentValuationService }) => {
+          return castToRes(
+            await investmentValuationService.listValuations(
+              user.id,
+              params.id,
+              query,
+            ),
           );
         },
         {
@@ -72,16 +77,18 @@ const valuationController = new Elysia().group(
           params: t.Object({ id: t.String() }),
           query: ListInvestmentValuationsQueryDto,
           response: {
-            200: InvestmentValuationListResponseDto,
+            200: ResWrapper(InvestmentValuationListResponseDto),
           },
         },
       )
       .get(
         '/latest',
-        ({ user, params, investmentValuationService }) => {
-          return investmentValuationService.getLatestValuation(
-            user.id,
-            params.id,
+        async ({ user, params, investmentValuationService }) => {
+          return castToRes(
+            await investmentValuationService.getLatestValuation(
+              user.id,
+              params.id,
+            ),
           );
         },
         {
@@ -94,17 +101,19 @@ const valuationController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: t.Nullable(InvestmentValuationDto),
+            200: ResWrapper(t.Nullable(InvestmentValuationDto)),
           },
         },
       )
       .delete(
         '/:valuationId',
-        ({ user, params, investmentValuationService }) => {
-          return investmentValuationService.deleteValuation(
-            user.id,
-            params.id,
-            params.valuationId,
+        async ({ user, params, investmentValuationService }) => {
+          return castToRes(
+            await investmentValuationService.deleteValuation(
+              user.id,
+              params.id,
+              params.valuationId,
+            ),
           );
         },
         {
@@ -117,7 +126,7 @@ const valuationController = new Elysia().group(
           },
           params: t.Object({ id: t.String(), valuationId: t.String() }),
           response: {
-            200: ValuationDeleteResponseDto,
+            200: ResWrapper(ValuationDeleteResponseDto),
           },
         },
       ),

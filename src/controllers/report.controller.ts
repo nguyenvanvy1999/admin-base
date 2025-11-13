@@ -22,6 +22,7 @@ import {
 } from '../dto/report.dto';
 import authMacro from '../macros/auth';
 import reportService from '../services/report.service';
+import { castToRes, ResWrapper } from '../share';
 
 const REPORT_DETAIL = {
   tags: ['Report'],
@@ -34,8 +35,8 @@ const reportController = new Elysia().group('/reports', (group) =>
     .use(authMacro)
     .get(
       '/summary',
-      ({ user, query, reportService }) => {
-        return reportService.getSummary(user.id, query);
+      async ({ user, query, reportService }) => {
+        return castToRes(await reportService.getSummary(user.id, query));
       },
       {
         checkAuth: [UserRole.user],
@@ -47,14 +48,14 @@ const reportController = new Elysia().group('/reports', (group) =>
         },
         query: ReportSummaryQueryDto,
         response: {
-          200: ReportSummaryDto,
+          200: ResWrapper(ReportSummaryDto),
         },
       },
     )
     .get(
       '/transactions',
-      ({ user, query, reportService }) => {
-        return reportService.getTransactions(user.id, query);
+      async ({ user, query, reportService }) => {
+        return castToRes(await reportService.getTransactions(user.id, query));
       },
       {
         checkAuth: [UserRole.user],
@@ -66,14 +67,14 @@ const reportController = new Elysia().group('/reports', (group) =>
         },
         query: ReportTransactionsQueryDto,
         response: {
-          200: ReportTransactionsDto,
+          200: ResWrapper(ReportTransactionsDto),
         },
       },
     )
     .get(
       '/investments',
-      ({ user, query, reportService }) => {
-        return reportService.getInvestments(user.id, query);
+      async ({ user, query, reportService }) => {
+        return castToRes(await reportService.getInvestments(user.id, query));
       },
       {
         checkAuth: [UserRole.user],
@@ -85,14 +86,16 @@ const reportController = new Elysia().group('/reports', (group) =>
         },
         query: ReportInvestmentsQueryDto,
         response: {
-          200: ReportInvestmentsDto,
+          200: ResWrapper(ReportInvestmentsDto),
         },
       },
     )
     .get(
       '/income-expense-detailed',
-      ({ user, query, reportService }) => {
-        return reportService.getIncomeExpenseDetailed(user.id, query);
+      async ({ user, query, reportService }) => {
+        return castToRes(
+          await reportService.getIncomeExpenseDetailed(user.id, query),
+        );
       },
       {
         checkAuth: [UserRole.user],
@@ -104,14 +107,16 @@ const reportController = new Elysia().group('/reports', (group) =>
         },
         query: IncomeExpenseDetailedQueryDto,
         response: {
-          200: IncomeExpenseDetailedResponseDto,
+          200: ResWrapper(IncomeExpenseDetailedResponseDto),
         },
       },
     )
     .get(
       '/investments/performance-detailed',
-      ({ user, query, reportService }) => {
-        return reportService.getInvestmentPerformanceDetailed(user.id, query);
+      async ({ user, query, reportService }) => {
+        return castToRes(
+          await reportService.getInvestmentPerformanceDetailed(user.id, query),
+        );
       },
       {
         checkAuth: [UserRole.user],
@@ -123,14 +128,16 @@ const reportController = new Elysia().group('/reports', (group) =>
         },
         query: InvestmentPerformanceDetailedQueryDto,
         response: {
-          200: InvestmentPerformanceDetailedResponseDto,
+          200: ResWrapper(InvestmentPerformanceDetailedResponseDto),
         },
       },
     )
     .get(
       '/investments/trades-detailed',
-      ({ user, query, reportService }) => {
-        return reportService.getInvestmentTradesDetailed(user.id, query);
+      async ({ user, query, reportService }) => {
+        return castToRes(
+          await reportService.getInvestmentTradesDetailed(user.id, query),
+        );
       },
       {
         checkAuth: [UserRole.user],
@@ -142,14 +149,16 @@ const reportController = new Elysia().group('/reports', (group) =>
         },
         query: InvestmentTradesDetailedQueryDto,
         response: {
-          200: InvestmentTradesDetailedResponseDto,
+          200: ResWrapper(InvestmentTradesDetailedResponseDto),
         },
       },
     )
     .get(
       '/investments/fees-detailed',
-      ({ user, query, reportService }) => {
-        return reportService.getInvestmentFeesDetailed(user.id, query);
+      async ({ user, query, reportService }) => {
+        return castToRes(
+          await reportService.getInvestmentFeesDetailed(user.id, query),
+        );
       },
       {
         checkAuth: [UserRole.user],
@@ -161,14 +170,19 @@ const reportController = new Elysia().group('/reports', (group) =>
         },
         query: InvestmentFeesDetailedQueryDto,
         response: {
-          200: InvestmentFeesDetailedResponseDto,
+          200: ResWrapper(InvestmentFeesDetailedResponseDto),
         },
       },
     )
     .get(
       '/investments/contributions-detailed',
-      ({ user, query, reportService }) => {
-        return reportService.getInvestmentContributionsDetailed(user.id, query);
+      async ({ user, query, reportService }) => {
+        return castToRes(
+          await reportService.getInvestmentContributionsDetailed(
+            user.id,
+            query,
+          ),
+        );
       },
       {
         checkAuth: [UserRole.user],
@@ -180,14 +194,14 @@ const reportController = new Elysia().group('/reports', (group) =>
         },
         query: InvestmentContributionsDetailedQueryDto,
         response: {
-          200: InvestmentContributionsDetailedResponseDto,
+          200: ResWrapper(InvestmentContributionsDetailedResponseDto),
         },
       },
     )
     .get(
       '/debt-statistics',
-      ({ user, query, reportService }) => {
-        return reportService.getDebtStatistics(user.id, query);
+      async ({ user, query, reportService }) => {
+        return castToRes(await reportService.getDebtStatistics(user.id, query));
       },
       {
         checkAuth: [UserRole.user],
@@ -199,7 +213,7 @@ const reportController = new Elysia().group('/reports', (group) =>
         },
         query: DebtStatisticsQueryDto,
         response: {
-          200: DebtStatisticsResponseDto,
+          200: ResWrapper(DebtStatisticsResponseDto),
         },
       },
     ),

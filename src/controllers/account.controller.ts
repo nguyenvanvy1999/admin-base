@@ -9,6 +9,7 @@ import {
 } from '../dto/account.dto';
 import authMacro from '../macros/auth';
 import accountService from '../services/account.service';
+import { castToRes, ResWrapper } from '../share';
 
 const ACCOUNT_DETAIL = {
   tags: ['Account'],
@@ -30,8 +31,8 @@ const accountController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        ({ user, body, accountService }) => {
-          return accountService.upsertAccount(user.id, body);
+        async ({ user, body, accountService }) => {
+          return castToRes(await accountService.upsertAccount(user.id, body));
         },
         {
           checkAuth: [UserRole.user],
@@ -43,14 +44,14 @@ const accountController = new Elysia().group(
           },
           body: UpsertAccountDto,
           response: {
-            200: AccountDto,
+            200: ResWrapper(AccountDto),
           },
         },
       )
       .get(
         '/:id',
-        ({ user, params, accountService }) => {
-          return accountService.getAccount(user.id, params.id);
+        async ({ user, params, accountService }) => {
+          return castToRes(await accountService.getAccount(user.id, params.id));
         },
         {
           checkAuth: [UserRole.user],
@@ -62,14 +63,14 @@ const accountController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: AccountDto,
+            200: ResWrapper(AccountDto),
           },
         },
       )
       .get(
         '/',
-        ({ user, query, accountService }) => {
-          return accountService.listAccounts(user.id, query);
+        async ({ user, query, accountService }) => {
+          return castToRes(await accountService.listAccounts(user.id, query));
         },
         {
           checkAuth: [UserRole.user],
@@ -81,14 +82,16 @@ const accountController = new Elysia().group(
           },
           query: ListAccountsQueryDto,
           response: {
-            200: AccountListResponseDto,
+            200: ResWrapper(AccountListResponseDto),
           },
         },
       )
       .delete(
         '/:id',
-        ({ user, params, accountService }) => {
-          return accountService.deleteAccount(user.id, params.id);
+        async ({ user, params, accountService }) => {
+          return castToRes(
+            await accountService.deleteAccount(user.id, params.id),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -100,7 +103,7 @@ const accountController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: AccountDeleteResponseDto,
+            200: ResWrapper(AccountDeleteResponseDto),
           },
         },
       ),

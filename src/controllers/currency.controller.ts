@@ -3,6 +3,7 @@ import { Elysia } from 'elysia';
 import { CurrencyListResponseDto } from '../dto/currency.dto';
 import authMacro from '../macros/auth';
 import currencyService from '../services/currency.service';
+import { castToRes, ResWrapper } from '../share';
 
 const CURRENCY_DETAIL = {
   tags: ['Currency'],
@@ -24,8 +25,8 @@ const currencyController = new Elysia().group(
       .use(authMacro)
       .get(
         '/',
-        ({ currencyService }) => {
-          return currencyService.getAllCurrencies();
+        async ({ currencyService }) => {
+          return castToRes(await currencyService.getAllCurrencies());
         },
         {
           checkAuth: [UserRole.user],
@@ -36,7 +37,7 @@ const currencyController = new Elysia().group(
               'Retrieve a list of all active currencies available in the system.',
           },
           response: {
-            200: CurrencyListResponseDto,
+            200: ResWrapper(CurrencyListResponseDto),
           },
         },
       ),

@@ -11,6 +11,7 @@ import {
 } from '../dto/investment.dto';
 import authMacro from '../macros/auth';
 import investmentService from '../services/investment.service';
+import { castToRes, ResWrapper } from '../share';
 
 const INVESTMENT_DETAIL = {
   tags: ['Investment'],
@@ -32,8 +33,10 @@ const investmentController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        ({ user, body, investmentService }) => {
-          return investmentService.upsertInvestment(user.id, body);
+        async ({ user, body, investmentService }) => {
+          return castToRes(
+            await investmentService.upsertInvestment(user.id, body),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -45,14 +48,16 @@ const investmentController = new Elysia().group(
           },
           body: UpsertInvestmentDto,
           response: {
-            200: InvestmentDto,
+            200: ResWrapper(InvestmentDto),
           },
         },
       )
       .get(
         '/',
-        ({ user, query, investmentService }) => {
-          return investmentService.listInvestments(user.id, query);
+        async ({ user, query, investmentService }) => {
+          return castToRes(
+            await investmentService.listInvestments(user.id, query),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -64,14 +69,16 @@ const investmentController = new Elysia().group(
           },
           query: ListInvestmentsQueryDto,
           response: {
-            200: InvestmentListResponseDto,
+            200: ResWrapper(InvestmentListResponseDto),
           },
         },
       )
       .get(
         '/:id',
-        ({ user, params, investmentService }) => {
-          return investmentService.getInvestment(user.id, params.id);
+        async ({ user, params, investmentService }) => {
+          return castToRes(
+            await investmentService.getInvestment(user.id, params.id),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -83,14 +90,16 @@ const investmentController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: InvestmentDto,
+            200: ResWrapper(InvestmentDto),
           },
         },
       )
       .get(
         '/:id/holdings',
-        ({ user, params, investmentService }) => {
-          return investmentService.getPosition(user.id, params.id);
+        async ({ user, params, investmentService }) => {
+          return castToRes(
+            await investmentService.getPosition(user.id, params.id),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -102,14 +111,16 @@ const investmentController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: InvestmentPositionDto,
+            200: ResWrapper(InvestmentPositionDto),
           },
         },
       )
       .get(
         '/:id/latest-valuation',
-        ({ user, params, investmentService }) => {
-          return investmentService.getLatestValuation(user.id, params.id);
+        async ({ user, params, investmentService }) => {
+          return castToRes(
+            await investmentService.getLatestValuation(user.id, params.id),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -121,14 +132,16 @@ const investmentController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: t.Nullable(InvestmentLatestValuationDto),
+            200: ResWrapper(t.Nullable(InvestmentLatestValuationDto)),
           },
         },
       )
       .delete(
         '/:id',
-        ({ user, params, investmentService }) => {
-          return investmentService.deleteInvestment(user.id, params.id);
+        async ({ user, params, investmentService }) => {
+          return castToRes(
+            await investmentService.deleteInvestment(user.id, params.id),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -140,7 +153,7 @@ const investmentController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: InvestmentDeleteResponseDto,
+            200: ResWrapper(InvestmentDeleteResponseDto),
           },
         },
       ),

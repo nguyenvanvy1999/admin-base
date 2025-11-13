@@ -9,6 +9,7 @@ import {
 } from '../dto/category.dto';
 import authMacro from '../macros/auth';
 import categoryService from '../services/category.service';
+import { castToRes, ResWrapper } from '../share';
 
 const CATEGORY_DETAIL = {
   tags: ['Category'],
@@ -30,8 +31,10 @@ const categoryController = new Elysia().group(
       .use(authMacro)
       .get(
         '/',
-        ({ user, query, categoryService }) => {
-          return categoryService.getAllCategories(user.id, query);
+        async ({ user, query, categoryService }) => {
+          return castToRes(
+            await categoryService.getAllCategories(user.id, query),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -43,14 +46,16 @@ const categoryController = new Elysia().group(
           },
           query: ListCategoriesQueryDto,
           response: {
-            200: CategoryListResponseDto,
+            200: ResWrapper(CategoryListResponseDto),
           },
         },
       )
       .get(
         '/:id',
-        ({ user, params, categoryService }) => {
-          return categoryService.getCategoryById(user.id, params.id);
+        async ({ user, params, categoryService }) => {
+          return castToRes(
+            await categoryService.getCategoryById(user.id, params.id),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -62,14 +67,14 @@ const categoryController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: CategoryDto,
+            200: ResWrapper(CategoryDto),
           },
         },
       )
       .post(
         '/',
-        ({ user, body, categoryService }) => {
-          return categoryService.createCategory(user.id, body);
+        async ({ user, body, categoryService }) => {
+          return castToRes(await categoryService.createCategory(user.id, body));
         },
         {
           checkAuth: [UserRole.user],
@@ -81,14 +86,16 @@ const categoryController = new Elysia().group(
           },
           body: UpsertCategoryDto,
           response: {
-            200: CategoryDto,
+            200: ResWrapper(CategoryDto),
           },
         },
       )
       .put(
         '/:id',
-        ({ user, params, body, categoryService }) => {
-          return categoryService.updateCategory(user.id, params.id, body);
+        async ({ user, params, body, categoryService }) => {
+          return castToRes(
+            await categoryService.updateCategory(user.id, params.id, body),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -101,14 +108,16 @@ const categoryController = new Elysia().group(
           params: t.Object({ id: t.String() }),
           body: UpsertCategoryDto,
           response: {
-            200: CategoryDto,
+            200: ResWrapper(CategoryDto),
           },
         },
       )
       .delete(
         '/:id',
-        ({ user, params, categoryService }) => {
-          return categoryService.deleteCategory(user.id, params.id);
+        async ({ user, params, categoryService }) => {
+          return castToRes(
+            await categoryService.deleteCategory(user.id, params.id),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -120,7 +129,7 @@ const categoryController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: CategoryDeleteResponseDto,
+            200: ResWrapper(CategoryDeleteResponseDto),
           },
         },
       ),

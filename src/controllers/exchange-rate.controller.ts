@@ -7,6 +7,7 @@ import {
 } from '../dto/exchange-rate.dto';
 import authMacro from '../macros/auth';
 import { exchangeRateServiceInstance } from '../services/exchange-rate.service';
+import { castToRes, ResWrapper } from '../share';
 
 const EXCHANGE_RATE_DETAIL = {
   tags: ['Exchange Rate'],
@@ -29,11 +30,11 @@ const exchangeRateController = new Elysia().group(
         '/info',
         () => {
           const cacheInfo = exchangeRateServiceInstance.getCacheInfo();
-          return {
+          return castToRes({
             date: cacheInfo.date,
             fetchedAt: cacheInfo.fetchedAt,
             isCacheValid: cacheInfo.isCacheValid,
-          };
+          });
         },
         {
           checkAuth: [UserRole.user],
@@ -44,7 +45,7 @@ const exchangeRateController = new Elysia().group(
               'Retrieve information about the cached exchange rates including the date, fetch timestamp, and cache validity.',
           },
           response: {
-            200: ExchangeRateInfoDto,
+            200: ResWrapper(ExchangeRateInfoDto),
           },
         },
       )
@@ -54,14 +55,14 @@ const exchangeRateController = new Elysia().group(
           try {
             await exchangeRateServiceInstance.refreshCache();
             const cacheInfo = exchangeRateServiceInstance.getCacheInfo();
-            return {
+            return castToRes({
               success: true,
               message: 'Exchange rates refreshed successfully',
               date: cacheInfo.date,
               fetchedAt: cacheInfo.fetchedAt,
-            };
+            });
           } catch (error) {
-            return {
+            return castToRes({
               success: false,
               message:
                 error instanceof Error
@@ -69,7 +70,7 @@ const exchangeRateController = new Elysia().group(
                   : 'Failed to refresh exchange rates',
               date: null,
               fetchedAt: null,
-            };
+            });
           }
         },
         {
@@ -81,7 +82,7 @@ const exchangeRateController = new Elysia().group(
               'Manually refresh exchange rates from the API and update the cache.',
           },
           response: {
-            200: ExchangeRateRefreshResponseDto,
+            200: ResWrapper(ExchangeRateRefreshResponseDto),
           },
         },
       )
@@ -89,13 +90,13 @@ const exchangeRateController = new Elysia().group(
         '/health',
         () => {
           const cacheInfo = exchangeRateServiceInstance.getCacheInfo();
-          return {
+          return castToRes({
             status: cacheInfo.isCacheValid ? 'healthy' : 'stale',
             apiUrl: exchangeRateServiceInstance.getApiUrl(),
             lastFetch: cacheInfo.fetchedAt,
             cacheDate: cacheInfo.date,
             isCacheValid: cacheInfo.isCacheValid,
-          };
+          });
         },
         {
           checkAuth: [UserRole.user],
@@ -106,7 +107,7 @@ const exchangeRateController = new Elysia().group(
               'Check the health status of the exchange rate service including API URL, cache status, and last fetch time.',
           },
           response: {
-            200: ExchangeRateHealthDto,
+            200: ResWrapper(ExchangeRateHealthDto),
           },
         },
       ),

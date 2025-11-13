@@ -12,6 +12,7 @@ import {
 } from '../dto/transaction.dto';
 import authMacro from '../macros/auth';
 import transactionService from '../services/transaction.service';
+import { castToRes, ResWrapper } from '../share';
 
 const TRANSACTION_DETAIL = {
   tags: ['Transaction'],
@@ -33,8 +34,10 @@ const transactionController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        ({ user, body, transactionService }) => {
-          return transactionService.upsertTransaction(user.id, body);
+        async ({ user, body, transactionService }) => {
+          return castToRes(
+            await transactionService.upsertTransaction(user.id, body),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -46,14 +49,16 @@ const transactionController = new Elysia().group(
           },
           body: UpsertTransactionDto,
           response: {
-            200: TransactionDetailDto,
+            200: ResWrapper(TransactionDetailDto),
           },
         },
       )
       .post(
         '/batch',
-        ({ user, body, transactionService }) => {
-          return transactionService.createBatchTransactions(user.id, body);
+        async ({ user, body, transactionService }) => {
+          return castToRes(
+            await transactionService.createBatchTransactions(user.id, body),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -65,14 +70,16 @@ const transactionController = new Elysia().group(
           },
           body: BatchTransactionsDto,
           response: {
-            200: BatchTransactionsResponseDto,
+            200: ResWrapper(BatchTransactionsResponseDto),
           },
         },
       )
       .get(
         '/:id',
-        ({ user, params, transactionService }) => {
-          return transactionService.getTransaction(user.id, params.id);
+        async ({ user, params, transactionService }) => {
+          return castToRes(
+            await transactionService.getTransaction(user.id, params.id),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -84,14 +91,16 @@ const transactionController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: TransactionDetailDto,
+            200: ResWrapper(TransactionDetailDto),
           },
         },
       )
       .get(
         '/',
-        ({ user, query, transactionService }) => {
-          return transactionService.listTransactions(user.id, query);
+        async ({ user, query, transactionService }) => {
+          return castToRes(
+            await transactionService.listTransactions(user.id, query),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -103,14 +112,16 @@ const transactionController = new Elysia().group(
           },
           query: ListTransactionsQueryDto,
           response: {
-            200: TransactionListResponseDto,
+            200: ResWrapper(TransactionListResponseDto),
           },
         },
       )
       .delete(
         '/:id',
-        ({ user, params, transactionService }) => {
-          return transactionService.deleteTransaction(user.id, params.id);
+        async ({ user, params, transactionService }) => {
+          return castToRes(
+            await transactionService.deleteTransaction(user.id, params.id),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -122,14 +133,16 @@ const transactionController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: TransactionDeleteResponseDto,
+            200: ResWrapper(TransactionDeleteResponseDto),
           },
         },
       )
       .post(
         '/adjust-balance',
-        ({ user, body, transactionService }) => {
-          return transactionService.adjustAccountBalance(user.id, body);
+        async ({ user, body, transactionService }) => {
+          return castToRes(
+            await transactionService.adjustAccountBalance(user.id, body),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -141,7 +154,7 @@ const transactionController = new Elysia().group(
           },
           body: BalanceAdjustmentElysiaDto,
           response: {
-            200: TransactionDetailDto,
+            200: ResWrapper(TransactionDetailDto),
           },
         },
       ),

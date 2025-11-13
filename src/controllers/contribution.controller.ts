@@ -9,6 +9,7 @@ import {
 } from '../dto/contribution.dto';
 import authMacro from '../macros/auth';
 import investmentContributionService from '../services/contribution.service';
+import { castToRes, ResWrapper } from '../share';
 
 const CONTRIBUTION_DETAIL = {
   tags: ['Investment Contribution'],
@@ -30,11 +31,13 @@ const contributionController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        ({ user, params, body, investmentContributionService }) => {
-          return investmentContributionService.createContribution(
-            user.id,
-            params.id,
-            body,
+        async ({ user, params, body, investmentContributionService }) => {
+          return castToRes(
+            await investmentContributionService.createContribution(
+              user.id,
+              params.id,
+              body,
+            ),
           );
         },
         {
@@ -48,17 +51,19 @@ const contributionController = new Elysia().group(
           params: t.Object({ id: t.String() }),
           body: CreateInvestmentContributionDto,
           response: {
-            200: InvestmentContributionDto,
+            200: ResWrapper(InvestmentContributionDto),
           },
         },
       )
       .get(
         '/',
-        ({ user, params, query, investmentContributionService }) => {
-          return investmentContributionService.listContributions(
-            user.id,
-            params.id,
-            query,
+        async ({ user, params, query, investmentContributionService }) => {
+          return castToRes(
+            await investmentContributionService.listContributions(
+              user.id,
+              params.id,
+              query,
+            ),
           );
         },
         {
@@ -72,17 +77,19 @@ const contributionController = new Elysia().group(
           params: t.Object({ id: t.String() }),
           query: ListInvestmentContributionsQueryDto,
           response: {
-            200: InvestmentContributionListResponseDto,
+            200: ResWrapper(InvestmentContributionListResponseDto),
           },
         },
       )
       .delete(
         '/:contributionId',
-        ({ user, params, investmentContributionService }) => {
-          return investmentContributionService.deleteContribution(
-            user.id,
-            params.id,
-            params.contributionId,
+        async ({ user, params, investmentContributionService }) => {
+          return castToRes(
+            await investmentContributionService.deleteContribution(
+              user.id,
+              params.id,
+              params.contributionId,
+            ),
           );
         },
         {
@@ -95,7 +102,7 @@ const contributionController = new Elysia().group(
           },
           params: t.Object({ id: t.String(), contributionId: t.String() }),
           response: {
-            200: ContributionDeleteResponseDto,
+            200: ResWrapper(ContributionDeleteResponseDto),
           },
         },
       ),

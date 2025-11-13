@@ -10,6 +10,7 @@ import {
 } from '../dto/entity.dto';
 import authMacro from '../macros/auth';
 import entityService from '../services/entity.service';
+import { castToRes, ResWrapper } from '../share';
 
 const ENTITY_DETAIL = {
   tags: ['Entity'],
@@ -31,8 +32,8 @@ const entityController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        ({ user, body, entityService }) => {
-          return entityService.upsertEntity(user.id, body);
+        async ({ user, body, entityService }) => {
+          return castToRes(await entityService.upsertEntity(user.id, body));
         },
         {
           checkAuth: [UserRole.user],
@@ -44,14 +45,14 @@ const entityController = new Elysia().group(
           },
           body: UpsertEntityDto,
           response: {
-            200: EntityDto,
+            200: ResWrapper(EntityDto),
           },
         },
       )
       .get(
         '/:id',
-        ({ user, params, entityService }) => {
-          return entityService.getEntity(user.id, params.id);
+        async ({ user, params, entityService }) => {
+          return castToRes(await entityService.getEntity(user.id, params.id));
         },
         {
           checkAuth: [UserRole.user],
@@ -63,14 +64,14 @@ const entityController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: EntityDto,
+            200: ResWrapper(EntityDto),
           },
         },
       )
       .get(
         '/',
-        ({ user, query, entityService }) => {
-          return entityService.listEntities(user.id, query);
+        async ({ user, query, entityService }) => {
+          return castToRes(await entityService.listEntities(user.id, query));
         },
         {
           checkAuth: [UserRole.user],
@@ -82,14 +83,16 @@ const entityController = new Elysia().group(
           },
           query: ListEntitiesQueryDto,
           response: {
-            200: EntityListResponseDto,
+            200: ResWrapper(EntityListResponseDto),
           },
         },
       )
       .delete(
         '/:id',
-        ({ user, params, entityService }) => {
-          return entityService.deleteEntity(user.id, params.id);
+        async ({ user, params, entityService }) => {
+          return castToRes(
+            await entityService.deleteEntity(user.id, params.id),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -101,14 +104,16 @@ const entityController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: EntityDeleteResponseDto,
+            200: ResWrapper(EntityDeleteResponseDto),
           },
         },
       )
       .post(
         '/delete-many',
-        ({ user, body, entityService }) => {
-          return entityService.deleteManyEntities(user.id, body.ids);
+        async ({ user, body, entityService }) => {
+          return castToRes(
+            await entityService.deleteManyEntities(user.id, body.ids),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -120,7 +125,7 @@ const entityController = new Elysia().group(
           },
           body: DeleteManyEntitiesDto,
           response: {
-            200: EntityDeleteResponseDto,
+            200: ResWrapper(EntityDeleteResponseDto),
           },
         },
       ),

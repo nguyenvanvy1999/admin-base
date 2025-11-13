@@ -9,6 +9,7 @@ import {
 } from '../dto/trade.dto';
 import authMacro from '../macros/auth';
 import investmentTradeService from '../services/trade.service';
+import { castToRes, ResWrapper } from '../share';
 
 const TRADE_DETAIL = {
   tags: ['Investment Trade'],
@@ -30,8 +31,10 @@ const tradeController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        ({ user, params, body, investmentTradeService }) => {
-          return investmentTradeService.createTrade(user.id, params.id, body);
+        async ({ user, params, body, investmentTradeService }) => {
+          return castToRes(
+            await investmentTradeService.createTrade(user.id, params.id, body),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -44,14 +47,16 @@ const tradeController = new Elysia().group(
           params: t.Object({ id: t.String() }),
           body: CreateInvestmentTradeDto,
           response: {
-            200: InvestmentTradeDto,
+            200: ResWrapper(InvestmentTradeDto),
           },
         },
       )
       .get(
         '/',
-        ({ user, params, query, investmentTradeService }) => {
-          return investmentTradeService.listTrades(user.id, params.id, query);
+        async ({ user, params, query, investmentTradeService }) => {
+          return castToRes(
+            await investmentTradeService.listTrades(user.id, params.id, query),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -64,17 +69,19 @@ const tradeController = new Elysia().group(
           params: t.Object({ id: t.String() }),
           query: ListInvestmentTradesQueryDto,
           response: {
-            200: InvestmentTradeListResponseDto,
+            200: ResWrapper(InvestmentTradeListResponseDto),
           },
         },
       )
       .delete(
         '/:tradeId',
-        ({ user, params, investmentTradeService }) => {
-          return investmentTradeService.deleteTrade(
-            user.id,
-            params.id,
-            params.tradeId,
+        async ({ user, params, investmentTradeService }) => {
+          return castToRes(
+            await investmentTradeService.deleteTrade(
+              user.id,
+              params.id,
+              params.tradeId,
+            ),
           );
         },
         {
@@ -87,7 +94,7 @@ const tradeController = new Elysia().group(
           },
           params: t.Object({ id: t.String(), tradeId: t.String() }),
           response: {
-            200: TradeDeleteResponseDto,
+            200: ResWrapper(TradeDeleteResponseDto),
           },
         },
       ),

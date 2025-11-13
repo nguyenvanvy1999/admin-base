@@ -10,6 +10,7 @@ import {
 } from '../dto/event.dto';
 import authMacro from '../macros/auth';
 import eventService from '../services/event.service';
+import { castToRes, ResWrapper } from '../share';
 
 const EVENT_DETAIL = {
   tags: ['Event'],
@@ -31,8 +32,8 @@ const eventController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        ({ user, body, eventService }) => {
-          return eventService.upsertEvent(user.id, body);
+        async ({ user, body, eventService }) => {
+          return castToRes(await eventService.upsertEvent(user.id, body));
         },
         {
           checkAuth: [UserRole.user],
@@ -44,14 +45,14 @@ const eventController = new Elysia().group(
           },
           body: UpsertEventDto,
           response: {
-            200: EventDto,
+            200: ResWrapper(EventDto),
           },
         },
       )
       .get(
         '/:id',
-        ({ user, params, eventService }) => {
-          return eventService.getEvent(user.id, params.id);
+        async ({ user, params, eventService }) => {
+          return castToRes(await eventService.getEvent(user.id, params.id));
         },
         {
           checkAuth: [UserRole.user],
@@ -63,14 +64,14 @@ const eventController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: EventDto,
+            200: ResWrapper(EventDto),
           },
         },
       )
       .get(
         '/',
-        ({ user, query, eventService }) => {
-          return eventService.listEvents(user.id, query);
+        async ({ user, query, eventService }) => {
+          return castToRes(await eventService.listEvents(user.id, query));
         },
         {
           checkAuth: [UserRole.user],
@@ -82,14 +83,14 @@ const eventController = new Elysia().group(
           },
           query: ListEventsQueryDto,
           response: {
-            200: EventListResponseDto,
+            200: ResWrapper(EventListResponseDto),
           },
         },
       )
       .delete(
         '/:id',
-        ({ user, params, eventService }) => {
-          return eventService.deleteEvent(user.id, params.id);
+        async ({ user, params, eventService }) => {
+          return castToRes(await eventService.deleteEvent(user.id, params.id));
         },
         {
           checkAuth: [UserRole.user],
@@ -101,14 +102,16 @@ const eventController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: EventDeleteResponseDto,
+            200: ResWrapper(EventDeleteResponseDto),
           },
         },
       )
       .post(
         '/delete-many',
-        ({ user, body, eventService }) => {
-          return eventService.deleteManyEvents(user.id, body.ids);
+        async ({ user, body, eventService }) => {
+          return castToRes(
+            await eventService.deleteManyEvents(user.id, body.ids),
+          );
         },
         {
           checkAuth: [UserRole.user],
@@ -120,7 +123,7 @@ const eventController = new Elysia().group(
           },
           body: DeleteManyEventsDto,
           response: {
-            200: EventDeleteResponseDto,
+            200: ResWrapper(EventDeleteResponseDto),
           },
         },
       ),

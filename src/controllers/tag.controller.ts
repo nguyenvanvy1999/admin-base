@@ -10,6 +10,7 @@ import {
 } from '../dto/tag.dto';
 import authMacro from '../macros/auth';
 import tagService from '../services/tag.service';
+import { castToRes, ResWrapper } from '../share';
 
 const TAG_DETAIL = {
   tags: ['Tag'],
@@ -31,8 +32,8 @@ const tagController = new Elysia().group(
       .use(authMacro)
       .post(
         '/',
-        ({ user, body, tagService }) => {
-          return tagService.upsertTag(user.id, body);
+        async ({ user, body, tagService }) => {
+          return castToRes(await tagService.upsertTag(user.id, body));
         },
         {
           checkAuth: [UserRole.user],
@@ -44,14 +45,14 @@ const tagController = new Elysia().group(
           },
           body: UpsertTagDto,
           response: {
-            200: TagDto,
+            200: ResWrapper(TagDto),
           },
         },
       )
       .get(
         '/:id',
-        ({ user, params, tagService }) => {
-          return tagService.getTag(user.id, params.id);
+        async ({ user, params, tagService }) => {
+          return castToRes(await tagService.getTag(user.id, params.id));
         },
         {
           checkAuth: [UserRole.user],
@@ -63,14 +64,14 @@ const tagController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: TagDto,
+            200: ResWrapper(TagDto),
           },
         },
       )
       .get(
         '/',
-        ({ user, query, tagService }) => {
-          return tagService.listTags(user.id, query);
+        async ({ user, query, tagService }) => {
+          return castToRes(await tagService.listTags(user.id, query));
         },
         {
           checkAuth: [UserRole.user],
@@ -82,14 +83,14 @@ const tagController = new Elysia().group(
           },
           query: ListTagsQueryDto,
           response: {
-            200: TagListResponseDto,
+            200: ResWrapper(TagListResponseDto),
           },
         },
       )
       .delete(
         '/:id',
-        ({ user, params, tagService }) => {
-          return tagService.deleteTag(user.id, params.id);
+        async ({ user, params, tagService }) => {
+          return castToRes(await tagService.deleteTag(user.id, params.id));
         },
         {
           checkAuth: [UserRole.user],
@@ -101,14 +102,14 @@ const tagController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: TagDeleteResponseDto,
+            200: ResWrapper(TagDeleteResponseDto),
           },
         },
       )
       .post(
         '/delete-many',
-        ({ user, body, tagService }) => {
-          return tagService.deleteManyTags(user.id, body.ids);
+        async ({ user, body, tagService }) => {
+          return castToRes(await tagService.deleteManyTags(user.id, body.ids));
         },
         {
           checkAuth: [UserRole.user],
@@ -120,7 +121,7 @@ const tagController = new Elysia().group(
           },
           body: DeleteManyTagsDto,
           response: {
-            200: TagDeleteResponseDto,
+            200: ResWrapper(TagDeleteResponseDto),
           },
         },
       ),
