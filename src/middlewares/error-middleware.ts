@@ -6,13 +6,13 @@ export function withErrorHandler(
   elysia: Elysia<any, any, any, any, any, any, any>,
 ) {
   return elysia.onError(({ error, code, set }) => {
-    logger.info(
-      `Error handler called: ${JSON.stringify({
-        errorType: error?.constructor?.name,
-        isAppError: error instanceof AppError,
-        code,
-        errorMessage: error instanceof Error ? error.message : String(error),
-      })}`,
+    const errorType = error?.constructor?.name || 'Unknown';
+    const isAppError = error instanceof AppError;
+    const elysiaCode = code || 'UNKNOWN';
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    logger.error(
+      `Error handler called - Type: ${errorType}, IsAppError: ${isAppError}, Code: ${elysiaCode}, Message: ${errorMessage}`,
     );
 
     let errorCode: string;
