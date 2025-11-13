@@ -671,5 +671,42 @@
       "yearly": "Hàng năm",
       "none": "Không lặp lại"
     }
+  },
+  "users": {
+    "title": "Người dùng",
+    "subtitle": "Quản lý người dùng",
+    "addUser": "Thêm người dùng",
+    "editUser": "Chỉnh sửa người dùng",
+    "deleteUser": "Xóa người dùng",
+    "username": "Tên đăng nhập",
+    "password": "Mật khẩu",
+    "name": "Tên",
+    "role": "Vai trò",
+    "roleUser": "Người dùng",
+    "roleAdmin": "Quản trị viên",
+    "baseCurrency": "Tiền tệ cơ sở",
+    "createdAt": "Ngày tạo",
+    "actions": "Thao tác",
+    "search": "Tìm kiếm người dùng...",
+    "usernamePlaceholder": "Nhập tên đăng nhập",
+    "namePlaceholder": "Nhập tên (tùy chọn)",
+    "rolePlaceholder": "Chọn vai trò",
+    "baseCurrencyPlaceholder": "Chọn tiền tệ cơ sở (tùy chọn)",
+    "passwordPlaceholder": "Nhập mật khẩu",
+    "passwordPlaceholderOptional": "Nhập mật khẩu mới (tùy chọn)",
+    "passwordChangeDescription": "Để trống để giữ mật khẩu hiện tại",
+    "usernameRequired": "Tên đăng nhập là bắt buộc",
+    "passwordMinLength": "Mật khẩu phải có ít nhất 6 ký tự",
+    "roleRequired": "Vai trò là bắt buộc",
+    "deleteConfirmTitle": "Xóa người dùng",
+    "deleteConfirmMessage": "Bạn có chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác."
+  },
+  "admin": {
+    "sidebar": {
+      "users": "Người dùng",
+      "roles": "Vai trò",
+      "permissions": "Quyền",
+      "sessions": "Phiên"
+    }
   }
 }

@@ -1,33 +1,23 @@
 import { userService } from '@client/services';
-import useUserStore from '@client/store/user';
-import { toast } from '@client/utils/toast';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { IUpsertUserDto } from '@server/modules/admin/dtos/user.dto';
+import { createMutationHooks } from './createMutationHooks';
 
-type UpdateProfileData = {
-  name?: string;
-  baseCurrencyId?: string;
-  oldPassword?: string;
-  newPassword?: string;
-};
+const userMutations = createMutationHooks<IUpsertUserDto, null, null>({
+  create: (data) => userService.createUser(data),
+  update: (data) => userService.updateUser(data),
+  delete: (id) => userService.deleteUser(id),
+});
 
-export const useUpdateProfileMutation = () => {
-  const { setUser } = useUserStore();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: UpdateProfileData) => {
-      return userService.updateProfile(data);
-    },
-    onSuccess: async (data) => {
-      setUser({
-        id: data.id,
-        username: data.username,
-        name: data.name ?? null,
-        role: data.role,
-        isSuperAdmin: data.isSuperAdmin,
-      });
-      await queryClient.invalidateQueries({ queryKey: ['user'] });
-      toast.success('Profile updated successfully');
-    },
-  });
-};
+export const {
+  useCreateMutation: useCreateUserMutation,
+  useUpdateMutation: useUpdateUserMutation,
+  useDeleteMutation: useDeleteUserMutation,
+} = userMutations({
+  queryKey: 'admin-users',
+  invalidateKeys: [['admin-users']],
+  successMessages: {
+    create: 'User created successfully',
+    update: 'User updated successfully',
+    delete: 'User deleted successfully',
+  },
+});

@@ -1,7 +1,7 @@
 import { PageContainer } from '@client/components/PageContainer';
 import { Select } from '@client/components/Select';
 import { ZodFormController } from '@client/components/ZodFormController';
-import { useUpdateProfileMutation } from '@client/hooks/mutations/useUserMutations';
+import { useUpdateProfileMutation } from '@client/hooks/mutations/useProfileMutations';
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import { useUserQuery } from '@client/hooks/queries/useUserQuery';
 import { useZodForm } from '@client/hooks/useZodForm';

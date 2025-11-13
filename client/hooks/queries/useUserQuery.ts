@@ -22,6 +22,7 @@ export const useUserQuery = () => {
         name: user.name,
         role: user.role,
         isSuperAdmin: user.isSuperAdmin,
+        permissions: user.permissions,
       });
 
       return user;

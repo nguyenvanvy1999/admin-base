@@ -5,6 +5,8 @@ export const PERMISSIONS = {
     VIEW: { roles: [defaultRoles.admin.id, defaultRoles.user.id] },
     UPDATE: { roles: [defaultRoles.admin.id, defaultRoles.user.id] },
     VIEW_ALL: { roles: [defaultRoles.admin.id] },
+    DELETE: { roles: [defaultRoles.admin.id] },
+    CREATE: { roles: [defaultRoles.admin.id] },
   },
   ROLE: {
     VIEW: { roles: [defaultRoles.admin.id] },

@@ -6,6 +6,7 @@ export type UserStore = {
   clearUser: () => void;
   isAdmin: () => boolean;
   isSuperAdmin: () => boolean;
+  hasPermission: (permission: string) => boolean;
 };
 
 export type User = {
@@ -14,6 +15,7 @@ export type User = {
   name: string | null;
   role: string;
   isSuperAdmin?: boolean;
+  permissions?: string[];
 };
 
 const defaultUser: User = {
@@ -33,6 +35,10 @@ const useUserStore = create<UserStore>((set, get) => ({
   isSuperAdmin: () => {
     const { user } = get();
     return user.isSuperAdmin === true;
+  },
+  hasPermission: (permission: string) => {
+    const { user } = get();
+    return user.permissions?.includes(permission) ?? false;
   },
 }));
 
