@@ -1,5 +1,6 @@
 export * from './DataTable';
 export * from './DataTable/types';
+export * from './DateRangePicker';
 export * from './DeleteConfirmationModal';
 export * from './DeleteManyConfirmationModal';
 export * from './DialogFooterButtons';
