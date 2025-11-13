@@ -41,9 +41,14 @@ const EventSelect = ({
     }));
   }, [eventsData]);
 
+  const displayLabel =
+    label === ''
+      ? undefined
+      : label || t('transactions.event', { defaultValue: 'Event' });
+
   return (
     <Select
-      label={label || t('transactions.event', { defaultValue: 'Event' })}
+      label={displayLabel}
       placeholder={
         placeholder ||
         t('transactions.eventPlaceholder', { defaultValue: 'Select event' })
