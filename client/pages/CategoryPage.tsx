@@ -14,83 +14,95 @@ import { usePageDelete } from '@client/hooks/usePageDelete';
 import { usePageDialog } from '@client/hooks/usePageDialog';
 import {
   ActionIcon,
+  Box,
   Button,
+  Group,
   MultiSelect,
+  Stack,
   Text,
   TextInput,
+  Tree,
+  type TreeNodeData,
+  useTree,
 } from '@mantine/core';
-import { Add, Category, Close, Delete, Edit, Lock } from '@mui/icons-material';
-import { Box, IconButton, Stack } from '@mui/material';
-import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
 import type {
   CategoryTreeResponse,
   IUpsertCategoryDto,
 } from '@server/dto/category.dto';
 import { CategoryType } from '@server/generated/prisma/enums';
+import {
+  IconCategory,
+  IconEdit,
+  IconLock,
+  IconPlus,
+  IconTrash,
+  IconX,
+} from '@tabler/icons-react';
 import type { TFunction } from 'i18next';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-type MUITreeItem = {
-  id: string;
-  label: string;
+type MantineTreeItem = TreeNodeData & {
   type: CategoryType;
   icon?: string | null;
   color?: string | null;
   isLocked: boolean;
   parentId: string | null;
-  children?: MUITreeItem[];
+  originalId: string;
 };
 
-const transformToMUITree = (
+const transformToMantineTree = (
   categories: CategoryTreeResponse[],
   t: TFunction<'translation', undefined>,
-): MUITreeItem[] => {
+): MantineTreeItem[] => {
   return categories.map((category) => ({
-    id: category.id,
+    value: category.id,
     label: getCategoryLabel(category.name, t),
     type: category.type,
     icon: category.icon,
     color: category.color,
     isLocked: category.isLocked,
     parentId: category.parentId,
+    originalId: category.id,
     children: category.children
-      ? transformToMUITree(category.children as CategoryTreeResponse[], t)
+      ? transformToMantineTree(category.children as CategoryTreeResponse[], t)
       : undefined,
   }));
 };
 
-const flattenTree = (items: MUITreeItem[]): MUITreeItem[] => {
-  const result: MUITreeItem[] = [];
+const flattenTree = (items: MantineTreeItem[]): MantineTreeItem[] => {
+  const result: MantineTreeItem[] = [];
   for (const item of items) {
     result.push(item);
     if (item.children) {
-      result.push(...flattenTree(item.children));
+      result.push(...flattenTree(item.children as MantineTreeItem[]));
     }
   }
   return result;
 };
 
 const filterTree = (
-  items: MUITreeItem[],
+  items: MantineTreeItem[],
   searchQuery: string,
   typeFilter: CategoryType[],
-): MUITreeItem[] => {
+): MantineTreeItem[] => {
   if (!searchQuery && typeFilter.length === 0) {
     return items;
   }
 
-  const filtered: MUITreeItem[] = [];
+  const filtered: MantineTreeItem[] = [];
 
   for (const item of items) {
+    const labelText =
+      typeof item.label === 'string' ? item.label : String(item.label || '');
     const matchesSearch =
       !searchQuery ||
-      item.label.toLowerCase().includes(searchQuery.toLowerCase());
+      labelText.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType =
       typeFilter.length === 0 || typeFilter.includes(item.type);
 
     const filteredChildren = item.children
-      ? filterTree(item.children, searchQuery, typeFilter)
+      ? filterTree(item.children as MantineTreeItem[], searchQuery, typeFilter)
       : undefined;
 
     if (matchesSearch && matchesType) {
@@ -120,7 +132,7 @@ const CategoryPage = () => {
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const [selectedItems, setSelectedItems] = useState<string | null>(null);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
   const queryParams = useMemo(
     () => ({
@@ -138,7 +150,7 @@ const CategoryPage = () => {
     if (!data?.categories) {
       return [];
     }
-    return transformToMUITree(data.categories, t);
+    return transformToMantineTree(data.categories, t);
   }, [data, t]);
 
   const filteredTreeItems = useMemo(() => {
@@ -149,8 +161,31 @@ const CategoryPage = () => {
     if (!data?.categories) {
       return [];
     }
-    return flattenTree(transformToMUITree(data.categories, t));
+    return flattenTree(transformToMantineTree(data.categories, t));
   }, [data, t]);
+
+  const tree = useTree({
+    initialExpandedState: Object.fromEntries(
+      expandedItems.map((id) => [id, true]),
+    ),
+    initialSelectedState: selectedItems,
+    multiple: false,
+    onNodeExpand: (value) => {
+      setExpandedItems((prev) => {
+        if (!prev.includes(value)) {
+          return [...prev, value];
+        }
+        return prev;
+      });
+    },
+    onNodeCollapse: (value) => {
+      setExpandedItems((prev) => prev.filter((id) => id !== value));
+    },
+  });
+
+  useEffect(() => {
+    setSelectedItems(tree.selectedState);
+  }, [tree.selectedState]);
 
   const categoryMap = useMemo(() => {
     const map = new Map<string, CategoryTreeResponse>();
@@ -211,6 +246,7 @@ const CategoryPage = () => {
       handleDialogClose();
       if (formData.parentId) {
         setExpandedItems((prev) => [...prev, formData.parentId!]);
+        tree.expand(formData.parentId);
       }
     } catch {
       // Error is already handled by mutation's onError callback
@@ -287,7 +323,7 @@ const CategoryPage = () => {
                         onClick={handleClearSearch}
                         disabled={isLoading}
                       >
-                        <Close fontSize="small" />
+                        <IconX size={16} />
                       </ActionIcon>
                     ) : null
                   }
@@ -352,123 +388,112 @@ const CategoryPage = () => {
               <Text>{t('categories.noCategories')}</Text>
             </div>
           ) : (
-            <Box sx={{ flex: 1, overflow: 'auto' }}>
-              <RichTreeView
-                items={filteredTreeItems}
-                expandedItems={expandedItems}
-                onExpandedItemsChange={(_event: unknown, itemIds: string[]) => {
-                  setExpandedItems(itemIds);
-                }}
-                selectedItems={selectedItems}
-                onSelectedItemsChange={(
-                  _event: unknown,
-                  itemIds: string | null,
-                ) => {
-                  setSelectedItems(itemIds);
-                }}
-                slotProps={{
-                  item: (ownerState) => {
-                    const item = allCategoriesFlat.find(
-                      (cat) => cat.id === ownerState.itemId,
-                    );
-                    if (item) {
-                      const category = categoryMap.get(item.id);
-                      const canAddChild = category && !category.parentId;
-                      const canEdit = category && !category.isLocked;
-                      const canDelete =
-                        category &&
-                        !category.isLocked &&
-                        (!category.children || category.children.length === 0);
+            <Box style={{ flex: 1, overflow: 'auto' }}>
+              <Tree
+                data={filteredTreeItems}
+                tree={tree}
+                selectOnClick
+                renderNode={({ node, elementProps }) => {
+                  const item = allCategoriesFlat.find(
+                    (cat) => cat.value === node.value,
+                  );
+                  if (!item) {
+                    return null;
+                  }
 
-                      const IconComponent = category?.name
-                        ? getCategoryIcon(category.name)
-                        : Category;
+                  const category = categoryMap.get(item.originalId);
+                  const canAddChild = category && !category.parentId;
+                  const canEdit = category && !category.isLocked;
+                  const canDelete =
+                    category &&
+                    !category.isLocked &&
+                    (!category.children || category.children.length === 0);
 
-                      return {
-                        label: (
+                  const IconComponent = category?.name
+                    ? getCategoryIcon(category.name)
+                    : IconCategory;
+
+                  return (
+                    <Group
+                      {...elementProps}
+                      gap="xs"
+                      style={{
+                        width: '100%',
+                        paddingRight: 8,
+                        flexWrap: 'nowrap',
+                      }}
+                    >
+                      <Group
+                        gap="xs"
+                        style={{ flex: 1, flexWrap: 'nowrap' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (elementProps.onClick) {
+                            elementProps.onClick(e);
+                          }
+                        }}
+                      >
+                        <IconComponent
+                          size={18}
+                          color={item.color || undefined}
+                          style={{ opacity: 0.8 }}
+                        />
+                        {item.color && (
                           <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1,
-                              width: '100%',
-                              paddingRight: 1,
+                            style={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: '50%',
+                              backgroundColor: item.color,
                             }}
+                          />
+                        )}
+                        <Text size="sm" style={{ flex: 1 }}>
+                          {node.label}
+                        </Text>
+                        {item.isLocked && (
+                          <IconLock size={14} style={{ opacity: 0.6 }} />
+                        )}
+                      </Group>
+                      <Group
+                        gap={4}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ flexWrap: 'nowrap' }}
+                      >
+                        {canAddChild && (
+                          <ActionIcon
+                            size="sm"
+                            variant="subtle"
+                            onClick={() => handleAddChild(item.originalId)}
+                            title={t('categories.addChild')}
                           >
-                            <Box
-                              sx={{
-                                flex: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1,
-                              }}
-                            >
-                              <IconComponent
-                                sx={{
-                                  fontSize: 18,
-                                  color: item.color || 'inherit',
-                                  opacity: 0.8,
-                                }}
-                              />
-                              {item.color && (
-                                <Box
-                                  sx={{
-                                    width: 12,
-                                    height: 12,
-                                    borderRadius: '50%',
-                                    backgroundColor: item.color,
-                                  }}
-                                />
-                              )}
-                              <Box
-                                component="span"
-                                sx={{ fontSize: '0.875rem' }}
-                              >
-                                {ownerState.label}
-                              </Box>
-                              {item.isLocked && (
-                                <Lock sx={{ fontSize: 14, opacity: 0.6 }} />
-                              )}
-                            </Box>
-                            <Box
-                              sx={{ display: 'flex', gap: 0.5 }}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {canAddChild && (
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleAddChild(item.id)}
-                                  title={t('categories.addChild')}
-                                >
-                                  <Add sx={{ fontSize: 14 }} />
-                                </IconButton>
-                              )}
-                              {canEdit && (
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleEdit(item.id)}
-                                  title={t('categories.editCategory')}
-                                >
-                                  <Edit sx={{ fontSize: 14 }} />
-                                </IconButton>
-                              )}
-                              {canDelete && (
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  onClick={() => handleDelete(item.id)}
-                                  title={t('categories.deleteCategory')}
-                                >
-                                  <Delete sx={{ fontSize: 14 }} />
-                                </IconButton>
-                              )}
-                            </Box>
-                          </Box>
-                        ),
-                      };
-                    }
-                    return {};
-                  },
+                            <IconPlus size={14} />
+                          </ActionIcon>
+                        )}
+                        {canEdit && (
+                          <ActionIcon
+                            size="sm"
+                            variant="subtle"
+                            onClick={() => handleEdit(item.originalId)}
+                            title={t('categories.editCategory')}
+                          >
+                            <IconEdit size={14} />
+                          </ActionIcon>
+                        )}
+                        {canDelete && (
+                          <ActionIcon
+                            size="sm"
+                            variant="subtle"
+                            color="red"
+                            onClick={() => handleDelete(item.originalId)}
+                            title={t('categories.deleteCategory')}
+                          >
+                            <IconTrash size={14} />
+                          </ActionIcon>
+                        )}
+                      </Group>
+                    </Group>
+                  );
                 }}
               />
             </Box>
