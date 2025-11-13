@@ -24,6 +24,7 @@ export const useUpdateProfileMutation = () => {
         username: data.username,
         name: data.name ?? null,
         role: data.role,
+        isSuperAdmin: data.isSuperAdmin,
       });
       await queryClient.invalidateQueries({ queryKey: ['user'] });
       toast.success('Profile updated successfully');

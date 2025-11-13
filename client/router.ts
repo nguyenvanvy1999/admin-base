@@ -2,6 +2,10 @@ import { createHashRouter } from 'react-router';
 
 import ProtectedPageLayout from './layouts';
 import AccountPage from './pages/AccountPage';
+import PermissionPage from './pages/admin/PermissionPage';
+import RolePage from './pages/admin/RolePage';
+import SessionPage from './pages/admin/SessionPage';
+import UserPage from './pages/admin/UserPage';
 import BudgetPage from './pages/BudgetPage';
 import BulkTransactionPage from './pages/BulkTransactionPage';
 import CategoryPage from './pages/CategoryPage';
@@ -105,6 +109,22 @@ const router = createHashRouter([
       {
         path: '/404',
         Component: NotFoundPage,
+      },
+      {
+        path: '/admin/users',
+        Component: UserPage,
+      },
+      {
+        path: '/admin/roles',
+        Component: RolePage,
+      },
+      {
+        path: '/admin/permissions',
+        Component: PermissionPage,
+      },
+      {
+        path: '/admin/sessions',
+        Component: SessionPage,
       },
     ],
   },

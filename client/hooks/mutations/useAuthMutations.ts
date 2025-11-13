@@ -29,6 +29,7 @@ export const useLoginMutation = () => {
         username: data.user.username,
         name: data.user.name,
         role: data.user.role,
+        isSuperAdmin: data.user.isSuperAdmin,
       });
       await queryClient.invalidateQueries({ queryKey: ['user'] });
       navigate('/');
@@ -59,6 +60,7 @@ export const useRegisterMutation = () => {
         username: data.user.username,
         name: data.user.name,
         role: data.user.role,
+        isSuperAdmin: data.user.isSuperAdmin,
       });
       await queryClient.invalidateQueries({ queryKey: ['user'] });
       navigate('/');

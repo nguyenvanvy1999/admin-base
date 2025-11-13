@@ -2,7 +2,7 @@ import { UserRole } from '@server/generated/prisma/enums';
 import type { UserUncheckedUpdateInput } from '@server/generated/prisma/models/User';
 import { prisma } from '@server/libs/db';
 import { userUtilService } from '@server/service/auth/auth-util.service';
-import { DB_PREFIX, defaultRoles, IdUtil } from '@server/share';
+import { DB_PREFIX, defaultRoles, IdUtil, SUPER_ADMIN_ID } from '@server/share';
 import { Elysia } from 'elysia';
 import { CURRENCY_IDS } from '../constants/currency';
 import { ErrorCode, throwAppError } from '../constants/error';
@@ -59,6 +59,7 @@ const formatUser = (user: {
   baseCurrencyId: user.baseCurrencyId ?? null,
   permissions: user.permissions ?? [],
   roleIds: user.roleIds ?? [],
+  isSuperAdmin: user.id === SUPER_ADMIN_ID,
 });
 
 export interface IDb {
@@ -95,6 +96,7 @@ export class UserService {
     if (existUser) {
       throwAppError(ErrorCode.USER_ALREADY_EXISTS, 'User already exists');
     }
+
     const hashPassword = await this.deps.passwordService.hash(data.password);
 
     const user = await this.deps.db.$transaction(async (tx) => {
@@ -188,6 +190,7 @@ export class UserService {
         baseCurrencyId: loginRes.user.baseCurrencyId,
         permissions: loginRes.user.permissions,
         roleIds: user.roles.map((r) => r.roleId),
+        isSuperAdmin: user.id === SUPER_ADMIN_ID,
       },
     };
   }
@@ -211,6 +214,13 @@ export class UserService {
   }
 
   async updateProfile(userId: string, data: IUpdateProfileDto) {
+    if (userId === SUPER_ADMIN_ID) {
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'Super admin account cannot be modified',
+      );
+    }
+
     const user = await this.deps.db.user.findFirst({
       where: { id: userId },
       select: USER_SELECT_FOR_VALIDATION,

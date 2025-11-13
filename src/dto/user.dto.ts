@@ -33,6 +33,7 @@ export const AuthUserDto = t.NoValidate(
     baseCurrencyId: t.Nullable(t.String()),
     permissions: t.Array(t.String()),
     roleIds: t.Array(t.String()),
+    isSuperAdmin: t.Boolean(),
   }),
 );
 export type AuthUserRes = typeof AuthUserDto.static;

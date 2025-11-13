@@ -15,7 +15,13 @@ import {
   userUtilService,
 } from '../service/auth/auth-util.service';
 import userService from '../services/user.service';
-import { castToRes, ErrCode, ResWrapper, UnAuthErr } from '../share';
+import {
+  castToRes,
+  ErrCode,
+  ResWrapper,
+  SUPER_ADMIN_ID,
+  UnAuthErr,
+} from '../share';
 import type { ITokenPayload } from '../share/type';
 
 const USER_DETAIL = {
@@ -142,6 +148,7 @@ const userController = new Elysia().group(
               baseCurrencyId: user.baseCurrencyId,
               permissions,
               roleIds: user.roles.map((r) => r.roleId),
+              isSuperAdmin: user.id === SUPER_ADMIN_ID,
             },
           });
         },
