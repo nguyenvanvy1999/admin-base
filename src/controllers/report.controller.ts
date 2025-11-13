@@ -1,6 +1,16 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia } from 'elysia';
 import {
+  IncomeExpenseDetailedQueryDto,
+  IncomeExpenseDetailedResponseDto,
+  InvestmentContributionsDetailedQueryDto,
+  InvestmentContributionsDetailedResponseDto,
+  InvestmentFeesDetailedQueryDto,
+  InvestmentFeesDetailedResponseDto,
+  InvestmentPerformanceDetailedQueryDto,
+  InvestmentPerformanceDetailedResponseDto,
+  InvestmentTradesDetailedQueryDto,
+  InvestmentTradesDetailedResponseDto,
   ReportInvestmentsDto,
   ReportInvestmentsQueryDto,
   ReportSummaryDto,
@@ -74,6 +84,101 @@ const reportController = new Elysia().group('/reports', (group) =>
         query: ReportInvestmentsQueryDto,
         response: {
           200: ReportInvestmentsDto,
+        },
+      },
+    )
+    .get(
+      '/income-expense-detailed',
+      ({ user, query, reportService }) => {
+        return reportService.getIncomeExpenseDetailed(user.id, query);
+      },
+      {
+        checkAuth: [UserRole.user],
+        detail: {
+          ...REPORT_DETAIL,
+          summary: 'Get detailed income/expense statistics',
+          description:
+            'Return detailed income and expense statistics with breakdowns by category, account, entity, and fee statistics.',
+        },
+        query: IncomeExpenseDetailedQueryDto,
+        response: {
+          200: IncomeExpenseDetailedResponseDto,
+        },
+      },
+    )
+    .get(
+      '/investments/performance-detailed',
+      ({ user, query, reportService }) => {
+        return reportService.getInvestmentPerformanceDetailed(user.id, query);
+      },
+      {
+        checkAuth: [UserRole.user],
+        detail: {
+          ...REPORT_DETAIL,
+          summary: 'Get detailed investment performance statistics',
+          description:
+            'Return investment performance time series with P&L and ROI metrics.',
+        },
+        query: InvestmentPerformanceDetailedQueryDto,
+        response: {
+          200: InvestmentPerformanceDetailedResponseDto,
+        },
+      },
+    )
+    .get(
+      '/investments/trades-detailed',
+      ({ user, query, reportService }) => {
+        return reportService.getInvestmentTradesDetailed(user.id, query);
+      },
+      {
+        checkAuth: [UserRole.user],
+        detail: {
+          ...REPORT_DETAIL,
+          summary: 'Get detailed investment trades statistics',
+          description:
+            'Return detailed trade statistics including buy/sell counts, volumes, and average trade sizes.',
+        },
+        query: InvestmentTradesDetailedQueryDto,
+        response: {
+          200: InvestmentTradesDetailedResponseDto,
+        },
+      },
+    )
+    .get(
+      '/investments/fees-detailed',
+      ({ user, query, reportService }) => {
+        return reportService.getInvestmentFeesDetailed(user.id, query);
+      },
+      {
+        checkAuth: [UserRole.user],
+        detail: {
+          ...REPORT_DETAIL,
+          summary: 'Get detailed investment fees statistics',
+          description:
+            'Return investment fee statistics with breakdown by investment and time period.',
+        },
+        query: InvestmentFeesDetailedQueryDto,
+        response: {
+          200: InvestmentFeesDetailedResponseDto,
+        },
+      },
+    )
+    .get(
+      '/investments/contributions-detailed',
+      ({ user, query, reportService }) => {
+        return reportService.getInvestmentContributionsDetailed(user.id, query);
+      },
+      {
+        checkAuth: [UserRole.user],
+        detail: {
+          ...REPORT_DETAIL,
+          summary: 'Get detailed investment contributions statistics',
+          description:
+            'Return investment contributions statistics including deposits, withdrawals, and cumulative amounts.',
+        },
+        query: InvestmentContributionsDetailedQueryDto,
+        response: {
+          200: InvestmentContributionsDetailedResponseDto,
         },
       },
     ),

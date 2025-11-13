@@ -54,6 +54,151 @@ export interface ReportInvestmentsResponse {
   performance: InvestmentPerformance;
 }
 
+export interface CategoryStats {
+  categoryId: string;
+  categoryName: string;
+  parentId: string | null;
+  income: number;
+  expense: number;
+  net: number;
+  transactionCount: number;
+  fee: number;
+}
+
+export interface AccountStats {
+  accountId: string;
+  accountName: string;
+  income: number;
+  expense: number;
+  net: number;
+  transactionCount: number;
+  fee: number;
+}
+
+export interface EntityStats {
+  entityId: string;
+  entityName: string;
+  income: number;
+  expense: number;
+  net: number;
+  transactionCount: number;
+  fee: number;
+}
+
+export interface FeeStats {
+  totalFee: number;
+  averageFeePerTransaction: number;
+  feeByCategory: Array<{
+    categoryId: string;
+    categoryName: string;
+    fee: number;
+  }>;
+  feeByAccount: Array<{
+    accountId: string;
+    accountName: string;
+    fee: number;
+  }>;
+}
+
+export interface IncomeExpenseDetailedResponse {
+  timeStats: Array<TransactionStatsItem & { fee: number }>;
+  categoryStats: CategoryStats[];
+  accountStats: AccountStats[];
+  entityStats: EntityStats[];
+  feeStats: FeeStats;
+  summary: {
+    totalIncome: number;
+    totalExpense: number;
+    totalNet: number;
+    totalFee: number;
+    totalTransactions: number;
+    averageDailyIncome: number;
+    averageDailyExpense: number;
+    averageMonthlyIncome: number;
+    averageMonthlyExpense: number;
+  };
+}
+
+export interface InvestmentPerformanceTimeSeries {
+  date: string;
+  totalInvested: number;
+  totalValue: number;
+  realizedPnl: number;
+  unrealizedPnl: number;
+  totalPnl: number;
+  roi: number;
+}
+
+export interface InvestmentPerformanceDetailedResponse {
+  timeSeries: InvestmentPerformanceTimeSeries[];
+  summary: {
+    totalInvested: number;
+    currentValue: number;
+    totalPnl: number;
+    realizedPnl: number;
+    unrealizedPnl: number;
+    roi: number;
+  };
+}
+
+export interface TradeStats {
+  date: string;
+  buyCount: number;
+  sellCount: number;
+  buyVolume: number;
+  sellVolume: number;
+  totalVolume: number;
+  averageTradeSize: number;
+}
+
+export interface InvestmentTradesDetailedResponse {
+  stats: TradeStats[];
+  summary: {
+    totalBuyTrades: number;
+    totalSellTrades: number;
+    totalBuyVolume: number;
+    totalSellVolume: number;
+    averageTradeSize: number;
+    totalTrades: number;
+  };
+}
+
+export interface InvestmentFeesDetailedResponse {
+  timeStats: Array<{
+    date: string;
+    totalFee: number;
+    transactionCount: number;
+  }>;
+  feeByInvestment: Array<{
+    investmentId: string;
+    investmentName: string;
+    investmentSymbol: string;
+    fee: number;
+  }>;
+  summary: {
+    totalFee: number;
+    averageFeePerTrade: number;
+    feePercentageOfReturns: number;
+  };
+}
+
+export interface ContributionStats {
+  date: string;
+  deposits: number;
+  withdrawals: number;
+  net: number;
+  cumulative: number;
+}
+
+export interface InvestmentContributionsDetailedResponse {
+  stats: ContributionStats[];
+  summary: {
+    totalDeposits: number;
+    totalWithdrawals: number;
+    netContributions: number;
+  };
+}
+
 export class ReportService extends ServiceBase {
   constructor() {
     super('/api/reports');
@@ -86,6 +231,71 @@ export class ReportService extends ServiceBase {
   }): Promise<ReportInvestmentsResponse> {
     return this.get<ReportInvestmentsResponse>({
       endpoint: 'investments',
+      params: query,
+    });
+  }
+
+  getIncomeExpenseDetailed(query?: {
+    dateFrom?: string;
+    dateTo?: string;
+    groupBy?: 'day' | 'week' | 'month' | 'year';
+    categoryId?: string;
+    accountId?: string;
+    entityId?: string;
+  }): Promise<IncomeExpenseDetailedResponse> {
+    return this.get<IncomeExpenseDetailedResponse>({
+      endpoint: 'income-expense-detailed',
+      params: query,
+    });
+  }
+
+  getInvestmentPerformanceDetailed(query?: {
+    dateFrom?: string;
+    dateTo?: string;
+    groupBy?: 'day' | 'week' | 'month' | 'year';
+    investmentId?: string;
+    accountId?: string;
+    assetType?: string;
+  }): Promise<InvestmentPerformanceDetailedResponse> {
+    return this.get<InvestmentPerformanceDetailedResponse>({
+      endpoint: 'investments/performance-detailed',
+      params: query,
+    });
+  }
+
+  getInvestmentTradesDetailed(query?: {
+    dateFrom?: string;
+    dateTo?: string;
+    groupBy?: 'day' | 'week' | 'month' | 'year';
+    investmentId?: string;
+    accountId?: string;
+  }): Promise<InvestmentTradesDetailedResponse> {
+    return this.get<InvestmentTradesDetailedResponse>({
+      endpoint: 'investments/trades-detailed',
+      params: query,
+    });
+  }
+
+  getInvestmentFeesDetailed(query?: {
+    dateFrom?: string;
+    dateTo?: string;
+    groupBy?: 'day' | 'week' | 'month' | 'year';
+    investmentId?: string;
+  }): Promise<InvestmentFeesDetailedResponse> {
+    return this.get<InvestmentFeesDetailedResponse>({
+      endpoint: 'investments/fees-detailed',
+      params: query,
+    });
+  }
+
+  getInvestmentContributionsDetailed(query?: {
+    dateFrom?: string;
+    dateTo?: string;
+    groupBy?: 'day' | 'week' | 'month' | 'year';
+    investmentId?: string;
+  }): Promise<InvestmentContributionsDetailedResponse> {
+    return this.get<InvestmentContributionsDetailedResponse>({
+      endpoint: 'investments/contributions-detailed',
       params: query,
     });
   }

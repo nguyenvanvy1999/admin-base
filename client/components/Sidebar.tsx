@@ -29,6 +29,7 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
+  const [isStatisticsMenuOpen, setIsStatisticsMenuOpen] = useState(false);
 
   useEffect(() => {
     if (onWidthChange) {
@@ -56,6 +57,10 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
 
   const toggleSubMenu = () => {
     setIsSubMenuOpen(!isSubMenuOpen);
+  };
+
+  const toggleStatisticsMenu = () => {
+    setIsStatisticsMenuOpen(!isStatisticsMenuOpen);
   };
 
   const menuItemClass = (isActive: boolean) =>
@@ -250,15 +255,60 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
               </div>
             )}
 
-            <NavLink
-              to="/statistics"
-              className={({ isActive }) => menuItemClass(isActive)}
-            >
-              <BarChart className={iconClass} />
-              {!isCollapsed && (
-                <span className="ml-3 flex-1">{t('sidebar.statistics')}</span>
-              )}
-            </NavLink>
+            {!isCollapsed ? (
+              <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-600">
+                <button
+                  onClick={toggleStatisticsMenu}
+                  className={`w-full ${menuItemClass(false)}`}
+                >
+                  <BarChart className={iconClass} />
+                  <span className="ml-3 flex-1 text-left">
+                    {t('sidebar.statistics')}
+                  </span>
+                  <KeyboardArrowDown
+                    className={`w-4 h-4 transition-transform ${
+                      isStatisticsMenuOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+
+                {isStatisticsMenuOpen && (
+                  <div className="ml-8 mt-1 space-y-1">
+                    <NavLink
+                      to="/statistics/income-expense"
+                      className={({ isActive }) => menuItemClass(isActive)}
+                    >
+                      <CreditCard className={iconClass} />
+                      <span className="ml-3">
+                        {t('sidebar.incomeExpenseStatistics', {
+                          defaultValue: 'Income/Expense',
+                        })}
+                      </span>
+                    </NavLink>
+
+                    <NavLink
+                      to="/statistics/investments"
+                      className={({ isActive }) => menuItemClass(isActive)}
+                    >
+                      <TrendingUp className={iconClass} />
+                      <span className="ml-3">
+                        {t('sidebar.investmentStatistics', {
+                          defaultValue: 'Investment',
+                        })}
+                      </span>
+                    </NavLink>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <NavLink
+                to="/statistics/income-expense"
+                className={({ isActive }) => menuItemClass(isActive)}
+                title={t('sidebar.statistics')}
+              >
+                <BarChart className={iconClass} />
+              </NavLink>
+            )}
           </nav>
         </div>
       </div>

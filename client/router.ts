@@ -6,8 +6,10 @@ import CategoryPage from './pages/CategoryPage';
 import EntityPage from './pages/EntityPage';
 import EventPage from './pages/EventPage';
 import HomePage from './pages/HomePage';
+import IncomeExpenseStatisticsPage from './pages/IncomeExpenseStatisticsPage';
 import InvestmentDetailPage from './pages/InvestmentDetailPage';
 import InvestmentPage from './pages/InvestmentPage';
+import InvestmentStatisticsPage from './pages/InvestmentStatisticsPage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProfilePage from './pages/ProfilePage';
@@ -73,8 +75,16 @@ const router = createHashRouter([
         Component: NotFoundPage,
       },
       {
+        path: '/statistics/income-expense',
+        Component: IncomeExpenseStatisticsPage,
+      },
+      {
+        path: '/statistics/investments',
+        Component: InvestmentStatisticsPage,
+      },
+      {
         path: '/statistics',
-        Component: NotFoundPage,
+        Component: IncomeExpenseStatisticsPage,
       },
       {
         path: '/404',
