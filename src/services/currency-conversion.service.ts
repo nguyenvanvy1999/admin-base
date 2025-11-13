@@ -1,12 +1,10 @@
 import { prisma } from '@server/libs/db';
 import Decimal from 'decimal.js';
+import { exchangeRateServiceInstance } from './exchange-rate.service';
 import { CURRENCY_SELECT_BASIC } from './selects';
 
 export class CurrencyConversionService {
-  private exchangeRates: Record<string, Record<string, Decimal>> = {
-    VND: { USD: new Decimal(1).div(25000) },
-    USD: { VND: new Decimal(25000) },
-  };
+  constructor(private exchangeRateService = exchangeRateServiceInstance) {}
 
   async convertCurrency(
     amount: Decimal | number,
@@ -30,14 +28,17 @@ export class CurrencyConversionService {
       throw new Error('Currency not found');
     }
 
-    const rate = this.exchangeRates[fromCurrency.code]?.[toCurrency.code];
-    if (!rate) {
+    try {
+      const rate = await this.exchangeRateService.getRateDecimal(
+        fromCurrency.code,
+        toCurrency.code,
+      );
+      return new Decimal(amount).mul(rate);
+    } catch (error) {
       throw new Error(
-        `Currency conversion not supported: ${fromCurrency.code} to ${toCurrency.code}`,
+        `Currency conversion failed: ${fromCurrency.code} to ${toCurrency.code}. ${error instanceof Error ? error.message : String(error)}`,
       );
     }
-
-    return new Decimal(amount).mul(rate);
   }
 
   async convertToAccountCurrency(

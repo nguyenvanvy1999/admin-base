@@ -1,0 +1,115 @@
+import { UserRole } from '@server/generated/prisma/enums';
+import { Elysia } from 'elysia';
+import {
+  ExchangeRateHealthDto,
+  ExchangeRateInfoDto,
+  ExchangeRateRefreshResponseDto,
+} from '../dto/exchange-rate.dto';
+import authMacro from '../macros/auth';
+import { exchangeRateServiceInstance } from '../services/exchange-rate.service';
+
+const EXCHANGE_RATE_DETAIL = {
+  tags: ['Exchange Rate'],
+  security: [{ JwtAuth: [] }],
+};
+
+const exchangeRateController = new Elysia().group(
+  '/exchange-rates',
+  {
+    detail: {
+      tags: ['Exchange Rate'],
+      description:
+        'Exchange rate management endpoints for retrieving cache info, refreshing rates, and health checks.',
+    },
+  },
+  (group) =>
+    group
+      .use(authMacro)
+      .get(
+        '/info',
+        () => {
+          const cacheInfo = exchangeRateServiceInstance.getCacheInfo();
+          return {
+            date: cacheInfo.date,
+            fetchedAt: cacheInfo.fetchedAt,
+            isCacheValid: cacheInfo.isCacheValid,
+          };
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...EXCHANGE_RATE_DETAIL,
+            summary: 'Get exchange rate cache info',
+            description:
+              'Retrieve information about the cached exchange rates including the date, fetch timestamp, and cache validity.',
+          },
+          response: {
+            200: ExchangeRateInfoDto,
+          },
+        },
+      )
+      .post(
+        '/refresh',
+        async () => {
+          try {
+            await exchangeRateServiceInstance.refreshCache();
+            const cacheInfo = exchangeRateServiceInstance.getCacheInfo();
+            return {
+              success: true,
+              message: 'Exchange rates refreshed successfully',
+              date: cacheInfo.date,
+              fetchedAt: cacheInfo.fetchedAt,
+            };
+          } catch (error) {
+            return {
+              success: false,
+              message:
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to refresh exchange rates',
+              date: null,
+              fetchedAt: null,
+            };
+          }
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...EXCHANGE_RATE_DETAIL,
+            summary: 'Refresh exchange rates',
+            description:
+              'Manually refresh exchange rates from the API and update the cache.',
+          },
+          response: {
+            200: ExchangeRateRefreshResponseDto,
+          },
+        },
+      )
+      .get(
+        '/health',
+        () => {
+          const cacheInfo = exchangeRateServiceInstance.getCacheInfo();
+          return {
+            status: cacheInfo.isCacheValid ? 'healthy' : 'stale',
+            apiUrl: exchangeRateServiceInstance.getApiUrl(),
+            lastFetch: cacheInfo.fetchedAt,
+            cacheDate: cacheInfo.date,
+            isCacheValid: cacheInfo.isCacheValid,
+          };
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...EXCHANGE_RATE_DETAIL,
+            summary: 'Exchange rate health check',
+            description:
+              'Check the health status of the exchange rate service including API URL, cache status, and last fetch time.',
+          },
+          response: {
+            200: ExchangeRateHealthDto,
+          },
+        },
+      ),
+);
+
+export default exchangeRateController;

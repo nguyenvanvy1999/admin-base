@@ -16,6 +16,15 @@ export const envSchema = t.Object({
     ],
     { default: LOG_LEVEL.INFO },
   ),
+  EXCHANGE_RATE_API_URL: t.Optional(
+    t.String({
+      default:
+        'https://latest.currency-api.pages.dev/v1/currencies/vnd.min.json',
+    }),
+  ),
+  EXCHANGE_RATE_CACHE_TTL: t.Optional(
+    t.Number({ minimum: 0, default: 3600000 }),
+  ),
 });
 
 const Compiler = TypeCompiler.Compile(envSchema);

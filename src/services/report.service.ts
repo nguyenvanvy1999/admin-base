@@ -1,5 +1,6 @@
 import { TransactionType } from '@server/generated/prisma/enums';
 import { prisma } from '@server/libs/db';
+import { logger } from '@server/libs/logger';
 import { Elysia } from 'elysia';
 import type {
   IIncomeExpenseDetailedQueryDto,
@@ -19,6 +20,7 @@ import type {
   ReportSummaryResponse,
   ReportTransactionsResponse,
 } from '../dto/report.dto';
+import { exchangeRateServiceInstance } from './exchange-rate.service';
 
 const safeNumber = (value: unknown) =>
   value && typeof value === 'object' && 'toNumber' in value
@@ -1623,14 +1625,14 @@ export class ReportService {
     fromCode: string,
     toCode: string,
   ): Promise<number> {
-    if (fromCode === toCode) return await Promise.resolve(1);
+    if (fromCode === toCode) return 1;
 
-    const rates: Record<string, Record<string, number>> = {
-      VND: { USD: 1 / 25000 },
-      USD: { VND: 25000 },
-    };
-
-    return rates[fromCode]?.[toCode] ?? 1;
+    try {
+      return await exchangeRateServiceInstance.getRate(fromCode, toCode);
+    } catch (error) {
+      logger.error('Failed to get exchange rate', { error });
+      return 1;
+    }
   }
 }
 

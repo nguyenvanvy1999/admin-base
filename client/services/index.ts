@@ -4,6 +4,7 @@ export * from './CategoryService';
 export * from './CurrencyService';
 export * from './EntityService';
 export * from './EventService';
+export * from './ExchangeRateService';
 export * from './InvestmentService';
 export * from './ReportService';
 export * from './TagService';

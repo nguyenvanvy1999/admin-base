@@ -3,6 +3,7 @@ import useUserStore from '@client/store/user';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
+import ExchangeRateStatus from './ExchangeRateStatus';
 import LanguageSwitcher from './LanguageSwitcher';
 import ThemeToggle from './ThemeToggle';
 
@@ -48,8 +49,11 @@ const Header = () => {
             </div>
           </div>
 
-          {/* Right side: Theme Toggle, Language Switcher and User Avatar */}
+          {/* Right side: Theme Toggle, Language Switcher, Exchange Rate Status and User Avatar */}
           <div className="flex items-center space-x-4">
+            {/* Exchange Rate Status */}
+            <ExchangeRateStatus />
+
             {/* Theme Toggle */}
             <ThemeToggle />
 

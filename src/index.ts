@@ -8,6 +8,7 @@ import contributionController from './controllers/contribution.controller';
 import currencyController from './controllers/currency.controller';
 import entityController from './controllers/entity.controller';
 import eventController from './controllers/event.controller';
+import exchangeRateController from './controllers/exchange-rate.controller';
 import investmentController from './controllers/investment.controller';
 import reportController from './controllers/report.controller';
 import tagController from './controllers/tag.controller';
@@ -60,6 +61,7 @@ export const app = new Elysia()
       .use(currencyController)
       .use(entityController)
       .use(eventController)
+      .use(exchangeRateController)
       .use(tagController)
       .use(transactionController)
       .use(investmentController)
