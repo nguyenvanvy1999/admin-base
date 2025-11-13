@@ -7,6 +7,13 @@ export const envSchema = t.Object({
   PORT: t.Number({ minimum: 0, maximum: 65535, default: 3000 }),
   POSTGRES_URL: t.String(),
   JWT_SECRET: t.String({ default: 'secret' }),
+  JWT_ACCESS_TOKEN_EXPIRED: t.String({ default: '15 minutes' }),
+  JWT_REFRESH_TOKEN_EXPIRED: t.String({ default: '15 days' }),
+  JWT_AUDIENCE: t.String({ default: 'https://example.com' }),
+  JWT_ISSUER: t.String({ default: 'investment' }),
+  JWT_SUBJECT: t.String({ default: 'investment' }),
+  ENCRYPT_KEY: t.Optional(t.String()),
+  ENCRYPT_IV: t.Optional(t.String()),
   LOG_LEVEL: t.Union(
     [
       t.Literal(LOG_LEVEL.DEBUG),

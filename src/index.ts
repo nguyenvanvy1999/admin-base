@@ -18,6 +18,7 @@ import userController from './controllers/user.controller';
 import valuationController from './controllers/valuation.controller';
 import { logger } from './libs/logger';
 import { errorHandler } from './middlewares/error-middleware';
+import { adminController } from './modules/admin';
 
 export const app = new Elysia()
   .use(
@@ -56,6 +57,7 @@ export const app = new Elysia()
     group
       .use(errorHandler)
       .use(userController)
+      .use(adminController)
       .use(accountController)
       .use(categoryController)
       .use(currencyController)

@@ -130,6 +130,8 @@ model User {
   holdings                Holding[]
   tags                    Tag[]
   events                  Event[]
+  roles                   RolePlayer[]
+  sessions                Session[]
 
   @@index([username], name: "user_username_idx")
   @@index([baseCurrencyId], name: "user_baseCurrencyId_idx")
@@ -506,4 +508,77 @@ model Event {
   @@index([startAt], name: "event_startAt_idx")
   @@index([endAt], name: "event_endAt_idx")
   @@map("events")
+}
+
+model Permission {
+  id          String           @id @default(uuid(7))
+  title       String           @unique
+  description String?
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model Role {
+  id          String           @id @default(uuid(7))
+  title       String           @unique
+  description String?
+  enabled     Boolean          @default(true)
+  permissions RolePermission[]
+  players     RolePlayer[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid(7))
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId], name: "role_permission_unique")
+  @@index([roleId], name: "role_permission_roleId_idx")
+  @@index([permissionId], name: "role_permission_permissionId_idx")
+  @@map("role_permissions")
+}
+
+model RolePlayer {
+  id          String    @id @default(uuid(7))
+  playerId    String    @map("player_id")
+  roleId      String    @map("role_id")
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  player User @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, playerId], name: "role_player_unique")
+  @@index([playerId], name: "role_player_playerId_idx")
+  @@index([roleId], name: "role_player_roleId_idx")
+  @@map("role_players")
+}
+
+model Session {
+  id          String   @id @default(uuid(7))
+  userId      String   @map("user_id")
+  token       String   @unique
+  device      String?
+  ip          String?
+  expired     DateTime
+  revoked     Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "session_userId_idx")
+  @@index([token], name: "session_token_idx")
+  @@map("sessions")
 }

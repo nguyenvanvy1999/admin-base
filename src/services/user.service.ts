@@ -47,19 +47,42 @@ const formatUser = (user: {
   baseCurrencyId: user.baseCurrencyId ?? null,
 });
 
+export interface IDb {
+  user: typeof prisma.user;
+  currency: typeof prisma.currency;
+  $transaction: typeof prisma.$transaction;
+}
+
 export class UserService {
-  private categoryService = new CategoryService();
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      categoryService: CategoryService;
+      passwordService: {
+        hash: (password: string) => Promise<string>;
+        verify: (password: string, hash: string) => Promise<boolean>;
+      };
+    } = {
+      db: prisma as unknown as IDb,
+      categoryService: new CategoryService(),
+      passwordService: {
+        hash: (password: string) => Bun.password.hash(password, 'bcrypt'),
+        verify: (password: string, hash: string) =>
+          Bun.password.verify(password, hash, 'bcrypt'),
+      },
+    },
+  ) {}
 
   async register(data: IRegisterDto) {
-    const existUser = await prisma.user.findFirst({
+    const existUser = await this.deps.db.user.findFirst({
       where: { username: data.username },
     });
     if (existUser) {
       throw new Error('User already exists');
     }
-    const hashPassword = await Bun.password.hash(data.password, 'bcrypt');
+    const hashPassword = await this.deps.passwordService.hash(data.password);
 
-    const user = await prisma.$transaction(async (tx) => {
+    const user = await this.deps.db.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
           username: data.username,
@@ -70,7 +93,7 @@ export class UserService {
         },
       });
 
-      await this.categoryService.seedDefaultCategories(tx, newUser.id);
+      await this.deps.categoryService.seedDefaultCategories(tx, newUser.id);
 
       return newUser;
     });
@@ -79,17 +102,16 @@ export class UserService {
   }
 
   async login(data: ILoginDto) {
-    const user = await prisma.user.findFirst({
+    const user = await this.deps.db.user.findFirst({
       where: { username: data.username },
       select: USER_SELECT_FOR_LOGIN,
     });
     if (!user) {
       throw new Error('User not found');
     }
-    const isValid = await Bun.password.verify(
+    const isValid = await this.deps.passwordService.verify(
       data.password,
       user.password,
-      'bcrypt',
     );
     if (!isValid) {
       throw new Error('Invalid password');
@@ -106,7 +128,7 @@ export class UserService {
   }
 
   async getUserInfo(id: string) {
-    const user = await prisma.user.findFirst({
+    const user = await this.deps.db.user.findFirst({
       where: { id },
       select: USER_SELECT_FOR_INFO,
     });
@@ -117,7 +139,7 @@ export class UserService {
   }
 
   async updateProfile(userId: string, data: IUpdateProfileDto) {
-    const user = await prisma.user.findFirst({
+    const user = await this.deps.db.user.findFirst({
       where: { id: userId },
       select: USER_SELECT_FOR_VALIDATION,
     });
@@ -129,10 +151,9 @@ export class UserService {
       if (!data.oldPassword) {
         throw new Error('Old password is required to change password');
       }
-      const isValid = await Bun.password.verify(
+      const isValid = await this.deps.passwordService.verify(
         data.oldPassword,
         user.password,
-        'bcrypt',
       );
       if (!isValid) {
         throw new Error('Invalid old password');
@@ -140,7 +161,7 @@ export class UserService {
     }
 
     if (data.baseCurrencyId) {
-      const count = await prisma.currency.count({
+      const count = await this.deps.db.currency.count({
         where: { id: data.baseCurrencyId },
       });
       if (count === 0) {
@@ -157,10 +178,12 @@ export class UserService {
       updateData.baseCurrencyId = data.baseCurrencyId;
     }
     if (data.newPassword) {
-      updateData.password = await Bun.password.hash(data.newPassword, 'bcrypt');
+      updateData.password = await this.deps.passwordService.hash(
+        data.newPassword,
+      );
     }
 
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await this.deps.db.user.update({
       where: { id: userId },
       data: updateData,
       select: {
