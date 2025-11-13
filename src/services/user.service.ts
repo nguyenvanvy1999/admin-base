@@ -8,6 +8,7 @@ import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import { Elysia } from 'elysia';
 import type {
   AuthUserRes,
+  IChangePasswordDto,
   ILoginDto,
   IRegisterDto,
   IUpdateProfileDto,
@@ -213,7 +214,7 @@ export class UserService {
     };
   }
 
-  async updateProfile(userId: string, data: IUpdateProfileDto) {
+  async changePassword(userId: string, data: IChangePasswordDto) {
     if (userId === SUPER_ADMIN_ID) {
       throwAppError(
         ErrorCode.VALIDATION_ERROR,
@@ -229,20 +230,47 @@ export class UserService {
       throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
 
-    if (data.newPassword) {
-      if (!data.oldPassword) {
-        throwAppError(
-          ErrorCode.VALIDATION_ERROR,
-          'Old password is required to change password',
-        );
-      }
-      const isValid = await this.deps.passwordService.verify(
-        data.oldPassword,
-        user.password,
+    const isValid = await this.deps.passwordService.verify(
+      data.oldPassword,
+      user.password,
+    );
+    if (!isValid) {
+      throwAppError(ErrorCode.INVALID_OLD_PASSWORD, 'Invalid old password');
+    }
+
+    const hashedPassword = await this.deps.passwordService.hash(
+      data.newPassword,
+    );
+
+    const updatedUser = await this.deps.db.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        role: true,
+        baseCurrencyId: true,
+      },
+    });
+
+    return formatUser(updatedUser);
+  }
+
+  async updateProfile(userId: string, data: IUpdateProfileDto) {
+    if (userId === SUPER_ADMIN_ID) {
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'Super admin account cannot be modified',
       );
-      if (!isValid) {
-        throwAppError(ErrorCode.INVALID_OLD_PASSWORD, 'Invalid old password');
-      }
+    }
+
+    const user = await this.deps.db.user.findFirst({
+      where: { id: userId },
+      select: USER_SELECT_FOR_VALIDATION,
+    });
+    if (!user) {
+      throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
 
     if (data.baseCurrencyId) {
@@ -261,11 +289,6 @@ export class UserService {
     }
     if (data.baseCurrencyId) {
       updateData.baseCurrencyId = data.baseCurrencyId;
-    }
-    if (data.newPassword) {
-      updateData.password = await this.deps.passwordService.hash(
-        data.newPassword,
-      );
     }
 
     const updatedUser = await this.deps.db.user.update({

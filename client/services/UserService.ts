@@ -8,6 +8,7 @@ import type {
 } from '@server/dto/admin/user.dto';
 import type {
   CurrentUserRes,
+  IChangePasswordDto,
   IUpdateProfileDto,
   UpdateProfileRes,
 } from '@server/dto/user.dto';
@@ -27,6 +28,12 @@ export class UserService extends ServiceBase {
   updateProfile(data: IUpdateProfileDto): Promise<UpdateProfileRes> {
     return this.put<UpdateProfileRes>(data, {
       endpoint: 'profile',
+    });
+  }
+
+  changePassword(data: IChangePasswordDto): Promise<UpdateProfileRes> {
+    return this.post<UpdateProfileRes>(data, {
+      endpoint: 'change-password',
     });
   }
 

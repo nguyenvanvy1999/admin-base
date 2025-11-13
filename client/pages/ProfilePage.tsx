@@ -1,7 +1,10 @@
 import { PageContainer } from '@client/components/PageContainer';
 import { Select } from '@client/components/Select';
 import { ZodFormController } from '@client/components/ZodFormController';
-import { useUpdateProfileMutation } from '@client/hooks/mutations/useProfileMutations';
+import {
+  useChangePasswordMutation,
+  useUpdateProfileMutation,
+} from '@client/hooks/mutations/useProfileMutations';
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import { useUserQuery } from '@client/hooks/queries/useUserQuery';
 import { useZodForm } from '@client/hooks/useZodForm';
@@ -14,108 +17,73 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { UpdateProfileDto } from '@server/dto/user.dto';
+import { ChangePasswordDto, UpdateProfileDto } from '@server/dto/user.dto';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-const profileSchema = z.preprocess(
-  (data) => {
-    if (typeof data === 'object' && data !== null) {
-      const processed = { ...data };
-      if (
-        typeof processed.oldPassword === 'string' &&
-        processed.oldPassword.trim() === ''
-      ) {
-        processed.oldPassword = undefined;
-      }
-      if (
-        typeof processed.newPassword === 'string' &&
-        processed.newPassword.trim() === ''
-      ) {
-        processed.newPassword = undefined;
-      }
-      if (
-        typeof processed.confirmPassword === 'string' &&
-        processed.confirmPassword.trim() === ''
-      ) {
-        processed.confirmPassword = undefined;
-      }
-      return processed;
-    }
-    return data;
-  },
-  UpdateProfileDto.extend({
-    confirmPassword: z.string().optional(),
-  })
-    .refine(
-      (data) => {
-        if (data.newPassword && !data.oldPassword) {
-          return false;
-        }
-        return true;
-      },
-      {
-        message: 'profile.oldPasswordRequired',
-        path: ['oldPassword'],
-      },
-    )
-    .refine(
-      (data) => {
-        if (data.newPassword && data.newPassword !== data.confirmPassword) {
-          return false;
-        }
-        return true;
-      },
-      {
-        message: 'profile.passwordsDoNotMatch',
-        path: ['confirmPassword'],
-      },
-    ),
-);
+const profileSchema = UpdateProfileDto;
 
-type FormValue = z.infer<typeof profileSchema>;
+const changePasswordSchema = ChangePasswordDto.extend({
+  confirmPassword: z.string().min(1, 'Confirm password is required'),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: 'profile.passwordsDoNotMatch',
+  path: ['confirmPassword'],
+});
+
+type ProfileFormValue = z.infer<typeof profileSchema>;
+type ChangePasswordFormValue = z.infer<typeof changePasswordSchema>;
 
 const ProfilePage = () => {
   const { t } = useTranslation();
   const { data: user, isLoading } = useUserQuery();
   const { data: currencies = [] } = useCurrenciesQuery();
   const updateProfileMutation = useUpdateProfileMutation();
+  const changePasswordMutation = useChangePasswordMutation();
   const [isEditMode, setIsEditMode] = useState(false);
 
-  const defaultValues: FormValue = {
+  const profileDefaultValues: ProfileFormValue = {
     name: '',
     baseCurrencyId: '',
+  };
+
+  const passwordDefaultValues: ChangePasswordFormValue = {
     oldPassword: '',
     newPassword: '',
     confirmPassword: '',
   };
 
-  const { control, handleSubmit, reset, watch } = useZodForm({
+  const {
+    control: profileControl,
+    handleSubmit: handleProfileSubmit,
+    reset: resetProfile,
+  } = useZodForm({
     zod: profileSchema,
-    defaultValues,
+    defaultValues: profileDefaultValues,
   });
 
-  const newPasswordValue = watch('newPassword');
+  const {
+    control: passwordControl,
+    handleSubmit: handlePasswordSubmit,
+    reset: resetPassword,
+  } = useZodForm({
+    zod: changePasswordSchema,
+    defaultValues: passwordDefaultValues,
+  });
 
   useEffect(() => {
     if (user && !isEditMode) {
-      reset({
+      resetProfile({
         name: user.name || '',
         baseCurrencyId: user.baseCurrencyId || '',
-        oldPassword: '',
-        newPassword: '',
-        confirmPassword: '',
       });
     }
-  }, [user, isEditMode, reset]);
+  }, [user, isEditMode, resetProfile]);
 
-  const onSubmitForm = handleSubmit((data) => {
+  const onSubmitProfileForm = handleProfileSubmit((data) => {
     const updateData: {
       name?: string;
       baseCurrencyId?: string;
-      oldPassword?: string;
-      newPassword?: string;
     } = {};
 
     if (data.name !== user?.name) {
@@ -123,10 +91,6 @@ const ProfilePage = () => {
     }
     if (data.baseCurrencyId !== user?.baseCurrencyId) {
       updateData.baseCurrencyId = data.baseCurrencyId;
-    }
-    if (data.newPassword) {
-      updateData.oldPassword = data.oldPassword;
-      updateData.newPassword = data.newPassword;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -141,14 +105,25 @@ const ProfilePage = () => {
     });
   });
 
+  const onSubmitPasswordForm = handlePasswordSubmit((data) => {
+    changePasswordMutation.mutate(
+      {
+        oldPassword: data.oldPassword,
+        newPassword: data.newPassword,
+      },
+      {
+        onSuccess: () => {
+          resetPassword(passwordDefaultValues);
+        },
+      },
+    );
+  });
+
   const handleEdit = () => {
     if (user) {
-      reset({
+      resetProfile({
         name: user.name || '',
         baseCurrencyId: user.baseCurrencyId || '',
-        oldPassword: '',
-        newPassword: '',
-        confirmPassword: '',
       });
     }
     setIsEditMode(true);
@@ -157,12 +132,9 @@ const ProfilePage = () => {
   const handleCancel = () => {
     setIsEditMode(false);
     if (user) {
-      reset({
+      resetProfile({
         name: user.name || '',
         baseCurrencyId: user.baseCurrencyId || '',
-        oldPassword: '',
-        newPassword: '',
-        confirmPassword: '',
       });
     }
   };
@@ -197,28 +169,166 @@ const ProfilePage = () => {
         ) : undefined
       }
     >
-      {isEditMode ? (
+      <Stack gap="xl">
+        {isEditMode ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onSubmitProfileForm();
+            }}
+          >
+            <Stack gap="md">
+              <Text size="lg" fw={500}>
+                {t('profile.title')}
+              </Text>
+
+              <TextInput
+                label={t('profile.username')}
+                value={user.username}
+                disabled
+              />
+
+              <ZodFormController
+                control={profileControl}
+                name="name"
+                render={({ field, fieldState: { error } }) => (
+                  <TextInput
+                    label={t('profile.name')}
+                    placeholder={t('profile.namePlaceholder')}
+                    error={error}
+                    {...field}
+                  />
+                )}
+              />
+
+              <ZodFormController
+                control={profileControl}
+                name="baseCurrencyId"
+                render={({ field, fieldState: { error } }) => (
+                  <Select
+                    label={t('profile.baseCurrency')}
+                    error={error}
+                    items={currencies.map((currency) => ({
+                      value: currency.id,
+                      label: `${currency.symbol || ''} - ${currency.name} (${currency.code})`,
+                    }))}
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+
+              <Group justify="flex-end" pt="md">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={updateProfileMutation.isPending}
+                >
+                  {t('profile.cancel')}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updateProfileMutation.isPending}
+                >
+                  {updateProfileMutation.isPending
+                    ? t('profile.saving')
+                    : t('profile.save')}
+                </Button>
+              </Group>
+            </Stack>
+          </form>
+        ) : (
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+            <Stack
+              gap="xs"
+              p="md"
+              style={{
+                backgroundColor: 'var(--mantine-color-gray-0)',
+                borderRadius: 'var(--mantine-radius-md)',
+              }}
+            >
+              <Text size="sm" c="dimmed">
+                {t('profile.username')}
+              </Text>
+              <Text size="lg" fw={600}>
+                {user.username}
+              </Text>
+            </Stack>
+
+            <Stack
+              gap="xs"
+              p="md"
+              style={{
+                backgroundColor: 'var(--mantine-color-gray-0)',
+                borderRadius: 'var(--mantine-radius-md)',
+              }}
+            >
+              <Text size="sm" c="dimmed">
+                {t('profile.name')}
+              </Text>
+              <Text size="lg" fw={600}>
+                {user.name || t('common.nA')}
+              </Text>
+            </Stack>
+
+            <Stack
+              gap="xs"
+              p="md"
+              style={{
+                backgroundColor: 'var(--mantine-color-gray-0)',
+                borderRadius: 'var(--mantine-radius-md)',
+              }}
+            >
+              <Text size="sm" c="dimmed">
+                {t('profile.role')}
+              </Text>
+              <Badge color="indigo" variant="light">
+                {user.role}
+              </Badge>
+            </Stack>
+
+            <Stack
+              gap="xs"
+              p="md"
+              style={{
+                backgroundColor: 'var(--mantine-color-gray-0)',
+                borderRadius: 'var(--mantine-radius-md)',
+              }}
+            >
+              <Text size="sm" c="dimmed">
+                {t('profile.baseCurrency')}
+              </Text>
+              <Text size="lg" fw={600}>
+                {selectedCurrency
+                  ? `${selectedCurrency.symbol || ''} - ${selectedCurrency.name} (${selectedCurrency.code})`
+                  : t('common.nA')}
+              </Text>
+            </Stack>
+          </SimpleGrid>
+        )}
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            onSubmitForm();
+            onSubmitPasswordForm();
           }}
         >
           <Stack gap="md">
-            <TextInput
-              label={t('profile.username')}
-              value={user.username}
-              disabled
-            />
+            <Text size="lg" fw={500}>
+              {t('profile.changePassword')}
+            </Text>
 
             <ZodFormController
-              control={control}
-              name="name"
+              control={passwordControl}
+              name="oldPassword"
               render={({ field, fieldState: { error } }) => (
                 <TextInput
-                  label={t('profile.name')}
-                  placeholder={t('profile.namePlaceholder')}
+                  type="password"
+                  label={t('profile.oldPassword')}
+                  placeholder={t('profile.oldPasswordPlaceholder')}
                   error={error}
                   {...field}
                 />
@@ -226,168 +336,43 @@ const ProfilePage = () => {
             />
 
             <ZodFormController
-              control={control}
-              name="baseCurrencyId"
+              control={passwordControl}
+              name="newPassword"
               render={({ field, fieldState: { error } }) => (
-                <Select
-                  label={t('profile.baseCurrency')}
+                <TextInput
+                  type="password"
+                  label={t('profile.newPassword')}
+                  placeholder={t('profile.newPasswordPlaceholder')}
                   error={error}
-                  items={currencies.map((currency) => ({
-                    value: currency.id,
-                    label: `${currency.symbol || ''} - ${currency.name} (${currency.code})`,
-                  }))}
-                  value={field.value || ''}
-                  onChange={field.onChange}
+                  {...field}
                 />
               )}
             />
 
-            <Stack
-              gap="md"
-              pt="md"
-              style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}
-            >
-              <Text size="lg" fw={500}>
-                {t('profile.changePassword')}
-              </Text>
-
-              {newPasswordValue && (
-                <ZodFormController
-                  control={control}
-                  name="oldPassword"
-                  render={({ field, fieldState: { error } }) => (
-                    <TextInput
-                      type="password"
-                      label={t('profile.oldPassword')}
-                      placeholder={t('profile.oldPasswordPlaceholder')}
-                      error={error}
-                      {...field}
-                    />
-                  )}
+            <ZodFormController
+              control={passwordControl}
+              name="confirmPassword"
+              render={({ field, fieldState: { error } }) => (
+                <TextInput
+                  type="password"
+                  label={t('profile.confirmPassword')}
+                  placeholder={t('profile.confirmPasswordPlaceholder')}
+                  error={error}
+                  {...field}
                 />
               )}
+            />
 
-              <ZodFormController
-                control={control}
-                name="newPassword"
-                render={({ field, fieldState: { error } }) => (
-                  <TextInput
-                    type="password"
-                    label={t('profile.newPassword')}
-                    placeholder={t('profile.newPasswordPlaceholder')}
-                    error={error}
-                    {...field}
-                  />
-                )}
-              />
-
-              {newPasswordValue && (
-                <ZodFormController
-                  control={control}
-                  name="confirmPassword"
-                  render={({ field, fieldState: { error } }) => (
-                    <TextInput
-                      type="password"
-                      label={t('profile.confirmPassword')}
-                      placeholder={t('profile.confirmPasswordPlaceholder')}
-                      error={error}
-                      {...field}
-                    />
-                  )}
-                />
-              )}
-            </Stack>
-
-            <Group
-              justify="flex-end"
-              pt="md"
-              style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}
-            >
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCancel}
-                disabled={updateProfileMutation.isPending}
-              >
-                {t('profile.cancel')}
-              </Button>
-              <Button type="submit" disabled={updateProfileMutation.isPending}>
-                {updateProfileMutation.isPending
+            <Group justify="flex-end">
+              <Button type="submit" disabled={changePasswordMutation.isPending}>
+                {changePasswordMutation.isPending
                   ? t('profile.saving')
-                  : t('profile.save')}
+                  : t('profile.changePassword')}
               </Button>
             </Group>
           </Stack>
         </form>
-      ) : (
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-          <Stack
-            gap="xs"
-            p="md"
-            style={{
-              backgroundColor: 'var(--mantine-color-gray-0)',
-              borderRadius: 'var(--mantine-radius-md)',
-            }}
-          >
-            <Text size="sm" c="dimmed">
-              {t('profile.username')}
-            </Text>
-            <Text size="lg" fw={600}>
-              {user.username}
-            </Text>
-          </Stack>
-
-          <Stack
-            gap="xs"
-            p="md"
-            style={{
-              backgroundColor: 'var(--mantine-color-gray-0)',
-              borderRadius: 'var(--mantine-radius-md)',
-            }}
-          >
-            <Text size="sm" c="dimmed">
-              {t('profile.name')}
-            </Text>
-            <Text size="lg" fw={600}>
-              {user.name || t('common.nA')}
-            </Text>
-          </Stack>
-
-          <Stack
-            gap="xs"
-            p="md"
-            style={{
-              backgroundColor: 'var(--mantine-color-gray-0)',
-              borderRadius: 'var(--mantine-radius-md)',
-            }}
-          >
-            <Text size="sm" c="dimmed">
-              {t('profile.role')}
-            </Text>
-            <Badge color="indigo" variant="light">
-              {user.role}
-            </Badge>
-          </Stack>
-
-          <Stack
-            gap="xs"
-            p="md"
-            style={{
-              backgroundColor: 'var(--mantine-color-gray-0)',
-              borderRadius: 'var(--mantine-radius-md)',
-            }}
-          >
-            <Text size="sm" c="dimmed">
-              {t('profile.baseCurrency')}
-            </Text>
-            <Text size="lg" fw={600}>
-              {selectedCurrency
-                ? `${selectedCurrency.symbol || ''} - ${selectedCurrency.name} (${selectedCurrency.code})`
-                : t('common.nA')}
-            </Text>
-          </Stack>
-        </SimpleGrid>
-      )}
+      </Stack>
     </PageContainer>
   );
 };

@@ -16,13 +16,17 @@ export const LoginDto = z.object({
 export const UpdateProfileDto = z.object({
   name: z.string().optional(),
   baseCurrencyId: z.string().optional(),
-  oldPassword: z.string().optional(),
-  newPassword: z.string().min(6).optional(),
+});
+
+export const ChangePasswordDto = z.object({
+  oldPassword: z.string().min(1, 'Old password is required'),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters'),
 });
 
 export type IRegisterDto = z.infer<typeof RegisterDto>;
 export type ILoginDto = z.infer<typeof LoginDto>;
 export type IUpdateProfileDto = z.infer<typeof UpdateProfileDto>;
+export type IChangePasswordDto = z.infer<typeof ChangePasswordDto>;
 
 export const AuthUserDto = t.NoValidate(
   t.Object({

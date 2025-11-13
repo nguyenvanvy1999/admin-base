@@ -13,6 +13,7 @@ import dayjs from 'dayjs';
 import { Elysia, t } from 'elysia';
 import {
   AuthUserDto,
+  ChangePasswordDto,
   LoginDto,
   LoginResponseDto,
   RegisterDto,
@@ -195,9 +196,29 @@ const userController = new Elysia().group(
             ...USER_DETAIL_AUTH,
             summary: 'Update user profile',
             description:
-              "Update the authenticated user's profile information such as username, email, or other profile fields.",
+              "Update the authenticated user's profile information such as name and base currency.",
           },
           body: UpdateProfileDto,
+          response: {
+            200: ResWrapper(AuthUserDto),
+          },
+        },
+      )
+      .post(
+        '/change-password',
+        async ({ currentUser, body, userService }) => {
+          return castToRes(
+            await userService.changePassword(currentUser.id, body),
+          );
+        },
+        {
+          detail: {
+            ...USER_DETAIL_AUTH,
+            summary: 'Change user password',
+            description:
+              "Change the authenticated user's password. Requires old password verification.",
+          },
+          body: ChangePasswordDto,
           response: {
             200: ResWrapper(AuthUserDto),
           },
