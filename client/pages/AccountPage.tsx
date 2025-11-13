@@ -1,5 +1,6 @@
 import AccountTable from '@client/components/AccountTable';
 import AddEditAccountDialog from '@client/components/AddEditAccountDialog';
+import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
 import {
   FormComponent,
   type FormComponentRef,
@@ -16,24 +17,26 @@ import {
   useAccountsQuery,
 } from '@client/hooks/queries/useAccountQueries';
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
+import { usePageDelete } from '@client/hooks/usePageDelete';
+import { usePageDialog } from '@client/hooks/usePageDialog';
+import { usePaginationSorting } from '@client/hooks/usePaginationSorting';
 import { useZodForm } from '@client/hooks/useZodForm';
 import {
   Button,
   Group,
-  Modal,
   MultiSelect,
   NumberFormatter,
-  Text,
   TextInput,
   useMantineColorScheme,
 } from '@mantine/core';
 import {
   type AccountResponse,
+  type AccountSummary,
   type IUpsertAccountDto,
   ListAccountsQueryDto,
 } from '@server/dto/account.dto';
 import { AccountType } from '@server/generated/prisma/enums';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const filterSchema = ListAccountsQueryDto.pick({
@@ -53,83 +56,51 @@ const AccountPage = () => {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   const formRef = useRef<FormComponentRef>(null);
-  const [selectedAccount, setSelectedAccount] =
-    useState<AccountResponse | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [accountToDelete, setAccountToDelete] =
-    useState<AccountResponse | null>(null);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
-  const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'balance'>(
-    'createdAt',
-  );
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const { handleSubmit, control, reset } = useZodForm({
+  const paginationSorting = usePaginationSorting<
+    'name' | 'createdAt' | 'balance'
+  >({
+    defaultPage: 1,
+    defaultLimit: 20,
+    defaultSortBy: 'createdAt',
+    defaultSortOrder: 'desc',
+  });
+
+  const dialog = usePageDialog<AccountResponse>();
+
+  const deleteHandler = usePageDelete<AccountResponse>();
+
+  const form = useZodForm({
     zod: filterSchema,
     defaultValues: defaultFilterValues,
   });
 
-  const queryParams = useMemo(
-    () => ({
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-    }),
-    [page, limit, sortBy, sortOrder],
+  const { data, isLoading, refetch } = useAccountsQuery(
+    paginationSorting.queryParams,
+    formRef,
+    form.handleSubmit,
   );
 
-  const { data, isLoading, refetch } = useAccountsQuery(
-    queryParams,
-    formRef,
-    handleSubmit,
-  );
   const { data: currencies = [] } = useCurrenciesQuery();
   const createMutation = useCreateAccountMutation();
   const updateMutation = useUpdateAccountMutation();
   const deleteMutation = useDeleteAccountMutation();
 
-  const handleAdd = () => {
-    setSelectedAccount(null);
-    setIsDialogOpen(true);
-  };
-
-  const handleEdit = (account: AccountResponse) => {
-    setSelectedAccount(account);
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = (account: AccountResponse) => {
-    setAccountToDelete(account);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setIsDialogOpen(false);
-    setSelectedAccount(null);
-  };
-
-  const handleDeleteDialogClose = () => {
-    setIsDeleteDialogOpen(false);
-    setAccountToDelete(null);
-  };
-
   const handleSubmitForm = async (formData: IUpsertAccountDto) => {
-    if (formData.id) {
-      await updateMutation.mutateAsync(formData);
-    } else {
-      await createMutation.mutateAsync(formData);
+    try {
+      if (formData.id) {
+        await updateMutation.mutateAsync(formData);
+      } else {
+        await createMutation.mutateAsync(formData);
+      }
+      dialog.handleClose();
+    } catch {
+      // Error is already handled by mutation's onError callback
     }
-    handleDialogClose();
   };
 
   const handleConfirmDelete = async () => {
-    if (accountToDelete) {
-      await deleteMutation.mutateAsync(accountToDelete.id);
-      handleDeleteDialogClose();
-    }
+    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
   };
 
   const handleSearch = () => {
@@ -145,7 +116,7 @@ const AccountPage = () => {
 
   const stats = useMemo(() => {
     if (!statistics || statistics.length === 0) return undefined;
-    return statistics.map((item) => {
+    return statistics.map((item: AccountSummary) => {
       const isNegative = item.totalBalance < 0;
       const color = isNegative
         ? isDark
@@ -176,7 +147,7 @@ const AccountPage = () => {
         <FormComponent ref={formRef}>
           <Group>
             <ZodFormController
-              control={control}
+              control={form.control}
               name="search"
               render={({ field, fieldState: { error } }) => (
                 <TextInput
@@ -188,7 +159,7 @@ const AccountPage = () => {
               )}
             />
             <ZodFormController
-              control={control}
+              control={form.control}
               name="type"
               render={({ field, fieldState: { error } }) => (
                 <MultiSelect
@@ -213,7 +184,7 @@ const AccountPage = () => {
               )}
             />
             <ZodFormController
-              control={control}
+              control={form.control}
               name="currencyId"
               render={({ field, fieldState: { error } }) => (
                 <MultiSelect
@@ -235,104 +206,51 @@ const AccountPage = () => {
         </FormComponent>
       }
       buttonGroups={
-        <Button onClick={handleAdd} disabled={isSubmitting}>
+        <Button onClick={dialog.handleAdd} disabled={isSubmitting}>
           {t('accounts.addAccount')}
         </Button>
       }
       onSearch={handleSearch}
-      onReset={() => reset(defaultFilterValues)}
+      onReset={() => form.reset(defaultFilterValues)}
       stats={stats}
     >
       <AccountTable
         accounts={data?.accounts || []}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onEdit={dialog.handleEdit}
+        onDelete={deleteHandler.handleDelete}
         isLoading={isLoading}
-        recordsPerPage={limit}
+        recordsPerPage={paginationSorting.limit}
         recordsPerPageOptions={[10, 20, 50, 100]}
-        onRecordsPerPageChange={(size) => {
-          setLimit(size);
-          setPage(1);
-        }}
-        page={page}
-        onPageChange={setPage}
+        onRecordsPerPageChange={paginationSorting.setLimit}
+        page={paginationSorting.page}
+        onPageChange={paginationSorting.setPage}
         totalRecords={data?.pagination?.total}
-        sorting={
-          sortBy
-            ? [
-                {
-                  id: sortBy,
-                  desc: sortOrder === 'desc',
-                },
-              ]
-            : undefined
+        sorting={paginationSorting.sorting}
+        onSortingChange={(updater) =>
+          paginationSorting.setSorting(updater, 'createdAt')
         }
-        onSortingChange={(
-          updater:
-            | { id: string; desc: boolean }[]
-            | ((prev: { id: string; desc: boolean }[]) => {
-                id: string;
-                desc: boolean;
-              }[]),
-        ) => {
-          const newSorting =
-            typeof updater === 'function'
-              ? updater(
-                  sortBy ? [{ id: sortBy, desc: sortOrder === 'desc' }] : [],
-                )
-              : updater;
-          if (newSorting.length > 0) {
-            setSortBy(newSorting[0].id as 'name' | 'createdAt' | 'balance');
-            setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
-          } else {
-            setSortBy('createdAt');
-            setSortOrder('desc');
-          }
-          setPage(1);
-        }}
       />
 
-      {isDialogOpen && (
+      {dialog.isDialogOpen && (
         <AddEditAccountDialog
-          isOpen={isDialogOpen}
-          onClose={handleDialogClose}
-          account={selectedAccount}
+          isOpen={dialog.isDialogOpen}
+          onClose={dialog.handleClose}
+          account={dialog.selectedItem}
           onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
         />
       )}
 
-      {isDeleteDialogOpen && accountToDelete && (
-        <Modal
-          opened={isDeleteDialogOpen}
-          onClose={handleDeleteDialogClose}
+      {deleteHandler.isDeleteDialogOpen && deleteHandler.itemToDelete && (
+        <DeleteConfirmationModal
+          isOpen={deleteHandler.isDeleteDialogOpen}
+          onClose={deleteHandler.handleDeleteDialogClose}
+          onConfirm={handleConfirmDelete}
+          isLoading={isSubmitting}
           title={t('accounts.deleteConfirmTitle')}
-          size="md"
-        >
-          <Text mb="md">
-            {t('accounts.deleteConfirmMessage')}
-            <br />
-            <strong>{accountToDelete.name}</strong>
-          </Text>
-          <Group justify="flex-end" mt="md">
-            <Button
-              variant="outline"
-              onClick={handleDeleteDialogClose}
-              disabled={isSubmitting}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              color="red"
-              onClick={handleConfirmDelete}
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? t('common.deleting', { defaultValue: 'Deleting...' })
-                : t('common.delete')}
-            </Button>
-          </Group>
-        </Modal>
+          message={t('accounts.deleteConfirmMessage')}
+          itemName={deleteHandler.itemToDelete.name}
+        />
       )}
     </PageContainer>
   );

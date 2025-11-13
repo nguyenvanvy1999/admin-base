@@ -1,4 +1,5 @@
 import AddEditCategoryDialog from '@client/components/AddEditCategoryDialog';
+import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
 import {
   getCategoryIcon,
   getCategoryLabel,
@@ -9,11 +10,11 @@ import {
   useUpdateCategoryMutation,
 } from '@client/hooks/mutations/useCategoryMutations';
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
+import { usePageDelete } from '@client/hooks/usePageDelete';
+import { usePageDialog } from '@client/hooks/usePageDialog';
 import {
   ActionIcon,
   Button,
-  Group,
-  Modal,
   MultiSelect,
   Text,
   TextInput,
@@ -110,13 +111,10 @@ const filterTree = (
 
 const CategoryPage = () => {
   const { t } = useTranslation();
-  const [selectedCategory, setSelectedCategory] =
-    useState<CategoryTreeResponse | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] =
-    useState<CategoryTreeResponse | null>(null);
   const [parentIdForNew, setParentIdForNew] = useState<string | null>(null);
+
+  const dialog = usePageDialog<CategoryTreeResponse>();
+  const deleteHandler = usePageDelete<CategoryTreeResponse>();
   const [typeFilterInput, setTypeFilterInput] = useState<CategoryType[]>([]);
   const [typeFilter, setTypeFilter] = useState<CategoryType[]>([]);
   const [searchInput, setSearchInput] = useState('');
@@ -171,46 +169,36 @@ const CategoryPage = () => {
   }, [data]);
 
   const handleAddRoot = () => {
-    setSelectedCategory(null);
+    dialog.handleAdd();
     setParentIdForNew(null);
-    setIsDialogOpen(true);
   };
 
   const handleAddChild = (categoryId: string) => {
     const category = categoryMap.get(categoryId);
     if (category) {
-      setSelectedCategory(null);
+      dialog.handleAdd();
       setParentIdForNew(categoryId);
-      setIsDialogOpen(true);
     }
   };
 
   const handleEdit = (categoryId: string) => {
     const category = categoryMap.get(categoryId);
     if (category) {
-      setSelectedCategory(category);
+      dialog.handleEdit(category);
       setParentIdForNew(null);
-      setIsDialogOpen(true);
     }
   };
 
   const handleDelete = (categoryId: string) => {
     const category = categoryMap.get(categoryId);
     if (category) {
-      setCategoryToDelete(category);
-      setIsDeleteDialogOpen(true);
+      deleteHandler.handleDelete(category);
     }
   };
 
   const handleDialogClose = () => {
-    setIsDialogOpen(false);
-    setSelectedCategory(null);
+    dialog.handleClose();
     setParentIdForNew(null);
-  };
-
-  const handleDeleteDialogClose = () => {
-    setIsDeleteDialogOpen(false);
-    setCategoryToDelete(null);
   };
 
   const handleSubmit = async (formData: IUpsertCategoryDto) => {
@@ -230,14 +218,7 @@ const CategoryPage = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (categoryToDelete) {
-      try {
-        await deleteMutation.mutateAsync(categoryToDelete.id);
-        handleDeleteDialogClose();
-      } catch {
-        // Error is already handled by mutation's onError callback
-      }
-    }
+    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
   };
 
   const hasActiveFilters = useMemo(() => {
@@ -494,11 +475,11 @@ const CategoryPage = () => {
           )}
         </div>
 
-        {isDialogOpen && (
+        {dialog.isDialogOpen && (
           <AddEditCategoryDialog
-            isOpen={isDialogOpen}
+            isOpen={dialog.isDialogOpen}
             onClose={handleDialogClose}
-            category={selectedCategory}
+            category={dialog.selectedItem}
             parentId={parentIdForNew}
             parentType={
               parentIdForNew
@@ -510,37 +491,16 @@ const CategoryPage = () => {
           />
         )}
 
-        {isDeleteDialogOpen && categoryToDelete && (
-          <Modal
-            opened={isDeleteDialogOpen}
-            onClose={handleDeleteDialogClose}
+        {deleteHandler.isDeleteDialogOpen && deleteHandler.itemToDelete && (
+          <DeleteConfirmationModal
+            isOpen={deleteHandler.isDeleteDialogOpen}
+            onClose={deleteHandler.handleDeleteDialogClose}
+            onConfirm={handleConfirmDelete}
+            isLoading={isSubmitting}
             title={t('categories.deleteConfirmTitle')}
-            size="md"
-          >
-            <Text mb="md">
-              {t('categories.deleteConfirmMessage')}
-              <br />
-              <strong>{categoryToDelete.name}</strong>
-            </Text>
-            <Group justify="flex-end" mt="md">
-              <Button
-                variant="outline"
-                onClick={handleDeleteDialogClose}
-                disabled={isSubmitting}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
-                color="red"
-                onClick={handleConfirmDelete}
-                disabled={isSubmitting}
-              >
-                {isSubmitting
-                  ? t('common.deleting', { defaultValue: 'Deleting...' })
-                  : t('common.delete')}
-              </Button>
-            </Group>
-          </Modal>
+            message={t('categories.deleteConfirmMessage')}
+            itemName={deleteHandler.itemToDelete.name}
+          />
         )}
       </div>
     </div>

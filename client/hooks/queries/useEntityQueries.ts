@@ -1,9 +1,8 @@
-import type { FormComponentRef } from '@client/components/FormComponent';
 import { entityService } from '@client/services';
-import { DeferredPromise } from '@open-draft/deferred-promise';
 import { EntityType } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
+import { createQueryHook } from './createQueryHook';
 
 const filterSchema = z.object({
   search: z.string().optional(),
@@ -21,48 +20,29 @@ type ListEntitiesQuery = {
   sortOrder?: 'asc' | 'desc';
 };
 
-export const useEntitiesQuery = (
-  queryParams: {
+export const useEntitiesQuery = createQueryHook<
+  typeof filterSchema,
+  FilterFormValue,
+  {
     page?: number;
     limit?: number;
     sortBy?: 'name' | 'type' | 'createdAt';
     sortOrder?: 'asc' | 'desc';
   },
-  formRef: React.RefObject<FormComponentRef | null>,
-  handleSubmit: (
-    onValid: (data: FilterFormValue) => void,
-    onInvalid?: (errors: any) => void,
-  ) => (e?: React.BaseSyntheticEvent) => Promise<void>,
-) => {
-  return useQuery({
-    queryKey: ['entities', queryParams],
-    queryFn: async () => {
-      let query: ListEntitiesQuery = {
-        ...queryParams,
-      };
-
-      if (formRef.current) {
-        const valueDeferred = new DeferredPromise<FilterFormValue>();
-        formRef.current.submit(
-          handleSubmit(valueDeferred.resolve, valueDeferred.reject),
-        );
-
-        const criteria = await valueDeferred;
-
-        query = {
-          ...query,
-          search: criteria.search?.trim() || undefined,
-          type:
-            criteria.type && criteria.type.length > 0
-              ? (criteria.type as EntityType[])
-              : undefined,
-        };
-      }
-
-      return entityService.listEntities(query);
-    },
-  });
-};
+  ListEntitiesQuery,
+  any
+>({
+  queryKey: 'entities',
+  serviceMethod: (query) => entityService.listEntities(query),
+  filterTransformer: (criteria, query) => ({
+    ...query,
+    search: criteria.search?.trim() || undefined,
+    type:
+      criteria.type && criteria.type.length > 0
+        ? (criteria.type as EntityType[])
+        : undefined,
+  }),
+});
 
 export const useEntitiesOptionsQuery = () => {
   return useQuery({

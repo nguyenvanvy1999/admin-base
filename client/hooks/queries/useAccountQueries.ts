@@ -1,9 +1,8 @@
-import type { FormComponentRef } from '@client/components/FormComponent';
 import { accountService } from '@client/services';
-import { DeferredPromise } from '@open-draft/deferred-promise';
 import { AccountType } from '@server/generated/prisma/enums';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
+import { createQueryHook } from './createQueryHook';
 
 const filterSchema = z.object({
   search: z.string().optional(),
@@ -23,52 +22,33 @@ type ListAccountsQuery = {
   sortOrder?: 'asc' | 'desc';
 };
 
-export const useAccountsQuery = (
-  queryParams: {
+export const useAccountsQuery = createQueryHook<
+  typeof filterSchema,
+  FilterFormValue,
+  {
     page?: number;
     limit?: number;
     sortBy?: 'name' | 'createdAt' | 'balance';
     sortOrder?: 'asc' | 'desc';
   },
-  formRef: React.RefObject<FormComponentRef | null>,
-  handleSubmit: (
-    onValid: (data: FilterFormValue) => void,
-    onInvalid?: (errors: any) => void,
-  ) => (e?: React.BaseSyntheticEvent) => Promise<void>,
-) => {
-  return useQuery({
-    queryKey: ['accounts', queryParams],
-    queryFn: async () => {
-      let query: ListAccountsQuery = {
-        ...queryParams,
-      };
-
-      if (formRef.current) {
-        const valueDeferred = new DeferredPromise<FilterFormValue>();
-        formRef.current.submit(
-          handleSubmit(valueDeferred.resolve, valueDeferred.reject),
-        );
-
-        const criteria = await valueDeferred;
-
-        query = {
-          ...query,
-          search: criteria.search?.trim() || undefined,
-          type:
-            criteria.type && criteria.type.length > 0
-              ? (criteria.type as AccountType[])
-              : undefined,
-          currencyId:
-            criteria.currencyId && criteria.currencyId.length > 0
-              ? criteria.currencyId
-              : undefined,
-        };
-      }
-
-      return accountService.listAccounts(query);
-    },
-  });
-};
+  ListAccountsQuery,
+  any
+>({
+  queryKey: 'accounts',
+  serviceMethod: (query) => accountService.listAccounts(query),
+  filterTransformer: (criteria, query) => ({
+    ...query,
+    search: criteria.search?.trim() || undefined,
+    type:
+      criteria.type && criteria.type.length > 0
+        ? (criteria.type as AccountType[])
+        : undefined,
+    currencyId:
+      criteria.currencyId && criteria.currencyId.length > 0
+        ? criteria.currencyId
+        : undefined,
+  }),
+});
 
 export const useAccountsOptionsQuery = () => {
   return useQuery({

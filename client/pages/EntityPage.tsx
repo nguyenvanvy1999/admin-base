@@ -20,6 +20,7 @@ import {
 } from '@client/hooks/queries/useEntityQueries';
 import { usePageDelete } from '@client/hooks/usePageDelete';
 import { usePageDialog } from '@client/hooks/usePageDialog';
+import { usePaginationSorting } from '@client/hooks/usePaginationSorting';
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Group, MultiSelect, TextInput } from '@mantine/core';
 import {
@@ -28,7 +29,7 @@ import {
   ListEntitiesQueryDto,
 } from '@server/dto/entity.dto';
 import { EntityType } from '@server/generated/prisma/enums';
-import { useMemo, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const filterSchema = ListEntitiesQueryDto.pick({
@@ -44,62 +45,35 @@ const defaultFilterValues: FilterFormValue = {
 const EntityPage = () => {
   const { t } = useTranslation();
   const formRef = useRef<FormComponentRef>(null);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
-  const [sortBy, setSortBy] = useState<'name' | 'type' | 'createdAt'>(
-    'createdAt',
+
+  const paginationSorting = usePaginationSorting<'name' | 'type' | 'createdAt'>(
+    {
+      defaultPage: 1,
+      defaultLimit: 20,
+      defaultSortBy: 'createdAt',
+      defaultSortOrder: 'desc',
+    },
   );
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const {
-    isDialogOpen,
-    selectedItem: selectedEntity,
-    resetTrigger,
-    handleAdd,
-    handleEdit,
-    handleClose: handleDialogClose,
-    handleSaveAndAdd,
-  } = usePageDialog<EntityResponse>();
+  const dialog = usePageDialog<EntityResponse>();
 
-  const {
-    isDeleteDialogOpen,
-    itemToDelete: entityToDelete,
-    handleDelete,
-    handleDeleteDialogClose,
-    handleConfirmDelete: handleConfirmDeleteBase,
-    isDeleteManyDialogOpen,
-    itemsToDeleteMany: entitiesToDeleteMany,
-    selectedRecords,
-    setSelectedRecords,
-    handleDeleteMany,
-    handleDeleteManyDialogClose,
-    handleConfirmDeleteMany: handleConfirmDeleteManyBase,
-  } = usePageDelete<EntityResponse>();
+  const deleteHandler = usePageDelete<EntityResponse>();
 
-  const { handleSubmit, control, reset } = useZodForm({
+  const form = useZodForm({
     zod: filterSchema,
     defaultValues: defaultFilterValues,
   });
 
-  const queryParams = useMemo(
-    () => ({
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-    }),
-    [page, limit, sortBy, sortOrder],
+  const { data, isLoading, refetch } = useEntitiesQuery(
+    paginationSorting.queryParams,
+    formRef,
+    form.handleSubmit,
   );
 
-  const { data, isLoading, refetch } = useEntitiesQuery(
-    queryParams,
-    formRef,
-    handleSubmit,
-  );
   const createMutation = useCreateEntityMutation();
   const updateMutation = useUpdateEntityMutation();
   const deleteMutation = useDeleteEntityMutation();
-  const deleteManyMutation = useDeleteManyEntitiesMutation();
+  const deleteManyMutation = useDeleteManyEntitiesMutation!();
 
   const handleSubmitForm = async (
     formData: IUpsertEntityDto,
@@ -112,21 +86,21 @@ const EntityPage = () => {
         await createMutation.mutateAsync(formData);
       }
       if (saveAndAdd) {
-        handleSaveAndAdd();
+        dialog.handleSaveAndAdd();
       } else {
-        handleDialogClose();
+        dialog.handleClose();
       }
     } catch {
       // Error is already handled by mutation's onError callback
     }
   };
 
-  const handleConfirmDelete = () => {
-    handleConfirmDeleteBase(deleteMutation.mutateAsync);
+  const handleConfirmDelete = async () => {
+    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
   };
 
-  const handleConfirmDeleteMany = () => {
-    handleConfirmDeleteManyBase(deleteManyMutation.mutateAsync);
+  const handleConfirmDeleteMany = async () => {
+    await deleteHandler.handleConfirmDeleteMany(deleteManyMutation.mutateAsync);
   };
 
   const handleSearch = () => {
@@ -145,7 +119,7 @@ const EntityPage = () => {
         <FormComponent ref={formRef}>
           <Group>
             <ZodFormController
-              control={control}
+              control={form.control}
               name="search"
               render={({ field, fieldState: { error } }) => (
                 <TextInput
@@ -157,7 +131,7 @@ const EntityPage = () => {
               )}
             />
             <ZodFormController
-              control={control}
+              control={form.control}
               name="type"
               render={({ field, fieldState: { error } }) => (
                 <MultiSelect
@@ -183,97 +157,73 @@ const EntityPage = () => {
         </FormComponent>
       }
       buttonGroups={
-        <Button onClick={handleAdd} disabled={isSubmitting}>
+        <Button onClick={dialog.handleAdd} disabled={isSubmitting}>
           {t('entities.addEntity')}
         </Button>
       }
       onSearch={handleSearch}
-      onReset={() => reset(defaultFilterValues)}
+      onReset={() => form.reset(defaultFilterValues)}
     >
       <EntityTable
         entities={data?.entities || []}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onDeleteMany={handleDeleteMany}
+        onEdit={dialog.handleEdit}
+        onDelete={deleteHandler.handleDelete}
+        onDeleteMany={deleteHandler.handleDeleteMany}
         isLoading={isLoading}
-        recordsPerPage={limit}
+        recordsPerPage={paginationSorting.limit}
         recordsPerPageOptions={[10, 20, 50, 100]}
-        onRecordsPerPageChange={(size) => {
-          setLimit(size);
-          setPage(1);
-        }}
-        page={page}
-        onPageChange={setPage}
+        onRecordsPerPageChange={paginationSorting.setLimit}
+        page={paginationSorting.page}
+        onPageChange={paginationSorting.setPage}
         totalRecords={data?.pagination?.total}
-        sorting={
-          sortBy
-            ? [
-                {
-                  id: sortBy,
-                  desc: sortOrder === 'desc',
-                },
-              ]
-            : undefined
+        sorting={paginationSorting.sorting}
+        onSortingChange={(updater) =>
+          paginationSorting.setSorting(updater, 'createdAt')
         }
-        onSortingChange={(updater) => {
-          const newSorting =
-            typeof updater === 'function'
-              ? updater(
-                  sortBy ? [{ id: sortBy, desc: sortOrder === 'desc' }] : [],
-                )
-              : updater;
-          if (newSorting.length > 0) {
-            setSortBy(newSorting[0].id as 'name' | 'type' | 'createdAt');
-            setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
-          } else {
-            setSortBy('createdAt');
-            setSortOrder('desc');
-          }
-          setPage(1);
-        }}
-        selectedRecords={selectedRecords}
-        onSelectedRecordsChange={setSelectedRecords}
+        selectedRecords={deleteHandler.selectedRecords}
+        onSelectedRecordsChange={deleteHandler.setSelectedRecords}
       />
 
-      {isDialogOpen && (
+      {dialog.isDialogOpen && (
         <AddEditEntityDialog
-          isOpen={isDialogOpen}
-          onClose={handleDialogClose}
-          entity={selectedEntity}
+          isOpen={dialog.isDialogOpen}
+          onClose={dialog.handleClose}
+          entity={dialog.selectedItem}
           onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
-          resetTrigger={resetTrigger}
+          resetTrigger={dialog.resetTrigger}
         />
       )}
 
-      {isDeleteDialogOpen && entityToDelete && (
+      {deleteHandler.isDeleteDialogOpen && deleteHandler.itemToDelete && (
         <DeleteConfirmationModal
-          isOpen={isDeleteDialogOpen}
-          onClose={handleDeleteDialogClose}
+          isOpen={deleteHandler.isDeleteDialogOpen}
+          onClose={deleteHandler.handleDeleteDialogClose}
           onConfirm={handleConfirmDelete}
           isLoading={isSubmitting}
           title={t('entities.deleteConfirmTitle')}
           message={t('entities.deleteConfirmMessage')}
-          itemName={entityToDelete.name}
+          itemName={deleteHandler.itemToDelete.name}
         />
       )}
 
-      {isDeleteManyDialogOpen && entitiesToDeleteMany.length > 0 && (
-        <DeleteManyConfirmationModal
-          isOpen={isDeleteManyDialogOpen}
-          onClose={handleDeleteManyDialogClose}
-          onConfirm={handleConfirmDeleteMany}
-          isLoading={isSubmitting}
-          title={t('entities.deleteManyConfirmTitle', {
-            defaultValue: 'Delete Multiple Entities',
-          })}
-          message={t('entities.deleteManyConfirmMessage', {
-            defaultValue:
-              'Are you sure you want to delete {{count}} entity(ies)?',
-          })}
-          count={entitiesToDeleteMany.length}
-        />
-      )}
+      {deleteHandler.isDeleteManyDialogOpen &&
+        deleteHandler.itemsToDeleteMany.length > 0 && (
+          <DeleteManyConfirmationModal
+            isOpen={deleteHandler.isDeleteManyDialogOpen}
+            onClose={deleteHandler.handleDeleteManyDialogClose}
+            onConfirm={handleConfirmDeleteMany}
+            isLoading={isSubmitting}
+            title={t('entities.deleteManyConfirmTitle', {
+              defaultValue: 'Delete Multiple Entities',
+            })}
+            message={t('entities.deleteManyConfirmMessage', {
+              defaultValue:
+                'Are you sure you want to delete {{count}} entity(ies)?',
+            })}
+            count={deleteHandler.itemsToDeleteMany.length}
+          />
+        )}
     </PageContainer>
   );
 };

@@ -1,13 +1,21 @@
 import { useState } from 'react';
 
-type UsePageDeleteOptions<_TItem> = {
-  onDeleteCallback?: () => void;
-  onDeleteManyCallback?: () => void;
+type UsePageDeleteOptions<TItem extends { id: string }> = {
+  onDeleteCallback?: (item: TItem) => void;
+  onDeleteManyCallback?: (ids: string[]) => void;
+  onDeleteSuccessCallback?: (item: TItem) => void;
+  onDeleteManySuccessCallback?: (ids: string[]) => void;
+  onDeleteErrorCallback?: (error: unknown, item: TItem) => void;
+  onDeleteManyErrorCallback?: (error: unknown, ids: string[]) => void;
 };
 
 export function usePageDelete<TItem extends { id: string }>({
   onDeleteCallback,
   onDeleteManyCallback,
+  onDeleteSuccessCallback,
+  onDeleteManySuccessCallback,
+  onDeleteErrorCallback,
+  onDeleteManyErrorCallback,
 }: UsePageDeleteOptions<TItem> = {}) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<TItem | null>(null);
@@ -18,6 +26,7 @@ export function usePageDelete<TItem extends { id: string }>({
   const handleDelete = (item: TItem) => {
     setItemToDelete(item);
     setIsDeleteDialogOpen(true);
+    onDeleteCallback?.(item);
   };
 
   const handleDeleteDialogClose = () => {
@@ -28,20 +37,23 @@ export function usePageDelete<TItem extends { id: string }>({
   const handleConfirmDelete = async (
     deleteFn: (id: string) => Promise<unknown>,
   ) => {
-    if (itemToDelete) {
-      try {
-        await deleteFn(itemToDelete.id);
-        handleDeleteDialogClose();
-        onDeleteCallback?.();
-      } catch {
-        // Error is already handled by mutation's onError callback
-      }
+    if (!itemToDelete) return;
+
+    try {
+      await deleteFn(itemToDelete.id);
+      const deletedItem = itemToDelete;
+      handleDeleteDialogClose();
+      onDeleteSuccessCallback?.(deletedItem);
+    } catch (error) {
+      onDeleteErrorCallback?.(error, itemToDelete);
+      throw error;
     }
   };
 
   const handleDeleteMany = (ids: string[]) => {
     setItemsToDeleteMany(ids);
     setIsDeleteManyDialogOpen(true);
+    onDeleteManyCallback?.(ids);
   };
 
   const handleDeleteManyDialogClose = () => {
@@ -53,14 +65,16 @@ export function usePageDelete<TItem extends { id: string }>({
   const handleConfirmDeleteMany = async (
     deleteManyFn: (ids: string[]) => Promise<unknown>,
   ) => {
-    if (itemsToDeleteMany.length > 0) {
-      try {
-        await deleteManyFn(itemsToDeleteMany);
-        handleDeleteManyDialogClose();
-        onDeleteManyCallback?.();
-      } catch {
-        // Error is already handled by mutation's onError callback
-      }
+    if (itemsToDeleteMany.length === 0) return;
+
+    const idsToDelete = [...itemsToDeleteMany];
+    try {
+      await deleteManyFn(idsToDelete);
+      handleDeleteManyDialogClose();
+      onDeleteManySuccessCallback?.(idsToDelete);
+    } catch (error) {
+      onDeleteManyErrorCallback?.(error, idsToDelete);
+      throw error;
     }
   };
 

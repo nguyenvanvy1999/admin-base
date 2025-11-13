@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { FieldValues } from 'react-hook-form';
 import type { UseZodFormReturn } from './useZodForm';
 
@@ -10,6 +10,7 @@ type UseDialogFormOptions<TItem, TFormData extends FieldValues> = {
   defaultValues: TFormData;
   getItemValues: (item: TItem) => Partial<TFormData>;
   onSubmit: (data: TFormData, saveAndAdd?: boolean) => void;
+  onReset?: () => void;
 };
 
 export function useDialogForm<TItem, TFormData extends FieldValues>({
@@ -20,26 +21,51 @@ export function useDialogForm<TItem, TFormData extends FieldValues>({
   defaultValues,
   getItemValues,
   onSubmit,
+  onReset,
 }: UseDialogFormOptions<TItem, TFormData>) {
   const { reset, handleSubmit } = form;
   const isEditMode = !!item;
+  const previousResetTrigger = useRef(resetTrigger ?? 0);
+  const previousIsOpen = useRef(isOpen);
+  const previousItemId = useRef<string | null>(null);
+
+  const currentItemId =
+    item && typeof item === 'object' && 'id' in item
+      ? (item.id as string)
+      : null;
 
   useEffect(() => {
-    if (item) {
+    if (!isOpen) {
+      previousIsOpen.current = false;
+      return;
+    }
+
+    if (item && currentItemId !== previousItemId.current) {
+      previousItemId.current = currentItemId;
       reset({
         ...defaultValues,
         ...getItemValues(item),
       });
-    } else {
+    } else if (!item && previousIsOpen.current !== isOpen) {
+      previousItemId.current = null;
       reset(defaultValues);
     }
-  }, [item, isOpen, reset, defaultValues, getItemValues]);
+
+    previousIsOpen.current = isOpen;
+  }, [item, isOpen, reset, defaultValues, getItemValues, currentItemId]);
 
   useEffect(() => {
-    if (resetTrigger && resetTrigger > 0 && !item && isOpen) {
+    if (
+      resetTrigger !== undefined &&
+      resetTrigger > previousResetTrigger.current &&
+      !item &&
+      isOpen
+    ) {
+      previousResetTrigger.current = resetTrigger;
       reset(defaultValues);
+      onReset?.();
     }
-  }, [resetTrigger, item, isOpen, reset, defaultValues]);
+  }, [resetTrigger, item, isOpen, reset, defaultValues, onReset]);
 
   const onSubmitForm = handleSubmit((data) => {
     onSubmit(data, false);

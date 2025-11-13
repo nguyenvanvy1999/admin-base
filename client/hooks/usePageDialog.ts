@@ -1,11 +1,21 @@
 import { useState } from 'react';
 
-type UsePageDialogOptions<_TItem> = {
+type UsePageDialogOptions<TItem> = {
   onCloseCallback?: () => void;
+  onOpenCallback?: () => void;
+  onAddCallback?: () => void;
+  onEditCallback?: (item: TItem) => void;
+  onSuccessCallback?: (item: TItem | null) => void;
+  onErrorCallback?: (error: unknown) => void;
 };
 
 export function usePageDialog<TItem>({
   onCloseCallback,
+  onOpenCallback,
+  onAddCallback,
+  onEditCallback,
+  onSuccessCallback,
+  onErrorCallback,
 }: UsePageDialogOptions<TItem> = {}) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<TItem | null>(null);
@@ -14,11 +24,15 @@ export function usePageDialog<TItem>({
   const handleAdd = () => {
     setSelectedItem(null);
     setIsDialogOpen(true);
+    onAddCallback?.();
+    onOpenCallback?.();
   };
 
   const handleEdit = (item: TItem) => {
     setSelectedItem(item);
     setIsDialogOpen(true);
+    onEditCallback?.(item);
+    onOpenCallback?.();
   };
 
   const handleClose = () => {
@@ -32,6 +46,14 @@ export function usePageDialog<TItem>({
     setResetTrigger((prev) => prev + 1);
   };
 
+  const handleSuccess = (item: TItem | null = null) => {
+    onSuccessCallback?.(item);
+  };
+
+  const handleError = (error: unknown) => {
+    onErrorCallback?.(error);
+  };
+
   return {
     isDialogOpen,
     selectedItem,
@@ -40,5 +62,7 @@ export function usePageDialog<TItem>({
     handleEdit,
     handleClose,
     handleSaveAndAdd,
+    handleSuccess,
+    handleError,
   };
 }

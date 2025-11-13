@@ -1,5 +1,6 @@
 import AddEditTransactionDialog from '@client/components/AddEditTransactionDialog';
 import CategoryMultiSelect from '@client/components/CategoryMultiSelect';
+import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
 import {
   FormComponent,
   type FormComponentRef,
@@ -19,14 +20,15 @@ import {
   type FilterFormValue,
   useTransactionsQuery,
 } from '@client/hooks/queries/useTransactionQueries';
+import { usePageDelete } from '@client/hooks/usePageDelete';
+import { usePageDialog } from '@client/hooks/usePageDialog';
+import { usePaginationSorting } from '@client/hooks/usePaginationSorting';
 import { useZodForm } from '@client/hooks/useZodForm';
 import {
   Button,
   Group,
-  Modal,
   MultiSelect,
   NumberFormatter,
-  Text,
   TextInput,
   useMantineColorScheme,
 } from '@mantine/core';
@@ -36,7 +38,7 @@ import type {
 } from '@server/dto/transaction.dto';
 import { ListTransactionsQueryDto } from '@server/dto/transaction.dto';
 import { TransactionType } from '@server/generated/prisma/enums';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const filterSchema = ListTransactionsQueryDto.pick({
@@ -59,39 +61,31 @@ const TransactionPage = () => {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   const formRef = useRef<FormComponentRef>(null);
-  const [selectedTransaction, setSelectedTransaction] =
-    useState<TransactionDetail | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [transactionToDelete, setTransactionToDelete] =
-    useState<TransactionDetail | null>(null);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
-  const [sortBy, setSortBy] = useState<
-    'date' | 'amount' | 'type' | 'accountId'
-  >('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const { handleSubmit, control, reset } = useZodForm({
+  const paginationSorting = usePaginationSorting<
+    'date' | 'amount' | 'type' | 'accountId'
+  >({
+    defaultPage: 1,
+    defaultLimit: 20,
+    defaultSortBy: 'date',
+    defaultSortOrder: 'desc',
+  });
+
+  const dialog = usePageDialog<TransactionDetail>();
+
+  const deleteHandler = usePageDelete<TransactionDetail>();
+
+  const form = useZodForm({
     zod: filterSchema,
     defaultValues: defaultFilterValues,
   });
 
-  const queryParams = useMemo(
-    () => ({
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-    }),
-    [page, limit, sortBy, sortOrder],
+  const { data, isLoading, refetch } = useTransactionsQuery(
+    paginationSorting.queryParams,
+    formRef,
+    form.handleSubmit,
   );
 
-  const { data, isLoading, refetch } = useTransactionsQuery(
-    queryParams,
-    formRef,
-    handleSubmit,
-  );
   const { data: accountsData } = useAccountsOptionsQuery();
   const { data: categoriesData } = useCategoriesQuery({});
   const { data: entitiesData } = useEntitiesOptionsQuery();
@@ -104,50 +98,26 @@ const TransactionPage = () => {
   const updateMutation = useUpdateTransactionMutation();
   const deleteMutation = useDeleteTransactionMutation();
 
-  const handleAdd = () => {
-    setSelectedTransaction(null);
-    setIsDialogOpen(true);
-  };
-
-  const handleEdit = (transaction: TransactionDetail) => {
-    setSelectedTransaction(transaction);
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = (transaction: TransactionDetail) => {
-    setTransactionToDelete(transaction);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setIsDialogOpen(false);
-    setSelectedTransaction(null);
-  };
-
-  const handleDeleteDialogClose = () => {
-    setIsDeleteDialogOpen(false);
-    setTransactionToDelete(null);
-  };
-
   const handleSubmitForm = async (
     formData: IUpsertTransaction,
     saveAndAdd: boolean,
   ) => {
-    if (formData.id) {
-      await updateMutation.mutateAsync(formData);
-    } else {
-      await createMutation.mutateAsync(formData);
-    }
-    if (!saveAndAdd) {
-      handleDialogClose();
+    try {
+      if (formData.id) {
+        await updateMutation.mutateAsync(formData);
+      } else {
+        await createMutation.mutateAsync(formData);
+      }
+      if (!saveAndAdd) {
+        dialog.handleClose();
+      }
+    } catch {
+      // Error is already handled by mutation's onError callback
     }
   };
 
   const handleConfirmDelete = async () => {
-    if (transactionToDelete) {
-      await deleteMutation.mutateAsync(transactionToDelete.id);
-      handleDeleteDialogClose();
-    }
+    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
   };
 
   const handleSearch = () => {
@@ -211,7 +181,7 @@ const TransactionPage = () => {
         <FormComponent ref={formRef}>
           <Group>
             <ZodFormController
-              control={control}
+              control={form.control}
               name="search"
               render={({ field, fieldState: { error } }) => (
                 <TextInput
@@ -223,7 +193,7 @@ const TransactionPage = () => {
               )}
             />
             <ZodFormController
-              control={control}
+              control={form.control}
               name="types"
               render={({ field, fieldState: { error } }) => (
                 <MultiSelect
@@ -276,7 +246,7 @@ const TransactionPage = () => {
               )}
             />
             <ZodFormController
-              control={control}
+              control={form.control}
               name="accountIds"
               render={({ field, fieldState: { error } }) => (
                 <MultiSelect
@@ -290,7 +260,7 @@ const TransactionPage = () => {
               )}
             />
             <ZodFormController
-              control={control}
+              control={form.control}
               name="categoryIds"
               render={({ field, fieldState: { error } }) => (
                 <CategoryMultiSelect
@@ -303,7 +273,7 @@ const TransactionPage = () => {
               )}
             />
             <ZodFormController
-              control={control}
+              control={form.control}
               name="entityIds"
               render={({ field, fieldState: { error } }) => (
                 <MultiSelect
@@ -323,70 +293,36 @@ const TransactionPage = () => {
         </FormComponent>
       }
       buttonGroups={
-        <Button onClick={handleAdd} disabled={isSubmitting}>
+        <Button onClick={dialog.handleAdd} disabled={isSubmitting}>
           {t('transactions.addTransaction')}
         </Button>
       }
       onSearch={handleSearch}
-      onReset={() => reset(defaultFilterValues)}
+      onReset={() => form.reset(defaultFilterValues)}
       stats={stats}
     >
       <TransactionTable
         transactions={data?.transactions || []}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onEdit={dialog.handleEdit}
+        onDelete={deleteHandler.handleDelete}
         isLoading={isLoading}
-        recordsPerPage={limit}
+        recordsPerPage={paginationSorting.limit}
         recordsPerPageOptions={[10, 20, 50, 100]}
-        onRecordsPerPageChange={(size) => {
-          setLimit(size);
-          setPage(1);
-        }}
-        page={page}
-        onPageChange={setPage}
+        onRecordsPerPageChange={paginationSorting.setLimit}
+        page={paginationSorting.page}
+        onPageChange={paginationSorting.setPage}
         totalRecords={data?.pagination?.total}
-        sorting={
-          sortBy
-            ? [
-                {
-                  id: sortBy,
-                  desc: sortOrder === 'desc',
-                },
-              ]
-            : undefined
+        sorting={paginationSorting.sorting}
+        onSortingChange={(updater) =>
+          paginationSorting.setSorting(updater, 'date')
         }
-        onSortingChange={(
-          updater:
-            | { id: string; desc: boolean }[]
-            | ((prev: { id: string; desc: boolean }[]) => {
-                id: string;
-                desc: boolean;
-              }[]),
-        ) => {
-          const newSorting =
-            typeof updater === 'function'
-              ? updater(
-                  sortBy ? [{ id: sortBy, desc: sortOrder === 'desc' }] : [],
-                )
-              : updater;
-          if (newSorting.length > 0) {
-            setSortBy(
-              newSorting[0].id as 'date' | 'amount' | 'type' | 'accountId',
-            );
-            setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
-          } else {
-            setSortBy('date');
-            setSortOrder('desc');
-          }
-          setPage(1);
-        }}
       />
 
-      {isDialogOpen && (
+      {dialog.isDialogOpen && (
         <AddEditTransactionDialog
-          isOpen={isDialogOpen}
-          onClose={handleDialogClose}
-          transaction={selectedTransaction}
+          isOpen={dialog.isDialogOpen}
+          onClose={dialog.handleClose}
+          transaction={dialog.selectedItem}
           onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
           accounts={accounts}
@@ -395,40 +331,16 @@ const TransactionPage = () => {
         />
       )}
 
-      {isDeleteDialogOpen && transactionToDelete && (
-        <Modal
-          opened={isDeleteDialogOpen}
-          onClose={handleDeleteDialogClose}
+      {deleteHandler.isDeleteDialogOpen && deleteHandler.itemToDelete && (
+        <DeleteConfirmationModal
+          isOpen={deleteHandler.isDeleteDialogOpen}
+          onClose={deleteHandler.handleDeleteDialogClose}
+          onConfirm={handleConfirmDelete}
+          isLoading={isSubmitting}
           title={t('transactions.deleteConfirmTitle')}
-          size="md"
-        >
-          <Text mb="md">
-            {t('transactions.deleteConfirmMessage')}
-            <br />
-            <strong>
-              {transactionToDelete.amount}{' '}
-              {transactionToDelete.account.currency.symbol}
-            </strong>
-          </Text>
-          <Group justify="flex-end" mt="md">
-            <Button
-              variant="outline"
-              onClick={handleDeleteDialogClose}
-              disabled={isSubmitting}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              color="red"
-              onClick={handleConfirmDelete}
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? t('common.deleting', { defaultValue: 'Deleting...' })
-                : t('common.delete')}
-            </Button>
-          </Group>
-        </Modal>
+          message={t('transactions.deleteConfirmMessage')}
+          itemName={`${deleteHandler.itemToDelete.amount} ${deleteHandler.itemToDelete.account.currency.symbol}`}
+        />
       )}
     </PageContainer>
   );

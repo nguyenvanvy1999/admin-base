@@ -20,6 +20,7 @@ import {
 } from '@client/hooks/queries/useTagQueries';
 import { usePageDelete } from '@client/hooks/usePageDelete';
 import { usePageDialog } from '@client/hooks/usePageDialog';
+import { usePaginationSorting } from '@client/hooks/usePaginationSorting';
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Group, TextInput } from '@mantine/core';
 import {
@@ -27,7 +28,7 @@ import {
   ListTagsQueryDto,
   type TagResponse,
 } from '@server/dto/tag.dto';
-import { useMemo, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const filterSchema = ListTagsQueryDto.pick({ search: true });
@@ -39,60 +40,33 @@ const defaultFilterValues: FilterFormValue = {
 const TagPage = () => {
   const { t } = useTranslation();
   const formRef = useRef<FormComponentRef>(null);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
-  const [sortBy, setSortBy] = useState<'name' | 'createdAt'>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const {
-    isDialogOpen,
-    selectedItem: selectedTag,
-    resetTrigger,
-    handleAdd,
-    handleEdit,
-    handleClose: handleDialogClose,
-    handleSaveAndAdd,
-  } = usePageDialog<TagResponse>();
+  const paginationSorting = usePaginationSorting<'name' | 'createdAt'>({
+    defaultPage: 1,
+    defaultLimit: 20,
+    defaultSortBy: 'createdAt',
+    defaultSortOrder: 'desc',
+  });
 
-  const {
-    isDeleteDialogOpen,
-    itemToDelete: tagToDelete,
-    handleDelete,
-    handleDeleteDialogClose,
-    handleConfirmDelete: handleConfirmDeleteBase,
-    isDeleteManyDialogOpen,
-    itemsToDeleteMany: tagsToDeleteMany,
-    selectedRecords,
-    setSelectedRecords,
-    handleDeleteMany,
-    handleDeleteManyDialogClose,
-    handleConfirmDeleteMany: handleConfirmDeleteManyBase,
-  } = usePageDelete<TagResponse>();
+  const dialog = usePageDialog<TagResponse>();
 
-  const { handleSubmit, control, reset } = useZodForm({
+  const deleteHandler = usePageDelete<TagResponse>();
+
+  const form = useZodForm({
     zod: filterSchema,
     defaultValues: defaultFilterValues,
   });
 
-  const queryParams = useMemo(
-    () => ({
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-    }),
-    [page, limit, sortBy, sortOrder],
+  const { data, isLoading, refetch } = useTagsQuery(
+    paginationSorting.queryParams,
+    formRef,
+    form.handleSubmit,
   );
 
-  const { data, isLoading, refetch } = useTagsQuery(
-    queryParams,
-    formRef,
-    handleSubmit,
-  );
   const createMutation = useCreateTagMutation();
   const updateMutation = useUpdateTagMutation();
   const deleteMutation = useDeleteTagMutation();
-  const deleteManyMutation = useDeleteManyTagsMutation();
+  const deleteManyMutation = useDeleteManyTagsMutation!();
 
   const handleSubmitForm = async (
     formData: IUpsertTagDto,
@@ -107,21 +81,21 @@ const TagPage = () => {
         await createMutation.mutateAsync(formData);
       }
       if (saveAndAdd) {
-        handleSaveAndAdd();
+        dialog.handleSaveAndAdd();
       } else {
-        handleDialogClose();
+        dialog.handleClose();
       }
     } catch {
       // Error is already handled by mutation's onError callback
     }
   };
 
-  const handleConfirmDelete = () => {
-    handleConfirmDeleteBase(deleteMutation.mutateAsync);
+  const handleConfirmDelete = async () => {
+    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
   };
 
-  const handleConfirmDeleteMany = () => {
-    handleConfirmDeleteManyBase(deleteManyMutation.mutateAsync);
+  const handleConfirmDeleteMany = async () => {
+    await deleteHandler.handleConfirmDeleteMany(deleteManyMutation.mutateAsync);
   };
 
   const handleSearch = () => {
@@ -140,7 +114,7 @@ const TagPage = () => {
         <FormComponent ref={formRef}>
           <Group>
             <ZodFormController
-              control={control}
+              control={form.control}
               name="search"
               render={({ field, fieldState: { error } }) => (
                 <TextInput
@@ -155,103 +129,72 @@ const TagPage = () => {
         </FormComponent>
       }
       buttonGroups={
-        <Button onClick={handleAdd} disabled={isSubmitting}>
+        <Button onClick={dialog.handleAdd} disabled={isSubmitting}>
           {t('tags.addTag')}
         </Button>
       }
       onSearch={handleSearch}
-      onReset={() => reset(defaultFilterValues)}
+      onReset={() => form.reset(defaultFilterValues)}
     >
       <TagTable
         tags={data?.tags || []}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onDeleteMany={handleDeleteMany}
+        onEdit={dialog.handleEdit}
+        onDelete={deleteHandler.handleDelete}
+        onDeleteMany={deleteHandler.handleDeleteMany}
         isLoading={isLoading}
-        recordsPerPage={limit}
+        recordsPerPage={paginationSorting.limit}
         recordsPerPageOptions={[10, 20, 50, 100]}
-        onRecordsPerPageChange={(size) => {
-          setLimit(size);
-          setPage(1);
-        }}
-        page={page}
-        onPageChange={setPage}
+        onRecordsPerPageChange={paginationSorting.setLimit}
+        page={paginationSorting.page}
+        onPageChange={paginationSorting.setPage}
         totalRecords={data?.pagination?.total}
-        sorting={
-          sortBy
-            ? [
-                {
-                  id: sortBy,
-                  desc: sortOrder === 'desc',
-                },
-              ]
-            : undefined
+        sorting={paginationSorting.sorting}
+        onSortingChange={(updater) =>
+          paginationSorting.setSorting(updater, 'createdAt')
         }
-        onSortingChange={(
-          updater:
-            | { id: string; desc: boolean }[]
-            | ((prev: { id: string; desc: boolean }[]) => {
-                id: string;
-                desc: boolean;
-              }[]),
-        ) => {
-          const newSorting =
-            typeof updater === 'function'
-              ? updater(
-                  sortBy ? [{ id: sortBy, desc: sortOrder === 'desc' }] : [],
-                )
-              : updater;
-          if (newSorting.length > 0) {
-            setSortBy(newSorting[0].id as 'name' | 'createdAt');
-            setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
-          } else {
-            setSortBy('createdAt');
-            setSortOrder('desc');
-          }
-          setPage(1);
-        }}
-        selectedRecords={selectedRecords}
-        onSelectedRecordsChange={setSelectedRecords}
+        selectedRecords={deleteHandler.selectedRecords}
+        onSelectedRecordsChange={deleteHandler.setSelectedRecords}
       />
 
-      {isDialogOpen && (
+      {dialog.isDialogOpen && (
         <AddEditTagDialog
-          isOpen={isDialogOpen}
-          onClose={handleDialogClose}
-          tag={selectedTag}
+          isOpen={dialog.isDialogOpen}
+          onClose={dialog.handleClose}
+          tag={dialog.selectedItem}
           onSubmit={handleSubmitForm}
           isLoading={isSubmitting}
-          resetTrigger={resetTrigger}
+          resetTrigger={dialog.resetTrigger}
         />
       )}
 
-      {isDeleteDialogOpen && tagToDelete && (
+      {deleteHandler.isDeleteDialogOpen && deleteHandler.itemToDelete && (
         <DeleteConfirmationModal
-          isOpen={isDeleteDialogOpen}
-          onClose={handleDeleteDialogClose}
+          isOpen={deleteHandler.isDeleteDialogOpen}
+          onClose={deleteHandler.handleDeleteDialogClose}
           onConfirm={handleConfirmDelete}
           isLoading={isSubmitting}
           title={t('tags.deleteConfirmTitle')}
           message={t('tags.deleteConfirmMessage')}
-          itemName={tagToDelete.name}
+          itemName={deleteHandler.itemToDelete.name}
         />
       )}
 
-      {isDeleteManyDialogOpen && tagsToDeleteMany.length > 0 && (
-        <DeleteManyConfirmationModal
-          isOpen={isDeleteManyDialogOpen}
-          onClose={handleDeleteManyDialogClose}
-          onConfirm={handleConfirmDeleteMany}
-          isLoading={isSubmitting}
-          title={t('tags.deleteManyConfirmTitle', {
-            defaultValue: 'Delete Multiple Tags',
-          })}
-          message={t('tags.deleteManyConfirmMessage', {
-            defaultValue: 'Are you sure you want to delete {{count}} tag(s)?',
-          })}
-          count={tagsToDeleteMany.length}
-        />
-      )}
+      {deleteHandler.isDeleteManyDialogOpen &&
+        deleteHandler.itemsToDeleteMany.length > 0 && (
+          <DeleteManyConfirmationModal
+            isOpen={deleteHandler.isDeleteManyDialogOpen}
+            onClose={deleteHandler.handleDeleteManyDialogClose}
+            onConfirm={handleConfirmDeleteMany}
+            isLoading={isSubmitting}
+            title={t('tags.deleteManyConfirmTitle', {
+              defaultValue: 'Delete Multiple Tags',
+            })}
+            message={t('tags.deleteManyConfirmMessage', {
+              defaultValue: 'Are you sure you want to delete {{count}} tag(s)?',
+            })}
+            count={deleteHandler.itemsToDeleteMany.length}
+          />
+        )}
     </PageContainer>
   );
 };
