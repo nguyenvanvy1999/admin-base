@@ -4,7 +4,7 @@ import ProtectedPageLayout from './layouts';
 import AccountPage from './pages/AccountPage';
 import PermissionPage from './pages/admin/PermissionPage';
 import RolePage from './pages/admin/RolePage';
-import SessionPage from './pages/admin/SessionPage';
+import AdminSessionPage from './pages/admin/SessionPage';
 import UserPage from './pages/admin/UserPage';
 import BudgetPage from './pages/BudgetPage';
 import BulkTransactionPage from './pages/BulkTransactionPage';
@@ -22,6 +22,7 @@ import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
+import SessionPage from './pages/SessionPage';
 import TagPage from './pages/TagPage';
 import TransactionPage from './pages/TransactionPage';
 
@@ -41,6 +42,10 @@ const router = createHashRouter([
       {
         path: '/profile',
         Component: ProfilePage,
+      },
+      {
+        path: '/sessions',
+        Component: SessionPage,
       },
       {
         path: '/transactions',
@@ -124,7 +129,7 @@ const router = createHashRouter([
       },
       {
         path: '/admin/sessions',
-        Component: SessionPage,
+        Component: AdminSessionPage,
       },
       {
         path: '*',

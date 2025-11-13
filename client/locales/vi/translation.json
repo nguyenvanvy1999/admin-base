@@ -92,6 +92,7 @@
   "header": {
     "appName": "FinTrack",
     "profile": "Hồ sơ",
+    "sessions": "Phiên",
     "logout": "Đăng xuất"
   },
   "footer": {

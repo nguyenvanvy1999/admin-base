@@ -92,6 +92,7 @@
   "header": {
     "appName": "FinTrack",
     "profile": "Profile",
+    "sessions": "Sessions",
     "logout": "Logout"
   },
   "footer": {
