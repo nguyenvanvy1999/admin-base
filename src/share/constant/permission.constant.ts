@@ -10,6 +10,7 @@ export const PERMISSIONS = {
   },
   ROLE: {
     VIEW: { roles: [defaultRoles.admin.id] },
+    CREATE: { roles: [defaultRoles.admin.id] },
     UPDATE: { roles: [defaultRoles.admin.id] },
     DELETE: { roles: [defaultRoles.admin.id] },
   },

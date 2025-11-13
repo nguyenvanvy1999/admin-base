@@ -35,7 +35,9 @@
     "refresh": "Làm mới",
     "actions": "Thao tác",
     "yes": "Có",
-    "no": "Không"
+    "no": "Không",
+    "enabled": "Đã kích hoạt",
+    "disabled": "Đã vô hiệu hóa"
   },
   "login": {
     "title": "FinTrack",
@@ -708,5 +710,29 @@
       "permissions": "Quyền",
       "sessions": "Phiên"
     }
+  },
+  "roles": {
+    "title": "Vai trò",
+    "subtitle": "Quản lý vai trò",
+    "addRole": "Thêm vai trò",
+    "editRole": "Chỉnh sửa vai trò",
+    "deleteRole": "Xóa vai trò",
+    "roleTitle": "Tiêu đề",
+    "description": "Mô tả",
+    "enabled": "Kích hoạt",
+    "permissions": "Quyền",
+    "players": "Người dùng",
+    "createdAt": "Ngày tạo",
+    "actions": "Thao tác",
+    "search": "Tìm kiếm vai trò...",
+    "titlePlaceholder": "Nhập tiêu đề vai trò",
+    "descriptionPlaceholder": "Nhập mô tả vai trò",
+    "permissionsPlaceholder": "Chọn quyền",
+    "playersPlaceholder": "Chọn người dùng",
+    "titleMinLength": "Tiêu đề phải có ít nhất 3 ký tự",
+    "deleteConfirmTitle": "Xóa vai trò",
+    "deleteConfirmMessage": "Bạn có chắc chắn muốn xóa vai trò này?",
+    "deleteManyConfirmTitle": "Xóa nhiều vai trò",
+    "deleteManyConfirmMessage": "Bạn có chắc chắn muốn xóa {{count}} vai trò?"
   }
 }

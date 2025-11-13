@@ -1,10 +1,21 @@
 import type { Prisma } from '@server/generated/prisma/client';
 import { prisma } from '@server/libs/db';
-import { allOf, authorize, has } from '@server/service/auth/authorization';
-import { castToRes, ErrCode, ResWrapper } from '@server/share';
+import { anyOf, authorize, has } from '@server/service/auth/authorization';
+import { castToRes, defaultRoles, ErrCode, ResWrapper } from '@server/share';
 import type { AppAuthMeta } from '@server/share/type';
 import { Elysia, t } from 'elysia';
-import { PaginateRoleResDto, RolePaginationDto, UpsertRoleDto } from '../dtos';
+import {
+  type IListRolesQueryDto,
+  RoleListResponseDto,
+  RolePaginationQueryDto,
+  UpsertRoleDto,
+} from '../dtos';
+
+const FROZEN_ROLE_IDS = [defaultRoles.user.id, defaultRoles.admin.id];
+
+function isFrozenRole(roleId: string): boolean {
+  return FROZEN_ROLE_IDS.includes(roleId);
+}
 
 export const roleController = new Elysia<'roles', AppAuthMeta>({
   prefix: 'roles',
@@ -12,51 +23,99 @@ export const roleController = new Elysia<'roles', AppAuthMeta>({
   .use(authorize(has('ROLE.VIEW')))
   .get(
     '/',
-    async ({ query: { userId } }) => {
+    async ({ query }) => {
+      const {
+        search,
+        userId,
+        page = 1,
+        limit = 20,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+      } = query as IListRolesQueryDto;
+
       const where: Prisma.RoleWhereInput = {};
+
       if (userId) {
         where.players = {
           some: { playerId: userId },
         };
       }
 
-      const roles = await prisma.role.findMany({
-        where,
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          enabled: true,
-          permissions: { select: { permissionId: true } },
-          players: { select: { playerId: true } },
-        },
-      });
+      if (search && search.trim()) {
+        where.title = { contains: search.trim(), mode: 'insensitive' };
+      }
 
-      return castToRes(
-        roles.map((role) => ({
+      const orderBy: Prisma.RoleOrderByWithRelationInput = {};
+      if (sortBy === 'title') {
+        orderBy.title = sortOrder;
+      } else if (sortBy === 'createdAt') {
+        orderBy.createdAt = sortOrder;
+      }
+
+      const skip = (page - 1) * limit;
+
+      const [roles, total] = await Promise.all([
+        prisma.role.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit,
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            enabled: true,
+            createdAt: true,
+            updatedAt: true,
+            permissions: { select: { permissionId: true } },
+            players: { select: { playerId: true } },
+          },
+        }),
+        prisma.role.count({ where }),
+      ]);
+
+      return castToRes({
+        roles: roles.map((role) => ({
           id: role.id,
           title: role.title,
           description: role.description,
           enabled: role.enabled,
           permissionIds: role.permissions.map((p) => p.permissionId),
           playerIds: role.players.map((p) => p.playerId),
+          createdAt: role.createdAt.toISOString(),
+          updatedAt: role.updatedAt.toISOString(),
         })),
-      );
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
     },
     {
-      query: RolePaginationDto,
+      query: RolePaginationQueryDto,
       response: {
-        200: ResWrapper(PaginateRoleResDto),
+        200: ResWrapper(RoleListResponseDto),
       },
     },
   )
-  .use(authorize(has('ROLE.UPDATE')))
+  .use(authorize(anyOf(has('ROLE.CREATE'), has('ROLE.UPDATE'))))
   .post(
     '/',
     async ({
       body: { id, title, enabled, description, playerIds, permissionIds },
+      currentUser,
     }) => {
       if (id) {
+        if (!currentUser.permissions.includes('ROLE.UPDATE')) {
+          throw new Error(ErrCode.PermissionDenied);
+        }
+
+        if (isFrozenRole(id)) {
+          throw new Error(ErrCode.PermissionDenied);
+        }
+
         await prisma.role.update({
           where: { id },
           data: {
@@ -91,6 +150,10 @@ export const roleController = new Elysia<'roles', AppAuthMeta>({
           select: { id: true },
         });
       } else {
+        if (!currentUser.permissions.includes('ROLE.CREATE')) {
+          throw new Error(ErrCode.PermissionDenied);
+        }
+
         await prisma.role.create({
           data: {
             description,
@@ -124,10 +187,16 @@ export const roleController = new Elysia<'roles', AppAuthMeta>({
       },
     },
   )
-  .use(authorize(allOf(has('ROLE.UPDATE'), has('ROLE.DELETE'))))
+  .use(authorize(has('ROLE.DELETE')))
   .post(
     '/del',
     async ({ body: { ids } }) => {
+      for (const roleId of ids) {
+        if (isFrozenRole(roleId)) {
+          throw new Error(ErrCode.PermissionDenied);
+        }
+      }
+
       const existUserRole = await prisma.rolePlayer.findFirst({
         where: { roleId: { in: ids } },
       });

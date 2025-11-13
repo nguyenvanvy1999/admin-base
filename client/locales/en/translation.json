@@ -35,7 +35,9 @@
     "refresh": "Refresh",
     "actions": "Actions",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
   },
   "login": {
     "title": "FinTrack",
@@ -708,5 +710,29 @@
       "permissions": "Permissions",
       "sessions": "Sessions"
     }
+  },
+  "roles": {
+    "title": "Roles",
+    "subtitle": "Manage roles",
+    "addRole": "Add Role",
+    "editRole": "Edit Role",
+    "deleteRole": "Delete Role",
+    "roleTitle": "Title",
+    "description": "Description",
+    "enabled": "Enabled",
+    "permissions": "Permissions",
+    "players": "Players",
+    "createdAt": "Created At",
+    "actions": "Actions",
+    "search": "Search roles...",
+    "titlePlaceholder": "Enter role title",
+    "descriptionPlaceholder": "Enter role description",
+    "permissionsPlaceholder": "Select permissions",
+    "playersPlaceholder": "Select users",
+    "titleMinLength": "Title must be at least 3 characters",
+    "deleteConfirmTitle": "Delete Role",
+    "deleteConfirmMessage": "Are you sure you want to delete this role?",
+    "deleteManyConfirmTitle": "Delete Multiple Roles",
+    "deleteManyConfirmMessage": "Are you sure you want to delete {{count}} role(s)?"
   }
 }

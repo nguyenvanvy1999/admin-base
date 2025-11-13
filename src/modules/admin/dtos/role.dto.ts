@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { z } from 'zod';
 
 export const UpsertRoleDto = t.Object({
   id: t.Optional(t.String()),
@@ -9,17 +10,65 @@ export const UpsertRoleDto = t.Object({
   playerIds: t.Array(t.String(), { minItems: 0 }),
 });
 
-export const PaginateRoleResDto = t.Array(
-  t.Intersect([
-    t.Omit(UpsertRoleDto, ['enabled']),
-    t.Object({
-      id: t.String(),
-      permissionIds: t.Array(t.String()),
-      playerIds: t.Array(t.String()),
-    }),
-  ]),
+export const UpsertRoleDtoZod = z.object({
+  id: z.string().optional(),
+  enabled: z.boolean().default(true),
+  title: z.string().min(3),
+  description: z.string().nullable().optional(),
+  permissionIds: z.array(z.string()).min(1),
+  playerIds: z.array(z.string()).default([]),
+});
+
+export type IUpsertRoleDto = z.infer<typeof UpsertRoleDtoZod>;
+
+export const ListRolesQueryDto = z.object({
+  search: z.string().optional(),
+  userId: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1).optional(),
+  limit: z.coerce.number().int().min(1).default(20).optional(),
+  sortBy: z.enum(['title', 'createdAt']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+export type IListRolesQueryDto = z.infer<typeof ListRolesQueryDto>;
+
+export const RoleResDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    title: t.String(),
+    description: t.Nullable(t.String()),
+    enabled: t.Boolean(),
+    permissionIds: t.Array(t.String()),
+    playerIds: t.Array(t.String()),
+    createdAt: t.String(),
+    updatedAt: t.String(),
+  }),
 );
 
-export const RolePaginationDto = t.Object({
+export const RolePaginationDto = t.NoValidate(
+  t.Object({
+    page: t.Integer(),
+    limit: t.Integer(),
+    total: t.Integer(),
+    totalPages: t.Integer(),
+  }),
+);
+
+export const RoleListResponseDto = t.NoValidate(
+  t.Object({
+    roles: t.Array(RoleResDto),
+    pagination: RolePaginationDto,
+  }),
+);
+
+export type RoleResponse = typeof RoleResDto.static;
+export type RoleListResponse = typeof RoleListResponseDto.static;
+
+export const RolePaginationQueryDto = t.Object({
   userId: t.Optional(t.String()),
+  search: t.Optional(t.String()),
+  page: t.Optional(t.Integer()),
+  limit: t.Optional(t.Integer()),
+  sortBy: t.Optional(t.Union([t.Literal('title'), t.Literal('createdAt')])),
+  sortOrder: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
 });
