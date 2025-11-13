@@ -24,6 +24,8 @@ import {
   decimalToNullableString,
   decimalToString,
 } from '../utils/formatters';
+import { accountBalanceServiceInstance } from './account-balance.service';
+import { currencyConversionServiceInstance } from './currency-conversion.service';
 import { CURRENCY_SELECT_BASIC } from './selects';
 
 type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -218,292 +220,10 @@ const formatTransactionRecord = (
   currency: formatCurrencyRecord(transaction.currency),
 });
 
-class BalanceCalculator {
-  private exchangeRates: Record<string, Record<string, Decimal>> = {
-    VND: { USD: new Decimal(1).div(25000) },
-    USD: { VND: new Decimal(25000) },
-  };
-
-  async convertCurrency(
-    amount: Decimal | number,
-    fromCurrencyId: string,
-    toCurrencyId: string,
-  ): Promise<Decimal> {
-    if (fromCurrencyId === toCurrencyId) {
-      return new Decimal(amount);
-    }
-
-    const fromCurrency = await prisma.currency.findUnique({
-      where: { id: fromCurrencyId },
-      select: CURRENCY_SELECT_BASIC,
-    });
-    const toCurrency = await prisma.currency.findUnique({
-      where: { id: toCurrencyId },
-      select: CURRENCY_SELECT_BASIC,
-    });
-
-    if (!fromCurrency || !toCurrency) {
-      throw new Error('Currency not found');
-    }
-
-    const rate = this.exchangeRates[fromCurrency.code]?.[toCurrency.code];
-    if (!rate) {
-      throw new Error(
-        `Currency conversion not supported: ${fromCurrency.code} to ${toCurrency.code}`,
-      );
-    }
-
-    return new Decimal(amount).mul(rate);
-  }
-
-  async convertAmountToAccountCurrency(
-    amount: Decimal | number,
-    fee: Decimal | number,
-    currencyId: string,
-    accountCurrencyId: string,
-  ): Promise<{
-    amountInAccountCurrency: Decimal;
-    feeInAccountCurrency: Decimal;
-  }> {
-    const amountDecimal = new Decimal(amount);
-    const feeDecimal = new Decimal(fee);
-
-    let amountInAccountCurrency = amountDecimal;
-    if (currencyId !== accountCurrencyId) {
-      amountInAccountCurrency = await this.convertCurrency(
-        amountDecimal,
-        currencyId,
-        accountCurrencyId,
-      );
-    }
-
-    let feeInAccountCurrency = feeDecimal;
-    if (currencyId !== accountCurrencyId) {
-      feeInAccountCurrency = await this.convertCurrency(
-        feeDecimal,
-        currencyId,
-        accountCurrencyId,
-      );
-    }
-
-    return { amountInAccountCurrency, feeInAccountCurrency };
-  }
-
-  convertAmountToToAccountCurrency(
-    amount: Decimal | number,
-    currencyId: string,
-    toAccountCurrencyId?: string,
-  ): Promise<Decimal> {
-    if (!toAccountCurrencyId || currencyId === toAccountCurrencyId) {
-      return new Promise((resolve) => resolve(new Decimal(amount)));
-    }
-    return this.convertCurrency(amount, currencyId, toAccountCurrencyId);
-  }
-}
-
-class BalanceUpdater {
-  constructor(private calculator: BalanceCalculator) {}
-
-  private async updateTransferBalance(
-    tx: PrismaTx,
-    accountId: string,
-    toAccountId: string,
-    amountInAccountCurrency: Decimal,
-    feeInAccountCurrency: Decimal,
-    amountInToAccountCurrency: Decimal,
-    isRevert: boolean,
-  ) {
-    const fromAccountOperation = isRevert ? 'increment' : 'decrement';
-    const toAccountOperation = isRevert ? 'decrement' : 'increment';
-
-    await tx.account.update({
-      where: { id: accountId },
-      data: {
-        balance: {
-          [fromAccountOperation]: amountInAccountCurrency
-            .plus(feeInAccountCurrency)
-            .toNumber(),
-        },
-      },
-    });
-
-    await tx.account.update({
-      where: { id: toAccountId },
-      data: {
-        balance: {
-          [toAccountOperation]: amountInToAccountCurrency.toNumber(),
-        },
-      },
-    });
-  }
-
-  async applyBalanceEffect(
-    tx: PrismaTx,
-    transactionType: TransactionType,
-    accountId: string,
-    toAccountId: string | null | undefined,
-    amount: Decimal | number,
-    fee: Decimal | number,
-    currencyId: string,
-    accountCurrencyId: string,
-    toAccountCurrencyId?: string,
-    toAmount?: Decimal | number,
-  ) {
-    await tx.account.findUniqueOrThrow({
-      where: { id: accountId },
-      select: {
-        id: true,
-      },
-    });
-
-    const { amountInAccountCurrency, feeInAccountCurrency } =
-      await this.calculator.convertAmountToAccountCurrency(
-        amount,
-        fee,
-        currencyId,
-        accountCurrencyId,
-      );
-
-    switch (transactionType) {
-      case TransactionType.income:
-      case TransactionType.loan_received:
-        await tx.account.update({
-          where: { id: accountId },
-          data: {
-            balance: {
-              increment: amountInAccountCurrency
-                .minus(feeInAccountCurrency)
-                .toNumber(),
-            },
-          },
-        });
-        break;
-
-      case TransactionType.expense:
-      case TransactionType.loan_given:
-        await tx.account.update({
-          where: { id: accountId },
-          data: {
-            balance: {
-              decrement: amountInAccountCurrency
-                .plus(feeInAccountCurrency)
-                .toNumber(),
-            },
-          },
-        });
-        break;
-
-      case TransactionType.transfer: {
-        if (!toAccountId) {
-          throw new Error('To account is required for transfer');
-        }
-        await tx.account.findUniqueOrThrow({
-          where: { id: toAccountId },
-        });
-
-        const amountInToAccountCurrency = toAmount
-          ? new Decimal(toAmount)
-          : await this.calculator.convertAmountToToAccountCurrency(
-              amount,
-              currencyId,
-              toAccountCurrencyId,
-            );
-
-        await this.updateTransferBalance(
-          tx,
-          accountId,
-          toAccountId,
-          amountInAccountCurrency,
-          feeInAccountCurrency,
-          amountInToAccountCurrency,
-          false,
-        );
-        break;
-      }
-    }
-  }
-
-  async revertBalanceEffect(
-    tx: PrismaTx,
-    transactionType: TransactionType,
-    accountId: string,
-    toAccountId: string | null | undefined,
-    amount: Decimal | number,
-    fee: Decimal | number,
-    currencyId: string,
-    accountCurrencyId: string,
-    toAccountCurrencyId?: string,
-    toAmount?: Decimal | number,
-  ) {
-    const { amountInAccountCurrency, feeInAccountCurrency } =
-      await this.calculator.convertAmountToAccountCurrency(
-        amount,
-        fee,
-        currencyId,
-        accountCurrencyId,
-      );
-
-    switch (transactionType) {
-      case TransactionType.income:
-      case TransactionType.loan_received:
-        await tx.account.update({
-          where: { id: accountId },
-          data: {
-            balance: {
-              decrement: amountInAccountCurrency
-                .minus(feeInAccountCurrency)
-                .toNumber(),
-            },
-          },
-        });
-        break;
-
-      case TransactionType.expense:
-      case TransactionType.loan_given:
-        await tx.account.update({
-          where: { id: accountId },
-          data: {
-            balance: {
-              increment: amountInAccountCurrency
-                .plus(feeInAccountCurrency)
-                .toNumber(),
-            },
-          },
-        });
-        break;
-
-      case TransactionType.transfer: {
-        if (!toAccountId) {
-          throw new Error('To account is required for transfer');
-        }
-
-        const amountInToAccountCurrency = toAmount
-          ? new Decimal(toAmount)
-          : await this.calculator.convertAmountToToAccountCurrency(
-              amount,
-              currencyId,
-              toAccountCurrencyId,
-            );
-
-        await this.updateTransferBalance(
-          tx,
-          accountId,
-          toAccountId,
-          amountInAccountCurrency,
-          feeInAccountCurrency,
-          amountInToAccountCurrency,
-          true,
-        );
-        break;
-      }
-    }
-  }
-}
-
 class TransactionHandlerFactory {
   constructor(
-    private calculator: BalanceCalculator,
-    private balanceUpdater: BalanceUpdater,
+    private balanceService = accountBalanceServiceInstance,
+    private currencyConverter = currencyConversionServiceInstance,
   ) {}
 
   private async validateAccountOwnership(userId: string, accountId: string) {
@@ -592,7 +312,7 @@ class TransactionHandlerFactory {
       feeDecimal.gt(0) &&
       !feeInBaseCurrency
     ) {
-      feeInBaseCurrency = await this.calculator.convertCurrency(
+      feeInBaseCurrency = await this.currencyConverter.convertToBaseCurrency(
         feeDecimal,
         currencyId,
         userBaseCurrencyId,
@@ -677,7 +397,7 @@ class TransactionHandlerFactory {
     toAccountCurrencyId?: string,
   ) {
     return prisma.$transaction(async (tx: PrismaTx) => {
-      await this.balanceUpdater.applyBalanceEffect(
+      await this.balanceService.applyTransactionBalance(
         tx,
         type,
         accountId,
@@ -722,7 +442,7 @@ class TransactionHandlerFactory {
     }
 
     return prisma.$transaction(async (tx: PrismaTx) => {
-      await this.balanceUpdater.revertBalanceEffect(
+      await this.balanceService.revertTransactionBalance(
         tx,
         existingTransaction.type,
         existingTransaction.accountId,
@@ -734,7 +454,7 @@ class TransactionHandlerFactory {
         existingTransaction.toAccount?.currencyId,
       );
 
-      await this.balanceUpdater.applyBalanceEffect(
+      await this.balanceService.applyTransactionBalance(
         tx,
         type,
         accountId,
@@ -773,8 +493,7 @@ class TransactionHandlerFactory {
     const groupId = crypto.randomUUID();
 
     return prisma.$transaction(async (tx: PrismaTx) => {
-      // Apply balance effect once for the primary (from) side
-      await this.balanceUpdater.applyBalanceEffect(
+      await this.balanceService.applyTransactionBalance(
         tx,
         TransactionType.transfer,
         fromAccount.id,
@@ -809,10 +528,9 @@ class TransactionHandlerFactory {
         select: TRANSACTION_SELECT,
       });
 
-      // Calculate mirror amount in destination currency
       const amountInToCurrency = toAmountDecimal
         ? toAmountDecimal
-        : await this.calculator.convertAmountToToAccountCurrency(
+        : await this.currencyConverter.convertToToAccountCurrency(
             amountDecimal,
             currencyId,
             toAccount.currencyId,
@@ -894,7 +612,7 @@ class TransactionHandlerFactory {
         ? new Decimal(existingMirrorForRevert.amount)
         : undefined;
 
-      await this.balanceUpdater.revertBalanceEffect(
+      await this.balanceService.revertTransactionBalance(
         tx,
         existing.type,
         existing.accountId,
@@ -907,8 +625,7 @@ class TransactionHandlerFactory {
         existingToAmount,
       );
 
-      // Apply balance with new values once for primary
-      await this.balanceUpdater.applyBalanceEffect(
+      await this.balanceService.applyTransactionBalance(
         tx,
         TransactionType.transfer,
         fromAccount.id,
@@ -943,10 +660,9 @@ class TransactionHandlerFactory {
         select: TRANSACTION_SELECT,
       });
 
-      // Calculate mirror amount
       const amountInToCurrency = toAmountDecimal
         ? toAmountDecimal
-        : await this.calculator.convertAmountToToAccountCurrency(
+        : await this.currencyConverter.convertToToAccountCurrency(
             amountDecimal,
             currencyId,
             toAccount.currencyId,
@@ -1111,17 +827,10 @@ class TransactionHandlerFactory {
 }
 
 export class TransactionService {
-  private readonly calculator: BalanceCalculator;
-  private readonly balanceUpdater: BalanceUpdater;
   private handlerFactory: TransactionHandlerFactory;
 
   constructor() {
-    this.calculator = new BalanceCalculator();
-    this.balanceUpdater = new BalanceUpdater(this.calculator);
-    this.handlerFactory = new TransactionHandlerFactory(
-      this.calculator,
-      this.balanceUpdater,
-    );
+    this.handlerFactory = new TransactionHandlerFactory();
   }
 
   async upsertTransaction(
@@ -1411,7 +1120,7 @@ export class TransactionService {
           const existingToAmount = mirrorForRevert
             ? new Decimal(mirrorForRevert.amount)
             : undefined;
-          await this.balanceUpdater.revertBalanceEffect(
+          await accountBalanceServiceInstance.revertTransactionBalance(
             tx,
             primary.type,
             primary.accountId,
@@ -1443,9 +1152,8 @@ export class TransactionService {
         }
       });
     } else {
-      // Non-transfer: single-side revert and soft delete
       await prisma.$transaction(async (tx: PrismaTx) => {
-        await this.balanceUpdater.revertBalanceEffect(
+        await accountBalanceServiceInstance.revertTransactionBalance(
           tx,
           transaction.type,
           transaction.accountId,

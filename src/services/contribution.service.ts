@@ -1,7 +1,6 @@
 import type { Prisma } from '@server/generated/prisma/client';
-import { ContributionType } from '@server/generated/prisma/enums';
+import type { ContributionType } from '@server/generated/prisma/enums';
 import { prisma } from '@server/libs/db';
-import Decimal from 'decimal.js';
 import { Elysia } from 'elysia';
 import type {
   ICreateInvestmentContributionDto,
@@ -14,8 +13,9 @@ import {
   decimalToNullableNumber,
   decimalToNumber,
 } from '../utils/formatters';
+import { accountBalanceServiceInstance } from './account-balance.service';
 import { investmentServiceInstance } from './investment.service';
-import { CURRENCY_SELECT_BASIC } from './selects';
+import { CONTRIBUTION_SELECT_MINIMAL, CURRENCY_SELECT_BASIC } from './selects';
 
 const CONTRIBUTION_SELECT = {
   id: true,
@@ -129,31 +129,13 @@ export class InvestmentContributionService {
         select: CONTRIBUTION_SELECT,
       });
 
-      // Update account balance if accountId is provided
       if (data.accountId) {
-        const amountDecimal = new Decimal(data.amount);
-
-        if (data.type === ContributionType.deposit) {
-          // Deposit: deduct amount from account (money goes into investment)
-          await tx.account.update({
-            where: { id: data.accountId },
-            data: {
-              balance: {
-                decrement: amountDecimal.toNumber(),
-              },
-            },
-          });
-        } else {
-          // Withdrawal: add amount to account (money comes out of investment)
-          await tx.account.update({
-            where: { id: data.accountId },
-            data: {
-              balance: {
-                increment: amountDecimal.toNumber(),
-              },
-            },
-          });
-        }
+        await accountBalanceServiceInstance.applyContributionBalance(
+          tx,
+          data.type as ContributionType,
+          data.accountId,
+          data.amount,
+        );
       }
 
       return formatContribution(contribution);
@@ -231,12 +213,7 @@ export class InvestmentContributionService {
         investmentId,
         deletedAt: null,
       },
-      select: {
-        id: true,
-        type: true,
-        amount: true,
-        accountId: true,
-      },
+      select: CONTRIBUTION_SELECT_MINIMAL,
     });
 
     if (!contribution) {
@@ -245,27 +222,12 @@ export class InvestmentContributionService {
 
     return prisma.$transaction(async (tx) => {
       if (contribution.accountId) {
-        const amountDecimal = new Decimal(contribution.amount);
-
-        if (contribution.type === ContributionType.deposit) {
-          await tx.account.update({
-            where: { id: contribution.accountId },
-            data: {
-              balance: {
-                increment: amountDecimal.toNumber(),
-              },
-            },
-          });
-        } else {
-          await tx.account.update({
-            where: { id: contribution.accountId },
-            data: {
-              balance: {
-                decrement: amountDecimal.toNumber(),
-              },
-            },
-          });
-        }
+        await accountBalanceServiceInstance.revertContributionBalance(
+          tx,
+          contribution.type,
+          contribution.accountId,
+          contribution.amount,
+        );
       }
 
       await tx.investmentContribution.update({

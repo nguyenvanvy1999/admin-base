@@ -1,15 +1,15 @@
 import type { Prisma } from '@server/generated/prisma/client';
-import { TradeSide } from '@server/generated/prisma/enums';
+import type { TradeSide } from '@server/generated/prisma/enums';
 import type { InvestmentTradeWhereInput } from '@server/generated/prisma/models';
 import { prisma } from '@server/libs/db';
-import Decimal from 'decimal.js';
 import { Elysia } from 'elysia';
 import type {
   ICreateInvestmentTradeDto,
   IListInvestmentTradesQueryDto,
 } from '../dto/trade.dto';
+import { accountBalanceServiceInstance } from './account-balance.service';
 import { investmentServiceInstance } from './investment.service';
-import { CURRENCY_SELECT_BASIC } from './selects';
+import { CURRENCY_SELECT_BASIC, TRADE_SELECT_MINIMAL } from './selects';
 
 const TRADE_SELECT = {
   id: true,
@@ -143,35 +143,13 @@ export class InvestmentTradeService {
         select: TRADE_SELECT,
       });
 
-      // Update account balance based on trade side
-      // Buy: deduct amount + fee from account (money goes out)
-      // Sell: add amount - fee to account (money comes in)
-      const amountDecimal = new Decimal(data.amount);
-      const feeDecimal = new Decimal(data.fee ?? 0);
-
-      if (data.side === TradeSide.buy) {
-        // Buying: deduct total cost (amount + fee) from account
-        const totalCost = amountDecimal.plus(feeDecimal);
-        await tx.account.update({
-          where: { id: data.accountId },
-          data: {
-            balance: {
-              decrement: totalCost.toNumber(),
-            },
-          },
-        });
-      } else {
-        // Selling: add proceeds (amount - fee) to account
-        const proceeds = amountDecimal.minus(feeDecimal);
-        await tx.account.update({
-          where: { id: data.accountId },
-          data: {
-            balance: {
-              increment: proceeds.toNumber(),
-            },
-          },
-        });
-      }
+      await accountBalanceServiceInstance.applyTradeBalance(
+        tx,
+        data.side as TradeSide,
+        data.accountId,
+        data.amount,
+        data.fee ?? 0,
+      );
 
       return mapTrade(trade);
     });
@@ -249,13 +227,7 @@ export class InvestmentTradeService {
         investmentId,
         deletedAt: null,
       },
-      select: {
-        id: true,
-        side: true,
-        amount: true,
-        fee: true,
-        accountId: true,
-      },
+      select: TRADE_SELECT_MINIMAL,
     });
 
     if (!trade) {
@@ -263,30 +235,13 @@ export class InvestmentTradeService {
     }
 
     return prisma.$transaction(async (tx) => {
-      const amountDecimal = new Decimal(trade.amount);
-      const feeDecimal = new Decimal(trade.fee);
-
-      if (trade.side === TradeSide.buy) {
-        const totalCost = amountDecimal.plus(feeDecimal);
-        await tx.account.update({
-          where: { id: trade.accountId },
-          data: {
-            balance: {
-              increment: totalCost.toNumber(),
-            },
-          },
-        });
-      } else {
-        const proceeds = amountDecimal.minus(feeDecimal);
-        await tx.account.update({
-          where: { id: trade.accountId },
-          data: {
-            balance: {
-              decrement: proceeds.toNumber(),
-            },
-          },
-        });
-      }
+      await accountBalanceServiceInstance.revertTradeBalance(
+        tx,
+        trade.side,
+        trade.accountId,
+        trade.amount,
+        trade.fee,
+      );
 
       await tx.investmentTrade.update({
         where: { id: tradeId },
