@@ -10,6 +10,7 @@ export * from './InvestmentService';
 export * from './PermissionService';
 export * from './ReportService';
 export * from './RoleService';
+export * from './SessionService';
 export * from './TagService';
 export * from './TransactionService';
 export * from './UserService';

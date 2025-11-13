@@ -66,3 +66,34 @@ export const UserListResponseDto = t.NoValidate(
 
 export type UserResponse = typeof UserResDto.static;
 export type UserListResponse = typeof UserListResponseDto.static;
+
+export const UserStatisticsQueryDto = z.object({
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  groupBy: z.enum(['day', 'week', 'month']).default('month').optional(),
+});
+
+export type IUserStatisticsQueryDto = z.infer<typeof UserStatisticsQueryDto>;
+
+export const UserGrowthTimeSeriesDto = t.NoValidate(
+  t.Object({
+    date: t.String(),
+    count: t.Integer(),
+    newUsers: t.Integer(),
+  }),
+);
+
+export const UserStatisticsResponseDto = t.NoValidate(
+  t.Object({
+    totalUsers: t.Integer(),
+    newUsersThisMonth: t.Integer(),
+    newUsersThisWeek: t.Integer(),
+    usersByRole: t.Object({
+      admin: t.Integer(),
+      user: t.Integer(),
+    }),
+    userGrowthTimeSeries: t.Array(UserGrowthTimeSeriesDto),
+  }),
+);
+
+export type UserStatisticsResponse = typeof UserStatisticsResponseDto.static;

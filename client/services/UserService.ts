@@ -1,8 +1,10 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
 import type {
   IUpsertUserDto,
+  IUserStatisticsQueryDto,
   UserListResponse,
   UserResponse,
+  UserStatisticsResponse,
 } from '@server/dto/admin/user.dto';
 import type {
   CurrentUserRes,
@@ -76,6 +78,15 @@ export class UserService extends ServiceBase {
         endpoint: '/api/admin/users/del',
       },
     );
+  }
+
+  getUserStatistics(
+    query?: IUserStatisticsQueryDto,
+  ): Promise<UserStatisticsResponse> {
+    return this.get<UserStatisticsResponse>({
+      endpoint: '/api/admin/users/statistics',
+      params: query,
+    });
   }
 }
 

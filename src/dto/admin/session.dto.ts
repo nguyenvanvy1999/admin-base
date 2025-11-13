@@ -18,3 +18,14 @@ export const SessionQueryDto = t.Object({
 export const RevokeSessionDto = t.Object({
   sessionIds: t.Array(t.String(), { minItems: 1 }),
 });
+
+export const SessionStatisticsResponseDto = t.NoValidate(
+  t.Object({
+    totalSessions: t.Integer(),
+    activeSessions: t.Integer(),
+    revokedSessions: t.Integer(),
+  }),
+);
+
+export type SessionStatisticsResponse =
+  typeof SessionStatisticsResponseDto.static;

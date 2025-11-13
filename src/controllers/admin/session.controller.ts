@@ -9,6 +9,7 @@ import {
   RevokeSessionDto,
   SessionQueryDto,
   SessionResDto,
+  SessionStatisticsResponseDto,
 } from '../../dto/admin';
 
 export const sessionController = new Elysia<'sessions', AppAuthMeta>({
@@ -34,6 +35,39 @@ export const sessionController = new Elysia<'sessions', AppAuthMeta>({
       query: SessionQueryDto,
       response: {
         200: ResWrapper(t.Array(SessionResDto)),
+      },
+    },
+  )
+  .get(
+    '/statistics',
+    async () => {
+      const now = new Date();
+
+      const [totalSessions, activeSessions, revokedSessions] =
+        await Promise.all([
+          prisma.session.count({}),
+          prisma.session.count({
+            where: {
+              expired: { gt: now },
+              revoked: false,
+            },
+          }),
+          prisma.session.count({
+            where: {
+              revoked: true,
+            },
+          }),
+        ]);
+
+      return castToRes({
+        totalSessions,
+        activeSessions,
+        revokedSessions,
+      });
+    },
+    {
+      response: {
+        200: ResWrapper(SessionStatisticsResponseDto),
       },
     },
   )
