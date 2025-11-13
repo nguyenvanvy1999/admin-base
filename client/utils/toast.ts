@@ -17,7 +17,7 @@ const getMessage = (config: ToastConfig): string => {
     return config.message;
   }
   const i18nKey = `api.${config.i18nKey}`;
-  return i18n.exists(i18nKey) ? i18n.t(i18nKey) : config.i18nKey;
+  return i18n.exists(i18nKey) ? i18n.t(i18nKey as any) : config.i18nKey;
 };
 
 const toastImpl = {

@@ -32,7 +32,10 @@
     "back": "Back",
     "saveAndAdd": "Save and Add",
     "advancedFilter": "Advanced Filter",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "actions": "Actions",
+    "yes": "Yes",
+    "no": "No"
   },
   "login": {
     "title": "FinTrack",

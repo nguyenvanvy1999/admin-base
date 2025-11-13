@@ -26,6 +26,7 @@ import type {
   IUpsertCategoryDto,
 } from '@server/dto/category.dto';
 import { CategoryType } from '@server/generated/prisma/enums';
+import type { TFunction } from 'i18next';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -42,7 +43,7 @@ type MUITreeItem = {
 
 const transformToMUITree = (
   categories: CategoryTreeResponse[],
-  t: (key: string) => string,
+  t: TFunction<'translation', undefined>,
 ): MUITreeItem[] => {
   return categories.map((category) => ({
     id: category.id,

@@ -33,13 +33,14 @@ import {
 } from '@mui/icons-material';
 import type { CategoryTreeResponse } from '@server/dto/category.dto';
 import type { CategoryType } from '@server/generated/prisma/enums';
+import type { TFunction } from 'i18next';
 
 const getCategoryLabel = (
   categoryName: string,
-  t: (key: string) => string,
+  t: TFunction<'translation', undefined>,
 ): string => {
   const translationKey = `categories.${categoryName}`;
-  const translated = t(translationKey);
+  const translated = t(translationKey as any);
   return translated !== translationKey ? translated : categoryName;
 };
 
@@ -136,7 +137,7 @@ export const getCategoryIcon = (categoryName: string): SvgIconComponent => {
 
 export const flattenCategories = (
   categories: CategoryTreeResponse[],
-  t: (key: string) => string,
+  t: TFunction<'translation', undefined>,
   filterType?: CategoryType,
   excludeId?: string,
   depth = 0,

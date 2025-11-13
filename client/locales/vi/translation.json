@@ -32,7 +32,10 @@
     "back": "Quay lại",
     "saveAndAdd": "Lưu và thêm",
     "advancedFilter": "Bộ lọc nâng cao",
-    "refresh": "Làm mới"
+    "refresh": "Làm mới",
+    "actions": "Thao tác",
+    "yes": "Có",
+    "no": "Không"
   },
   "login": {
     "title": "FinTrack",

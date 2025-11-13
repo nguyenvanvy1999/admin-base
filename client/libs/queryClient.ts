@@ -24,8 +24,8 @@ export const queryClient = new QueryClient({
         const errorCode = err.code || 'ise';
         const i18nKey = `api.${errorCode}`;
         const message = i18n.exists(i18nKey)
-          ? i18n.t(i18nKey)
-          : err.message || i18n.t('api.ise');
+          ? i18n.t(i18nKey as any)
+          : err.message || i18n.t('api.ise' as any);
         toast.error({ i18nKey: message, type: 'error' });
       },
     },

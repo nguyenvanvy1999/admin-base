@@ -1,4 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { defaultColumnRender } from './formatters';
 import type { DataTableColumn } from './types';
@@ -28,7 +29,7 @@ export const createIndexColumn = <T extends Record<string, any>>(
 
 export const convertToTanStackColumn = <T extends Record<string, any>>(
   column: DataTableColumn<T>,
-  t: (key: string, options?: { defaultValue?: string }) => string,
+  t: TFunction<'translation', undefined>,
 ): ColumnDef<T> => {
   const {
     title,

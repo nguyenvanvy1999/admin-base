@@ -4,6 +4,17 @@ import { initReactI18next } from 'react-i18next';
 import enTranslations from './locales/en/translation.json';
 import viTranslations from './locales/vi/translation.json';
 
+export const defaultNS = 'translation' as const;
+
+export const resources = {
+  en: {
+    translation: enTranslations,
+  },
+  vi: {
+    translation: viTranslations,
+  },
+} as const;
+
 const isProduction = process.env.NODE_ENV === 'production';
 
 i18n
@@ -13,14 +24,8 @@ i18n
     debug: !isProduction,
     lng: 'vi',
     fallbackLng: 'vi',
-    resources: {
-      en: {
-        translation: enTranslations,
-      },
-      vi: {
-        translation: viTranslations,
-      },
-    },
+    defaultNS,
+    resources,
     interpolation: {
       escapeValue: false,
     },

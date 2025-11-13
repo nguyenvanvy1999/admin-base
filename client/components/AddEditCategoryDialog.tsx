@@ -7,6 +7,7 @@ import {
   UpsertCategoryDto,
 } from '@server/dto/category.dto';
 import { CategoryType } from '@server/generated/prisma/enums';
+import type { TFunction } from 'i18next';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -16,16 +17,16 @@ import { ZodFormController } from './ZodFormController';
 
 const getCategoryLabel = (
   categoryName: string,
-  t: (key: string) => string,
+  t: TFunction<'translation', undefined>,
 ): string => {
   const translationKey = `categories.${categoryName}`;
-  const translated = t(translationKey);
+  const translated = t(translationKey as any);
   return translated !== translationKey ? translated : categoryName;
 };
 
 const flattenCategories = (
   categories: CategoryTreeResponse[],
-  t: (key: string) => string,
+  t: TFunction<'translation', undefined>,
   excludeId?: string,
   depth = 0,
   onlyLevel1 = false,

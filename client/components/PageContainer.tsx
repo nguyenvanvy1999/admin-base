@@ -138,7 +138,7 @@ export const PageContainer: FC<Props> = ({
               </Text>
               <Text size="xl" fw={700} c={stat.color}>
                 {typeof stat.value === 'number'
-                  ? t('common.int', { value: stat.value })
+                  ? stat.value.toLocaleString()
                   : typeof stat.value === 'string'
                     ? stat.value
                     : stat.value}
