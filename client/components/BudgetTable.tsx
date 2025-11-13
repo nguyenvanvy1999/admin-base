@@ -57,15 +57,17 @@ const BudgetTable = ({
   const getPeriodLabel = (period: BudgetPeriod) => {
     switch (period) {
       case BudgetPeriod.daily:
-        return t('budgets.period.daily', { defaultValue: 'Daily' });
+        return t('budgets.periodOptions.daily', { defaultValue: 'Daily' });
       case BudgetPeriod.monthly:
-        return t('budgets.period.monthly', { defaultValue: 'Monthly' });
+        return t('budgets.periodOptions.monthly', { defaultValue: 'Monthly' });
       case BudgetPeriod.quarterly:
-        return t('budgets.period.quarterly', { defaultValue: 'Quarterly' });
+        return t('budgets.periodOptions.quarterly', {
+          defaultValue: 'Quarterly',
+        });
       case BudgetPeriod.yearly:
-        return t('budgets.period.yearly', { defaultValue: 'Yearly' });
+        return t('budgets.periodOptions.yearly', { defaultValue: 'Yearly' });
       case BudgetPeriod.none:
-        return t('budgets.period.none', { defaultValue: 'None' });
+        return t('budgets.periodOptions.none', { defaultValue: 'None' });
       default:
         return period;
     }
@@ -184,7 +186,29 @@ const BudgetTable = ({
       onSortingChange={onSortingChange}
       selectedRecords={selectedRecords}
       onSelectedRecordsChange={onSelectedRecordsChange}
-      onDeleteMany={onDeleteMany}
+      renderTopToolbarCustomActions={
+        onDeleteMany && selectedRecords && selectedRecords.length > 0
+          ? () => (
+              <Button
+                color="red"
+                variant="filled"
+                leftSection={<IconTrash size={16} />}
+                onClick={() => {
+                  const selectedIds = selectedRecords?.map((r) => r.id) || [];
+                  if (selectedIds.length > 0 && onDeleteMany) {
+                    onDeleteMany(selectedIds);
+                  }
+                }}
+                disabled={isLoading}
+              >
+                {t('common.deleteSelected', {
+                  defaultValue: `Delete ${selectedRecords.length}`,
+                  count: selectedRecords.length,
+                })}
+              </Button>
+            )
+          : undefined
+      }
     />
   );
 };

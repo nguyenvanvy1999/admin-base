@@ -1,5 +1,4 @@
 import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
-import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
 import {
   Modal,
@@ -15,21 +14,15 @@ import { UpsertBudgetDto } from '@server/dto/budget.dto';
 import { BudgetPeriod } from '@server/generated/prisma/enums';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { z } from 'zod';
 import CategoryMultiSelect from './CategoryMultiSelect';
 import { DialogFooterButtons } from './DialogFooterButtons';
 import { Select } from './Select';
 import { ZodFormController } from './ZodFormController';
 
-const schema = UpsertBudgetDto.extend({
-  name: UpsertBudgetDto.shape.name,
-  amount: UpsertBudgetDto.shape.amount,
-  period: UpsertBudgetDto.shape.period,
-  startDate: UpsertBudgetDto.shape.startDate,
-  accountIds: UpsertBudgetDto.shape.accountIds,
-  categoryIds: UpsertBudgetDto.shape.categoryIds,
-});
+const schema = UpsertBudgetDto;
 
-type FormValue = typeof UpsertBudgetDto._type;
+type FormValue = z.infer<typeof UpsertBudgetDto>;
 
 type AddEditBudgetDialogProps = {
   isOpen: boolean;
@@ -51,7 +44,6 @@ const AddEditBudgetDialog = ({
   const { t } = useTranslation();
   const isEditMode = !!budget;
   const { data: accountsData } = useAccountsOptionsQuery();
-  const { data: categoriesData } = useCategoriesQuery({});
 
   const accountOptions = useMemo(() => {
     if (!accountsData?.accounts) return [];
@@ -152,7 +144,7 @@ const AddEditBudgetDialog = ({
                 label={t('budgets.name')}
                 placeholder={t('budgets.namePlaceholder')}
                 required
-                error={error?.message}
+                error={error}
                 {...field}
               />
             )}
@@ -169,7 +161,7 @@ const AddEditBudgetDialog = ({
                 min={0.01}
                 step={0.01}
                 decimalScale={2}
-                error={error?.message}
+                error={error}
                 {...field}
                 value={field.value || 0}
                 onChange={(value) => field.onChange(value || 0)}
@@ -185,33 +177,37 @@ const AddEditBudgetDialog = ({
                 label={t('budgets.period')}
                 placeholder={t('budgets.periodPlaceholder')}
                 required
-                error={error?.message}
+                error={error}
                 items={[
                   {
                     value: BudgetPeriod.daily,
-                    label: t('budgets.period.daily', { defaultValue: 'Daily' }),
+                    label: t('budgets.periodOptions.daily', {
+                      defaultValue: 'Daily',
+                    }),
                   },
                   {
                     value: BudgetPeriod.monthly,
-                    label: t('budgets.period.monthly', {
+                    label: t('budgets.periodOptions.monthly', {
                       defaultValue: 'Monthly',
                     }),
                   },
                   {
                     value: BudgetPeriod.quarterly,
-                    label: t('budgets.period.quarterly', {
+                    label: t('budgets.periodOptions.quarterly', {
                       defaultValue: 'Quarterly',
                     }),
                   },
                   {
                     value: BudgetPeriod.yearly,
-                    label: t('budgets.period.yearly', {
+                    label: t('budgets.periodOptions.yearly', {
                       defaultValue: 'Yearly',
                     }),
                   },
                   {
                     value: BudgetPeriod.none,
-                    label: t('budgets.period.none', { defaultValue: 'None' }),
+                    label: t('budgets.periodOptions.none', {
+                      defaultValue: 'None',
+                    }),
                   },
                 ]}
                 value={field.value || ''}
@@ -228,11 +224,17 @@ const AddEditBudgetDialog = ({
                 label={t('budgets.startDate')}
                 placeholder={t('budgets.startDatePlaceholder')}
                 required
-                error={error?.message}
-                value={field.value ? new Date(field.value) : null}
-                onChange={(date) =>
-                  field.onChange(date ? date.toISOString() : '')
-                }
+                error={error}
+                value={field.value ? new Date(field.value as string) : null}
+                onChange={(value: Date | string | null) => {
+                  if (value instanceof Date) {
+                    field.onChange(value.toISOString());
+                  } else if (typeof value === 'string') {
+                    field.onChange(value);
+                  } else {
+                    field.onChange('');
+                  }
+                }}
               />
             )}
           />
@@ -244,11 +246,17 @@ const AddEditBudgetDialog = ({
               <DateInput
                 label={t('budgets.endDate')}
                 placeholder={t('budgets.endDatePlaceholder')}
-                error={error?.message}
-                value={field.value ? new Date(field.value) : null}
-                onChange={(date) =>
-                  field.onChange(date ? date.toISOString() : undefined)
-                }
+                error={error}
+                value={field.value ? new Date(field.value as string) : null}
+                onChange={(value: Date | string | null) => {
+                  if (value instanceof Date) {
+                    field.onChange(value.toISOString());
+                  } else if (typeof value === 'string') {
+                    field.onChange(value);
+                  } else {
+                    field.onChange(undefined);
+                  }
+                }}
               />
             )}
           />
@@ -276,7 +284,7 @@ const AddEditBudgetDialog = ({
                 data={accountOptions}
                 value={field.value || []}
                 onChange={(value) => field.onChange(value)}
-                error={error?.message}
+                error={error}
                 searchable
               />
             )}
@@ -291,7 +299,7 @@ const AddEditBudgetDialog = ({
                 onChange={(value) => field.onChange(value)}
                 filterType="expense"
                 placeholder={t('budgets.categoriesPlaceholder')}
-                error={error?.message}
+                error={error}
               />
             )}
           />

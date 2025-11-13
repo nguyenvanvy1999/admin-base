@@ -27,7 +27,11 @@ import { usePageDialog } from '@client/hooks/usePageDialog';
 import { usePaginationSorting } from '@client/hooks/usePaginationSorting';
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Group, Modal, MultiSelect, TextInput } from '@mantine/core';
-import type { BudgetResponse, IUpsertBudgetDto } from '@server/dto/budget.dto';
+import type {
+  BudgetPeriodDetailResponse,
+  BudgetResponse,
+  IUpsertBudgetDto,
+} from '@server/dto/budget.dto';
 import { ListBudgetsQueryDto } from '@server/dto/budget.dto';
 import { BudgetPeriod } from '@server/generated/prisma/enums';
 import { useRef, useState } from 'react';
@@ -165,31 +169,31 @@ const BudgetPage = () => {
                     data={[
                       {
                         value: BudgetPeriod.daily,
-                        label: t('budgets.period.daily', {
+                        label: t('budgets.periodOptions.daily', {
                           defaultValue: 'Daily',
                         }),
                       },
                       {
                         value: BudgetPeriod.monthly,
-                        label: t('budgets.period.monthly', {
+                        label: t('budgets.periodOptions.monthly', {
                           defaultValue: 'Monthly',
                         }),
                       },
                       {
                         value: BudgetPeriod.quarterly,
-                        label: t('budgets.period.quarterly', {
+                        label: t('budgets.periodOptions.quarterly', {
                           defaultValue: 'Quarterly',
                         }),
                       },
                       {
                         value: BudgetPeriod.yearly,
-                        label: t('budgets.period.yearly', {
+                        label: t('budgets.periodOptions.yearly', {
                           defaultValue: 'Yearly',
                         }),
                       },
                       {
                         value: BudgetPeriod.none,
-                        label: t('budgets.period.none', {
+                        label: t('budgets.periodOptions.none', {
                           defaultValue: 'None',
                         }),
                       },

@@ -1,6 +1,5 @@
 import { Badge, Card, Table, Text } from '@mantine/core';
 import type { BudgetPeriodDetailResponse } from '@server/dto/budget.dto';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type BudgetPeriodListProps = {

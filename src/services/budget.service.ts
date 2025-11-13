@@ -246,7 +246,8 @@ export class BudgetService {
       }
 
       let feeInBase: Decimal = new Decimal(0);
-      if (transaction.fee > 0) {
+      const feeDecimal = new Decimal(transaction.fee);
+      if (feeDecimal.gt(0)) {
         if (transaction.currencyId === baseCurrencyId) {
           feeInBase = new Decimal(transaction.fee);
         } else if (transaction.feeInBaseCurrency !== null) {
@@ -557,7 +558,7 @@ export class BudgetService {
 
       let existingPeriod = await prisma.budgetPeriodRecord.findUnique({
         where: {
-          budgetId_periodStartDate: {
+          budget_period_unique: {
             budgetId,
             periodStartDate: currentStart,
           },

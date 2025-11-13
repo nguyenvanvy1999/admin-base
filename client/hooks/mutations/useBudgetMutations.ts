@@ -1,10 +1,6 @@
 import { budgetService } from '@client/services';
 import { toast } from '@client/utils/toast';
-import type {
-  BudgetDeleteResponse,
-  BudgetResponse,
-  IUpsertBudgetDto,
-} from '@server/dto/budget.dto';
+import type { IUpsertBudgetDto } from '@server/dto/budget.dto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
