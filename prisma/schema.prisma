@@ -58,8 +58,11 @@ enum EntityType {
 }
 
 enum BudgetPeriod {
+  daily
   monthly
+  quarterly
   yearly
+  none
 }
 
 enum RecurringFrequency {
@@ -161,6 +164,7 @@ model Account {
   recurringTransactions   RecurringTransaction[]
   investmentTrades        InvestmentTrade[]
   investmentContributions InvestmentContribution[]
+  budgetAccounts          BudgetAccount[]
 
   @@index([userId], name: "account_userId_idx")
   @@index([type], name: "account_type_idx")
@@ -186,6 +190,7 @@ model Category {
   children              Category[]             @relation("CategoryHierarchy")
   transactions          Transaction[]
   budgets               Budget[]
+  budgetCategories      BudgetCategory[]
   recurringTransactions RecurringTransaction[]
 
   @@unique([userId, name], name: "category_userId_name_unique")
@@ -283,23 +288,74 @@ model Transaction {
 }
 
 model Budget {
-  id         String       @id @default(uuid(7))
-  userId     String       @map("user_id")
-  categoryId String       @map("category_id")
-  amount     Decimal      @db.Decimal(30, 10)
-  period     BudgetPeriod
-  startDate  DateTime     @map("start_date")
-  endDate    DateTime?    @map("end_date")
-  deletedAt  DateTime?    @map("deleted_at")
-  createdAt  DateTime     @default(now()) @map("created_at")
-  updatedAt  DateTime     @updatedAt @map("updated_at")
+  id        String       @id @default(uuid(7))
+  userId    String       @map("user_id")
+  name      String
+  amount    Decimal      @db.Decimal(30, 10)
+  period    BudgetPeriod
+  startDate DateTime     @map("start_date")
+  endDate   DateTime?    @map("end_date")
+  carryOver Boolean      @default(false) @map("carry_over")
+  deletedAt DateTime?    @map("deleted_at")
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
 
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories BudgetCategory[]
+  accounts   BudgetAccount[]
+  periods    BudgetPeriodRecord[]
+  category   Category?            @relation(fields: [categoryId], references: [id])
+  categoryId String?
 
   @@index([userId], name: "budget_userId_idx")
-  @@index([categoryId], name: "budget_categoryId_idx")
   @@map("budgets")
+}
+
+model BudgetCategory {
+  id         String   @id @default(uuid(7))
+  budgetId   String   @map("budget_id")
+  categoryId String   @map("category_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  budget   Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([budgetId, categoryId], name: "budget_category_unique")
+  @@index([budgetId], name: "budget_category_budgetId_idx")
+  @@index([categoryId], name: "budget_category_categoryId_idx")
+  @@map("budget_categories")
+}
+
+model BudgetAccount {
+  id        String   @id @default(uuid(7))
+  budgetId  String   @map("budget_id")
+  accountId String   @map("account_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  budget  Budget  @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([budgetId, accountId], name: "budget_account_unique")
+  @@index([budgetId], name: "budget_account_budgetId_idx")
+  @@index([accountId], name: "budget_account_accountId_idx")
+  @@map("budget_accounts")
+}
+
+model BudgetPeriodRecord {
+  id                String   @id @default(uuid(7))
+  budgetId          String   @map("budget_id")
+  periodStartDate   DateTime @map("period_start_date")
+  periodEndDate     DateTime @map("period_end_date")
+  carriedOverAmount Decimal  @default(0) @map("carried_over_amount") @db.Decimal(30, 10)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  budget Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  @@unique([budgetId, periodStartDate], name: "budget_period_unique")
+  @@index([budgetId], name: "budget_period_budgetId_idx")
+  @@index([periodStartDate], name: "budget_period_startDate_idx")
+  @@map("budget_periods")
 }
 
 model Entity {
@@ -533,11 +589,11 @@ model Role {
 }
 
 model RolePermission {
-  id           String     @id @default(uuid(7))
-  roleId       String     @map("role_id")
-  permissionId String     @map("permission_id")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
+  id           String   @id @default(uuid(7))
+  roleId       String   @map("role_id")
+  permissionId String   @map("permission_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
@@ -549,12 +605,12 @@ model RolePermission {
 }
 
 model RolePlayer {
-  id          String    @id @default(uuid(7))
-  playerId    String    @map("player_id")
-  roleId      String    @map("role_id")
+  id          String   @id @default(uuid(7))
+  playerId    String   @map("player_id")
+  roleId      String   @map("role_id")
   description String?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   player User @relation(fields: [playerId], references: [id], onDelete: Cascade)
   role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
@@ -566,15 +622,15 @@ model RolePlayer {
 }
 
 model Session {
-  id          String   @id @default(uuid(7))
-  userId      String   @map("user_id")
-  token       String   @unique
-  device      String?
-  ip          String?
-  expired     DateTime
-  revoked     Boolean  @default(false)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(uuid(7))
+  userId    String   @map("user_id")
+  token     String   @unique
+  device    String?
+  ip        String?
+  expired   DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -1,5 +1,6 @@
 export * from './AccountService';
 export * from './AuthService';
+export * from './BudgetService';
 export * from './CategoryService';
 export * from './CurrencyService';
 export * from './EntityService';

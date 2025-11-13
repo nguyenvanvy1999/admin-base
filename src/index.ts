@@ -4,6 +4,7 @@ import { redis } from '@server/config/redis';
 import { appEnv } from '@server/libs/env';
 import { Elysia } from 'elysia';
 import accountController from './controllers/account.controller';
+import budgetController from './controllers/budget.controller';
 import categoryController from './controllers/category.controller';
 import contributionController from './controllers/contribution.controller';
 import currencyController from './controllers/currency.controller';
@@ -59,6 +60,7 @@ export const app = new Elysia()
       .use(userController)
       .use(adminController)
       .use(accountController)
+      .use(budgetController)
       .use(categoryController)
       .use(currencyController)
       .use(entityController)
