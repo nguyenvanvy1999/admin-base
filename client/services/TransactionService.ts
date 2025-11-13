@@ -1,5 +1,6 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
 import type {
+  IBalanceAdjustmentDto,
   IUpsertTransaction,
   TransactionDeleteResponse,
   TransactionDetail,
@@ -43,6 +44,13 @@ export class TransactionService extends ServiceBase {
   deleteTransaction(transactionId: string): Promise<TransactionDeleteResponse> {
     return this.delete<TransactionDeleteResponse>({
       endpoint: transactionId,
+    });
+  }
+
+  adjustBalance(data: IBalanceAdjustmentDto): Promise<TransactionDetail> {
+    return this.post<TransactionDetail>({
+      endpoint: 'adjust-balance',
+      data,
     });
   }
 }

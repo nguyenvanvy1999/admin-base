@@ -64,6 +64,22 @@ export const BatchTransactionsDto = z.object({
   transactions: z.array(UpsertTransactionDto).min(1),
 });
 
+export const BalanceAdjustmentDto = z.object({
+  accountId: z.string().min(1),
+  newBalance: z.number().min(0),
+  date: z.iso.datetime(),
+  note: z.string().optional(),
+});
+
+export const BalanceAdjustmentElysiaDto = t.Object({
+  accountId: t.String({ minLength: 1 }),
+  newBalance: t.Number({ minimum: 0 }),
+  date: t.String({ format: 'date-time' }),
+  note: t.Optional(t.String()),
+});
+
+export type IBalanceAdjustmentDto = z.infer<typeof BalanceAdjustmentDto>;
+
 export const ListTransactionsQueryDto = z.object({
   types: z.preprocess((val) => {
     if (val === undefined || val === null) return undefined;

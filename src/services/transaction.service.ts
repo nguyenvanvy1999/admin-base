@@ -10,6 +10,7 @@ import { Elysia } from 'elysia';
 import { ErrorCode, throwAppError } from '../constants/error';
 import type {
   BatchTransactionsResponse,
+  IBalanceAdjustmentDto,
   IBatchTransactionsDto,
   IIncomeExpenseTransaction,
   IListTransactionsQuery,
@@ -26,6 +27,7 @@ import {
   decimalToString,
 } from '../utils/formatters';
 import { accountBalanceServiceInstance } from './account-balance.service';
+import { CategoryService } from './category.service';
 import { currencyConversionServiceInstance } from './currency-conversion.service';
 import { CURRENCY_SELECT_BASIC } from './selects';
 
@@ -829,9 +831,11 @@ class TransactionHandlerFactory {
 
 export class TransactionService {
   private handlerFactory: TransactionHandlerFactory;
+  private categoryService: CategoryService;
 
   constructor() {
     this.handlerFactory = new TransactionHandlerFactory();
+    this.categoryService = new CategoryService();
   }
 
   async upsertTransaction(
@@ -1326,6 +1330,86 @@ export class TransactionService {
         failed: results.filter((r) => !r.success).length,
       },
     };
+  }
+
+  async adjustAccountBalance(
+    userId: string,
+    data: IBalanceAdjustmentDto,
+  ): Promise<TransactionDetail> {
+    const account = await prisma.account.findFirst({
+      where: {
+        id: data.accountId,
+        userId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        balance: true,
+        currencyId: true,
+      },
+    });
+
+    if (!account) {
+      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
+    }
+
+    const currentBalance = new Decimal(account.balance);
+    const newBalance = new Decimal(data.newBalance);
+    const difference = newBalance.minus(currentBalance);
+
+    if (difference.isZero()) {
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'New balance must be different from current balance',
+      );
+    }
+
+    const transactionType = difference.isPositive()
+      ? TransactionType.income
+      : TransactionType.expense;
+    const categoryType = difference.isPositive() ? 'income' : 'expense';
+    const categoryId =
+      await this.categoryService.getOrCreateBalanceAdjustmentCategory(
+        userId,
+        categoryType,
+      );
+
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { id: true, baseCurrencyId: true },
+    });
+
+    const amount = difference.abs();
+
+    const transactionData: IIncomeExpenseTransaction = {
+      accountId: account.id,
+      amount: amount.toNumber(),
+      currencyId: account.currencyId,
+      fee: 0,
+      date: data.date,
+      note: data.note ?? undefined,
+      categoryId,
+      type: transactionType,
+      metadata: {
+        oldBalance: currentBalance.toNumber(),
+        newBalance: newBalance.toNumber(),
+      },
+    };
+
+    const accountRecord = {
+      id: account.id,
+    };
+
+    const transaction = await this.handlerFactory.handleIncomeExpense(
+      userId,
+      transactionData,
+      accountRecord as Awaited<
+        ReturnType<(typeof this.handlerFactory)['validateAccountOwnership']>
+      >,
+      user.baseCurrencyId,
+    );
+
+    return formatTransactionRecord(transaction);
   }
 }
 

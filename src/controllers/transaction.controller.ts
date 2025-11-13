@@ -1,6 +1,7 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
+  BalanceAdjustmentElysiaDto,
   BatchTransactionsDto,
   BatchTransactionsResponseDto,
   ListTransactionsQueryDto,
@@ -122,6 +123,25 @@ const transactionController = new Elysia().group(
           params: t.Object({ id: t.String() }),
           response: {
             200: TransactionDeleteResponseDto,
+          },
+        },
+      )
+      .post(
+        '/adjust-balance',
+        ({ user, body, transactionService }) => {
+          return transactionService.adjustAccountBalance(user.id, body);
+        },
+        {
+          checkAuth: [UserRole.user],
+          detail: {
+            ...TRANSACTION_DETAIL,
+            summary: 'Adjust account balance',
+            description:
+              'Adjust account balance by creating an income or expense transaction. The system automatically calculates the difference and creates the appropriate transaction.',
+          },
+          body: BalanceAdjustmentElysiaDto,
+          response: {
+            200: TransactionDetailDto,
           },
         },
       ),

@@ -269,6 +269,41 @@ export class CategoryService {
     return formatCategory(category);
   }
 
+  async getOrCreateBalanceAdjustmentCategory(
+    userId: string,
+    type: 'income' | 'expense',
+  ): Promise<string> {
+    const categoryType = type === 'income' ? 'income' : 'expense';
+    const categoryName = 'Balance Adjustment';
+
+    const existingCategory = await prisma.category.findFirst({
+      where: {
+        userId,
+        name: categoryName,
+        type: categoryType,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+
+    if (existingCategory) {
+      return existingCategory.id;
+    }
+
+    const newCategory = await prisma.category.create({
+      data: {
+        userId,
+        name: categoryName,
+        type: categoryType,
+        parentId: null,
+        isLocked: true,
+      },
+      select: { id: true },
+    });
+
+    return newCategory.id;
+  }
+
   async createCategory(
     userId: string,
     data: IUpsertCategoryDto,

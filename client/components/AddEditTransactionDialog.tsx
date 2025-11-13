@@ -1,3 +1,4 @@
+import { useAdjustBalanceMutation } from '@client/hooks/mutations/useTransactionMutations';
 import { useZodForm } from '@client/hooks/useZodForm';
 import {
   Button,
@@ -5,6 +6,7 @@ import {
   NumberInput,
   Stack,
   Tabs,
+  Text,
   Textarea,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
@@ -42,7 +44,24 @@ const baseSchema = z.object({
   borrowToPay: z.boolean().optional(),
 });
 
+const createBalanceAdjustmentSchema = (currentBalance: number | null) =>
+  z.object({
+    accountId: z.string().min(1, 'transactions.accountRequired'),
+    newBalance: z
+      .number()
+      .min(0, 'transactions.newBalanceRequired')
+      .refine(
+        (val) => currentBalance === null || val !== currentBalance,
+        'New balance must be different from current balance',
+      ),
+    date: z.string().min(1, 'transactions.dateRequired'),
+    note: z.string().optional(),
+  });
+
 type FormValue = z.infer<typeof baseSchema>;
+type BalanceAdjustmentFormValue = z.infer<
+  ReturnType<typeof createBalanceAdjustmentSchema>
+>;
 
 type AddEditTransactionDialogProps = {
   isOpen: boolean;
@@ -80,6 +99,7 @@ const AddEditTransactionDialog = ({
   );
   const [_saveAndAdd, setSaveAndAdd] = useState(false);
   const [feeEnabled, setFeeEnabled] = useState(false);
+  const [currentBalance, setCurrentBalance] = useState<number | null>(null);
 
   const accounts = accountsProp;
   const categories = categoriesProp;
@@ -92,8 +112,11 @@ const AddEditTransactionDialog = ({
       return TransactionType.loan_given;
     if (activeTab === TransactionType.loan_received)
       return TransactionType.loan_received;
+    if (activeTab === 'adjust_balance') return 'adjust_balance' as const;
     return TransactionType.expense;
   }, [activeTab]);
+
+  const isBalanceAdjustment = activeTab === 'adjust_balance';
 
   const isLoanType = useMemo(() => {
     return (
@@ -185,6 +208,31 @@ const AddEditTransactionDialog = ({
     defaultValues,
   });
 
+  const balanceAdjustmentDefaultValues: BalanceAdjustmentFormValue = {
+    accountId: '',
+    newBalance: 0,
+    date: new Date().toISOString(),
+    note: '',
+  };
+
+  const balanceAdjustmentSchema = useMemo(
+    () => createBalanceAdjustmentSchema(currentBalance),
+    [currentBalance],
+  );
+
+  const {
+    control: balanceAdjustmentControl,
+    handleSubmit: handleBalanceAdjustmentSubmit,
+    reset: resetBalanceAdjustment,
+    watch: watchBalanceAdjustment,
+  } = useZodForm({
+    zod: balanceAdjustmentSchema,
+    defaultValues: balanceAdjustmentDefaultValues,
+  });
+
+  const balanceAdjustmentAccountId = watchBalanceAdjustment('accountId');
+  const newBalanceValue = watchBalanceAdjustment('newBalance');
+
   const accountIdValue = watch('accountId');
   const toAccountIdValue = watch('toAccountId');
   const amountValue = watch('amount');
@@ -194,6 +242,27 @@ const AddEditTransactionDialog = ({
     if (!accountIdValue) return null;
     return accounts.find((acc) => acc.id === accountIdValue);
   }, [accountIdValue, accounts]);
+
+  const selectedBalanceAdjustmentAccount = useMemo(() => {
+    if (!balanceAdjustmentAccountId) return null;
+    return accounts.find((acc) => acc.id === balanceAdjustmentAccountId);
+  }, [balanceAdjustmentAccountId, accounts]);
+
+  useEffect(() => {
+    if (isBalanceAdjustment && selectedBalanceAdjustmentAccount) {
+      const balance = parseFloat(selectedBalanceAdjustmentAccount.balance);
+      setCurrentBalance(balance);
+    } else {
+      setCurrentBalance(null);
+    }
+  }, [isBalanceAdjustment, selectedBalanceAdjustmentAccount]);
+
+  const balanceDifference = useMemo(() => {
+    if (currentBalance === null || newBalanceValue === undefined) return null;
+    return newBalanceValue - currentBalance;
+  }, [currentBalance, newBalanceValue]);
+
+  const adjustBalanceMutation = useAdjustBalanceMutation();
 
   const selectedToAccount = useMemo(() => {
     if (!toAccountIdValue) return null;
@@ -243,6 +312,7 @@ const AddEditTransactionDialog = ({
 
   const handleClose = () => {
     reset(defaultValues);
+    resetBalanceAdjustment(balanceAdjustmentDefaultValues);
     setSaveAndAdd(false);
     setActiveTab(
       transaction?.type === TransactionType.income
@@ -256,6 +326,7 @@ const AddEditTransactionDialog = ({
               : TransactionType.expense,
     );
     setFeeEnabled(false);
+    setCurrentBalance(null);
     onClose();
   };
 
@@ -288,6 +359,10 @@ const AddEditTransactionDialog = ({
 
   const handleFormSubmit = (shouldSaveAndAdd: boolean) => {
     return handleSubmit((data) => {
+      if (isBalanceAdjustment) {
+        return;
+      }
+
       if (transactionType === TransactionType.transfer) {
         if (!data.toAccountId || data.toAccountId === data.accountId) {
           return;
@@ -348,11 +423,7 @@ const AddEditTransactionDialog = ({
           entityId: data.entityId,
         } as IUpsertTransaction;
       } else {
-        submitData = {
-          ...baseData,
-          type: transactionType,
-          entityId: data.entityId || '',
-        } as IUpsertTransaction;
+        throw new Error(`Invalid transaction type: ${transactionType}`);
       }
 
       onSubmit(submitData, shouldSaveAndAdd);
@@ -380,6 +451,45 @@ const AddEditTransactionDialog = ({
   const onSubmitForm = handleFormSubmit(false);
   const onSubmitFormAndAdd = handleFormSubmit(true);
 
+  const handleBalanceAdjustmentFormSubmit = (shouldSaveAndAdd: boolean) => {
+    return handleBalanceAdjustmentSubmit(async (data) => {
+      if (currentBalance === null || data.newBalance === currentBalance) {
+        return;
+      }
+
+      try {
+        await adjustBalanceMutation.mutateAsync({
+          accountId: data.accountId,
+          newBalance: data.newBalance,
+          date: data.date,
+          note: data.note,
+        });
+
+        if (!shouldSaveAndAdd) {
+          handleClose();
+        } else {
+          const currentAccountId = data.accountId;
+          const currentDate = data.date;
+          resetBalanceAdjustment(balanceAdjustmentDefaultValues);
+          setTimeout(() => {
+            resetBalanceAdjustment({
+              ...balanceAdjustmentDefaultValues,
+              accountId: currentAccountId,
+              date: currentDate,
+            });
+          }, 0);
+        }
+      } catch (_error) {
+        // Error is handled by mutation
+      }
+    });
+  };
+
+  const onSubmitBalanceAdjustmentForm =
+    handleBalanceAdjustmentFormSubmit(false);
+  const onSubmitBalanceAdjustmentFormAndAdd =
+    handleBalanceAdjustmentFormSubmit(true);
+
   return (
     <Modal
       opened={isOpen}
@@ -392,7 +502,11 @@ const AddEditTransactionDialog = ({
       size="xl"
       centered
     >
-      <form onSubmit={onSubmitForm}>
+      <form
+        onSubmit={
+          isBalanceAdjustment ? onSubmitBalanceAdjustmentForm : onSubmitForm
+        }
+      >
         <Stack gap="md">
           <Tabs
             value={activeTab}
@@ -416,63 +530,16 @@ const AddEditTransactionDialog = ({
                   defaultValue: 'Loan Received',
                 })}
               </Tabs.Tab>
-              <Tabs.Tab value="adjust_balance" disabled>
+              <Tabs.Tab value="adjust_balance">
                 {t('transactions.adjustBalance')}
               </Tabs.Tab>
             </Tabs.List>
           </Tabs>
 
-          <div className="grid grid-cols-2 gap-4">
+          {isBalanceAdjustment ? (
             <div className="space-y-4">
               <ZodFormController
-                control={control}
-                name="amount"
-                render={({ field, fieldState: { error } }) => (
-                  <NumberInput
-                    label={
-                      isTransfer
-                        ? t('transactions.amountFrom', {
-                            defaultValue: 'Amount From',
-                          })
-                        : t('transactions.amount')
-                    }
-                    placeholder={`0 ${currencySymbol}`}
-                    required
-                    error={error}
-                    value={field.value ?? 0}
-                    onChange={(value) => field.onChange(Number(value) || 0)}
-                    thousandSeparator=","
-                    decimalScale={2}
-                    min={0}
-                    prefix={currencySymbol ? `${currencySymbol} ` : ''}
-                  />
-                )}
-              />
-
-              {isTransfer && (
-                <ZodFormController
-                  control={control}
-                  name="toAmount"
-                  render={({ field, fieldState: { error } }) => (
-                    <NumberInput
-                      label={t('transactions.amountTo', {
-                        defaultValue: 'Amount To',
-                      })}
-                      placeholder={`0 ${toCurrencySymbol}`}
-                      error={error}
-                      value={field.value ?? 0}
-                      onChange={(value) => field.onChange(Number(value) || 0)}
-                      thousandSeparator=","
-                      decimalScale={2}
-                      min={0}
-                      prefix={toCurrencySymbol ? `${toCurrencySymbol} ` : ''}
-                    />
-                  )}
-                />
-              )}
-
-              <ZodFormController
-                control={control}
+                control={balanceAdjustmentControl}
                 name="accountId"
                 render={({ field, fieldState: { error } }) => (
                   <Select
@@ -488,32 +555,84 @@ const AddEditTransactionDialog = ({
                 )}
               />
 
-              {transactionType === TransactionType.transfer && (
-                <ZodFormController
-                  control={control}
-                  name="toAccountId"
-                  render={({ field, fieldState: { error } }) => {
-                    const toAccountOptions = accountOptions.filter(
-                      (opt) => opt.value !== accountIdValue,
-                    );
-                    return (
-                      <Select
-                        label={t('transactions.transferTo')}
-                        placeholder={t('transactions.selectAccount')}
-                        required
-                        error={error}
-                        items={toAccountOptions}
-                        value={field.value || null}
-                        onChange={(value) => field.onChange(value || '')}
-                        searchable
-                      />
-                    );
-                  }}
-                />
+              {selectedBalanceAdjustmentAccount && currentBalance !== null && (
+                <div>
+                  <Text size="sm" fw={500} mb={4}>
+                    {t('transactions.currentBalance', {
+                      defaultValue: 'Current Balance',
+                    })}
+                  </Text>
+                  <Text
+                    size="lg"
+                    c={
+                      selectedBalanceAdjustmentAccount.currency.symbol
+                        ? undefined
+                        : 'dimmed'
+                    }
+                  >
+                    {selectedBalanceAdjustmentAccount.currency.symbol}{' '}
+                    {currentBalance.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </Text>
+                </div>
               )}
 
               <ZodFormController
-                control={control}
+                control={balanceAdjustmentControl}
+                name="newBalance"
+                render={({ field, fieldState: { error } }) => (
+                  <NumberInput
+                    label={t('transactions.newBalance', {
+                      defaultValue: 'New Balance',
+                    })}
+                    placeholder={`0 ${selectedBalanceAdjustmentAccount?.currency.symbol || ''}`}
+                    required
+                    error={error}
+                    value={field.value ?? 0}
+                    onChange={(value) => field.onChange(Number(value) || 0)}
+                    thousandSeparator=","
+                    decimalScale={2}
+                    min={0}
+                    prefix={
+                      selectedBalanceAdjustmentAccount?.currency.symbol
+                        ? `${selectedBalanceAdjustmentAccount.currency.symbol} `
+                        : ''
+                    }
+                  />
+                )}
+              />
+
+              {balanceDifference !== null && (
+                <div>
+                  <Text size="sm" fw={500} mb={4}>
+                    {t('transactions.balanceDifference', {
+                      defaultValue: 'Difference',
+                    })}
+                  </Text>
+                  <Text
+                    size="lg"
+                    c={
+                      balanceDifference > 0
+                        ? 'green'
+                        : balanceDifference < 0
+                          ? 'red'
+                          : 'dimmed'
+                    }
+                  >
+                    {balanceDifference > 0 ? '+' : ''}
+                    {selectedBalanceAdjustmentAccount?.currency.symbol}{' '}
+                    {balanceDifference.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </Text>
+                </div>
+              )}
+
+              <ZodFormController
+                control={balanceAdjustmentControl}
                 name="date"
                 render={({ field, fieldState: { error } }) => {
                   const dateValue = field.value
@@ -543,122 +662,7 @@ const AddEditTransactionDialog = ({
               />
 
               <ZodFormController
-                control={control}
-                name="eventId"
-                render={({ field, fieldState: { error } }) => (
-                  <EventSelect
-                    value={field.value ?? null}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    error={typeof error === 'string' ? error : undefined}
-                    clearable
-                  />
-                )}
-              />
-
-              {!isLoanType && (
-                <ZodFormController
-                  control={control}
-                  name="entityId"
-                  render={({ field, fieldState: { error } }) => (
-                    <Select
-                      label={t('transactions.spendFor')}
-                      placeholder={t('transactions.spendForPlaceholder')}
-                      error={error}
-                      items={entityOptions}
-                      value={field.value || null}
-                      onChange={(value) => field.onChange(value || null)}
-                      searchable
-                      clearable
-                    />
-                  )}
-                />
-              )}
-            </div>
-
-            <div className="space-y-4">
-              {transactionType !== TransactionType.transfer && !isLoanType && (
-                <ZodFormController
-                  control={control}
-                  name="categoryId"
-                  render={({ field, fieldState: { error } }) => (
-                    <div>
-                      <CategorySelect
-                        label={t('transactions.category')}
-                        placeholder={t('transactions.selectCategory')}
-                        required
-                        value={field.value ? field.value : null}
-                        onChange={(value) => {
-                          field.onChange(value ?? '');
-                        }}
-                        error={error ? String(error) : undefined}
-                        filterType={categoryType}
-                        searchable
-                        categories={categories}
-                      />
-                      {quickCategoryButtons.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {quickCategoryButtons.map((cat) => {
-                            const IconComponent = cat.icon
-                              ? getCategoryIcon(cat.icon)
-                              : null;
-                            return (
-                              <Button
-                                key={cat.id}
-                                type="button"
-                                variant={
-                                  categoryIdValue === cat.id
-                                    ? 'filled'
-                                    : 'outline'
-                                }
-                                size="xs"
-                                onClick={() => field.onChange(cat.id)}
-                                leftSection={
-                                  IconComponent ? (
-                                    <IconComponent
-                                      style={{
-                                        fontSize: 16,
-                                        color: cat.color || 'inherit',
-                                        opacity: 0.8,
-                                      }}
-                                    />
-                                  ) : null
-                                }
-                              >
-                                {cat.name}
-                              </Button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                />
-              )}
-
-              {isLoanType && (
-                <ZodFormController
-                  control={control}
-                  name="entityId"
-                  render={({ field, fieldState: { error } }) => (
-                    <Select
-                      label={t('transactions.entity')}
-                      placeholder={t('transactions.selectEntity', {
-                        defaultValue: 'Select entity',
-                      })}
-                      required
-                      error={error}
-                      items={entityOptions}
-                      value={field.value || null}
-                      onChange={(value) => field.onChange(value || null)}
-                      searchable
-                    />
-                  )}
-                />
-              )}
-
-              <ZodFormController
-                control={control}
+                control={balanceAdjustmentControl}
                 name="note"
                 render={({ field, fieldState: { error } }) => (
                   <Textarea
@@ -670,67 +674,330 @@ const AddEditTransactionDialog = ({
                   />
                 )}
               />
-
-              {transactionType !== TransactionType.transfer && !isLoanType && (
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <ZodFormController
                   control={control}
-                  name="borrowToPay"
-                  render={({
-                    field: { value, ...field },
-                    fieldState: { error },
-                  }) => (
-                    <Switch
-                      label={t('transactions.borrowToPay')}
+                  name="amount"
+                  render={({ field, fieldState: { error } }) => (
+                    <NumberInput
+                      label={
+                        isTransfer
+                          ? t('transactions.amountFrom', {
+                              defaultValue: 'Amount From',
+                            })
+                          : t('transactions.amount')
+                      }
+                      placeholder={`0 ${currencySymbol}`}
+                      required
                       error={error}
-                      checked={value ?? false}
-                      onChange={(e) => field.onChange(e.currentTarget.checked)}
+                      value={field.value ?? 0}
+                      onChange={(value) => field.onChange(Number(value) || 0)}
+                      thousandSeparator=","
+                      decimalScale={2}
+                      min={0}
+                      prefix={currencySymbol ? `${currencySymbol} ` : ''}
                     />
                   )}
                 />
-              )}
 
-              <ZodFormController
-                control={control}
-                name="fee"
-                render={({ field, fieldState: { error } }) => (
-                  <div>
-                    <Switch
-                      label={t('transactions.fee')}
-                      checked={feeEnabled}
-                      onChange={(e) => {
-                        setFeeEnabled(e.currentTarget.checked);
-                        if (!e.currentTarget.checked) {
-                          field.onChange(0);
-                        }
-                      }}
-                      mb="xs"
-                    />
-                    {feeEnabled && (
+                {isTransfer && (
+                  <ZodFormController
+                    control={control}
+                    name="toAmount"
+                    render={({ field, fieldState: { error } }) => (
                       <NumberInput
-                        label={t('transactions.fee')}
-                        placeholder={t('transactions.feePlaceholder')}
+                        label={t('transactions.amountTo', {
+                          defaultValue: 'Amount To',
+                        })}
+                        placeholder={`0 ${toCurrencySymbol}`}
                         error={error}
                         value={field.value ?? 0}
                         onChange={(value) => field.onChange(Number(value) || 0)}
                         thousandSeparator=","
                         decimalScale={2}
                         min={0}
-                        prefix={currencySymbol ? `${currencySymbol} ` : ''}
+                        prefix={toCurrencySymbol ? `${toCurrencySymbol} ` : ''}
                       />
                     )}
-                  </div>
+                  />
                 )}
-              />
+
+                <ZodFormController
+                  control={control}
+                  name="accountId"
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      label={t('transactions.account')}
+                      placeholder={t('transactions.selectAccount')}
+                      required
+                      error={error}
+                      items={accountOptions}
+                      value={field.value || null}
+                      onChange={(value) => field.onChange(value || '')}
+                      searchable
+                    />
+                  )}
+                />
+
+                {transactionType === TransactionType.transfer && (
+                  <ZodFormController
+                    control={control}
+                    name="toAccountId"
+                    render={({ field, fieldState: { error } }) => {
+                      const toAccountOptions = accountOptions.filter(
+                        (opt) => opt.value !== accountIdValue,
+                      );
+                      return (
+                        <Select
+                          label={t('transactions.transferTo')}
+                          placeholder={t('transactions.selectAccount')}
+                          required
+                          error={error}
+                          items={toAccountOptions}
+                          value={field.value || null}
+                          onChange={(value) => field.onChange(value || '')}
+                          searchable
+                        />
+                      );
+                    }}
+                  />
+                )}
+
+                <ZodFormController
+                  control={control}
+                  name="date"
+                  render={({ field, fieldState: { error } }) => {
+                    const dateValue = field.value
+                      ? new Date(field.value)
+                      : new Date();
+                    return (
+                      <DateTimePicker
+                        label={t('transactions.date')}
+                        placeholder={t('transactions.selectDate')}
+                        required
+                        error={error}
+                        value={dateValue}
+                        onChange={(value: Date | string | null) => {
+                          if (value) {
+                            field.onChange(
+                              (value instanceof Date
+                                ? value
+                                : new Date(value)
+                              ).toISOString(),
+                            );
+                          }
+                        }}
+                        valueFormat="DD/MM/YYYY HH:mm"
+                      />
+                    );
+                  }}
+                />
+
+                <ZodFormController
+                  control={control}
+                  name="eventId"
+                  render={({ field, fieldState: { error } }) => (
+                    <EventSelect
+                      value={field.value ?? null}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      error={typeof error === 'string' ? error : undefined}
+                      clearable
+                    />
+                  )}
+                />
+
+                {!isLoanType && (
+                  <ZodFormController
+                    control={control}
+                    name="entityId"
+                    render={({ field, fieldState: { error } }) => (
+                      <Select
+                        label={t('transactions.spendFor')}
+                        placeholder={t('transactions.spendForPlaceholder')}
+                        error={error}
+                        items={entityOptions}
+                        value={field.value || null}
+                        onChange={(value) => field.onChange(value || null)}
+                        searchable
+                        clearable
+                      />
+                    )}
+                  />
+                )}
+              </div>
+
+              <div className="space-y-4">
+                {transactionType !== TransactionType.transfer &&
+                  !isLoanType && (
+                    <ZodFormController
+                      control={control}
+                      name="categoryId"
+                      render={({ field, fieldState: { error } }) => (
+                        <div>
+                          <CategorySelect
+                            label={t('transactions.category')}
+                            placeholder={t('transactions.selectCategory')}
+                            required
+                            value={field.value ? field.value : null}
+                            onChange={(value) => {
+                              field.onChange(value ?? '');
+                            }}
+                            error={error ? String(error) : undefined}
+                            filterType={categoryType}
+                            searchable
+                            categories={categories}
+                          />
+                          {quickCategoryButtons.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {quickCategoryButtons.map((cat) => {
+                                const IconComponent = cat.icon
+                                  ? getCategoryIcon(cat.icon)
+                                  : null;
+                                return (
+                                  <Button
+                                    key={cat.id}
+                                    type="button"
+                                    variant={
+                                      categoryIdValue === cat.id
+                                        ? 'filled'
+                                        : 'outline'
+                                    }
+                                    size="xs"
+                                    onClick={() => field.onChange(cat.id)}
+                                    leftSection={
+                                      IconComponent ? (
+                                        <IconComponent
+                                          style={{
+                                            fontSize: 16,
+                                            color: cat.color || 'inherit',
+                                            opacity: 0.8,
+                                          }}
+                                        />
+                                      ) : null
+                                    }
+                                  >
+                                    {cat.name}
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    />
+                  )}
+
+                {isLoanType && (
+                  <ZodFormController
+                    control={control}
+                    name="entityId"
+                    render={({ field, fieldState: { error } }) => (
+                      <Select
+                        label={t('transactions.entity')}
+                        placeholder={t('transactions.selectEntity', {
+                          defaultValue: 'Select entity',
+                        })}
+                        required
+                        error={error}
+                        items={entityOptions}
+                        value={field.value || null}
+                        onChange={(value) => field.onChange(value || null)}
+                        searchable
+                      />
+                    )}
+                  />
+                )}
+
+                <ZodFormController
+                  control={control}
+                  name="note"
+                  render={({ field, fieldState: { error } }) => (
+                    <Textarea
+                      label={t('transactions.description')}
+                      placeholder={t('transactions.descriptionPlaceholder')}
+                      error={error}
+                      rows={3}
+                      {...field}
+                    />
+                  )}
+                />
+
+                {transactionType !== TransactionType.transfer &&
+                  !isLoanType && (
+                    <ZodFormController
+                      control={control}
+                      name="borrowToPay"
+                      render={({
+                        field: { value, ...field },
+                        fieldState: { error },
+                      }) => (
+                        <Switch
+                          label={t('transactions.borrowToPay')}
+                          error={error}
+                          checked={value ?? false}
+                          onChange={(e) =>
+                            field.onChange(e.currentTarget.checked)
+                          }
+                        />
+                      )}
+                    />
+                  )}
+
+                <ZodFormController
+                  control={control}
+                  name="fee"
+                  render={({ field, fieldState: { error } }) => (
+                    <div>
+                      <Switch
+                        label={t('transactions.fee')}
+                        checked={feeEnabled}
+                        onChange={(e) => {
+                          setFeeEnabled(e.currentTarget.checked);
+                          if (!e.currentTarget.checked) {
+                            field.onChange(0);
+                          }
+                        }}
+                        mb="xs"
+                      />
+                      {feeEnabled && (
+                        <NumberInput
+                          label={t('transactions.fee')}
+                          placeholder={t('transactions.feePlaceholder')}
+                          error={error}
+                          value={field.value ?? 0}
+                          onChange={(value) =>
+                            field.onChange(Number(value) || 0)
+                          }
+                          thousandSeparator=","
+                          decimalScale={2}
+                          min={0}
+                          prefix={currencySymbol ? `${currencySymbol} ` : ''}
+                        />
+                      )}
+                    </div>
+                  )}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <DialogFooterButtons
             isEditMode={isEditMode}
-            isLoading={isLoading}
+            isLoading={isLoading || adjustBalanceMutation.isPending}
             onCancel={handleClose}
-            onSave={onSubmitForm}
-            onSaveAndAdd={onSubmitFormAndAdd}
-            showSaveAndAdd={true}
+            onSave={
+              isBalanceAdjustment ? onSubmitBalanceAdjustmentForm : onSubmitForm
+            }
+            onSaveAndAdd={
+              isBalanceAdjustment
+                ? onSubmitBalanceAdjustmentFormAndAdd
+                : onSubmitFormAndAdd
+            }
+            showSaveAndAdd={!isBalanceAdjustment}
           />
         </Stack>
       </form>
