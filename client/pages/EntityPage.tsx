@@ -162,7 +162,10 @@ const EntityPage = () => {
         </Button>
       }
       onSearch={handleSearch}
-      onReset={() => form.reset(defaultFilterValues)}
+      onReset={() => {
+        form.reset(defaultFilterValues);
+        refetch();
+      }}
     >
       <EntityTable
         entities={data?.entities || []}

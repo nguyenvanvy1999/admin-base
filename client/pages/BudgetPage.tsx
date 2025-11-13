@@ -215,7 +215,10 @@ const BudgetPage = () => {
           </Button>
         }
         onSearch={handleSearch}
-        onReset={() => form.reset(defaultFilterValues)}
+        onReset={() => {
+          form.reset(defaultFilterValues);
+          refetch();
+        }}
       >
         <BudgetTable
           budgets={data?.budgets || []}

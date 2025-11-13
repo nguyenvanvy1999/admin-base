@@ -158,7 +158,10 @@ const UserPage = () => {
         )
       }
       onSearch={handleSearch}
-      onReset={() => form.reset(defaultFilterValues)}
+      onReset={() => {
+        form.reset(defaultFilterValues);
+        refetch();
+      }}
     >
       <UserTable
         users={data?.users || []}

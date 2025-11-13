@@ -124,6 +124,11 @@ const TransactionPage = () => {
     refetch();
   };
 
+  const handleReset = () => {
+    form.reset(defaultFilterValues);
+    refetch();
+  };
+
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
@@ -298,7 +303,7 @@ const TransactionPage = () => {
         </Button>
       }
       onSearch={handleSearch}
-      onReset={() => form.reset(defaultFilterValues)}
+      onReset={handleReset}
       stats={stats}
     >
       <TransactionTable

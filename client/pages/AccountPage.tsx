@@ -211,7 +211,10 @@ const AccountPage = () => {
         </Button>
       }
       onSearch={handleSearch}
-      onReset={() => form.reset(defaultFilterValues)}
+      onReset={() => {
+        form.reset(defaultFilterValues);
+        refetch();
+      }}
       stats={stats}
     >
       <AccountTable

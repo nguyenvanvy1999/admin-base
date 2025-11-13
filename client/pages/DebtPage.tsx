@@ -239,7 +239,10 @@ const DebtPage = () => {
         </Button>
       }
       onSearch={handleSearch}
-      onReset={() => reset(defaultFilterValues)}
+      onReset={() => {
+        reset(defaultFilterValues);
+        refetch();
+      }}
     >
       <TransactionTable
         transactions={data?.transactions || []}

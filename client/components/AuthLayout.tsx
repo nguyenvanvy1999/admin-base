@@ -21,7 +21,7 @@ export const AuthLayout = ({ title, children }: AuthLayoutProps) => {
       }}
       p="xl"
     >
-      <Container size="xs" w="100%">
+      <Container size="sm" w="100%" maw={600}>
         <Stack gap="xl">
           <Stack align="center" gap="md">
             <Image

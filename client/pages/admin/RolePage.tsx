@@ -160,7 +160,10 @@ const RolePage = () => {
         )
       }
       onSearch={handleSearch}
-      onReset={() => form.reset(defaultFilterValues)}
+      onReset={() => {
+        form.reset(defaultFilterValues);
+        refetch();
+      }}
     >
       <RoleTable
         roles={data?.roles || []}

@@ -147,6 +147,11 @@ const InvestmentPage = () => {
     refetch();
   };
 
+  const handleReset = () => {
+    reset(defaultFilterValues);
+    refetch();
+  };
+
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
@@ -281,7 +286,7 @@ const InvestmentPage = () => {
         </Button>
       }
       onSearch={handleSearch}
-      onReset={() => reset(defaultFilterValues)}
+      onReset={handleReset}
       stats={stats}
     >
       <InvestmentTable

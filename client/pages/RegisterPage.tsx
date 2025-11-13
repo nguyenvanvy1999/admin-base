@@ -45,14 +45,13 @@ const RegisterPage = () => {
         description={t('register.joinUs')}
       >
         <form
-          className="space-y-6"
           onSubmit={(e) => {
             e.preventDefault();
             e.stopPropagation();
             onSubmitForm();
           }}
         >
-          <Stack gap="md">
+          <Stack gap="md" mb="md">
             <ZodFormController
               control={control}
               name="username"

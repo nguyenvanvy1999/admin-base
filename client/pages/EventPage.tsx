@@ -88,7 +88,7 @@ const EventPage = () => {
     [page, limit, sortBy, sortOrder, searchValue],
   );
 
-  const { data, isLoading } = useEventsQuery(queryParams);
+  const { data, isLoading, refetch } = useEventsQuery(queryParams);
   const createMutation = useCreateEventMutation();
   const updateMutation = useUpdateEventMutation();
   const deleteMutation = useDeleteEventMutation();
@@ -153,7 +153,10 @@ const EventPage = () => {
           {t('events.addEvent')}
         </Button>
       }
-      onReset={() => reset(defaultFilterValues)}
+      onReset={() => {
+        reset(defaultFilterValues);
+        refetch();
+      }}
     >
       <EventTable
         events={data?.events || []}
