@@ -41,6 +41,7 @@
     "@tanstack/react-table": "^8.20.5",
     "axios": "^1.8.4",
     "dayjs": "^1.11.19",
+    "decimal.js": "^10.6.0",
     "elysia": "1.4.15",
     "i18next": "^25.6.2",
     "i18next-browser-languagedetector": "^8.2.0",

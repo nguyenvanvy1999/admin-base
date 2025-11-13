@@ -1,4 +1,5 @@
-import { Select } from '@mantine/core';
+import { Box, Button, Group, Select, Text } from '@mantine/core';
+import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 type PaginationProps = {
@@ -33,41 +34,42 @@ const Pagination = ({
   const pageSizeOptions = pageSize?.options || [10, 20, 50, 100];
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 sm:px-6">
-      <div className="flex flex-1 justify-between sm:hidden w-full">
-        <button
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1 || isLoading}
-          className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {t('common.previous', { defaultValue: 'Previous' })}
-        </button>
-        <button
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage >= totalPages || isLoading}
-          className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {t('common.next', { defaultValue: 'Next' })}
-        </button>
-      </div>
-      <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between w-full">
-        <div>
-          <p className="text-sm text-gray-700 dark:text-gray-300">
-            {t('common.showing', { defaultValue: 'Showing' })}{' '}
-            <span className="font-medium">{startItem}</span>{' '}
-            {t('common.to', { defaultValue: 'to' })}{' '}
-            <span className="font-medium">{endItem}</span>{' '}
-            {t('common.of', { defaultValue: 'of' })}{' '}
-            <span className="font-medium">{totalItems}</span>{' '}
-            {t('common.results', { defaultValue: 'results' })}
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
+    <Box
+      p="sm"
+      style={{
+        borderTop: '1px solid var(--mantine-color-gray-3)',
+        backgroundColor: 'var(--mantine-color-body)',
+      }}
+    >
+      <Group
+        justify="space-between"
+        align="center"
+        gap="md"
+        wrap="wrap"
+        visibleFrom="sm"
+      >
+        <Text size="sm" c="dimmed">
+          {t('common.showing', { defaultValue: 'Showing' })}{' '}
+          <Text component="span" fw={500} c="var(--mantine-color-text)">
+            {startItem}
+          </Text>{' '}
+          {t('common.to', { defaultValue: 'to' })}{' '}
+          <Text component="span" fw={500} c="var(--mantine-color-text)">
+            {endItem}
+          </Text>{' '}
+          {t('common.of', { defaultValue: 'of' })}{' '}
+          <Text component="span" fw={500} c="var(--mantine-color-text)">
+            {totalItems}
+          </Text>{' '}
+          {t('common.results', { defaultValue: 'results' })}
+        </Text>
+
+        <Group gap="xs">
           {pageSize && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+            <Group gap="xs">
+              <Text size="sm" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
                 {t('common.pageSizeLabel', { defaultValue: 'Show' })}
-              </span>
+              </Text>
               <Select
                 value={itemsPerPage.toString()}
                 onChange={(value) => {
@@ -80,42 +82,31 @@ const Pagination = ({
                   label: size.toString(),
                 }))}
                 disabled={isLoading}
-                className="w-20"
-                styles={{
-                  input: {
-                    minHeight: '32px',
-                    height: '32px',
-                  },
-                }}
+                size="xs"
+                w={70}
               />
-            </div>
+            </Group>
           )}
+
           {totalPages > 1 && (
-            <nav
-              className="isolate inline-flex -space-x-px rounded-md shadow-sm"
-              aria-label="Pagination"
-            >
-              <button
+            <Group gap={1}>
+              <Button
+                variant="light"
+                size="xs"
                 onClick={() => onPageChange(currentPage - 1)}
                 disabled={currentPage === 1 || isLoading}
-                className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 dark:text-gray-500 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={t('common.previous', { defaultValue: 'Previous' })}
+                styles={{
+                  root: {
+                    minWidth: '24px',
+                    width: '24px',
+                    height: '24px',
+                    padding: '0',
+                  },
+                }}
               >
-                <span className="sr-only">
-                  {t('common.previous', { defaultValue: 'Previous' })}
-                </span>
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
+                <IconChevronLeft size={12} />
+              </Button>
 
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(
                 (page) => {
@@ -125,62 +116,89 @@ const Pagination = ({
                     (page >= currentPage - 1 && page <= currentPage + 1)
                   ) {
                     return (
-                      <button
+                      <Button
                         key={page}
+                        variant={page === currentPage ? 'filled' : 'light'}
+                        size="xs"
                         onClick={() => onPageChange(page)}
                         disabled={isLoading}
-                        className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                          page === currentPage
-                            ? 'z-10 bg-[hsl(var(--color-primary))] text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[hsl(var(--color-primary))]'
-                            : 'text-gray-900 dark:text-gray-100 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        styles={{
+                          root: {
+                            minWidth: '24px',
+                            height: '24px',
+                            padding: '0 6px',
+                            fontSize: '11px',
+                          },
+                        }}
                       >
                         {page}
-                      </button>
+                      </Button>
                     );
                   } else if (
                     page === currentPage - 2 ||
                     page === currentPage + 2
                   ) {
                     return (
-                      <span
+                      <Text
                         key={page}
-                        className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-600"
+                        size="xs"
+                        c="dimmed"
+                        px={2}
+                        style={{ userSelect: 'none', fontSize: '11px' }}
                       >
                         ...
-                      </span>
+                      </Text>
                     );
                   }
                   return null;
                 },
               )}
 
-              <button
+              <Button
+                variant="light"
+                size="xs"
                 onClick={() => onPageChange(currentPage + 1)}
                 disabled={currentPage >= totalPages || isLoading}
-                className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 dark:text-gray-500 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={t('common.next', { defaultValue: 'Next' })}
+                styles={{
+                  root: {
+                    minWidth: '24px',
+                    width: '24px',
+                    height: '24px',
+                    padding: '0',
+                  },
+                }}
               >
-                <span className="sr-only">
-                  {t('common.next', { defaultValue: 'Next' })}
-                </span>
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-            </nav>
+                <IconChevronRight size={12} />
+              </Button>
+            </Group>
           )}
-        </div>
-      </div>
-    </div>
+        </Group>
+      </Group>
+
+      <Group justify="space-between" gap="xs" hiddenFrom="sm">
+        <Button
+          variant="light"
+          size="xs"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1 || isLoading}
+          leftSection={<IconChevronLeft size={14} />}
+          flex={1}
+        >
+          {t('common.previous', { defaultValue: 'Previous' })}
+        </Button>
+        <Button
+          variant="light"
+          size="xs"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage >= totalPages || isLoading}
+          rightSection={<IconChevronRight size={14} />}
+          flex={1}
+        >
+          {t('common.next', { defaultValue: 'Next' })}
+        </Button>
+      </Group>
+    </Box>
   );
 };
 
