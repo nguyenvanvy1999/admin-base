@@ -527,5 +527,25 @@
       "lastUpdated": "Cập nhật lần cuối",
       "noValuation": "Không có định giá"
     }
+  },
+  "api": {
+    "ise": "Lỗi máy chủ. Vui lòng thử lại sau.",
+    "validation_error": "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.",
+    "not_found": "Không tìm thấy tài nguyên.",
+    "unauthorized": "Chưa đăng nhập. Vui lòng đăng nhập.",
+    "forbidden": "Bạn không có quyền thực hiện hành động này.",
+    "entity_not_found": "Không tìm thấy đối tượng.",
+    "account_not_found": "Không tìm thấy tài khoản.",
+    "currency_not_found": "Không tìm thấy loại tiền tệ.",
+    "investment_not_found": "Không tìm thấy khoản đầu tư.",
+    "user_not_found": "Không tìm thấy người dùng.",
+    "duplicate_name": "Đã tồn tại bản ghi với tên này.",
+    "invalid_transaction_type": "Loại giao dịch không hợp lệ.",
+    "insufficient_balance": "Số dư không đủ.",
+    "exchange_rate_error": "Không thể lấy tỷ giá.",
+    "invalid_currency_mismatch": "Không khớp loại tiền tệ. Vui lòng kiểm tra lại.",
+    "withdrawal_exceeds_balance": "Số tiền rút vượt quá số dư khả dụng.",
+    "exchange_rate_refreshed": "Đã làm mới tỷ giá thành công",
+    "exchange_rate_refresh_failed": "Không thể làm mới tỷ giá"
   }
 }

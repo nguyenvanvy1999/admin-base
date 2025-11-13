@@ -2,6 +2,7 @@ import { TransactionType } from '@server/generated/prisma/enums';
 import { prisma } from '@server/libs/db';
 import { logger } from '@server/libs/logger';
 import { Elysia } from 'elysia';
+import { ErrorCode, throwAppError } from '../constants/error';
 import type {
   IIncomeExpenseDetailedQueryDto,
   IInvestmentContributionsDetailedQueryDto,
@@ -34,7 +35,7 @@ export class ReportService {
       select: { baseCurrencyId: true },
     });
     if (!user) {
-      throw new Error('User not found');
+      throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
     return user.baseCurrencyId;
   }

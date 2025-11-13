@@ -527,5 +527,25 @@
       "lastUpdated": "Last Updated",
       "noValuation": "No valuation available"
     }
+  },
+  "api": {
+    "ise": "Internal server error. Please try again later.",
+    "validation_error": "Invalid data provided. Please check your input.",
+    "not_found": "Resource not found.",
+    "unauthorized": "Unauthorized. Please log in.",
+    "forbidden": "You don't have permission to perform this action.",
+    "entity_not_found": "Entity not found.",
+    "account_not_found": "Account not found.",
+    "currency_not_found": "Currency not found.",
+    "investment_not_found": "Investment not found.",
+    "user_not_found": "User not found.",
+    "duplicate_name": "A record with this name already exists.",
+    "invalid_transaction_type": "Invalid transaction type.",
+    "insufficient_balance": "Insufficient balance.",
+    "exchange_rate_error": "Failed to fetch exchange rate.",
+    "invalid_currency_mismatch": "Currency mismatch. Please check your selection.",
+    "withdrawal_exceeds_balance": "Withdrawal amount exceeds available balance.",
+    "exchange_rate_refreshed": "Exchange rates refreshed successfully",
+    "exchange_rate_refresh_failed": "Failed to refresh exchange rates"
   }
 }

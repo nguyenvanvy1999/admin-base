@@ -1,5 +1,6 @@
 import { prisma } from '@server/libs/db';
 import Decimal from 'decimal.js';
+import { ErrorCode, throwAppError } from '../constants/error';
 import { exchangeRateServiceInstance } from './exchange-rate.service';
 import { CURRENCY_SELECT_BASIC } from './selects';
 
@@ -25,7 +26,7 @@ export class CurrencyConversionService {
     });
 
     if (!fromCurrency || !toCurrency) {
-      throw new Error('Currency not found');
+      throwAppError(ErrorCode.CURRENCY_NOT_FOUND, 'Currency not found');
     }
 
     try {
@@ -35,7 +36,8 @@ export class CurrencyConversionService {
       );
       return new Decimal(amount).mul(rate);
     } catch (error) {
-      throw new Error(
+      throwAppError(
+        ErrorCode.EXCHANGE_RATE_ERROR,
         `Currency conversion failed: ${fromCurrency.code} to ${toCurrency.code}. ${error instanceof Error ? error.message : String(error)}`,
       );
     }

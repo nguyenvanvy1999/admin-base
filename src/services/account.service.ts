@@ -2,6 +2,7 @@ import type { Prisma } from '@server/generated/prisma/client';
 import type { AccountWhereInput } from '@server/generated/prisma/models/Account';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
+import { ErrorCode, throwAppError } from '../constants/error';
 import type {
   AccountDeleteResponse,
   AccountListResponse,
@@ -65,7 +66,7 @@ export class AccountService {
       select: ACCOUNT_SELECT_MINIMAL,
     });
     if (!account) {
-      throw new Error('Account not found');
+      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
     }
     return account;
   }
@@ -75,7 +76,7 @@ export class AccountService {
       where: { id: currencyId },
     });
     if (count === 0) {
-      throw new Error('Currency not found');
+      throwAppError(ErrorCode.CURRENCY_NOT_FOUND, 'Currency not found');
     }
   }
 
@@ -93,11 +94,17 @@ export class AccountService {
       data.paymentDay !== undefined &&
       (data.paymentDay < 1 || data.paymentDay > 31)
     ) {
-      throw new Error('Payment day must be between 1 and 31');
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'Payment day must be between 1 and 31',
+      );
     }
 
     if (data.notifyDaysBefore !== undefined && data.notifyDaysBefore < 0) {
-      throw new Error('Notify days before must be greater than or equal to 0');
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'Notify days before must be greater than or equal to 0',
+      );
     }
 
     if (data.id) {
@@ -150,7 +157,7 @@ export class AccountService {
     });
 
     if (!account) {
-      throw new Error('Account not found');
+      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
     }
 
     return formatAccount(account);

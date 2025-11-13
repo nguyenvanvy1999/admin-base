@@ -7,6 +7,7 @@ import type {
 import { prisma } from '@server/libs/db';
 import Decimal from 'decimal.js';
 import { Elysia } from 'elysia';
+import { ErrorCode, throwAppError } from '../constants/error';
 import type {
   BatchTransactionsResponse,
   IBatchTransactionsDto,
@@ -236,7 +237,7 @@ class TransactionHandlerFactory {
       select: ACCOUNT_SELECT_MINIMAL,
     });
     if (!account) {
-      throw new Error('Account not found');
+      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
     }
     return account;
   }
@@ -251,7 +252,7 @@ class TransactionHandlerFactory {
       select: { id: true, userId: true },
     });
     if (!category) {
-      throw new Error('Category not found');
+      throwAppError(ErrorCode.NOT_FOUND, 'Category not found');
     }
   }
 
@@ -265,7 +266,7 @@ class TransactionHandlerFactory {
       select: { id: true, userId: true },
     });
     if (!entity) {
-      throw new Error('Entity not found');
+      throwAppError(ErrorCode.ENTITY_NOT_FOUND, 'Entity not found');
     }
   }
 
@@ -285,7 +286,7 @@ class TransactionHandlerFactory {
       select: { id: true, userId: true },
     });
     if (!event) {
-      throw new Error('Event not found');
+      throwAppError(ErrorCode.NOT_FOUND, 'Event not found');
     }
   }
 
@@ -435,10 +436,10 @@ class TransactionHandlerFactory {
     });
 
     if (!existingTransaction) {
-      throw new Error('Transaction not found');
+      throwAppError(ErrorCode.NOT_FOUND, 'Transaction not found');
     }
     if (existingTransaction.userId !== userId) {
-      throw new Error('Transaction not owned by user');
+      throwAppError(ErrorCode.FORBIDDEN, 'Transaction not owned by user');
     }
 
     return prisma.$transaction(async (tx: PrismaTx) => {
@@ -572,7 +573,7 @@ class TransactionHandlerFactory {
       select: TRANSACTION_SELECT_FOR_BALANCE,
     });
     if (!existing || existing.userId !== userId) {
-      throw new Error('Transaction not found');
+      throwAppError(ErrorCode.NOT_FOUND, 'Transaction not found');
     }
     if (existing.type !== TransactionType.transfer) {
       throw new Error('Invalid transaction type for transfer update');
@@ -847,7 +848,7 @@ export class TransactionService {
     });
 
     if (!account) {
-      throw new Error('Account not found');
+      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
     }
 
     const user = await prisma.user.findUniqueOrThrow({
@@ -887,7 +888,10 @@ export class TransactionService {
         break;
 
       default: {
-        throw new Error(`Invalid transaction type: ${transactionType}`);
+        throwAppError(
+          ErrorCode.INVALID_TRANSACTION_TYPE,
+          `Invalid transaction type: ${transactionType}`,
+        );
       }
     }
 
@@ -908,7 +912,7 @@ export class TransactionService {
     });
 
     if (!transaction) {
-      throw new Error('Transaction not found');
+      throwAppError(ErrorCode.NOT_FOUND, 'Transaction not found');
     }
 
     return formatTransactionRecord(transaction);
@@ -1069,10 +1073,10 @@ export class TransactionService {
     });
 
     if (!transaction) {
-      throw new Error('Transaction not found');
+      throwAppError(ErrorCode.NOT_FOUND, 'Transaction not found');
     }
     if (transaction.userId !== userId) {
-      throw new Error('Transaction not owned by user');
+      throwAppError(ErrorCode.FORBIDDEN, 'Transaction not owned by user');
     }
 
     // For transfers, delete both sides, but revert balance once using the primary

@@ -5,6 +5,7 @@ import type {
 } from '@server/generated/prisma/models/Entity';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
+import { ErrorCode, throwAppError } from '../constants/error';
 import type {
   IListEntitiesQueryDto,
   IUpsertEntityDto,
@@ -47,7 +48,7 @@ export class EntityService {
       select: ENTITY_SELECT_MINIMAL,
     });
     if (!entity) {
-      throw new Error('Entity not found');
+      throwAppError(ErrorCode.ENTITY_NOT_FOUND, 'Entity not found');
     }
     return entity;
   }
@@ -70,7 +71,7 @@ export class EntityService {
     const count = await prisma.entity.count({ where });
 
     if (count > 0) {
-      throw new Error('Entity name already exists');
+      throwAppError(ErrorCode.DUPLICATE_NAME, 'Entity name already exists');
     }
   }
 

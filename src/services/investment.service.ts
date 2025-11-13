@@ -5,6 +5,7 @@ import {
 import type { InvestmentWhereInput } from '@server/generated/prisma/models/Investment';
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
+import { ErrorCode, throwAppError } from '../constants/error';
 import type { ICreateInvestmentContributionDto } from '../dto/contribution.dto';
 import type {
   IListInvestmentsQueryDto,
@@ -78,7 +79,7 @@ export class InvestmentService {
       select: { id: true },
     });
     if (!exists) {
-      throw new Error('Currency not found');
+      throwAppError(ErrorCode.CURRENCY_NOT_FOUND, 'Currency not found');
     }
   }
 
@@ -93,7 +94,7 @@ export class InvestmentService {
     });
 
     if (!investment) {
-      throw new Error('Investment not found');
+      throwAppError(ErrorCode.INVESTMENT_NOT_FOUND, 'Investment not found');
     }
 
     return investment;
@@ -260,11 +261,17 @@ export class InvestmentService {
     const investment = await this.ensureInvestment(userId, investmentId);
 
     if (investment.mode !== InvestmentMode.priced) {
-      throw new Error('Trades are only allowed for priced investments');
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'Trades are only allowed for priced investments',
+      );
     }
 
     if (investment.currencyId !== data.currencyId) {
-      throw new Error('Trade currency must match investment currency');
+      throwAppError(
+        ErrorCode.INVALID_CURRENCY_MISMATCH,
+        'Trade currency must match investment currency',
+      );
     }
 
     const account = await prisma.account.findFirst({
@@ -273,12 +280,15 @@ export class InvestmentService {
     });
 
     if (!account) {
-      throw new Error('Account not found');
+      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
     }
 
     if (!investment.baseCurrencyId) {
       if (account.currencyId !== investment.currencyId) {
-        throw new Error('Account currency must match investment currency');
+        throwAppError(
+          ErrorCode.INVALID_CURRENCY_MISMATCH,
+          'Account currency must match investment currency',
+        );
       }
     }
 
@@ -310,7 +320,10 @@ export class InvestmentService {
     }
 
     if (investment.currencyId !== data.currencyId) {
-      throw new Error('Contribution currency must match investment currency');
+      throwAppError(
+        ErrorCode.INVALID_CURRENCY_MISMATCH,
+        'Contribution currency must match investment currency',
+      );
     }
 
     if (
@@ -322,7 +335,10 @@ export class InvestmentService {
         investmentId,
       );
       if (data.amount > position.costBasis) {
-        throw new Error('Withdrawal amount exceeds current cost basis');
+        throwAppError(
+          ErrorCode.WITHDRAWAL_EXCEEDS_BALANCE,
+          'Withdrawal amount exceeds current cost basis',
+        );
       }
     }
 
@@ -337,7 +353,10 @@ export class InvestmentService {
     const investment = await this.ensureInvestment(userId, investmentId);
 
     if (investment.currencyId !== data.currencyId) {
-      throw new Error('Valuation currency must match investment currency');
+      throwAppError(
+        ErrorCode.INVALID_CURRENCY_MISMATCH,
+        'Valuation currency must match investment currency',
+      );
     }
 
     return investment;

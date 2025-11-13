@@ -1,6 +1,7 @@
 import { appEnv } from '@server/libs/env';
 import { logger } from '@server/libs/logger';
 import Decimal from 'decimal.js';
+import { ErrorCode, throwAppError } from '../constants/error';
 
 interface ExchangeRateResponse {
   date: string;
@@ -74,7 +75,8 @@ export class ExchangeRateService {
         );
         return 1 / FALLBACK_USD_RATE;
       }
-      throw new Error(
+      throwAppError(
+        ErrorCode.EXCHANGE_RATE_ERROR,
         `Exchange rate not available for currency: ${currencyCode}`,
       );
     }
@@ -125,13 +127,19 @@ export class ExchangeRateService {
       });
 
       if (!response.ok) {
-        throw new Error(`Exchange rate API returned status ${response.status}`);
+        throwAppError(
+          ErrorCode.EXCHANGE_RATE_ERROR,
+          `Exchange rate API returned status ${response.status}`,
+        );
       }
 
       const data = (await response.json()) as ExchangeRateResponse;
 
       if (!data.vnd || typeof data.vnd !== 'object') {
-        throw new Error('Invalid exchange rate API response format');
+        throwAppError(
+          ErrorCode.EXCHANGE_RATE_ERROR,
+          'Invalid exchange rate API response format',
+        );
       }
 
       this.cache = {

@@ -22,7 +22,7 @@ export const queryClient = new QueryClient({
       onError: (error) => {
         const err = error as Error & { code?: string };
         const errorCode = err.code || 'ise';
-        const i18nKey = `api.${errorCode}`;
+        const i18nKey = `api.${errorCode.toLowerCase()}`;
         const message = i18n.exists(i18nKey)
           ? i18n.t(i18nKey as any)
           : err.message || i18n.t('api.ise' as any);
