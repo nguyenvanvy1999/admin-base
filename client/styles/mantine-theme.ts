@@ -1,5 +1,6 @@
 import type { MantineThemeOverride } from '@mantine/core';
 import {
+  ActionIcon,
   Card,
   Container,
   createTheme,
@@ -75,6 +76,12 @@ export const mantineTheme: MantineThemeOverride = createTheme({
     Select: Select.extend({
       defaultProps: {
         checkIconPosition: 'right',
+      },
+    }),
+    ActionIcon: ActionIcon.extend({
+      defaultProps: {
+        variant: 'subtle',
+        size: 'sm',
       },
     }),
   },

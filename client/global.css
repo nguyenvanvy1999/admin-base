@@ -103,16 +103,17 @@
 
 .mrt-top-toolbar button,
 .mrt-top-toolbar .mantine-ActionIcon-root {
-  width: 28px !important;
-  height: 28px !important;
-  min-width: 28px !important;
-  min-height: 28px !important;
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  padding: 0 !important;
 }
 
 .mrt-top-toolbar button svg,
 .mrt-top-toolbar .mantine-ActionIcon-root svg {
-  width: 14px !important;
-  height: 14px !important;
+  width: 16px !important;
+  height: 16px !important;
 }
 
 /* Fix column alignment between header and body */
