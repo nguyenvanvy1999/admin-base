@@ -1,6 +1,7 @@
 import { CURRENCY_IDS } from '@server/constants/currency';
 import { UserRole } from '@server/generated/prisma/enums';
 import { prisma } from '@server/libs/db';
+import { appEnv } from '@server/libs/env';
 import { logger } from '@server/libs/logger';
 import { DB_PREFIX, defaultRoles, IdUtil, SUPER_ADMIN_ID } from '@server/share';
 
@@ -15,8 +16,8 @@ async function main() {
       return;
     }
 
-    const superAdminUsername = process.env.SUPER_ADMIN_USERNAME || 'superadmin';
-    const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+    const superAdminUsername = appEnv.SUPER_ADMIN_USERNAME || 'superadmin';
+    const superAdminPassword = appEnv.SUPER_ADMIN_PASSWORD;
 
     if (!superAdminPassword) {
       logger.error('SUPER_ADMIN_PASSWORD environment variable is required');
@@ -52,7 +53,7 @@ async function main() {
       );
     });
   } catch (error) {
-    logger.error('Error seeding super admin', { error });
+    logger.error(`Error seeding super admin ${error}`);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

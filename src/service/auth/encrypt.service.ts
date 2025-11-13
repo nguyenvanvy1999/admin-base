@@ -1,4 +1,5 @@
 import { createCipheriv, createDecipheriv } from 'node:crypto';
+import { appEnv } from '@server/libs/env';
 
 const algorithm = 'aes-256-cbc';
 
@@ -10,9 +11,9 @@ export class EncryptService {
 
   private static getKeyAndIv(): { key: Buffer; iv: Buffer } {
     const encryptKey =
-      process.env.ENCRYPT_KEY ||
+      appEnv.ENCRYPT_KEY ||
       '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
-    const encryptIv = process.env.ENCRYPT_IV || '0123456789abcdef';
+    const encryptIv = appEnv.ENCRYPT_IV || '0123456789abcdef';
     const key = EncryptService.hexToBuffer(encryptKey);
     const iv = EncryptService.hexToBuffer(encryptIv);
     return { key, iv };

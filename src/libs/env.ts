@@ -33,8 +33,12 @@ export const envSchema = t.Object({
     t.Number({ minimum: 0, default: 3600000 }),
   ),
   REDIS_URI: t.String({ default: 'redis://localhost:6379' }),
-  AUTO_SEED: t.Optional(t.Boolean({ default: false })),
-  AUTO_SEED_SUPER_ADMIN: t.Optional(t.Boolean({ default: false })),
+
+  AUTO_SEED: t.Optional(t.Boolean({ default: true })),
+  AUTO_SEED_SUPER_ADMIN: t.Optional(t.Boolean({ default: true })),
+
+  SUPER_ADMIN_USERNAME: t.String({ default: 'superadmin' }),
+  SUPER_ADMIN_PASSWORD: t.String(),
 });
 
 const Compiler = TypeCompiler.Compile(envSchema);

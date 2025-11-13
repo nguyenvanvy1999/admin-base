@@ -1,6 +1,7 @@
 import { CURRENCY_IDS } from '@server/constants/currency';
 import { UserRole } from '@server/generated/prisma/enums';
 import { prisma } from '@server/libs/db';
+import { appEnv } from '@server/libs/env';
 import { logger } from '@server/libs/logger';
 import { DB_PREFIX, defaultRoles, IdUtil, SUPER_ADMIN_ID } from '@server/share';
 
@@ -15,8 +16,8 @@ export async function seedSuperAdmin(): Promise<void> {
       return;
     }
 
-    const superAdminUsername = process.env.SUPER_ADMIN_USERNAME || 'superadmin';
-    const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+    const superAdminUsername = appEnv.SUPER_ADMIN_USERNAME || 'superadmin';
+    const superAdminPassword = appEnv.SUPER_ADMIN_PASSWORD;
 
     if (!superAdminPassword) {
       logger.warn(

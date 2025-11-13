@@ -176,7 +176,7 @@ const authMacro = new Elysia()
                     if (!token) {
                         throw new Error("Token not found");
                     }
-                    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+                    const decoded = jwt.verify(token, appEnv.JWT_SECRET!) as any;
                     if (!roles.includes(decoded.role)) {
                         throw new Error("Permission denied");
                     }
