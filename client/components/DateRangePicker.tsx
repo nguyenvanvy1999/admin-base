@@ -1,13 +1,22 @@
 import { Box, Group, Stack, Text } from '@mantine/core';
-import { DatePicker, type DatePickerProps, TimeInput } from '@mantine/dates';
+import {
+  DatePickerInput,
+  type DatePickerInputProps,
+  TimeInput,
+} from '@mantine/dates';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export interface DateRangePickerProps
   extends Omit<
-    DatePickerProps,
-    'value' | 'onChange' | 'type' | 'presets' | 'allowSingleDateInRange'
+    DatePickerInputProps,
+    | 'value'
+    | 'onChange'
+    | 'type'
+    | 'presets'
+    | 'allowSingleDateInRange'
+    | 'styles'
   > {
   value?: {
     from: string | null;
@@ -21,6 +30,7 @@ export interface DateRangePickerProps
   allowSingleDateInRange?: boolean;
   error?: string | boolean;
   required?: boolean;
+  maxWidth?: string | number;
   presets?: Array<{
     label: string;
     value: [string, string];
@@ -38,8 +48,13 @@ export const DateRangePicker = ({
   error,
   required,
   presets,
+  maxWidth = '350px',
   ...datePickerProps
 }: DateRangePickerProps) => {
+  const { styles: customStyles, ...restDatePickerProps } = datePickerProps as {
+    styles?: DatePickerInputProps['styles'];
+    [key: string]: any;
+  };
   const { t } = useTranslation();
   const [timeFrom, setTimeFrom] = useState<string>('00:00');
   const [timeTo, setTimeTo] = useState<string>('23:59');
@@ -125,20 +140,13 @@ export const DateRangePicker = ({
     }
   }, [value?.from, value?.to, mode]);
 
+  const datePickerInputPresets = presets?.map((preset) => ({
+    label: preset.label,
+    value: preset.value as [string, string],
+  }));
+
   return (
     <Stack gap="xs">
-      {label && (
-        <Text size="sm" fw={500}>
-          {label}
-          {required && (
-            <Text component="span" c="red">
-              {' '}
-              *
-            </Text>
-          )}
-        </Text>
-      )}
-
       {presets && presets.length > 0 && (
         <Group gap="xs">
           {presets.map((preset, index) => (
@@ -162,12 +170,31 @@ export const DateRangePicker = ({
         </Group>
       )}
 
-      <DatePicker
+      <DatePickerInput
         type="range"
+        label={label}
+        placeholder={
+          datePickerProps.placeholder ||
+          t('common.dateRange', { defaultValue: 'Pick dates range' })
+        }
+        clearable
         value={dateValueForPicker}
         onChange={handleDateChange}
         allowSingleDateInRange={allowSingleDateInRange}
-        {...(datePickerProps as any)}
+        error={error}
+        required={required}
+        presets={datePickerInputPresets}
+        style={{
+          maxWidth: typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth,
+          width: '100%',
+        }}
+        styles={{
+          input: {
+            textAlign: 'center',
+          },
+          ...customStyles,
+        }}
+        {...(restDatePickerProps as any)}
       />
 
       {mode === 'datetime' && (
