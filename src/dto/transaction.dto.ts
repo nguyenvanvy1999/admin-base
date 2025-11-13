@@ -40,11 +40,25 @@ export const TransferTransactionDto = BaseTransactionDto.extend({
 export const LoanGivenTransactionDto = BaseTransactionDto.extend({
   type: z.literal(TransactionType.loan_given),
   entityId: z.string().min(1),
+  categoryId: z.string().min(1),
 });
 
 export const LoanReceivedTransactionDto = BaseTransactionDto.extend({
   type: z.literal(TransactionType.loan_received),
   entityId: z.string().min(1),
+  categoryId: z.string().min(1),
+});
+
+export const RepayDebtTransactionDto = BaseTransactionDto.extend({
+  type: z.literal(TransactionType.repay_debt),
+  entityId: z.string().min(1),
+  categoryId: z.string().min(1),
+});
+
+export const CollectDebtTransactionDto = BaseTransactionDto.extend({
+  type: z.literal(TransactionType.collect_debt),
+  entityId: z.string().min(1),
+  categoryId: z.string().min(1),
 });
 
 export const UpsertTransactionDto = z.discriminatedUnion('type', [
@@ -53,6 +67,8 @@ export const UpsertTransactionDto = z.discriminatedUnion('type', [
   TransferTransactionDto,
   LoanGivenTransactionDto,
   LoanReceivedTransactionDto,
+  RepayDebtTransactionDto,
+  CollectDebtTransactionDto,
 ]);
 
 export const IncomeExpenseTransactionDto = z.union([
@@ -112,7 +128,10 @@ export type IIncomeExpenseTransaction = z.infer<
 >;
 export type ITransferTransaction = z.infer<typeof TransferTransactionDto>;
 export type ILoanTransaction = z.infer<
-  typeof LoanGivenTransactionDto | typeof LoanReceivedTransactionDto
+  | typeof LoanGivenTransactionDto
+  | typeof LoanReceivedTransactionDto
+  | typeof RepayDebtTransactionDto
+  | typeof CollectDebtTransactionDto
 >;
 export type IBatchTransactionsDto = z.infer<typeof BatchTransactionsDto>;
 

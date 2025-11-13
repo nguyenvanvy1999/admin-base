@@ -59,6 +59,10 @@ const TransactionTable = ({
         return t('transactions.loanGiven');
       case TransactionType.loan_received:
         return t('transactions.loanReceived');
+      case TransactionType.repay_debt:
+        return t('categories.repay_debt', { defaultValue: 'Repay Debt' });
+      case TransactionType.collect_debt:
+        return t('categories.collect_debt', { defaultValue: 'Collect Debt' });
       case TransactionType.investment:
         return t('transactions.investment');
       default:
@@ -74,6 +78,12 @@ const TransactionTable = ({
         return 'red';
       case TransactionType.transfer:
         return 'blue';
+      case TransactionType.loan_given:
+      case TransactionType.collect_debt:
+        return 'orange';
+      case TransactionType.loan_received:
+      case TransactionType.repay_debt:
+        return 'cyan';
       default:
         return 'gray';
     }

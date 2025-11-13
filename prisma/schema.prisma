@@ -36,6 +36,8 @@ enum TransactionType {
   transfer
   loan_given
   loan_received
+  repay_debt
+  collect_debt
   investment
 }
 

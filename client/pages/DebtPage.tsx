@@ -25,10 +25,8 @@ import {
   Group,
   Modal,
   MultiSelect,
-  NumberFormatter,
   Text,
   TextInput,
-  useMantineColorScheme,
 } from '@mantine/core';
 import type {
   IUpsertTransaction,
@@ -48,16 +46,14 @@ const filterSchema = ListTransactionsQueryDto.pick({
 
 const defaultFilterValues: FilterFormValue = {
   search: '',
-  types: [],
+  types: [TransactionType.loan_given, TransactionType.loan_received],
   accountIds: [],
   categoryIds: [],
   entityIds: [],
 };
 
-const TransactionPage = () => {
+const DebtPage = () => {
   const { t } = useTranslation();
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
   const formRef = useRef<FormComponentRef>(null);
   const [selectedTransaction, setSelectedTransaction] =
     useState<TransactionDetail | null>(null);
@@ -173,38 +169,6 @@ const TransactionPage = () => {
     }));
   }, [entities]);
 
-  const summary = data?.summary;
-
-  const stats = useMemo(() => {
-    if (!summary || summary.length === 0) return undefined;
-    return summary.flatMap((item) => [
-      {
-        titleI18nKey: `transactions.totalIncome_${item.currency.code}` as any,
-        value: (
-          <NumberFormatter
-            value={item.totalIncome}
-            prefix={item.currency.symbol ? `${item.currency.symbol} ` : ''}
-            thousandSeparator=","
-            decimalScale={2}
-          />
-        ),
-        color: isDark ? 'rgb(34 197 94)' : 'rgb(21 128 61)',
-      },
-      {
-        titleI18nKey: `transactions.totalExpense_${item.currency.code}` as any,
-        value: (
-          <NumberFormatter
-            value={item.totalExpense}
-            prefix={item.currency.symbol ? `${item.currency.symbol} ` : ''}
-            thousandSeparator=","
-            decimalScale={2}
-          />
-        ),
-        color: isDark ? 'rgb(248 113 113)' : 'rgb(185 28 28)',
-      },
-    ]);
-  }, [summary, isDark]);
-
   return (
     <PageContainer
       filterGroup={
@@ -219,59 +183,6 @@ const TransactionPage = () => {
                   error={error}
                   style={{ flex: 1, maxWidth: '300px' }}
                   {...field}
-                />
-              )}
-            />
-            <ZodFormController
-              control={control}
-              name="types"
-              render={({ field, fieldState: { error } }) => (
-                <MultiSelect
-                  placeholder={t('transactions.typePlaceholder')}
-                  error={error}
-                  data={[
-                    {
-                      value: TransactionType.income,
-                      label: t('transactions.income'),
-                    },
-                    {
-                      value: TransactionType.expense,
-                      label: t('transactions.expense'),
-                    },
-                    {
-                      value: TransactionType.transfer,
-                      label: t('transactions.transfer'),
-                    },
-                    {
-                      value: TransactionType.loan_given,
-                      label: t('transactions.loanGiven', {
-                        defaultValue: 'Loan Given',
-                      }),
-                    },
-                    {
-                      value: TransactionType.loan_received,
-                      label: t('transactions.loanReceived', {
-                        defaultValue: 'Loan Received',
-                      }),
-                    },
-                    {
-                      value: TransactionType.repay_debt,
-                      label: t('categories.repay_debt', {
-                        defaultValue: 'Repay Debt',
-                      }),
-                    },
-                    {
-                      value: TransactionType.collect_debt,
-                      label: t('categories.collect_debt', {
-                        defaultValue: 'Collect Debt',
-                      }),
-                    },
-                  ]}
-                  value={field.value || []}
-                  onChange={(value) =>
-                    field.onChange(value as TransactionType[])
-                  }
-                  style={{ maxWidth: '200px' }}
                 />
               )}
             />
@@ -329,7 +240,6 @@ const TransactionPage = () => {
       }
       onSearch={handleSearch}
       onReset={() => reset(defaultFilterValues)}
-      stats={stats}
     >
       <TransactionTable
         transactions={data?.transactions || []}
@@ -434,4 +344,4 @@ const TransactionPage = () => {
   );
 };
 
-export default TransactionPage;
+export default DebtPage;

@@ -132,7 +132,9 @@
     "statistics": "Thống kê",
     "incomeExpenseStatistics": "Thu Chi",
     "investmentStatistics": "Đầu tư",
-    "debtStatistics": "Vay nợ"
+    "debtStatistics": "Vay nợ",
+    "debts": "Vay nợ",
+    "transactionsList": "Danh sách"
   },
   "notFound": {
     "title": "Không tìm thấy trang",
@@ -417,6 +419,8 @@
     "fee": "Phí",
     "feePlaceholder": "Nhập phí",
     "borrowToPay": "Đi vay để trả khoản này",
+    "debt": "Vay nợ",
+    "debtType": "Loại vay nợ",
     "typePlaceholder": "Chọn loại giao dịch",
     "accountPlaceholder": "Chọn tài khoản",
     "categoryPlaceholder": "Chọn hạng mục",

@@ -4,6 +4,7 @@ import {
   Button,
   Modal,
   NumberInput,
+  Radio,
   Stack,
   Tabs,
   Text,
@@ -86,17 +87,37 @@ const AddEditTransactionDialog = ({
 }: AddEditTransactionDialogProps) => {
   const { t } = useTranslation();
   const isEditMode = !!transaction;
-  const [activeTab, setActiveTab] = useState<string>(
-    transaction?.type === TransactionType.income
-      ? TransactionType.income
-      : transaction?.type === TransactionType.transfer
-        ? TransactionType.transfer
-        : transaction?.type === TransactionType.loan_given
-          ? TransactionType.loan_given
-          : transaction?.type === TransactionType.loan_received
-            ? TransactionType.loan_received
-            : TransactionType.expense,
-  );
+
+  const getInitialTab = () => {
+    if (!transaction) return TransactionType.expense;
+    if (transaction.type === TransactionType.income)
+      return TransactionType.income;
+    if (transaction.type === TransactionType.transfer)
+      return TransactionType.transfer;
+    const debtTypes = [
+      TransactionType.loan_given,
+      TransactionType.loan_received,
+      TransactionType.repay_debt,
+      TransactionType.collect_debt,
+    ] as const;
+    if (debtTypes.includes(transaction.type as (typeof debtTypes)[number])) {
+      return 'debt';
+    }
+    return TransactionType.expense;
+  };
+
+  const getInitialDebtType = () => {
+    if (!transaction) return 'borrow';
+    if (transaction.type === TransactionType.loan_received) return 'borrow';
+    if (transaction.type === TransactionType.loan_given) return 'lend';
+    if (transaction.type === TransactionType.repay_debt) return 'repay_debt';
+    if (transaction.type === TransactionType.collect_debt)
+      return 'collect_debt';
+    return 'borrow';
+  };
+
+  const [activeTab, setActiveTab] = useState<string>(getInitialTab());
+  const [debtType, setDebtType] = useState<string>(getInitialDebtType());
   const [_saveAndAdd, setSaveAndAdd] = useState(false);
   const [feeEnabled, setFeeEnabled] = useState(false);
   const [currentBalance, setCurrentBalance] = useState<number | null>(null);
@@ -108,25 +129,30 @@ const AddEditTransactionDialog = ({
   const transactionType = useMemo(() => {
     if (activeTab === TransactionType.income) return TransactionType.income;
     if (activeTab === TransactionType.transfer) return TransactionType.transfer;
-    if (activeTab === TransactionType.loan_given)
-      return TransactionType.loan_given;
-    if (activeTab === TransactionType.loan_received)
-      return TransactionType.loan_received;
     if (activeTab === 'adjust_balance') return 'adjust_balance' as const;
+    if (activeTab === 'debt') {
+      if (debtType === 'borrow') return TransactionType.loan_received;
+      if (debtType === 'lend') return TransactionType.loan_given;
+      if (debtType === 'repay_debt') return TransactionType.repay_debt;
+      if (debtType === 'collect_debt') return TransactionType.collect_debt;
+      return TransactionType.loan_received;
+    }
     return TransactionType.expense;
-  }, [activeTab]);
+  }, [activeTab, debtType]);
 
   const isBalanceAdjustment = activeTab === 'adjust_balance';
 
   const isLoanType = useMemo(() => {
     return (
       transactionType === TransactionType.loan_given ||
-      transactionType === TransactionType.loan_received
+      transactionType === TransactionType.loan_received ||
+      transactionType === TransactionType.repay_debt ||
+      transactionType === TransactionType.collect_debt
     );
   }, [transactionType]);
 
   const categoryType = useMemo(() => {
-    if (isLoanType) return undefined;
+    if (isLoanType) return 'loan' as const;
     if (transactionType === TransactionType.income) return 'income' as const;
     if (transactionType === TransactionType.expense) return 'expense' as const;
     return undefined;
@@ -314,17 +340,13 @@ const AddEditTransactionDialog = ({
     reset(defaultValues);
     resetBalanceAdjustment(balanceAdjustmentDefaultValues);
     setSaveAndAdd(false);
-    setActiveTab(
-      transaction?.type === TransactionType.income
-        ? TransactionType.income
-        : transaction?.type === TransactionType.transfer
-          ? TransactionType.transfer
-          : transaction?.type === TransactionType.loan_given
-            ? TransactionType.loan_given
-            : transaction?.type === TransactionType.loan_received
-              ? TransactionType.loan_received
-              : TransactionType.expense,
-    );
+    const tab = getInitialTab();
+    setActiveTab(tab);
+    if (tab === 'debt') {
+      setDebtType(getInitialDebtType());
+    } else {
+      setDebtType('borrow');
+    }
     setFeeEnabled(false);
     setCurrentBalance(null);
     onClose();
@@ -350,7 +372,11 @@ const AddEditTransactionDialog = ({
         borrowToPay: (transaction.metadata as any)?.borrowToPay || false,
       });
       setFeeEnabled(feeValue > 0);
-      setActiveTab(transaction.type);
+      const tab = getInitialTab();
+      setActiveTab(tab);
+      if (tab === 'debt') {
+        setDebtType(getInitialDebtType());
+      }
     } else {
       reset(defaultValues);
       setFeeEnabled(false);
@@ -412,15 +438,18 @@ const AddEditTransactionDialog = ({
         } as IUpsertTransaction;
       } else if (
         transactionType === TransactionType.loan_given ||
-        transactionType === TransactionType.loan_received
+        transactionType === TransactionType.loan_received ||
+        transactionType === TransactionType.repay_debt ||
+        transactionType === TransactionType.collect_debt
       ) {
-        if (!data.entityId) {
+        if (!data.entityId || !data.categoryId) {
           return;
         }
         submitData = {
           ...baseData,
           type: transactionType,
           entityId: data.entityId,
+          categoryId: data.categoryId,
         } as IUpsertTransaction;
       } else {
         throw new Error(`Invalid transaction type: ${transactionType}`);
@@ -510,7 +539,17 @@ const AddEditTransactionDialog = ({
         <Stack gap="md">
           <Tabs
             value={activeTab}
-            onChange={(value) => value && setActiveTab(value)}
+            onChange={(value) => {
+              if (value) {
+                setActiveTab(value);
+                if (value !== 'debt' && debtType) {
+                  setDebtType('borrow');
+                }
+                if (value === 'debt' && !debtType) {
+                  setDebtType('borrow');
+                }
+              }
+            }}
           >
             <Tabs.List>
               <Tabs.Tab value={TransactionType.expense}>
@@ -522,13 +561,8 @@ const AddEditTransactionDialog = ({
               <Tabs.Tab value={TransactionType.transfer}>
                 {t('transactions.transfer')}
               </Tabs.Tab>
-              <Tabs.Tab value={TransactionType.loan_given}>
-                {t('transactions.loanGiven', { defaultValue: 'Loan Given' })}
-              </Tabs.Tab>
-              <Tabs.Tab value={TransactionType.loan_received}>
-                {t('transactions.loanReceived', {
-                  defaultValue: 'Loan Received',
-                })}
+              <Tabs.Tab value="debt">
+                {t('transactions.debt', { defaultValue: 'Debt' })}
               </Tabs.Tab>
               <Tabs.Tab value="adjust_balance">
                 {t('transactions.adjustBalance')}
@@ -677,6 +711,42 @@ const AddEditTransactionDialog = ({
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4">
+              {activeTab === 'debt' && (
+                <div className="col-span-2">
+                  <Text size="sm" fw={500} mb="xs">
+                    {t('transactions.debtType', { defaultValue: 'Debt Type' })}
+                  </Text>
+                  <Radio.Group
+                    value={debtType}
+                    onChange={(value) => setDebtType(value)}
+                  >
+                    <Stack gap="xs">
+                      <Radio
+                        value="borrow"
+                        label={t('categories.borrow', {
+                          defaultValue: 'Borrow',
+                        })}
+                      />
+                      <Radio
+                        value="lend"
+                        label={t('categories.lend', { defaultValue: 'Lend' })}
+                      />
+                      <Radio
+                        value="repay_debt"
+                        label={t('categories.repay_debt', {
+                          defaultValue: 'Repay Debt',
+                        })}
+                      />
+                      <Radio
+                        value="collect_debt"
+                        label={t('categories.collect_debt', {
+                          defaultValue: 'Collect Debt',
+                        })}
+                      />
+                    </Stack>
+                  </Radio.Group>
+                </div>
+              )}
               <div className="space-y-4">
                 <ZodFormController
                   control={control}
@@ -831,65 +901,64 @@ const AddEditTransactionDialog = ({
               </div>
 
               <div className="space-y-4">
-                {transactionType !== TransactionType.transfer &&
-                  !isLoanType && (
-                    <ZodFormController
-                      control={control}
-                      name="categoryId"
-                      render={({ field, fieldState: { error } }) => (
-                        <div>
-                          <CategorySelect
-                            label={t('transactions.category')}
-                            placeholder={t('transactions.selectCategory')}
-                            required
-                            value={field.value ? field.value : null}
-                            onChange={(value) => {
-                              field.onChange(value ?? '');
-                            }}
-                            error={error ? String(error) : undefined}
-                            filterType={categoryType}
-                            searchable
-                            categories={categories}
-                          />
-                          {quickCategoryButtons.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {quickCategoryButtons.map((cat) => {
-                                const IconComponent = cat.icon
-                                  ? getCategoryIcon(cat.icon)
-                                  : null;
-                                return (
-                                  <Button
-                                    key={cat.id}
-                                    type="button"
-                                    variant={
-                                      categoryIdValue === cat.id
-                                        ? 'filled'
-                                        : 'outline'
-                                    }
-                                    size="xs"
-                                    onClick={() => field.onChange(cat.id)}
-                                    leftSection={
-                                      IconComponent ? (
-                                        <IconComponent
-                                          style={{
-                                            fontSize: 16,
-                                            color: cat.color || 'inherit',
-                                            opacity: 0.8,
-                                          }}
-                                        />
-                                      ) : null
-                                    }
-                                  >
-                                    {cat.name}
-                                  </Button>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    />
-                  )}
+                {transactionType !== TransactionType.transfer && (
+                  <ZodFormController
+                    control={control}
+                    name="categoryId"
+                    render={({ field, fieldState: { error } }) => (
+                      <div>
+                        <CategorySelect
+                          label={t('transactions.category')}
+                          placeholder={t('transactions.selectCategory')}
+                          required
+                          value={field.value ? field.value : null}
+                          onChange={(value) => {
+                            field.onChange(value ?? '');
+                          }}
+                          error={error ? String(error) : undefined}
+                          filterType={categoryType}
+                          searchable
+                          categories={categories}
+                        />
+                        {quickCategoryButtons.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {quickCategoryButtons.map((cat) => {
+                              const IconComponent = cat.icon
+                                ? getCategoryIcon(cat.icon)
+                                : null;
+                              return (
+                                <Button
+                                  key={cat.id}
+                                  type="button"
+                                  variant={
+                                    categoryIdValue === cat.id
+                                      ? 'filled'
+                                      : 'outline'
+                                  }
+                                  size="xs"
+                                  onClick={() => field.onChange(cat.id)}
+                                  leftSection={
+                                    IconComponent ? (
+                                      <IconComponent
+                                        style={{
+                                          fontSize: 16,
+                                          color: cat.color || 'inherit',
+                                          opacity: 0.8,
+                                        }}
+                                      />
+                                    ) : null
+                                  }
+                                >
+                                  {cat.name}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  />
+                )}
 
                 {isLoanType && (
                   <ZodFormController

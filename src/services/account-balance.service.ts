@@ -40,6 +40,7 @@ export class AccountBalanceService {
     switch (transactionType) {
       case TransactionType.income:
       case TransactionType.loan_received:
+      case TransactionType.collect_debt:
         await tx.account.update({
           where: { id: accountId },
           data: {
@@ -54,6 +55,7 @@ export class AccountBalanceService {
 
       case TransactionType.expense:
       case TransactionType.loan_given:
+      case TransactionType.repay_debt:
         await tx.account.update({
           where: { id: accountId },
           data: {
@@ -120,6 +122,7 @@ export class AccountBalanceService {
     switch (transactionType) {
       case TransactionType.income:
       case TransactionType.loan_received:
+      case TransactionType.collect_debt:
         await tx.account.update({
           where: { id: accountId },
           data: {
@@ -134,6 +137,7 @@ export class AccountBalanceService {
 
       case TransactionType.expense:
       case TransactionType.loan_given:
+      case TransactionType.repay_debt:
         await tx.account.update({
           where: { id: accountId },
           data: {

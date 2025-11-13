@@ -134,6 +134,10 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
       path: '/transactions',
     },
     {
+      label: t('sidebar.debts', { defaultValue: 'Debts' }),
+      path: '/debts',
+    },
+    {
       label: t('sidebar.bulkAddTransactions', { defaultValue: 'Bulk Add' }),
       path: '/transactions/bulk',
     },

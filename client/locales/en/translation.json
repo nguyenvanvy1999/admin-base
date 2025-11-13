@@ -132,7 +132,9 @@
     "statistics": "Statistics",
     "incomeExpenseStatistics": "Income/Expense",
     "investmentStatistics": "Investment",
-    "debtStatistics": "Debt"
+    "debtStatistics": "Debt",
+    "debts": "Debts",
+    "transactionsList": "List"
   },
   "notFound": {
     "title": "Page Not Found",
@@ -417,6 +419,8 @@
     "fee": "Fee",
     "feePlaceholder": "Enter fee",
     "borrowToPay": "Borrow to pay this loan",
+    "debt": "Debt",
+    "debtType": "Debt Type",
     "typePlaceholder": "Select transaction type",
     "accountPlaceholder": "Select account",
     "categoryPlaceholder": "Select category",

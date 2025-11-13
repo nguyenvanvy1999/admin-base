@@ -4,6 +4,7 @@ import ProtectedPageLayout from './layouts';
 import AccountPage from './pages/AccountPage';
 import BulkTransactionPage from './pages/BulkTransactionPage';
 import CategoryPage from './pages/CategoryPage';
+import DebtPage from './pages/DebtPage';
 import DebtStatisticsPage from './pages/DebtStatisticsPage';
 import EntityPage from './pages/EntityPage';
 import EventPage from './pages/EventPage';
@@ -43,6 +44,10 @@ const router = createHashRouter([
       {
         path: '/transactions/bulk',
         Component: BulkTransactionPage,
+      },
+      {
+        path: '/debts',
+        Component: DebtPage,
       },
       {
         path: '/budgets',

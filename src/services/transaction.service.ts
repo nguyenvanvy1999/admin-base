@@ -367,12 +367,14 @@ class TransactionHandlerFactory {
       }
 
       case TransactionType.loan_given:
-      case TransactionType.loan_received: {
+      case TransactionType.loan_received:
+      case TransactionType.repay_debt:
+      case TransactionType.collect_debt: {
         const loanData = data as ILoanTransaction;
         return {
           ...baseData,
           entityId: loanData.entityId,
-          categoryId: null,
+          categoryId: loanData.categoryId,
           toAccountId: null,
           price: null,
           priceInBaseCurrency: null,
@@ -883,6 +885,8 @@ export class TransactionService {
 
       case TransactionType.loan_given:
       case TransactionType.loan_received:
+      case TransactionType.repay_debt:
+      case TransactionType.collect_debt:
         transaction = await this.handlerFactory.handleLoan(
           userId,
           data as ILoanTransaction,
