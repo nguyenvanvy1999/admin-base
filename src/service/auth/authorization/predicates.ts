@@ -1,4 +1,4 @@
-import type { UPermission } from '@server/share/type';
+import { defaultRoles, type UPermission } from '@server/share';
 import type { PolicyCtx, Predicate } from './policy-types';
 
 export function has<T extends UPermission>(key: T): Predicate<any> {
@@ -8,9 +8,12 @@ export function has<T extends UPermission>(key: T): Predicate<any> {
   );
 }
 
-export function isRole(roleId: string): Predicate<any> {
+export function isRole<T extends keyof typeof defaultRoles>(
+  role: T,
+): Predicate<any> {
   return Object.assign(
-    (ctx: PolicyCtx): boolean => ctx.currentUser.roleIds.includes(roleId),
+    (ctx: PolicyCtx): boolean =>
+      ctx.currentUser.roleIds.some((r) => r === defaultRoles[role].id) ?? false,
     { __type: 'primitive' as const },
   );
 }

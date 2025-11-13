@@ -1,11 +1,10 @@
-import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia } from 'elysia';
 import {
   ExchangeRateHealthDto,
   ExchangeRateInfoDto,
   ExchangeRateRefreshResponseDto,
 } from '../dto/exchange-rate.dto';
-import authMacro from '../macros/auth';
+import { authCheck } from '../service/auth/auth.middleware';
 import { exchangeRateServiceInstance } from '../services/exchange-rate.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -25,7 +24,7 @@ const exchangeRateController = new Elysia().group(
   },
   (group) =>
     group
-      .use(authMacro)
+      .use(authCheck)
       .get(
         '/info',
         () => {
@@ -37,7 +36,6 @@ const exchangeRateController = new Elysia().group(
           });
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...EXCHANGE_RATE_DETAIL,
             summary: 'Get exchange rate cache info',
@@ -74,7 +72,6 @@ const exchangeRateController = new Elysia().group(
           }
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...EXCHANGE_RATE_DETAIL,
             summary: 'Refresh exchange rates',
@@ -99,7 +96,6 @@ const exchangeRateController = new Elysia().group(
           });
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...EXCHANGE_RATE_DETAIL,
             summary: 'Exchange rate health check',

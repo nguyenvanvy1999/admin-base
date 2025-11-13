@@ -1,4 +1,3 @@
-import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia } from 'elysia';
 import {
   DebtStatisticsQueryDto,
@@ -20,7 +19,7 @@ import {
   ReportTransactionsDto,
   ReportTransactionsQueryDto,
 } from '../dto/report.dto';
-import authMacro from '../macros/auth';
+import { authCheck } from '../service/auth/auth.middleware';
 import reportService from '../services/report.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -32,14 +31,13 @@ const REPORT_DETAIL = {
 const reportController = new Elysia().group('/reports', (group) =>
   group
     .use(reportService)
-    .use(authMacro)
+    .use(authCheck)
     .get(
       '/summary',
-      async ({ user, query, reportService }) => {
-        return castToRes(await reportService.getSummary(user.id, query));
+      async ({ currentUser, query, reportService }) => {
+        return castToRes(await reportService.getSummary(currentUser.id, query));
       },
       {
-        checkAuth: [UserRole.user],
         detail: {
           ...REPORT_DETAIL,
           summary: 'Get summary report',
@@ -54,11 +52,12 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/transactions',
-      async ({ user, query, reportService }) => {
-        return castToRes(await reportService.getTransactions(user.id, query));
+      async ({ currentUser, query, reportService }) => {
+        return castToRes(
+          await reportService.getTransactions(currentUser.id, query),
+        );
       },
       {
-        checkAuth: [UserRole.user],
         detail: {
           ...REPORT_DETAIL,
           summary: 'Get transaction statistics',
@@ -73,11 +72,12 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/investments',
-      async ({ user, query, reportService }) => {
-        return castToRes(await reportService.getInvestments(user.id, query));
+      async ({ currentUser, query, reportService }) => {
+        return castToRes(
+          await reportService.getInvestments(currentUser.id, query),
+        );
       },
       {
-        checkAuth: [UserRole.user],
         detail: {
           ...REPORT_DETAIL,
           summary: 'Get investment statistics',
@@ -92,13 +92,12 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/income-expense-detailed',
-      async ({ user, query, reportService }) => {
+      async ({ currentUser, query, reportService }) => {
         return castToRes(
-          await reportService.getIncomeExpenseDetailed(user.id, query),
+          await reportService.getIncomeExpenseDetailed(currentUser.id, query),
         );
       },
       {
-        checkAuth: [UserRole.user],
         detail: {
           ...REPORT_DETAIL,
           summary: 'Get detailed income/expense statistics',
@@ -113,13 +112,15 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/investments/performance-detailed',
-      async ({ user, query, reportService }) => {
+      async ({ currentUser, query, reportService }) => {
         return castToRes(
-          await reportService.getInvestmentPerformanceDetailed(user.id, query),
+          await reportService.getInvestmentPerformanceDetailed(
+            currentUser.id,
+            query,
+          ),
         );
       },
       {
-        checkAuth: [UserRole.user],
         detail: {
           ...REPORT_DETAIL,
           summary: 'Get detailed investment performance statistics',
@@ -134,13 +135,15 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/investments/trades-detailed',
-      async ({ user, query, reportService }) => {
+      async ({ currentUser, query, reportService }) => {
         return castToRes(
-          await reportService.getInvestmentTradesDetailed(user.id, query),
+          await reportService.getInvestmentTradesDetailed(
+            currentUser.id,
+            query,
+          ),
         );
       },
       {
-        checkAuth: [UserRole.user],
         detail: {
           ...REPORT_DETAIL,
           summary: 'Get detailed investment trades statistics',
@@ -155,13 +158,12 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/investments/fees-detailed',
-      async ({ user, query, reportService }) => {
+      async ({ currentUser, query, reportService }) => {
         return castToRes(
-          await reportService.getInvestmentFeesDetailed(user.id, query),
+          await reportService.getInvestmentFeesDetailed(currentUser.id, query),
         );
       },
       {
-        checkAuth: [UserRole.user],
         detail: {
           ...REPORT_DETAIL,
           summary: 'Get detailed investment fees statistics',
@@ -176,16 +178,15 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/investments/contributions-detailed',
-      async ({ user, query, reportService }) => {
+      async ({ currentUser, query, reportService }) => {
         return castToRes(
           await reportService.getInvestmentContributionsDetailed(
-            user.id,
+            currentUser.id,
             query,
           ),
         );
       },
       {
-        checkAuth: [UserRole.user],
         detail: {
           ...REPORT_DETAIL,
           summary: 'Get detailed investment contributions statistics',
@@ -200,11 +201,12 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/debt-statistics',
-      async ({ user, query, reportService }) => {
-        return castToRes(await reportService.getDebtStatistics(user.id, query));
+      async ({ currentUser, query, reportService }) => {
+        return castToRes(
+          await reportService.getDebtStatistics(currentUser.id, query),
+        );
       },
       {
-        checkAuth: [UserRole.user],
         detail: {
           ...REPORT_DETAIL,
           summary: 'Get debt statistics',

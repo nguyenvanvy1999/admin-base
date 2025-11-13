@@ -1,5 +1,6 @@
 import openapi from '@elysiajs/openapi';
 import { staticPlugin } from '@elysiajs/static';
+import { redis } from '@server/config/redis';
 import { appEnv } from '@server/libs/env';
 import { Elysia } from 'elysia';
 import accountController from './controllers/account.controller';
@@ -72,6 +73,8 @@ export const app = new Elysia()
       .use(reportController),
   )
   .listen(appEnv.PORT);
+
+await redis.connect();
 
 logger.info(
   `Server started open http://${app.server?.hostname}:${app.server?.port} in the browser`,

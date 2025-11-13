@@ -1,15 +1,15 @@
 import { prisma } from '@server/libs/db';
-import { defaultRoles, PERMISSIONS } from '@server/share/constant';
+import { defaultRoles } from '@server/share/constant';
 
 export class AuthSeedService {
   async seedRolesAndPermissions(): Promise<void> {
     await prisma.$transaction(async (tx) => {
       const permissions = [
-        PERMISSIONS.ROLE.VIEW,
-        PERMISSIONS.ROLE.UPDATE,
-        PERMISSIONS.ROLE.DELETE,
-        PERMISSIONS.SESSION.VIEW,
-        PERMISSIONS.SESSION.REVOKE,
+        'ROLE.VIEW',
+        'ROLE.UPDATE',
+        'ROLE.DELETE',
+        'SESSION.VIEW',
+        'SESSION.REVOKE',
       ];
 
       for (const permTitle of permissions) {
@@ -48,9 +48,7 @@ export class AuthSeedService {
             ),
           );
         } else {
-          permissionIds.push(
-            `perm_${PERMISSIONS.SESSION.VIEW.toLowerCase().replace(/\./g, '_')}`,
-          );
+          permissionIds.push('perm_session_view');
         }
 
         await tx.rolePermission.deleteMany({

@@ -1,4 +1,3 @@
-import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   CategoryDeleteResponseDto,
@@ -7,7 +6,7 @@ import {
   ListCategoriesQueryDto,
   UpsertCategoryDto,
 } from '../dto/category.dto';
-import authMacro from '../macros/auth';
+import { authCheck } from '../service/auth/auth.middleware';
 import categoryService from '../services/category.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -28,16 +27,15 @@ const categoryController = new Elysia().group(
   (group) =>
     group
       .use(categoryService)
-      .use(authMacro)
+      .use(authCheck)
       .get(
         '/',
-        async ({ user, query, categoryService }) => {
+        async ({ currentUser, query, categoryService }) => {
           return castToRes(
-            await categoryService.getAllCategories(user.id, query),
+            await categoryService.getAllCategories(currentUser.id, query),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...CATEGORY_DETAIL,
             summary: 'Get all categories as tree',
@@ -52,13 +50,12 @@ const categoryController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ user, params, categoryService }) => {
+        async ({ currentUser, params, categoryService }) => {
           return castToRes(
-            await categoryService.getCategoryById(user.id, params.id),
+            await categoryService.getCategoryById(currentUser.id, params.id),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...CATEGORY_DETAIL,
             summary: 'Get category by ID',
@@ -73,11 +70,12 @@ const categoryController = new Elysia().group(
       )
       .post(
         '/',
-        async ({ user, body, categoryService }) => {
-          return castToRes(await categoryService.createCategory(user.id, body));
+        async ({ currentUser, body, categoryService }) => {
+          return castToRes(
+            await categoryService.createCategory(currentUser.id, body),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...CATEGORY_DETAIL,
             summary: 'Create category',
@@ -92,13 +90,16 @@ const categoryController = new Elysia().group(
       )
       .put(
         '/:id',
-        async ({ user, params, body, categoryService }) => {
+        async ({ currentUser, params, body, categoryService }) => {
           return castToRes(
-            await categoryService.updateCategory(user.id, params.id, body),
+            await categoryService.updateCategory(
+              currentUser.id,
+              params.id,
+              body,
+            ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...CATEGORY_DETAIL,
             summary: 'Update category',
@@ -114,13 +115,12 @@ const categoryController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ user, params, categoryService }) => {
+        async ({ currentUser, params, categoryService }) => {
           return castToRes(
-            await categoryService.deleteCategory(user.id, params.id),
+            await categoryService.deleteCategory(currentUser.id, params.id),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...CATEGORY_DETAIL,
             summary: 'Delete category',

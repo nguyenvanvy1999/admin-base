@@ -1,5 +1,7 @@
 import { UserRole } from '@server/generated/prisma/enums';
-import { Elysia } from 'elysia';
+import { prisma } from '@server/libs/db';
+import dayjs from 'dayjs';
+import { Elysia, t } from 'elysia';
 import {
   AuthUserDto,
   LoginDto,
@@ -7,9 +9,14 @@ import {
   RegisterDto,
   UpdateProfileDto,
 } from '../dto/user.dto';
-import authMacro from '../macros/auth';
+import { authCheck, userResSelect } from '../service/auth/auth.middleware';
+import {
+  tokenService,
+  userUtilService,
+} from '../service/auth/auth-util.service';
 import userService from '../services/user.service';
-import { castToRes, ResWrapper } from '../share';
+import { castToRes, ErrCode, ResWrapper, UnAuthErr } from '../share';
+import type { ITokenPayload } from '../share/type';
 
 const USER_DETAIL = {
   tags: ['User'],
@@ -32,7 +39,6 @@ const userController = new Elysia().group(
   (group) =>
     group
       .use(userService)
-      .use(authMacro)
       .post(
         '/register',
         async ({ body, userService }) => {
@@ -53,8 +59,16 @@ const userController = new Elysia().group(
       )
       .post(
         '/login',
-        async ({ body, userService }) => {
-          return castToRes(await userService.login(body));
+        async ({ body, userService, request, headers }) => {
+          const clientIp =
+            headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+            headers['x-real-ip'] ||
+            request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+            'unknown';
+          const userAgent = headers['user-agent'] || 'unknown';
+          return castToRes(
+            await userService.login(body, clientIp as string, userAgent),
+          );
         },
         {
           detail: {
@@ -69,13 +83,90 @@ const userController = new Elysia().group(
           },
         },
       )
-      .get(
-        '/me',
-        async ({ user, userService }) => {
-          return castToRes(await userService.getUserInfo(user.id));
+      .post(
+        '/refresh-token',
+        async ({ body, request, headers }) => {
+          const clientIp =
+            headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+            headers['x-real-ip'] ||
+            request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+            'unknown';
+          const userAgent = headers['user-agent'] || 'unknown';
+
+          const session = await prisma.session.findFirst({
+            where: { token: body.token },
+            select: {
+              revoked: true,
+              id: true,
+              expired: true,
+              userId: true,
+            },
+          });
+
+          if (!session || session.revoked || new Date() > session.expired) {
+            throw new UnAuthErr(ErrCode.ExpiredToken);
+          }
+
+          const user = await prisma.user.findUnique({
+            where: { id: session.userId },
+            select: userResSelect,
+          });
+
+          if (!user) {
+            throw new UnAuthErr(ErrCode.UserNotFound);
+          }
+
+          const payload: ITokenPayload = {
+            userId: user.id,
+            timestamp: Date.now(),
+            sessionId: session.id,
+            clientIp,
+            userAgent,
+          };
+
+          const { accessToken, expirationTime } =
+            await tokenService.createAccessToken(payload);
+
+          const permissions = await userUtilService.getPermissions(user);
+
+          return castToRes({
+            accessToken,
+            refreshToken: body.token,
+            exp: expirationTime.getTime(),
+            expired: dayjs(expirationTime).format(),
+            user: {
+              id: user.id,
+              username: user.username,
+              name: user.name,
+              role: UserRole.user,
+              baseCurrencyId: user.baseCurrencyId,
+              permissions,
+              roleIds: user.roles.map((r) => r.roleId),
+            },
+          });
         },
         {
-          checkAuth: [UserRole.user],
+          detail: {
+            ...USER_DETAIL,
+            summary: 'Refresh access token',
+            description:
+              'Issues a new access token using a valid refresh token.',
+          },
+          body: t.Object({
+            token: t.String({ minLength: 1 }),
+          }),
+          response: {
+            200: ResWrapper(LoginResponseDto),
+          },
+        },
+      )
+      .use(authCheck)
+      .get(
+        '/me',
+        async ({ currentUser, userService }) => {
+          return castToRes(await userService.getUserInfo(currentUser.id));
+        },
+        {
           detail: {
             ...USER_DETAIL_AUTH,
             summary: 'Get current user info',
@@ -89,11 +180,12 @@ const userController = new Elysia().group(
       )
       .put(
         '/profile',
-        async ({ user, body, userService }) => {
-          return castToRes(await userService.updateProfile(user.id, body));
+        async ({ currentUser, body, userService }) => {
+          return castToRes(
+            await userService.updateProfile(currentUser.id, body),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...USER_DETAIL_AUTH,
             summary: 'Update user profile',

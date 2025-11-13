@@ -1,4 +1,3 @@
-import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   DeleteManyTagsDto,
@@ -8,7 +7,7 @@ import {
   TagListResponseDto,
   UpsertTagDto,
 } from '../dto/tag.dto';
-import authMacro from '../macros/auth';
+import { authCheck } from '../service/auth/auth.middleware';
 import tagService from '../services/tag.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -29,14 +28,13 @@ const tagController = new Elysia().group(
   (group) =>
     group
       .use(tagService)
-      .use(authMacro)
+      .use(authCheck)
       .post(
         '/',
-        async ({ user, body, tagService }) => {
-          return castToRes(await tagService.upsertTag(user.id, body));
+        async ({ currentUser, body, tagService }) => {
+          return castToRes(await tagService.upsertTag(currentUser.id, body));
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TAG_DETAIL,
             summary: 'Create or update tag',
@@ -51,11 +49,10 @@ const tagController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ user, params, tagService }) => {
-          return castToRes(await tagService.getTag(user.id, params.id));
+        async ({ currentUser, params, tagService }) => {
+          return castToRes(await tagService.getTag(currentUser.id, params.id));
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TAG_DETAIL,
             summary: 'Get tag by ID',
@@ -70,11 +67,10 @@ const tagController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ user, query, tagService }) => {
-          return castToRes(await tagService.listTags(user.id, query));
+        async ({ currentUser, query, tagService }) => {
+          return castToRes(await tagService.listTags(currentUser.id, query));
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TAG_DETAIL,
             summary: 'List all tags',
@@ -89,11 +85,12 @@ const tagController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ user, params, tagService }) => {
-          return castToRes(await tagService.deleteTag(user.id, params.id));
+        async ({ currentUser, params, tagService }) => {
+          return castToRes(
+            await tagService.deleteTag(currentUser.id, params.id),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TAG_DETAIL,
             summary: 'Delete tag',
@@ -108,11 +105,12 @@ const tagController = new Elysia().group(
       )
       .post(
         '/delete-many',
-        async ({ user, body, tagService }) => {
-          return castToRes(await tagService.deleteManyTags(user.id, body.ids));
+        async ({ currentUser, body, tagService }) => {
+          return castToRes(
+            await tagService.deleteManyTags(currentUser.id, body.ids),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TAG_DETAIL,
             summary: 'Delete many tags',

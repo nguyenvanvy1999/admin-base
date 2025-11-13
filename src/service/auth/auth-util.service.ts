@@ -24,6 +24,8 @@ export interface ILoginRes {
     name: string | null;
     createdAt: Date;
     updatedAt: Date;
+    baseCurrencyId: string | null;
+    settings: any;
     permissions: UPermission[];
   };
 }
@@ -42,7 +44,7 @@ export const userUtilService = {
   },
 
   async completeLogin(
-    user: User & { roles: { roleId: string }[] },
+    user: User & { roles: { roleId: string }[]; deletedAt?: Date | null },
     clientIp: string,
     userAgent: string,
   ): Promise<ILoginRes> {
@@ -84,6 +86,8 @@ export const userUtilService = {
       name: user.name,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      baseCurrencyId: user.baseCurrencyId,
+      settings: user.settings,
       permissions: await userUtilService.getPermissions(user),
     };
 

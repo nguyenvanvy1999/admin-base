@@ -1,4 +1,3 @@
-import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   CreateInvestmentTradeDto,
@@ -7,7 +6,7 @@ import {
   ListInvestmentTradesQueryDto,
   TradeDeleteResponseDto,
 } from '../dto/trade.dto';
-import authMacro from '../macros/auth';
+import { authCheck } from '../service/auth/auth.middleware';
 import investmentTradeService from '../services/trade.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -28,16 +27,19 @@ const tradeController = new Elysia().group(
   (group) =>
     group
       .use(investmentTradeService)
-      .use(authMacro)
+      .use(authCheck)
       .post(
         '/',
-        async ({ user, params, body, investmentTradeService }) => {
+        async ({ currentUser, params, body, investmentTradeService }) => {
           return castToRes(
-            await investmentTradeService.createTrade(user.id, params.id, body),
+            await investmentTradeService.createTrade(
+              currentUser.id,
+              params.id,
+              body,
+            ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TRADE_DETAIL,
             summary: 'Create investment trade',
@@ -53,13 +55,16 @@ const tradeController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ user, params, query, investmentTradeService }) => {
+        async ({ currentUser, params, query, investmentTradeService }) => {
           return castToRes(
-            await investmentTradeService.listTrades(user.id, params.id, query),
+            await investmentTradeService.listTrades(
+              currentUser.id,
+              params.id,
+              query,
+            ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TRADE_DETAIL,
             summary: 'List investment trades',
@@ -75,17 +80,16 @@ const tradeController = new Elysia().group(
       )
       .delete(
         '/:tradeId',
-        async ({ user, params, investmentTradeService }) => {
+        async ({ currentUser, params, investmentTradeService }) => {
           return castToRes(
             await investmentTradeService.deleteTrade(
-              user.id,
+              currentUser.id,
               params.id,
               params.tradeId,
             ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TRADE_DETAIL,
             summary: 'Delete investment trade',

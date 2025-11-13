@@ -1,4 +1,3 @@
-import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   BalanceAdjustmentElysiaDto,
@@ -10,7 +9,7 @@ import {
   TransactionListResponseDto,
   UpsertTransactionDto,
 } from '../dto/transaction.dto';
-import authMacro from '../macros/auth';
+import { authCheck } from '../service/auth/auth.middleware';
 import transactionService from '../services/transaction.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -31,16 +30,15 @@ const transactionController = new Elysia().group(
   (group) =>
     group
       .use(transactionService)
-      .use(authMacro)
+      .use(authCheck)
       .post(
         '/',
-        async ({ user, body, transactionService }) => {
+        async ({ currentUser, body, transactionService }) => {
           return castToRes(
-            await transactionService.upsertTransaction(user.id, body),
+            await transactionService.upsertTransaction(currentUser.id, body),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TRANSACTION_DETAIL,
             summary: 'Create or update transaction',
@@ -55,13 +53,15 @@ const transactionController = new Elysia().group(
       )
       .post(
         '/batch',
-        async ({ user, body, transactionService }) => {
+        async ({ currentUser, body, transactionService }) => {
           return castToRes(
-            await transactionService.createBatchTransactions(user.id, body),
+            await transactionService.createBatchTransactions(
+              currentUser.id,
+              body,
+            ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TRANSACTION_DETAIL,
             summary: 'Create multiple transactions',
@@ -76,13 +76,12 @@ const transactionController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ user, params, transactionService }) => {
+        async ({ currentUser, params, transactionService }) => {
           return castToRes(
-            await transactionService.getTransaction(user.id, params.id),
+            await transactionService.getTransaction(currentUser.id, params.id),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TRANSACTION_DETAIL,
             summary: 'Get transaction by ID',
@@ -97,13 +96,12 @@ const transactionController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ user, query, transactionService }) => {
+        async ({ currentUser, query, transactionService }) => {
           return castToRes(
-            await transactionService.listTransactions(user.id, query),
+            await transactionService.listTransactions(currentUser.id, query),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TRANSACTION_DETAIL,
             summary: 'List all transactions',
@@ -118,13 +116,15 @@ const transactionController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ user, params, transactionService }) => {
+        async ({ currentUser, params, transactionService }) => {
           return castToRes(
-            await transactionService.deleteTransaction(user.id, params.id),
+            await transactionService.deleteTransaction(
+              currentUser.id,
+              params.id,
+            ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TRANSACTION_DETAIL,
             summary: 'Delete transaction',
@@ -139,13 +139,12 @@ const transactionController = new Elysia().group(
       )
       .post(
         '/adjust-balance',
-        async ({ user, body, transactionService }) => {
+        async ({ currentUser, body, transactionService }) => {
           return castToRes(
-            await transactionService.adjustAccountBalance(user.id, body),
+            await transactionService.adjustAccountBalance(currentUser.id, body),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...TRANSACTION_DETAIL,
             summary: 'Adjust account balance',

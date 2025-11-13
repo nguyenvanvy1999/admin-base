@@ -1,4 +1,3 @@
-import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   DeleteManyEventsDto,
@@ -8,7 +7,7 @@ import {
   ListEventsQueryDto,
   UpsertEventDto,
 } from '../dto/event.dto';
-import authMacro from '../macros/auth';
+import { authCheck } from '../service/auth/auth.middleware';
 import eventService from '../services/event.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -29,14 +28,15 @@ const eventController = new Elysia().group(
   (group) =>
     group
       .use(eventService)
-      .use(authMacro)
+      .use(authCheck)
       .post(
         '/',
-        async ({ user, body, eventService }) => {
-          return castToRes(await eventService.upsertEvent(user.id, body));
+        async ({ currentUser, body, eventService }) => {
+          return castToRes(
+            await eventService.upsertEvent(currentUser.id, body),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...EVENT_DETAIL,
             summary: 'Create or update event',
@@ -51,11 +51,12 @@ const eventController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ user, params, eventService }) => {
-          return castToRes(await eventService.getEvent(user.id, params.id));
+        async ({ currentUser, params, eventService }) => {
+          return castToRes(
+            await eventService.getEvent(currentUser.id, params.id),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...EVENT_DETAIL,
             summary: 'Get event by ID',
@@ -70,11 +71,12 @@ const eventController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ user, query, eventService }) => {
-          return castToRes(await eventService.listEvents(user.id, query));
+        async ({ currentUser, query, eventService }) => {
+          return castToRes(
+            await eventService.listEvents(currentUser.id, query),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...EVENT_DETAIL,
             summary: 'List all events',
@@ -89,11 +91,12 @@ const eventController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ user, params, eventService }) => {
-          return castToRes(await eventService.deleteEvent(user.id, params.id));
+        async ({ currentUser, params, eventService }) => {
+          return castToRes(
+            await eventService.deleteEvent(currentUser.id, params.id),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...EVENT_DETAIL,
             summary: 'Delete event',
@@ -108,13 +111,12 @@ const eventController = new Elysia().group(
       )
       .post(
         '/delete-many',
-        async ({ user, body, eventService }) => {
+        async ({ currentUser, body, eventService }) => {
           return castToRes(
-            await eventService.deleteManyEvents(user.id, body.ids),
+            await eventService.deleteManyEvents(currentUser.id, body.ids),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...EVENT_DETAIL,
             summary: 'Delete many events',

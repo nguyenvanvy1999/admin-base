@@ -22,8 +22,8 @@ export const useLoginMutation = () => {
       return authService.login(data);
     },
     onSuccess: async (data) => {
-      localStorage.setItem(ACCESS_TOKEN_KEY, data.jwt);
-      accessTokenRefreshSubject.next(data.jwt);
+      localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+      accessTokenRefreshSubject.next(data.accessToken);
       setUser({
         id: String(data.user.id),
         username: data.user.username,
@@ -52,8 +52,8 @@ export const useRegisterMutation = () => {
       return authService.login(data);
     },
     onSuccess: async (data) => {
-      localStorage.setItem(ACCESS_TOKEN_KEY, data.jwt);
-      accessTokenRefreshSubject.next(data.jwt);
+      localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+      accessTokenRefreshSubject.next(data.accessToken);
       setUser({
         id: String(data.user.id),
         username: data.user.username,

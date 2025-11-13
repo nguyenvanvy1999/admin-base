@@ -32,6 +32,7 @@ export const envSchema = t.Object({
   EXCHANGE_RATE_CACHE_TTL: t.Optional(
     t.Number({ minimum: 0, default: 3600000 }),
   ),
+  REDIS_URI: t.String({ default: 'redis://localhost:6379' }),
 });
 
 const Compiler = TypeCompiler.Compile(envSchema);

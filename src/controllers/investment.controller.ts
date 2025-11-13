@@ -1,4 +1,3 @@
-import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   InvestmentDeleteResponseDto,
@@ -9,7 +8,7 @@ import {
   ListInvestmentsQueryDto,
   UpsertInvestmentDto,
 } from '../dto/investment.dto';
-import authMacro from '../macros/auth';
+import { authCheck } from '../service/auth/auth.middleware';
 import investmentService from '../services/investment.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -30,16 +29,15 @@ const investmentController = new Elysia().group(
   (group) =>
     group
       .use(investmentService)
-      .use(authMacro)
+      .use(authCheck)
       .post(
         '/',
-        async ({ user, body, investmentService }) => {
+        async ({ currentUser, body, investmentService }) => {
           return castToRes(
-            await investmentService.upsertInvestment(user.id, body),
+            await investmentService.upsertInvestment(currentUser.id, body),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...INVESTMENT_DETAIL,
             summary: 'Create or update investment',
@@ -54,13 +52,12 @@ const investmentController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ user, query, investmentService }) => {
+        async ({ currentUser, query, investmentService }) => {
           return castToRes(
-            await investmentService.listInvestments(user.id, query),
+            await investmentService.listInvestments(currentUser.id, query),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...INVESTMENT_DETAIL,
             summary: 'List investments',
@@ -75,13 +72,12 @@ const investmentController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ user, params, investmentService }) => {
+        async ({ currentUser, params, investmentService }) => {
           return castToRes(
-            await investmentService.getInvestment(user.id, params.id),
+            await investmentService.getInvestment(currentUser.id, params.id),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...INVESTMENT_DETAIL,
             summary: 'Get investment by ID',
@@ -96,13 +92,12 @@ const investmentController = new Elysia().group(
       )
       .get(
         '/:id/holdings',
-        async ({ user, params, investmentService }) => {
+        async ({ currentUser, params, investmentService }) => {
           return castToRes(
-            await investmentService.getPosition(user.id, params.id),
+            await investmentService.getPosition(currentUser.id, params.id),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...INVESTMENT_DETAIL,
             summary: 'Get investment position',
@@ -117,13 +112,15 @@ const investmentController = new Elysia().group(
       )
       .get(
         '/:id/latest-valuation',
-        async ({ user, params, investmentService }) => {
+        async ({ currentUser, params, investmentService }) => {
           return castToRes(
-            await investmentService.getLatestValuation(user.id, params.id),
+            await investmentService.getLatestValuation(
+              currentUser.id,
+              params.id,
+            ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...INVESTMENT_DETAIL,
             summary: 'Get latest valuation',
@@ -138,13 +135,12 @@ const investmentController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ user, params, investmentService }) => {
+        async ({ currentUser, params, investmentService }) => {
           return castToRes(
-            await investmentService.deleteInvestment(user.id, params.id),
+            await investmentService.deleteInvestment(currentUser.id, params.id),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...INVESTMENT_DETAIL,
             summary: 'Delete investment',

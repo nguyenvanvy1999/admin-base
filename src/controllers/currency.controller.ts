@@ -1,7 +1,6 @@
-import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia } from 'elysia';
 import { CurrencyListResponseDto } from '../dto/currency.dto';
-import authMacro from '../macros/auth';
+import { authCheck } from '../service/auth/auth.middleware';
 import currencyService from '../services/currency.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -22,14 +21,13 @@ const currencyController = new Elysia().group(
   (group) =>
     group
       .use(currencyService)
-      .use(authMacro)
+      .use(authCheck)
       .get(
         '/',
         async ({ currencyService }) => {
           return castToRes(await currencyService.getAllCurrencies());
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...CURRENCY_DETAIL,
             summary: 'Get all currencies',

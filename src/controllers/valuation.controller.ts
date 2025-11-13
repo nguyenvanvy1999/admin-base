@@ -1,4 +1,3 @@
-import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   InvestmentValuationDto,
@@ -7,7 +6,7 @@ import {
   UpsertInvestmentValuationDto,
   ValuationDeleteResponseDto,
 } from '../dto/valuation.dto';
-import authMacro from '../macros/auth';
+import { authCheck } from '../service/auth/auth.middleware';
 import investmentValuationService from '../services/valuation.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -28,20 +27,19 @@ const valuationController = new Elysia().group(
   (group) =>
     group
       .use(investmentValuationService)
-      .use(authMacro)
+      .use(authCheck)
       .post(
         '/',
-        async ({ user, params, body, investmentValuationService }) => {
+        async ({ currentUser, params, body, investmentValuationService }) => {
           return castToRes(
             await investmentValuationService.upsertValuation(
-              user.id,
+              currentUser.id,
               params.id,
               body,
             ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...VALUATION_DETAIL,
             summary: 'Upsert investment valuation',
@@ -57,17 +55,16 @@ const valuationController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ user, params, query, investmentValuationService }) => {
+        async ({ currentUser, params, query, investmentValuationService }) => {
           return castToRes(
             await investmentValuationService.listValuations(
-              user.id,
+              currentUser.id,
               params.id,
               query,
             ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...VALUATION_DETAIL,
             summary: 'List investment valuations',
@@ -83,16 +80,15 @@ const valuationController = new Elysia().group(
       )
       .get(
         '/latest',
-        async ({ user, params, investmentValuationService }) => {
+        async ({ currentUser, params, investmentValuationService }) => {
           return castToRes(
             await investmentValuationService.getLatestValuation(
-              user.id,
+              currentUser.id,
               params.id,
             ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...VALUATION_DETAIL,
             summary: 'Get latest investment valuation',
@@ -107,17 +103,16 @@ const valuationController = new Elysia().group(
       )
       .delete(
         '/:valuationId',
-        async ({ user, params, investmentValuationService }) => {
+        async ({ currentUser, params, investmentValuationService }) => {
           return castToRes(
             await investmentValuationService.deleteValuation(
-              user.id,
+              currentUser.id,
               params.id,
               params.valuationId,
             ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...VALUATION_DETAIL,
             summary: 'Delete investment valuation',

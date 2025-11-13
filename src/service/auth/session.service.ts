@@ -1,3 +1,4 @@
+import { currentUserCache } from '@server/config/cache';
 import type { Prisma } from '@server/generated/prisma/client';
 import { prisma } from '@server/libs/db';
 
@@ -40,6 +41,8 @@ export class SessionService {
         where: { id: { in: idsToRevoke } },
         data: { revoked: true },
       });
+
+      await Promise.all(idsToRevoke.map((id) => currentUserCache.del(id)));
     }
   }
 }

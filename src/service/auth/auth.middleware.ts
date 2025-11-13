@@ -1,3 +1,4 @@
+import { currentUserCache } from '@server/config/cache';
 import { prisma } from '@server/libs/db';
 import { ErrCode, NotFoundErr, UnAuthErr } from '@server/share';
 import type { ICurrentUser } from '@server/share/type';
@@ -10,6 +11,8 @@ export const userResSelect = {
   id: true,
   username: true,
   name: true,
+  baseCurrencyId: true,
+  settings: true,
   createdAt: true,
   updatedAt: true,
   roles: { select: { roleId: true } },
@@ -25,41 +28,50 @@ export const authCheck = (app: Elysia) =>
 
     const { data } = await tokenService.verifyAccessToken(token);
 
-    const session = await prisma.session.findUnique({
-      where: { id: data.sessionId },
-      select: {
-        id: true,
-        revoked: true,
-        expired: true,
-        userId: true,
-      },
-    });
+    let currentUser: ICurrentUser;
+    const cachedUser = await currentUserCache.get(data.sessionId);
 
-    if (!session || session.revoked || new Date() > session.expired) {
-      throw new UnAuthErr(ErrCode.ExpiredToken);
+    if (cachedUser) {
+      currentUser = cachedUser;
+    } else {
+      const session = await prisma.session.findUnique({
+        where: { id: data.sessionId },
+        select: {
+          id: true,
+          revoked: true,
+          expired: true,
+          userId: true,
+        },
+      });
+
+      if (!session || session.revoked || new Date() > session.expired) {
+        throw new UnAuthErr(ErrCode.ExpiredToken);
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: data.userId },
+        select: userResSelect,
+      });
+
+      if (!user) {
+        throw new NotFoundErr(ErrCode.UserNotFound);
+      }
+
+      currentUser = {
+        id: user.id,
+        sessionId: data.sessionId,
+        username: user.username,
+        name: user.name,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        baseCurrencyId: user.baseCurrencyId,
+        settings: user.settings,
+        permissions: await userUtilService.getPermissions(user),
+        roleIds: user.roles.map((x) => x.roleId),
+      };
+
+      await currentUserCache.set(data.sessionId, currentUser);
     }
-
-    const user = await prisma.user.findUnique({
-      where: { id: data.userId },
-      select: userResSelect,
-    });
-
-    if (!user) {
-      throw new NotFoundErr(ErrCode.UserNotFound);
-    }
-
-    const currentUser: ICurrentUser = {
-      id: user.id,
-      sessionId: data.sessionId,
-      username: user.username,
-      name: user.name,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      baseCurrencyId: null,
-      settings: null,
-      permissions: await userUtilService.getPermissions(user),
-      roleIds: user.roles.map((x) => x.roleId),
-    };
 
     return { currentUser };
   });

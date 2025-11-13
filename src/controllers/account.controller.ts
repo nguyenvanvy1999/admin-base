@@ -1,4 +1,3 @@
-import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   AccountDeleteResponseDto,
@@ -7,7 +6,7 @@ import {
   ListAccountsQueryDto,
   UpsertAccountDto,
 } from '../dto/account.dto';
-import authMacro from '../macros/auth';
+import { authCheck } from '../service/auth/auth.middleware';
 import accountService from '../services/account.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -28,14 +27,15 @@ const accountController = new Elysia().group(
   (group) =>
     group
       .use(accountService)
-      .use(authMacro)
+      .use(authCheck)
       .post(
         '/',
-        async ({ user, body, accountService }) => {
-          return castToRes(await accountService.upsertAccount(user.id, body));
+        async ({ currentUser, body, accountService }) => {
+          return castToRes(
+            await accountService.upsertAccount(currentUser.id, body),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...ACCOUNT_DETAIL,
             summary: 'Create or update account',
@@ -50,11 +50,12 @@ const accountController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ user, params, accountService }) => {
-          return castToRes(await accountService.getAccount(user.id, params.id));
+        async ({ currentUser, params, accountService }) => {
+          return castToRes(
+            await accountService.getAccount(currentUser.id, params.id),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...ACCOUNT_DETAIL,
             summary: 'Get account by ID',
@@ -69,11 +70,12 @@ const accountController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ user, query, accountService }) => {
-          return castToRes(await accountService.listAccounts(user.id, query));
+        async ({ currentUser, query, accountService }) => {
+          return castToRes(
+            await accountService.listAccounts(currentUser.id, query),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...ACCOUNT_DETAIL,
             summary: 'List all accounts',
@@ -88,13 +90,12 @@ const accountController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ user, params, accountService }) => {
+        async ({ currentUser, params, accountService }) => {
           return castToRes(
-            await accountService.deleteAccount(user.id, params.id),
+            await accountService.deleteAccount(currentUser.id, params.id),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...ACCOUNT_DETAIL,
             summary: 'Delete account',

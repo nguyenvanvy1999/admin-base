@@ -31,14 +31,19 @@ export const AuthUserDto = t.NoValidate(
     name: t.Nullable(t.String()),
     role: t.Enum(UserRole),
     baseCurrencyId: t.Nullable(t.String()),
+    permissions: t.Array(t.String()),
+    roleIds: t.Array(t.String()),
   }),
 );
 export type AuthUserRes = typeof AuthUserDto.static;
 
 export const LoginResponseDto = t.NoValidate(
   t.Object({
+    accessToken: t.String(),
+    refreshToken: t.String(),
+    exp: t.Number(),
+    expired: t.String(),
     user: AuthUserDto,
-    jwt: t.String(),
   }),
 );
 export type LoginRes = typeof LoginResponseDto.static;

@@ -1,4 +1,3 @@
-import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   ContributionDeleteResponseDto,
@@ -7,7 +6,7 @@ import {
   InvestmentContributionListResponseDto,
   ListInvestmentContributionsQueryDto,
 } from '../dto/contribution.dto';
-import authMacro from '../macros/auth';
+import { authCheck } from '../service/auth/auth.middleware';
 import investmentContributionService from '../services/contribution.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -28,20 +27,24 @@ const contributionController = new Elysia().group(
   (group) =>
     group
       .use(investmentContributionService)
-      .use(authMacro)
+      .use(authCheck)
       .post(
         '/',
-        async ({ user, params, body, investmentContributionService }) => {
+        async ({
+          currentUser,
+          params,
+          body,
+          investmentContributionService,
+        }) => {
           return castToRes(
             await investmentContributionService.createContribution(
-              user.id,
+              currentUser.id,
               params.id,
               body,
             ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...CONTRIBUTION_DETAIL,
             summary: 'Create investment contribution',
@@ -57,17 +60,21 @@ const contributionController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ user, params, query, investmentContributionService }) => {
+        async ({
+          currentUser,
+          params,
+          query,
+          investmentContributionService,
+        }) => {
           return castToRes(
             await investmentContributionService.listContributions(
-              user.id,
+              currentUser.id,
               params.id,
               query,
             ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...CONTRIBUTION_DETAIL,
             summary: 'List investment contributions',
@@ -83,17 +90,16 @@ const contributionController = new Elysia().group(
       )
       .delete(
         '/:contributionId',
-        async ({ user, params, investmentContributionService }) => {
+        async ({ currentUser, params, investmentContributionService }) => {
           return castToRes(
             await investmentContributionService.deleteContribution(
-              user.id,
+              currentUser.id,
               params.id,
               params.contributionId,
             ),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...CONTRIBUTION_DETAIL,
             summary: 'Delete investment contribution',

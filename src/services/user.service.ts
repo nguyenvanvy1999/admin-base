@@ -1,8 +1,9 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import type { UserUncheckedUpdateInput } from '@server/generated/prisma/models/User';
 import { prisma } from '@server/libs/db';
+import { userUtilService } from '@server/service/auth/auth-util.service';
+import { DB_PREFIX, defaultRoles, IdUtil } from '@server/share';
 import { Elysia } from 'elysia';
-import * as jwt from 'jsonwebtoken';
 import { CURRENCY_IDS } from '../constants/currency';
 import { ErrorCode, throwAppError } from '../constants/error';
 import type {
@@ -20,6 +21,10 @@ const USER_SELECT_FOR_INFO = {
   name: true,
   role: true,
   baseCurrencyId: true,
+  settings: true,
+  createdAt: true,
+  updatedAt: true,
+  roles: { select: { roleId: true } },
 } as const;
 
 const USER_SELECT_FOR_VALIDATION = {
@@ -33,7 +38,11 @@ const USER_SELECT_FOR_LOGIN = {
   role: true,
   name: true,
   baseCurrencyId: true,
+  settings: true,
   password: true,
+  createdAt: true,
+  updatedAt: true,
+  roles: { select: { roleId: true } },
 } as const;
 
 const formatUser = (user: {
@@ -42,15 +51,20 @@ const formatUser = (user: {
   name: string | null;
   role: UserRole;
   baseCurrencyId: string | null;
+  permissions?: string[];
+  roleIds?: string[];
 }): AuthUserRes => ({
   ...user,
   name: user.name ?? null,
   baseCurrencyId: user.baseCurrencyId ?? null,
+  permissions: user.permissions ?? [],
+  roleIds: user.roleIds ?? [],
 });
 
 export interface IDb {
   user: typeof prisma.user;
   currency: typeof prisma.currency;
+  rolePlayer: typeof prisma.rolePlayer;
   $transaction: typeof prisma.$transaction;
 }
 
@@ -96,13 +110,47 @@ export class UserService {
 
       await this.deps.categoryService.seedDefaultCategories(tx, newUser.id);
 
+      await tx.rolePlayer.create({
+        data: {
+          id: IdUtil.dbId(DB_PREFIX.ROLE),
+          playerId: newUser.id,
+          roleId: defaultRoles.user.id,
+        },
+      });
+
       return newUser;
     });
 
-    return formatUser(user);
+    const userWithRoles = await this.deps.db.user.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        role: true,
+        baseCurrencyId: true,
+        roles: { select: { roleId: true } },
+      },
+    });
+
+    if (!userWithRoles) {
+      throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
+    }
+
+    const permissions = await userUtilService.getPermissions(userWithRoles);
+
+    return formatUser({
+      ...userWithRoles,
+      permissions,
+      roleIds: userWithRoles.roles.map((r) => r.roleId),
+    });
   }
 
-  async login(data: ILoginDto) {
+  async login(
+    data: ILoginDto,
+    clientIp: string,
+    userAgent: string,
+  ): Promise<LoginRes> {
     const user = await this.deps.db.user.findFirst({
       where: { username: data.username },
       select: USER_SELECT_FOR_LOGIN,
@@ -117,15 +165,31 @@ export class UserService {
     if (!isValid) {
       throwAppError(ErrorCode.INVALID_PASSWORD, 'Invalid password');
     }
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      process.env.JWT_SECRET ?? '',
+
+    const loginRes = await userUtilService.completeLogin(
+      user as typeof user & {
+        roles: { roleId: string }[];
+        deletedAt: Date | null;
+      },
+      clientIp,
+      userAgent,
     );
 
     return {
-      user: formatUser(user),
-      jwt: token,
-    } satisfies LoginRes;
+      accessToken: loginRes.accessToken,
+      refreshToken: loginRes.refreshToken,
+      exp: loginRes.exp,
+      expired: loginRes.expired,
+      user: {
+        id: loginRes.user.id,
+        username: loginRes.user.username,
+        name: loginRes.user.name,
+        role: user.role,
+        baseCurrencyId: loginRes.user.baseCurrencyId,
+        permissions: loginRes.user.permissions,
+        roleIds: user.roles.map((r) => r.roleId),
+      },
+    };
   }
 
   async getUserInfo(id: string) {
@@ -136,7 +200,14 @@ export class UserService {
     if (!user) {
       throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
-    return formatUser(user);
+
+    const permissions = await userUtilService.getPermissions(user);
+
+    return {
+      ...formatUser(user),
+      permissions,
+      roleIds: user.roles.map((r) => r.roleId),
+    };
   }
 
   async updateProfile(userId: string, data: IUpdateProfileDto) {

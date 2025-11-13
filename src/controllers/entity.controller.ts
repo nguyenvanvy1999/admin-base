@@ -1,4 +1,3 @@
-import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia, t } from 'elysia';
 import {
   DeleteManyEntitiesDto,
@@ -8,7 +7,7 @@ import {
   ListEntitiesQueryDto,
   UpsertEntityDto,
 } from '../dto/entity.dto';
-import authMacro from '../macros/auth';
+import { authCheck } from '../service/auth/auth.middleware';
 import entityService from '../services/entity.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -29,14 +28,15 @@ const entityController = new Elysia().group(
   (group) =>
     group
       .use(entityService)
-      .use(authMacro)
+      .use(authCheck)
       .post(
         '/',
-        async ({ user, body, entityService }) => {
-          return castToRes(await entityService.upsertEntity(user.id, body));
+        async ({ currentUser, body, entityService }) => {
+          return castToRes(
+            await entityService.upsertEntity(currentUser.id, body),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...ENTITY_DETAIL,
             summary: 'Create or update entity',
@@ -51,11 +51,12 @@ const entityController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ user, params, entityService }) => {
-          return castToRes(await entityService.getEntity(user.id, params.id));
+        async ({ currentUser, params, entityService }) => {
+          return castToRes(
+            await entityService.getEntity(currentUser.id, params.id),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...ENTITY_DETAIL,
             summary: 'Get entity by ID',
@@ -70,11 +71,12 @@ const entityController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ user, query, entityService }) => {
-          return castToRes(await entityService.listEntities(user.id, query));
+        async ({ currentUser, query, entityService }) => {
+          return castToRes(
+            await entityService.listEntities(currentUser.id, query),
+          );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...ENTITY_DETAIL,
             summary: 'List all entities',
@@ -89,13 +91,12 @@ const entityController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ user, params, entityService }) => {
+        async ({ currentUser, params, entityService }) => {
           return castToRes(
-            await entityService.deleteEntity(user.id, params.id),
+            await entityService.deleteEntity(currentUser.id, params.id),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...ENTITY_DETAIL,
             summary: 'Delete entity',
@@ -110,13 +111,12 @@ const entityController = new Elysia().group(
       )
       .post(
         '/delete-many',
-        async ({ user, body, entityService }) => {
+        async ({ currentUser, body, entityService }) => {
           return castToRes(
-            await entityService.deleteManyEntities(user.id, body.ids),
+            await entityService.deleteManyEntities(currentUser.id, body.ids),
           );
         },
         {
-          checkAuth: [UserRole.user],
           detail: {
             ...ENTITY_DETAIL,
             summary: 'Delete many entities',
