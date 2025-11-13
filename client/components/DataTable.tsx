@@ -1,13 +1,14 @@
 import { booleanStatusMap } from '@client/utils/booleanStatusMap';
 import { formatDate, formatDecimal, formatInt } from '@client/utils/format';
 import {
+  ActionIcon,
   Group,
-  Pagination,
   Select,
   Text,
   useMantineColorScheme,
   useMantineTheme,
 } from '@mantine/core';
+import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   MantineReactTable,
@@ -448,13 +449,9 @@ export function DataTable<T extends { id: string } = { id: string }>({
         minHeight: '28px',
       },
     },
-    enablePagination: true,
+    enablePagination: false,
     paginationDisplayMode: 'pages',
     pageCount: computedRowCount ? Math.ceil(computedRowCount / pageSize) : 0,
-    mantinePaginationProps: {
-      radius: 'xl',
-      size: 'lg',
-    },
     mantineBottomToolbarProps: {
       style: {
         padding: theme.spacing.xs,
@@ -543,16 +540,37 @@ export function DataTable<T extends { id: string } = { id: string }>({
             </Text>
           </Text>
           {totalPages > 0 && (
-            <Pagination
-              total={totalPages}
-              value={pagination.pageIndex + 1}
-              onChange={(newPage: number) => {
-                onPageChange?.(newPage);
-              }}
-              disabled={isLoading}
-              size="lg"
-              radius="xl"
-            />
+            <Group gap={4}>
+              <ActionIcon
+                variant="light"
+                size="sm"
+                onClick={() => {
+                  if (pagination.pageIndex > 0) {
+                    onPageChange?.(pagination.pageIndex);
+                  }
+                }}
+                disabled={pagination.pageIndex === 0 || isLoading}
+                aria-label="Previous page"
+              >
+                <IconChevronLeft size={16} />
+              </ActionIcon>
+              <Text size="xs" c="dimmed" px="xs">
+                {pagination.pageIndex + 1} / {totalPages}
+              </Text>
+              <ActionIcon
+                variant="light"
+                size="sm"
+                onClick={() => {
+                  if (pagination.pageIndex < totalPages - 1) {
+                    onPageChange?.(pagination.pageIndex + 2);
+                  }
+                }}
+                disabled={pagination.pageIndex >= totalPages - 1 || isLoading}
+                aria-label="Next page"
+              >
+                <IconChevronRight size={16} />
+              </ActionIcon>
+            </Group>
           )}
         </Group>
       );
