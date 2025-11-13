@@ -34,11 +34,10 @@ export class TokenService {
   }
 
   async signJwt(payload: Record<string, any>): Promise<string> {
-    const expiredSeconds = this.parseTime(this.e.JWT_ACCESS_TOKEN_EXPIRED);
     return await new SignJWT(payload)
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
-      .setExpirationTime(expiredSeconds)
+      .setExpirationTime(this.e.JWT_ACCESS_TOKEN_EXPIRED)
       .setAudience(this.e.JWT_AUDIENCE)
       .setIssuer(this.e.JWT_ISSUER)
       .setSubject(this.e.JWT_SUBJECT)
@@ -82,9 +81,10 @@ export class TokenService {
     const data = EncryptService.aes256Encrypt(payload);
     const accessToken = await this.signJwt({ data });
     const expiredSeconds = this.parseTime(this.e.JWT_ACCESS_TOKEN_EXPIRED);
+    const expirationTime = dayjs().add(expiredSeconds, 's').toDate();
     return {
       accessToken,
-      expirationTime: dayjs().add(expiredSeconds, 's').toDate(),
+      expirationTime,
     };
   }
 
@@ -95,8 +95,15 @@ export class TokenService {
     if (!res) {
       throwAppError(ErrorCode.INVALID_TOKEN, 'Invalid token');
     }
-    const data = EncryptService.aes256Decrypt<ITokenPayload>(res.data);
-    return { ...res, data };
+    if (!res.data || typeof res.data !== 'string') {
+      throwAppError(ErrorCode.INVALID_TOKEN, 'Invalid token payload');
+    }
+    try {
+      const data = EncryptService.aes256Decrypt<ITokenPayload>(res.data);
+      return { ...res, data };
+    } catch {
+      throwAppError(ErrorCode.INVALID_TOKEN, 'Failed to decrypt token');
+    }
   }
 }
 

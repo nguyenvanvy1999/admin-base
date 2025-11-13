@@ -24,8 +24,10 @@ export const authCheck = (app: Elysia) =>
     if (!authorization) {
       throwAppError(ErrorCode.INVALID_TOKEN, 'Invalid token');
     }
-    const token = authorization.slice(AUTH_HEADER.length + 1);
-
+    if (!authorization.startsWith(`${AUTH_HEADER} `)) {
+      throwAppError(ErrorCode.INVALID_TOKEN, 'Invalid token format');
+    }
+    const token = authorization.slice(AUTH_HEADER.length + 1).trim();
     const { data } = await tokenService.verifyAccessToken(token);
 
     let currentUser: ICurrentUser;
