@@ -4,8 +4,8 @@ import {
   TradeSide,
 } from '@server/generated/prisma/enums';
 import { prisma } from '@server/libs/db';
+import { ErrorCode, throwAppError } from '../constants/error';
 import type { InvestmentPositionResponse } from '../dto/investment.dto';
-import { investmentServiceInstance } from './investment.service';
 import {
   CONTRIBUTION_SELECT_FOR_POSITION,
   TRADE_SELECT_FOR_POSITION,
@@ -59,7 +59,10 @@ const safeNumber = (value: unknown) =>
     : Number(value ?? 0);
 
 export class InvestmentPositionService {
-  private readonly investmentService = investmentServiceInstance;
+  private get investmentService() {
+    // biome-ignore lint/style/noCommonJs: Fix circular dependency
+    return require('./investment.service').investmentServiceInstance;
+  }
 
   calculatePricedPosition(
     trades: TradeLike[],
@@ -92,7 +95,10 @@ export class InvestmentPositionService {
       }
 
       if (tradeQuantity > quantity) {
-        throw new Error('Sell quantity exceeds current position');
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Sell quantity exceeds current position',
+        );
       }
 
       if (quantity === 0) {
