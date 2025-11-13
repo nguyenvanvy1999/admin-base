@@ -299,6 +299,13 @@ class TransactionHandlerFactory {
     accountCurrencyId: string,
     userBaseCurrencyId: string,
   ) {
+    if (!userBaseCurrencyId) {
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'User base currency is required',
+      );
+    }
+
     const currencyId = data.currencyId ?? accountCurrencyId;
     const amountDecimal = new Decimal(data.amount);
     const feeDecimal = new Decimal(data.fee ?? 0);
@@ -1404,12 +1411,21 @@ export class TransactionService {
       select: { id: true, baseCurrencyId: true },
     });
 
+    if (!user.baseCurrencyId) {
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'User base currency is required. Please set your base currency in profile settings.',
+      );
+    }
+
     const amount = difference.abs();
+
+    const currencyId = account.currencyId;
 
     const transactionData: IIncomeExpenseTransaction = {
       accountId: account.id,
       amount: amount.toNumber(),
-      currencyId: account.currencyId,
+      currencyId,
       fee: 0,
       date: data.date,
       note: data.note ?? undefined,
@@ -1423,6 +1439,8 @@ export class TransactionService {
 
     const accountRecord = {
       id: account.id,
+      userId: userId,
+      currencyId,
     };
 
     const transaction = await this.handlerFactory.handleIncomeExpense(

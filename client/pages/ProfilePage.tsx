@@ -19,33 +19,60 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-const profileSchema = UpdateProfileDto.extend({
-  confirmPassword: z.string().optional(),
-})
-  .refine(
-    (data) => {
-      if (data.newPassword && !data.oldPassword) {
-        return false;
+const profileSchema = z.preprocess(
+  (data) => {
+    if (typeof data === 'object' && data !== null) {
+      const processed = { ...data };
+      if (
+        typeof processed.oldPassword === 'string' &&
+        processed.oldPassword.trim() === ''
+      ) {
+        processed.oldPassword = undefined;
       }
-      return true;
-    },
-    {
-      message: 'profile.oldPasswordRequired',
-      path: ['oldPassword'],
-    },
-  )
-  .refine(
-    (data) => {
-      if (data.newPassword && data.newPassword !== data.confirmPassword) {
-        return false;
+      if (
+        typeof processed.newPassword === 'string' &&
+        processed.newPassword.trim() === ''
+      ) {
+        processed.newPassword = undefined;
       }
-      return true;
-    },
-    {
-      message: 'profile.passwordsDoNotMatch',
-      path: ['confirmPassword'],
-    },
-  );
+      if (
+        typeof processed.confirmPassword === 'string' &&
+        processed.confirmPassword.trim() === ''
+      ) {
+        processed.confirmPassword = undefined;
+      }
+      return processed;
+    }
+    return data;
+  },
+  UpdateProfileDto.extend({
+    confirmPassword: z.string().optional(),
+  })
+    .refine(
+      (data) => {
+        if (data.newPassword && !data.oldPassword) {
+          return false;
+        }
+        return true;
+      },
+      {
+        message: 'profile.oldPasswordRequired',
+        path: ['oldPassword'],
+      },
+    )
+    .refine(
+      (data) => {
+        if (data.newPassword && data.newPassword !== data.confirmPassword) {
+          return false;
+        }
+        return true;
+      },
+      {
+        message: 'profile.passwordsDoNotMatch',
+        path: ['confirmPassword'],
+      },
+    ),
+);
 
 type FormValue = z.infer<typeof profileSchema>;
 

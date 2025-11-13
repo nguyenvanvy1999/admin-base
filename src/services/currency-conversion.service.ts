@@ -12,6 +12,13 @@ export class CurrencyConversionService {
     fromCurrencyId: string,
     toCurrencyId: string,
   ): Promise<Decimal> {
+    if (!fromCurrencyId || !toCurrencyId) {
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'Currency IDs are required for conversion',
+      );
+    }
+
     if (fromCurrencyId === toCurrencyId) {
       return new Decimal(amount);
     }
@@ -92,6 +99,9 @@ export class CurrencyConversionService {
     currencyId: string,
     baseCurrencyId: string,
   ): Promise<Decimal> {
+    if (!baseCurrencyId) {
+      throwAppError(ErrorCode.VALIDATION_ERROR, 'Base currency ID is required');
+    }
     if (currencyId === baseCurrencyId) {
       return new Decimal(amount);
     }

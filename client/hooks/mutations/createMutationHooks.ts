@@ -1,3 +1,4 @@
+import i18n from '@client/i18n';
 import { toast } from '@client/utils/toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -11,6 +12,12 @@ type ServiceWithCRUD<TUpsertDto, TResponse, TDeleteResponse> = {
 type CreateMutationHooksOptions = {
   queryKey: string | string[];
   successMessages?: {
+    create?: string;
+    update?: string;
+    delete?: string;
+    deleteMany?: string;
+  };
+  errorMessages?: {
     create?: string;
     update?: string;
     delete?: string;
@@ -34,6 +41,7 @@ export function createMutationHooks<
     const {
       queryKey,
       successMessages = {},
+      errorMessages = {},
       invalidateKeys = [],
       onSuccess: onSuccessCallbacks = {},
     } = options;
@@ -59,6 +67,16 @@ export function createMutationHooks<
           }
           await onSuccessCallbacks.create?.();
         },
+        onError: (error: Error & { code?: string; message?: string }) => {
+          const errorCode = error.code || 'ise';
+          const i18nKey = `api.${errorCode.toLowerCase()}`;
+          const errorMessage =
+            (i18n.exists(i18nKey) ? i18n.t(i18nKey as any) : null) ||
+            error.message ||
+            errorMessages.create ||
+            'Failed to create. Please try again.';
+          toast.error(errorMessage);
+        },
       });
     };
 
@@ -83,6 +101,16 @@ export function createMutationHooks<
           }
           await onSuccessCallbacks.update?.();
         },
+        onError: (error: Error & { code?: string; message?: string }) => {
+          const errorCode = error.code || 'ise';
+          const i18nKey = `api.${errorCode.toLowerCase()}`;
+          const errorMessage =
+            (i18n.exists(i18nKey) ? i18n.t(i18nKey as any) : null) ||
+            error.message ||
+            errorMessages.update ||
+            'Failed to update. Please try again.';
+          toast.error(errorMessage);
+        },
       });
     };
 
@@ -103,6 +131,16 @@ export function createMutationHooks<
             toast.success(successMessages.delete);
           }
           await onSuccessCallbacks.delete?.();
+        },
+        onError: (error: Error & { code?: string; message?: string }) => {
+          const errorCode = error.code || 'ise';
+          const i18nKey = `api.${errorCode.toLowerCase()}`;
+          const errorMessage =
+            (i18n.exists(i18nKey) ? i18n.t(i18nKey as any) : null) ||
+            error.message ||
+            errorMessages.delete ||
+            'Failed to delete. Please try again.';
+          toast.error(errorMessage);
         },
       });
     };
@@ -125,6 +163,16 @@ export function createMutationHooks<
                 toast.success(successMessages.deleteMany);
               }
               await onSuccessCallbacks.deleteMany?.();
+            },
+            onError: (error: Error & { code?: string; message?: string }) => {
+              const errorCode = error.code || 'ise';
+              const i18nKey = `api.${errorCode.toLowerCase()}`;
+              const errorMessage =
+                (i18n.exists(i18nKey) ? i18n.t(i18nKey as any) : null) ||
+                error.message ||
+                errorMessages.deleteMany ||
+                'Failed to delete. Please try again.';
+              toast.error(errorMessage);
             },
           });
         }

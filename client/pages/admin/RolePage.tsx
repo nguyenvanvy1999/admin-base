@@ -106,7 +106,11 @@ const RolePage = () => {
   };
 
   const handleConfirmDelete = async () => {
-    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
+    try {
+      await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
+    } catch {
+      // Error is already handled by mutation's onError callback
+    }
   };
 
   const handleConfirmDeleteMany = async () => {
@@ -114,12 +118,18 @@ const RolePage = () => {
       deleteHandler.selectedRecords &&
       deleteHandler.selectedRecords.length > 0
     ) {
-      await deleteManyMutation.mutateAsync(
-        deleteHandler.selectedRecords.map((r) => r.id),
-      );
-      deleteHandler.setSelectedRecords([]);
+      try {
+        await deleteManyMutation.mutateAsync(
+          deleteHandler.selectedRecords.map((r) => r.id),
+        );
+        deleteHandler.setSelectedRecords([]);
+        deleteHandler.handleDeleteManyDialogClose();
+      } catch {
+        // Error is already handled by mutation's onError callback
+      }
+    } else {
+      deleteHandler.handleDeleteManyDialogClose();
     }
-    deleteHandler.handleDeleteManyDialogClose();
   };
 
   const handleSearch = () => {

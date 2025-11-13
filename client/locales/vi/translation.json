@@ -590,6 +590,7 @@
     "not_found": "Không tìm thấy tài nguyên.",
     "unauthorized": "Chưa đăng nhập. Vui lòng đăng nhập.",
     "forbidden": "Bạn không có quyền thực hiện hành động này.",
+    "permission_denied": "Bạn không có quyền thực hiện hành động này.",
     "entity_not_found": "Không tìm thấy đối tượng.",
     "account_not_found": "Không tìm thấy tài khoản.",
     "currency_not_found": "Không tìm thấy loại tiền tệ.",

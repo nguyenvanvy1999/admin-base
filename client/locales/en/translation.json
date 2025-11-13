@@ -590,6 +590,7 @@
     "not_found": "Resource not found.",
     "unauthorized": "Unauthorized. Please log in.",
     "forbidden": "You don't have permission to perform this action.",
+    "permission_denied": "You don't have permission to perform this action.",
     "entity_not_found": "Entity not found.",
     "account_not_found": "Account not found.",
     "currency_not_found": "Currency not found.",

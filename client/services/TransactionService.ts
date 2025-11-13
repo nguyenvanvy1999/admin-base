@@ -50,18 +50,16 @@ export class TransactionService extends ServiceBase {
   }
 
   adjustBalance(data: IBalanceAdjustmentDto): Promise<TransactionDetail> {
-    return this.post<TransactionDetail>({
+    return this.post<TransactionDetail>(data, {
       endpoint: 'adjust-balance',
-      data,
     });
   }
 
   createBatchTransactions(
     data: IBatchTransactionsDto,
   ): Promise<BatchTransactionsResponse> {
-    return this.post<BatchTransactionsResponse>({
+    return this.post<BatchTransactionsResponse>(data, {
       endpoint: 'batch',
-      data,
     });
   }
 }
