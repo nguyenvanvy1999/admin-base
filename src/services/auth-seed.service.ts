@@ -1,30 +1,36 @@
 import { prisma } from '@server/libs/db';
-import { defaultRoles } from '@server/share/constant';
+import { defaultRoles, PERMISSIONS } from '@server/share/constant';
 
 export class AuthSeedService {
   async seedRolesAndPermissions(): Promise<void> {
     await prisma.$transaction(async (tx) => {
-      const permissions = [
-        'ROLE.VIEW',
-        'ROLE.UPDATE',
-        'ROLE.DELETE',
-        'SESSION.VIEW',
-        'SESSION.REVOKE',
-      ];
+      const perms = PERMISSIONS as unknown as Record<
+        string,
+        Record<string, { roles: string[] }>
+      >;
 
-      for (const permTitle of permissions) {
-        await tx.permission.upsert({
-          where: { title: permTitle },
-          update: {},
-          create: {
-            id: `perm_${permTitle.toLowerCase().replace(/\./g, '_')}`,
-            title: permTitle,
-            description: `Permission for ${permTitle}`,
-          },
-        });
+      const permissionMap = new Map<string, string>();
+
+      for (const [category, actions] of Object.entries(perms)) {
+        for (const [action] of Object.entries(actions)) {
+          const permTitle = `${category}.${action}`;
+          const permId = `perm_${permTitle.toLowerCase().replace(/\./g, '_')}`;
+
+          await tx.permission.upsert({
+            where: { title: permTitle },
+            update: {},
+            create: {
+              id: permId,
+              title: permTitle,
+              description: `Permission for ${permTitle}`,
+            },
+          });
+
+          permissionMap.set(permTitle, permId);
+        }
       }
 
-      for (const [key, role] of Object.entries(defaultRoles)) {
+      for (const [_key, role] of Object.entries(defaultRoles)) {
         const createdRole = await tx.role.upsert({
           where: { id: role.id },
           update: {
@@ -41,27 +47,32 @@ export class AuthSeedService {
         });
 
         const permissionIds: string[] = [];
-        if (key === 'admin') {
-          permissionIds.push(
-            ...permissions.map(
-              (p) => `perm_${p.toLowerCase().replace(/\./g, '_')}`,
-            ),
-          );
-        } else {
-          permissionIds.push('perm_session_view');
+
+        for (const [category, actions] of Object.entries(perms)) {
+          for (const [action, permData] of Object.entries(actions)) {
+            if (permData.roles.includes(role.id)) {
+              const permTitle = `${category}.${action}`;
+              const permId = permissionMap.get(permTitle);
+              if (permId) {
+                permissionIds.push(permId);
+              }
+            }
+          }
         }
 
         await tx.rolePermission.deleteMany({
           where: { roleId: createdRole.id },
         });
 
-        await tx.rolePermission.createMany({
-          data: permissionIds.map((permissionId) => ({
-            roleId: createdRole.id,
-            permissionId,
-          })),
-          skipDuplicates: true,
-        });
+        if (permissionIds.length > 0) {
+          await tx.rolePermission.createMany({
+            data: permissionIds.map((permissionId) => ({
+              roleId: createdRole.id,
+              permissionId,
+            })),
+            skipDuplicates: true,
+          });
+        }
       }
     });
   }

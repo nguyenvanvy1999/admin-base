@@ -21,6 +21,9 @@ import valuationController from './controllers/valuation.controller';
 import { logger } from './libs/logger';
 import { withErrorHandler } from './middlewares/error-middleware';
 import { adminController } from './modules/admin';
+import { AuthSeedService } from './services/auth-seed.service';
+import { SeedService } from './services/seed.service';
+import { seedSuperAdmin } from './services/super-admin-seed.service';
 
 export const app = new Elysia()
   .use(
@@ -77,6 +80,32 @@ export const app = new Elysia()
   .listen(appEnv.PORT);
 
 await redis.connect();
+
+if (appEnv.AUTO_SEED) {
+  try {
+    logger.info('Auto-seed enabled, starting seed process...');
+    const seedService = new SeedService();
+    const authSeedService = new AuthSeedService();
+
+    logger.info('Starting currency seed...');
+    await seedService.seedCurrencies();
+    logger.info('Currency seed completed successfully!');
+
+    logger.info('Starting auth seed (roles and permissions)...');
+    await authSeedService.seedRolesAndPermissions();
+    logger.info('Auth seed completed successfully!');
+
+    if (appEnv.AUTO_SEED_SUPER_ADMIN) {
+      logger.info(
+        'Auto-seed super admin enabled, starting super admin seed...',
+      );
+      await seedSuperAdmin();
+      logger.info('Super admin seed completed successfully!');
+    }
+  } catch (error) {
+    logger.error('Error during auto-seed', { error });
+  }
+}
 
 logger.info(
   `Server started open http://${app.server?.hostname}:${app.server?.port} in the browser`,
