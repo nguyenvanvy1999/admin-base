@@ -1,14 +1,5 @@
 import { useUserStatistics } from '@client/hooks/queries/useAdminStatistics';
-import {
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts';
-
-const COLORS = ['#3b82f6', '#10b981'];
+import { PieChart } from '@mantine/charts';
 
 export const UserRoleDistributionChart = () => {
   const { data, isLoading, error } = useUserStatistics();
@@ -37,6 +28,8 @@ export const UserRoleDistributionChart = () => {
     );
   }
 
+  const COLORS = ['#3b82f6', '#10b981'];
+
   const totalUsers = data.usersByRole.admin + data.usersByRole.user;
   const chartData = [
     {
@@ -44,14 +37,21 @@ export const UserRoleDistributionChart = () => {
       value: data.usersByRole.admin,
       percentage:
         totalUsers > 0 ? (data.usersByRole.admin / totalUsers) * 100 : 0,
+      color: COLORS[0],
     },
     {
       name: 'User',
       value: data.usersByRole.user,
       percentage:
         totalUsers > 0 ? (data.usersByRole.user / totalUsers) * 100 : 0,
+      color: COLORS[1],
     },
-  ].filter((item) => item.value > 0);
+  ]
+    .filter((item) => item.value > 0)
+    .map((item, index) => ({
+      ...item,
+      color: COLORS[index % COLORS.length],
+    }));
 
   if (chartData.length === 0) {
     return (
@@ -68,44 +68,18 @@ export const UserRoleDistributionChart = () => {
       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
         User Role Distribution
       </h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie
-            data={chartData}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            label={({ payload }) => `${payload.percentage.toFixed(1)}%`}
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="value"
-          >
-            {chartData.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={COLORS[index % COLORS.length]}
-              />
-            ))}
-          </Pie>
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--color-background)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '8px',
-            }}
-            formatter={(value: number, name: string, props: any) => [
-              `${value.toLocaleString()} (${props.payload.percentage.toFixed(2)}%)`,
-              name,
-            ]}
-            labelStyle={{ color: 'var(--color-text)' }}
-          />
-          <Legend
-            formatter={(value, entry: any) =>
-              `${value}: ${entry.payload.value.toLocaleString()} (${entry.payload.percentage.toFixed(1)}%)`
-            }
-          />
-        </PieChart>
-      </ResponsiveContainer>
+      <PieChart
+        h={300}
+        data={chartData}
+        tooltipProps={{
+          formatter: (value: unknown, payload: unknown) => [
+            `${(value as number).toLocaleString()} (${(payload as { percentage: number }).percentage.toFixed(2)}%)`,
+            (payload as { name: string }).name,
+          ],
+        }}
+        withLabelsLine
+        labelsType="percent"
+      />
     </div>
   );
 };

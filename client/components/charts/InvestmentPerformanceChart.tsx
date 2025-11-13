@@ -1,16 +1,6 @@
 import { useReportInvestments } from '@client/hooks/queries/useReportInvestments';
 import { formatDecimal } from '@client/utils/format';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { BarChart } from '@mantine/charts';
 
 interface InvestmentPerformanceChartProps {
   dateFrom?: string;
@@ -55,15 +45,21 @@ export const InvestmentPerformanceChart = ({
   const chartData = [
     {
       name: 'Realized P&L',
-      value: performance.realizedPnl,
+      realizedPnl: performance.realizedPnl,
+      unrealizedPnl: null,
+      totalPnl: null,
     },
     {
       name: 'Unrealized P&L',
-      value: performance.unrealizedPnl,
+      realizedPnl: null,
+      unrealizedPnl: performance.unrealizedPnl,
+      totalPnl: null,
     },
     {
       name: 'Total P&L',
-      value: performance.totalPnl,
+      realizedPnl: null,
+      unrealizedPnl: null,
+      totalPnl: performance.totalPnl,
     },
   ];
 
@@ -76,39 +72,35 @@ export const InvestmentPerformanceChart = ({
       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
         Investment Performance
       </h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={chartData}>
-          <CartesianGrid
-            strokeDasharray="3 3"
-            className="stroke-gray-300 dark:stroke-gray-700"
-          />
-          <XAxis
-            dataKey="name"
-            className="text-gray-600 dark:text-gray-400"
-            tick={{ fill: 'currentColor' }}
-          />
-          <YAxis
-            className="text-gray-600 dark:text-gray-400"
-            tick={{ fill: 'currentColor' }}
-            tickFormatter={(value) => formatDecimal(value, 0)}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--color-background)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '8px',
-            }}
-            formatter={(value: number) => formatDecimal(value)}
-            labelStyle={{ color: 'var(--color-text)' }}
-          />
-          <Legend />
-          <Bar dataKey="value">
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={getBarColor(entry.value)} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+      <BarChart
+        h={300}
+        data={chartData}
+        dataKey="name"
+        series={[
+          {
+            name: 'realizedPnl',
+            label: 'Realized P&L',
+            color: getBarColor(performance.realizedPnl),
+          },
+          {
+            name: 'unrealizedPnl',
+            label: 'Unrealized P&L',
+            color: getBarColor(performance.unrealizedPnl),
+          },
+          {
+            name: 'totalPnl',
+            label: 'Total P&L',
+            color: getBarColor(performance.totalPnl),
+          },
+        ]}
+        withLegend
+        yAxisProps={{
+          tickFormatter: (value) => formatDecimal(value, 0),
+        }}
+        tooltipProps={{
+          formatter: (value) => formatDecimal(value as number),
+        }}
+      />
       <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
         <div>
           <p className="text-sm text-gray-600 dark:text-gray-400">

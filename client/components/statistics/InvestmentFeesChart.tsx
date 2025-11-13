@@ -1,17 +1,6 @@
 import { useInvestmentFeesDetailed } from '@client/hooks/queries/useInvestmentFeesDetailed';
 import { formatDecimal } from '@client/utils/format';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { BarChart, PieChart } from '@mantine/charts';
 
 interface InvestmentFeesChartProps {
   queryParams: {
@@ -21,17 +10,6 @@ interface InvestmentFeesChartProps {
     investmentId?: string;
   };
 }
-
-const COLORS = [
-  '#3b82f6',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#8b5cf6',
-  '#ec4899',
-  '#06b6d4',
-  '#84cc16',
-];
 
 export const InvestmentFeesChart = ({
   queryParams,
@@ -65,9 +43,21 @@ export const InvestmentFeesChart = ({
     totalFee: item.totalFee,
   }));
 
-  const pieData = data.feeByInvestment.slice(0, 8).map((inv) => ({
+  const COLORS = [
+    '#3b82f6',
+    '#10b981',
+    '#f59e0b',
+    '#ef4444',
+    '#8b5cf6',
+    '#ec4899',
+    '#06b6d4',
+    '#84cc16',
+  ];
+
+  const pieData = data.feeByInvestment.slice(0, 8).map((inv, index) => ({
     name: inv.investmentSymbol,
     value: inv.fee,
+    color: COLORS[index % COLORS.length],
   }));
 
   return (
@@ -104,70 +94,38 @@ export const InvestmentFeesChart = ({
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Fees Over Time
           </h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                className="stroke-gray-300 dark:stroke-gray-700"
-              />
-              <XAxis
-                dataKey="date"
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-              />
-              <YAxis
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-                tickFormatter={(value) => formatDecimal(value, 0)}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-background)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                }}
-                formatter={(value: number) => formatDecimal(value)}
-                labelStyle={{ color: 'var(--color-text)' }}
-              />
-              <Bar dataKey="totalFee" fill="#f59e0b" />
-            </BarChart>
-          </ResponsiveContainer>
+          <BarChart
+            h={300}
+            data={chartData}
+            dataKey="date"
+            series={[
+              {
+                name: 'totalFee',
+                label: 'Total Fee',
+                color: '#f59e0b',
+              },
+            ]}
+            yAxisProps={{
+              tickFormatter: (value) => formatDecimal(value, 0),
+            }}
+            tooltipProps={{
+              formatter: (value) => formatDecimal(value as number),
+            }}
+          />
         </div>
         <div>
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Fees by Investment
           </h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) =>
-                  `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`
-                }
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: number) => formatDecimal(value)}
-                contentStyle={{
-                  backgroundColor: 'var(--color-background)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <PieChart
+            h={300}
+            data={pieData}
+            tooltipProps={{
+              formatter: (value) => formatDecimal(value as number),
+            }}
+            withLabelsLine
+            labelsType="percent"
+          />
         </div>
       </div>
     </div>

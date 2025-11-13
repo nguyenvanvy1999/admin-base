@@ -13,6 +13,7 @@
         "@logtape/file": "^1.2.0",
         "@logtape/logtape": "^1.2.0",
         "@logtape/pretty": "^1.2.0",
+        "@mantine/charts": "^8.3.7",
         "@mantine/core": "^8.3.7",
         "@mantine/dates": "^8.3.7",
         "@mantine/hooks": "^8.3.7",
@@ -167,6 +168,8 @@
     "@logtape/logtape": ["@logtape/logtape@1.2.0", "", {}, "sha512-L7aXBYrxpSUQcsZm/hCuh5REN+dckxmPmH7x7eCROiLAHUSPzc7AhbsxsZLDsXMM4ggtbmS3sUQVa+blfF4sZA=="],
 
     "@logtape/pretty": ["@logtape/pretty@1.2.0", "", { "peerDependencies": { "@logtape/logtape": "^1.2.0" } }, "sha512-jPmwgKwHiYRvIqzBPJhfwQPUjNASYWLiPTMYkoZN93NcfLai+P8ZgsONJf0Gfjpec8ieVYFiiEMnKvn64KN9+Q=="],
+
+    "@mantine/charts": ["@mantine/charts@8.3.7", "", { "peerDependencies": { "@mantine/core": "8.3.7", "@mantine/hooks": "8.3.7", "react": "^18.x || ^19.x", "react-dom": "^18.x || ^19.x", "recharts": ">=2.13.3" } }, "sha512-7yJZOwbrpgqjhtrv5jFnh7wYrtXxYofBcSfJ133VT/kdqrNknrooPMgvsN7hRnxYSkJ+k0boApngwZQzggxl2g=="],
 
     "@mantine/core": ["@mantine/core@8.3.7", "", { "dependencies": { "@floating-ui/react": "^0.27.16", "clsx": "^2.1.1", "react-number-format": "^5.4.4", "react-remove-scroll": "^2.7.1", "react-textarea-autosize": "8.5.9", "type-fest": "^4.41.0" }, "peerDependencies": { "@mantine/hooks": "8.3.7", "react": "^18.x || ^19.x", "react-dom": "^18.x || ^19.x" } }, "sha512-7gUTiUrD0pukpkSNvScGi/e+pBuBWYJP5yFHT4TFf1fmaQAA7PbNoAzUeEkPbVromDtK0VdEcpRlYpDnJhpz2g=="],
 

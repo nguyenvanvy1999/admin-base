@@ -1,16 +1,7 @@
 import { useDebtStatistics } from '@client/hooks/queries/useDebtStatistics';
 import { formatDecimal } from '@client/utils/format';
+import { LineChart } from '@mantine/charts';
 import { useTranslation } from 'react-i18next';
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 
 interface DebtTimeChartProps {
   queryParams: {
@@ -60,72 +51,37 @@ export const DebtTimeChart = ({ queryParams }: DebtTimeChartProps) => {
       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
         {t('statistics.debt.timeSeries')}
       </h3>
-      <ResponsiveContainer width="100%" height={400}>
-        <LineChart data={chartData}>
-          <defs>
-            <linearGradient id="colorLoanGiven" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id="colorLoanReceived" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id="colorNetDebt" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid
-            strokeDasharray="3 3"
-            className="stroke-gray-300 dark:stroke-gray-700"
-          />
-          <XAxis
-            dataKey="date"
-            className="text-gray-600 dark:text-gray-400"
-            tick={{ fill: 'currentColor' }}
-          />
-          <YAxis
-            className="text-gray-600 dark:text-gray-400"
-            tick={{ fill: 'currentColor' }}
-            tickFormatter={(value) => formatDecimal(value, 0)}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--color-background)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '8px',
-            }}
-            formatter={(value: number) => formatDecimal(value)}
-            labelStyle={{ color: 'var(--color-text)' }}
-          />
-          <Legend />
-          <Line
-            type="monotone"
-            dataKey="loanGiven"
-            stroke="#3b82f6"
-            strokeWidth={2}
-            name={t('statistics.debt.totalLoanGiven')}
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="loanReceived"
-            stroke="#10b981"
-            strokeWidth={2}
-            name={t('statistics.debt.totalLoanReceived')}
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="cumulativeNetDebt"
-            stroke="#ef4444"
-            strokeWidth={2}
-            name={t('statistics.debt.netDebt')}
-            dot={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <LineChart
+        h={400}
+        data={chartData}
+        dataKey="date"
+        series={[
+          {
+            name: 'loanGiven',
+            label: t('statistics.debt.totalLoanGiven'),
+            color: '#3b82f6',
+          },
+          {
+            name: 'loanReceived',
+            label: t('statistics.debt.totalLoanReceived'),
+            color: '#10b981',
+          },
+          {
+            name: 'cumulativeNetDebt',
+            label: t('statistics.debt.netDebt'),
+            color: '#ef4444',
+          },
+        ]}
+        curveType="natural"
+        withLegend
+        withDots={false}
+        yAxisProps={{
+          tickFormatter: (value) => formatDecimal(value, 0),
+        }}
+        tooltipProps={{
+          formatter: (value) => formatDecimal(value as number),
+        }}
+      />
     </div>
   );
 };

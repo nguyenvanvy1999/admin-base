@@ -1,16 +1,6 @@
 import { useUserStatistics } from '@client/hooks/queries/useAdminStatistics';
+import { CompositeChart } from '@mantine/charts';
 import { useState } from 'react';
-import {
-  Area,
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 
 interface UserGrowthChartProps {
   dateFrom?: string;
@@ -83,53 +73,28 @@ export const UserGrowthChart = ({
           ))}
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={300}>
-        <ComposedChart data={chartData}>
-          <defs>
-            <linearGradient id="colorNewUsers" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid
-            strokeDasharray="3 3"
-            className="stroke-gray-300 dark:stroke-gray-700"
-          />
-          <XAxis
-            dataKey="date"
-            className="text-gray-600 dark:text-gray-400"
-            tick={{ fill: 'currentColor' }}
-          />
-          <YAxis
-            className="text-gray-600 dark:text-gray-400"
-            tick={{ fill: 'currentColor' }}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--color-background)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '8px',
-            }}
-            labelStyle={{ color: 'var(--color-text)' }}
-          />
-          <Legend />
-          <Area
-            type="monotone"
-            dataKey="newUsers"
-            stroke="#10b981"
-            fill="url(#colorNewUsers)"
-            name="New Users"
-          />
-          <Line
-            type="monotone"
-            dataKey="totalUsers"
-            stroke="#3b82f6"
-            strokeWidth={2}
-            name="Total Users"
-            dot={false}
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
+      <CompositeChart
+        h={300}
+        data={chartData}
+        dataKey="date"
+        series={[
+          {
+            name: 'newUsers',
+            label: 'New Users',
+            color: '#10b981',
+            type: 'area',
+          },
+          {
+            name: 'totalUsers',
+            label: 'Total Users',
+            color: '#3b82f6',
+            type: 'line',
+          },
+        ]}
+        curveType="natural"
+        withLegend
+        withDots={false}
+      />
     </div>
   );
 };

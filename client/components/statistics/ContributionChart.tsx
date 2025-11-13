@@ -1,15 +1,6 @@
 import { useInvestmentContributionsDetailed } from '@client/hooks/queries/useInvestmentContributionsDetailed';
 import { formatDecimal } from '@client/utils/format';
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { AreaChart } from '@mantine/charts';
 
 interface ContributionChartProps {
   queryParams: {
@@ -92,118 +83,60 @@ export const ContributionChart = ({ queryParams }: ContributionChartProps) => {
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Deposits vs Withdrawals
           </h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="colorDeposits" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient
-                  id="colorWithdrawals"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                className="stroke-gray-300 dark:stroke-gray-700"
-              />
-              <XAxis
-                dataKey="date"
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-              />
-              <YAxis
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-                tickFormatter={(value) => formatDecimal(value, 0)}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-background)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                }}
-                formatter={(value: number) => formatDecimal(value)}
-                labelStyle={{ color: 'var(--color-text)' }}
-              />
-              <Legend />
-              <Area
-                type="monotone"
-                dataKey="deposits"
-                stackId="1"
-                stroke="#10b981"
-                fill="url(#colorDeposits)"
-                name="Deposits"
-              />
-              <Area
-                type="monotone"
-                dataKey="withdrawals"
-                stackId="1"
-                stroke="#ef4444"
-                fill="url(#colorWithdrawals)"
-                name="Withdrawals"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <AreaChart
+            h={300}
+            data={chartData}
+            dataKey="date"
+            series={[
+              {
+                name: 'deposits',
+                label: 'Deposits',
+                color: '#10b981',
+              },
+              {
+                name: 'withdrawals',
+                label: 'Withdrawals',
+                color: '#ef4444',
+              },
+            ]}
+            curveType="natural"
+            withLegend
+            withGradient
+            withDots={false}
+            yAxisProps={{
+              tickFormatter: (value) => formatDecimal(value, 0),
+            }}
+            tooltipProps={{
+              formatter: (value) => formatDecimal(value as number),
+            }}
+          />
         </div>
         <div>
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Cumulative Contributions
           </h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient
-                  id="colorCumulative"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                className="stroke-gray-300 dark:stroke-gray-700"
-              />
-              <XAxis
-                dataKey="date"
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-              />
-              <YAxis
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-                tickFormatter={(value) => formatDecimal(value, 0)}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-background)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                }}
-                formatter={(value: number) => formatDecimal(value)}
-                labelStyle={{ color: 'var(--color-text)' }}
-              />
-              <Legend />
-              <Area
-                type="monotone"
-                dataKey="cumulative"
-                stroke="#3b82f6"
-                fill="url(#colorCumulative)"
-                name="Cumulative"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <AreaChart
+            h={300}
+            data={chartData}
+            dataKey="date"
+            series={[
+              {
+                name: 'cumulative',
+                label: 'Cumulative',
+                color: '#3b82f6',
+              },
+            ]}
+            curveType="natural"
+            withLegend
+            withGradient
+            withDots={false}
+            yAxisProps={{
+              tickFormatter: (value) => formatDecimal(value, 0),
+            }}
+            tooltipProps={{
+              formatter: (value) => formatDecimal(value as number),
+            }}
+          />
         </div>
       </div>
     </div>

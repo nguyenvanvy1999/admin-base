@@ -1,17 +1,6 @@
 import { useInvestmentPerformanceDetailed } from '@client/hooks/queries/useInvestmentPerformanceDetailed';
 import { formatDecimal } from '@client/utils/format';
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { AreaChart, LineChart } from '@mantine/charts';
 
 interface InvestmentPerformanceChartProps {
   queryParams: {
@@ -72,150 +61,90 @@ export const InvestmentPerformanceChart = ({
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Portfolio Value Over Time
           </h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                className="stroke-gray-300 dark:stroke-gray-700"
-              />
-              <XAxis
-                dataKey="date"
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-              />
-              <YAxis
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-                tickFormatter={(value) => formatDecimal(value, 0)}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-background)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                }}
-                formatter={(value: number) => formatDecimal(value)}
-                labelStyle={{ color: 'var(--color-text)' }}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="totalInvested"
-                stroke="#3b82f6"
-                name="Total Invested"
-              />
-              <Line
-                type="monotone"
-                dataKey="totalValue"
-                stroke="#10b981"
-                name="Current Value"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <LineChart
+            h={300}
+            data={chartData}
+            dataKey="date"
+            series={[
+              {
+                name: 'totalInvested',
+                label: 'Total Invested',
+                color: '#3b82f6',
+              },
+              {
+                name: 'totalValue',
+                label: 'Current Value',
+                color: '#10b981',
+              },
+            ]}
+            curveType="natural"
+            withLegend
+            withDots={false}
+            yAxisProps={{
+              tickFormatter: (value) => formatDecimal(value, 0),
+            }}
+            tooltipProps={{
+              formatter: (value) => formatDecimal(value as number),
+            }}
+          />
         </div>
         <div>
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             P&L Over Time
           </h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="colorRealized" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient
-                  id="colorUnrealized"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                className="stroke-gray-300 dark:stroke-gray-700"
-              />
-              <XAxis
-                dataKey="date"
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-              />
-              <YAxis
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-                tickFormatter={(value) => formatDecimal(value, 0)}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-background)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                }}
-                formatter={(value: number) => formatDecimal(value)}
-                labelStyle={{ color: 'var(--color-text)' }}
-              />
-              <Legend />
-              <Area
-                type="monotone"
-                dataKey="realizedPnl"
-                stackId="1"
-                stroke="#10b981"
-                fill="url(#colorRealized)"
-                name="Realized P&L"
-              />
-              <Area
-                type="monotone"
-                dataKey="unrealizedPnl"
-                stackId="1"
-                stroke="#3b82f6"
-                fill="url(#colorUnrealized)"
-                name="Unrealized P&L"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <AreaChart
+            h={300}
+            data={chartData}
+            dataKey="date"
+            series={[
+              {
+                name: 'realizedPnl',
+                label: 'Realized P&L',
+                color: '#10b981',
+              },
+              {
+                name: 'unrealizedPnl',
+                label: 'Unrealized P&L',
+                color: '#3b82f6',
+              },
+            ]}
+            curveType="natural"
+            withLegend
+            withGradient
+            withDots={false}
+            yAxisProps={{
+              tickFormatter: (value) => formatDecimal(value, 0),
+            }}
+            tooltipProps={{
+              formatter: (value) => formatDecimal(value as number),
+            }}
+          />
         </div>
         <div>
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             ROI Over Time
           </h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                className="stroke-gray-300 dark:stroke-gray-700"
-              />
-              <XAxis
-                dataKey="date"
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-              />
-              <YAxis
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-                tickFormatter={(value) => `${value}%`}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-background)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                }}
-                formatter={(value: number) => `${formatDecimal(value)}%`}
-                labelStyle={{ color: 'var(--color-text)' }}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="roi"
-                stroke="#8b5cf6"
-                name="ROI (%)"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <LineChart
+            h={300}
+            data={chartData}
+            dataKey="date"
+            series={[
+              {
+                name: 'roi',
+                label: 'ROI (%)',
+                color: '#8b5cf6',
+              },
+            ]}
+            curveType="natural"
+            withLegend
+            withDots={false}
+            yAxisProps={{
+              tickFormatter: (value) => `${value}%`,
+            }}
+            tooltipProps={{
+              formatter: (value) => `${formatDecimal(value as number)}%`,
+            }}
+          />
         </div>
       </div>
     </div>

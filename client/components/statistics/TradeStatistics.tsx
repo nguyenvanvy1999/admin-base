@@ -1,15 +1,6 @@
 import { useInvestmentTradesDetailed } from '@client/hooks/queries/useInvestmentTradesDetailed';
 import { formatDecimal } from '@client/utils/format';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { BarChart } from '@mantine/charts';
 
 interface TradeStatisticsProps {
   queryParams: {
@@ -93,36 +84,30 @@ export const TradeStatistics = ({ queryParams }: TradeStatisticsProps) => {
           </p>
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={chartData}>
-          <CartesianGrid
-            strokeDasharray="3 3"
-            className="stroke-gray-300 dark:stroke-gray-700"
-          />
-          <XAxis
-            dataKey="date"
-            className="text-gray-600 dark:text-gray-400"
-            tick={{ fill: 'currentColor' }}
-          />
-          <YAxis
-            className="text-gray-600 dark:text-gray-400"
-            tick={{ fill: 'currentColor' }}
-            tickFormatter={(value) => formatDecimal(value, 0)}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--color-background)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '8px',
-            }}
-            formatter={(value: number) => formatDecimal(value)}
-            labelStyle={{ color: 'var(--color-text)' }}
-          />
-          <Legend />
-          <Bar dataKey="buyVolume" fill="#10b981" name="Buy Volume" />
-          <Bar dataKey="sellVolume" fill="#ef4444" name="Sell Volume" />
-        </BarChart>
-      </ResponsiveContainer>
+      <BarChart
+        h={300}
+        data={chartData}
+        dataKey="date"
+        series={[
+          {
+            name: 'buyVolume',
+            label: 'Buy Volume',
+            color: '#10b981',
+          },
+          {
+            name: 'sellVolume',
+            label: 'Sell Volume',
+            color: '#ef4444',
+          },
+        ]}
+        withLegend
+        yAxisProps={{
+          tickFormatter: (value) => formatDecimal(value, 0),
+        }}
+        tooltipProps={{
+          formatter: (value) => formatDecimal(value as number),
+        }}
+      />
     </div>
   );
 };

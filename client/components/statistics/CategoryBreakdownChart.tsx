@@ -1,17 +1,6 @@
 import { useIncomeExpenseDetailed } from '@client/hooks/queries/useIncomeExpenseDetailed';
 import { formatDecimal } from '@client/utils/format';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { BarChart, PieChart } from '@mantine/charts';
 
 interface CategoryBreakdownChartProps {
   queryParams: {
@@ -23,17 +12,6 @@ interface CategoryBreakdownChartProps {
     entityId?: string;
   };
 }
-
-const COLORS = [
-  '#3b82f6',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#8b5cf6',
-  '#ec4899',
-  '#06b6d4',
-  '#84cc16',
-];
 
 export const CategoryBreakdownChart = ({
   queryParams,
@@ -67,9 +45,21 @@ export const CategoryBreakdownChart = ({
     .sort((a, b) => b.expense - a.expense)
     .slice(0, 10);
 
-  const pieData = expenseCategories.map((cat) => ({
+  const COLORS = [
+    '#3b82f6',
+    '#10b981',
+    '#f59e0b',
+    '#ef4444',
+    '#8b5cf6',
+    '#ec4899',
+    '#06b6d4',
+    '#84cc16',
+  ];
+
+  const pieData = expenseCategories.map((cat, index) => ({
     name: cat.categoryName,
     value: cat.expense,
+    color: COLORS[index % COLORS.length],
   }));
 
   return (
@@ -82,73 +72,43 @@ export const CategoryBreakdownChart = ({
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Expenses by Category
           </h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) =>
-                  `${name}: ${(percent ?? 0 * 100).toFixed(0)}%`
-                }
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: number) => formatDecimal(value)}
-                contentStyle={{
-                  backgroundColor: 'var(--color-background)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <PieChart
+            h={300}
+            data={pieData}
+            tooltipProps={{
+              formatter: (value) => formatDecimal(value as number),
+            }}
+            withLabelsLine
+            labelsType="percent"
+          />
         </div>
         <div>
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Top Expense Categories
           </h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={expenseCategories}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                className="stroke-gray-300 dark:stroke-gray-700"
-              />
-              <XAxis
-                dataKey="categoryName"
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-                angle={-45}
-                textAnchor="end"
-                height={100}
-              />
-              <YAxis
-                className="text-gray-600 dark:text-gray-400"
-                tick={{ fill: 'currentColor' }}
-                tickFormatter={(value) => formatDecimal(value, 0)}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-background)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                }}
-                formatter={(value: number) => formatDecimal(value)}
-                labelStyle={{ color: 'var(--color-text)' }}
-              />
-              <Bar dataKey="expense" fill="#ef4444" />
-            </BarChart>
-          </ResponsiveContainer>
+          <BarChart
+            h={300}
+            data={expenseCategories}
+            dataKey="categoryName"
+            series={[
+              {
+                name: 'expense',
+                label: 'Expense',
+                color: '#ef4444',
+              },
+            ]}
+            xAxisProps={{
+              angle: -45,
+              textAnchor: 'end',
+              height: 100,
+            }}
+            yAxisProps={{
+              tickFormatter: (value) => formatDecimal(value, 0),
+            }}
+            tooltipProps={{
+              formatter: (value) => formatDecimal(value as number),
+            }}
+          />
         </div>
       </div>
     </div>

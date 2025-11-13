@@ -1,15 +1,6 @@
 import { useIncomeExpenseDetailed } from '@client/hooks/queries/useIncomeExpenseDetailed';
 import { formatDecimal } from '@client/utils/format';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { BarChart } from '@mantine/charts';
 
 interface AccountBreakdownChartProps {
   queryParams: {
@@ -61,39 +52,35 @@ export const AccountBreakdownChart = ({
       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
         Account Breakdown
       </h3>
-      <ResponsiveContainer width="100%" height={400}>
-        <BarChart data={chartData}>
-          <CartesianGrid
-            strokeDasharray="3 3"
-            className="stroke-gray-300 dark:stroke-gray-700"
-          />
-          <XAxis
-            dataKey="name"
-            className="text-gray-600 dark:text-gray-400"
-            tick={{ fill: 'currentColor' }}
-            angle={-45}
-            textAnchor="end"
-            height={100}
-          />
-          <YAxis
-            className="text-gray-600 dark:text-gray-400"
-            tick={{ fill: 'currentColor' }}
-            tickFormatter={(value) => formatDecimal(value, 0)}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--color-background)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '8px',
-            }}
-            formatter={(value: number) => formatDecimal(value)}
-            labelStyle={{ color: 'var(--color-text)' }}
-          />
-          <Legend />
-          <Bar dataKey="income" fill="#10b981" name="Income" />
-          <Bar dataKey="expense" fill="#ef4444" name="Expense" />
-        </BarChart>
-      </ResponsiveContainer>
+      <BarChart
+        h={400}
+        data={chartData}
+        dataKey="name"
+        series={[
+          {
+            name: 'income',
+            label: 'Income',
+            color: '#10b981',
+          },
+          {
+            name: 'expense',
+            label: 'Expense',
+            color: '#ef4444',
+          },
+        ]}
+        withLegend
+        xAxisProps={{
+          angle: -45,
+          textAnchor: 'end',
+          height: 100,
+        }}
+        yAxisProps={{
+          tickFormatter: (value) => formatDecimal(value, 0),
+        }}
+        tooltipProps={{
+          formatter: (value) => formatDecimal(value as number),
+        }}
+      />
     </div>
   );
 };

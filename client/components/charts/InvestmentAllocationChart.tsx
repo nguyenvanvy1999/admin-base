@@ -1,29 +1,11 @@
 import { useReportInvestments } from '@client/hooks/queries/useReportInvestments';
 import { formatDecimal } from '@client/utils/format';
-import {
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts';
+import { DonutChart } from '@mantine/charts';
 
 interface InvestmentAllocationChartProps {
   dateFrom?: string;
   dateTo?: string;
 }
-
-const COLORS = [
-  '#3b82f6',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#8b5cf6',
-  '#ec4899',
-  '#06b6d4',
-  '#84cc16',
-];
 
 export const InvestmentAllocationChart = ({
   dateFrom,
@@ -58,11 +40,23 @@ export const InvestmentAllocationChart = ({
     );
   }
 
-  const chartData = data.allocation.map((item) => ({
+  const COLORS = [
+    '#3b82f6',
+    '#10b981',
+    '#f59e0b',
+    '#ef4444',
+    '#8b5cf6',
+    '#ec4899',
+    '#06b6d4',
+    '#84cc16',
+  ];
+
+  const chartData = data.allocation.map((item, index) => ({
     name: item.investmentSymbol,
     value: item.value,
     percentage: item.percentage,
     fullName: item.investmentName,
+    color: COLORS[index % COLORS.length],
   }));
 
   return (
@@ -70,44 +64,19 @@ export const InvestmentAllocationChart = ({
       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
         Investment Allocation
       </h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie
-            data={chartData}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            label={({ payload }) => `${payload.percentage.toFixed(1)}%`}
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="value"
-          >
-            {chartData.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={COLORS[index % COLORS.length]}
-              />
-            ))}
-          </Pie>
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--color-background)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '8px',
-            }}
-            formatter={(value: number, name: string, props: any) => [
-              `${formatDecimal(value)} (${props.payload.percentage.toFixed(2)}%)`,
-              props.payload.fullName,
-            ]}
-            labelStyle={{ color: 'var(--color-text)' }}
-          />
-          <Legend
-            formatter={(value, entry: any) =>
-              `${entry.payload.fullName} (${entry.payload.percentage.toFixed(1)}%)`
-            }
-          />
-        </PieChart>
-      </ResponsiveContainer>
+      <DonutChart
+        h={300}
+        data={chartData}
+        tooltipProps={{
+          formatter: (value, payload) => [
+            `${formatDecimal(value as number)} (${(payload as any).percentage.toFixed(2)}%)`,
+            (payload as any).fullName,
+          ],
+        }}
+        withLabelsLine
+        labelsType="percent"
+        strokeWidth={0}
+      />
     </div>
   );
 };

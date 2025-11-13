@@ -1,14 +1,6 @@
 import { useIncomeExpenseDetailed } from '@client/hooks/queries/useIncomeExpenseDetailed';
 import { formatDecimal } from '@client/utils/format';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { BarChart } from '@mantine/charts';
 
 interface FeeStatisticsProps {
   queryParams: {
@@ -86,34 +78,24 @@ export const FeeStatistics = ({ queryParams }: FeeStatisticsProps) => {
         <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Fees Over Time
         </h4>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              className="stroke-gray-300 dark:stroke-gray-700"
-            />
-            <XAxis
-              dataKey="date"
-              className="text-gray-600 dark:text-gray-400"
-              tick={{ fill: 'currentColor' }}
-            />
-            <YAxis
-              className="text-gray-600 dark:text-gray-400"
-              tick={{ fill: 'currentColor' }}
-              tickFormatter={(value) => formatDecimal(value, 0)}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'var(--color-background)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '8px',
-              }}
-              formatter={(value: number) => formatDecimal(value)}
-              labelStyle={{ color: 'var(--color-text)' }}
-            />
-            <Bar dataKey="fee" fill="#f59e0b" />
-          </BarChart>
-        </ResponsiveContainer>
+        <BarChart
+          h={300}
+          data={chartData}
+          dataKey="date"
+          series={[
+            {
+              name: 'fee',
+              label: 'Fee',
+              color: '#f59e0b',
+            },
+          ]}
+          yAxisProps={{
+            tickFormatter: (value) => formatDecimal(value, 0),
+          }}
+          tooltipProps={{
+            formatter: (value) => formatDecimal(value as number),
+          }}
+        />
       </div>
       {feeStats.feeByCategory.length > 0 && (
         <div className="mb-4">
