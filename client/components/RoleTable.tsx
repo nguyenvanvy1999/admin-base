@@ -1,6 +1,6 @@
 import { usePermission } from '@client/hooks/usePermission';
 import { ActionIcon, Badge } from '@mantine/core';
-import type { RoleResponse } from '@server/modules/admin/dtos/role.dto';
+import type { RoleResponse } from '@server/dto/admin/role.dto';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

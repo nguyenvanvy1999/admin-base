@@ -1,5 +1,5 @@
+import { prisma } from '@server/configs/db';
 import type { User } from '@server/generated/prisma/client';
-import { prisma } from '@server/libs/db';
 import { ArrayUtil, DB_PREFIX, IdUtil } from '@server/share';
 import type { ITokenPayload, UPermission } from '@server/share/type';
 import dayjs from 'dayjs';

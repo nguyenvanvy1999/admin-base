@@ -1,4 +1,3 @@
-export * from './constant';
-export * from './error';
+export * from './constants';
 export * from './type';
 export * from './utils';

@@ -1,7 +1,7 @@
+import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
 import type { TradeSide } from '@server/generated/prisma/enums';
 import type { InvestmentTradeWhereInput } from '@server/generated/prisma/models';
-import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import type {
   ICreateInvestmentTradeDto,

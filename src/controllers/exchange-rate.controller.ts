@@ -1,10 +1,10 @@
+import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia } from 'elysia';
 import {
   ExchangeRateHealthDto,
   ExchangeRateInfoDto,
   ExchangeRateRefreshResponseDto,
 } from '../dto/exchange-rate.dto';
-import { authCheck } from '../service/auth/auth.middleware';
 import { exchangeRateServiceInstance } from '../services/exchange-rate.service';
 import { castToRes, ResWrapper } from '../share';
 

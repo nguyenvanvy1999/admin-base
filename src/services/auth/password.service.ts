@@ -1,5 +1,5 @@
-import { prisma } from '@server/libs/db';
-import { appEnv, type IEnv } from '@server/libs/env';
+import { prisma } from '@server/configs/db';
+import { appEnv, type IEnv } from '@server/configs/env';
 
 export class BunPasswordHasher {
   async hash(password: string): Promise<string> {

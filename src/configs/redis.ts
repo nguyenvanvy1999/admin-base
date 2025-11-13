@@ -1,5 +1,5 @@
-import { appEnv } from '@server/libs/env';
-import { logger } from '@server/libs/logger';
+import { appEnv } from '@server/configs/env';
+import { logger } from '@server/configs/logger';
 import { RedisClient } from 'bun';
 
 export const redis: RedisClient = new RedisClient(appEnv.REDIS_URI);

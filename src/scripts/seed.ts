@@ -1,5 +1,5 @@
-import { prisma } from '@server/libs/db';
-import { logger } from '@server/libs/logger';
+import { prisma } from '@server/configs/db';
+import { logger } from '@server/configs/logger';
 import { AuthSeedService } from '@server/services/auth-seed.service';
 import { SeedService } from '@server/services/seed.service';
 

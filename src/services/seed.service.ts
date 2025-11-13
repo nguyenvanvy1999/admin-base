@@ -1,7 +1,7 @@
-import { CURRENCY_IDS } from '@server/constants/currency';
-import { prisma } from '@server/libs/db';
-import { logger } from '@server/libs/logger';
+import { prisma } from '@server/configs/db';
+import { logger } from '@server/configs/logger';
 import { DB_PREFIX, defaultRoles, IdUtil, PERMISSIONS } from '@server/share';
+import { CURRENCY_IDS } from '@server/share/constants/currency';
 
 export class SeedService {
   async seedCurrencies(): Promise<void> {

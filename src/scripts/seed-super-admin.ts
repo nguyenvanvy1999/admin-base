@@ -1,9 +1,9 @@
-import { CURRENCY_IDS } from '@server/constants/currency';
+import { prisma } from '@server/configs/db';
+import { appEnv } from '@server/configs/env';
+import { logger } from '@server/configs/logger';
 import { UserRole } from '@server/generated/prisma/enums';
-import { prisma } from '@server/libs/db';
-import { appEnv } from '@server/libs/env';
-import { logger } from '@server/libs/logger';
 import { DB_PREFIX, defaultRoles, IdUtil, SUPER_ADMIN_ID } from '@server/share';
+import { CURRENCY_IDS } from '@server/share/constants/currency';
 
 async function main() {
   try {

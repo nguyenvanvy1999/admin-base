@@ -1,5 +1,5 @@
-import { ErrorCode, throwAppError } from '@server/constants/error';
-import { logger } from '@server/libs/logger';
+import { logger } from '@server/configs/logger';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import type { AppAuthMeta } from '@server/share/type';
 import { Elysia } from 'elysia';
 import type { AuthorizeOptions, Policy, PolicyCtx } from './policy-types';

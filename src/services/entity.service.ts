@@ -1,11 +1,11 @@
+import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
 import type {
   EntityOrderByWithRelationInput,
   EntityWhereInput,
 } from '@server/generated/prisma/models/Entity';
-import { prisma } from '@server/libs/db';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import { Elysia } from 'elysia';
-import { ErrorCode, throwAppError } from '../constants/error';
 import type {
   IListEntitiesQueryDto,
   IUpsertEntityDto,

@@ -1,3 +1,4 @@
+import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
 import {
   DeleteManyTagsDto,
@@ -7,7 +8,6 @@ import {
   TagListResponseDto,
   UpsertTagDto,
 } from '../dto/tag.dto';
-import { authCheck } from '../service/auth/auth.middleware';
 import tagService from '../services/tag.service';
 import { castToRes, ResWrapper } from '../share';
 

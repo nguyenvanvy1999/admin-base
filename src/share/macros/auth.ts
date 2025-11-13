@@ -1,12 +1,7 @@
-import { appEnv } from '@server/libs/env';
+import { appEnv } from '@server/configs/env';
 import { Elysia } from 'elysia';
 import * as jwt from 'jsonwebtoken';
 
-/*
- * Starting from Elysia 1.2.10, each property in the macro object can be a function or an object.
- * If the property is an object, it will be translated to a function that accept a boolean parameter,
- * and will be executed if the parameter is true.
- */
 const authMacro = new Elysia().macro({
   checkAuth(roles: string[]) {
     return {

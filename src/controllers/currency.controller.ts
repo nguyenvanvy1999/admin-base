@@ -1,6 +1,6 @@
+import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia } from 'elysia';
 import { CurrencyListResponseDto } from '../dto/currency.dto';
-import { authCheck } from '../service/auth/auth.middleware';
 import currencyService from '../services/currency.service';
 import { castToRes, ResWrapper } from '../share';
 

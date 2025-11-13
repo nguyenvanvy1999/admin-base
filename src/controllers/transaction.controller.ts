@@ -1,3 +1,4 @@
+import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
 import {
   BalanceAdjustmentElysiaDto,
@@ -9,7 +10,6 @@ import {
   TransactionListResponseDto,
   UpsertTransactionDto,
 } from '../dto/transaction.dto';
-import { authCheck } from '../service/auth/auth.middleware';
 import transactionService from '../services/transaction.service';
 import { castToRes, ResWrapper } from '../share';
 

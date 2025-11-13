@@ -1,5 +1,5 @@
-import { prisma } from '@server/libs/db';
-import { defaultRoles, PERMISSIONS } from '@server/share/constant';
+import { prisma } from '@server/configs/db';
+import { defaultRoles, PERMISSIONS } from '@server/share/constants';
 
 export class AuthSeedService {
   async seedRolesAndPermissions(): Promise<void> {

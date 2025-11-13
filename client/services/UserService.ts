@@ -1,15 +1,15 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
 import type {
+  IUpsertUserDto,
+  UserListResponse,
+  UserResponse,
+} from '@server/dto/admin/user.dto';
+import type {
   CurrentUserRes,
   IUpdateProfileDto,
   UpdateProfileRes,
 } from '@server/dto/user.dto';
 import type { UserRole } from '@server/generated/prisma/enums';
-import type {
-  IUpsertUserDto,
-  UserListResponse,
-  UserResponse,
-} from '@server/modules/admin/dtos/user.dto';
 
 export class UserService extends ServiceBase {
   constructor() {

@@ -1,3 +1,4 @@
+import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
 import {
   DeleteManyEntitiesDto,
@@ -7,7 +8,6 @@ import {
   ListEntitiesQueryDto,
   UpsertEntityDto,
 } from '../dto/entity.dto';
-import { authCheck } from '../service/auth/auth.middleware';
 import entityService from '../services/entity.service';
 import { castToRes, ResWrapper } from '../share';
 

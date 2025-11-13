@@ -1,8 +1,8 @@
-import { ErrorCode, throwAppError } from '@server/constants/error';
+import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
-import { prisma } from '@server/libs/db';
-import { anyOf, authorize, has } from '@server/service/auth/authorization';
+import { anyOf, authorize, has } from '@server/services/auth/authorization';
 import { castToRes, defaultRoles, ResWrapper } from '@server/share';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import type { AppAuthMeta } from '@server/share/type';
 import { Elysia, t } from 'elysia';
 import {
@@ -10,7 +10,7 @@ import {
   RoleListResponseDto,
   RolePaginationQueryDto,
   UpsertRoleDto,
-} from '../dtos';
+} from '../../dto/admin';
 
 const FROZEN_ROLE_IDS = [defaultRoles.user.id, defaultRoles.admin.id];
 

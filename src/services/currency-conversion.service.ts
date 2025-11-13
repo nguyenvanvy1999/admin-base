@@ -1,6 +1,6 @@
-import { prisma } from '@server/libs/db';
+import { prisma } from '@server/configs/db';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import Decimal from 'decimal.js';
-import { ErrorCode, throwAppError } from '../constants/error';
 import { exchangeRateServiceInstance } from './exchange-rate.service';
 import { CURRENCY_SELECT_BASIC } from './selects';
 

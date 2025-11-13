@@ -1,9 +1,10 @@
+import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
 import type {
   TagOrderByWithRelationInput,
   TagWhereInput,
 } from '@server/generated/prisma/models/Tag';
-import { prisma } from '@server/libs/db';
+import { dateToIsoString } from '@server/share/utils/formatters';
 import { Elysia } from 'elysia';
 import type {
   IListTagsQueryDto,
@@ -11,7 +12,6 @@ import type {
   TagListResponse,
   TagResponse,
 } from '../dto/tag.dto';
-import { dateToIsoString } from '../utils/formatters';
 
 const TAG_SELECT_FULL = {
   id: true,

@@ -1,5 +1,5 @@
 import { userService } from '@client/services';
-import type { IUpsertUserDto } from '@server/modules/admin/dtos/user.dto';
+import type { IUpsertUserDto } from '@server/dto/admin/user.dto';
 import { createMutationHooks } from './createMutationHooks';
 
 const userMutations = createMutationHooks<IUpsertUserDto, null, null>({

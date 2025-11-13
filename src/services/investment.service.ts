@@ -1,11 +1,11 @@
+import { prisma } from '@server/configs/db';
 import {
   type InvestmentAssetType,
   InvestmentMode,
 } from '@server/generated/prisma/enums';
 import type { InvestmentWhereInput } from '@server/generated/prisma/models/Investment';
-import { prisma } from '@server/libs/db';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import { Elysia } from 'elysia';
-import { ErrorCode, throwAppError } from '../constants/error';
 import type { ICreateInvestmentContributionDto } from '../dto/contribution.dto';
 import type {
   IListInvestmentsQueryDto,

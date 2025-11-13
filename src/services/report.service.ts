@@ -1,8 +1,8 @@
+import { prisma } from '@server/configs/db';
+import { logger } from '@server/configs/logger';
 import { TransactionType } from '@server/generated/prisma/enums';
-import { prisma } from '@server/libs/db';
-import { logger } from '@server/libs/logger';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import { Elysia } from 'elysia';
-import { ErrorCode, throwAppError } from '../constants/error';
 import type {
   DebtStatisticsResponse,
   IDebtStatisticsQueryDto,

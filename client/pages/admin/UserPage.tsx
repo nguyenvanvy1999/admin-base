@@ -23,12 +23,9 @@ import { usePermission } from '@client/hooks/usePermission';
 import { useZodForm } from '@client/hooks/useZodForm';
 import NotFoundPage from '@client/pages/NotFoundPage';
 import { Button, Group, MultiSelect, TextInput } from '@mantine/core';
+import type { IUpsertUserDto, UserResponse } from '@server/dto/admin/user.dto';
+import { ListUsersQueryDto } from '@server/dto/admin/user.dto';
 import { UserRole } from '@server/generated/prisma/enums';
-import type {
-  IUpsertUserDto,
-  UserResponse,
-} from '@server/modules/admin/dtos/user.dto';
-import { ListUsersQueryDto } from '@server/modules/admin/dtos/user.dto';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';

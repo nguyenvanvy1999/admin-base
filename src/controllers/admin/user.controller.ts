@@ -1,10 +1,10 @@
-import { CURRENCY_IDS } from '@server/constants/currency';
-import { ErrorCode, throwAppError } from '@server/constants/error';
+import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
 import { UserRole } from '@server/generated/prisma/enums';
-import { prisma } from '@server/libs/db';
-import { anyOf, authorize, has } from '@server/service/auth/authorization';
+import { anyOf, authorize, has } from '@server/services/auth/authorization';
 import { castToRes, ResWrapper, SUPER_ADMIN_ID } from '@server/share';
+import { CURRENCY_IDS } from '@server/share/constants/currency';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import type { AppAuthMeta } from '@server/share/type';
 import { Elysia, t } from 'elysia';
 import {
@@ -14,7 +14,7 @@ import {
   UpsertUserDto,
   UserListResponseDto,
   UserResDto,
-} from '../dtos';
+} from '../../dto/admin';
 
 export const userController = new Elysia<'users', AppAuthMeta>({
   prefix: 'users',

@@ -1,4 +1,4 @@
-import { PERMISSIONS } from '@server/share/constant';
+import { PERMISSIONS } from '@server/share/constants';
 
 export const PermissionFixtures = {
   createPermission(

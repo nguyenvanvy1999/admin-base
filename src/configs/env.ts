@@ -1,7 +1,7 @@
+import { LOG_LEVEL } from '@server/share/constants/log';
 import { type Static, Type as t } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { Value } from '@sinclair/typebox/value';
-import { LOG_LEVEL } from '../constants/log';
 
 export const envSchema = t.Object({
   PORT: t.Number({ minimum: 0, maximum: 65535, default: 3000 }),

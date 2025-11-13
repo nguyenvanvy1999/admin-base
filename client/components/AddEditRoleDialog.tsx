@@ -9,9 +9,9 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
-import type { RoleResponse } from '@server/modules/admin/dtos/role.dto';
-import { UpsertRoleDtoZod } from '@server/modules/admin/dtos/role.dto';
-import type { UserResponse } from '@server/modules/admin/dtos/user.dto';
+import type { RoleResponse } from '@server/dto/admin/role.dto';
+import { UpsertRoleDtoZod } from '@server/dto/admin/role.dto';
+import type { UserResponse } from '@server/dto/admin/user.dto';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

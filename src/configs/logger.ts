@@ -12,7 +12,7 @@ import {
   withFilter,
 } from '@logtape/logtape';
 import { getPrettyFormatter } from '@logtape/pretty';
-import { LOG_LEVEL } from '../constants/log';
+import { LOG_LEVEL } from '@server/share/constants/log';
 import { appEnv } from './env';
 
 const logsDir = path.resolve(process.cwd(), 'logs');

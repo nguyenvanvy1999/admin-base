@@ -1,4 +1,4 @@
-import { prisma } from '@server/libs/db';
+import { prisma } from '@server/configs/db';
 import { Elysia } from 'elysia';
 
 export class CurrencyService {

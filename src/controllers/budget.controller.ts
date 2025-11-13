@@ -1,3 +1,4 @@
+import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
 import {
   BudgetDeleteResponseDto,
@@ -10,7 +11,6 @@ import {
   ListBudgetsQueryDto,
   UpsertBudgetDto,
 } from '../dto/budget.dto';
-import { authCheck } from '../service/auth/auth.middleware';
 import budgetService from '../services/budget.service';
 import { castToRes, ResWrapper } from '../share';
 

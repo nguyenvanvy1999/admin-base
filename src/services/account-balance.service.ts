@@ -1,9 +1,9 @@
+import type { prisma } from '@server/configs/db';
 import {
   ContributionType,
   TradeSide,
   TransactionType,
 } from '@server/generated/prisma/enums';
-import type { prisma } from '@server/libs/db';
 import Decimal from 'decimal.js';
 import { currencyConversionServiceInstance } from './currency-conversion.service';
 

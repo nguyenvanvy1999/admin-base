@@ -1,3 +1,4 @@
+import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia } from 'elysia';
 import {
   DebtStatisticsQueryDto,
@@ -19,7 +20,6 @@ import {
   ReportTransactionsDto,
   ReportTransactionsQueryDto,
 } from '../dto/report.dto';
-import { authCheck } from '../service/auth/auth.middleware';
 import reportService from '../services/report.service';
 import { castToRes, ResWrapper } from '../share';
 

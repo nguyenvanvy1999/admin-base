@@ -1,11 +1,11 @@
+import { prisma } from '@server/configs/db';
 import { UserRole } from '@server/generated/prisma/enums';
 import type { UserUncheckedUpdateInput } from '@server/generated/prisma/models/User';
-import { prisma } from '@server/libs/db';
-import { userUtilService } from '@server/service/auth/auth-util.service';
+import { userUtilService } from '@server/services/auth/auth-util.service';
 import { DB_PREFIX, defaultRoles, IdUtil, SUPER_ADMIN_ID } from '@server/share';
+import { CURRENCY_IDS } from '@server/share/constants/currency';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import { Elysia } from 'elysia';
-import { CURRENCY_IDS } from '../constants/currency';
-import { ErrorCode, throwAppError } from '../constants/error';
 import type {
   AuthUserRes,
   ILoginDto,

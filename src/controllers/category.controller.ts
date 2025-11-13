@@ -1,3 +1,4 @@
+import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
 import {
   CategoryDeleteResponseDto,
@@ -6,7 +7,6 @@ import {
   ListCategoriesQueryDto,
   UpsertCategoryDto,
 } from '../dto/category.dto';
-import { authCheck } from '../service/auth/auth.middleware';
 import categoryService from '../services/category.service';
 import { castToRes, ResWrapper } from '../share';
 

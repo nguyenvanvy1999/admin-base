@@ -1,11 +1,15 @@
+import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
-import { prisma } from '@server/libs/db';
-import { authorize, has } from '@server/service/auth/authorization';
-import { sessionService } from '@server/service/auth/session.service';
+import { authorize, has } from '@server/services/auth/authorization';
+import { sessionService } from '@server/services/auth/session.service';
 import { castToRes, ResWrapper } from '@server/share';
 import type { AppAuthMeta } from '@server/share/type';
 import { Elysia, t } from 'elysia';
-import { RevokeSessionDto, SessionQueryDto, SessionResDto } from '../dtos';
+import {
+  RevokeSessionDto,
+  SessionQueryDto,
+  SessionResDto,
+} from '../../dto/admin';
 
 export const sessionController = new Elysia<'sessions', AppAuthMeta>({
   prefix: 'sessions',

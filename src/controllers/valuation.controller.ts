@@ -1,3 +1,4 @@
+import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
 import {
   InvestmentValuationDto,
@@ -6,7 +7,6 @@ import {
   UpsertInvestmentValuationDto,
   ValuationDeleteResponseDto,
 } from '../dto/valuation.dto';
-import { authCheck } from '../service/auth/auth.middleware';
 import investmentValuationService from '../services/valuation.service';
 import { castToRes, ResWrapper } from '../share';
 

@@ -1,9 +1,9 @@
+import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
 import type {
   EventOrderByWithRelationInput,
   EventWhereInput,
 } from '@server/generated/prisma/models/Event';
-import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import type { IListEventsQueryDto, IUpsertEventDto } from '../dto/event.dto';
 

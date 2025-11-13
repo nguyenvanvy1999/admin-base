@@ -1,6 +1,6 @@
+import { logger } from '@server/configs/logger';
+import { AppError, ErrorCode } from '@server/share/constants/error';
 import type { Elysia } from 'elysia';
-import { AppError, ErrorCode } from '../constants/error';
-import { logger } from '../libs/logger';
 
 export function withErrorHandler(
   elysia: Elysia<any, any, any, any, any, any, any>,

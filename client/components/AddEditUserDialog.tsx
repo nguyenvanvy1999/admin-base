@@ -1,12 +1,9 @@
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Modal, PasswordInput, Stack, TextInput } from '@mantine/core';
+import type { IUpsertUserDto, UserResponse } from '@server/dto/admin/user.dto';
+import { UpsertUserDto } from '@server/dto/admin/user.dto';
 import { UserRole } from '@server/generated/prisma/enums';
-import type {
-  IUpsertUserDto,
-  UserResponse,
-} from '@server/modules/admin/dtos/user.dto';
-import { UpsertUserDto } from '@server/modules/admin/dtos/user.dto';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';

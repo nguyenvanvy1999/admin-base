@@ -1,4 +1,4 @@
-import { defaultRoles } from '@server/share/constant';
+import { defaultRoles } from '@server/share/constants';
 
 export const RoleFixtures = {
   createRole(

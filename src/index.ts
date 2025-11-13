@@ -1,9 +1,11 @@
 import openapi from '@elysiajs/openapi';
 import { staticPlugin } from '@elysiajs/static';
-import { redis } from '@server/config/redis';
-import { appEnv } from '@server/libs/env';
+import { appEnv } from '@server/configs/env';
+import { redis } from '@server/configs/redis';
 import { Elysia } from 'elysia';
+import { logger } from './configs/logger';
 import accountController from './controllers/account.controller';
+import { adminController } from './controllers/admin';
 import budgetController from './controllers/budget.controller';
 import categoryController from './controllers/category.controller';
 import contributionController from './controllers/contribution.controller';
@@ -18,12 +20,10 @@ import tradeController from './controllers/trade.controller';
 import transactionController from './controllers/transaction.controller';
 import userController from './controllers/user.controller';
 import valuationController from './controllers/valuation.controller';
-import { logger } from './libs/logger';
-import { withErrorHandler } from './middlewares/error-middleware';
-import { adminController } from './modules/admin';
 import { AuthSeedService } from './services/auth-seed.service';
 import { SeedService } from './services/seed.service';
 import { seedSuperAdmin } from './services/super-admin-seed.service';
+import { withErrorHandler } from './share/middlewares/error-middleware';
 
 export const app = new Elysia()
   .use(

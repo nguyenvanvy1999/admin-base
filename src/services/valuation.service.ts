@@ -1,5 +1,5 @@
+import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
-import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import type {
   IListInvestmentValuationsQueryDto,

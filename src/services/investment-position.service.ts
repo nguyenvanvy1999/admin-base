@@ -1,10 +1,10 @@
+import { prisma } from '@server/configs/db';
 import {
   ContributionType,
   InvestmentMode,
   TradeSide,
 } from '@server/generated/prisma/enums';
-import { prisma } from '@server/libs/db';
-import { ErrorCode, throwAppError } from '../constants/error';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import type { InvestmentPositionResponse } from '../dto/investment.dto';
 import {
   CONTRIBUTION_SELECT_FOR_POSITION,

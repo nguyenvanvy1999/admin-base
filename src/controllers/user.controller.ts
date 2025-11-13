@@ -1,8 +1,16 @@
+import { prisma } from '@server/configs/db';
 import { UserRole } from '@server/generated/prisma/enums';
-import { prisma } from '@server/libs/db';
+import {
+  authCheck,
+  userResSelect,
+} from '@server/services/auth/auth.middleware';
+import {
+  tokenService,
+  userUtilService,
+} from '@server/services/auth/auth-util.service';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import dayjs from 'dayjs';
 import { Elysia, t } from 'elysia';
-import { ErrorCode, throwAppError } from '../constants/error';
 import {
   AuthUserDto,
   LoginDto,
@@ -10,11 +18,6 @@ import {
   RegisterDto,
   UpdateProfileDto,
 } from '../dto/user.dto';
-import { authCheck, userResSelect } from '../service/auth/auth.middleware';
-import {
-  tokenService,
-  userUtilService,
-} from '../service/auth/auth-util.service';
 import userService from '../services/user.service';
 import { castToRes, ResWrapper, SUPER_ADMIN_ID } from '../share';
 import type { ITokenPayload } from '../share/type';

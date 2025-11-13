@@ -1,4 +1,5 @@
 export * from './array.util';
+export * from './formatters';
 export * from './id.util';
 export * from './time.util';
 

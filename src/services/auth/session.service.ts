@@ -1,6 +1,6 @@
-import { currentUserCache } from '@server/config/cache';
+import { currentUserCache } from '@server/configs/cache';
+import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
-import { prisma } from '@server/libs/db';
 
 export interface IDb {
   session: {

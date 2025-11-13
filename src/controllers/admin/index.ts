@@ -1,4 +1,4 @@
-import { authCheck } from '@server/service/auth/auth.middleware';
+import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia } from 'elysia';
 import { permissionController } from './permission.controller';
 import { roleController } from './role.controller';

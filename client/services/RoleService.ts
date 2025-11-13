@@ -1,5 +1,5 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
-import type { RoleListResponse } from '@server/modules/admin/dtos/role.dto';
+import type { RoleListResponse } from '@server/dto/admin/role.dto';
 
 export type IUpsertRoleDto = {
   id?: string;

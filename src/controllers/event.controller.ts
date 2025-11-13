@@ -1,3 +1,4 @@
+import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
 import {
   DeleteManyEventsDto,
@@ -7,7 +8,6 @@ import {
   ListEventsQueryDto,
   UpsertEventDto,
 } from '../dto/event.dto';
-import { authCheck } from '../service/auth/auth.middleware';
 import eventService from '../services/event.service';
 import { castToRes, ResWrapper } from '../share';
 
