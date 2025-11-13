@@ -48,7 +48,7 @@ export const userUtilService = {
     clientIp: string,
     userAgent: string,
   ): Promise<ILoginRes> {
-    await sessionService.revoke(user.id);
+    await sessionService.revoke(user.id, false, []);
     const sessionId = IdUtil.dbId(DB_PREFIX.SESSION);
     const payload: ITokenPayload = {
       userId: user.id,

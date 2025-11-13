@@ -711,6 +711,28 @@
       "sessions": "Phiên"
     }
   },
+  "sessions": {
+    "title": "Phiên",
+    "subtitle": "Quản lý phiên người dùng",
+    "user": "Người dùng",
+    "device": "Thiết bị",
+    "ip": "Địa chỉ IP",
+    "statusLabel": "Trạng thái",
+    "createdAt": "Ngày tạo",
+    "expired": "Hết hạn",
+    "actions": "Thao tác",
+    "revokeConfirmTitle": "Thu hồi phiên",
+    "revokeConfirmMessage": "Bạn có chắc chắn muốn thu hồi phiên này?",
+    "revokeSelected": "Thu hồi {{count}} phiên",
+    "filterByUser": "Lọc theo người dùng",
+    "filterByStatus": "Lọc theo trạng thái",
+    "status": {
+      "all": "Tất cả",
+      "active": "Đang hoạt động",
+      "revoked": "Đã thu hồi",
+      "expired": "Đã hết hạn"
+    }
+  },
   "roles": {
     "title": "Vai trò",
     "subtitle": "Quản lý vai trò",

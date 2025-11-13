@@ -1,4 +1,5 @@
 import { ACCESS_TOKEN_KEY } from '@client/constants';
+import useUserStore from '@client/store/user';
 import {
   accessTokenRefreshSubject,
   configSubject,
@@ -46,8 +47,15 @@ export abstract class ServiceBase {
     });
   }
 
+  private handleUnauthorized() {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    useUserStore.getState().clearUser();
+    accessTokenRefreshSubject.next('');
+    window.location.href = '/#/login';
+  }
+
   private createClient(baseURL: string): AxiosInstance {
-    return axios.create({
+    const client = axios.create({
       baseURL,
       headers: { Accept: 'application/json' },
       timeout: 10000,
@@ -74,6 +82,39 @@ export abstract class ServiceBase {
       ],
       validateStatus: (status) => status >= 200 && status < 300,
     });
+
+    client.interceptors.response.use(
+      (response) => response,
+      (error: AxiosError) => {
+        if (error.response) {
+          const status = error.response.status;
+          const responseData = error.response.data;
+
+          if (status === 401) {
+            let errorCode = '';
+            if (
+              typeof responseData === 'object' &&
+              responseData !== null &&
+              'code' in responseData
+            ) {
+              errorCode = String(responseData.code);
+            }
+
+            if (
+              errorCode === 'INVALID_TOKEN' ||
+              errorCode === 'EXPIRED_TOKEN' ||
+              errorCode === 'UNAUTHORIZED' ||
+              errorCode === 'SESSION_EXPIRED'
+            ) {
+              this.handleUnauthorized();
+            }
+          }
+        }
+        return Promise.reject(error);
+      },
+    );
+
+    return client;
   }
 
   protected get baseEndpoint(): string {

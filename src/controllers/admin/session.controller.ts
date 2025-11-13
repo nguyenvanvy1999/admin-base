@@ -1,40 +1,43 @@
 import { prisma } from '@server/configs/db';
-import type { Prisma } from '@server/generated/prisma/client';
-import { authorize, has } from '@server/services/auth/authorization';
+import { anyOf, authorize, has } from '@server/services/auth/authorization';
 import { sessionService } from '@server/services/auth/session.service';
 import { castToRes, ResWrapper } from '@server/share';
 import type { AppAuthMeta } from '@server/share/type';
 import { Elysia, t } from 'elysia';
 import {
+  type ISessionQueryDto,
   RevokeSessionDto,
+  SessionListResponseDto,
   SessionQueryDto,
-  SessionResDto,
   SessionStatisticsResponseDto,
 } from '../../dto/admin';
 
 export const sessionController = new Elysia<'sessions', AppAuthMeta>({
   prefix: 'sessions',
 })
-  .use(authorize(has('SESSION.VIEW')))
+  .use(authorize(anyOf(has('SESSION.VIEW'), has('SESSION.VIEW_ALL'))))
   .get(
     '/',
-    async ({ query: { userId }, currentUser }) => {
-      const targetUserId = userId || currentUser.id;
-      const where: Prisma.SessionWhereInput = {
-        userId: targetUserId,
-      };
+    async ({ query, currentUser }) => {
+      const isAdmin = currentUser.permissions.includes('SESSION.VIEW_ALL');
+      const queryParams = query as ISessionQueryDto;
 
-      const sessions = await prisma.session.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-      });
+      if (!isAdmin && queryParams.userId) {
+        queryParams.userId = undefined;
+      }
 
-      return castToRes(sessions);
+      const result = await sessionService.listSessions(
+        currentUser.id,
+        isAdmin,
+        queryParams,
+      );
+
+      return castToRes(result);
     },
     {
       query: SessionQueryDto,
       response: {
-        200: ResWrapper(t.Array(SessionResDto)),
+        200: ResWrapper(SessionListResponseDto),
       },
     },
   )
@@ -71,15 +74,54 @@ export const sessionController = new Elysia<'sessions', AppAuthMeta>({
       },
     },
   )
-  .use(authorize(has('SESSION.REVOKE')))
+  .use(authorize(anyOf(has('SESSION.REVOKE'), has('SESSION.REVOKE_ALL'))))
   .post(
     '/revoke',
-    async ({ body: { sessionIds }, currentUser }) => {
-      await sessionService.revoke(currentUser.id, sessionIds);
+    async ({ body: { sessionIds }, currentUser, query }) => {
+      const isAdmin = currentUser.permissions.includes('SESSION.REVOKE_ALL');
+      const queryParams = query as { userId?: string };
+      const targetUserId =
+        isAdmin && queryParams.userId ? queryParams.userId : undefined;
+
+      await sessionService.revoke(
+        currentUser.id,
+        isAdmin,
+        sessionIds,
+        targetUserId,
+      );
       return castToRes(null);
     },
     {
       body: RevokeSessionDto,
+      query: t.Object({
+        userId: t.Optional(t.String()),
+      }),
+      response: {
+        200: ResWrapper(t.Null()),
+      },
+    },
+  )
+  .post(
+    '/revoke-many',
+    async ({ body: { sessionIds }, currentUser, query }) => {
+      const isAdmin = currentUser.permissions.includes('SESSION.REVOKE_ALL');
+      const queryParams = query as { userId?: string };
+      const targetUserId =
+        isAdmin && queryParams.userId ? queryParams.userId : undefined;
+
+      await sessionService.revoke(
+        currentUser.id,
+        isAdmin,
+        sessionIds,
+        targetUserId,
+      );
+      return castToRes(null);
+    },
+    {
+      body: RevokeSessionDto,
+      query: t.Object({
+        userId: t.Optional(t.String()),
+      }),
       response: {
         200: ResWrapper(t.Null()),
       },

@@ -711,6 +711,28 @@
       "sessions": "Sessions"
     }
   },
+  "sessions": {
+    "title": "Sessions",
+    "subtitle": "Manage user sessions",
+    "user": "User",
+    "device": "Device",
+    "ip": "IP Address",
+    "statusLabel": "Status",
+    "createdAt": "Created At",
+    "expired": "Expired At",
+    "actions": "Actions",
+    "revokeConfirmTitle": "Revoke Session",
+    "revokeConfirmMessage": "Are you sure you want to revoke this session?",
+    "revokeSelected": "Revoke {{count}} session(s)",
+    "filterByUser": "Filter by User",
+    "filterByStatus": "Filter by Status",
+    "status": {
+      "all": "All",
+      "active": "Active",
+      "revoked": "Revoked",
+      "expired": "Expired"
+    }
+  },
   "roles": {
     "title": "Roles",
     "subtitle": "Manage roles",
