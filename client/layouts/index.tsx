@@ -10,7 +10,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router';
 const ProtectedPageLayout = () => {
   const navigate = useNavigate();
   const pathname = useLocation();
-  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [sidebarWidth, setSidebarWidth] = useState(200);
   const { isAdmin } = useUserStore();
 
   useEffect(() => {

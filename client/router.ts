@@ -126,6 +126,10 @@ const router = createHashRouter([
         path: '/admin/sessions',
         Component: SessionPage,
       },
+      {
+        path: '*',
+        Component: NotFoundPage,
+      },
     ],
   },
   {
