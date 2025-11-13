@@ -12,8 +12,8 @@ export const envSchema = t.Object({
   JWT_AUDIENCE: t.String({ default: 'https://example.com' }),
   JWT_ISSUER: t.String({ default: 'investment' }),
   JWT_SUBJECT: t.String({ default: 'investment' }),
-  ENCRYPT_KEY: t.Optional(t.String()),
-  ENCRYPT_IV: t.Optional(t.String()),
+  ENCRYPT_KEY: t.String(),
+  ENCRYPT_IV: t.String(),
   LOG_LEVEL: t.Union(
     [
       t.Literal(LOG_LEVEL.DEBUG),

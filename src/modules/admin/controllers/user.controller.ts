@@ -1,9 +1,10 @@
 import { CURRENCY_IDS } from '@server/constants/currency';
+import { ErrorCode, throwAppError } from '@server/constants/error';
 import type { Prisma } from '@server/generated/prisma/client';
 import { UserRole } from '@server/generated/prisma/enums';
 import { prisma } from '@server/libs/db';
 import { anyOf, authorize, has } from '@server/service/auth/authorization';
-import { castToRes, ErrCode, ResWrapper, SUPER_ADMIN_ID } from '@server/share';
+import { castToRes, ResWrapper, SUPER_ADMIN_ID } from '@server/share';
 import type { AppAuthMeta } from '@server/share/type';
 import { Elysia, t } from 'elysia';
 import {
@@ -147,7 +148,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
       });
 
       if (!user) {
-        throw new Error(ErrCode.UserNotFound);
+        throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
       }
 
       return castToRes({
@@ -183,7 +184,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
         body as IUpsertUserDto;
 
       if (id && id === SUPER_ADMIN_ID) {
-        throw new Error(ErrCode.PermissionDenied);
+        throwAppError(ErrorCode.PERMISSION_DENIED, 'Permission denied');
       }
 
       if (baseCurrencyId) {
@@ -191,7 +192,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
           where: { id: baseCurrencyId },
         });
         if (currencyExists === 0) {
-          throw new Error(ErrCode.ItemNotFound);
+          throwAppError(ErrorCode.CURRENCY_NOT_FOUND, 'Currency not found');
         }
       }
 
@@ -200,7 +201,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
           where: { id, deletedAt: null },
         });
         if (!existingUser) {
-          throw new Error(ErrCode.UserNotFound);
+          throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
         }
 
         if (username && username !== existingUser.username) {
@@ -208,7 +209,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
             where: { username, deletedAt: null },
           });
           if (usernameExists) {
-            throw new Error(ErrCode.UserExisted);
+            throwAppError(ErrorCode.USER_ALREADY_EXISTS, 'User already exists');
           }
         }
 
@@ -232,11 +233,11 @@ export const userController = new Elysia<'users', AppAuthMeta>({
           where: { username, deletedAt: null },
         });
         if (usernameExists) {
-          throw new Error(ErrCode.UserExisted);
+          throwAppError(ErrorCode.USER_ALREADY_EXISTS, 'User already exists');
         }
 
         if (!password) {
-          throw new Error(ErrCode.ValidationError);
+          throwAppError(ErrorCode.VALIDATION_ERROR, 'Password is required');
         }
 
         const hashPassword = await Bun.password.hash(password, 'bcrypt');
@@ -267,7 +268,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
     '/del',
     async ({ body: { ids } }) => {
       if (ids.includes(SUPER_ADMIN_ID)) {
-        throw new Error(ErrCode.PermissionDenied);
+        throwAppError(ErrorCode.PERMISSION_DENIED, 'Permission denied');
       }
 
       await prisma.user.updateMany({

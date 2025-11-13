@@ -2,6 +2,7 @@ import { UserRole } from '@server/generated/prisma/enums';
 import { prisma } from '@server/libs/db';
 import dayjs from 'dayjs';
 import { Elysia, t } from 'elysia';
+import { ErrorCode, throwAppError } from '../constants/error';
 import {
   AuthUserDto,
   LoginDto,
@@ -15,13 +16,7 @@ import {
   userUtilService,
 } from '../service/auth/auth-util.service';
 import userService from '../services/user.service';
-import {
-  castToRes,
-  ErrCode,
-  ResWrapper,
-  SUPER_ADMIN_ID,
-  UnAuthErr,
-} from '../share';
+import { castToRes, ResWrapper, SUPER_ADMIN_ID } from '../share';
 import type { ITokenPayload } from '../share/type';
 
 const USER_DETAIL = {
@@ -110,7 +105,7 @@ const userController = new Elysia().group(
           });
 
           if (!session || session.revoked || new Date() > session.expired) {
-            throw new UnAuthErr(ErrCode.ExpiredToken);
+            throwAppError(ErrorCode.EXPIRED_TOKEN, 'Token expired');
           }
 
           const user = await prisma.user.findUnique({
@@ -119,7 +114,7 @@ const userController = new Elysia().group(
           });
 
           if (!user) {
-            throw new UnAuthErr(ErrCode.UserNotFound);
+            throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
           }
 
           const payload: ITokenPayload = {

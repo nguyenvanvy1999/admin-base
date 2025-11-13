@@ -1,7 +1,8 @@
+import { ErrorCode, throwAppError } from '@server/constants/error';
 import type { Prisma } from '@server/generated/prisma/client';
 import { prisma } from '@server/libs/db';
 import { anyOf, authorize, has } from '@server/service/auth/authorization';
-import { castToRes, defaultRoles, ErrCode, ResWrapper } from '@server/share';
+import { castToRes, defaultRoles, ResWrapper } from '@server/share';
 import type { AppAuthMeta } from '@server/share/type';
 import { Elysia, t } from 'elysia';
 import {
@@ -109,11 +110,11 @@ export const roleController = new Elysia<'roles', AppAuthMeta>({
     }) => {
       if (id) {
         if (!currentUser.permissions.includes('ROLE.UPDATE')) {
-          throw new Error(ErrCode.PermissionDenied);
+          throwAppError(ErrorCode.PERMISSION_DENIED, 'Permission denied');
         }
 
         if (isFrozenRole(id)) {
-          throw new Error(ErrCode.PermissionDenied);
+          throwAppError(ErrorCode.PERMISSION_DENIED, 'Permission denied');
         }
 
         await prisma.role.update({
@@ -151,7 +152,7 @@ export const roleController = new Elysia<'roles', AppAuthMeta>({
         });
       } else {
         if (!currentUser.permissions.includes('ROLE.CREATE')) {
-          throw new Error(ErrCode.PermissionDenied);
+          throwAppError(ErrorCode.PERMISSION_DENIED, 'Permission denied');
         }
 
         await prisma.role.create({
@@ -193,7 +194,7 @@ export const roleController = new Elysia<'roles', AppAuthMeta>({
     async ({ body: { ids } }) => {
       for (const roleId of ids) {
         if (isFrozenRole(roleId)) {
-          throw new Error(ErrCode.PermissionDenied);
+          throwAppError(ErrorCode.PERMISSION_DENIED, 'Permission denied');
         }
       }
 
@@ -201,7 +202,7 @@ export const roleController = new Elysia<'roles', AppAuthMeta>({
         where: { roleId: { in: ids } },
       });
       if (existUserRole) {
-        throw new Error(ErrCode.PermissionDenied);
+        throwAppError(ErrorCode.PERMISSION_DENIED, 'Permission denied');
       }
 
       await prisma.role.deleteMany({

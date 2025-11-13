@@ -193,7 +193,7 @@ model Category {
   budgetCategories      BudgetCategory[]
   recurringTransactions RecurringTransaction[]
 
-  @@unique([userId, name], name: "category_userId_name_unique")
+  @@unique([userId, name, type], name: "category_userId_name_type_unique")
   @@index([userId], name: "category_userId_idx")
   @@index([type], name: "category_type_idx")
   @@index([parentId], name: "category_parentId_idx")

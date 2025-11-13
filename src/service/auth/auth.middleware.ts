@@ -1,6 +1,6 @@
 import { currentUserCache } from '@server/config/cache';
+import { ErrorCode, throwAppError } from '@server/constants/error';
 import { prisma } from '@server/libs/db';
-import { ErrCode, NotFoundErr, UnAuthErr } from '@server/share';
 import type { ICurrentUser } from '@server/share/type';
 import type { Elysia } from 'elysia';
 import { tokenService, userUtilService } from './auth-util.service';
@@ -22,7 +22,7 @@ export const authCheck = (app: Elysia) =>
   app.guard({ as: 'scoped' }).resolve({ as: 'local' }, async ({ headers }) => {
     const authorization = headers['authorization'];
     if (!authorization) {
-      throw new UnAuthErr(ErrCode.InvalidToken);
+      throwAppError(ErrorCode.INVALID_TOKEN, 'Invalid token');
     }
     const token = authorization.slice(AUTH_HEADER.length + 1);
 
@@ -45,7 +45,7 @@ export const authCheck = (app: Elysia) =>
       });
 
       if (!session || session.revoked || new Date() > session.expired) {
-        throw new UnAuthErr(ErrCode.ExpiredToken);
+        throwAppError(ErrorCode.EXPIRED_TOKEN, 'Token expired');
       }
 
       const user = await prisma.user.findUnique({
@@ -54,7 +54,7 @@ export const authCheck = (app: Elysia) =>
       });
 
       if (!user) {
-        throw new NotFoundErr(ErrCode.UserNotFound);
+        throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
       }
 
       currentUser = {

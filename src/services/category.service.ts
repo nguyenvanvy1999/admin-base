@@ -75,7 +75,10 @@ const formatCategoryTree = (
 };
 
 export class CategoryService {
-  getCategoryId(userId: string, code: string): string {
+  getCategoryId(userId: string, code: string, type?: string): string {
+    if (type) {
+      return `category_${code}_${type}_${userId}`;
+    }
     return `category_${code}_${userId}`;
   }
 
@@ -132,7 +135,7 @@ export class CategoryService {
     if (level0.length > 0) {
       await tx.category.createMany({
         data: level0.map((cat) => ({
-          id: this.getCategoryId(userId, cat.name),
+          id: this.getCategoryId(userId, cat.name, cat.type),
           userId,
           name: cat.name,
           type: cat.type,
@@ -142,20 +145,29 @@ export class CategoryService {
       });
 
       for (const cat of level0) {
-        nameToIdMap.set(cat.name, this.getCategoryId(userId, cat.name));
+        nameToIdMap.set(
+          `${cat.name}_${cat.type}`,
+          this.getCategoryId(userId, cat.name, cat.type),
+        );
       }
     }
 
     if (level1.length > 0) {
       await tx.category.createMany({
-        data: level1.map((cat) => ({
-          id: this.getCategoryId(userId, cat.name),
-          userId,
-          name: cat.name,
-          type: cat.type,
-          parentId: nameToIdMap.get(cat.parentName!),
-          isLocked: true,
-        })),
+        data: level1.map((cat) => {
+          const parent = level0.find(
+            (p) => p.name === cat.parentName && p.type === cat.type,
+          );
+          const parentKey = parent ? `${parent.name}_${parent.type}` : null;
+          return {
+            id: this.getCategoryId(userId, cat.name, cat.type),
+            userId,
+            name: cat.name,
+            type: cat.type,
+            parentId: parentKey ? (nameToIdMap.get(parentKey) ?? null) : null,
+            isLocked: true,
+          };
+        }),
       });
     }
   }
@@ -280,7 +292,7 @@ export class CategoryService {
   ): Promise<string> {
     const categoryType = type === 'income' ? 'income' : 'expense';
     const categoryName = CATEGORY_NAME.BALANCE_ADJUSTMENT;
-    const categoryId = this.getCategoryId(userId, categoryName);
+    const categoryId = this.getCategoryId(userId, categoryName, categoryType);
 
     const existingCategory = await prisma.category.findUnique({
       where: {

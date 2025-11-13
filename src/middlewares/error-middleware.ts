@@ -23,7 +23,37 @@ export function withErrorHandler(
     if (error instanceof AppError) {
       errorCode = error.code;
       message = error.message;
-      status = 400;
+
+      if (
+        errorCode === ErrorCode.UNAUTHORIZED ||
+        errorCode === ErrorCode.INVALID_TOKEN ||
+        errorCode === ErrorCode.EXPIRED_TOKEN ||
+        errorCode === ErrorCode.SESSION_EXPIRED
+      ) {
+        status = 401;
+      } else if (
+        errorCode === ErrorCode.FORBIDDEN ||
+        errorCode === ErrorCode.PERMISSION_DENIED
+      ) {
+        status = 403;
+      } else if (
+        errorCode === ErrorCode.NOT_FOUND ||
+        errorCode === ErrorCode.ENTITY_NOT_FOUND ||
+        errorCode === ErrorCode.ACCOUNT_NOT_FOUND ||
+        errorCode === ErrorCode.CURRENCY_NOT_FOUND ||
+        errorCode === ErrorCode.INVESTMENT_NOT_FOUND ||
+        errorCode === ErrorCode.USER_NOT_FOUND ||
+        errorCode === ErrorCode.BUDGET_NOT_FOUND ||
+        errorCode === ErrorCode.BUDGET_PERIOD_NOT_FOUND ||
+        errorCode === ErrorCode.CATEGORY_NOT_FOUND ||
+        errorCode === ErrorCode.ITEM_NOT_FOUND
+      ) {
+        status = 404;
+      } else if (errorCode === ErrorCode.INTERNAL_SERVER_ERROR) {
+        status = 500;
+      } else {
+        status = 400;
+      }
     } else if (code === 'UNKNOWN') {
       errorCode = ErrorCode.VALIDATION_ERROR;
       message = error instanceof Error ? error.message : String(error);

@@ -1,5 +1,5 @@
+import { ErrorCode, throwAppError } from '@server/constants/error';
 import { appEnv, type IEnv } from '@server/libs/env';
-import { BadReqErr, ErrCode } from '@server/share';
 import type { ITokenPayload } from '@server/share/type';
 import dayjs from 'dayjs';
 import { type JWTPayload, jwtVerify, SignJWT } from 'jose';
@@ -93,7 +93,7 @@ export class TokenService {
   ): Promise<JWTPayload & { data: ITokenPayload }> {
     const res = await this.verifyJwt(token);
     if (!res) {
-      throw new BadReqErr(ErrCode.InvalidToken);
+      throwAppError(ErrorCode.INVALID_TOKEN, 'Invalid token');
     }
     const data = EncryptService.aes256Decrypt<ITokenPayload>(res.data);
     return { ...res, data };

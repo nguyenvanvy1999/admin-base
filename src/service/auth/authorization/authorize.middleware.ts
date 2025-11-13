@@ -1,5 +1,5 @@
+import { ErrorCode, throwAppError } from '@server/constants/error';
 import { logger } from '@server/libs/logger';
-import { ErrCode, UnAuthErr } from '@server/share';
 import type { AppAuthMeta } from '@server/share/type';
 import { Elysia } from 'elysia';
 import type { AuthorizeOptions, Policy, PolicyCtx } from './policy-types';
@@ -37,7 +37,7 @@ export function authorize<TResource>(
         } catch (error) {
           logger.warning(`Error in onDeny handler: ${error}`);
         }
-        throw new UnAuthErr(ErrCode.PermissionDenied);
+        throwAppError(ErrorCode.PERMISSION_DENIED, 'Permission denied');
       }
     });
 }
