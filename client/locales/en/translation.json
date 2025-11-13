@@ -360,6 +360,7 @@
     "repay_debt": "Repay Debt",
     "collect_debt": "Collect Debt",
     "transfer": "Transfer",
+    "balance_adjustment": "Balance Adjustment",
     "income": "Income",
     "expense": "Expense",
     "salary": "Salary",

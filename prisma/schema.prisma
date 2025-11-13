@@ -167,7 +167,7 @@ model Account {
 }
 
 model Category {
-  id        String       @id @default(uuid(7))
+  id        String       @id
   userId    String       @map("user_id")
   type      CategoryType
   name      String
@@ -186,6 +186,7 @@ model Category {
   budgets               Budget[]
   recurringTransactions RecurringTransaction[]
 
+  @@unique([userId, name], name: "category_userId_name_unique")
   @@index([userId], name: "category_userId_idx")
   @@index([type], name: "category_type_idx")
   @@index([parentId], name: "category_parentId_idx")
@@ -231,7 +232,7 @@ model Transaction {
   transferGroupId     String?         @map("transfer_group_id")
   isTransferMirror    Boolean         @default(false) @map("is_transfer_mirror")
   type                TransactionType
-  categoryId          String?         @map("category_id")
+  categoryId          String          @map("category_id")
   investmentId        String?         @map("investment_id")
   entityId            String?         @map("entity_id")
   eventId             String?         @map("event_id")
@@ -255,7 +256,7 @@ model Transaction {
   user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   account    Account          @relation("AccountTransactions", fields: [accountId], references: [id], onDelete: Cascade)
   toAccount  Account?         @relation("ToAccountTransactions", fields: [toAccountId], references: [id], onDelete: SetNull)
-  category   Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category   Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   investment Investment?      @relation(fields: [investmentId], references: [id], onDelete: SetNull)
   entity     Entity?          @relation(fields: [entityId], references: [id], onDelete: SetNull)
   event      Event?           @relation(fields: [eventId], references: [id], onDelete: SetNull)

@@ -190,7 +190,7 @@ export const TransactionDetailDto = t.NoValidate(
     transferGroupId: t.Nullable(t.String()),
     isTransferMirror: t.Boolean(),
     type: t.Enum(TransactionType),
-    categoryId: t.Nullable(t.String()),
+    categoryId: t.String(),
     entityId: t.Nullable(t.String()),
     investmentId: t.Nullable(t.String()),
     eventId: t.Nullable(t.String()),

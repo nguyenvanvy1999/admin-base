@@ -77,6 +77,9 @@ export const CATEGORY_NAME = {
   // Transfer
   TRANSFER: 'transfer',
 
+  // Balance Adjustment
+  BALANCE_ADJUSTMENT: 'balance_adjustment',
+
   // Income categories - Parents
   INCOME: 'income',
   EXPENSE: 'expense',
@@ -268,3 +271,8 @@ export const INCOME_CATEGORIES: CategorySeedData = {
     { name: CATEGORY_NAME.OTHER, type: CategoryType.income },
   ],
 };
+
+export const BALANCE_ADJUSTMENT_CATEGORIES: CategorySeedData[] = [
+  { name: CATEGORY_NAME.BALANCE_ADJUSTMENT, type: CategoryType.income },
+  { name: CATEGORY_NAME.BALANCE_ADJUSTMENT, type: CategoryType.expense },
+];

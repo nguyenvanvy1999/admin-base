@@ -3,6 +3,8 @@ import type { CategoryWhereInput } from '@server/generated/prisma/models/Categor
 import { prisma } from '@server/libs/db';
 import { Elysia } from 'elysia';
 import {
+  BALANCE_ADJUSTMENT_CATEGORIES,
+  CATEGORY_NAME,
   type CategorySeedData,
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
@@ -32,9 +34,11 @@ type CategoryWithChildren = {
 
 const CATEGORY_SELECT_MINIMAL = {
   id: true,
+  userId: true,
   isLocked: true,
   type: true,
   parentId: true,
+  deletedAt: true,
 } as const;
 
 const formatCategory = (
@@ -71,6 +75,10 @@ const formatCategoryTree = (
 };
 
 export class CategoryService {
+  getCategoryId(userId: string, code: string): string {
+    return `category_${code}_${userId}`;
+  }
+
   private flattenCategories(
     categories: CategorySeedData[],
     parentName?: string,
@@ -111,6 +119,7 @@ export class CategoryService {
       INVESTMENT_CATEGORY,
       INCOME_CATEGORIES,
       ...EXPENSE_CATEGORIES,
+      ...BALANCE_ADJUSTMENT_CATEGORIES,
     ];
 
     const flattened = this.flattenCategories(allCategories);
@@ -123,6 +132,7 @@ export class CategoryService {
     if (level0.length > 0) {
       await tx.category.createMany({
         data: level0.map((cat) => ({
+          id: this.getCategoryId(userId, cat.name),
           userId,
           name: cat.name,
           type: cat.type,
@@ -131,22 +141,15 @@ export class CategoryService {
         })),
       });
 
-      const createdCategories = await tx.category.findMany({
-        where: {
-          userId,
-          name: { in: level0.map((cat) => cat.name) },
-        },
-        select: { id: true, name: true },
-      });
-
-      for (const cat of createdCategories) {
-        nameToIdMap.set(cat.name, cat.id);
+      for (const cat of level0) {
+        nameToIdMap.set(cat.name, this.getCategoryId(userId, cat.name));
       }
     }
 
     if (level1.length > 0) {
       await tx.category.createMany({
         data: level1.map((cat) => ({
+          id: this.getCategoryId(userId, cat.name),
           userId,
           name: cat.name,
           type: cat.type,
@@ -158,15 +161,17 @@ export class CategoryService {
   }
 
   private async validateCategoryOwnership(userId: string, categoryId: string) {
-    const category = await prisma.category.findFirst({
+    const category = await prisma.category.findUnique({
       where: {
         id: categoryId,
-        userId,
-        deletedAt: null,
       },
       select: CATEGORY_SELECT_MINIMAL,
     });
-    if (!category) {
+    if (
+      !category ||
+      category.userId !== userId ||
+      category.deletedAt !== null
+    ) {
       throw new Error('Category not found');
     }
     return category;
@@ -274,14 +279,12 @@ export class CategoryService {
     type: 'income' | 'expense',
   ): Promise<string> {
     const categoryType = type === 'income' ? 'income' : 'expense';
-    const categoryName = 'Balance Adjustment';
+    const categoryName = CATEGORY_NAME.BALANCE_ADJUSTMENT;
+    const categoryId = this.getCategoryId(userId, categoryName);
 
-    const existingCategory = await prisma.category.findFirst({
+    const existingCategory = await prisma.category.findUnique({
       where: {
-        userId,
-        name: categoryName,
-        type: categoryType,
-        deletedAt: null,
+        id: categoryId,
       },
       select: { id: true },
     });
@@ -292,6 +295,7 @@ export class CategoryService {
 
     const newCategory = await prisma.category.create({
       data: {
+        id: categoryId,
         userId,
         name: categoryName,
         type: categoryType,
@@ -327,8 +331,10 @@ export class CategoryService {
       }
     }
 
+    const categoryId = this.getCategoryId(userId, data.name);
     const category = await prisma.category.create({
       data: {
+        id: categoryId,
         userId,
         name: data.name,
         type: data.type,

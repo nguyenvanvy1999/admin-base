@@ -8,7 +8,7 @@ CREATE TYPE "AccountType" AS ENUM ('cash', 'bank', 'credit_card', 'investment');
 CREATE TYPE "CategoryType" AS ENUM ('expense', 'income', 'transfer', 'investment', 'loan');
 
 -- CreateEnum
-CREATE TYPE "TransactionType" AS ENUM ('income', 'expense', 'transfer', 'loan_given', 'loan_received', 'investment');
+CREATE TYPE "TransactionType" AS ENUM ('income', 'expense', 'transfer', 'loan_given', 'loan_received', 'repay_debt', 'collect_debt', 'investment');
 
 -- CreateEnum
 CREATE TYPE "InvestmentAssetType" AS ENUM ('coin', 'ccq', 'custom');
@@ -124,9 +124,10 @@ CREATE TABLE "transactions" (
     "transfer_group_id" TEXT,
     "is_transfer_mirror" BOOLEAN NOT NULL DEFAULT false,
     "type" "TransactionType" NOT NULL,
-    "category_id" TEXT,
+    "category_id" TEXT NOT NULL,
     "investment_id" TEXT,
     "entity_id" TEXT,
+    "event_id" TEXT,
     "amount" DECIMAL(30,10) NOT NULL,
     "currency_id" TEXT NOT NULL,
     "price" DECIMAL(30,10),
@@ -221,6 +222,7 @@ CREATE TABLE "investment_trades" (
     "external_id" TEXT,
     "transaction_id" TEXT,
     "meta" JSONB,
+    "deleted_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -241,6 +243,7 @@ CREATE TABLE "investment_contributions" (
     "base_currency_id" TEXT,
     "timestamp" TIMESTAMP(3) NOT NULL,
     "note" TEXT,
+    "deleted_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -260,6 +263,7 @@ CREATE TABLE "investment_valuations" (
     "timestamp" TIMESTAMP(3) NOT NULL,
     "source" TEXT,
     "fetched_at" TIMESTAMP(3),
+    "deleted_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -296,6 +300,20 @@ CREATE TABLE "tags" (
     CONSTRAINT "tags_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "events" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "start_at" TIMESTAMP(3) NOT NULL,
+    "end_at" TIMESTAMP(3),
+    "deleted_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "events_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "currencies_code_key" ON "currencies"("code");
 
@@ -330,6 +348,9 @@ CREATE INDEX "category_type_idx" ON "categories"("type");
 CREATE INDEX "category_parentId_idx" ON "categories"("parent_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "categories_user_id_name_key" ON "categories"("user_id", "name");
+
+-- CreateIndex
 CREATE INDEX "investment_userId_idx" ON "investments"("user_id");
 
 -- CreateIndex
@@ -361,6 +382,9 @@ CREATE INDEX "transaction_investmentId_idx" ON "transactions"("investment_id");
 
 -- CreateIndex
 CREATE INDEX "transaction_entityId_idx" ON "transactions"("entity_id");
+
+-- CreateIndex
+CREATE INDEX "transaction_eventId_idx" ON "transactions"("event_id");
 
 -- CreateIndex
 CREATE INDEX "transaction_currencyId_idx" ON "transactions"("currency_id");
@@ -473,6 +497,21 @@ CREATE INDEX "tag_name_idx" ON "tags"("name");
 -- CreateIndex
 CREATE UNIQUE INDEX "tags_user_id_name_key" ON "tags"("user_id", "name");
 
+-- CreateIndex
+CREATE INDEX "event_userId_idx" ON "events"("user_id");
+
+-- CreateIndex
+CREATE INDEX "event_name_idx" ON "events"("name");
+
+-- CreateIndex
+CREATE INDEX "event_startAt_idx" ON "events"("start_at");
+
+-- CreateIndex
+CREATE INDEX "event_endAt_idx" ON "events"("end_at");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "events_user_id_name_key" ON "events"("user_id", "name");
+
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_base_currency_id_fkey" FOREIGN KEY ("base_currency_id") REFERENCES "currencies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -510,13 +549,16 @@ ALTER TABLE "transactions" ADD CONSTRAINT "transactions_account_id_fkey" FOREIGN
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_to_account_id_fkey" FOREIGN KEY ("to_account_id") REFERENCES "accounts"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "transactions" ADD CONSTRAINT "transactions_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_investment_id_fkey" FOREIGN KEY ("investment_id") REFERENCES "investments"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_entity_id_fkey" FOREIGN KEY ("entity_id") REFERENCES "entities"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "events"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "budgets" ADD CONSTRAINT "budgets_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -592,3 +634,6 @@ ALTER TABLE "holdings" ADD CONSTRAINT "holdings_investment_id_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "tags" ADD CONSTRAINT "tags_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "events" ADD CONSTRAINT "events_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

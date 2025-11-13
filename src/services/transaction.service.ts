@@ -7,6 +7,7 @@ import type {
 import { prisma } from '@server/libs/db';
 import Decimal from 'decimal.js';
 import { Elysia } from 'elysia';
+import { CATEGORY_NAME } from '../constants/category';
 import { ErrorCode, throwAppError } from '../constants/error';
 import type {
   BatchTransactionsResponse,
@@ -198,7 +199,7 @@ const formatTransactionRecord = (
   ...transaction,
   toAccountId: transaction.toAccountId ?? null,
   transferGroupId: transaction.transferGroupId ?? null,
-  categoryId: transaction.categoryId ?? null,
+  categoryId: transaction.categoryId,
   entityId: transaction.entityId ?? null,
   investmentId: transaction.investmentId ?? null,
   eventId: transaction.eventId ?? null,
@@ -355,10 +356,15 @@ class TransactionHandlerFactory {
 
       case TransactionType.transfer: {
         const transferData = data as ITransferTransaction;
+        const categoryService = new CategoryService();
+        const transferCategoryId = categoryService.getCategoryId(
+          userId,
+          CATEGORY_NAME.TRANSFER,
+        );
         return {
           ...baseData,
           toAccountId: transferData.toAccountId,
-          categoryId: null,
+          categoryId: transferCategoryId,
           entityId: null,
           price: null,
           priceInBaseCurrency: null,
@@ -496,6 +502,11 @@ class TransactionHandlerFactory {
       ? new Decimal(data.toAmount)
       : undefined;
     const groupId = crypto.randomUUID();
+    const categoryService = new CategoryService();
+    const transferCategoryId = categoryService.getCategoryId(
+      userId,
+      CATEGORY_NAME.TRANSFER,
+    );
 
     return prisma.$transaction(async (tx: PrismaTx) => {
       await this.balanceService.applyTransactionBalance(
@@ -518,6 +529,7 @@ class TransactionHandlerFactory {
           accountId: fromAccount.id,
           toAccountId: toAccount.id,
           type: TransactionType.transfer,
+          categoryId: transferCategoryId,
           amount: amountDecimal.toNumber(),
           currencyId,
           fee: feeDecimal.toNumber(),
@@ -548,6 +560,7 @@ class TransactionHandlerFactory {
           accountId: toAccount.id,
           toAccountId: fromAccount.id,
           type: TransactionType.transfer,
+          categoryId: transferCategoryId,
           amount: amountInToCurrency.toNumber(),
           currencyId: toAccount.currencyId,
           fee: 0,
@@ -596,6 +609,11 @@ class TransactionHandlerFactory {
       : undefined;
 
     const groupId = existing.transferGroupId ?? crypto.randomUUID();
+    const categoryService = new CategoryService();
+    const transferCategoryId = categoryService.getCategoryId(
+      userId,
+      CATEGORY_NAME.TRANSFER,
+    );
 
     // Get existing mirror to get original toAmount for revert
     const existingMirrorForRevert = existing.transferGroupId
@@ -651,6 +669,7 @@ class TransactionHandlerFactory {
           accountId: fromAccount.id,
           toAccountId: toAccount.id,
           type: TransactionType.transfer,
+          categoryId: transferCategoryId,
           amount: amountDecimal.toNumber(),
           currencyId,
           fee: feeDecimal.toNumber(),
@@ -692,6 +711,7 @@ class TransactionHandlerFactory {
           data: {
             accountId: toAccount.id,
             toAccountId: fromAccount.id,
+            categoryId: transferCategoryId,
             amount: amountInToCurrency.toNumber(),
             currencyId: toAccount.currencyId,
             fee: 0,
@@ -711,6 +731,7 @@ class TransactionHandlerFactory {
             accountId: toAccount.id,
             toAccountId: fromAccount.id,
             type: TransactionType.transfer,
+            categoryId: transferCategoryId,
             amount: amountInToCurrency.toNumber(),
             currencyId: toAccount.currencyId,
             fee: 0,
