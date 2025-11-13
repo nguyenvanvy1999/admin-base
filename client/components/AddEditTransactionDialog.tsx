@@ -72,7 +72,11 @@ const AddEditTransactionDialog = ({
       ? TransactionType.income
       : transaction?.type === TransactionType.transfer
         ? TransactionType.transfer
-        : TransactionType.expense,
+        : transaction?.type === TransactionType.loan_given
+          ? TransactionType.loan_given
+          : transaction?.type === TransactionType.loan_received
+            ? TransactionType.loan_received
+            : TransactionType.expense,
   );
   const [_saveAndAdd, setSaveAndAdd] = useState(false);
   const [feeEnabled, setFeeEnabled] = useState(false);
@@ -84,15 +88,33 @@ const AddEditTransactionDialog = ({
   const transactionType = useMemo(() => {
     if (activeTab === TransactionType.income) return TransactionType.income;
     if (activeTab === TransactionType.transfer) return TransactionType.transfer;
+    if (activeTab === TransactionType.loan_given)
+      return TransactionType.loan_given;
+    if (activeTab === TransactionType.loan_received)
+      return TransactionType.loan_received;
     return TransactionType.expense;
   }, [activeTab]);
 
+  const isLoanType = useMemo(() => {
+    return (
+      transactionType === TransactionType.loan_given ||
+      transactionType === TransactionType.loan_received
+    );
+  }, [transactionType]);
+
+  const categoryType = useMemo(() => {
+    if (isLoanType) return undefined;
+    if (transactionType === TransactionType.income) return 'income' as const;
+    if (transactionType === TransactionType.expense) return 'expense' as const;
+    return undefined;
+  }, [transactionType, isLoanType]);
+
   const flattenedCategories = useMemo(() => {
-    if (!categories || categories.length === 0) {
+    if (!categories || categories.length === 0 || !categoryType) {
       return [];
     }
-    return flattenCategories(categories, t, transactionType);
-  }, [categories, transactionType, t]);
+    return flattenCategories(categories, t, categoryType);
+  }, [categories, categoryType, t]);
 
   const entityOptions = useMemo(() => {
     return entities.map((entity) => ({
@@ -227,7 +249,11 @@ const AddEditTransactionDialog = ({
         ? TransactionType.income
         : transaction?.type === TransactionType.transfer
           ? TransactionType.transfer
-          : TransactionType.expense,
+          : transaction?.type === TransactionType.loan_given
+            ? TransactionType.loan_given
+            : transaction?.type === TransactionType.loan_received
+              ? TransactionType.loan_received
+              : TransactionType.expense,
     );
     setFeeEnabled(false);
     onClose();
@@ -309,6 +335,18 @@ const AddEditTransactionDialog = ({
           type: transactionType,
           categoryId: data.categoryId || '',
         } as IUpsertTransaction;
+      } else if (
+        transactionType === TransactionType.loan_given ||
+        transactionType === TransactionType.loan_received
+      ) {
+        if (!data.entityId) {
+          return;
+        }
+        submitData = {
+          ...baseData,
+          type: transactionType,
+          entityId: data.entityId,
+        } as IUpsertTransaction;
       } else {
         submitData = {
           ...baseData,
@@ -369,6 +407,14 @@ const AddEditTransactionDialog = ({
               </Tabs.Tab>
               <Tabs.Tab value={TransactionType.transfer}>
                 {t('transactions.transfer')}
+              </Tabs.Tab>
+              <Tabs.Tab value={TransactionType.loan_given}>
+                {t('transactions.loanGiven', { defaultValue: 'Loan Given' })}
+              </Tabs.Tab>
+              <Tabs.Tab value={TransactionType.loan_received}>
+                {t('transactions.loanReceived', {
+                  defaultValue: 'Loan Received',
+                })}
               </Tabs.Tab>
               <Tabs.Tab value="adjust_balance" disabled>
                 {t('transactions.adjustBalance')}
@@ -510,26 +556,28 @@ const AddEditTransactionDialog = ({
                 )}
               />
 
-              <ZodFormController
-                control={control}
-                name="entityId"
-                render={({ field, fieldState: { error } }) => (
-                  <Select
-                    label={t('transactions.spendFor')}
-                    placeholder={t('transactions.spendForPlaceholder')}
-                    error={error}
-                    items={entityOptions}
-                    value={field.value || null}
-                    onChange={(value) => field.onChange(value || null)}
-                    searchable
-                    clearable
-                  />
-                )}
-              />
+              {!isLoanType && (
+                <ZodFormController
+                  control={control}
+                  name="entityId"
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      label={t('transactions.spendFor')}
+                      placeholder={t('transactions.spendForPlaceholder')}
+                      error={error}
+                      items={entityOptions}
+                      value={field.value || null}
+                      onChange={(value) => field.onChange(value || null)}
+                      searchable
+                      clearable
+                    />
+                  )}
+                />
+              )}
             </div>
 
             <div className="space-y-4">
-              {transactionType !== TransactionType.transfer && (
+              {transactionType !== TransactionType.transfer && !isLoanType && (
                 <ZodFormController
                   control={control}
                   name="categoryId"
@@ -544,7 +592,7 @@ const AddEditTransactionDialog = ({
                           field.onChange(value ?? '');
                         }}
                         error={error ? String(error) : undefined}
-                        filterType={transactionType}
+                        filterType={categoryType}
                         searchable
                         categories={categories}
                       />
@@ -588,6 +636,27 @@ const AddEditTransactionDialog = ({
                 />
               )}
 
+              {isLoanType && (
+                <ZodFormController
+                  control={control}
+                  name="entityId"
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      label={t('transactions.entity')}
+                      placeholder={t('transactions.selectEntity', {
+                        defaultValue: 'Select entity',
+                      })}
+                      required
+                      error={error}
+                      items={entityOptions}
+                      value={field.value || null}
+                      onChange={(value) => field.onChange(value || null)}
+                      searchable
+                    />
+                  )}
+                />
+              )}
+
               <ZodFormController
                 control={control}
                 name="note"
@@ -602,7 +671,7 @@ const AddEditTransactionDialog = ({
                 )}
               />
 
-              {transactionType !== TransactionType.transfer && (
+              {transactionType !== TransactionType.transfer && !isLoanType && (
                 <ZodFormController
                   control={control}
                   name="borrowToPay"

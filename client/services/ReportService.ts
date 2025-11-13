@@ -199,6 +199,63 @@ export interface InvestmentContributionsDetailedResponse {
   };
 }
 
+export interface EntityDebt {
+  entityId: string;
+  entityName: string;
+  totalLoanGiven: number;
+  totalLoanReceived: number;
+  netDebt: number;
+  currencyId: string;
+  currency: {
+    id: string;
+    code: string;
+    name: string;
+    symbol: string | null;
+  };
+  transactionCount: number;
+}
+
+export interface LoanHistoryItem {
+  id: string;
+  date: string;
+  type: string;
+  amount: number;
+  currencyId: string;
+  currency: {
+    id: string;
+    code: string;
+    name: string;
+    symbol: string | null;
+  };
+  entityId: string;
+  entityName: string;
+  accountId: string;
+  accountName: string;
+  note: string | null;
+}
+
+export interface DebtTimeSeries {
+  date: string;
+  totalLoanGiven: number;
+  totalLoanReceived: number;
+  netDebt: number;
+  cumulativeNetDebt: number;
+  transactionCount: number;
+}
+
+export interface DebtStatisticsResponse {
+  entityDebts: EntityDebt[];
+  loanHistory: LoanHistoryItem[];
+  timeSeries: DebtTimeSeries[];
+  summary: {
+    totalLoanGiven: number;
+    totalLoanReceived: number;
+    netDebt: number;
+    totalTransactions: number;
+    entityCount: number;
+  };
+}
+
 export class ReportService extends ServiceBase {
   constructor() {
     super('/api/reports');
@@ -296,6 +353,18 @@ export class ReportService extends ServiceBase {
   }): Promise<InvestmentContributionsDetailedResponse> {
     return this.get<InvestmentContributionsDetailedResponse>({
       endpoint: 'investments/contributions-detailed',
+      params: query,
+    });
+  }
+
+  getDebtStatistics(query?: {
+    dateFrom?: string;
+    dateTo?: string;
+    groupBy?: 'day' | 'week' | 'month' | 'year';
+    entityId?: string;
+  }): Promise<DebtStatisticsResponse> {
+    return this.get<DebtStatisticsResponse>({
+      endpoint: 'debt-statistics',
       params: query,
     });
   }

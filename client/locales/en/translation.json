@@ -129,7 +129,10 @@
     "events": "Events",
     "tags": "Tags",
     "rules": "Rules",
-    "statistics": "Statistics"
+    "statistics": "Statistics",
+    "incomeExpenseStatistics": "Income/Expense",
+    "investmentStatistics": "Investment",
+    "debtStatistics": "Debt"
   },
   "notFound": {
     "title": "Page Not Found",
@@ -417,7 +420,44 @@
     "totalExpense": "Total Expense",
     "amountFrom": "Amount From",
     "amountTo": "Amount To",
-    "transferTo": "Transfer To"
+    "transferTo": "Transfer To",
+    "entity": "Entity",
+    "selectEntity": "Select entity"
+  },
+  "statistics": {
+    "incomeExpense": {
+      "title": "Income & Expense Statistics",
+      "description": "Detailed analysis of your income and expenses"
+    },
+    "investment": {
+      "title": "Investment Statistics",
+      "description": "Detailed analysis of your investments"
+    },
+    "debt": {
+      "title": "Debt Statistics",
+      "description": "Track and analyze your loans and debts",
+      "totalLoanGiven": "Total Loan Given",
+      "totalLoanReceived": "Total Loan Received",
+      "netDebt": "Net Debt",
+      "entityDebts": "Entity Debts",
+      "loanHistory": "Loan History",
+      "timeSeries": "Debt Over Time",
+      "entityName": "Entity",
+      "totalGiven": "Total Given",
+      "totalReceived": "Total Received",
+      "netBalance": "Net Balance",
+      "transactionCount": "Transactions",
+      "date": "Date",
+      "type": "Type",
+      "amount": "Amount",
+      "account": "Account",
+      "note": "Note",
+      "filterByEntity": "Filter by Entity",
+      "selectEntity": "Select entity",
+      "entityCount": "Total Entities"
+    },
+    "filterByAccount": "Filter by Account",
+    "selectAccount": "Select account"
   },
   "investments": {
     "name": "Name",

@@ -129,7 +129,10 @@
     "events": "Sự kiện",
     "tags": "Thẻ",
     "rules": "Quy tắc",
-    "statistics": "Thống kê"
+    "statistics": "Thống kê",
+    "incomeExpenseStatistics": "Thu Chi",
+    "investmentStatistics": "Đầu tư",
+    "debtStatistics": "Vay nợ"
   },
   "notFound": {
     "title": "Không tìm thấy trang",
@@ -417,7 +420,44 @@
     "totalExpense": "Tổng chi",
     "amountFrom": "Số tiền đi",
     "amountTo": "Số tiền đến",
-    "transferTo": "Chuyển đến"
+    "transferTo": "Chuyển đến",
+    "entity": "Đối tượng",
+    "selectEntity": "Chọn đối tượng"
+  },
+  "statistics": {
+    "incomeExpense": {
+      "title": "Thống kê Thu Chi",
+      "description": "Phân tích chi tiết về thu nhập và chi tiêu của bạn"
+    },
+    "investment": {
+      "title": "Thống kê Đầu tư",
+      "description": "Phân tích chi tiết về các khoản đầu tư của bạn"
+    },
+    "debt": {
+      "title": "Thống kê Vay nợ",
+      "description": "Theo dõi và phân tích các khoản vay nợ của bạn",
+      "totalLoanGiven": "Tổng Cho vay",
+      "totalLoanReceived": "Tổng Nhận vay",
+      "netDebt": "Nợ ròng",
+      "entityDebts": "Nợ theo Đối tượng",
+      "loanHistory": "Lịch sử Vay nợ",
+      "timeSeries": "Nợ theo Thời gian",
+      "entityName": "Đối tượng",
+      "totalGiven": "Tổng Cho",
+      "totalReceived": "Tổng Nhận",
+      "netBalance": "Số dư ròng",
+      "transactionCount": "Giao dịch",
+      "date": "Ngày",
+      "type": "Loại",
+      "amount": "Số tiền",
+      "account": "Tài khoản",
+      "note": "Ghi chú",
+      "filterByEntity": "Lọc theo Đối tượng",
+      "selectEntity": "Chọn đối tượng",
+      "entityCount": "Tổng Đối tượng"
+    },
+    "filterByAccount": "Lọc theo Tài khoản",
+    "selectAccount": "Chọn tài khoản"
   },
   "investments": {
     "name": "Tên",

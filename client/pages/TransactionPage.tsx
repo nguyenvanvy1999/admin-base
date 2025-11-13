@@ -242,6 +242,18 @@ const TransactionPage = () => {
                       value: TransactionType.transfer,
                       label: t('transactions.transfer'),
                     },
+                    {
+                      value: TransactionType.loan_given,
+                      label: t('transactions.loanGiven', {
+                        defaultValue: 'Loan Given',
+                      }),
+                    },
+                    {
+                      value: TransactionType.loan_received,
+                      label: t('transactions.loanReceived', {
+                        defaultValue: 'Loan Received',
+                      }),
+                    },
                   ]}
                   value={field.value || []}
                   onChange={(value) =>

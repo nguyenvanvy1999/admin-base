@@ -1,6 +1,8 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { Elysia } from 'elysia';
 import {
+  DebtStatisticsQueryDto,
+  DebtStatisticsResponseDto,
   IncomeExpenseDetailedQueryDto,
   IncomeExpenseDetailedResponseDto,
   InvestmentContributionsDetailedQueryDto,
@@ -179,6 +181,25 @@ const reportController = new Elysia().group('/reports', (group) =>
         query: InvestmentContributionsDetailedQueryDto,
         response: {
           200: InvestmentContributionsDetailedResponseDto,
+        },
+      },
+    )
+    .get(
+      '/debt-statistics',
+      ({ user, query, reportService }) => {
+        return reportService.getDebtStatistics(user.id, query);
+      },
+      {
+        checkAuth: [UserRole.user],
+        detail: {
+          ...REPORT_DETAIL,
+          summary: 'Get debt statistics',
+          description:
+            'Return debt statistics including entity debts, loan history, and time series data.',
+        },
+        query: DebtStatisticsQueryDto,
+        response: {
+          200: DebtStatisticsResponseDto,
         },
       },
     ),

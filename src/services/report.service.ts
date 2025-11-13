@@ -4,6 +4,8 @@ import { logger } from '@server/libs/logger';
 import { Elysia } from 'elysia';
 import { ErrorCode, throwAppError } from '../constants/error';
 import type {
+  DebtStatisticsResponse,
+  IDebtStatisticsQueryDto,
   IIncomeExpenseDetailedQueryDto,
   IInvestmentContributionsDetailedQueryDto,
   IInvestmentFeesDetailedQueryDto,
@@ -1618,6 +1620,230 @@ export class ReportService {
         totalDeposits: Number(totalDeposits.toFixed(2)),
         totalWithdrawals: Number(totalWithdrawals.toFixed(2)),
         netContributions: Number((totalDeposits - totalWithdrawals).toFixed(2)),
+      },
+    };
+  }
+
+  async getDebtStatistics(
+    userId: string,
+    query: IDebtStatisticsQueryDto,
+  ): Promise<DebtStatisticsResponse> {
+    const groupBy = query.groupBy || 'month';
+
+    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
+    const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
+
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        userId,
+        deletedAt: null,
+        type: {
+          in: [TransactionType.loan_given, TransactionType.loan_received],
+        },
+        ...(dateFrom || dateTo
+          ? {
+              date: {
+                ...(dateFrom ? { gte: dateFrom } : {}),
+                ...(dateTo ? { lte: dateTo } : {}),
+              },
+            }
+          : {}),
+        ...(query.entityId ? { entityId: query.entityId } : {}),
+      },
+      select: {
+        id: true,
+        type: true,
+        amount: true,
+        currencyId: true,
+        date: true,
+        entityId: true,
+        accountId: true,
+        note: true,
+        entity: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        account: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        currency: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            symbol: true,
+          },
+        },
+      },
+      orderBy: {
+        date: 'desc',
+      },
+    });
+
+    const entityDebtsMap = new Map<
+      string,
+      {
+        entityId: string;
+        entityName: string;
+        totalLoanGiven: number;
+        totalLoanReceived: number;
+        currencyId: string;
+        currency: {
+          id: string;
+          code: string;
+          name: string;
+          symbol: string | null;
+        };
+        transactionCount: number;
+      }
+    >();
+
+    const timeSeriesMap = new Map<
+      string,
+      {
+        totalLoanGiven: number;
+        totalLoanReceived: number;
+        transactionCount: number;
+      }
+    >();
+
+    let totalLoanGiven = 0;
+    let totalLoanReceived = 0;
+
+    for (const transaction of transactions) {
+      const amount = safeNumber(transaction.amount);
+      const currency = transaction.currency;
+
+      if (transaction.type === TransactionType.loan_given) {
+        totalLoanGiven += amount;
+      } else {
+        totalLoanReceived += amount;
+      }
+
+      if (transaction.entityId && transaction.entity) {
+        const entityKey = transaction.entityId;
+        if (!entityDebtsMap.has(entityKey)) {
+          entityDebtsMap.set(entityKey, {
+            entityId: transaction.entity.id,
+            entityName: transaction.entity.name,
+            totalLoanGiven: 0,
+            totalLoanReceived: 0,
+            currencyId: currency.id,
+            currency: {
+              id: currency.id,
+              code: currency.code,
+              name: currency.name,
+              symbol: currency.symbol,
+            },
+            transactionCount: 0,
+          });
+        }
+
+        const entityDebt = entityDebtsMap.get(entityKey)!;
+        entityDebt.transactionCount++;
+        if (transaction.type === TransactionType.loan_given) {
+          entityDebt.totalLoanGiven += amount;
+        } else {
+          entityDebt.totalLoanReceived += amount;
+        }
+      }
+
+      const date = new Date(transaction.date);
+      let dateKey: string;
+      if (groupBy === 'day') {
+        dateKey = date.toISOString().split('T')[0];
+      } else if (groupBy === 'week') {
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay());
+        dateKey = weekStart.toISOString().split('T')[0];
+      } else if (groupBy === 'year') {
+        dateKey = String(date.getFullYear());
+      } else {
+        dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      }
+
+      if (!timeSeriesMap.has(dateKey)) {
+        timeSeriesMap.set(dateKey, {
+          totalLoanGiven: 0,
+          totalLoanReceived: 0,
+          transactionCount: 0,
+        });
+      }
+
+      const timeStats = timeSeriesMap.get(dateKey)!;
+      timeStats.transactionCount++;
+      if (transaction.type === TransactionType.loan_given) {
+        timeStats.totalLoanGiven += amount;
+      } else {
+        timeStats.totalLoanReceived += amount;
+      }
+    }
+
+    const entityDebts = Array.from(entityDebtsMap.values()).map((debt) => ({
+      entityId: debt.entityId,
+      entityName: debt.entityName,
+      totalLoanGiven: Number(debt.totalLoanGiven.toFixed(2)),
+      totalLoanReceived: Number(debt.totalLoanReceived.toFixed(2)),
+      netDebt: Number(
+        (debt.totalLoanGiven - debt.totalLoanReceived).toFixed(2),
+      ),
+      currencyId: debt.currencyId,
+      currency: debt.currency,
+      transactionCount: debt.transactionCount,
+    }));
+
+    const loanHistory = transactions.map((tx) => ({
+      id: tx.id,
+      date: tx.date.toISOString(),
+      type: tx.type,
+      amount: Number(safeNumber(tx.amount).toFixed(2)),
+      currencyId: tx.currency.id,
+      currency: {
+        id: tx.currency.id,
+        code: tx.currency.code,
+        name: tx.currency.name,
+        symbol: tx.currency.symbol,
+      },
+      entityId: tx.entityId || '',
+      entityName: tx.entity?.name || '',
+      accountId: tx.accountId,
+      accountName: tx.account?.name || '',
+      note: tx.note,
+    }));
+
+    let cumulativeNetDebt = 0;
+    const timeSeries = Array.from(timeSeriesMap.entries())
+      .map(([date, data]) => {
+        const netDebt = data.totalLoanGiven - data.totalLoanReceived;
+        cumulativeNetDebt += netDebt;
+        return {
+          date,
+          totalLoanGiven: Number(data.totalLoanGiven.toFixed(2)),
+          totalLoanReceived: Number(data.totalLoanReceived.toFixed(2)),
+          netDebt: Number(netDebt.toFixed(2)),
+          cumulativeNetDebt: Number(cumulativeNetDebt.toFixed(2)),
+          transactionCount: data.transactionCount,
+        };
+      })
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    const netDebt = totalLoanGiven - totalLoanReceived;
+
+    return {
+      entityDebts,
+      loanHistory,
+      timeSeries,
+      summary: {
+        totalLoanGiven: Number(totalLoanGiven.toFixed(2)),
+        totalLoanReceived: Number(totalLoanReceived.toFixed(2)),
+        netDebt: Number(netDebt.toFixed(2)),
+        totalTransactions: transactions.length,
+        entityCount: entityDebts.length,
       },
     };
   }

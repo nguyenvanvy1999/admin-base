@@ -57,6 +57,13 @@ export const InvestmentContributionsDetailedQueryDto = z.object({
   investmentId: z.string().optional(),
 });
 
+export const DebtStatisticsQueryDto = z.object({
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  groupBy: z.enum(['day', 'week', 'month', 'year']).default('month').optional(),
+  entityId: z.string().optional(),
+});
+
 export type IReportSummaryQueryDto = z.infer<typeof ReportSummaryQueryDto>;
 export type IReportTransactionsQueryDto = z.infer<
   typeof ReportTransactionsQueryDto
@@ -79,6 +86,7 @@ export type IInvestmentFeesDetailedQueryDto = z.infer<
 export type IInvestmentContributionsDetailedQueryDto = z.infer<
   typeof InvestmentContributionsDetailedQueryDto
 >;
+export type IDebtStatisticsQueryDto = z.infer<typeof DebtStatisticsQueryDto>;
 
 export const ReportSummaryDto = t.NoValidate(
   t.Object({
@@ -339,3 +347,70 @@ export type InvestmentFeesDetailedResponse =
   typeof InvestmentFeesDetailedResponseDto.static;
 export type InvestmentContributionsDetailedResponse =
   typeof InvestmentContributionsDetailedResponseDto.static;
+
+export const EntityDebtDto = t.NoValidate(
+  t.Object({
+    entityId: t.String(),
+    entityName: t.String(),
+    totalLoanGiven: t.Number(),
+    totalLoanReceived: t.Number(),
+    netDebt: t.Number(),
+    currencyId: t.String(),
+    currency: t.Object({
+      id: t.String(),
+      code: t.String(),
+      name: t.String(),
+      symbol: t.Nullable(t.String()),
+    }),
+    transactionCount: t.Integer(),
+  }),
+);
+
+export const LoanHistoryItemDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    date: t.String(),
+    type: t.String(),
+    amount: t.Number(),
+    currencyId: t.String(),
+    currency: t.Object({
+      id: t.String(),
+      code: t.String(),
+      name: t.String(),
+      symbol: t.Nullable(t.String()),
+    }),
+    entityId: t.String(),
+    entityName: t.String(),
+    accountId: t.String(),
+    accountName: t.String(),
+    note: t.Nullable(t.String()),
+  }),
+);
+
+export const DebtTimeSeriesDto = t.NoValidate(
+  t.Object({
+    date: t.String(),
+    totalLoanGiven: t.Number(),
+    totalLoanReceived: t.Number(),
+    netDebt: t.Number(),
+    cumulativeNetDebt: t.Number(),
+    transactionCount: t.Integer(),
+  }),
+);
+
+export const DebtStatisticsResponseDto = t.NoValidate(
+  t.Object({
+    entityDebts: t.Array(EntityDebtDto),
+    loanHistory: t.Array(LoanHistoryItemDto),
+    timeSeries: t.Array(DebtTimeSeriesDto),
+    summary: t.Object({
+      totalLoanGiven: t.Number(),
+      totalLoanReceived: t.Number(),
+      netDebt: t.Number(),
+      totalTransactions: t.Integer(),
+      entityCount: t.Integer(),
+    }),
+  }),
+);
+
+export type DebtStatisticsResponse = typeof DebtStatisticsResponseDto.static;

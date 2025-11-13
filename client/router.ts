@@ -3,6 +3,7 @@ import { createHashRouter } from 'react-router';
 import ProtectedPageLayout from './layouts';
 import AccountPage from './pages/AccountPage';
 import CategoryPage from './pages/CategoryPage';
+import DebtStatisticsPage from './pages/DebtStatisticsPage';
 import EntityPage from './pages/EntityPage';
 import EventPage from './pages/EventPage';
 import HomePage from './pages/HomePage';
@@ -81,6 +82,10 @@ const router = createHashRouter([
       {
         path: '/statistics/investments',
         Component: InvestmentStatisticsPage,
+      },
+      {
+        path: '/statistics/debts',
+        Component: DebtStatisticsPage,
       },
       {
         path: '/statistics',

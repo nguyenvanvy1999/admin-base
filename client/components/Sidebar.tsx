@@ -297,6 +297,18 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
                         })}
                       </span>
                     </NavLink>
+
+                    <NavLink
+                      to="/statistics/debts"
+                      className={({ isActive }) => menuItemClass(isActive)}
+                    >
+                      <CreditCard className={iconClass} />
+                      <span className="ml-3">
+                        {t('sidebar.debtStatistics', {
+                          defaultValue: 'Debt',
+                        })}
+                      </span>
+                    </NavLink>
                   </div>
                 )}
               </div>
