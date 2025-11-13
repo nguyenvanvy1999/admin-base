@@ -28,7 +28,9 @@ export type AppAuthMeta = {
   resolve: Record<string, unknown>;
 };
 
+import type { PrismaClient } from '@server/generated/prisma/client';
+
 export type PrismaTx = Omit<
-  typeof import('@server/generated/prisma').PrismaClient,
+  PrismaClient,
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'
 >;

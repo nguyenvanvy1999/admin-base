@@ -9,6 +9,3 @@ export const PERMISSIONS = {
     REVOKE: 'SESSION.REVOKE',
   },
 } as const;
-
-export type UPermission =
-  (typeof PERMISSIONS)[keyof typeof PERMISSIONS][keyof (typeof PERMISSIONS)[keyof typeof PERMISSIONS]];

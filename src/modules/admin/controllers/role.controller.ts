@@ -1,16 +1,10 @@
-import type { Prisma } from '@server/generated/prisma';
+import type { Prisma } from '@server/generated/prisma/client';
 import { prisma } from '@server/libs/db';
 import { allOf, authorize, has } from '@server/service/auth/authorization';
-import { castToRes, ErrCode } from '@server/share';
+import { castToRes, ErrCode, ResWrapper } from '@server/share';
 import type { AppAuthMeta } from '@server/share/type';
 import { Elysia, t } from 'elysia';
 import { PaginateRoleResDto, RolePaginationDto, UpsertRoleDto } from '../dtos';
-
-function ResWrapper<T>(schema: T): T {
-  return t.Object({
-    data: schema as any,
-  }) as T;
-}
 
 export const roleController = new Elysia<'roles', AppAuthMeta>({
   prefix: 'roles',

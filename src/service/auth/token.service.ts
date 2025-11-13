@@ -2,7 +2,6 @@ import { appEnv, type IEnv } from '@server/libs/env';
 import { BadReqErr, ErrCode } from '@server/share';
 import type { ITokenPayload } from '@server/share/type';
 import dayjs from 'dayjs';
-import { seconds } from 'itty-time';
 import { type JWTPayload, jwtVerify, SignJWT } from 'jose';
 import { EncryptService } from './encrypt.service';
 

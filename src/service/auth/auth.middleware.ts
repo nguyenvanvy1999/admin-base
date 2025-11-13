@@ -24,7 +24,6 @@ export const authCheck = (app: Elysia) =>
     const token = authorization.slice(AUTH_HEADER.length + 1);
 
     const { data } = await tokenService.verifyAccessToken(token);
-    let currentUser: ICurrentUser;
 
     const session = await prisma.session.findUnique({
       where: { id: data.sessionId },
@@ -49,7 +48,7 @@ export const authCheck = (app: Elysia) =>
       throw new NotFoundErr(ErrCode.UserNotFound);
     }
 
-    currentUser = {
+    const currentUser: ICurrentUser = {
       id: user.id,
       sessionId: data.sessionId,
       username: user.username,

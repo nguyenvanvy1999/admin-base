@@ -1,4 +1,4 @@
-import type { Prisma } from '@server/generated/prisma';
+import type { Prisma } from '@server/generated/prisma/client';
 import { prisma } from '@server/libs/db';
 
 export interface IDb {

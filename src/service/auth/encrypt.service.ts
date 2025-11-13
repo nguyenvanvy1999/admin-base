@@ -1,5 +1,4 @@
 import { createCipheriv, createDecipheriv } from 'node:crypto';
-import { appEnv } from '@server/libs/env';
 
 const algorithm = 'aes-256-cbc';
 

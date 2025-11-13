@@ -1,5 +1,6 @@
 import { logger } from '@server/libs/logger';
 import { ErrCode, UnAuthErr } from '@server/share';
+import type { AppAuthMeta } from '@server/share/type';
 import { Elysia } from 'elysia';
 import type { AuthorizeOptions, Policy, PolicyCtx } from './policy-types';
 
@@ -7,7 +8,7 @@ export function authorize<TResource>(
   policy: Policy<TResource>,
   options?: AuthorizeOptions<TResource>,
 ) {
-  return new Elysia()
+  return new Elysia<'', AppAuthMeta>()
     .derive(
       { as: 'scoped' },
       async (req): Promise<Partial<PolicyCtx<TResource>>> => {
