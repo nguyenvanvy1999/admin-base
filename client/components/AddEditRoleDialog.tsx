@@ -1,4 +1,5 @@
 import { usePermissionsQuery } from '@client/hooks/queries/usePermissionQueries';
+import { usePermission } from '@client/hooks/usePermission';
 import { useZodForm } from '@client/hooks/useZodForm';
 import { userService } from '@client/services';
 import {
@@ -49,7 +50,12 @@ const AddEditRoleDialog = ({
   resetTrigger = 0,
 }: AddEditRoleDialogProps) => {
   const { t } = useTranslation();
-  const { data: permissionsData } = usePermissionsQuery();
+  const { hasPermission } = usePermission();
+  const canView = hasPermission('ROLE.VIEW');
+  const { data: permissionsData } = usePermissionsQuery({
+    enabled: canView,
+    retry: false,
+  });
   const { data: usersData } = useQuery({
     queryKey: ['admin-users-all'],
     queryFn: () => userService.listUsers({ page: 1, limit: 1000 }),

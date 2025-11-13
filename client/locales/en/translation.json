@@ -759,5 +759,20 @@
     "deleteConfirmMessage": "Are you sure you want to delete this role?",
     "deleteManyConfirmTitle": "Delete Multiple Roles",
     "deleteManyConfirmMessage": "Are you sure you want to delete {{count}} role(s)?"
+  },
+  "permissions": {
+    "title": "Permissions",
+    "subtitle": "View all permissions in the system",
+    "permissionTitle": "Permission",
+    "category": "Category",
+    "description": "Description",
+    "search": "Search permissions...",
+    "noPermissions": "No permissions found",
+    "categories": {
+      "USER": "User",
+      "ROLE": "Role",
+      "SESSION": "Session",
+      "ADMIN": "Admin"
+    }
   }
 }

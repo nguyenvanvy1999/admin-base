@@ -759,5 +759,20 @@
     "deleteConfirmMessage": "Bạn có chắc chắn muốn xóa vai trò này?",
     "deleteManyConfirmTitle": "Xóa nhiều vai trò",
     "deleteManyConfirmMessage": "Bạn có chắc chắn muốn xóa {{count}} vai trò?"
+  },
+  "permissions": {
+    "title": "Quyền",
+    "subtitle": "Xem tất cả các quyền trong hệ thống",
+    "permissionTitle": "Quyền",
+    "category": "Phân loại",
+    "description": "Ý nghĩa",
+    "search": "Tìm kiếm quyền...",
+    "noPermissions": "Không tìm thấy quyền nào",
+    "categories": {
+      "USER": "Người dùng",
+      "ROLE": "Vai trò",
+      "SESSION": "Phiên",
+      "ADMIN": "Quản trị"
+    }
   }
 }
