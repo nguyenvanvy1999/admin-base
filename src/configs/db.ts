@@ -19,3 +19,6 @@ export const prisma = new PrismaClient({
 });
 
 prisma.$on('error', (err) => logger.error('Prisma database error', { err }));
+
+export type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+export type IDb = typeof prisma;

@@ -1,3 +1,4 @@
+import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import {
   ContributionType,
@@ -5,7 +6,6 @@ import {
   TradeSide,
 } from '@server/generated/prisma/enums';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import type { IDb } from '@server/share/type';
 import Elysia from 'elysia';
 import type { InvestmentPositionResponse } from '../dto/investment.dto';
 import {
@@ -130,8 +130,7 @@ export class InvestmentPositionService {
         const averageCostInBase =
           costBasisInBaseCurrency / totalQuantityBeforeSell;
         const costOfSoldInBase = averageCostInBase * tradeQuantity;
-        const proceedsInBase = tradeAmountInBase;
-        realizedPnlInBaseCurrency += proceedsInBase - costOfSoldInBase;
+        realizedPnlInBaseCurrency += tradeAmountInBase - costOfSoldInBase;
         costBasisInBaseCurrency -= costOfSoldInBase;
       } else if (tradeAmountInBase !== null) {
         realizedPnlInBaseCurrency += tradeAmountInBase;
@@ -163,9 +162,7 @@ export class InvestmentPositionService {
       : null;
 
     const exchangeRateGainLoss =
-      currentExchangeRate !== null &&
-      realizedPnl !== undefined &&
-      realizedPnlInBaseCurrency !== undefined
+      currentExchangeRate !== null
         ? Number(
             (
               realizedPnlInBaseCurrency -
@@ -276,14 +273,12 @@ export class InvestmentPositionService {
         : 0;
 
     const unrealizedPnlInBaseCurrency =
-      currentValueInBase !== null && costBasisInBaseCurrency !== null
+      currentValueInBase !== null
         ? Number((currentValueInBase - costBasisInBaseCurrency).toFixed(2))
         : undefined;
 
     const exchangeRateGainLoss =
-      currentExchangeRate !== null &&
-      realizedPnl !== undefined &&
-      realizedPnlInBaseCurrency !== undefined
+      currentExchangeRate !== null
         ? Number(
             (
               realizedPnlInBaseCurrency -

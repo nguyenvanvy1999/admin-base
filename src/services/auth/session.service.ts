@@ -1,8 +1,7 @@
 import { currentUserCache } from '@server/configs/cache';
-import { prisma } from '@server/configs/db';
+import { type IDb, prisma } from '@server/configs/db';
 import type { ISessionQueryDto } from '@server/dto/admin/session.dto';
 import type { Prisma } from '@server/generated/prisma/client';
-import type { IDb } from '@server/share';
 
 export class SessionService {
   constructor(private readonly deps: { db: IDb } = { db: prisma }) {}

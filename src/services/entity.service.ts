@@ -1,3 +1,4 @@
+import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
 import type {
@@ -5,7 +6,6 @@ import type {
   EntityWhereInput,
 } from '@server/generated/prisma/models/Entity';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import type { IDb } from '@server/share/type';
 import { Elysia } from 'elysia';
 import type {
   IListEntitiesQueryDto,

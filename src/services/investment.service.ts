@@ -1,3 +1,4 @@
+import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import {
   type InvestmentAssetType,
@@ -5,7 +6,6 @@ import {
 } from '@server/generated/prisma/enums';
 import type { InvestmentWhereInput } from '@server/generated/prisma/models/Investment';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import type { IDb } from '@server/share/type';
 import { Elysia } from 'elysia';
 import type {
   IListInvestmentsQueryDto,

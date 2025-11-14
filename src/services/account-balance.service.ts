@@ -1,18 +1,16 @@
-import { prisma } from '@server/configs/db';
+import type { IDb } from '@server/configs/db';
+import { type PrismaTx, prisma } from '@server/configs/db';
 import {
   ContributionType,
   TradeSide,
   TransactionType,
 } from '@server/generated/prisma/enums';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import type { IDb } from '@server/share/type';
 import Decimal from 'decimal.js';
 import {
   type CurrencyConversionService,
   currencyConversionServiceInstance,
 } from './currency-conversion.service';
-
-type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 export class AccountBalanceService {
   constructor(

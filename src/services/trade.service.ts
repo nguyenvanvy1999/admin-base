@@ -1,9 +1,9 @@
+import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
 import type { TradeSide } from '@server/generated/prisma/enums';
 import type { InvestmentTradeWhereInput } from '@server/generated/prisma/models';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import type { IDb } from '@server/share/type';
 import { Elysia } from 'elysia';
 import type {
   ICreateInvestmentTradeDto,

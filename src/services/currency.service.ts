@@ -1,5 +1,5 @@
+import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type { IDb } from '@server/share/type';
 import { Elysia } from 'elysia';
 
 export class CurrencyService {

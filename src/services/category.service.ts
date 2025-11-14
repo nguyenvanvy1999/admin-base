@@ -1,3 +1,4 @@
+import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { CategoryType } from '@server/generated/prisma/enums';
 import type { CategoryWhereInput } from '@server/generated/prisma/models/Category';
@@ -12,7 +13,6 @@ import {
   TRANSFER_CATEGORY,
 } from '@server/share/constants/category';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import type { IDb } from '@server/share/type';
 import { Elysia } from 'elysia';
 import type {
   CategoryListResponse,

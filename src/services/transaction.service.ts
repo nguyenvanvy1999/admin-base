@@ -1,4 +1,5 @@
-import { prisma } from '@server/configs/db';
+import type { IDb } from '@server/configs/db';
+import { type PrismaTx, prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
 import { TransactionType } from '@server/generated/prisma/enums';
 import type {
@@ -7,7 +8,6 @@ import type {
 } from '@server/generated/prisma/models/Transaction';
 import { CATEGORY_NAME } from '@server/share/constants/category';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import type { IDb } from '@server/share/type';
 import {
   dateToIsoString,
   dateToNullableIsoString,
@@ -37,11 +37,8 @@ import {
   type CurrencyConversionService,
   currencyConversionServiceInstance,
 } from './currency-conversion.service';
-import { CURRENCY_SELECT_BASIC } from './selects';
-
-type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
-
 import {
+  CURRENCY_SELECT_BASIC,
   TRANSACTION_SELECT_FOR_BALANCE,
   TRANSACTION_SELECT_FULL,
   TRANSACTION_SELECT_MINIMAL,

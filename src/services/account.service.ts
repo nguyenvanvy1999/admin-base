@@ -1,8 +1,11 @@
+import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
-import type { AccountWhereInput } from '@server/generated/prisma/models/Account';
+import type {
+  AccountOrderByWithRelationInput,
+  AccountWhereInput,
+} from '@server/generated/prisma/models/Account';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import type { IDb } from '@server/share/type';
 import {
   dateToIsoString,
   decimalToNullableString,
@@ -182,7 +185,7 @@ export class AccountService {
       };
     }
 
-    const orderBy: any = {};
+    const orderBy: AccountOrderByWithRelationInput = {};
     if (sortBy === 'name') {
       orderBy.name = sortOrder;
     } else if (sortBy === 'createdAt') {

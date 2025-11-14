@@ -1,6 +1,6 @@
+import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import type { IDb } from '@server/share/type';
 import Decimal from 'decimal.js';
 import {
   type ExchangeRateService,
