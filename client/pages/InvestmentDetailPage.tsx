@@ -22,11 +22,16 @@ import {
   Badge,
   Button,
   Card,
+  Center,
+  Container,
   Group,
   Modal,
   NumberFormatter,
+  SimpleGrid,
+  Stack,
   Tabs,
   Text,
+  Title,
 } from '@mantine/core';
 import type { InvestmentContributionResponse } from '@server/dto/contribution.dto';
 import type { InvestmentTradeResponse } from '@server/dto/trade.dto';
@@ -48,13 +53,13 @@ const InvestmentDetailPage = () => {
 
   if (!investmentId) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <Center h="100vh">
         <Text c="red">
           {t('investments.invalidId', {
             defaultValue: 'Investment identifier is missing.',
           })}
         </Text>
-      </div>
+      </Center>
     );
   }
 
@@ -252,7 +257,7 @@ const InvestmentDetailPage = () => {
         textAlign: 'center',
         width: '8rem',
         render: (value: unknown, row: InvestmentTradeResponse) => (
-          <div className="flex items-center justify-center gap-2">
+          <Group justify="center" gap="xs">
             <ActionIcon
               variant="subtle"
               color="red"
@@ -263,7 +268,7 @@ const InvestmentDetailPage = () => {
             >
               <IconTrash size={16} />
             </ActionIcon>
-          </div>
+          </Group>
         ),
       },
     ],
@@ -315,7 +320,7 @@ const InvestmentDetailPage = () => {
         textAlign: 'center',
         width: '8rem',
         render: (value: unknown, row: InvestmentContributionResponse) => (
-          <div className="flex items-center justify-center gap-2">
+          <Group justify="center" gap="xs">
             <ActionIcon
               variant="subtle"
               color="red"
@@ -326,7 +331,7 @@ const InvestmentDetailPage = () => {
             >
               <IconTrash size={16} />
             </ActionIcon>
-          </div>
+          </Group>
         ),
       },
     ],
@@ -355,7 +360,7 @@ const InvestmentDetailPage = () => {
         textAlign: 'center',
         width: '8rem',
         render: (value: unknown, row: InvestmentValuationResponse) => (
-          <div className="flex items-center justify-center gap-2">
+          <Group justify="center" gap="xs">
             <ActionIcon
               variant="subtle"
               color="red"
@@ -366,7 +371,7 @@ const InvestmentDetailPage = () => {
             >
               <IconTrash size={16} />
             </ActionIcon>
-          </div>
+          </Group>
         ),
       },
     ],
@@ -389,10 +394,10 @@ const InvestmentDetailPage = () => {
     deleteValuationMutation.isPending;
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <Container fluid py="md">
+      <Stack gap="lg">
+        <Group justify="space-between" align="flex-start">
+          <Group gap="md">
             <Button
               variant="subtle"
               leftSection={<IconArrowLeft size={18} />}
@@ -400,22 +405,24 @@ const InvestmentDetailPage = () => {
             >
               {t('common.back', { defaultValue: 'Back' })}
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <Stack gap="xs">
+              <Title order={2}>
                 {investment?.name ??
                   t('investments.detailTitle', {
                     defaultValue: 'Investment detail',
                   })}
-              </h1>
+              </Title>
               <Text size="sm" c="dimmed">
                 {investment?.symbol && (
-                  <span className="mr-2">{investment.symbol}</span>
+                  <Text component="span" mr="xs">
+                    {investment.symbol}
+                  </Text>
                 )}
                 {investment?.assetType.toString().toUpperCase()}
               </Text>
-            </div>
-          </div>
-          <div className="flex gap-2">
+            </Stack>
+          </Group>
+          <Group gap="xs">
             <Button
               variant="outline"
               onClick={() => setIsContributionDialogOpen(true)}
@@ -442,8 +449,8 @@ const InvestmentDetailPage = () => {
             >
               {t('investments.addTrade', { defaultValue: 'Add trade' })}
             </Button>
-          </div>
-        </div>
+          </Group>
+        </Group>
 
         <Tabs
           value={activeTab}
@@ -467,7 +474,7 @@ const InvestmentDetailPage = () => {
           </Tabs.List>
 
           <Tabs.Panel value="overview" pt="md">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <SimpleGrid cols={{ base: 1, md: 2, xl: 4 }} spacing="md">
               <Card shadow="sm" padding="lg" withBorder>
                 <Text size="sm" c="dimmed">
                   {t('investments.position.quantity', {
@@ -497,11 +504,7 @@ const InvestmentDetailPage = () => {
                 <Text
                   size="lg"
                   fw={600}
-                  className={
-                    (position?.realizedPnl ?? 0) >= 0
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-red-600 dark:text-red-400'
-                  }
+                  c={(position?.realizedPnl ?? 0) >= 0 ? 'green.6' : 'red.6'}
                 >
                   {formatCurrency(position?.realizedPnl ?? 0)}
                 </Text>
@@ -515,19 +518,15 @@ const InvestmentDetailPage = () => {
                 <Text
                   size="lg"
                   fw={600}
-                  className={
-                    (position?.unrealizedPnl ?? 0) >= 0
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-red-600 dark:text-red-400'
-                  }
+                  c={(position?.unrealizedPnl ?? 0) >= 0 ? 'green.6' : 'red.6'}
                 >
                   {formatCurrency(position?.unrealizedPnl ?? 0)}
                 </Text>
               </Card>
-            </div>
+            </SimpleGrid>
 
             {investment?.baseCurrencyId && position && (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
+              <SimpleGrid cols={{ base: 1, md: 2, xl: 4 }} spacing="md" mt="md">
                 <Card shadow="sm" padding="lg" withBorder>
                   <Text size="sm" c="dimmed">
                     {t('investments.position.costBasisInBaseCurrency', {
@@ -552,10 +551,10 @@ const InvestmentDetailPage = () => {
                   <Text
                     size="lg"
                     fw={600}
-                    className={
+                    c={
                       (position.realizedPnlInBaseCurrency ?? 0) >= 0
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-red-600 dark:text-red-400'
+                        ? 'green.6'
+                        : 'red.6'
                     }
                   >
                     {position.realizedPnlInBaseCurrency !== undefined
@@ -575,10 +574,10 @@ const InvestmentDetailPage = () => {
                   <Text
                     size="lg"
                     fw={600}
-                    className={
+                    c={
                       (position.unrealizedPnlInBaseCurrency ?? 0) >= 0
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-red-600 dark:text-red-400'
+                        ? 'green.6'
+                        : 'red.6'
                     }
                   >
                     {position.unrealizedPnlInBaseCurrency !== undefined
@@ -598,10 +597,10 @@ const InvestmentDetailPage = () => {
                   <Text
                     size="lg"
                     fw={600}
-                    className={
+                    c={
                       (position.exchangeRateGainLoss ?? 0) >= 0
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-red-600 dark:text-red-400'
+                        ? 'green.6'
+                        : 'red.6'
                     }
                   >
                     {position.exchangeRateGainLoss !== undefined
@@ -612,14 +611,14 @@ const InvestmentDetailPage = () => {
                       : '--'}
                   </Text>
                 </Card>
-              </div>
+              </SimpleGrid>
             )}
 
             {investment?.baseCurrencyId &&
               position?.lastValueInBaseCurrency !== undefined && (
                 <Card shadow="sm" padding="lg" withBorder mt="md">
                   <Group justify="space-between">
-                    <div>
+                    <Stack gap="xs">
                       <Text size="sm" c="dimmed">
                         {t('investments.position.lastValueInBaseCurrency', {
                           defaultValue: 'Market value (Base Currency)',
@@ -631,9 +630,9 @@ const InvestmentDetailPage = () => {
                           baseCurrencySymbol,
                         )}
                       </Text>
-                    </div>
+                    </Stack>
                     {position.currentExchangeRate !== undefined && (
-                      <div>
+                      <Stack gap="xs">
                         <Text size="sm" c="dimmed">
                           {t('investments.position.currentExchangeRate', {
                             defaultValue: 'Current Exchange Rate',
@@ -642,7 +641,7 @@ const InvestmentDetailPage = () => {
                         <Text size="lg" fw={600}>
                           {position.currentExchangeRate?.toFixed(6) ?? '--'}
                         </Text>
-                      </div>
+                      </Stack>
                     )}
                   </Group>
                 </Card>
@@ -650,7 +649,7 @@ const InvestmentDetailPage = () => {
 
             <Card shadow="sm" padding="lg" withBorder mt="md">
               <Group justify="space-between">
-                <div>
+                <Stack gap="xs">
                   <Text size="sm" c="dimmed">
                     {t('investments.position.lastValue', {
                       defaultValue: 'Market value',
@@ -659,8 +658,8 @@ const InvestmentDetailPage = () => {
                   <Text size="xl" fw={600}>
                     {formatCurrency(position?.lastValue ?? null)}
                   </Text>
-                </div>
-                <div>
+                </Stack>
+                <Stack gap="xs">
                   <Text size="sm" c="dimmed">
                     {t('investments.position.netContribution', {
                       defaultValue: 'Net contributions',
@@ -669,8 +668,8 @@ const InvestmentDetailPage = () => {
                   <Text size="lg" fw={600}>
                     {formatCurrency(position?.netContributions ?? 0)}
                   </Text>
-                </div>
-                <div>
+                </Stack>
+                <Stack gap="xs">
                   <Text size="sm" c="dimmed">
                     {t('investments.position.lastUpdated', {
                       defaultValue: 'Last valuation',
@@ -683,7 +682,7 @@ const InvestmentDetailPage = () => {
                           defaultValue: 'No valuation yet',
                         })}
                   </Text>
-                </div>
+                </Stack>
               </Group>
             </Card>
           </Tabs.Panel>
@@ -736,7 +735,7 @@ const InvestmentDetailPage = () => {
             />
           </Tabs.Panel>
         </Tabs>
-      </div>
+      </Stack>
 
       {investment && isTradeDialogOpen && (
         <AddTradeDialog
@@ -882,7 +881,7 @@ const InvestmentDetailPage = () => {
           </Group>
         </Modal>
       )}
-    </div>
+    </Container>
   );
 };
 

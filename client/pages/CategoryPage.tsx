@@ -16,11 +16,14 @@ import {
   ActionIcon,
   Box,
   Button,
+  Container,
   Group,
   MultiSelect,
+  Paper,
   Stack,
   Text,
   TextInput,
+  Title,
   Tree,
   type TreeNodeData,
   useTree,
@@ -284,26 +287,33 @@ const CategoryPage = () => {
     deleteMutation.isPending;
 
   return (
-    <div className="h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900 flex flex-col">
-      <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 overflow-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {t('categories.title')}
-              </h1>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+    <Container
+      fluid
+      h="100vh"
+      p={0}
+      style={{ display: 'flex', flexDirection: 'column' }}
+    >
+      <Box style={{ flex: 1, overflow: 'auto' }} p="md">
+        <Paper
+          p="lg"
+          h="100%"
+          style={{ display: 'flex', flexDirection: 'column' }}
+        >
+          <Group justify="space-between" align="flex-start" mb="lg">
+            <Stack gap="xs">
+              <Title order={2}>{t('categories.title')}</Title>
+              <Text size="sm" c="dimmed">
                 {t('categories.subtitle')}
-              </p>
-            </div>
+              </Text>
+            </Stack>
             <Button onClick={handleAddRoot} disabled={isSubmitting}>
               {t('categories.addRootCategory')}
             </Button>
-          </div>
+          </Group>
 
           <Stack gap="md" mb="md">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="w-full md:w-64">
+            <Group gap="md" align="flex-start" wrap="wrap">
+              <Box style={{ width: '100%', maxWidth: '256px' }}>
                 <TextInput
                   placeholder={t('categories.search')}
                   value={searchInput}
@@ -328,9 +338,9 @@ const CategoryPage = () => {
                     ) : null
                   }
                 />
-              </div>
+              </Box>
 
-              <div className="w-full md:w-48">
+              <Box style={{ width: '100%', maxWidth: '192px' }}>
                 <MultiSelect
                   placeholder={t('categories.filterByType')}
                   value={typeFilterInput}
@@ -360,9 +370,9 @@ const CategoryPage = () => {
                     },
                   ]}
                 />
-              </div>
+              </Box>
 
-              <div className="w-full md:w-auto flex gap-2">
+              <Group gap="xs">
                 <Button onClick={handleSearch} disabled={isLoading}>
                   {t('common.search')}
                 </Button>
@@ -375,18 +385,18 @@ const CategoryPage = () => {
                     {t('common.reset', { defaultValue: 'Reset' })}
                   </Button>
                 )}
-              </div>
-            </div>
+              </Group>
+            </Group>
           </Stack>
 
           {isLoading ? (
-            <div className="text-center py-8">
+            <Stack align="center" py="xl">
               <Text>{t('common.loading', { defaultValue: 'Loading...' })}</Text>
-            </div>
+            </Stack>
           ) : filteredTreeItems.length === 0 ? (
-            <div className="text-center py-8">
+            <Stack align="center" py="xl">
               <Text>{t('categories.noCategories')}</Text>
-            </div>
+            </Stack>
           ) : (
             <Box style={{ flex: 1, overflow: 'auto' }}>
               <Tree
@@ -498,37 +508,37 @@ const CategoryPage = () => {
               />
             </Box>
           )}
-        </div>
 
-        {dialog.isDialogOpen && (
-          <AddEditCategoryDialog
-            isOpen={dialog.isDialogOpen}
-            onClose={handleDialogClose}
-            category={dialog.selectedItem}
-            parentId={parentIdForNew}
-            parentType={
-              parentIdForNew
-                ? (categoryMap.get(parentIdForNew)?.type ?? null)
-                : null
-            }
-            onSubmit={handleSubmit}
-            isLoading={isSubmitting}
-          />
-        )}
+          {dialog.isDialogOpen && (
+            <AddEditCategoryDialog
+              isOpen={dialog.isDialogOpen}
+              onClose={handleDialogClose}
+              category={dialog.selectedItem}
+              parentId={parentIdForNew}
+              parentType={
+                parentIdForNew
+                  ? (categoryMap.get(parentIdForNew)?.type ?? null)
+                  : null
+              }
+              onSubmit={handleSubmit}
+              isLoading={isSubmitting}
+            />
+          )}
 
-        {deleteHandler.isDeleteDialogOpen && deleteHandler.itemToDelete && (
-          <DeleteConfirmationModal
-            isOpen={deleteHandler.isDeleteDialogOpen}
-            onClose={deleteHandler.handleDeleteDialogClose}
-            onConfirm={handleConfirmDelete}
-            isLoading={isSubmitting}
-            title={t('categories.deleteConfirmTitle')}
-            message={t('categories.deleteConfirmMessage')}
-            itemName={deleteHandler.itemToDelete.name}
-          />
-        )}
-      </div>
-    </div>
+          {deleteHandler.isDeleteDialogOpen && deleteHandler.itemToDelete && (
+            <DeleteConfirmationModal
+              isOpen={deleteHandler.isDeleteDialogOpen}
+              onClose={deleteHandler.handleDeleteDialogClose}
+              onConfirm={handleConfirmDelete}
+              isLoading={isSubmitting}
+              title={t('categories.deleteConfirmTitle')}
+              message={t('categories.deleteConfirmMessage')}
+              itemName={deleteHandler.itemToDelete.name}
+            />
+          )}
+        </Paper>
+      </Box>
+    </Container>
   );
 };
 

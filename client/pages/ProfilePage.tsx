@@ -12,6 +12,7 @@ import {
   Badge,
   Button,
   Group,
+  Paper,
   SimpleGrid,
   Stack,
   Text,
@@ -241,71 +242,51 @@ const ProfilePage = () => {
           </form>
         ) : (
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-            <Stack
-              gap="xs"
-              p="md"
-              style={{
-                backgroundColor: 'var(--mantine-color-gray-0)',
-                borderRadius: 'var(--mantine-radius-md)',
-              }}
-            >
-              <Text size="sm" c="dimmed">
-                {t('profile.username')}
-              </Text>
-              <Text size="lg" fw={600}>
-                {user.username}
-              </Text>
-            </Stack>
+            <Paper p="md" bg="gray.0">
+              <Stack gap="xs">
+                <Text size="sm" c="dimmed">
+                  {t('profile.username')}
+                </Text>
+                <Text size="lg" fw={600}>
+                  {user.username}
+                </Text>
+              </Stack>
+            </Paper>
 
-            <Stack
-              gap="xs"
-              p="md"
-              style={{
-                backgroundColor: 'var(--mantine-color-gray-0)',
-                borderRadius: 'var(--mantine-radius-md)',
-              }}
-            >
-              <Text size="sm" c="dimmed">
-                {t('profile.name')}
-              </Text>
-              <Text size="lg" fw={600}>
-                {user.name || t('common.nA')}
-              </Text>
-            </Stack>
+            <Paper p="md" bg="gray.0">
+              <Stack gap="xs">
+                <Text size="sm" c="dimmed">
+                  {t('profile.name')}
+                </Text>
+                <Text size="lg" fw={600}>
+                  {user.name || t('common.nA')}
+                </Text>
+              </Stack>
+            </Paper>
 
-            <Stack
-              gap="xs"
-              p="md"
-              style={{
-                backgroundColor: 'var(--mantine-color-gray-0)',
-                borderRadius: 'var(--mantine-radius-md)',
-              }}
-            >
-              <Text size="sm" c="dimmed">
-                {t('profile.role')}
-              </Text>
-              <Badge color="indigo" variant="light">
-                {user.role}
-              </Badge>
-            </Stack>
+            <Paper p="md" bg="gray.0">
+              <Stack gap="xs">
+                <Text size="sm" c="dimmed">
+                  {t('profile.role')}
+                </Text>
+                <Badge color="indigo" variant="light">
+                  {user.role}
+                </Badge>
+              </Stack>
+            </Paper>
 
-            <Stack
-              gap="xs"
-              p="md"
-              style={{
-                backgroundColor: 'var(--mantine-color-gray-0)',
-                borderRadius: 'var(--mantine-radius-md)',
-              }}
-            >
-              <Text size="sm" c="dimmed">
-                {t('profile.baseCurrency')}
-              </Text>
-              <Text size="lg" fw={600}>
-                {selectedCurrency
-                  ? `${selectedCurrency.symbol || ''} - ${selectedCurrency.name} (${selectedCurrency.code})`
-                  : t('common.nA')}
-              </Text>
-            </Stack>
+            <Paper p="md" bg="gray.0">
+              <Stack gap="xs">
+                <Text size="sm" c="dimmed">
+                  {t('profile.baseCurrency')}
+                </Text>
+                <Text size="lg" fw={600}>
+                  {selectedCurrency
+                    ? `${selectedCurrency.symbol || ''} - ${selectedCurrency.name} (${selectedCurrency.code})`
+                    : t('common.nA')}
+                </Text>
+              </Stack>
+            </Paper>
           </SimpleGrid>
         )}
 

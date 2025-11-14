@@ -7,6 +7,14 @@ import { GroupBySelector } from '@client/components/statistics/GroupBySelector';
 import { IncomeExpenseOverview } from '@client/components/statistics/IncomeExpenseOverview';
 import { IncomeExpenseTable } from '@client/components/statistics/IncomeExpenseTable';
 import { IncomeExpenseTimeChart } from '@client/components/statistics/IncomeExpenseTimeChart';
+import {
+  Container,
+  Group,
+  SimpleGrid,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,22 +46,22 @@ const IncomeExpenseStatisticsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+    <Container size="xl" py="xl">
+      <Stack gap="xl">
+        <Stack gap="xs">
+          <Title order={1}>
             {t('statistics.incomeExpense.title', {
               defaultValue: 'Income & Expense Statistics',
             })}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          </Title>
+          <Text c="dimmed">
             {t('statistics.incomeExpense.description', {
               defaultValue: 'Detailed analysis of your income and expenses',
             })}
-          </p>
-        </div>
+          </Text>
+        </Stack>
 
-        <div className="mb-6 space-y-4">
+        <Stack gap="md">
           <DateRangeFilter
             dateFrom={dateRange.from}
             dateTo={dateRange.to}
@@ -61,9 +69,9 @@ const IncomeExpenseStatisticsPage = () => {
               setDateRange((prev) => ({ ...prev, [type]: value }))
             }
           />
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <Group gap="md" align="flex-start" wrap="wrap">
             <GroupBySelector value={groupBy} onChange={setGroupBy} />
-          </div>
+          </Group>
           <FilterBar
             categoryIds={categoryIds}
             accountId={accountId || undefined}
@@ -72,30 +80,30 @@ const IncomeExpenseStatisticsPage = () => {
             onAccountChange={setAccountId}
             onEntityChange={setEntityId}
           />
-        </div>
+        </Stack>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <IncomeExpenseOverview queryParams={queryParams} />
-        </div>
+        </Stack>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <IncomeExpenseTimeChart queryParams={queryParams} />
-        </div>
+        </Stack>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="xl">
           <CategoryBreakdownChart queryParams={queryParams} />
           <AccountBreakdownChart queryParams={queryParams} />
-        </div>
+        </SimpleGrid>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <FeeStatistics queryParams={queryParams} />
-        </div>
+        </Stack>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <IncomeExpenseTable queryParams={queryParams} />
-        </div>
-      </div>
-    </div>
+        </Stack>
+      </Stack>
+    </Container>
   );
 };
 

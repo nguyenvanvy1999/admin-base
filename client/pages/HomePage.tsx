@@ -7,7 +7,7 @@ import { AdminSummaryCards } from '@client/components/statistics/AdminSummaryCar
 import { UserGrowthChart } from '@client/components/statistics/UserGrowthChart';
 import { UserRoleDistributionChart } from '@client/components/statistics/UserRoleDistributionChart';
 import useUserStore from '@client/store/user';
-import { Box } from '@mantine/core';
+import { Container, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -28,81 +28,75 @@ const HomePage = () => {
 
   if (adminUser) {
     return (
-      <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-              Admin Dashboard
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Overview of user and session statistics
-            </p>
-          </div>
+      <Container size="xl" py="xl">
+        <Stack gap="xl">
+          <Stack gap="xs">
+            <Title order={1}>Admin Dashboard</Title>
+            <Text c="dimmed">Overview of user and session statistics</Text>
+          </Stack>
 
-          <Box className="mb-6">
+          <Stack gap="md">
             <DateRangePicker
               value={dateRange}
               onChange={setDateRange}
               mode="date"
               label={t('common.dateRange', { defaultValue: 'Date Range' })}
             />
-          </Box>
+          </Stack>
 
-          <div className="mb-8">
+          <Stack gap="md">
             <AdminSummaryCards />
-          </div>
+          </Stack>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div className="lg:col-span-2">
+          <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="xl">
+            <Stack style={{ gridColumn: '1 / -1' }}>
               <UserGrowthChart
                 dateFrom={dateRange.from || ''}
                 dateTo={dateRange.to || ''}
               />
-            </div>
+            </Stack>
             <UserRoleDistributionChart />
-          </div>
-        </div>
-      </div>
+          </SimpleGrid>
+        </Stack>
+      </Container>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+    <Container size="xl" py="xl">
+      <Stack gap="xl">
+        <Stack gap="xs">
+          <Title order={1}>
             {t('home.welcomeBack', { username: user?.username })}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {t('home.successfullyLogged')}
-          </p>
-        </div>
+          </Title>
+          <Text c="dimmed">{t('home.successfullyLogged')}</Text>
+        </Stack>
 
-        <Box className="mb-6">
+        <Stack gap="md">
           <DateRangePicker
             value={dateRange}
             onChange={setDateRange}
             mode="date"
             label={t('common.dateRange', { defaultValue: 'Date Range' })}
           />
-        </Box>
+        </Stack>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <SummaryCards
             dateFrom={dateRange.from || ''}
             dateTo={dateRange.to || ''}
           />
-        </div>
+        </Stack>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <TransactionChart
             dateFrom={dateRange.from || ''}
             dateTo={dateRange.to || ''}
             groupBy="month"
           />
-        </div>
+        </Stack>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="xl">
           <InvestmentAllocationChart
             dateFrom={dateRange.from || ''}
             dateTo={dateRange.to || ''}
@@ -111,9 +105,9 @@ const HomePage = () => {
             dateFrom={dateRange.from || ''}
             dateTo={dateRange.to || ''}
           />
-        </div>
-      </div>
-    </div>
+        </SimpleGrid>
+      </Stack>
+    </Container>
   );
 };
 

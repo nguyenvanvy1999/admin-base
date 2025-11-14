@@ -6,6 +6,7 @@ import { EntityDebtsTable } from '@client/components/statistics/EntityDebtsTable
 import { GroupBySelector } from '@client/components/statistics/GroupBySelector';
 import { LoanHistoryTable } from '@client/components/statistics/LoanHistoryTable';
 import { useEntitiesOptionsQuery } from '@client/hooks/queries/useEntityQueries';
+import { Container, Group, Stack, Text, Title } from '@mantine/core';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -41,18 +42,14 @@ const DebtStatisticsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            {t('statistics.debt.title')}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {t('statistics.debt.description')}
-          </p>
-        </div>
+    <Container size="xl" py="xl">
+      <Stack gap="xl">
+        <Stack gap="xs">
+          <Title order={1}>{t('statistics.debt.title')}</Title>
+          <Text c="dimmed">{t('statistics.debt.description')}</Text>
+        </Stack>
 
-        <div className="mb-6 space-y-4">
+        <Stack gap="md">
           <DateRangeFilter
             dateFrom={dateRange.from}
             dateTo={dateRange.to}
@@ -60,12 +57,12 @@ const DebtStatisticsPage = () => {
               setDateRange((prev) => ({ ...prev, [type]: value }))
             }
           />
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <Group gap="md" align="flex-start" wrap="wrap">
             <GroupBySelector value={groupBy} onChange={setGroupBy} />
-            <div className="flex-1 max-w-xs">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <Stack gap="xs" style={{ flex: 1, maxWidth: '300px' }}>
+              <Text size="sm" fw={500}>
                 {t('statistics.debt.filterByEntity')}
-              </label>
+              </Text>
               <Select
                 items={entityOptions}
                 value={entityId || null}
@@ -74,27 +71,27 @@ const DebtStatisticsPage = () => {
                 searchable
                 clearable
               />
-            </div>
-          </div>
-        </div>
+            </Stack>
+          </Group>
+        </Stack>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <DebtOverview queryParams={queryParams} />
-        </div>
+        </Stack>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <DebtTimeChart queryParams={queryParams} />
-        </div>
+        </Stack>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <EntityDebtsTable queryParams={queryParams} />
-        </div>
+        </Stack>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <LoanHistoryTable queryParams={queryParams} />
-        </div>
-      </div>
-    </div>
+        </Stack>
+      </Stack>
+    </Container>
   );
 };
 

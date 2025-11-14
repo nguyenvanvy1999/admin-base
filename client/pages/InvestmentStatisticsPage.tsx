@@ -8,6 +8,14 @@ import { InvestmentPerformanceChart } from '@client/components/statistics/Invest
 import { InvestmentTable } from '@client/components/statistics/InvestmentTable';
 import { TradeStatistics } from '@client/components/statistics/TradeStatistics';
 import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
+import {
+  Container,
+  Group,
+  SimpleGrid,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -42,22 +50,22 @@ const InvestmentStatisticsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+    <Container size="xl" py="xl">
+      <Stack gap="xl">
+        <Stack gap="xs">
+          <Title order={1}>
             {t('statistics.investment.title', {
               defaultValue: 'Investment Statistics',
             })}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          </Title>
+          <Text c="dimmed">
             {t('statistics.investment.description', {
               defaultValue: 'Detailed analysis of your investments',
             })}
-          </p>
-        </div>
+          </Text>
+        </Stack>
 
-        <div className="mb-6 space-y-4">
+        <Stack gap="md">
           <DateRangeFilter
             dateFrom={dateRange.from}
             dateTo={dateRange.to}
@@ -65,14 +73,14 @@ const InvestmentStatisticsPage = () => {
               setDateRange((prev) => ({ ...prev, [type]: value }))
             }
           />
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <Group gap="md" align="flex-start" wrap="wrap">
             <GroupBySelector value={groupBy} onChange={setGroupBy} />
-            <div className="flex-1 max-w-xs">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <Stack gap="xs" style={{ flex: 1, maxWidth: '300px' }}>
+              <Text size="sm" fw={500}>
                 {t('statistics.filterByAccount', {
                   defaultValue: 'Filter by Account',
                 })}
-              </label>
+              </Text>
               <Select
                 items={accountOptions}
                 value={accountId || null}
@@ -83,32 +91,32 @@ const InvestmentStatisticsPage = () => {
                 searchable
                 clearable
               />
-            </div>
-          </div>
-        </div>
+            </Stack>
+          </Group>
+        </Stack>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <InvestmentOverview queryParams={queryParams} />
-        </div>
+        </Stack>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <InvestmentPerformanceChart queryParams={queryParams} />
-        </div>
+        </Stack>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="xl">
           <TradeStatistics queryParams={queryParams} />
           <InvestmentFeesChart queryParams={queryParams} />
-        </div>
+        </SimpleGrid>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <ContributionChart queryParams={queryParams} />
-        </div>
+        </Stack>
 
-        <div className="mb-8">
+        <Stack gap="md">
           <InvestmentTable queryParams={queryParams} />
-        </div>
-      </div>
-    </div>
+        </Stack>
+      </Stack>
+    </Container>
   );
 };
 
