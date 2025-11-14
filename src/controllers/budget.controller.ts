@@ -11,7 +11,7 @@ import {
   ListBudgetsQueryDto,
   UpsertBudgetDto,
 } from '../dto/budget.dto';
-import budgetService from '../services/budget.service';
+import { budgetService } from '../services/budget.service';
 import { castToRes, ResWrapper } from '../share';
 
 const BUDGET_DETAIL = {
@@ -30,11 +30,10 @@ const budgetController = new Elysia().group(
   },
   (group) =>
     group
-      .use(budgetService)
       .use(authCheck)
       .post(
         '/',
-        async ({ currentUser, body, budgetService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await budgetService.upsertBudget(currentUser.id, body),
           );
@@ -54,7 +53,7 @@ const budgetController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ currentUser, params, budgetService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await budgetService.getBudget(currentUser.id, params.id),
           );
@@ -74,7 +73,7 @@ const budgetController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ currentUser, query, budgetService }) => {
+        async ({ currentUser, query }) => {
           return castToRes(
             await budgetService.listBudgets(currentUser.id, query),
           );
@@ -94,7 +93,7 @@ const budgetController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ currentUser, params, budgetService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await budgetService.deleteBudget(currentUser.id, params.id),
           );
@@ -114,7 +113,7 @@ const budgetController = new Elysia().group(
       )
       .get(
         '/:id/periods',
-        async ({ currentUser, params, query, budgetService }) => {
+        async ({ currentUser, params, query }) => {
           return castToRes(
             await budgetService.getBudgetPeriods(
               currentUser.id,
@@ -139,7 +138,7 @@ const budgetController = new Elysia().group(
       )
       .get(
         '/:id/periods/:periodId',
-        async ({ currentUser, params, budgetService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await budgetService.getBudgetPeriodDetail(
               currentUser.id,
@@ -166,7 +165,7 @@ const budgetController = new Elysia().group(
       )
       .post(
         '/delete-many',
-        async ({ currentUser, body, budgetService }) => {
+        async ({ currentUser, body }) => {
           const results = await Promise.all(
             body.ids.map((id) =>
               budgetService.deleteBudget(currentUser.id, id),

@@ -7,7 +7,7 @@ import {
   ListCategoriesQueryDto,
   UpsertCategoryDto,
 } from '../dto/category.dto';
-import categoryService from '../services/category.service';
+import { categoryService } from '../services/category.service';
 import { castToRes, ResWrapper } from '../share';
 
 const CATEGORY_DETAIL = {
@@ -26,11 +26,10 @@ const categoryController = new Elysia().group(
   },
   (group) =>
     group
-      .use(categoryService)
       .use(authCheck)
       .get(
         '/',
-        async ({ currentUser, query, categoryService }) => {
+        async ({ currentUser, query }) => {
           return castToRes(
             await categoryService.getAllCategories(currentUser.id, query),
           );
@@ -50,7 +49,7 @@ const categoryController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ currentUser, params, categoryService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await categoryService.getCategoryById(currentUser.id, params.id),
           );
@@ -70,7 +69,7 @@ const categoryController = new Elysia().group(
       )
       .post(
         '/',
-        async ({ currentUser, body, categoryService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await categoryService.createCategory(currentUser.id, body),
           );
@@ -90,7 +89,7 @@ const categoryController = new Elysia().group(
       )
       .put(
         '/:id',
-        async ({ currentUser, params, body, categoryService }) => {
+        async ({ currentUser, params, body }) => {
           return castToRes(
             await categoryService.updateCategory(
               currentUser.id,
@@ -115,7 +114,7 @@ const categoryController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ currentUser, params, categoryService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await categoryService.deleteCategory(currentUser.id, params.id),
           );

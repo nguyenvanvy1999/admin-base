@@ -6,7 +6,6 @@ import {
   TradeSide,
 } from '@server/generated/prisma/enums';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import Elysia from 'elysia';
 import type { InvestmentPositionResponse } from '../dto/investment.dto';
 import {
   type InvestmentService,
@@ -392,10 +391,4 @@ export class InvestmentPositionService {
   }
 }
 
-export const investmentPositionServiceInstance =
-  new InvestmentPositionService();
-
-export default new Elysia().decorate(
-  'investmentPositionService',
-  investmentPositionServiceInstance,
-);
+export const investmentPositionService = new InvestmentPositionService();

@@ -9,8 +9,8 @@ import {
   ListInvestmentsQueryDto,
   UpsertInvestmentDto,
 } from '../dto/investment.dto';
-import investmentService from '../services/investment.service';
-import investmentPositionService from '../services/investment-position.service';
+import { investmentService } from '../services/investment.service';
+import { investmentPositionService } from '../services/investment-position.service';
 import { castToRes, ResWrapper } from '../share';
 
 const INVESTMENT_DETAIL = {
@@ -29,12 +29,10 @@ const investmentController = new Elysia().group(
   },
   (group) =>
     group
-      .use(investmentService)
-      .use(investmentPositionService)
       .use(authCheck)
       .post(
         '/',
-        async ({ currentUser, body, investmentService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await investmentService.upsertInvestment(currentUser.id, body),
           );
@@ -54,7 +52,7 @@ const investmentController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ currentUser, query, investmentService }) => {
+        async ({ currentUser, query }) => {
           return castToRes(
             await investmentService.listInvestments(currentUser.id, query),
           );
@@ -74,7 +72,7 @@ const investmentController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ currentUser, params, investmentService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await investmentService.getInvestment(currentUser.id, params.id),
           );
@@ -94,7 +92,7 @@ const investmentController = new Elysia().group(
       )
       .get(
         '/:id/holdings',
-        async ({ currentUser, params, investmentPositionService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await investmentPositionService.getPosition(
               currentUser.id,
@@ -117,7 +115,7 @@ const investmentController = new Elysia().group(
       )
       .get(
         '/:id/latest-valuation',
-        async ({ currentUser, params, investmentService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await investmentService.getLatestValuation(
               currentUser.id,
@@ -140,7 +138,7 @@ const investmentController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ currentUser, params, investmentService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await investmentService.deleteInvestment(currentUser.id, params.id),
           );

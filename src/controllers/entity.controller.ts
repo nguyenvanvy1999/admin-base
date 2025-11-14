@@ -8,7 +8,7 @@ import {
   ListEntitiesQueryDto,
   UpsertEntityDto,
 } from '../dto/entity.dto';
-import entityService from '../services/entity.service';
+import { entityService } from '../services/entity.service';
 import { castToRes, ResWrapper } from '../share';
 
 const ENTITY_DETAIL = {
@@ -27,11 +27,10 @@ const entityController = new Elysia().group(
   },
   (group) =>
     group
-      .use(entityService)
       .use(authCheck)
       .post(
         '/',
-        async ({ currentUser, body, entityService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await entityService.upsertEntity(currentUser.id, body),
           );
@@ -51,7 +50,7 @@ const entityController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ currentUser, params, entityService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await entityService.getEntity(currentUser.id, params.id),
           );
@@ -71,7 +70,7 @@ const entityController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ currentUser, query, entityService }) => {
+        async ({ currentUser, query }) => {
           return castToRes(
             await entityService.listEntities(currentUser.id, query),
           );
@@ -91,7 +90,7 @@ const entityController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ currentUser, params, entityService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await entityService.deleteEntity(currentUser.id, params.id),
           );
@@ -111,7 +110,7 @@ const entityController = new Elysia().group(
       )
       .post(
         '/delete-many',
-        async ({ currentUser, body, entityService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await entityService.deleteManyEntities(currentUser.id, body.ids),
           );

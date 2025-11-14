@@ -7,7 +7,7 @@ import {
   ListAccountsQueryDto,
   UpsertAccountDto,
 } from '../dto/account.dto';
-import accountService from '../services/account.service';
+import { accountService } from '../services/account.service';
 import { castToRes, ResWrapper } from '../share';
 
 const ACCOUNT_DETAIL = {
@@ -26,11 +26,10 @@ const accountController = new Elysia().group(
   },
   (group) =>
     group
-      .use(accountService)
       .use(authCheck)
       .post(
         '/',
-        async ({ currentUser, body, accountService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await accountService.upsertAccount(currentUser.id, body),
           );
@@ -50,7 +49,7 @@ const accountController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ currentUser, params, accountService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await accountService.getAccount(currentUser.id, params.id),
           );
@@ -70,7 +69,7 @@ const accountController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ currentUser, query, accountService }) => {
+        async ({ currentUser, query }) => {
           return castToRes(
             await accountService.listAccounts(currentUser.id, query),
           );
@@ -90,7 +89,7 @@ const accountController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ currentUser, params, accountService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await accountService.deleteAccount(currentUser.id, params.id),
           );

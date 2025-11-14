@@ -8,7 +8,7 @@ import {
   ListEventsQueryDto,
   UpsertEventDto,
 } from '../dto/event.dto';
-import eventService from '../services/event.service';
+import { eventService } from '../services/event.service';
 import { castToRes, ResWrapper } from '../share';
 
 const EVENT_DETAIL = {
@@ -27,11 +27,10 @@ const eventController = new Elysia().group(
   },
   (group) =>
     group
-      .use(eventService)
       .use(authCheck)
       .post(
         '/',
-        async ({ currentUser, body, eventService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await eventService.upsertEvent(currentUser.id, body),
           );
@@ -51,7 +50,7 @@ const eventController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ currentUser, params, eventService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await eventService.getEvent(currentUser.id, params.id),
           );
@@ -71,7 +70,7 @@ const eventController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ currentUser, query, eventService }) => {
+        async ({ currentUser, query }) => {
           return castToRes(
             await eventService.listEvents(currentUser.id, query),
           );
@@ -91,7 +90,7 @@ const eventController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ currentUser, params, eventService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await eventService.deleteEvent(currentUser.id, params.id),
           );
@@ -111,7 +110,7 @@ const eventController = new Elysia().group(
       )
       .post(
         '/delete-many',
-        async ({ currentUser, body, eventService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await eventService.deleteManyEvents(currentUser.id, body.ids),
           );

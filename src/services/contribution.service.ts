@@ -11,7 +11,6 @@ import {
   decimalToNullableNumber,
   decimalToNumber,
 } from '@server/share/utils/formatters';
-import { Elysia } from 'elysia';
 import type {
   ICreateInvestmentContributionDto,
   IListInvestmentContributionsQueryDto,
@@ -28,7 +27,7 @@ import {
 } from './investment.service';
 import {
   type InvestmentPositionService,
-  investmentPositionServiceInstance,
+  investmentPositionService,
 } from './investment-position.service';
 import { CONTRIBUTION_SELECT_FULL } from './selects';
 
@@ -71,7 +70,7 @@ export class InvestmentContributionService {
       db: prisma,
       investmentService: investmentService,
       accountBalanceService: accountBalanceService,
-      investmentPositionService: investmentPositionServiceInstance,
+      investmentPositionService: investmentPositionService,
     },
   ) {}
 
@@ -290,10 +289,5 @@ export class InvestmentContributionService {
   }
 }
 
-export const investmentContributionServiceInstance =
+export const investmentContributionService =
   new InvestmentContributionService();
-
-export default new Elysia().decorate(
-  'investmentContributionService',
-  investmentContributionServiceInstance,
-);

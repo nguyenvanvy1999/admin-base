@@ -7,7 +7,7 @@ import {
   InvestmentContributionListResponseDto,
   ListInvestmentContributionsQueryDto,
 } from '../dto/contribution.dto';
-import investmentContributionService from '../services/contribution.service';
+import { investmentContributionService } from '../services/contribution.service';
 import { castToRes, ResWrapper } from '../share';
 
 const CONTRIBUTION_DETAIL = {
@@ -26,16 +26,10 @@ const contributionController = new Elysia().group(
   },
   (group) =>
     group
-      .use(investmentContributionService)
       .use(authCheck)
       .post(
         '/',
-        async ({
-          currentUser,
-          params,
-          body,
-          investmentContributionService,
-        }) => {
+        async ({ currentUser, params, body }) => {
           return castToRes(
             await investmentContributionService.createContribution(
               currentUser.id,
@@ -60,12 +54,7 @@ const contributionController = new Elysia().group(
       )
       .get(
         '/',
-        async ({
-          currentUser,
-          params,
-          query,
-          investmentContributionService,
-        }) => {
+        async ({ currentUser, params, query }) => {
           return castToRes(
             await investmentContributionService.listContributions(
               currentUser.id,
@@ -90,7 +79,7 @@ const contributionController = new Elysia().group(
       )
       .delete(
         '/:contributionId',
-        async ({ currentUser, params, investmentContributionService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await investmentContributionService.deleteContribution(
               currentUser.id,
