@@ -20,11 +20,11 @@ import type {
 } from '../dto/contribution.dto';
 import {
   type AccountBalanceService,
-  accountBalanceServiceInstance,
+  accountBalanceService,
 } from './account-balance.service';
 import {
   type InvestmentService,
-  investmentServiceInstance,
+  investmentService,
 } from './investment.service';
 import {
   type InvestmentPositionService,
@@ -69,8 +69,8 @@ export class InvestmentContributionService {
       investmentPositionService: InvestmentPositionService;
     } = {
       db: prisma,
-      investmentService: investmentServiceInstance,
-      accountBalanceService: accountBalanceServiceInstance,
+      investmentService: investmentService,
+      accountBalanceService: accountBalanceService,
       investmentPositionService: investmentPositionServiceInstance,
     },
   ) {}

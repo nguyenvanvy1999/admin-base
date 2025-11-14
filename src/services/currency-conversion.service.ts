@@ -4,7 +4,7 @@ import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import Decimal from 'decimal.js';
 import {
   type ExchangeRateService,
-  exchangeRateServiceInstance,
+  exchangeRateService,
 } from './exchange-rate.service';
 import { CURRENCY_SELECT_BASIC } from './selects';
 
@@ -15,7 +15,7 @@ export class CurrencyConversionService {
       exchangeRateService: ExchangeRateService;
     } = {
       db: prisma,
-      exchangeRateService: exchangeRateServiceInstance,
+      exchangeRateService: exchangeRateService,
     },
   ) {}
 
@@ -121,5 +121,4 @@ export class CurrencyConversionService {
   }
 }
 
-export const currencyConversionServiceInstance =
-  new CurrencyConversionService();
+export const currencyConversionService = new CurrencyConversionService();

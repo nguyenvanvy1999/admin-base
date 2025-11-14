@@ -3,7 +3,6 @@ import { prisma } from '@server/configs/db';
 import { logger } from '@server/configs/logger';
 import { TransactionType } from '@server/generated/prisma/enums';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import { Elysia } from 'elysia';
 import type {
   DebtStatisticsResponse,
   IDebtStatisticsQueryDto,
@@ -26,7 +25,7 @@ import type {
 } from '../dto/report.dto';
 import {
   type ExchangeRateService,
-  exchangeRateServiceInstance,
+  exchangeRateService,
 } from './exchange-rate.service';
 
 const safeNumber = (value: unknown) =>
@@ -41,7 +40,7 @@ export class ReportService {
       exchangeRateService: ExchangeRateService;
     } = {
       db: prisma,
-      exchangeRateService: exchangeRateServiceInstance,
+      exchangeRateService: exchangeRateService,
     },
   ) {}
 
@@ -1877,6 +1876,4 @@ export class ReportService {
   }
 }
 
-export const reportServiceInstance = new ReportService();
-
-export default new Elysia().decorate('reportService', reportServiceInstance);
+export const reportService = new ReportService();

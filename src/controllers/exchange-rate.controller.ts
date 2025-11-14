@@ -5,7 +5,7 @@ import {
   ExchangeRateInfoDto,
   ExchangeRateRefreshResponseDto,
 } from '../dto/exchange-rate.dto';
-import { exchangeRateServiceInstance } from '../services/exchange-rate.service';
+import { exchangeRateService } from '../services/exchange-rate.service';
 import { castToRes, ResWrapper } from '../share';
 
 const EXCHANGE_RATE_DETAIL = {
@@ -28,7 +28,7 @@ const exchangeRateController = new Elysia().group(
       .get(
         '/info',
         () => {
-          const cacheInfo = exchangeRateServiceInstance.getCacheInfo();
+          const cacheInfo = exchangeRateService.getCacheInfo();
           return castToRes({
             date: cacheInfo.date,
             fetchedAt: cacheInfo.fetchedAt,
@@ -51,8 +51,8 @@ const exchangeRateController = new Elysia().group(
         '/refresh',
         async () => {
           try {
-            await exchangeRateServiceInstance.refreshCache();
-            const cacheInfo = exchangeRateServiceInstance.getCacheInfo();
+            await exchangeRateService.refreshCache();
+            const cacheInfo = exchangeRateService.getCacheInfo();
             return castToRes({
               success: true,
               message: 'Exchange rates refreshed successfully',
@@ -86,10 +86,10 @@ const exchangeRateController = new Elysia().group(
       .get(
         '/health',
         () => {
-          const cacheInfo = exchangeRateServiceInstance.getCacheInfo();
+          const cacheInfo = exchangeRateService.getCacheInfo();
           return castToRes({
             status: cacheInfo.isCacheValid ? 'healthy' : 'stale',
-            apiUrl: exchangeRateServiceInstance.getApiUrl(),
+            apiUrl: exchangeRateService.getApiUrl(),
             lastFetch: cacheInfo.fetchedAt,
             cacheDate: cacheInfo.date,
             isCacheValid: cacheInfo.isCacheValid,

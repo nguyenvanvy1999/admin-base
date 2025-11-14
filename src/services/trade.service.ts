@@ -11,11 +11,11 @@ import type {
 } from '../dto/trade.dto';
 import {
   type AccountBalanceService,
-  accountBalanceServiceInstance,
+  accountBalanceService,
 } from './account-balance.service';
 import {
   type InvestmentService,
-  investmentServiceInstance,
+  investmentService,
 } from './investment.service';
 import { TRADE_SELECT_FULL } from './selects';
 
@@ -46,8 +46,8 @@ export class InvestmentTradeService {
       accountBalanceService: AccountBalanceService;
     } = {
       db: prisma,
-      investmentService: investmentServiceInstance,
-      accountBalanceService: accountBalanceServiceInstance,
+      investmentService: investmentService,
+      accountBalanceService: accountBalanceService,
     },
   ) {}
 

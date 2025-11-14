@@ -11,7 +11,6 @@ import {
   decimalToNullableString,
   decimalToString,
 } from '@server/share/utils/formatters';
-import { Elysia } from 'elysia';
 import type {
   AccountDeleteResponse,
   AccountListResponse,
@@ -271,4 +270,4 @@ export class AccountService {
   }
 }
 
-export default new Elysia().decorate('accountService', new AccountService());
+export const accountService = new AccountService();

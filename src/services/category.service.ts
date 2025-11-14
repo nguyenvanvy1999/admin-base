@@ -13,7 +13,6 @@ import {
   TRANSFER_CATEGORY,
 } from '@server/share/constants/category';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import { Elysia } from 'elysia';
 import type {
   CategoryListResponse,
   CategoryResponse,
@@ -526,4 +525,4 @@ export class CategoryService {
   }
 }
 
-export default new Elysia().decorate('categoryService', new CategoryService());
+export const categoryService = new CategoryService();

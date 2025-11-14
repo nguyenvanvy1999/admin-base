@@ -7,7 +7,6 @@ import type {
 } from '@server/generated/prisma/models/Tag';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import { dateToIsoString } from '@server/share/utils/formatters';
-import { Elysia } from 'elysia';
 import type {
   IListTagsQueryDto,
   IUpsertTagDto,
@@ -218,4 +217,4 @@ export class TagService {
   }
 }
 
-export default new Elysia().decorate('tagService', new TagService());
+export const tagService = new TagService();

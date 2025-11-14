@@ -6,7 +6,6 @@ import {
 } from '@server/generated/prisma/enums';
 import type { InvestmentWhereInput } from '@server/generated/prisma/models/Investment';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import { Elysia } from 'elysia';
 import type {
   IListInvestmentsQueryDto,
   InvestmentLatestValuationResponse,
@@ -306,9 +305,4 @@ export class InvestmentService {
   }
 }
 
-export const investmentServiceInstance = new InvestmentService();
-
-export default new Elysia().decorate(
-  'investmentService',
-  investmentServiceInstance,
-);
+export const investmentService = new InvestmentService();

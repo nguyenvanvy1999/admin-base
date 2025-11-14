@@ -10,7 +10,7 @@ import Elysia from 'elysia';
 import type { InvestmentPositionResponse } from '../dto/investment.dto';
 import {
   type InvestmentService,
-  investmentServiceInstance,
+  investmentService,
 } from './investment.service';
 import {
   CONTRIBUTION_SELECT_FOR_POSITION,
@@ -71,7 +71,7 @@ export class InvestmentPositionService {
       investmentService: InvestmentService;
     } = {
       db: prisma,
-      investmentService: investmentServiceInstance,
+      investmentService: investmentService,
     },
   ) {}
 

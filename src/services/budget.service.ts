@@ -13,7 +13,6 @@ import {
   decimalToString,
 } from '@server/share/utils/formatters';
 import Decimal from 'decimal.js';
-import { Elysia } from 'elysia';
 import type {
   IBudgetPeriodQueryDto,
   IListBudgetsQueryDto,
@@ -21,7 +20,7 @@ import type {
 } from '../dto/budget.dto';
 import {
   type CurrencyConversionService,
-  currencyConversionServiceInstance,
+  currencyConversionService,
 } from './currency-conversion.service';
 
 import { BUDGET_SELECT_FULL, BUDGET_SELECT_MINIMAL } from './selects';
@@ -51,7 +50,7 @@ export class BudgetService {
       currencyConversionService: CurrencyConversionService;
     } = {
       db: prisma,
-      currencyConversionService: currencyConversionServiceInstance,
+      currencyConversionService: currencyConversionService,
     },
   ) {}
 
@@ -677,4 +676,4 @@ export class BudgetService {
   }
 }
 
-export default new Elysia().decorate('budgetService', new BudgetService());
+export const budgetService = new BudgetService();

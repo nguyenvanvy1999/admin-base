@@ -1,6 +1,5 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import { Elysia } from 'elysia';
 
 export class CurrencyService {
   constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
@@ -18,4 +17,4 @@ export class CurrencyService {
   }
 }
 
-export default new Elysia().decorate('currencyService', new CurrencyService());
+export const currencyService = new CurrencyService();

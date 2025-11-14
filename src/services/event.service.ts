@@ -6,7 +6,6 @@ import type {
   EventWhereInput,
 } from '@server/generated/prisma/models/Event';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import { Elysia } from 'elysia';
 import type { IListEventsQueryDto, IUpsertEventDto } from '../dto/event.dto';
 
 import { EVENT_SELECT_FULL, EVENT_SELECT_MINIMAL } from './selects';
@@ -254,4 +253,4 @@ export class EventService {
   }
 }
 
-export default new Elysia().decorate('eventService', new EventService());
+export const eventService = new EventService();

@@ -30,12 +30,12 @@ import type {
 } from '../dto/transaction.dto';
 import {
   type AccountBalanceService,
-  accountBalanceServiceInstance,
+  accountBalanceService,
 } from './account-balance.service';
 import { CategoryService } from './category.service';
 import {
   type CurrencyConversionService,
-  currencyConversionServiceInstance,
+  currencyConversionService,
 } from './currency-conversion.service';
 import {
   CURRENCY_SELECT_BASIC,
@@ -801,8 +801,8 @@ export class TransactionService {
     } = {
       db: prisma,
       categoryService: new CategoryService(),
-      accountBalanceService: accountBalanceServiceInstance,
-      currencyConversionService: currencyConversionServiceInstance,
+      accountBalanceService: accountBalanceService,
+      currencyConversionService: currencyConversionService,
     },
   ) {
     this.handlerFactory = new TransactionHandlerFactory({
@@ -1104,7 +1104,7 @@ export class TransactionService {
           const existingToAmount = mirrorForRevert
             ? new Decimal(mirrorForRevert.amount)
             : undefined;
-          await accountBalanceServiceInstance.revertTransactionBalance(
+          await accountBalanceService.revertTransactionBalance(
             tx,
             primary.type,
             primary.accountId,
@@ -1137,7 +1137,7 @@ export class TransactionService {
       });
     } else {
       await this.deps.db.$transaction(async (tx: PrismaTx) => {
-        await accountBalanceServiceInstance.revertTransactionBalance(
+        await accountBalanceService.revertTransactionBalance(
           tx,
           transaction.type,
           transaction.accountId,

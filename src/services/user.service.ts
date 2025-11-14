@@ -5,7 +5,6 @@ import { userUtilService } from '@server/services/auth/auth-util.service';
 import { DB_PREFIX, defaultRoles, IdUtil, SUPER_ADMIN_ID } from '@server/share';
 import { CURRENCY_IDS } from '@server/share/constants/currency';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import { Elysia } from 'elysia';
 import type {
   AuthUserRes,
   IChangePasswordDto,
@@ -276,4 +275,4 @@ export class UserService {
   }
 }
 
-export default new Elysia().decorate('userService', new UserService());
+export const userService = new UserService();

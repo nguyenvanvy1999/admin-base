@@ -9,7 +9,7 @@ import type {
 } from '../dto/valuation.dto';
 import {
   type InvestmentService,
-  investmentServiceInstance,
+  investmentService,
 } from './investment.service';
 import { VALUATION_SELECT_FULL } from './selects';
 
@@ -20,7 +20,7 @@ export class InvestmentValuationService {
       investmentService: InvestmentService;
     } = {
       db: prisma,
-      investmentService: investmentServiceInstance,
+      investmentService: investmentService,
     },
   ) {}
 

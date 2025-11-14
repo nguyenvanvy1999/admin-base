@@ -6,7 +6,6 @@ import type {
   EntityWhereInput,
 } from '@server/generated/prisma/models/Entity';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import { Elysia } from 'elysia';
 import type {
   IListEntitiesQueryDto,
   IUpsertEntityDto,
@@ -226,4 +225,4 @@ export class EntityService {
   }
 }
 
-export default new Elysia().decorate('entityService', new EntityService());
+export const entityService = new EntityService();

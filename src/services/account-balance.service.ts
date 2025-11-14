@@ -9,7 +9,7 @@ import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import Decimal from 'decimal.js';
 import {
   type CurrencyConversionService,
-  currencyConversionServiceInstance,
+  currencyConversionService,
 } from './currency-conversion.service';
 
 export class AccountBalanceService {
@@ -19,7 +19,7 @@ export class AccountBalanceService {
       currencyConverter: CurrencyConversionService;
     } = {
       db: prisma,
-      currencyConverter: currencyConversionServiceInstance,
+      currencyConverter: currencyConversionService,
     },
   ) {}
 
@@ -352,4 +352,4 @@ export class AccountBalanceService {
   }
 }
 
-export const accountBalanceServiceInstance = new AccountBalanceService();
+export const accountBalanceService = new AccountBalanceService();

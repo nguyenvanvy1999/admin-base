@@ -41,8 +41,7 @@ export class ExchangeRateService {
     const normalizedTo = toCode.toUpperCase();
 
     if (normalizedFrom === 'VND') {
-      const rate = await this.getVndRate(normalizedTo);
-      return rate;
+      return await this.getVndRate(normalizedTo);
     }
 
     if (normalizedTo === 'VND') {
@@ -95,8 +94,7 @@ export class ExchangeRateService {
 
     this.fetchPromise = this.fetchRates();
     try {
-      const rates = await this.fetchPromise;
-      return rates;
+      return await this.fetchPromise;
     } finally {
       this.fetchPromise = null;
     }
@@ -110,11 +108,7 @@ export class ExchangeRateService {
     const now = Date.now();
     const cacheAge = now - this.cache.fetchedAt;
 
-    if (cacheAge > this.cacheTtl) {
-      return false;
-    }
-
-    return true;
+    return cacheAge <= this.cacheTtl;
   }
 
   private async fetchRates(): Promise<Record<string, number>> {
@@ -198,4 +192,4 @@ export class ExchangeRateService {
   }
 }
 
-export const exchangeRateServiceInstance = new ExchangeRateService();
+export const exchangeRateService = new ExchangeRateService();
