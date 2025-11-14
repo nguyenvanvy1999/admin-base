@@ -676,7 +676,12 @@
       "quarterly": "Quarterly",
       "yearly": "Yearly",
       "none": "None"
-    }
+    },
+    "invalidId": "Budget identifier is missing.",
+    "detailTitle": "Budget detail",
+    "notFound": "Budget not found",
+    "periodTransactions": "Period Transactions",
+    "periodNotFound": "Period not found"
   },
   "users": {
     "title": "Users",

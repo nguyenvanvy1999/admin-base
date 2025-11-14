@@ -1,6 +1,4 @@
 import AddEditBudgetDialog from '@client/components/AddEditBudgetDialog';
-import BudgetPeriodDetail from '@client/components/BudgetPeriodDetail';
-import BudgetPeriodList from '@client/components/BudgetPeriodList';
 import BudgetTable from '@client/components/BudgetTable';
 import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
 import { DeleteManyConfirmationModal } from '@client/components/DeleteManyConfirmationModal';
@@ -18,23 +16,17 @@ import {
 } from '@client/hooks/mutations/useBudgetMutations';
 import {
   type FilterFormValue,
-  useBudgetPeriodDetailQuery,
-  useBudgetPeriodsQuery,
   useBudgetsQuery,
 } from '@client/hooks/queries/useBudgetQueries';
 import { usePageDelete } from '@client/hooks/usePageDelete';
 import { usePageDialog } from '@client/hooks/usePageDialog';
 import { usePaginationSorting } from '@client/hooks/usePaginationSorting';
 import { useZodForm } from '@client/hooks/useZodForm';
-import { Button, Group, Modal, MultiSelect, TextInput } from '@mantine/core';
-import type {
-  BudgetPeriodDetailResponse,
-  BudgetResponse,
-  IUpsertBudgetDto,
-} from '@server/dto/budget.dto';
+import { Button, Group, MultiSelect, TextInput } from '@mantine/core';
+import type { BudgetResponse, IUpsertBudgetDto } from '@server/dto/budget.dto';
 import { ListBudgetsQueryDto } from '@server/dto/budget.dto';
 import { BudgetPeriod } from '@server/generated/prisma/enums';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const filterSchema = ListBudgetsQueryDto.pick({
@@ -50,12 +42,6 @@ const defaultFilterValues: FilterFormValue = {
 const BudgetPage = () => {
   const { t } = useTranslation();
   const formRef = useRef<FormComponentRef>(null);
-  const [selectedBudget, setSelectedBudget] = useState<BudgetResponse | null>(
-    null,
-  );
-  const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
-  const [showPeriodsModal, setShowPeriodsModal] = useState(false);
-  const [showPeriodDetailModal, setShowPeriodDetailModal] = useState(false);
 
   const paginationSorting = usePaginationSorting<
     'name' | 'amount' | 'period' | 'startDate' | 'createdAt'
@@ -78,14 +64,6 @@ const BudgetPage = () => {
     paginationSorting.queryParams,
     formRef,
     form.handleSubmit,
-  );
-
-  const { data: periodsData, isLoading: periodsLoading } =
-    useBudgetPeriodsQuery(selectedBudget?.id || '');
-
-  const { data: periodDetailData } = useBudgetPeriodDetailQuery(
-    selectedBudget?.id || '',
-    selectedPeriodId || '',
   );
 
   const createMutation = useCreateBudgetMutation();
@@ -123,16 +101,6 @@ const BudgetPage = () => {
 
   const handleSearch = () => {
     refetch();
-  };
-
-  const handleViewPeriods = (budget: BudgetResponse) => {
-    setSelectedBudget(budget);
-    setShowPeriodsModal(true);
-  };
-
-  const handlePeriodClick = (period: BudgetPeriodDetailResponse) => {
-    setSelectedPeriodId(period.id);
-    setShowPeriodDetailModal(true);
   };
 
   const isSubmitting =
@@ -225,7 +193,6 @@ const BudgetPage = () => {
           onEdit={dialog.handleEdit}
           onDelete={deleteHandler.handleDelete}
           onDeleteMany={deleteHandler.handleDeleteMany}
-          onViewPeriods={handleViewPeriods}
           isLoading={isLoading}
           recordsPerPage={paginationSorting.limit}
           recordsPerPageOptions={[10, 20, 50, 100]}
@@ -277,34 +244,6 @@ const BudgetPage = () => {
             count={deleteHandler.itemsToDeleteMany.length}
           />
         )}
-
-      <Modal
-        opened={showPeriodsModal}
-        onClose={() => {
-          setShowPeriodsModal(false);
-          setSelectedBudget(null);
-        }}
-        title={t('budgets.periods', { defaultValue: 'Budget Periods' })}
-        size="xl"
-      >
-        <BudgetPeriodList
-          periods={periodsData?.periods || []}
-          isLoading={periodsLoading}
-          onPeriodClick={handlePeriodClick}
-        />
-      </Modal>
-
-      <Modal
-        opened={showPeriodDetailModal}
-        onClose={() => {
-          setShowPeriodDetailModal(false);
-          setSelectedPeriodId(null);
-        }}
-        title={t('budgets.periodDetail', { defaultValue: 'Period Detail' })}
-        size="md"
-      >
-        {periodDetailData && <BudgetPeriodDetail period={periodDetailData} />}
-      </Modal>
     </>
   );
 };

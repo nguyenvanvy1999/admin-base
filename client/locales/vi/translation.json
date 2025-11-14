@@ -676,7 +676,12 @@
       "quarterly": "Hàng quý",
       "yearly": "Hàng năm",
       "none": "Không lặp lại"
-    }
+    },
+    "invalidId": "Thiếu mã định danh ngân sách.",
+    "detailTitle": "Chi tiết ngân sách",
+    "notFound": "Không tìm thấy ngân sách",
+    "periodTransactions": "Giao dịch trong kỳ",
+    "periodNotFound": "Không tìm thấy kỳ"
   },
   "users": {
     "title": "Người dùng",

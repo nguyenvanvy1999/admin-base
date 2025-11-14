@@ -4,6 +4,7 @@ import { BudgetPeriod } from '@server/generated/prisma/enums';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
 import { DataTable, type DataTableColumn } from './DataTable';
 
 type BudgetTableProps = {
@@ -11,7 +12,6 @@ type BudgetTableProps = {
   onEdit: (budget: BudgetResponse) => void;
   onDelete: (budget: BudgetResponse) => void;
   onDeleteMany?: (ids: string[]) => void;
-  onViewPeriods?: (budget: BudgetResponse) => void;
   isLoading?: boolean;
   showIndexColumn?: boolean;
   recordsPerPage?: number;
@@ -38,7 +38,6 @@ const BudgetTable = ({
   onEdit,
   onDelete,
   onDeleteMany,
-  onViewPeriods,
   isLoading = false,
   showIndexColumn = true,
   recordsPerPage,
@@ -53,6 +52,7 @@ const BudgetTable = ({
   onSelectedRecordsChange,
 }: BudgetTableProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const getPeriodLabel = (period: BudgetPeriod) => {
     switch (period) {
@@ -78,6 +78,20 @@ const BudgetTable = ({
       {
         accessor: 'name',
         title: 'budgets.name',
+        render: (value: unknown, row: BudgetResponse) => (
+          <Button
+            variant="subtle"
+            p={0}
+            h="auto"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/budgets/${row.id}`);
+            }}
+            style={{ fontWeight: 'inherit' }}
+          >
+            {value as string}
+          </Button>
+        ),
       },
       {
         accessor: 'amount',
@@ -140,26 +154,33 @@ const BudgetTable = ({
         accessor: 'actions',
         render: (_value: unknown, row: BudgetResponse) => (
           <div className="flex items-center gap-2">
-            {onViewPeriods && (
-              <Button
-                size="xs"
-                variant="light"
-                onClick={() => onViewPeriods(row)}
-              >
-                {t('budgets.viewPeriods', { defaultValue: 'View Periods' })}
-              </Button>
-            )}
+            <Button
+              size="xs"
+              variant="light"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/budgets/${row.id}`);
+              }}
+            >
+              {t('budgets.viewPeriods', { defaultValue: 'View Periods' })}
+            </Button>
             <ActionIcon
               variant="subtle"
               color="blue"
-              onClick={() => onEdit(row)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(row);
+              }}
             >
               <IconEdit size={16} />
             </ActionIcon>
             <ActionIcon
               variant="subtle"
               color="red"
-              onClick={() => onDelete(row)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(row);
+              }}
             >
               <IconTrash size={16} />
             </ActionIcon>
@@ -167,7 +188,7 @@ const BudgetTable = ({
         ),
       },
     ],
-    [t, onEdit, onDelete, onViewPeriods],
+    [t, onEdit, onDelete, navigate],
   );
 
   return (

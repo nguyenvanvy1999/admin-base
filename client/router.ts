@@ -6,7 +6,9 @@ import PermissionPage from './pages/admin/PermissionPage';
 import RolePage from './pages/admin/RolePage';
 import AdminSessionPage from './pages/admin/SessionPage';
 import UserPage from './pages/admin/UserPage';
+import BudgetDetailPage from './pages/BudgetDetailPage';
 import BudgetPage from './pages/BudgetPage';
+import BudgetPeriodDetailPage from './pages/BudgetPeriodDetailPage';
 import BulkTransactionPage from './pages/BulkTransactionPage';
 import CategoryPage from './pages/CategoryPage';
 import DebtPage from './pages/DebtPage';
@@ -62,6 +64,14 @@ const router = createHashRouter([
       {
         path: '/budgets',
         Component: BudgetPage,
+      },
+      {
+        path: '/budgets/:budgetId/periods/:periodId',
+        Component: BudgetPeriodDetailPage,
+      },
+      {
+        path: '/budgets/:budgetId',
+        Component: BudgetDetailPage,
       },
       {
         path: '/accounts',

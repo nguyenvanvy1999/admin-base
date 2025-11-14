@@ -1,19 +1,31 @@
 import { Badge, Card, Table, Text } from '@mantine/core';
 import type { BudgetPeriodDetailResponse } from '@server/dto/budget.dto';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
 
 type BudgetPeriodListProps = {
   periods: BudgetPeriodDetailResponse[];
   isLoading?: boolean;
+  budgetId?: string;
   onPeriodClick?: (period: BudgetPeriodDetailResponse) => void;
 };
 
 const BudgetPeriodList = ({
   periods,
   isLoading = false,
+  budgetId,
   onPeriodClick,
 }: BudgetPeriodListProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const handlePeriodClick = (period: BudgetPeriodDetailResponse) => {
+    if (onPeriodClick) {
+      onPeriodClick(period);
+    } else if (budgetId) {
+      navigate(`/budgets/${budgetId}/periods/${period.id}`);
+    }
+  };
 
   const formatCurrency = (value: string) => {
     const amount = parseFloat(value);
@@ -79,8 +91,10 @@ const BudgetPeriodList = ({
           return (
             <Table.Tr
               key={period.id}
-              onClick={() => onPeriodClick?.(period)}
-              style={{ cursor: onPeriodClick ? 'pointer' : 'default' }}
+              onClick={() => handlePeriodClick(period)}
+              style={{
+                cursor: onPeriodClick || budgetId ? 'pointer' : 'default',
+              }}
             >
               <Table.Td>{formatDate(period.periodStartDate)}</Table.Td>
               <Table.Td>{formatDate(period.periodEndDate)}</Table.Td>
