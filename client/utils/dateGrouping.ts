@@ -1,24 +1,21 @@
 import type { TransactionDetail } from '@server/dto/transaction.dto';
+import dayjs from 'dayjs';
 
 export type DateGroupLevel = 'day' | 'month' | 'year';
 
 export function getDateGroupKey(date: string, level: DateGroupLevel): string {
   if (!date) return '';
 
-  const dateObj = new Date(date);
-  if (isNaN(dateObj.getTime())) return '';
-
-  const year = dateObj.getFullYear();
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const day = String(dateObj.getDate()).padStart(2, '0');
+  const d = dayjs(date);
+  if (!d.isValid()) return '';
 
   switch (level) {
     case 'day':
-      return `${year}-${month}-${day}`;
+      return d.format('YYYY-MM-DD');
     case 'month':
-      return `${year}-${month}`;
+      return d.format('YYYY-MM');
     case 'year':
-      return String(year);
+      return d.format('YYYY');
     default:
       return '';
   }

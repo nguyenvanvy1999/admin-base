@@ -30,7 +30,7 @@ type BudgetRecord = Prisma.BudgetGetPayload<{
   select: typeof BUDGET_SELECT_FULL;
 }>;
 
-const mapBudget = (budget: BudgetRecord, baseCurrencyId: string) => ({
+const mapBudget = (budget: BudgetRecord) => ({
   id: budget.id,
   name: budget.name,
   amount: decimalToString(budget.amount),
@@ -340,8 +340,6 @@ export class BudgetService {
       data.categoryIds,
     );
 
-    const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
-
     if (data.id) {
       const budget = await this.deps.db.budget.update({
         where: { id: data.id },
@@ -367,7 +365,7 @@ export class BudgetService {
         },
         select: BUDGET_SELECT_FULL,
       });
-      return mapBudget(budget, baseCurrencyId);
+      return mapBudget(budget);
     } else {
       const budget = await this.deps.db.budget.create({
         data: {
@@ -391,12 +389,11 @@ export class BudgetService {
         },
         select: BUDGET_SELECT_FULL,
       });
-      return mapBudget(budget, baseCurrencyId);
+      return mapBudget(budget);
     }
   }
 
   async getBudget(userId: string, budgetId: string) {
-    const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
     const budget = await this.deps.db.budget.findFirst({
       where: {
         id: budgetId,
@@ -410,7 +407,7 @@ export class BudgetService {
       throwAppError(ErrorCode.BUDGET_NOT_FOUND, 'Budget not found');
     }
 
-    return mapBudget(budget, baseCurrencyId);
+    return mapBudget(budget);
   }
 
   async listBudgets(userId: string, query: IListBudgetsQueryDto = {}) {
@@ -453,7 +450,6 @@ export class BudgetService {
     }
 
     const skip = (page - 1) * limit;
-    const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
 
     const [budgets, total] = await Promise.all([
       this.deps.db.budget.findMany({
@@ -467,7 +463,7 @@ export class BudgetService {
     ]);
 
     return {
-      budgets: budgets.map((budget) => mapBudget(budget, baseCurrencyId)),
+      budgets: budgets.map((budget) => mapBudget(budget)),
       pagination: {
         page,
         limit,
@@ -560,17 +556,20 @@ export class BudgetService {
       let carriedOverAmount = new Decimal(0);
       if (existingPeriod) {
         carriedOverAmount = new Decimal(existingPeriod.carriedOverAmount);
-      } else if (currentStart > budget.startDate) {
-        const previousPeriodEnd = new Date(currentStart);
-        previousPeriodEnd.setMilliseconds(
-          previousPeriodEnd.getMilliseconds() - 1,
-        );
-        carriedOverAmount = await this.getCarryOverAmount(
-          userId,
-          budgetId,
-          previousPeriodEnd,
-        );
+      } else {
+        if (currentStart > budget.startDate) {
+          const previousPeriodEnd = new Date(currentStart);
+          previousPeriodEnd.setMilliseconds(
+            previousPeriodEnd.getMilliseconds() - 1,
+          );
+          carriedOverAmount = await this.getCarryOverAmount(
+            userId,
+            budgetId,
+            previousPeriodEnd,
+          );
+        }
 
+        // Always create a period record if it doesn't exist
         existingPeriod = await this.deps.db.budgetPeriodRecord.create({
           data: {
             budgetId,
@@ -594,7 +593,7 @@ export class BudgetService {
       const isOverBudget = spent.gt(totalAmount);
 
       periods.push({
-        id: existingPeriod ? existingPeriod.id : '',
+        id: existingPeriod.id,
         budgetId,
         periodStartDate: dateToIsoString(currentStart),
         periodEndDate: dateToIsoString(periodEndDate),
@@ -604,12 +603,8 @@ export class BudgetService {
         spentAmount: decimalToString(spent),
         remainingAmount: decimalToString(remaining),
         isOverBudget,
-        createdAt: existingPeriod
-          ? dateToIsoString(existingPeriod.createdAt)
-          : dateToIsoString(new Date()),
-        updatedAt: existingPeriod
-          ? dateToIsoString(existingPeriod.updatedAt)
-          : dateToIsoString(new Date()),
+        createdAt: dateToIsoString(existingPeriod.createdAt),
+        updatedAt: dateToIsoString(existingPeriod.updatedAt),
       });
 
       currentStart = this.calculateNextPeriodStart(budget.period, currentStart);

@@ -1,9 +1,10 @@
 import { booleanStatusMap } from '@client/utils/booleanStatusMap';
 import { formatDate, formatDecimal, formatInt } from '@client/utils/format';
 import type { ColumnDef } from '@tanstack/react-table';
+import type React from 'react';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MetaVisualizer } from '../../MetaVisualizer';
+import { MetaVisualizer } from '@/components';
 import type { DataTableColumn } from '../types';
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
@@ -84,7 +85,7 @@ export function useDataTableColumns<T extends { id: string }>({
     return Number.isFinite(num) ? Math.round(num * 16) : undefined;
   }, []);
 
-  const mappedColumns = useMemo<ColumnDef<T>[]>(() => {
+  return useMemo<ColumnDef<T>[]>(() => {
     return columns.map((col, idx) => {
       const hasAccessorFn = typeof col.accessor === 'function';
       const accessorKey =
@@ -92,6 +93,7 @@ export function useDataTableColumns<T extends { id: string }>({
           ? (col.accessor as string)
           : undefined;
       const id =
+        col.id ||
         accessorKey ||
         (col.title ? String(col.title) : undefined) ||
         `col_${idx}`;
@@ -152,7 +154,7 @@ export function useDataTableColumns<T extends { id: string }>({
         );
       };
 
-      const columnDef: ColumnDef<T> = {
+      return {
         id,
         header: col.title ? t(col.title) : '',
         Cell: cellRenderer,
@@ -187,9 +189,6 @@ export function useDataTableColumns<T extends { id: string }>({
           },
         },
       } as ColumnDef<T>;
-      return columnDef;
     });
   }, [columns, t, autoFormatDisabled, autoFormat, toPx, themeSpacingXs]);
-
-  return mappedColumns;
 }

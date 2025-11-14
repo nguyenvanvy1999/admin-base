@@ -9,6 +9,7 @@ export type SortingState = { id: string; desc: boolean }[];
 export type ColumnFilter = { id: string; value: unknown };
 
 export interface DataTableColumn<T> {
+  id?: string;
   title?: ParseKeys;
   accessor?: string | AccessorFn<T>;
   render?: (value: unknown, row: T, rowIndex: number) => React.ReactNode;
@@ -33,8 +34,8 @@ export interface DataTableColumn<T> {
   enableSorting?: boolean;
   enableGrouping?: boolean;
   aggregationFn?: string;
-  GroupedCell?: (props: { row: any }) => React.ReactNode;
-  AggregatedCell?: (props: { row: any }) => React.ReactNode;
+  GroupedCell?: (props: { row: any; cell: any }) => React.ReactNode;
+  AggregatedCell?: (props: { row: any; cell: any }) => React.ReactNode;
 }
 
 export interface DataTableProps<T extends { id: string } = { id: string }> {

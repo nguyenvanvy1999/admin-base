@@ -17,7 +17,7 @@ import {
 import type { TransactionDetail } from '@server/dto/transaction.dto';
 import { TransactionType } from '@server/generated/prisma/enums';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTable, type DataTableColumn } from './DataTable';
 import { getCategoryIcon, getCategoryLabel } from './utils/category';
@@ -107,43 +107,44 @@ const TransactionTable = ({
     }
   };
 
-  const getDateAccessor = () => {
-    switch (groupingLevel) {
-      case 'day':
-        return dateGroupByDay;
-      case 'month':
-        return dateGroupByMonth;
-      case 'year':
-        return dateGroupByYear;
-      default:
-        return 'date';
-    }
-  };
-
   const grouping = useMemo(() => {
     if (groupingLevel === 'none') return [];
     return ['date'];
   }, [groupingLevel]);
 
+  const dateAccessor = useCallback(
+    (row: TransactionDetail) => {
+      switch (groupingLevel) {
+        case 'day':
+          return dateGroupByDay(row);
+        case 'month':
+          return dateGroupByMonth(row);
+        case 'year':
+          return dateGroupByYear(row);
+        default:
+          return row.date;
+      }
+    },
+    [groupingLevel],
+  );
+
   const columns = useMemo(
     (): DataTableColumn<TransactionDetail>[] => [
       {
-        accessor:
-          groupingLevel === 'none'
-            ? 'date'
-            : (getDateAccessor() as (row: TransactionDetail) => string),
+        id: 'date',
+        accessor: dateAccessor as (row: TransactionDetail) => string,
         title: 'transactions.date',
         enableGrouping: groupingLevel !== 'none',
         GroupedCell:
           groupingLevel !== 'none'
-            ? ({ cell }: any) => {
+            ? ({ row, cell }: any) => {
                 const groupValue = cell.getValue() as string;
                 const formatted = formatDateGroupKey(
                   groupValue,
                   groupingLevel as DateGroupLevel,
                   i18n.language || 'en',
                 );
-                const count = cell.row.subRows?.length || 0;
+                const count = row.subRows?.length || 0;
                 return (
                   <Box
                     style={{
@@ -160,7 +161,7 @@ const TransactionTable = ({
       {
         accessor: 'type',
         title: 'transactions.type',
-        render: (value, row: TransactionDetail) => (
+        render: (_, row: TransactionDetail) => (
           <Badge color={getTransactionTypeColor(row.type)}>
             {getTransactionTypeLabel(row.type)}
           </Badge>
@@ -176,7 +177,7 @@ const TransactionTable = ({
         enableSorting: false,
         accessor: (row) => row.category?.name,
         title: 'transactions.category',
-        render: (value, row: TransactionDetail) => {
+        render: (_, row: TransactionDetail) => {
           const category = row.category;
           if (!category) {
             return (
@@ -218,38 +219,47 @@ const TransactionTable = ({
         },
       },
       {
-        accessor: 'amount',
+        id: 'amount',
+        accessor: (row) => {
+          const amount = parseFloat(String(row.amount));
+          const isExpense = row.type === TransactionType.expense;
+          return isExpense ? -amount : amount;
+        },
         title: 'transactions.amount',
         aggregationFn: groupingLevel !== 'none' ? 'sum' : undefined,
         AggregatedCell:
           groupingLevel !== 'none'
-            ? ({ cell }: any) => {
+            ? ({ row, cell }: any) => {
                 const aggregatedValue = cell.getValue() as number;
-                const subRows = cell.row.subRows || [];
+                const subRows = row.subRows || [];
                 const firstTransaction = subRows[0]?.original as
                   | TransactionDetail
                   | undefined;
                 const currencySymbol =
                   firstTransaction?.account?.currency?.symbol || '';
+                const isPositive = aggregatedValue >= 0;
                 return (
                   <Box
                     style={{
-                      color: 'var(--mantine-color-green-6)',
+                      color: isPositive
+                        ? 'var(--mantine-color-green-6)'
+                        : 'var(--mantine-color-red-6)',
                       fontWeight: 'bold',
                     }}
                   >
                     {t('transactions.totalAmount', { defaultValue: 'Total' })}:{' '}
                     <NumberFormatter
-                      value={Math.abs(aggregatedValue)}
+                      value={aggregatedValue}
                       prefix={currencySymbol ? `${currencySymbol} ` : ''}
                       thousandSeparator=","
                       decimalScale={2}
+                      allowNegative={true}
                     />
                   </Box>
                 );
               }
             : undefined,
-        render: (value, row: TransactionDetail) => {
+        render: (_, row: TransactionDetail) => {
           const amount = parseFloat(String(row.amount));
           const isExpense = row.type === TransactionType.expense;
           const isIncome = row.type === TransactionType.income;
@@ -278,7 +288,7 @@ const TransactionTable = ({
         enableSorting: false,
         accessor: (row) => row.event?.name,
         title: 'transactions.event',
-        render: (value, row: TransactionDetail) => {
+        render: (_, row: TransactionDetail) => {
           const event = row.event;
           if (!event) {
             return (
@@ -301,7 +311,7 @@ const TransactionTable = ({
         title: 'transactions.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value, row: TransactionDetail) => (
+        render: (_, row: TransactionDetail) => (
           <Group gap="xs" justify="center">
             <ActionIcon
               variant="subtle"
@@ -327,7 +337,7 @@ const TransactionTable = ({
         ),
       },
     ],
-    [t, onEdit, onDelete, groupingLevel, i18n.language],
+    [t, onEdit, onDelete, groupingLevel, i18n.language, dateAccessor],
   );
 
   return (
@@ -363,6 +373,7 @@ const TransactionTable = ({
         />
       </Group>
       <DataTable
+        key={`table-${groupingLevel}`}
         data={transactions}
         columns={columns}
         loading={isLoading}

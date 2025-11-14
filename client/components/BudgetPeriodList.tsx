@@ -22,7 +22,7 @@ const BudgetPeriodList = ({
   const handlePeriodClick = (period: BudgetPeriodDetailResponse) => {
     if (onPeriodClick) {
       onPeriodClick(period);
-    } else if (budgetId) {
+    } else if (budgetId && period.id) {
       navigate(`/budgets/${budgetId}/periods/${period.id}`);
     }
   };
