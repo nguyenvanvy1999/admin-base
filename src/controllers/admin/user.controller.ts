@@ -25,7 +25,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
   .use(authorize(anyOf(has('USER.VIEW'), has('USER.VIEW_ALL'))))
   .get(
     '/',
-    async ({ query, currentUser }) => {
+    async ({ query }) => {
       const {
         search,
         role,

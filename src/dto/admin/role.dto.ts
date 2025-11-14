@@ -20,8 +20,6 @@ export const UpsertRoleDtoZod = z.object({
   playerIds: z.array(z.string()).default([]),
 });
 
-export type IUpsertRoleDto = z.infer<typeof UpsertRoleDtoZod>;
-
 export const ListRolesQueryDto = createListQueryDto({
   search: z.string().optional(),
   userId: z.string().optional(),
@@ -42,8 +40,6 @@ export const RoleResDto = t.NoValidate(
     updatedAt: t.String(),
   }),
 );
-
-export const RolePaginationDto = PaginationDto;
 
 export const RoleListResponseDto = t.NoValidate(
   t.Object({

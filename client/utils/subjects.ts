@@ -11,12 +11,8 @@ export const configSubject = new BehaviorSubject<{
 });
 
 export const accessTokenRefreshSubject = new BehaviorSubject<string>('');
-
-export const accessTokenExpiredSubject = new Subject<
-  (newToken: boolean) => void
->();
-
-export const messengerSubject = new BehaviorSubject<
+new Subject<(newToken: boolean) => void>();
+new BehaviorSubject<
   | {
       type: 'error' | 'warn';
       code: string;

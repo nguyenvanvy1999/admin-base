@@ -136,7 +136,7 @@ const TransactionTable = ({
         enableGrouping: groupingLevel !== 'none',
         GroupedCell:
           groupingLevel !== 'none'
-            ? ({ cell, table }: any) => {
+            ? ({ cell }: any) => {
                 const groupValue = cell.getValue() as string;
                 const formatted = formatDateGroupKey(
                   groupValue,
@@ -223,7 +223,7 @@ const TransactionTable = ({
         aggregationFn: groupingLevel !== 'none' ? 'sum' : undefined,
         AggregatedCell:
           groupingLevel !== 'none'
-            ? ({ cell, table }: any) => {
+            ? ({ cell }: any) => {
                 const aggregatedValue = cell.getValue() as number;
                 const subRows = cell.row.subRows || [];
                 const firstTransaction = subRows[0]?.original as

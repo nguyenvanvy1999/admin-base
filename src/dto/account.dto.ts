@@ -59,8 +59,6 @@ export const AccountSummaryDto = t.NoValidate(
   }),
 );
 
-export const AccountPaginationDto = PaginationDto;
-
 export const AccountListResponseDto = t.NoValidate(
   t.Object({
     accounts: t.Array(AccountDto),

@@ -6,7 +6,6 @@ import {
   createListQueryDto,
   DeleteManyDto,
   DeleteResponseDto,
-  type IDeleteManyDto,
   PaginationDto,
 } from './common.dto';
 
@@ -14,7 +13,7 @@ export const UpsertBudgetDto = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
   amount: z.number().min(0.01),
-  period: z.nativeEnum(BudgetPeriod),
+  period: z.enum(BudgetPeriod),
   startDate: z.iso.datetime(),
   endDate: z.iso.datetime().optional(),
   carryOver: z.boolean().default(false),
@@ -40,7 +39,6 @@ export const DeleteManyBudgetsDto = DeleteManyDto;
 export type IUpsertBudgetDto = z.infer<typeof UpsertBudgetDto>;
 export type IListBudgetsQueryDto = z.infer<typeof ListBudgetsQueryDto>;
 export type IBudgetPeriodQueryDto = z.infer<typeof BudgetPeriodQueryDto>;
-export type IDeleteManyBudgetsDto = IDeleteManyDto;
 
 export const BudgetDto = t.NoValidate(
   t.Object({
@@ -57,8 +55,6 @@ export const BudgetDto = t.NoValidate(
     updatedAt: t.String(),
   }),
 );
-
-export const BudgetPaginationDto = PaginationDto;
 
 export const BudgetListResponseDto = t.NoValidate(
   t.Object({
@@ -106,7 +102,6 @@ export const BudgetDeleteResponseDto = DeleteResponseDto;
 
 export type BudgetResponse = typeof BudgetDto.static;
 export type BudgetListResponse = typeof BudgetListResponseDto.static;
-export type BudgetPeriodResponse = typeof BudgetPeriodDto.static;
 export type BudgetPeriodDetailResponse = typeof BudgetPeriodDetailDto.static;
 export type BudgetPeriodListResponse =
   typeof BudgetPeriodListResponseDto.static;

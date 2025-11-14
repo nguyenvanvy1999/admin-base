@@ -71,7 +71,6 @@ await configure({
 });
 
 export const logger = getLogger('application');
-export const httpLogger = getLogger('http');
 export const slowReqLogger = getLogger('httpSlow');
 
 export type ILogger = typeof logger;

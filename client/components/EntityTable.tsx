@@ -149,7 +149,7 @@ const EntityTable = ({
       onSelectedRecordsChange={onSelectedRecordsChange}
       renderTopToolbarCustomActions={
         onDeleteMany && selectedCount > 0
-          ? ({ table }) => (
+          ? () => (
               <Button
                 color="red"
                 variant="filled"

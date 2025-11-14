@@ -1,4 +1,3 @@
-import type { ColumnDef } from '@tanstack/react-table';
 import type { ParseKeys } from 'i18next';
 import type React from 'react';
 
@@ -34,5 +33,3 @@ export interface DataTableColumn<T> {
   GroupedCell?: (props: any) => React.ReactNode;
   AggregatedCell?: (props: any) => React.ReactNode;
 }
-
-export type MRTColumnDef<T> = ColumnDef<T>;

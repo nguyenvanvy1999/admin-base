@@ -2,7 +2,7 @@ import { t } from 'elysia';
 import { z } from 'zod';
 import { createListQueryDto, PaginationDto } from '../common.dto';
 
-export const SessionResDto = t.Object({
+t.Object({
   id: t.String(),
   userId: t.String(),
   device: t.Nullable(t.String()),
@@ -12,7 +12,6 @@ export const SessionResDto = t.Object({
   createdAt: t.Date(),
   updatedAt: t.Date(),
 });
-
 export const SessionResWithUserDto = t.NoValidate(
   t.Object({
     id: t.String(),
@@ -52,8 +51,6 @@ export const RevokeSessionDto = t.Object({
   sessionIds: t.Array(t.String(), { minItems: 1 }),
 });
 
-export const SessionPaginationDto = PaginationDto;
-
 export const SessionListResponseDto = t.NoValidate(
   t.Object({
     sessions: t.Array(SessionResWithUserDto),
@@ -69,7 +66,6 @@ export const SessionStatisticsResponseDto = t.NoValidate(
   }),
 );
 
-export type SessionResponse = typeof SessionResDto.static;
 export type SessionResponseWithUser = typeof SessionResWithUserDto.static;
 export type SessionListResponse = typeof SessionListResponseDto.static;
 export type SessionStatisticsResponse =

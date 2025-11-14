@@ -39,12 +39,6 @@ export const BaseListQueryDto = z.object({
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
-export type IBaseListQueryDto = z.infer<typeof BaseListQueryDto>;
-
-export type PaginationResponse = typeof PaginationDto.static;
-export type DeleteResponse = typeof DeleteResponseDto.static;
-export type CurrencyResponse = typeof CurrencyDto.static;
-
 export function createArrayPreprocess<T extends z.ZodTypeAny>(schema: T) {
   return z.preprocess((val) => {
     if (val === undefined || val === null) return undefined;

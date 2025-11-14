@@ -42,7 +42,6 @@ const RoleTable = ({
   roles,
   onEdit,
   onDelete,
-  onDeleteMany,
   isLoading = false,
   showIndexColumn = true,
   recordsPerPage,

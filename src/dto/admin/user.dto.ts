@@ -41,8 +41,6 @@ export const UserResDto = t.NoValidate(
   }),
 );
 
-export const UserPaginationDto = PaginationDto;
-
 export const UserListResponseDto = t.NoValidate(
   t.Object({
     users: t.Array(UserResDto),

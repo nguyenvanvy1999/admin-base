@@ -90,7 +90,7 @@ const SessionPage = ({ isAdminPage = false }: SessionPageProps = {}) => {
   const { data: usersData } = useUsersQuery(
     { page: 1, limit: 1000 },
     { current: null },
-    (onValid) => () => Promise.resolve(),
+    () => () => Promise.resolve(),
     { enabled: showAdminFeatures },
   );
 

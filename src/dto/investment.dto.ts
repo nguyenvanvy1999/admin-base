@@ -55,8 +55,6 @@ export const InvestmentDto = t.NoValidate(
   }),
 );
 
-export const InvestmentPaginationDto = PaginationDto;
-
 export const InvestmentListResponseDto = t.NoValidate(
   t.Object({
     investments: t.Array(InvestmentDto),
@@ -104,5 +102,3 @@ export type InvestmentListResponse = typeof InvestmentListResponseDto.static;
 export type InvestmentPositionResponse = typeof InvestmentPositionDto.static;
 export type InvestmentLatestValuationResponse =
   typeof InvestmentLatestValuationDto.static;
-export type InvestmentDeleteResponse =
-  typeof InvestmentDeleteResponseDto.static;

@@ -4,7 +4,6 @@ import {
   createListQueryDto,
   DeleteManyDto,
   DeleteResponseDto,
-  type IDeleteManyDto,
   PaginationDto,
 } from './common.dto';
 
@@ -23,7 +22,6 @@ export const DeleteManyTagsDto = DeleteManyDto;
 
 export type IUpsertTagDto = z.infer<typeof UpsertTagDto>;
 export type IListTagsQueryDto = z.infer<typeof ListTagsQueryDto>;
-export type IDeleteManyTagsDto = IDeleteManyDto;
 
 export const TagDto = t.NoValidate(
   t.Object({
@@ -34,8 +32,6 @@ export const TagDto = t.NoValidate(
     updatedAt: t.String(),
   }),
 );
-
-export const TagPaginationDto = PaginationDto;
 
 export const TagListResponseDto = t.NoValidate(
   t.Object({

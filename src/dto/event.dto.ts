@@ -4,7 +4,6 @@ import {
   createListQueryDto,
   DeleteManyDto,
   DeleteResponseDto,
-  type IDeleteManyDto,
   PaginationDto,
 } from './common.dto';
 
@@ -28,7 +27,6 @@ export const DeleteManyEventsDto = DeleteManyDto;
 
 export type IUpsertEventDto = z.infer<typeof UpsertEventDto>;
 export type IListEventsQueryDto = z.infer<typeof ListEventsQueryDto>;
-export type IDeleteManyEventsDto = IDeleteManyDto;
 
 export const EventDto = t.NoValidate(
   t.Object({
@@ -40,8 +38,6 @@ export const EventDto = t.NoValidate(
     updatedAt: t.String(),
   }),
 );
-
-export const EventPaginationDto = PaginationDto;
 
 export const EventListResponseDto = t.NoValidate(
   t.Object({

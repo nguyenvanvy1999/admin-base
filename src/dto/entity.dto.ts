@@ -6,7 +6,6 @@ import {
   createListQueryDto,
   DeleteManyDto,
   DeleteResponseDto,
-  type IDeleteManyDto,
   PaginationDto,
 } from './common.dto';
 
@@ -15,7 +14,7 @@ export const UpsertEntityDto = z.object({
   name: z.string().min(1),
   type: z.enum(EntityType),
   phone: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
+  email: z.email().optional().or(z.literal('')),
   address: z.string().optional(),
   note: z.string().optional(),
 });
@@ -30,7 +29,6 @@ export const DeleteManyEntitiesDto = DeleteManyDto;
 
 export type IUpsertEntityDto = z.infer<typeof UpsertEntityDto>;
 export type IListEntitiesQueryDto = z.infer<typeof ListEntitiesQueryDto>;
-export type IDeleteManyEntitiesDto = IDeleteManyDto;
 
 export const EntityDto = t.NoValidate(
   t.Object({
@@ -45,8 +43,6 @@ export const EntityDto = t.NoValidate(
     updatedAt: t.String(),
   }),
 );
-
-export const EntityPaginationDto = PaginationDto;
 
 export const EntityListResponseDto = t.NoValidate(
   t.Object({

@@ -22,16 +22,6 @@ export const useEventsQuery = (queryParams?: ListEventsQuery) => {
   });
 };
 
-export const useEventQuery = (eventId: string) => {
-  return useQuery({
-    queryKey: ['event', eventId],
-    queryFn: () => {
-      return eventService.getEvent(eventId);
-    },
-    enabled: !!eventId,
-  });
-};
-
 export const useEventsOptionsQuery = () => {
   return useQuery({
     queryKey: ['events-options'],

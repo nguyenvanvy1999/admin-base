@@ -27,10 +27,3 @@ export type AppAuthMeta = {
   store: Record<string, unknown>;
   resolve: Record<string, unknown>;
 };
-
-import type { PrismaClient } from '@server/generated/prisma/client';
-
-export type PrismaTx = Omit<
-  PrismaClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'
->;

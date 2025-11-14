@@ -160,12 +160,3 @@ export const useInvestmentValuationsQuery = (
     },
   });
 };
-
-export const useLatestInvestmentValuationQuery = (investmentId: string) => {
-  return useQuery({
-    queryKey: ['investment-latest-valuation', investmentId],
-    queryFn: () => {
-      return investmentService.getLatestValuation(investmentId);
-    },
-  });
-};

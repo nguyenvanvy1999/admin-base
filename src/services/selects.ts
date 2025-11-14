@@ -27,11 +27,6 @@ export const ACCOUNT_SELECT_MINIMAL = {
   id: true,
 } as const;
 
-export const ACCOUNT_SELECT_FOR_BALANCE = {
-  id: true,
-  currencyId: true,
-} as const;
-
 export const CATEGORY_SELECT_MINIMAL = {
   id: true,
   userId: true,
@@ -136,10 +131,6 @@ export const INVESTMENT_SELECT_FULL = {
   },
 } as const;
 
-export const INVESTMENT_SELECT_MINIMAL = {
-  id: true,
-} as const;
-
 export const VALUATION_SELECT_FULL = {
   id: true,
   userId: true,
@@ -160,10 +151,6 @@ export const VALUATION_SELECT_FULL = {
   baseCurrency: {
     select: CURRENCY_SELECT_BASIC,
   },
-} as const;
-
-export const VALUATION_SELECT_MINIMAL = {
-  id: true,
 } as const;
 
 export const TRADE_SELECT_FULL = {
@@ -203,14 +190,6 @@ export const TRADE_SELECT_FULL = {
   },
 } as const;
 
-export const TRADE_SELECT_MINIMAL = {
-  id: true,
-  side: true,
-  amount: true,
-  fee: true,
-  accountId: true,
-} as const;
-
 export const TRADE_SELECT_FOR_POSITION = {
   side: true,
   quantity: true,
@@ -248,13 +227,6 @@ export const CONTRIBUTION_SELECT_FULL = {
   baseCurrency: {
     select: CURRENCY_SELECT_BASIC,
   },
-} as const;
-
-export const CONTRIBUTION_SELECT_MINIMAL = {
-  id: true,
-  type: true,
-  amount: true,
-  accountId: true,
 } as const;
 
 export const CONTRIBUTION_SELECT_FOR_POSITION = {

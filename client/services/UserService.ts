@@ -3,7 +3,6 @@ import type {
   IUpsertUserDto,
   IUserStatisticsQueryDto,
   UserListResponse,
-  UserResponse,
   UserStatisticsResponse,
 } from '@server/dto/admin/user.dto';
 import type {
@@ -51,12 +50,6 @@ export class UserService extends ServiceBase {
     });
   }
 
-  getUser(id: string): Promise<UserResponse> {
-    return this.get<UserResponse>({
-      endpoint: `/api/admin/users/${id}`,
-    });
-  }
-
   createUser(data: Omit<IUpsertUserDto, 'id'>): Promise<null> {
     return this.post<null>(data, {
       endpoint: '/api/admin/users',
@@ -72,15 +65,6 @@ export class UserService extends ServiceBase {
   deleteUser(id: string): Promise<null> {
     return this.post<null>(
       { ids: [id] },
-      {
-        endpoint: '/api/admin/users/del',
-      },
-    );
-  }
-
-  deleteManyUsers(ids: string[]): Promise<null> {
-    return this.post<null>(
-      { ids },
       {
         endpoint: '/api/admin/users/del',
       },

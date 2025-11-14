@@ -208,8 +208,6 @@ export const TransactionDetailDto = t.NoValidate(
   }),
 );
 
-export const TransactionPaginationDto = PaginationDto;
-
 export const TransactionSummaryDto = t.NoValidate(
   t.Object({
     currency: TransactionCurrencyDto,
