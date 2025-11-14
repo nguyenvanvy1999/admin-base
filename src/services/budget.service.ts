@@ -20,38 +20,7 @@ import type {
 } from '../dto/budget.dto';
 import { currencyConversionServiceInstance } from './currency-conversion.service';
 
-const BUDGET_SELECT_FULL = {
-  id: true,
-  userId: true,
-  name: true,
-  amount: true,
-  period: true,
-  startDate: true,
-  endDate: true,
-  carryOver: true,
-  createdAt: true,
-  updatedAt: true,
-  categories: {
-    select: {
-      categoryId: true,
-    },
-  },
-  accounts: {
-    select: {
-      accountId: true,
-    },
-  },
-} as const;
-
-const BUDGET_SELECT_MINIMAL = {
-  id: true,
-  userId: true,
-  amount: true,
-  period: true,
-  startDate: true,
-  endDate: true,
-  carryOver: true,
-} as const;
+import { BUDGET_SELECT_FULL, BUDGET_SELECT_MINIMAL } from './selects';
 
 type BudgetRecord = Prisma.BudgetGetPayload<{
   select: typeof BUDGET_SELECT_FULL;
@@ -149,7 +118,10 @@ export class BudgetService {
         next.setFullYear(next.getFullYear() + 1);
         break;
       case BudgetPeriod.none:
-        throw new Error('Cannot calculate next period for none period type');
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Cannot calculate next period for none period type',
+        );
     }
     return next;
   }
@@ -176,7 +148,10 @@ export class BudgetService {
         end.setHours(23, 59, 59, 999);
         break;
       case BudgetPeriod.none:
-        throw new Error('Cannot calculate period end for none period type');
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Cannot calculate period end for none period type',
+        );
     }
     return end;
   }
@@ -332,7 +307,10 @@ export class BudgetService {
         start.setHours(0, 0, 0, 0);
         break;
       case BudgetPeriod.none:
-        throw new Error('Cannot calculate period start for none period type');
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Cannot calculate period start for none period type',
+        );
     }
     return start;
   }

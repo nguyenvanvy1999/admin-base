@@ -11,21 +11,7 @@ import type {
   IUpsertEntityDto,
 } from '../dto/entity.dto';
 
-const ENTITY_SELECT_FULL = {
-  id: true,
-  name: true,
-  type: true,
-  phone: true,
-  email: true,
-  address: true,
-  note: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
-
-const ENTITY_SELECT_MINIMAL = {
-  id: true,
-} as const;
+import { ENTITY_SELECT_FULL, ENTITY_SELECT_MINIMAL } from './selects';
 
 const mapEntity = (
   entity: Prisma.EntityGetPayload<{
@@ -124,7 +110,7 @@ export class EntityService {
     });
 
     if (!entity) {
-      throw new Error('Entity not found');
+      throwAppError(ErrorCode.ENTITY_NOT_FOUND, 'Entity not found');
     }
 
     return mapEntity(entity);
@@ -213,7 +199,10 @@ export class EntityService {
     });
 
     if (entities.length !== ids.length) {
-      throw new Error('Some entities were not found or do not belong to you');
+      throwAppError(
+        ErrorCode.ENTITY_NOT_FOUND,
+        'Some entities were not found or do not belong to you',
+      );
     }
 
     const result = await prisma.entity.updateMany({

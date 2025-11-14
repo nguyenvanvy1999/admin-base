@@ -1,5 +1,6 @@
 import { t } from 'elysia';
 import { z } from 'zod';
+import { createListQueryDto, PaginationDto } from '../common.dto';
 
 export const UpsertRoleDto = t.Object({
   id: t.Optional(t.String()),
@@ -21,13 +22,10 @@ export const UpsertRoleDtoZod = z.object({
 
 export type IUpsertRoleDto = z.infer<typeof UpsertRoleDtoZod>;
 
-export const ListRolesQueryDto = z.object({
+export const ListRolesQueryDto = createListQueryDto({
   search: z.string().optional(),
   userId: z.string().optional(),
-  page: z.coerce.number().int().min(1).default(1).optional(),
-  limit: z.coerce.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['title', 'createdAt']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export type IListRolesQueryDto = z.infer<typeof ListRolesQueryDto>;
@@ -45,19 +43,12 @@ export const RoleResDto = t.NoValidate(
   }),
 );
 
-export const RolePaginationDto = t.NoValidate(
-  t.Object({
-    page: t.Integer(),
-    limit: t.Integer(),
-    total: t.Integer(),
-    totalPages: t.Integer(),
-  }),
-);
+export const RolePaginationDto = PaginationDto;
 
 export const RoleListResponseDto = t.NoValidate(
   t.Object({
     roles: t.Array(RoleResDto),
-    pagination: RolePaginationDto,
+    pagination: PaginationDto,
   }),
 );
 

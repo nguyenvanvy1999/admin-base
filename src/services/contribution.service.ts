@@ -1,6 +1,7 @@
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
 import type { ContributionType } from '@server/generated/prisma/enums';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import {
   dateToIsoString,
   decimalToNullableNumber,
@@ -15,39 +16,10 @@ import type {
 } from '../dto/contribution.dto';
 import { accountBalanceServiceInstance } from './account-balance.service';
 import { investmentServiceInstance } from './investment.service';
-import { CONTRIBUTION_SELECT_MINIMAL, CURRENCY_SELECT_BASIC } from './selects';
-
-const CONTRIBUTION_SELECT = {
-  id: true,
-  userId: true,
-  investmentId: true,
-  accountId: true,
-  amount: true,
-  currencyId: true,
-  type: true,
-  amountInBaseCurrency: true,
-  exchangeRate: true,
-  baseCurrencyId: true,
-  timestamp: true,
-  note: true,
-  createdAt: true,
-  updatedAt: true,
-  account: {
-    select: {
-      id: true,
-      name: true,
-    },
-  },
-  currency: {
-    select: CURRENCY_SELECT_BASIC,
-  },
-  baseCurrency: {
-    select: CURRENCY_SELECT_BASIC,
-  },
-} as const;
+import { CONTRIBUTION_SELECT_FULL } from './selects';
 
 type ContributionRecord = Prisma.InvestmentContributionGetPayload<{
-  select: typeof CONTRIBUTION_SELECT;
+  select: typeof CONTRIBUTION_SELECT_FULL;
 }>;
 
 const formatContribution = (
@@ -80,7 +52,7 @@ export class InvestmentContributionService {
   private parseDate(value: string) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
-      throw new Error('Invalid date provided');
+      throwAppError(ErrorCode.INVALID_DATE, 'Invalid date provided');
     }
 
     return date;
@@ -107,7 +79,7 @@ export class InvestmentContributionService {
       });
 
       if (!account) {
-        throw new Error('Account not found');
+        throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
       }
     }
 
@@ -126,7 +98,7 @@ export class InvestmentContributionService {
           timestamp,
           note: data.note ?? null,
         },
-        select: CONTRIBUTION_SELECT,
+        select: CONTRIBUTION_SELECT_FULL,
       });
 
       if (data.accountId) {
@@ -183,7 +155,7 @@ export class InvestmentContributionService {
         orderBy: { timestamp: sortOrder },
         skip,
         take: limit,
-        select: CONTRIBUTION_SELECT,
+        select: CONTRIBUTION_SELECT_FULL,
       }),
       prisma.investmentContribution.count({ where }),
     ]);
@@ -213,11 +185,11 @@ export class InvestmentContributionService {
         investmentId,
         deletedAt: null,
       },
-      select: CONTRIBUTION_SELECT_MINIMAL,
+      select: CONTRIBUTION_SELECT_FULL,
     });
 
     if (!contribution) {
-      throw new Error('Contribution not found');
+      throwAppError(ErrorCode.CONTRIBUTION_NOT_FOUND, 'Contribution not found');
     }
 
     return prisma.$transaction(async (tx) => {

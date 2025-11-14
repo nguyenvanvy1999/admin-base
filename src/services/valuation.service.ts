@@ -1,34 +1,13 @@
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import { Elysia } from 'elysia';
 import type {
   IListInvestmentValuationsQueryDto,
   IUpsertInvestmentValuationDto,
 } from '../dto/valuation.dto';
 import { investmentServiceInstance } from './investment.service';
-import { CURRENCY_SELECT_BASIC } from './selects';
-
-const VALUATION_SELECT = {
-  id: true,
-  userId: true,
-  investmentId: true,
-  currencyId: true,
-  price: true,
-  priceInBaseCurrency: true,
-  exchangeRate: true,
-  baseCurrencyId: true,
-  timestamp: true,
-  source: true,
-  fetchedAt: true,
-  createdAt: true,
-  updatedAt: true,
-  currency: {
-    select: CURRENCY_SELECT_BASIC,
-  },
-  baseCurrency: {
-    select: CURRENCY_SELECT_BASIC,
-  },
-} as const;
+import { VALUATION_SELECT_FULL } from './selects';
 
 export class InvestmentValuationService {
   private readonly investmentService = investmentServiceInstance;
@@ -36,7 +15,7 @@ export class InvestmentValuationService {
   private parseDate(value: string) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
-      throw new Error('Invalid date provided');
+      throwAppError(ErrorCode.INVALID_DATE, 'Invalid date provided');
     }
 
     return date;
@@ -76,7 +55,7 @@ export class InvestmentValuationService {
             fetchedAt,
             deletedAt: null,
           },
-          select: VALUATION_SELECT,
+          select: VALUATION_SELECT_FULL,
         }),
       );
     }
@@ -95,14 +74,14 @@ export class InvestmentValuationService {
           source: data.source ?? null,
           fetchedAt,
         },
-        select: VALUATION_SELECT,
+        select: VALUATION_SELECT_FULL,
       }),
     );
   }
 
   mapValuation(
     valuation: Prisma.InvestmentValuationGetPayload<{
-      select: typeof VALUATION_SELECT;
+      select: typeof VALUATION_SELECT_FULL;
     }>,
   ) {
     return {
@@ -153,7 +132,7 @@ export class InvestmentValuationService {
         orderBy: { timestamp: sortOrder },
         skip,
         take: limit,
-        select: VALUATION_SELECT,
+        select: VALUATION_SELECT_FULL,
       }),
       prisma.investmentValuation.count({ where }),
     ]);
@@ -175,7 +154,7 @@ export class InvestmentValuationService {
     const valuation = await prisma.investmentValuation.findFirst({
       where: { userId, investmentId, deletedAt: null },
       orderBy: { timestamp: 'desc' },
-      select: VALUATION_SELECT,
+      select: VALUATION_SELECT_FULL,
     });
 
     if (!valuation) {
@@ -202,7 +181,7 @@ export class InvestmentValuationService {
     });
 
     if (!valuation) {
-      throw new Error('Valuation not found');
+      throwAppError(ErrorCode.VALUATION_NOT_FOUND, 'Valuation not found');
     }
 
     await prisma.investmentValuation.update({

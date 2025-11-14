@@ -2,6 +2,7 @@ import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
 import type { TradeSide } from '@server/generated/prisma/enums';
 import type { InvestmentTradeWhereInput } from '@server/generated/prisma/models';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import { Elysia } from 'elysia';
 import type {
   ICreateInvestmentTradeDto,
@@ -9,48 +10,11 @@ import type {
 } from '../dto/trade.dto';
 import { accountBalanceServiceInstance } from './account-balance.service';
 import { investmentServiceInstance } from './investment.service';
-import { CURRENCY_SELECT_BASIC, TRADE_SELECT_MINIMAL } from './selects';
-
-const TRADE_SELECT = {
-  id: true,
-  userId: true,
-  investmentId: true,
-  accountId: true,
-  side: true,
-  timestamp: true,
-  price: true,
-  quantity: true,
-  amount: true,
-  fee: true,
-  currencyId: true,
-  transactionId: true,
-  priceCurrency: true,
-  priceInBaseCurrency: true,
-  amountInBaseCurrency: true,
-  exchangeRate: true,
-  baseCurrencyId: true,
-  priceSource: true,
-  priceFetchedAt: true,
-  meta: true,
-  account: {
-    select: {
-      id: true,
-      name: true,
-    },
-  },
-  currency: {
-    select: CURRENCY_SELECT_BASIC,
-  },
-  baseCurrency: {
-    select: CURRENCY_SELECT_BASIC,
-  },
-  createdAt: true,
-  updatedAt: true,
-} as const;
+import { TRADE_SELECT_FULL } from './selects';
 
 const mapTrade = (
   trade: Prisma.InvestmentTradeGetPayload<{
-    select: typeof TRADE_SELECT;
+    select: typeof TRADE_SELECT_FULL;
   }>,
 ) => ({
   ...trade,
@@ -73,7 +37,7 @@ export class InvestmentTradeService {
   private parseDate(value: string) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
-      throw new Error('Invalid date provided');
+      throwAppError(ErrorCode.INVALID_DATE, 'Invalid date provided');
     }
     return date;
   }
@@ -88,7 +52,7 @@ export class InvestmentTradeService {
     });
 
     if (!transaction) {
-      throw new Error('Transaction not found');
+      throwAppError(ErrorCode.NOT_FOUND, 'Transaction not found');
     }
   }
 
@@ -114,7 +78,7 @@ export class InvestmentTradeService {
     });
 
     if (!account) {
-      throw new Error('Account not found');
+      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
     }
 
     return prisma.$transaction(async (tx) => {
@@ -140,7 +104,7 @@ export class InvestmentTradeService {
           priceFetchedAt: priceFetchedAt ?? null,
           meta: (data.meta ?? null) as any,
         },
-        select: TRADE_SELECT,
+        select: TRADE_SELECT_FULL,
       });
 
       await accountBalanceServiceInstance.applyTradeBalance(
@@ -201,7 +165,7 @@ export class InvestmentTradeService {
         orderBy: { timestamp: sortOrder },
         skip,
         take: limit,
-        select: TRADE_SELECT,
+        select: TRADE_SELECT_FULL,
       }),
       prisma.investmentTrade.count({ where }),
     ]);
@@ -227,11 +191,11 @@ export class InvestmentTradeService {
         investmentId,
         deletedAt: null,
       },
-      select: TRADE_SELECT_MINIMAL,
+      select: TRADE_SELECT_FULL,
     });
 
     if (!trade) {
-      throw new Error('Trade not found');
+      throwAppError(ErrorCode.TRADE_NOT_FOUND, 'Trade not found');
     }
 
     return prisma.$transaction(async (tx) => {

@@ -1,7 +1,14 @@
 import { BudgetPeriod } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
 import { z } from 'zod';
-import { DeleteManyDto, type IDeleteManyDto } from './common.dto';
+import {
+  createArrayPreprocess,
+  createListQueryDto,
+  DeleteManyDto,
+  DeleteResponseDto,
+  type IDeleteManyDto,
+  PaginationDto,
+} from './common.dto';
 
 export const UpsertBudgetDto = z.object({
   id: z.string().optional(),
@@ -15,18 +22,12 @@ export const UpsertBudgetDto = z.object({
   categoryIds: z.array(z.string()).min(1),
 });
 
-export const ListBudgetsQueryDto = z.object({
+export const ListBudgetsQueryDto = createListQueryDto({
   search: z.string().optional(),
-  period: z.preprocess((val) => {
-    if (val === undefined || val === null) return undefined;
-    return Array.isArray(val) ? val : [val];
-  }, z.array(z.nativeEnum(BudgetPeriod)).optional()),
-  page: z.coerce.number().int().min(1).default(1).optional(),
-  limit: z.coerce.number().int().min(1).default(20).optional(),
+  period: createArrayPreprocess(z.nativeEnum(BudgetPeriod)),
   sortBy: z
     .enum(['name', 'amount', 'period', 'startDate', 'createdAt'])
     .optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export const BudgetPeriodQueryDto = z.object({
@@ -57,19 +58,12 @@ export const BudgetDto = t.NoValidate(
   }),
 );
 
-export const BudgetPaginationDto = t.NoValidate(
-  t.Object({
-    page: t.Integer(),
-    limit: t.Integer(),
-    total: t.Integer(),
-    totalPages: t.Integer(),
-  }),
-);
+export const BudgetPaginationDto = PaginationDto;
 
 export const BudgetListResponseDto = t.NoValidate(
   t.Object({
     budgets: t.Array(BudgetDto),
-    pagination: BudgetPaginationDto,
+    pagination: PaginationDto,
   }),
 );
 
@@ -108,12 +102,7 @@ export const BudgetPeriodListResponseDto = t.NoValidate(
   }),
 );
 
-export const BudgetDeleteResponseDto = t.NoValidate(
-  t.Object({
-    success: t.Boolean(),
-    message: t.String(),
-  }),
-);
+export const BudgetDeleteResponseDto = DeleteResponseDto;
 
 export type BudgetResponse = typeof BudgetDto.static;
 export type BudgetListResponse = typeof BudgetListResponseDto.static;

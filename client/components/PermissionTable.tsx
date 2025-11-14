@@ -65,10 +65,7 @@ const PermissionTable = ({
       {
         accessor: 'category',
         title: 'permissions.category',
-        render: (
-          value: unknown,
-          row: PermissionResponse & { category?: string },
-        ) => {
+        render: (value, row: PermissionResponse & { category?: string }) => {
           if (!row || !row.title) {
             return (
               <Badge color="gray" variant="light">
@@ -92,7 +89,7 @@ const PermissionTable = ({
         accessor: 'description',
         title: 'permissions.description',
         ellipsis: true,
-        render: (value: unknown) => {
+        render: (value) => {
           if (!value) return <span className="text-gray-400">-</span>;
           return <span>{String(value)}</span>;
         },

@@ -1,6 +1,12 @@
 import { t } from 'elysia';
 import { z } from 'zod';
-import { DeleteManyDto, type IDeleteManyDto } from './common.dto';
+import {
+  createListQueryDto,
+  DeleteManyDto,
+  DeleteResponseDto,
+  type IDeleteManyDto,
+  PaginationDto,
+} from './common.dto';
 
 export const UpsertTagDto = z.object({
   id: z.string().optional(),
@@ -8,12 +14,9 @@ export const UpsertTagDto = z.object({
   description: z.string().optional(),
 });
 
-export const ListTagsQueryDto = z.object({
+export const ListTagsQueryDto = createListQueryDto({
   search: z.string().optional(),
-  page: z.coerce.number().int().min(1).default(1).optional(),
-  limit: z.coerce.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['name', 'createdAt']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export const DeleteManyTagsDto = DeleteManyDto;
@@ -32,28 +35,16 @@ export const TagDto = t.NoValidate(
   }),
 );
 
-export const TagPaginationDto = t.NoValidate(
-  t.Object({
-    page: t.Integer(),
-    limit: t.Integer(),
-    total: t.Integer(),
-    totalPages: t.Integer(),
-  }),
-);
+export const TagPaginationDto = PaginationDto;
 
 export const TagListResponseDto = t.NoValidate(
   t.Object({
     tags: t.Array(TagDto),
-    pagination: TagPaginationDto,
+    pagination: PaginationDto,
   }),
 );
 
-export const TagDeleteResponseDto = t.NoValidate(
-  t.Object({
-    success: t.Boolean(),
-    message: t.String(),
-  }),
-);
+export const TagDeleteResponseDto = DeleteResponseDto;
 
 export type TagResponse = typeof TagDto.static;
 export type TagListResponse = typeof TagListResponseDto.static;

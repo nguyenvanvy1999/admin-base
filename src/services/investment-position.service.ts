@@ -216,7 +216,10 @@ export class InvestmentPositionService {
         }
       } else {
         if (netContributions === 0) {
-          throw new Error('Withdrawal exceeds current cost basis');
+          throwAppError(
+            ErrorCode.WITHDRAWAL_EXCEEDS_BALANCE,
+            'Withdrawal exceeds current cost basis',
+          );
         }
 
         const costBasisAtWithdrawal = netContributions;

@@ -1,7 +1,14 @@
 import { EntityType } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
 import { z } from 'zod';
-import { DeleteManyDto, type IDeleteManyDto } from './common.dto';
+import {
+  createArrayPreprocess,
+  createListQueryDto,
+  DeleteManyDto,
+  DeleteResponseDto,
+  type IDeleteManyDto,
+  PaginationDto,
+} from './common.dto';
 
 export const UpsertEntityDto = z.object({
   id: z.string().optional(),
@@ -13,16 +20,10 @@ export const UpsertEntityDto = z.object({
   note: z.string().optional(),
 });
 
-export const ListEntitiesQueryDto = z.object({
+export const ListEntitiesQueryDto = createListQueryDto({
   search: z.string().optional(),
-  type: z.preprocess((val) => {
-    if (val === undefined || val === null) return undefined;
-    return Array.isArray(val) ? val : [val];
-  }, z.array(z.enum(EntityType)).optional()),
-  page: z.coerce.number().int().min(1).default(1).optional(),
-  limit: z.coerce.number().int().min(1).default(20).optional(),
+  type: createArrayPreprocess(z.enum(EntityType)),
   sortBy: z.enum(['name', 'type', 'createdAt']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export const DeleteManyEntitiesDto = DeleteManyDto;
@@ -45,28 +46,16 @@ export const EntityDto = t.NoValidate(
   }),
 );
 
-export const EntityPaginationDto = t.NoValidate(
-  t.Object({
-    page: t.Integer(),
-    limit: t.Integer(),
-    total: t.Integer(),
-    totalPages: t.Integer(),
-  }),
-);
+export const EntityPaginationDto = PaginationDto;
 
 export const EntityListResponseDto = t.NoValidate(
   t.Object({
     entities: t.Array(EntityDto),
-    pagination: EntityPaginationDto,
+    pagination: PaginationDto,
   }),
 );
 
-export const EntityDeleteResponseDto = t.NoValidate(
-  t.Object({
-    success: t.Boolean(),
-    message: t.String(),
-  }),
-);
+export const EntityDeleteResponseDto = DeleteResponseDto;
 
 export type EntityResponse = typeof EntityDto.static;
 export type EntityListResponse = typeof EntityListResponseDto.static;

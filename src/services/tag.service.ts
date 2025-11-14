@@ -4,6 +4,7 @@ import type {
   TagOrderByWithRelationInput,
   TagWhereInput,
 } from '@server/generated/prisma/models/Tag';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import { dateToIsoString } from '@server/share/utils/formatters';
 import { Elysia } from 'elysia';
 import type {
@@ -13,17 +14,7 @@ import type {
   TagResponse,
 } from '../dto/tag.dto';
 
-const TAG_SELECT_FULL = {
-  id: true,
-  name: true,
-  description: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
-
-const TAG_SELECT_MINIMAL = {
-  id: true,
-} as const;
+import { TAG_SELECT_FULL, TAG_SELECT_MINIMAL } from './selects';
 
 type TagRecord = Prisma.TagGetPayload<{ select: typeof TAG_SELECT_FULL }>;
 
@@ -45,7 +36,7 @@ export class TagService {
       select: TAG_SELECT_MINIMAL,
     });
     if (!tag) {
-      throw new Error('Tag not found');
+      throwAppError(ErrorCode.TAG_NOT_FOUND, 'Tag not found');
     }
     return tag;
   }
@@ -69,7 +60,7 @@ export class TagService {
     const count = await prisma.tag.count({ where });
 
     if (count > 0) {
-      throw new Error('Tag name already exists');
+      throwAppError(ErrorCode.DUPLICATE_NAME, 'Tag name already exists');
     }
   }
 
@@ -115,7 +106,7 @@ export class TagService {
     });
 
     if (!tag) {
-      throw new Error('Tag not found');
+      throwAppError(ErrorCode.TAG_NOT_FOUND, 'Tag not found');
     }
 
     return formatTag(tag);
@@ -200,7 +191,10 @@ export class TagService {
     });
 
     if (tags.length !== ids.length) {
-      throw new Error('Some tags were not found or do not belong to you');
+      throwAppError(
+        ErrorCode.TAG_NOT_FOUND,
+        'Some tags were not found or do not belong to you',
+      );
     }
 
     const result = await prisma.tag.updateMany({

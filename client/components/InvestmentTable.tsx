@@ -67,7 +67,7 @@ const InvestmentTable = ({
         accessor: 'assetType',
         title: 'investments.assetType',
         enableSorting: false,
-        render: (value: unknown, row: InvestmentResponse) => (
+        render: (value, row: InvestmentResponse) => (
           <Badge color="blue" variant="light">
             {(() => {
               switch (row.assetType) {
@@ -91,7 +91,7 @@ const InvestmentTable = ({
         accessor: 'mode',
         title: 'investments.mode',
         enableSorting: false,
-        render: (value: unknown, row: InvestmentResponse) => (
+        render: (value, row: InvestmentResponse) => (
           <Badge
             color={row.mode === InvestmentMode.priced ? 'green' : 'yellow'}
           >
@@ -120,7 +120,7 @@ const InvestmentTable = ({
         title: 'investments.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value: unknown, row: InvestmentResponse) => (
+        render: (value, row: InvestmentResponse) => (
           <div className="flex items-center justify-center gap-2">
             <ActionIcon
               variant="subtle"

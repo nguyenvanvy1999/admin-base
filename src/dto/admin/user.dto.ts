@@ -1,6 +1,12 @@
 import { UserRole } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
 import { z } from 'zod';
+import {
+  CurrencyDto,
+  createArrayPreprocess,
+  createListQueryDto,
+  PaginationDto,
+} from '../common.dto';
 
 export const UpsertUserDto = z.object({
   id: z.string().optional(),
@@ -11,29 +17,16 @@ export const UpsertUserDto = z.object({
   baseCurrencyId: z.string().optional(),
 });
 
-export const ListUsersQueryDto = z.object({
+export const ListUsersQueryDto = createListQueryDto({
   search: z.string().optional(),
-  role: z.preprocess((val) => {
-    if (val === undefined || val === null) return undefined;
-    return Array.isArray(val) ? val : [val];
-  }, z.array(z.enum([UserRole.user, UserRole.admin])).optional()),
-  page: z.coerce.number().int().min(1).default(1).optional(),
-  limit: z.coerce.number().int().min(1).default(20).optional(),
+  role: createArrayPreprocess(z.enum([UserRole.user, UserRole.admin])),
   sortBy: z.enum(['username', 'name', 'role', 'createdAt']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export type IUpsertUserDto = z.infer<typeof UpsertUserDto>;
 export type IListUsersQueryDto = z.infer<typeof ListUsersQueryDto>;
 
-const currencyShape = {
-  id: t.String(),
-  code: t.String(),
-  name: t.String(),
-  symbol: t.Nullable(t.String()),
-} as const;
-
-export const UserCurrencyDto = t.NoValidate(t.Object(currencyShape));
+export const UserCurrencyDto = CurrencyDto;
 
 export const UserResDto = t.NoValidate(
   t.Object({
@@ -48,19 +41,12 @@ export const UserResDto = t.NoValidate(
   }),
 );
 
-export const UserPaginationDto = t.NoValidate(
-  t.Object({
-    page: t.Integer(),
-    limit: t.Integer(),
-    total: t.Integer(),
-    totalPages: t.Integer(),
-  }),
-);
+export const UserPaginationDto = PaginationDto;
 
 export const UserListResponseDto = t.NoValidate(
   t.Object({
     users: t.Array(UserResDto),
-    pagination: UserPaginationDto,
+    pagination: PaginationDto,
   }),
 );
 

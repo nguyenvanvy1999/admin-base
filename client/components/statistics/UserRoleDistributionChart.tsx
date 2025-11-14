@@ -72,7 +72,7 @@ export const UserRoleDistributionChart = () => {
         h={300}
         data={chartData}
         tooltipProps={{
-          formatter: (value: unknown, payload: unknown) => [
+          formatter: (value, payload) => [
             `${(value as number).toLocaleString()} (${(payload as { percentage: number }).percentage.toFixed(2)}%)`,
             (payload as { name: string }).name,
           ],

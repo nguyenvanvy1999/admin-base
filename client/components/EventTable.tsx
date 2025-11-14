@@ -60,7 +60,7 @@ const EventTable = ({
       {
         accessor: 'startAt',
         title: 'events.startAt',
-        render: (value: unknown) => {
+        render: (value) => {
           if (!value) return <span className="text-gray-400">-</span>;
           return <span>{formatDate(String(value))}</span>;
         },
@@ -68,7 +68,7 @@ const EventTable = ({
       {
         accessor: 'endAt',
         title: 'events.endAt',
-        render: (value: unknown) => {
+        render: (value) => {
           if (!value) return <span className="text-gray-400">-</span>;
           return <span>{formatDate(String(value))}</span>;
         },
@@ -77,7 +77,7 @@ const EventTable = ({
         title: 'events.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value: unknown, row: EventResponse) => (
+        render: (value, row: EventResponse) => (
           <div className="flex items-center justify-center gap-2">
             <ActionIcon
               variant="subtle"

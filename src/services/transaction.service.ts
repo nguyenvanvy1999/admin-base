@@ -34,96 +34,14 @@ import { CURRENCY_SELECT_BASIC } from './selects';
 
 type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
-const TRANSACTION_SELECT_FOR_BALANCE = {
-  id: true,
-  userId: true,
-  type: true,
-  accountId: true,
-  toAccountId: true,
-  transferGroupId: true,
-  isTransferMirror: true,
-  amount: true,
-  fee: true,
-  currencyId: true,
-  account: { select: { currencyId: true } },
-  toAccount: { select: { currencyId: true } },
-} as const;
-
-const TRANSACTION_SELECT = {
-  id: true,
-  userId: true,
-  accountId: true,
-  toAccountId: true,
-  transferGroupId: true,
-  isTransferMirror: true,
-  type: true,
-  categoryId: true,
-  entityId: true,
-  investmentId: true,
-  eventId: true,
-  amount: true,
-  currencyId: true,
-  price: true,
-  priceInBaseCurrency: true,
-  quantity: true,
-  fee: true,
-  feeInBaseCurrency: true,
-  date: true,
-  dueDate: true,
-  note: true,
-  receiptUrl: true,
-  metadata: true,
-  createdAt: true,
-  updatedAt: true,
-  account: {
-    select: {
-      id: true,
-      name: true,
-      currency: { select: CURRENCY_SELECT_BASIC },
-    },
-  },
-  toAccount: {
-    select: {
-      id: true,
-      name: true,
-      currency: { select: CURRENCY_SELECT_BASIC },
-    },
-  },
-  category: {
-    select: {
-      id: true,
-      name: true,
-      type: true,
-      icon: true,
-      color: true,
-    },
-  },
-  entity: {
-    select: {
-      id: true,
-      name: true,
-      type: true,
-    },
-  },
-  event: {
-    select: {
-      id: true,
-      name: true,
-      startAt: true,
-      endAt: true,
-    },
-  },
-  currency: { select: CURRENCY_SELECT_BASIC },
-} as const;
-
-const ACCOUNT_SELECT_MINIMAL = {
-  id: true,
-  userId: true,
-  currencyId: true,
-} as const;
+import {
+  TRANSACTION_SELECT_FOR_BALANCE,
+  TRANSACTION_SELECT_FULL,
+  TRANSACTION_SELECT_MINIMAL,
+} from './selects';
 
 type TransactionRecord = Prisma.TransactionGetPayload<{
-  select: typeof TRANSACTION_SELECT;
+  select: typeof TRANSACTION_SELECT_FULL;
 }>;
 type MinimalCurrency = {
   id: string;
@@ -237,7 +155,7 @@ class TransactionHandlerFactory {
         userId,
         deletedAt: null,
       },
-      select: ACCOUNT_SELECT_MINIMAL,
+      select: TRANSACTION_SELECT_MINIMAL,
     });
     if (!account) {
       throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
@@ -396,7 +314,8 @@ class TransactionHandlerFactory {
       }
 
       default: {
-        throw new Error(
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
           `Invalid transaction type: ${(data as IUpsertTransaction).type}`,
         );
       }
@@ -429,7 +348,7 @@ class TransactionHandlerFactory {
 
       return tx.transaction.create({
         data: transactionData,
-        select: TRANSACTION_SELECT,
+        select: TRANSACTION_SELECT_FULL,
       });
     });
   }
@@ -487,7 +406,7 @@ class TransactionHandlerFactory {
       return tx.transaction.update({
         where: { id: transactionId },
         data: transactionData,
-        select: TRANSACTION_SELECT,
+        select: TRANSACTION_SELECT_FULL,
       });
     });
   }
@@ -549,7 +468,7 @@ class TransactionHandlerFactory {
           transferGroupId: groupId,
           isTransferMirror: false,
         },
-        select: TRANSACTION_SELECT,
+        select: TRANSACTION_SELECT_FULL,
       });
 
       const amountInToCurrency = toAmountDecimal
@@ -600,7 +519,10 @@ class TransactionHandlerFactory {
       throwAppError(ErrorCode.NOT_FOUND, 'Transaction not found');
     }
     if (existing.type !== TransactionType.transfer) {
-      throw new Error('Invalid transaction type for transfer update');
+      throwAppError(
+        ErrorCode.INVALID_TRANSACTION_TYPE,
+        'Invalid transaction type for transfer update',
+      );
     }
 
     const toAccount = await this.validateAccountOwnership(
@@ -688,7 +610,7 @@ class TransactionHandlerFactory {
           transferGroupId: groupId,
           isTransferMirror: false,
         },
-        select: TRANSACTION_SELECT,
+        select: TRANSACTION_SELECT_FULL,
       });
 
       const amountInToCurrency = toAmountDecimal
@@ -878,7 +800,7 @@ export class TransactionService {
         userId,
         deletedAt: null,
       },
-      select: ACCOUNT_SELECT_MINIMAL,
+      select: TRANSACTION_SELECT_MINIMAL,
     });
 
     if (!account) {
@@ -944,7 +866,7 @@ export class TransactionService {
         userId,
         deletedAt: null,
       },
-      select: TRANSACTION_SELECT,
+      select: TRANSACTION_SELECT_FULL,
     });
 
     if (!transaction) {
@@ -1017,7 +939,7 @@ export class TransactionService {
         orderBy,
         skip,
         take: limit,
-        select: TRANSACTION_SELECT,
+        select: TRANSACTION_SELECT_FULL,
       }),
       prisma.transaction.count({ where }),
       prisma.transaction.groupBy({
@@ -1239,7 +1161,7 @@ export class TransactionService {
               userId,
               deletedAt: null,
             },
-            select: ACCOUNT_SELECT_MINIMAL,
+            select: TRANSACTION_SELECT_MINIMAL,
           });
 
           if (!account) {

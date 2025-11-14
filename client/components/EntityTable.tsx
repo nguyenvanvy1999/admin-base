@@ -61,7 +61,7 @@ const EntityTable = ({
       {
         accessor: 'type',
         title: 'entities.type',
-        render: (value: unknown, row: EntityResponse) => {
+        render: (value, row: EntityResponse) => {
           if (!row.type) return <span className="text-gray-400">-</span>;
           const label =
             row.type === EntityType.individual
@@ -100,7 +100,7 @@ const EntityTable = ({
         title: 'entities.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value: unknown, row: EntityResponse) => (
+        render: (value, row: EntityResponse) => (
           <div className="flex items-center justify-center gap-2">
             <ActionIcon
               variant="subtle"

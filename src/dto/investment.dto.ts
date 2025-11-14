@@ -4,6 +4,13 @@ import {
 } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
 import { z } from 'zod';
+import {
+  CurrencyDto,
+  createArrayPreprocess,
+  createListQueryDto,
+  DeleteResponseDto,
+  PaginationDto,
+} from './common.dto';
 
 export const UpsertInvestmentDto = z.object({
   id: z.string().optional(),
@@ -16,39 +23,18 @@ export const UpsertInvestmentDto = z.object({
   extra: z.unknown().optional(),
 });
 
-export const ListInvestmentsQueryDto = z.object({
-  assetTypes: z.preprocess((val) => {
-    if (val === undefined || val === null) return undefined;
-    return Array.isArray(val) ? val : [val];
-  }, z.array(z.enum(InvestmentAssetType)).optional()),
-  modes: z.preprocess((val) => {
-    if (val === undefined || val === null) return undefined;
-    return Array.isArray(val) ? val : [val];
-  }, z.array(z.enum(InvestmentMode)).optional()),
-  currencyIds: z.preprocess((val) => {
-    if (val === undefined || val === null) return undefined;
-    return Array.isArray(val) ? val : [val];
-  }, z.array(z.string()).optional()),
+export const ListInvestmentsQueryDto = createListQueryDto({
+  assetTypes: createArrayPreprocess(z.enum(InvestmentAssetType)),
+  modes: createArrayPreprocess(z.enum(InvestmentMode)),
+  currencyIds: createArrayPreprocess(z.string()),
   search: z.string().optional(),
-  page: z.coerce.number().int().min(1).default(1).optional(),
-  limit: z.coerce.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['name', 'createdAt', 'updatedAt']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export type IUpsertInvestmentDto = z.infer<typeof UpsertInvestmentDto>;
 export type IListInvestmentsQueryDto = z.infer<typeof ListInvestmentsQueryDto>;
 
-const investmentCurrencyShape = {
-  id: t.String(),
-  code: t.String(),
-  name: t.String(),
-  symbol: t.Nullable(t.String()),
-} as const;
-
-export const InvestmentCurrencyDto = t.NoValidate(
-  t.Object(investmentCurrencyShape),
-);
+export const InvestmentCurrencyDto = CurrencyDto;
 
 export const InvestmentDto = t.NoValidate(
   t.Object({
@@ -69,19 +55,12 @@ export const InvestmentDto = t.NoValidate(
   }),
 );
 
-export const InvestmentPaginationDto = t.NoValidate(
-  t.Object({
-    page: t.Integer(),
-    limit: t.Integer(),
-    total: t.Integer(),
-    totalPages: t.Integer(),
-  }),
-);
+export const InvestmentPaginationDto = PaginationDto;
 
 export const InvestmentListResponseDto = t.NoValidate(
   t.Object({
     investments: t.Array(InvestmentDto),
-    pagination: InvestmentPaginationDto,
+    pagination: PaginationDto,
   }),
 );
 
@@ -118,12 +97,7 @@ export const InvestmentLatestValuationDto = t.NoValidate(
   }),
 );
 
-export const InvestmentDeleteResponseDto = t.NoValidate(
-  t.Object({
-    success: t.Boolean(),
-    message: t.String(),
-  }),
-);
+export const InvestmentDeleteResponseDto = DeleteResponseDto;
 
 export type InvestmentResponse = typeof InvestmentDto.static;
 export type InvestmentListResponse = typeof InvestmentListResponseDto.static;

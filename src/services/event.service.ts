@@ -4,21 +4,11 @@ import type {
   EventOrderByWithRelationInput,
   EventWhereInput,
 } from '@server/generated/prisma/models/Event';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import { Elysia } from 'elysia';
 import type { IListEventsQueryDto, IUpsertEventDto } from '../dto/event.dto';
 
-const EVENT_SELECT_FULL = {
-  id: true,
-  name: true,
-  startAt: true,
-  endAt: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
-
-const EVENT_SELECT_MINIMAL = {
-  id: true,
-} as const;
+import { EVENT_SELECT_FULL, EVENT_SELECT_MINIMAL } from './selects';
 
 const mapEvent = (
   event: Prisma.EventGetPayload<{
@@ -43,7 +33,7 @@ export class EventService {
       select: EVENT_SELECT_MINIMAL,
     });
     if (!event) {
-      throw new Error('Event not found');
+      throwAppError(ErrorCode.EVENT_NOT_FOUND, 'Event not found');
     }
     return event;
   }
@@ -66,13 +56,16 @@ export class EventService {
     const count = await prisma.event.count({ where });
 
     if (count > 0) {
-      throw new Error('Event name already exists');
+      throwAppError(ErrorCode.DUPLICATE_NAME, 'Event name already exists');
     }
   }
 
   private validateDateRange(startAt: Date, endAt?: Date | null) {
     if (endAt && endAt < startAt) {
-      throw new Error('endAt must be greater than or equal to startAt');
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'endAt must be greater than or equal to startAt',
+      );
     }
   }
 
@@ -124,7 +117,7 @@ export class EventService {
     });
 
     if (!event) {
-      throw new Error('Event not found');
+      throwAppError(ErrorCode.EVENT_NOT_FOUND, 'Event not found');
     }
 
     return mapEvent(event);
@@ -234,7 +227,10 @@ export class EventService {
     });
 
     if (events.length !== ids.length) {
-      throw new Error('Some events were not found or do not belong to you');
+      throwAppError(
+        ErrorCode.EVENT_NOT_FOUND,
+        'Some events were not found or do not belong to you',
+      );
     }
 
     const result = await prisma.event.updateMany({

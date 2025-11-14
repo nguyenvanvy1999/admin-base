@@ -4,6 +4,7 @@ import {
   TradeSide,
   TransactionType,
 } from '@server/generated/prisma/enums';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import Decimal from 'decimal.js';
 import { currencyConversionServiceInstance } from './currency-conversion.service';
 
@@ -70,7 +71,10 @@ export class AccountBalanceService {
 
       case TransactionType.transfer: {
         if (!toAccountId) {
-          throw new Error('To account is required for transfer');
+          throwAppError(
+            ErrorCode.VALIDATION_ERROR,
+            'To account is required for transfer',
+          );
         }
         await tx.account.findUniqueOrThrow({
           where: { id: toAccountId },
@@ -152,7 +156,10 @@ export class AccountBalanceService {
 
       case TransactionType.transfer: {
         if (!toAccountId) {
-          throw new Error('To account is required for transfer');
+          throwAppError(
+            ErrorCode.VALIDATION_ERROR,
+            'To account is required for transfer',
+          );
         }
 
         const amountInToAccountCurrency = toAmount

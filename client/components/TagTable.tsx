@@ -67,7 +67,7 @@ const TagTable = ({
         title: 'tags.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value: unknown, row: TagResponse) => (
+        render: (value, row: TagResponse) => (
           <div className="flex items-center justify-center gap-2">
             <ActionIcon
               variant="subtle"

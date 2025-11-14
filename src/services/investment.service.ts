@@ -16,28 +16,7 @@ import type {
 import type { ICreateInvestmentTradeDto } from '../dto/trade.dto';
 import type { IUpsertInvestmentValuationDto } from '../dto/valuation.dto';
 import { investmentPositionServiceInstance } from './investment-position.service';
-import { CURRENCY_SELECT_BASIC } from './selects';
-
-const INVESTMENT_SELECT_BASE = {
-  id: true,
-  userId: true,
-  symbol: true,
-  name: true,
-  assetType: true,
-  mode: true,
-  currencyId: true,
-  baseCurrencyId: true,
-  extra: true,
-  deletedAt: true,
-  createdAt: true,
-  updatedAt: true,
-  currency: {
-    select: CURRENCY_SELECT_BASIC,
-  },
-  baseCurrency: {
-    select: CURRENCY_SELECT_BASIC,
-  },
-} as const;
+import { INVESTMENT_SELECT_FULL } from './selects';
 
 const serializeInvestment = (investment: {
   id: string;
@@ -90,7 +69,7 @@ export class InvestmentService {
         userId,
         deletedAt: null,
       },
-      select: INVESTMENT_SELECT_BASE,
+      select: INVESTMENT_SELECT_FULL,
     });
 
     if (!investment) {
@@ -121,7 +100,7 @@ export class InvestmentService {
       const updated = await prisma.investment.update({
         where: { id: investment.id },
         data: payload,
-        select: INVESTMENT_SELECT_BASE,
+        select: INVESTMENT_SELECT_FULL,
       });
       return serializeInvestment(updated);
     }
@@ -131,7 +110,7 @@ export class InvestmentService {
         ...payload,
         userId,
       },
-      select: INVESTMENT_SELECT_BASE,
+      select: INVESTMENT_SELECT_FULL,
     });
     return serializeInvestment(created);
   }
@@ -183,7 +162,7 @@ export class InvestmentService {
         orderBy,
         skip,
         take: limit,
-        select: INVESTMENT_SELECT_BASE,
+        select: INVESTMENT_SELECT_FULL,
       }),
       prisma.investment.count({ where }),
     ]);
@@ -309,12 +288,15 @@ export class InvestmentService {
       });
 
       if (!account) {
-        throw new Error('Account not found');
+        throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
       }
 
       if (!investment.baseCurrencyId) {
         if (account.currencyId !== investment.currencyId) {
-          throw new Error('Account currency must match investment currency');
+          throwAppError(
+            ErrorCode.INVALID_CURRENCY_MISMATCH,
+            'Account currency must match investment currency',
+          );
         }
       }
     }

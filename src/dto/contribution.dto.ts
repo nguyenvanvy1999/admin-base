@@ -1,6 +1,13 @@
 import { ContributionType } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
 import { z } from 'zod';
+import {
+  CurrencyDto,
+  createArrayPreprocess,
+  createListQueryDto,
+  DeleteResponseDto,
+  PaginationDto,
+} from './common.dto';
 
 export const CreateInvestmentContributionDto = z.object({
   amount: z.number(),
@@ -14,13 +21,11 @@ export const CreateInvestmentContributionDto = z.object({
   baseCurrencyId: z.string().optional(),
 });
 
-export const ListInvestmentContributionsQueryDto = z.object({
-  accountIds: z.array(z.string()).optional(),
+export const ListInvestmentContributionsQueryDto = createListQueryDto({
+  accountIds: createArrayPreprocess(z.string()),
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
-  page: z.coerce.number().int().min(1).default(1).optional(),
   limit: z.coerce.number().int().min(1).default(50).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export type ICreateInvestmentContributionDto = z.infer<
@@ -37,14 +42,7 @@ export const InvestmentContributionAccountDto = t.NoValidate(
   }),
 );
 
-export const InvestmentContributionCurrencyDto = t.NoValidate(
-  t.Object({
-    id: t.String(),
-    code: t.String(),
-    name: t.String(),
-    symbol: t.Nullable(t.String()),
-  }),
-);
+export const InvestmentContributionCurrencyDto = CurrencyDto;
 
 export const InvestmentContributionDto = t.NoValidate(
   t.Object({
@@ -68,28 +66,16 @@ export const InvestmentContributionDto = t.NoValidate(
   }),
 );
 
-export const InvestmentContributionPaginationDto = t.NoValidate(
-  t.Object({
-    page: t.Integer(),
-    limit: t.Integer(),
-    total: t.Integer(),
-    totalPages: t.Integer(),
-  }),
-);
+export const InvestmentContributionPaginationDto = PaginationDto;
 
 export const InvestmentContributionListResponseDto = t.NoValidate(
   t.Object({
     contributions: t.Array(InvestmentContributionDto),
-    pagination: InvestmentContributionPaginationDto,
+    pagination: PaginationDto,
   }),
 );
 
-export const ContributionDeleteResponseDto = t.NoValidate(
-  t.Object({
-    success: t.Boolean(),
-    message: t.String(),
-  }),
-);
+export const ContributionDeleteResponseDto = DeleteResponseDto;
 
 export type InvestmentContributionResponse =
   typeof InvestmentContributionDto.static;

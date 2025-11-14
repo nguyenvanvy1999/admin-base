@@ -160,7 +160,7 @@ const TransactionTable = ({
       {
         accessor: 'type',
         title: 'transactions.type',
-        render: (value: unknown, row: TransactionDetail) => (
+        render: (value, row: TransactionDetail) => (
           <Badge color={getTransactionTypeColor(row.type)}>
             {getTransactionTypeLabel(row.type)}
           </Badge>
@@ -176,7 +176,7 @@ const TransactionTable = ({
         enableSorting: false,
         accessor: (row) => row.category?.name,
         title: 'transactions.category',
-        render: (value: unknown, row: TransactionDetail) => {
+        render: (value, row: TransactionDetail) => {
           const category = row.category;
           if (!category) {
             return (
@@ -249,7 +249,7 @@ const TransactionTable = ({
                 );
               }
             : undefined,
-        render: (value: unknown, row: TransactionDetail) => {
+        render: (value, row: TransactionDetail) => {
           const amount = parseFloat(String(row.amount));
           const isExpense = row.type === TransactionType.expense;
           const isIncome = row.type === TransactionType.income;
@@ -278,7 +278,7 @@ const TransactionTable = ({
         enableSorting: false,
         accessor: (row) => row.event?.name,
         title: 'transactions.event',
-        render: (value: unknown, row: TransactionDetail) => {
+        render: (value, row: TransactionDetail) => {
           const event = row.event;
           if (!event) {
             return (
@@ -301,7 +301,7 @@ const TransactionTable = ({
         title: 'transactions.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value: unknown, row: TransactionDetail) => (
+        render: (value, row: TransactionDetail) => (
           <Group gap="xs" justify="center">
             <ActionIcon
               variant="subtle"

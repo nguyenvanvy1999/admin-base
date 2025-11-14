@@ -1,6 +1,12 @@
 import { t } from 'elysia';
 import { z } from 'zod';
-import { DeleteManyDto, type IDeleteManyDto } from './common.dto';
+import {
+  createListQueryDto,
+  DeleteManyDto,
+  DeleteResponseDto,
+  type IDeleteManyDto,
+  PaginationDto,
+} from './common.dto';
 
 export const UpsertEventDto = z.object({
   id: z.string().optional(),
@@ -9,16 +15,13 @@ export const UpsertEventDto = z.object({
   endAt: z.iso.datetime().optional(),
 });
 
-export const ListEventsQueryDto = z.object({
+export const ListEventsQueryDto = createListQueryDto({
   search: z.string().optional(),
   startAtFrom: z.iso.datetime().optional(),
   startAtTo: z.iso.datetime().optional(),
   endAtFrom: z.iso.datetime().optional(),
   endAtTo: z.iso.datetime().optional(),
-  page: z.coerce.number().int().min(1).default(1).optional(),
-  limit: z.coerce.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['name', 'startAt', 'endAt', 'createdAt']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export const DeleteManyEventsDto = DeleteManyDto;
@@ -38,28 +41,16 @@ export const EventDto = t.NoValidate(
   }),
 );
 
-export const EventPaginationDto = t.NoValidate(
-  t.Object({
-    page: t.Integer(),
-    limit: t.Integer(),
-    total: t.Integer(),
-    totalPages: t.Integer(),
-  }),
-);
+export const EventPaginationDto = PaginationDto;
 
 export const EventListResponseDto = t.NoValidate(
   t.Object({
     events: t.Array(EventDto),
-    pagination: EventPaginationDto,
+    pagination: PaginationDto,
   }),
 );
 
-export const EventDeleteResponseDto = t.NoValidate(
-  t.Object({
-    success: t.Boolean(),
-    message: t.String(),
-  }),
-);
+export const EventDeleteResponseDto = DeleteResponseDto;
 
 export type EventResponse = typeof EventDto.static;
 export type EventListResponse = typeof EventListResponseDto.static;

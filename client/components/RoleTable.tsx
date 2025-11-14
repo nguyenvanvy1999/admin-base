@@ -72,7 +72,7 @@ const RoleTable = ({
         accessor: 'description',
         title: 'roles.description',
         ellipsis: true,
-        render: (value: unknown) => {
+        render: (value) => {
           if (!value) return <span className="text-gray-400">-</span>;
           return <span>{String(value)}</span>;
         },
@@ -80,7 +80,7 @@ const RoleTable = ({
       {
         accessor: 'enabled',
         title: 'roles.enabled',
-        render: (value: unknown) => {
+        render: (value) => {
           const enabled = value as boolean;
           return (
             <Badge color={enabled ? 'green' : 'red'} variant="light">
@@ -92,7 +92,7 @@ const RoleTable = ({
       {
         accessor: 'permissionIds',
         title: 'roles.permissions',
-        render: (value: unknown) => {
+        render: (value) => {
           const permissionIds = value as string[];
           return <span>{permissionIds.length}</span>;
         },
@@ -100,7 +100,7 @@ const RoleTable = ({
       {
         accessor: 'playerIds',
         title: 'roles.players',
-        render: (value: unknown) => {
+        render: (value) => {
           const playerIds = value as string[];
           return <span>{playerIds.length}</span>;
         },
@@ -113,7 +113,7 @@ const RoleTable = ({
         title: 'roles.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value: unknown, row: RoleResponse) => {
+        render: (value, row: RoleResponse) => {
           const frozen = isFrozenRole(row.id);
           const canEdit = canUpdate && !frozen;
           const canDeleteRole = canDelete && !frozen;

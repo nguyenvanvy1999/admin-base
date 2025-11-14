@@ -15,29 +15,11 @@ import type {
   IListAccountsQueryDto,
   IUpsertAccountDto,
 } from '../dto/account.dto';
-import { CURRENCY_SELECT_BASIC } from './selects';
-
-const ACCOUNT_SELECT_FULL = {
-  id: true,
-  type: true,
-  name: true,
-  currencyId: true,
-  balance: true,
-  creditLimit: true,
-  notifyOnDueDate: true,
-  paymentDay: true,
-  notifyDaysBefore: true,
-  meta: true,
-  createdAt: true,
-  updatedAt: true,
-  currency: {
-    select: CURRENCY_SELECT_BASIC,
-  },
-} as const;
-
-const ACCOUNT_SELECT_MINIMAL = {
-  id: true,
-} as const;
+import {
+  ACCOUNT_SELECT_FULL,
+  ACCOUNT_SELECT_MINIMAL,
+  CURRENCY_SELECT_BASIC,
+} from './selects';
 
 type AccountRecord = Prisma.AccountGetPayload<{
   select: typeof ACCOUNT_SELECT_FULL;

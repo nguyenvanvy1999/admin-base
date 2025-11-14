@@ -1,6 +1,13 @@
 import { AccountType } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
 import { z } from 'zod';
+import {
+  CurrencyDto,
+  createArrayPreprocess,
+  createListQueryDto,
+  DeleteResponseDto,
+  PaginationDto,
+} from './common.dto';
 
 export const UpsertAccountDto = z.object({
   id: z.string().optional(),
@@ -15,33 +22,17 @@ export const UpsertAccountDto = z.object({
   meta: z.unknown().optional(),
 });
 
-export const ListAccountsQueryDto = z.object({
-  type: z.preprocess((val) => {
-    if (val === undefined || val === null) return undefined;
-    return Array.isArray(val) ? val : [val];
-  }, z.array(z.enum(AccountType)).optional()),
-  currencyId: z.preprocess((val) => {
-    if (val === undefined || val === null) return undefined;
-    return Array.isArray(val) ? val : [val];
-  }, z.array(z.string()).optional()),
+export const ListAccountsQueryDto = createListQueryDto({
+  type: createArrayPreprocess(z.enum(AccountType)),
+  currencyId: createArrayPreprocess(z.string()),
   search: z.string().optional(),
-  page: z.coerce.number().int().min(1).default(1).optional(),
-  limit: z.coerce.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['name', 'createdAt', 'balance']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export type IUpsertAccountDto = z.infer<typeof UpsertAccountDto>;
 export type IListAccountsQueryDto = z.infer<typeof ListAccountsQueryDto>;
 
-const accountCurrencyShape = {
-  id: t.String(),
-  code: t.String(),
-  name: t.String(),
-  symbol: t.Nullable(t.String()),
-} as const;
-
-export const AccountCurrencyDto = t.NoValidate(t.Object(accountCurrencyShape));
+export const AccountCurrencyDto = CurrencyDto;
 
 export const AccountDto = t.NoValidate(
   t.Object({
@@ -68,29 +59,17 @@ export const AccountSummaryDto = t.NoValidate(
   }),
 );
 
-export const AccountPaginationDto = t.NoValidate(
-  t.Object({
-    page: t.Integer(),
-    limit: t.Integer(),
-    total: t.Integer(),
-    totalPages: t.Integer(),
-  }),
-);
+export const AccountPaginationDto = PaginationDto;
 
 export const AccountListResponseDto = t.NoValidate(
   t.Object({
     accounts: t.Array(AccountDto),
-    pagination: AccountPaginationDto,
+    pagination: PaginationDto,
     summary: t.Array(AccountSummaryDto),
   }),
 );
 
-export const AccountDeleteResponseDto = t.NoValidate(
-  t.Object({
-    success: t.Boolean(),
-    message: t.String(),
-  }),
-);
+export const AccountDeleteResponseDto = DeleteResponseDto;
 
 export type AccountResponse = typeof AccountDto.static;
 export type AccountSummary = typeof AccountSummaryDto.static;

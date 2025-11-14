@@ -11,6 +11,7 @@ import {
   LOAN_CATEGORIES,
   TRANSFER_CATEGORY,
 } from '@server/share/constants/category';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import { Elysia } from 'elysia';
 import type {
   CategoryListResponse,
@@ -19,6 +20,7 @@ import type {
   IListCategoriesQueryDto,
   IUpsertCategoryDto,
 } from '../dto/category.dto';
+import { CATEGORY_SELECT_MINIMAL } from './selects';
 
 type CategoryWithChildren = {
   id: string;
@@ -31,15 +33,6 @@ type CategoryWithChildren = {
   color: string | null;
   children?: CategoryWithChildren[];
 };
-
-const CATEGORY_SELECT_MINIMAL = {
-  id: true,
-  userId: true,
-  isLocked: true,
-  type: true,
-  parentId: true,
-  deletedAt: true,
-} as const;
 
 const formatCategory = (
   category: Pick<
@@ -184,7 +177,7 @@ export class CategoryService {
       category.userId !== userId ||
       category.deletedAt !== null
     ) {
-      throw new Error('Category not found');
+      throwAppError(ErrorCode.CATEGORY_NOT_FOUND, 'Category not found');
     }
     return category;
   }
@@ -224,6 +217,7 @@ export class CategoryService {
     const { type, includeDeleted = false } = query;
 
     const where: CategoryWhereInput = {
+      type: type && type.length > 0 ? { in: type } : undefined,
       userId,
     };
 
@@ -280,7 +274,7 @@ export class CategoryService {
     });
 
     if (!category) {
-      throw new Error('Category not found');
+      throwAppError(ErrorCode.CATEGORY_NOT_FOUND, 'Category not found');
     }
 
     return formatCategory(category);
@@ -331,15 +325,24 @@ export class CategoryService {
       );
 
       if (parent.isLocked) {
-        throw new Error('Cannot create child of locked category');
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Cannot create child of locked category',
+        );
       }
 
       if (parent.type !== data.type) {
-        throw new Error('Category type must match parent category type');
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Category type must match parent category type',
+        );
       }
 
       if (parent.parentId !== null) {
-        throw new Error('Cannot create category with more than 2 levels');
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Cannot create category with more than 2 levels',
+        );
       }
     }
 
@@ -377,12 +380,18 @@ export class CategoryService {
     const category = await this.validateCategoryOwnership(userId, categoryId);
 
     if (category.isLocked) {
-      throw new Error('Cannot update locked category');
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'Cannot update locked category',
+      );
     }
 
     if (data.parentId !== undefined) {
       if (data.parentId === categoryId) {
-        throw new Error('Category cannot be its own parent');
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Category cannot be its own parent',
+        );
       }
 
       if (data.parentId !== null) {
@@ -392,15 +401,24 @@ export class CategoryService {
         );
 
         if (newParent.isLocked) {
-          throw new Error('Cannot set locked category as parent');
+          throwAppError(
+            ErrorCode.VALIDATION_ERROR,
+            'Cannot set locked category as parent',
+          );
         }
 
         if (newParent.type !== data.type) {
-          throw new Error('Category type must match parent category type');
+          throwAppError(
+            ErrorCode.VALIDATION_ERROR,
+            'Category type must match parent category type',
+          );
         }
 
         if (newParent.parentId !== null) {
-          throw new Error('Cannot create category with more than 2 levels');
+          throwAppError(
+            ErrorCode.VALIDATION_ERROR,
+            'Cannot create category with more than 2 levels',
+          );
         }
 
         const hasCircularReference = await this.checkCircularReference(
@@ -408,7 +426,10 @@ export class CategoryService {
           data.parentId,
         );
         if (hasCircularReference) {
-          throw new Error('Circular reference detected');
+          throwAppError(
+            ErrorCode.VALIDATION_ERROR,
+            'Circular reference detected',
+          );
         }
       }
     }
@@ -471,7 +492,10 @@ export class CategoryService {
     const category = await this.validateCategoryOwnership(userId, categoryId);
 
     if (category.isLocked) {
-      throw new Error('Cannot delete locked category');
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'Cannot delete locked category',
+      );
     }
 
     const childrenCount = await prisma.category.count({
@@ -482,7 +506,10 @@ export class CategoryService {
     });
 
     if (childrenCount > 0) {
-      throw new Error('Cannot delete category with children');
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'Cannot delete category with children',
+      );
     }
 
     await prisma.category.update({

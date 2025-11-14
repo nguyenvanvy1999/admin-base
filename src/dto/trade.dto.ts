@@ -1,6 +1,13 @@
 import { TradeSide } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
 import { z } from 'zod';
+import {
+  CurrencyDto,
+  createArrayPreprocess,
+  createListQueryDto,
+  DeleteResponseDto,
+  PaginationDto,
+} from './common.dto';
 
 export const CreateInvestmentTradeDto = z.object({
   side: z.enum(TradeSide),
@@ -22,14 +29,12 @@ export const CreateInvestmentTradeDto = z.object({
   meta: z.unknown().optional(),
 });
 
-export const ListInvestmentTradesQueryDto = z.object({
+export const ListInvestmentTradesQueryDto = createListQueryDto({
   side: z.enum(TradeSide).optional(),
-  accountIds: z.array(z.string()).optional(),
+  accountIds: createArrayPreprocess(z.string()),
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
-  page: z.coerce.number().int().min(1).default(1).optional(),
   limit: z.coerce.number().int().min(1).default(50).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export type ICreateInvestmentTradeDto = z.infer<
@@ -46,14 +51,7 @@ export const InvestmentTradeAccountDto = t.NoValidate(
   }),
 );
 
-export const InvestmentTradeCurrencyDto = t.NoValidate(
-  t.Object({
-    id: t.String(),
-    code: t.String(),
-    name: t.String(),
-    symbol: t.Nullable(t.String()),
-  }),
-);
+export const InvestmentTradeCurrencyDto = CurrencyDto;
 
 export const InvestmentTradeDto = t.NoValidate(
   t.Object({
@@ -83,28 +81,16 @@ export const InvestmentTradeDto = t.NoValidate(
   }),
 );
 
-export const InvestmentTradePaginationDto = t.NoValidate(
-  t.Object({
-    page: t.Integer(),
-    limit: t.Integer(),
-    total: t.Integer(),
-    totalPages: t.Integer(),
-  }),
-);
+export const InvestmentTradePaginationDto = PaginationDto;
 
 export const InvestmentTradeListResponseDto = t.NoValidate(
   t.Object({
     trades: t.Array(InvestmentTradeDto),
-    pagination: InvestmentTradePaginationDto,
+    pagination: PaginationDto,
   }),
 );
 
-export const TradeDeleteResponseDto = t.NoValidate(
-  t.Object({
-    success: t.Boolean(),
-    message: t.String(),
-  }),
-);
+export const TradeDeleteResponseDto = DeleteResponseDto;
 
 export type InvestmentTradeResponse = typeof InvestmentTradeDto.static;
 export type InvestmentTradeListResponse =

@@ -217,7 +217,7 @@ const InvestmentDetailPage = () => {
       {
         accessor: 'side',
         title: 'investments.trade.side',
-        render: (value: unknown, row: InvestmentTradeResponse) => (
+        render: (value, row: InvestmentTradeResponse) => (
           <Badge
             color={row.side === TradeSide.buy ? 'green' : 'red'}
             variant="light"
@@ -256,7 +256,7 @@ const InvestmentDetailPage = () => {
         title: 'common.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value: unknown, row: InvestmentTradeResponse) => (
+        render: (value, row: InvestmentTradeResponse) => (
           <Group justify="center" gap="xs">
             <ActionIcon
               variant="subtle"
@@ -285,7 +285,7 @@ const InvestmentDetailPage = () => {
       {
         accessor: 'type',
         title: 'investments.contribution.type',
-        render: (value: unknown, row: InvestmentContributionResponse) => (
+        render: (value, row: InvestmentContributionResponse) => (
           <Badge
             color={row.type === ContributionType.deposit ? 'green' : 'red'}
             variant="light"
@@ -308,7 +308,7 @@ const InvestmentDetailPage = () => {
       {
         accessor: (row: InvestmentContributionResponse) => row.account?.name,
         title: 'investments.contribution.account',
-        render: (value: unknown) => (value ? String(value) : '--'),
+        render: (value) => (value ? String(value) : '--'),
       },
       {
         accessor: 'note',
@@ -319,7 +319,7 @@ const InvestmentDetailPage = () => {
         title: 'common.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value: unknown, row: InvestmentContributionResponse) => (
+        render: (value, row: InvestmentContributionResponse) => (
           <Group justify="center" gap="xs">
             <ActionIcon
               variant="subtle"
@@ -359,7 +359,7 @@ const InvestmentDetailPage = () => {
         title: 'common.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value: unknown, row: InvestmentValuationResponse) => (
+        render: (value, row: InvestmentValuationResponse) => (
           <Group justify="center" gap="xs">
             <ActionIcon
               variant="subtle"

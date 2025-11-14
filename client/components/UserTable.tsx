@@ -65,7 +65,7 @@ const UserTable = ({
       {
         accessor: 'role',
         title: 'users.role',
-        render: (value: unknown, row: UserResponse) => {
+        render: (value, row: UserResponse) => {
           if (!row.role) return <span className="text-gray-400">-</span>;
           const label =
             row.role === UserRole.admin
@@ -83,7 +83,7 @@ const UserTable = ({
       {
         accessor: 'baseCurrency',
         title: 'users.baseCurrency',
-        render: (value: unknown, row: UserResponse) => {
+        render: (value, row: UserResponse) => {
           if (!row.baseCurrency)
             return <span className="text-gray-400">-</span>;
           return (
@@ -102,7 +102,7 @@ const UserTable = ({
         title: 'users.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value: unknown, row: UserResponse) => (
+        render: (value, row: UserResponse) => (
           <div className="flex items-center justify-center gap-2">
             {canUpdate && (
               <ActionIcon

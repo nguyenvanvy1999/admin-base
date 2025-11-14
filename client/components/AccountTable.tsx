@@ -72,7 +72,7 @@ const AccountTable = ({
         accessor: 'type',
         title: 'accounts.type',
         enableSorting: false,
-        render: (value: unknown, row: AccountResponse) => (
+        render: (value, row: AccountResponse) => (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
             {getAccountTypeLabel(row.type)}
           </span>
@@ -87,7 +87,7 @@ const AccountTable = ({
         accessor: 'balance',
         title: 'accounts.balance',
         enableSorting: true,
-        render: (value: unknown, row: AccountResponse) => {
+        render: (value, row: AccountResponse) => {
           const balance = parseFloat(String(row.balance));
           const isNegative = balance < 0;
           const colorClass = isNegative
@@ -112,7 +112,7 @@ const AccountTable = ({
         accessor: 'creditLimit',
         title: 'accounts.creditLimit',
         enableSorting: false,
-        render: (value: unknown, row: AccountResponse) => {
+        render: (value, row: AccountResponse) => {
           if (!row.creditLimit) return null;
           const currencySymbol = row.currency?.symbol || '';
           return (
@@ -135,7 +135,7 @@ const AccountTable = ({
         textAlign: 'center',
         width: '8rem',
         enableSorting: false,
-        render: (value: unknown, row: AccountResponse) => (
+        render: (value, row: AccountResponse) => (
           <div className="flex items-center justify-center gap-2">
             <ActionIcon
               variant="subtle"

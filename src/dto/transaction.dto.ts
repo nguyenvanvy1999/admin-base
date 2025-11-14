@@ -5,6 +5,12 @@ import {
   EntityType,
   TransactionType,
 } from '../generated/prisma/enums';
+import {
+  createArrayPreprocess,
+  createListQueryDto,
+  DeleteResponseDto,
+  PaginationDto,
+} from './common.dto';
 
 const BaseTransactionDto = z.object({
   id: z.string().optional(),
@@ -96,29 +102,14 @@ export const BalanceAdjustmentElysiaDto = t.Object({
 
 export type IBalanceAdjustmentDto = z.infer<typeof BalanceAdjustmentDto>;
 
-export const ListTransactionsQueryDto = z.object({
-  types: z.preprocess((val) => {
-    if (val === undefined || val === null) return undefined;
-    return Array.isArray(val) ? val : [val];
-  }, z.array(z.enum(TransactionType)).optional()),
-  accountIds: z.preprocess((val) => {
-    if (val === undefined || val === null) return undefined;
-    return Array.isArray(val) ? val : [val];
-  }, z.array(z.string()).optional()),
-  categoryIds: z.preprocess((val) => {
-    if (val === undefined || val === null) return undefined;
-    return Array.isArray(val) ? val : [val];
-  }, z.array(z.string()).optional()),
-  entityIds: z.preprocess((val) => {
-    if (val === undefined || val === null) return undefined;
-    return Array.isArray(val) ? val : [val];
-  }, z.array(z.string()).optional()),
+export const ListTransactionsQueryDto = createListQueryDto({
+  types: createArrayPreprocess(z.enum(TransactionType)),
+  accountIds: createArrayPreprocess(z.string()),
+  categoryIds: createArrayPreprocess(z.string()),
+  entityIds: createArrayPreprocess(z.string()),
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
-  page: z.coerce.number().int().min(1).default(1).optional(),
-  limit: z.coerce.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['date', 'amount', 'type', 'accountId']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export type IUpsertTransaction = z.infer<typeof UpsertTransactionDto>;
@@ -217,14 +208,7 @@ export const TransactionDetailDto = t.NoValidate(
   }),
 );
 
-export const TransactionPaginationDto = t.NoValidate(
-  t.Object({
-    page: t.Integer(),
-    limit: t.Integer(),
-    total: t.Integer(),
-    totalPages: t.Integer(),
-  }),
-);
+export const TransactionPaginationDto = PaginationDto;
 
 export const TransactionSummaryDto = t.NoValidate(
   t.Object({
@@ -237,17 +221,12 @@ export const TransactionSummaryDto = t.NoValidate(
 export const TransactionListResponseDto = t.NoValidate(
   t.Object({
     transactions: t.Array(TransactionDetailDto),
-    pagination: TransactionPaginationDto,
+    pagination: PaginationDto,
     summary: t.Array(TransactionSummaryDto),
   }),
 );
 
-export const TransactionDeleteResponseDto = t.NoValidate(
-  t.Object({
-    success: t.Boolean(),
-    message: t.String(),
-  }),
-);
+export const TransactionDeleteResponseDto = DeleteResponseDto;
 
 export const BatchTransactionResultDto = t.NoValidate(
   t.Object({

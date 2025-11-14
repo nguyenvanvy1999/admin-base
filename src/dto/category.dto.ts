@@ -1,6 +1,7 @@
 import { CategoryType } from '@server/generated/prisma/enums';
 import { t } from 'elysia';
 import { z } from 'zod';
+import { createArrayPreprocess, DeleteResponseDto } from './common.dto';
 
 export const UpsertCategoryDto = z.object({
   id: z.string().optional(),
@@ -12,7 +13,7 @@ export const UpsertCategoryDto = z.object({
 });
 
 export const ListCategoriesQueryDto = z.object({
-  type: z.array(z.enum(CategoryType)).optional(),
+  type: createArrayPreprocess(z.enum(CategoryType)),
   includeDeleted: z.boolean().default(false).optional(),
 });
 
@@ -52,12 +53,7 @@ export const CategoryListResponseDto = t.NoValidate(
   }),
 );
 
-export const CategoryDeleteResponseDto = t.NoValidate(
-  t.Object({
-    success: t.Boolean(),
-    message: t.String(),
-  }),
-);
+export const CategoryDeleteResponseDto = DeleteResponseDto;
 
 export type CategoryResponse = typeof CategoryDto.static;
 export type CategoryTreeResponse = typeof CategoryTreeDto.static;

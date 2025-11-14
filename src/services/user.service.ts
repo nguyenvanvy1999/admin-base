@@ -16,35 +16,11 @@ import type {
 } from '../dto/user.dto';
 import { CategoryService } from './category.service';
 
-const USER_SELECT_FOR_INFO = {
-  id: true,
-  username: true,
-  name: true,
-  role: true,
-  baseCurrencyId: true,
-  settings: true,
-  createdAt: true,
-  updatedAt: true,
-  roles: { select: { roleId: true } },
-} as const;
-
-const USER_SELECT_FOR_VALIDATION = {
-  id: true,
-  password: true,
-} as const;
-
-const USER_SELECT_FOR_LOGIN = {
-  id: true,
-  username: true,
-  role: true,
-  name: true,
-  baseCurrencyId: true,
-  settings: true,
-  password: true,
-  createdAt: true,
-  updatedAt: true,
-  roles: { select: { roleId: true } },
-} as const;
+import {
+  USER_SELECT_FOR_INFO,
+  USER_SELECT_FOR_LOGIN,
+  USER_SELECT_FOR_VALIDATION,
+} from './selects';
 
 const formatUser = (user: {
   id: string;

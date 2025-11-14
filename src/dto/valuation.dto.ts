@@ -1,5 +1,11 @@
 import { t } from 'elysia';
 import { z } from 'zod';
+import {
+  CurrencyDto,
+  createListQueryDto,
+  DeleteResponseDto,
+  PaginationDto,
+} from './common.dto';
 
 export const UpsertInvestmentValuationDto = z.object({
   price: z.number().min(0),
@@ -12,12 +18,10 @@ export const UpsertInvestmentValuationDto = z.object({
   baseCurrencyId: z.string().optional(),
 });
 
-export const ListInvestmentValuationsQueryDto = z.object({
+export const ListInvestmentValuationsQueryDto = createListQueryDto({
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
-  page: z.coerce.number().int().min(1).default(1).optional(),
   limit: z.coerce.number().int().min(1).default(50).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export type IUpsertInvestmentValuationDto = z.infer<
@@ -27,14 +31,7 @@ export type IListInvestmentValuationsQueryDto = z.infer<
   typeof ListInvestmentValuationsQueryDto
 >;
 
-export const InvestmentValuationCurrencyDto = t.NoValidate(
-  t.Object({
-    id: t.String(),
-    code: t.String(),
-    name: t.String(),
-    symbol: t.Nullable(t.String()),
-  }),
-);
+export const InvestmentValuationCurrencyDto = CurrencyDto;
 
 export const InvestmentValuationDto = t.NoValidate(
   t.Object({
@@ -56,28 +53,16 @@ export const InvestmentValuationDto = t.NoValidate(
   }),
 );
 
-export const InvestmentValuationPaginationDto = t.NoValidate(
-  t.Object({
-    page: t.Integer(),
-    limit: t.Integer(),
-    total: t.Integer(),
-    totalPages: t.Integer(),
-  }),
-);
+export const InvestmentValuationPaginationDto = PaginationDto;
 
 export const InvestmentValuationListResponseDto = t.NoValidate(
   t.Object({
     valuations: t.Array(InvestmentValuationDto),
-    pagination: InvestmentValuationPaginationDto,
+    pagination: PaginationDto,
   }),
 );
 
-export const ValuationDeleteResponseDto = t.NoValidate(
-  t.Object({
-    success: t.Boolean(),
-    message: t.String(),
-  }),
-);
+export const ValuationDeleteResponseDto = DeleteResponseDto;
 
 export type InvestmentValuationResponse = typeof InvestmentValuationDto.static;
 export type InvestmentValuationListResponse =

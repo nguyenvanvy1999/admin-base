@@ -1,5 +1,6 @@
 import { t } from 'elysia';
 import { z } from 'zod';
+import { createListQueryDto, PaginationDto } from '../common.dto';
 
 export const SessionResDto = t.Object({
   id: t.String(),
@@ -32,12 +33,9 @@ export const SessionResWithUserDto = t.NoValidate(
   }),
 );
 
-export const SessionQueryDto = z.object({
+export const SessionQueryDto = createListQueryDto({
   userId: z.string().optional(),
-  page: z.coerce.number().int().min(1).default(1).optional(),
-  limit: z.coerce.number().int().min(1).default(20).optional(),
   sortBy: z.enum(['createdAt', 'expired', 'revoked']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
   revoked: z
     .preprocess((val) => {
       if (val === undefined || val === null) return undefined;
@@ -54,19 +52,12 @@ export const RevokeSessionDto = t.Object({
   sessionIds: t.Array(t.String(), { minItems: 1 }),
 });
 
-export const SessionPaginationDto = t.NoValidate(
-  t.Object({
-    page: t.Integer(),
-    limit: t.Integer(),
-    total: t.Integer(),
-    totalPages: t.Integer(),
-  }),
-);
+export const SessionPaginationDto = PaginationDto;
 
 export const SessionListResponseDto = t.NoValidate(
   t.Object({
     sessions: t.Array(SessionResWithUserDto),
-    pagination: SessionPaginationDto,
+    pagination: PaginationDto,
   }),
 );
 

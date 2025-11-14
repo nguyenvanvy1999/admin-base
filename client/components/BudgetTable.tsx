@@ -78,7 +78,7 @@ const BudgetTable = ({
       {
         accessor: 'name',
         title: 'budgets.name',
-        render: (value: unknown, row: BudgetResponse) => (
+        render: (value, row: BudgetResponse) => (
           <Button
             variant="subtle"
             p={0}
@@ -96,7 +96,7 @@ const BudgetTable = ({
       {
         accessor: 'amount',
         title: 'budgets.amount',
-        render: (value: unknown) => {
+        render: (value) => {
           const amount = typeof value === 'string' ? parseFloat(value) : 0;
           return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -108,7 +108,7 @@ const BudgetTable = ({
       {
         accessor: 'period',
         title: 'budgets.period',
-        render: (value: unknown) => {
+        render: (value) => {
           const period = value as BudgetPeriod;
           return (
             <Badge variant="light" color="blue">
@@ -120,7 +120,7 @@ const BudgetTable = ({
       {
         accessor: 'startDate',
         title: 'budgets.startDate',
-        render: (value: unknown) => {
+        render: (value) => {
           if (!value) return <Text c="dimmed">-</Text>;
           return new Date(value as string).toLocaleDateString();
         },
@@ -128,7 +128,7 @@ const BudgetTable = ({
       {
         accessor: 'endDate',
         title: 'budgets.endDate',
-        render: (value: unknown) => {
+        render: (value) => {
           if (!value) return <Text c="dimmed">-</Text>;
           return new Date(value as string).toLocaleDateString();
         },
@@ -136,7 +136,7 @@ const BudgetTable = ({
       {
         accessor: 'carryOver',
         title: 'budgets.carryOver',
-        render: (value: unknown) => {
+        render: (value) => {
           const carryOver = value as boolean;
           return carryOver ? (
             <Badge variant="light" color="green">
@@ -152,7 +152,7 @@ const BudgetTable = ({
       {
         title: 'budgets.actions',
         accessor: 'actions',
-        render: (_value: unknown, row: BudgetResponse) => (
+        render: (_value, row: BudgetResponse) => (
           <Group gap="xs">
             <Button
               size="xs"
