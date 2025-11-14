@@ -438,7 +438,13 @@
     "amountTo": "Số tiền đến",
     "transferTo": "Chuyển đến",
     "entity": "Đối tượng",
-    "selectEntity": "Chọn đối tượng"
+    "selectEntity": "Chọn đối tượng",
+    "groupBy": "Nhóm theo",
+    "groupByDay": "Ngày",
+    "groupByMonth": "Tháng",
+    "groupByYear": "Năm",
+    "noGrouping": "Không nhóm",
+    "totalAmount": "Tổng số tiền"
   },
   "statistics": {
     "incomeExpense": {

@@ -438,7 +438,13 @@
     "amountTo": "Amount To",
     "transferTo": "Transfer To",
     "entity": "Entity",
-    "selectEntity": "Select entity"
+    "selectEntity": "Select entity",
+    "groupBy": "Group by",
+    "groupByDay": "Day",
+    "groupByMonth": "Month",
+    "groupByYear": "Year",
+    "noGrouping": "No Grouping",
+    "totalAmount": "Total Amount"
   },
   "statistics": {
     "incomeExpense": {

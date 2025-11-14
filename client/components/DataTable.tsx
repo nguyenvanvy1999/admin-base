@@ -56,6 +56,12 @@ type Props<T> = {
   onColumnFiltersChange?: (updater: ColumnFilter[]) => void;
   enableRowNumbers?: boolean;
   renderTopToolbarCustomActions?: (props: { table: any }) => React.ReactNode;
+  enableGrouping?: boolean;
+  grouping?: string[];
+  onGroupingChange?: (
+    updater: string[] | ((prev: string[]) => string[]),
+  ) => void;
+  initialGrouping?: string[];
 };
 
 export function DataTable<T extends { id: string } = { id: string }>({
@@ -87,6 +93,10 @@ export function DataTable<T extends { id: string } = { id: string }>({
   columnFilters,
   onColumnFiltersChange,
   renderTopToolbarCustomActions,
+  enableGrouping = false,
+  grouping,
+  onGroupingChange,
+  initialGrouping,
   ...props
 }: Props<T>) {
   const { t } = useTranslation();
@@ -266,14 +276,16 @@ export function DataTable<T extends { id: string } = { id: string }>({
         );
       };
 
-      return {
+      const columnDef: ColumnDef<T> = {
         id,
         header: col.title ? t(col.title) : '',
-        accessorKey,
-        accessorFn: hasAccessorFn
-          ? (row: T) => (col.accessor as (r: T) => unknown)(row)
-          : undefined,
         Cell: cellRenderer,
+        ...(accessorKey ? { accessorKey } : {}),
+        ...(hasAccessorFn
+          ? {
+              accessorFn: (row: T) => (col.accessor as (r: T) => unknown)(row),
+            }
+          : {}),
         size: toPx(col.width),
         minSize: toPx(col.minWidth),
         enableColumnFilter: accessorKey !== undefined || hasAccessorFn,
@@ -281,6 +293,10 @@ export function DataTable<T extends { id: string } = { id: string }>({
           col.filterVariant || (col.filterOptions ? 'select' : 'text'),
         filterSelectOptions: col.filterOptions,
         enableSorting: col.enableSorting ?? false,
+        enableGrouping: col.enableGrouping ?? true,
+        aggregationFn: col.aggregationFn,
+        GroupedCell: col.GroupedCell,
+        AggregatedCell: col.AggregatedCell,
         mantineTableHeadCellProps: {
           align: 'center',
           style: {
@@ -294,7 +310,8 @@ export function DataTable<T extends { id: string } = { id: string }>({
             textAlign: col.textAlign || 'center',
           },
         },
-      };
+      } as ColumnDef<T>;
+      return columnDef;
     });
   }, [columns, t, autoFormatDisabled, autoFormat, toPx, themeSpacingXs]);
 
@@ -492,6 +509,7 @@ export function DataTable<T extends { id: string } = { id: string }>({
       rowSelection,
       sorting: sorting || [],
       ...(onColumnFiltersChange ? { columnFilters: columnFilters || [] } : {}),
+      ...(enableGrouping && grouping !== undefined ? { grouping } : {}),
     },
     manualPagination: true,
     rowCount: computedRowCount,
@@ -539,17 +557,32 @@ export function DataTable<T extends { id: string } = { id: string }>({
           },
         }
       : {}),
-    enableColumnPinning: !!pinLastColumn,
-    initialState: pinLastColumn
+    enableGrouping: enableGrouping,
+    ...(enableGrouping && onGroupingChange
       ? {
-          columnPinning: {
-            right:
-              mappedColumns.length > 0
-                ? [String(mappedColumns[mappedColumns.length - 1].id)]
-                : [],
+          onGroupingChange: (updater) => {
+            const next =
+              typeof updater === 'function' ? updater(grouping || []) : updater;
+            onGroupingChange?.(next);
           },
         }
-      : undefined,
+      : {}),
+    enableColumnPinning: !!pinLastColumn,
+    initialState: {
+      ...(pinLastColumn
+        ? {
+            columnPinning: {
+              right:
+                mappedColumns.length > 0
+                  ? [String(mappedColumns[mappedColumns.length - 1].id)]
+                  : [],
+            },
+          }
+        : {}),
+      ...(enableGrouping && initialGrouping
+        ? { grouping: initialGrouping, expanded: true }
+        : {}),
+    },
     mantineTableContainerProps: height ? { style: { height } } : undefined,
     mantineTopToolbarProps: {
       style: topToolbarStyle,

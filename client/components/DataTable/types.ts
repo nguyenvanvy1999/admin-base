@@ -29,6 +29,10 @@ export interface DataTableColumn<T> {
   };
   autoFormatDisabled?: boolean;
   enableSorting?: boolean;
+  enableGrouping?: boolean;
+  aggregationFn?: string;
+  GroupedCell?: (props: any) => React.ReactNode;
+  AggregatedCell?: (props: any) => React.ReactNode;
 }
 
 export type MRTColumnDef<T> = ColumnDef<T>;
