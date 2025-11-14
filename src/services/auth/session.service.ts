@@ -2,36 +2,10 @@ import { currentUserCache } from '@server/configs/cache';
 import { prisma } from '@server/configs/db';
 import type { ISessionQueryDto } from '@server/dto/admin/session.dto';
 import type { Prisma } from '@server/generated/prisma/client';
-
-export interface IDb {
-  session: {
-    findMany: (args: {
-      where: Prisma.SessionWhereInput;
-      select?: Prisma.SessionSelect;
-      orderBy?:
-        | Prisma.SessionOrderByWithRelationInput
-        | Prisma.SessionOrderByWithRelationInput[];
-      skip?: number;
-      take?: number;
-    }) => Promise<any[]>;
-    count: (args: { where: Prisma.SessionWhereInput }) => Promise<number>;
-    updateMany: (args: {
-      where: Prisma.SessionWhereInput;
-      data: Prisma.SessionUpdateManyMutationInput;
-    }) => Promise<any>;
-  };
-  user: {
-    findUnique: (args: {
-      where: { id: string };
-      select?: Prisma.UserSelect;
-    }) => Promise<any>;
-  };
-}
+import type { IDb } from '@server/share';
 
 export class SessionService {
-  constructor(
-    private readonly deps: { db: IDb } = { db: prisma as unknown as IDb },
-  ) {}
+  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
 
   async listSessions(
     currentUserId: string,

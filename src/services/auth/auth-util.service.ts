@@ -6,8 +6,6 @@ import dayjs from 'dayjs';
 import { sessionService } from './session.service';
 import { tokenService } from './token.service';
 
-export { tokenService };
-
 export enum LoginResType {
   COMPLETED = 'completed',
 }

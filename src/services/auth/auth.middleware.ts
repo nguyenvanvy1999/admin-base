@@ -1,9 +1,10 @@
 import { currentUserCache } from '@server/configs/cache';
 import { prisma } from '@server/configs/db';
+import { tokenService } from '@server/services/auth/token.service';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import type { ICurrentUser } from '@server/share/type';
 import type { Elysia } from 'elysia';
-import { tokenService, userUtilService } from './auth-util.service';
+import { userUtilService } from './auth-util.service';
 
 const AUTH_HEADER = 'Bearer';
 
