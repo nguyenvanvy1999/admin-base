@@ -1,17 +1,29 @@
-import type { prisma } from '@server/configs/db';
+import { prisma } from '@server/configs/db';
 import {
   ContributionType,
   TradeSide,
   TransactionType,
 } from '@server/generated/prisma/enums';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import Decimal from 'decimal.js';
-import { currencyConversionServiceInstance } from './currency-conversion.service';
+import {
+  type CurrencyConversionService,
+  currencyConversionServiceInstance,
+} from './currency-conversion.service';
 
 type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 export class AccountBalanceService {
-  constructor(private currencyConverter = currencyConversionServiceInstance) {}
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      currencyConverter: CurrencyConversionService;
+    } = {
+      db: prisma,
+      currencyConverter: currencyConversionServiceInstance,
+    },
+  ) {}
 
   async applyTransactionBalance(
     tx: PrismaTx,
@@ -31,7 +43,7 @@ export class AccountBalanceService {
     });
 
     const { amountInAccountCurrency, feeInAccountCurrency } =
-      await this.currencyConverter.convertToAccountCurrency(
+      await this.deps.currencyConverter.convertToAccountCurrency(
         amount,
         fee,
         currencyId,
@@ -83,7 +95,7 @@ export class AccountBalanceService {
 
         const amountInToAccountCurrency = toAmount
           ? new Decimal(toAmount)
-          : await this.currencyConverter.convertToToAccountCurrency(
+          : await this.deps.currencyConverter.convertToToAccountCurrency(
               amount,
               currencyId,
               toAccountCurrencyId,
@@ -116,7 +128,7 @@ export class AccountBalanceService {
     toAmount?: Decimal | number,
   ) {
     const { amountInAccountCurrency, feeInAccountCurrency } =
-      await this.currencyConverter.convertToAccountCurrency(
+      await this.deps.currencyConverter.convertToAccountCurrency(
         amount,
         fee,
         currencyId,
@@ -164,7 +176,7 @@ export class AccountBalanceService {
 
         const amountInToAccountCurrency = toAmount
           ? new Decimal(toAmount)
-          : await this.currencyConverter.convertToToAccountCurrency(
+          : await this.deps.currencyConverter.convertToToAccountCurrency(
               amount,
               currencyId,
               toAccountCurrencyId,

@@ -5,6 +5,7 @@ import type {
   EventWhereInput,
 } from '@server/generated/prisma/models/Event';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import { Elysia } from 'elysia';
 import type { IListEventsQueryDto, IUpsertEventDto } from '../dto/event.dto';
 
@@ -23,8 +24,10 @@ const mapEvent = (
 });
 
 export class EventService {
+  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+
   private async validateEventOwnership(userId: string, eventId: string) {
-    const event = await prisma.event.findFirst({
+    const event = await this.deps.db.event.findFirst({
       where: {
         id: eventId,
         userId,
@@ -53,7 +56,7 @@ export class EventService {
       where.id = { not: excludeId };
     }
 
-    const count = await prisma.event.count({ where });
+    const count = await this.deps.db.event.count({ where });
 
     if (count > 0) {
       throwAppError(ErrorCode.DUPLICATE_NAME, 'Event name already exists');
@@ -82,7 +85,7 @@ export class EventService {
     this.validateDateRange(startAt, endAt);
 
     if (data.id) {
-      const event = await prisma.event.update({
+      const event = await this.deps.db.event.update({
         where: { id: data.id },
         data: {
           name: data.name,
@@ -93,7 +96,7 @@ export class EventService {
       });
       return mapEvent(event);
     } else {
-      const event = await prisma.event.create({
+      const event = await this.deps.db.event.create({
         data: {
           userId,
           name: data.name,
@@ -107,7 +110,7 @@ export class EventService {
   }
 
   async getEvent(userId: string, eventId: string) {
-    const event = await prisma.event.findFirst({
+    const event = await this.deps.db.event.findFirst({
       where: {
         id: eventId,
         userId,
@@ -182,14 +185,14 @@ export class EventService {
     const skip = (page - 1) * limit;
 
     const [events, total] = await Promise.all([
-      prisma.event.findMany({
+      this.deps.db.event.findMany({
         where,
         orderBy,
         skip,
         take: limit,
         select: EVENT_SELECT_FULL,
       }),
-      prisma.event.count({ where }),
+      this.deps.db.event.count({ where }),
     ]);
 
     return {
@@ -206,7 +209,7 @@ export class EventService {
   async deleteEvent(userId: string, eventId: string) {
     await this.validateEventOwnership(userId, eventId);
 
-    await prisma.event.update({
+    await this.deps.db.event.update({
       where: { id: eventId },
       data: {
         deletedAt: new Date(),
@@ -217,7 +220,7 @@ export class EventService {
   }
 
   async deleteManyEvents(userId: string, ids: string[]) {
-    const events = await prisma.event.findMany({
+    const events = await this.deps.db.event.findMany({
       where: {
         id: { in: ids },
         userId,
@@ -233,7 +236,7 @@ export class EventService {
       );
     }
 
-    const result = await prisma.event.updateMany({
+    const result = await this.deps.db.event.updateMany({
       where: {
         id: { in: ids },
         userId,

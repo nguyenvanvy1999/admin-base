@@ -2,7 +2,13 @@ import { prisma } from '@server/configs/db';
 import { UserRole } from '@server/generated/prisma/enums';
 import type { UserUncheckedUpdateInput } from '@server/generated/prisma/models/User';
 import { userUtilService } from '@server/services/auth/auth-util.service';
-import { DB_PREFIX, defaultRoles, IdUtil, SUPER_ADMIN_ID } from '@server/share';
+import {
+  DB_PREFIX,
+  defaultRoles,
+  type IDb,
+  IdUtil,
+  SUPER_ADMIN_ID,
+} from '@server/share';
 import { CURRENCY_IDS } from '@server/share/constants/currency';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import { Elysia } from 'elysia';
@@ -39,13 +45,6 @@ const formatUser = (user: {
   isSuperAdmin: user.id === SUPER_ADMIN_ID,
 });
 
-export interface IDb {
-  user: typeof prisma.user;
-  currency: typeof prisma.currency;
-  rolePlayer: typeof prisma.rolePlayer;
-  $transaction: typeof prisma.$transaction;
-}
-
 export class UserService {
   constructor(
     private readonly deps: {
@@ -56,7 +55,7 @@ export class UserService {
         verify: (password: string, hash: string) => Promise<boolean>;
       };
     } = {
-      db: prisma as unknown as IDb,
+      db: prisma,
       categoryService: new CategoryService(),
       passwordService: {
         hash: (password: string) => Bun.password.hash(password, 'bcrypt'),

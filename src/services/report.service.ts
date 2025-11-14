@@ -2,6 +2,7 @@ import { prisma } from '@server/configs/db';
 import { logger } from '@server/configs/logger';
 import { TransactionType } from '@server/generated/prisma/enums';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import { Elysia } from 'elysia';
 import type {
   DebtStatisticsResponse,
@@ -23,7 +24,10 @@ import type {
   ReportSummaryResponse,
   ReportTransactionsResponse,
 } from '../dto/report.dto';
-import { exchangeRateServiceInstance } from './exchange-rate.service';
+import {
+  type ExchangeRateService,
+  exchangeRateServiceInstance,
+} from './exchange-rate.service';
 
 const safeNumber = (value: unknown) =>
   value && typeof value === 'object' && 'toNumber' in value
@@ -31,8 +35,18 @@ const safeNumber = (value: unknown) =>
     : Number(value ?? 0);
 
 export class ReportService {
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      exchangeRateService: ExchangeRateService;
+    } = {
+      db: prisma,
+      exchangeRateService: exchangeRateServiceInstance,
+    },
+  ) {}
+
   private async getUserBaseCurrencyId(userId: string): Promise<string> {
-    const user = await prisma.user.findUnique({
+    const user = await this.deps.db.user.findUnique({
       where: { id: userId },
       select: { baseCurrencyId: true },
     });
@@ -52,7 +66,7 @@ export class ReportService {
     const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
 
     const [accounts, transactions, investments, holdings] = await Promise.all([
-      prisma.account.findMany({
+      this.deps.db.account.findMany({
         where: {
           userId,
           deletedAt: null,
@@ -62,7 +76,7 @@ export class ReportService {
           currencyId: true,
         },
       }),
-      prisma.transaction.findMany({
+      this.deps.db.transaction.findMany({
         where: {
           userId,
           deletedAt: null,
@@ -82,7 +96,7 @@ export class ReportService {
           priceInBaseCurrency: true,
         },
       }),
-      prisma.investment.findMany({
+      this.deps.db.investment.findMany({
         where: {
           userId,
           deletedAt: null,
@@ -91,7 +105,7 @@ export class ReportService {
           id: true,
         },
       }),
-      prisma.holding.findMany({
+      this.deps.db.holding.findMany({
         where: {
           userId,
         },
@@ -111,11 +125,11 @@ export class ReportService {
       if (account.currencyId === baseCurrencyId) {
         totalBalance += balance;
       } else {
-        const accountCurrency = await prisma.currency.findUnique({
+        const accountCurrency = await this.deps.db.currency.findUnique({
           where: { id: account.currencyId },
           select: { code: true },
         });
-        const baseCurrency = await prisma.currency.findUnique({
+        const baseCurrency = await this.deps.db.currency.findUnique({
           where: { id: baseCurrencyId },
           select: { code: true },
         });
@@ -146,11 +160,11 @@ export class ReportService {
         if (amountInBase !== null) {
           amountToUse = amountInBase;
         } else {
-          const transactionCurrency = await prisma.currency.findUnique({
+          const transactionCurrency = await this.deps.db.currency.findUnique({
             where: { id: transaction.currencyId },
             select: { code: true },
           });
-          const baseCurrency = await prisma.currency.findUnique({
+          const baseCurrency = await this.deps.db.currency.findUnique({
             where: { id: baseCurrencyId },
             select: { code: true },
           });
@@ -180,7 +194,7 @@ export class ReportService {
         ? safeNumber(holding.lastPrice)
         : null;
       if (lastPrice !== null && quantity > 0) {
-        const investment = await prisma.investment.findUnique({
+        const investment = await this.deps.db.investment.findUnique({
           where: { id: holding.investmentId },
           select: {
             currencyId: true,
@@ -194,11 +208,11 @@ export class ReportService {
           } else if (investment.currencyId === baseCurrencyId) {
             totalInvestments += value;
           } else {
-            const investmentCurrency = await prisma.currency.findUnique({
+            const investmentCurrency = await this.deps.db.currency.findUnique({
               where: { id: investment.currencyId },
               select: { code: true },
             });
-            const baseCurrency = await prisma.currency.findUnique({
+            const baseCurrency = await this.deps.db.currency.findUnique({
               where: { id: baseCurrencyId },
               select: { code: true },
             });
@@ -214,7 +228,7 @@ export class ReportService {
       }
     }
 
-    const totalTrades = await prisma.investmentTrade.count({
+    const totalTrades = await this.deps.db.investmentTrade.count({
       where: {
         userId,
         deletedAt: null,
@@ -252,7 +266,7 @@ export class ReportService {
     const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
     const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
 
-    const transactions = await prisma.transaction.findMany({
+    const transactions = await this.deps.db.transaction.findMany({
       where: {
         userId,
         deletedAt: null,
@@ -305,11 +319,11 @@ export class ReportService {
         if (amountInBase !== null) {
           amountToUse = amountInBase;
         } else {
-          const transactionCurrency = await prisma.currency.findUnique({
+          const transactionCurrency = await this.deps.db.currency.findUnique({
             where: { id: transaction.currencyId },
             select: { code: true },
           });
-          const baseCurrency = await prisma.currency.findUnique({
+          const baseCurrency = await this.deps.db.currency.findUnique({
             where: { id: baseCurrencyId },
             select: { code: true },
           });
@@ -324,11 +338,11 @@ export class ReportService {
         if (feeInBase !== null) {
           feeToUse = feeInBase;
         } else {
-          const transactionCurrency = await prisma.currency.findUnique({
+          const transactionCurrency = await this.deps.db.currency.findUnique({
             where: { id: transaction.currencyId },
             select: { code: true },
           });
-          const baseCurrency = await prisma.currency.findUnique({
+          const baseCurrency = await this.deps.db.currency.findUnique({
             where: { id: baseCurrencyId },
             select: { code: true },
           });
@@ -402,7 +416,7 @@ export class ReportService {
     const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
     const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
 
-    const transactions = await prisma.transaction.findMany({
+    const transactions = await this.deps.db.transaction.findMany({
       where: {
         userId,
         deletedAt: null,
@@ -519,11 +533,11 @@ export class ReportService {
         if (amountInBase !== null) {
           amountToUse = amountInBase;
         } else {
-          const transactionCurrency = await prisma.currency.findUnique({
+          const transactionCurrency = await this.deps.db.currency.findUnique({
             where: { id: transaction.currencyId },
             select: { code: true },
           });
-          const baseCurrency = await prisma.currency.findUnique({
+          const baseCurrency = await this.deps.db.currency.findUnique({
             where: { id: baseCurrencyId },
             select: { code: true },
           });
@@ -538,11 +552,11 @@ export class ReportService {
         if (feeInBase !== null) {
           feeToUse = feeInBase;
         } else {
-          const transactionCurrency = await prisma.currency.findUnique({
+          const transactionCurrency = await this.deps.db.currency.findUnique({
             where: { id: transaction.currencyId },
             select: { code: true },
           });
-          const baseCurrency = await prisma.currency.findUnique({
+          const baseCurrency = await this.deps.db.currency.findUnique({
             where: { id: baseCurrencyId },
             select: { code: true },
           });
@@ -765,7 +779,7 @@ export class ReportService {
   ): Promise<ReportInvestmentsResponse> {
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
 
-    const investments = await prisma.investment.findMany({
+    const investments = await this.deps.db.investment.findMany({
       where: {
         userId,
         deletedAt: null,
@@ -780,7 +794,7 @@ export class ReportService {
       },
     });
 
-    const holdings = await prisma.holding.findMany({
+    const holdings = await this.deps.db.holding.findMany({
       where: {
         userId,
         investmentId: {
@@ -796,7 +810,7 @@ export class ReportService {
       },
     });
 
-    const trades = await prisma.investmentTrade.findMany({
+    const trades = await this.deps.db.investmentTrade.findMany({
       where: {
         userId,
         deletedAt: null,
@@ -842,11 +856,11 @@ export class ReportService {
       } else if (investment.currencyId === baseCurrencyId) {
         valueInBase = value;
       } else {
-        const investmentCurrency = await prisma.currency.findUnique({
+        const investmentCurrency = await this.deps.db.currency.findUnique({
           where: { id: investment.currencyId },
           select: { code: true },
         });
-        const baseCurrency = await prisma.currency.findUnique({
+        const baseCurrency = await this.deps.db.currency.findUnique({
           where: { id: baseCurrencyId },
           select: { code: true },
         });
@@ -894,11 +908,11 @@ export class ReportService {
         if (amountInBase !== null) {
           amountToUse = amountInBase;
         } else {
-          const tradeCurrency = await prisma.currency.findUnique({
+          const tradeCurrency = await this.deps.db.currency.findUnique({
             where: { id: trade.currencyId },
             select: { code: true },
           });
-          const baseCurrency = await prisma.currency.findUnique({
+          const baseCurrency = await this.deps.db.currency.findUnique({
             where: { id: baseCurrencyId },
             select: { code: true },
           });
@@ -957,7 +971,7 @@ export class ReportService {
     const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
     const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
 
-    const investments = await prisma.investment.findMany({
+    const investments = await this.deps.db.investment.findMany({
       where: {
         userId,
         deletedAt: null,
@@ -975,7 +989,7 @@ export class ReportService {
 
     const investmentIds = investments.map((inv) => inv.id);
 
-    const trades = await prisma.investmentTrade.findMany({
+    const trades = await this.deps.db.investmentTrade.findMany({
       where: {
         userId,
         investmentId: { in: investmentIds },
@@ -1003,7 +1017,7 @@ export class ReportService {
       },
     });
 
-    const holdings = await prisma.holding.findMany({
+    const holdings = await this.deps.db.holding.findMany({
       where: {
         userId,
         investmentId: { in: investmentIds },
@@ -1040,11 +1054,11 @@ export class ReportService {
         if (amountInBase !== null) {
           amountToUse = amountInBase;
         } else {
-          const tradeCurrency = await prisma.currency.findUnique({
+          const tradeCurrency = await this.deps.db.currency.findUnique({
             where: { id: trade.currencyId },
             select: { code: true },
           });
-          const baseCurrency = await prisma.currency.findUnique({
+          const baseCurrency = await this.deps.db.currency.findUnique({
             where: { id: baseCurrencyId },
             select: { code: true },
           });
@@ -1182,7 +1196,7 @@ export class ReportService {
     const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
     const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
 
-    const trades = await prisma.investmentTrade.findMany({
+    const trades = await this.deps.db.investmentTrade.findMany({
       where: {
         userId,
         deletedAt: null,
@@ -1238,11 +1252,11 @@ export class ReportService {
         if (amountInBase !== null) {
           amountToUse = amountInBase;
         } else {
-          const tradeCurrency = await prisma.currency.findUnique({
+          const tradeCurrency = await this.deps.db.currency.findUnique({
             where: { id: trade.currencyId },
             select: { code: true },
           });
-          const baseCurrency = await prisma.currency.findUnique({
+          const baseCurrency = await this.deps.db.currency.findUnique({
             where: { id: baseCurrencyId },
             select: { code: true },
           });
@@ -1343,7 +1357,7 @@ export class ReportService {
     const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
     const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
 
-    const trades = await prisma.investmentTrade.findMany({
+    const trades = await this.deps.db.investmentTrade.findMany({
       where: {
         userId,
         deletedAt: null,
@@ -1396,11 +1410,11 @@ export class ReportService {
       let feeToUse = fee;
 
       if (trade.currencyId !== baseCurrencyId) {
-        const tradeCurrency = await prisma.currency.findUnique({
+        const tradeCurrency = await this.deps.db.currency.findUnique({
           where: { id: trade.currencyId },
           select: { code: true },
         });
-        const baseCurrency = await prisma.currency.findUnique({
+        const baseCurrency = await this.deps.db.currency.findUnique({
           where: { id: baseCurrencyId },
           select: { code: true },
         });
@@ -1468,7 +1482,7 @@ export class ReportService {
       }))
       .sort((a, b) => b.fee - a.fee);
 
-    const holdings = await prisma.holding.findMany({
+    const holdings = await this.deps.db.holding.findMany({
       where: {
         userId,
         ...(query.investmentId ? { investmentId: query.investmentId } : {}),
@@ -1509,7 +1523,7 @@ export class ReportService {
     const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
     const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
 
-    const contributions = await prisma.investmentContribution.findMany({
+    const contributions = await this.deps.db.investmentContribution.findMany({
       where: {
         userId,
         deletedAt: null,
@@ -1554,11 +1568,11 @@ export class ReportService {
         if (amountInBase !== null) {
           amountToUse = amountInBase;
         } else {
-          const contributionCurrency = await prisma.currency.findUnique({
+          const contributionCurrency = await this.deps.db.currency.findUnique({
             where: { id: contribution.currencyId },
             select: { code: true },
           });
-          const baseCurrency = await prisma.currency.findUnique({
+          const baseCurrency = await this.deps.db.currency.findUnique({
             where: { id: baseCurrencyId },
             select: { code: true },
           });
@@ -1633,7 +1647,7 @@ export class ReportService {
     const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
     const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
 
-    const transactions = await prisma.transaction.findMany({
+    const transactions = await this.deps.db.transaction.findMany({
       where: {
         userId,
         deletedAt: null,
@@ -1855,7 +1869,7 @@ export class ReportService {
     if (fromCode === toCode) return 1;
 
     try {
-      return await exchangeRateServiceInstance.getRate(fromCode, toCode);
+      return await this.deps.exchangeRateService.getRate(fromCode, toCode);
     } catch (error) {
       logger.error('Failed to get exchange rate', { error });
       return 1;

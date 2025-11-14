@@ -12,6 +12,7 @@ import {
   TRANSFER_CATEGORY,
 } from '@server/share/constants/category';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import { Elysia } from 'elysia';
 import type {
   CategoryListResponse,
@@ -68,6 +69,8 @@ const formatCategoryTree = (
 };
 
 export class CategoryService {
+  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+
   getCategoryId(userId: string, code: string, type?: string): string {
     if (type) {
       return `category_${code}_${type}_${userId}`;
@@ -166,7 +169,7 @@ export class CategoryService {
   }
 
   private async validateCategoryOwnership(userId: string, categoryId: string) {
-    const category = await prisma.category.findUnique({
+    const category = await this.deps.db.category.findUnique({
       where: {
         id: categoryId,
       },
@@ -229,7 +232,7 @@ export class CategoryService {
       where.type = { in: type };
     }
 
-    const categories = await prisma.category.findMany({
+    const categories = await this.deps.db.category.findMany({
       where,
       select: {
         id: true,
@@ -255,7 +258,7 @@ export class CategoryService {
     userId: string,
     categoryId: string,
   ): Promise<CategoryResponse> {
-    const category = await prisma.category.findFirst({
+    const category = await this.deps.db.category.findFirst({
       where: {
         id: categoryId,
         userId,
@@ -288,7 +291,7 @@ export class CategoryService {
     const categoryName = CATEGORY_NAME.BALANCE_ADJUSTMENT;
     const categoryId = this.getCategoryId(userId, categoryName, categoryType);
 
-    const existingCategory = await prisma.category.findUnique({
+    const existingCategory = await this.deps.db.category.findUnique({
       where: {
         id: categoryId,
       },
@@ -299,7 +302,7 @@ export class CategoryService {
       return existingCategory.id;
     }
 
-    const newCategory = await prisma.category.create({
+    const newCategory = await this.deps.db.category.create({
       data: {
         id: categoryId,
         userId,
@@ -347,7 +350,7 @@ export class CategoryService {
     }
 
     const categoryId = this.getCategoryId(userId, data.name);
-    const category = await prisma.category.create({
+    const category = await this.deps.db.category.create({
       data: {
         id: categoryId,
         userId,
@@ -434,7 +437,7 @@ export class CategoryService {
       }
     }
 
-    const updatedCategory = await prisma.category.update({
+    const updatedCategory = await this.deps.db.category.update({
       where: { id: categoryId },
       data: {
         name: data.name,
@@ -474,7 +477,7 @@ export class CategoryService {
       }
       visited.add(currentId);
 
-      const category = await prisma.category.findUnique({
+      const category = await this.deps.db.category.findUnique({
         where: { id: currentId },
         select: { parentId: true },
       });
@@ -498,7 +501,7 @@ export class CategoryService {
       );
     }
 
-    const childrenCount = await prisma.category.count({
+    const childrenCount = await this.deps.db.category.count({
       where: {
         parentId: categoryId,
         deletedAt: null,
@@ -512,7 +515,7 @@ export class CategoryService {
       );
     }
 
-    await prisma.category.update({
+    await this.deps.db.category.update({
       where: { id: categoryId },
       data: {
         deletedAt: new Date(),

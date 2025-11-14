@@ -5,6 +5,7 @@ import type {
   TagWhereInput,
 } from '@server/generated/prisma/models/Tag';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import { dateToIsoString } from '@server/share/utils/formatters';
 import { Elysia } from 'elysia';
 import type {
@@ -26,8 +27,10 @@ const formatTag = (tag: TagRecord): TagResponse => ({
 });
 
 export class TagService {
+  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+
   private async validateTagOwnership(userId: string, tagId: string) {
-    const tag = await prisma.tag.findFirst({
+    const tag = await this.deps.db.tag.findFirst({
       where: {
         id: tagId,
         userId,
@@ -57,7 +60,7 @@ export class TagService {
       where.id = { not: excludeId };
     }
 
-    const count = await prisma.tag.count({ where });
+    const count = await this.deps.db.tag.count({ where });
 
     if (count > 0) {
       throwAppError(ErrorCode.DUPLICATE_NAME, 'Tag name already exists');
@@ -73,7 +76,7 @@ export class TagService {
     await this.validateUniqueName(userId, lowerName, data.id);
 
     if (data.id) {
-      const tag = await prisma.tag.update({
+      const tag = await this.deps.db.tag.update({
         where: { id: data.id },
         data: {
           name: lowerName,
@@ -83,7 +86,7 @@ export class TagService {
       });
       return formatTag(tag);
     } else {
-      const tag = await prisma.tag.create({
+      const tag = await this.deps.db.tag.create({
         data: {
           userId,
           name: lowerName,
@@ -96,7 +99,7 @@ export class TagService {
   }
 
   async getTag(userId: string, tagId: string): Promise<TagResponse> {
-    const tag = await prisma.tag.findFirst({
+    const tag = await this.deps.db.tag.findFirst({
       where: {
         id: tagId,
         userId,
@@ -146,14 +149,14 @@ export class TagService {
     const skip = (page - 1) * limit;
 
     const [tags, total] = await Promise.all([
-      prisma.tag.findMany({
+      this.deps.db.tag.findMany({
         where,
         orderBy,
         skip,
         take: limit,
         select: TAG_SELECT_FULL,
       }),
-      prisma.tag.count({ where }),
+      this.deps.db.tag.count({ where }),
     ]);
 
     return {
@@ -170,7 +173,7 @@ export class TagService {
   async deleteTag(userId: string, tagId: string) {
     await this.validateTagOwnership(userId, tagId);
 
-    await prisma.tag.update({
+    await this.deps.db.tag.update({
       where: { id: tagId },
       data: {
         deletedAt: new Date(),
@@ -181,7 +184,7 @@ export class TagService {
   }
 
   async deleteManyTags(userId: string, ids: string[]) {
-    const tags = await prisma.tag.findMany({
+    const tags = await this.deps.db.tag.findMany({
       where: {
         id: { in: ids },
         userId,
@@ -197,7 +200,7 @@ export class TagService {
       );
     }
 
-    const result = await prisma.tag.updateMany({
+    const result = await this.deps.db.tag.updateMany({
       where: {
         id: { in: ids },
         userId,

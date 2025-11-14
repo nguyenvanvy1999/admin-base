@@ -1,7 +1,11 @@
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
-import type { ContributionType } from '@server/generated/prisma/enums';
+import {
+  type ContributionType,
+  InvestmentMode,
+} from '@server/generated/prisma/enums';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import {
   dateToIsoString,
   decimalToNullableNumber,
@@ -14,8 +18,18 @@ import type {
   InvestmentContributionListResponse,
   InvestmentContributionResponse,
 } from '../dto/contribution.dto';
-import { accountBalanceServiceInstance } from './account-balance.service';
-import { investmentServiceInstance } from './investment.service';
+import {
+  type AccountBalanceService,
+  accountBalanceServiceInstance,
+} from './account-balance.service';
+import {
+  type InvestmentService,
+  investmentServiceInstance,
+} from './investment.service';
+import {
+  type InvestmentPositionService,
+  investmentPositionServiceInstance,
+} from './investment-position.service';
 import { CONTRIBUTION_SELECT_FULL } from './selects';
 
 type ContributionRecord = Prisma.InvestmentContributionGetPayload<{
@@ -47,7 +61,19 @@ const formatContribution = (
 });
 
 export class InvestmentContributionService {
-  private readonly investmentService = investmentServiceInstance;
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      investmentService: InvestmentService;
+      accountBalanceService: AccountBalanceService;
+      investmentPositionService: InvestmentPositionService;
+    } = {
+      db: prisma,
+      investmentService: investmentServiceInstance,
+      accountBalanceService: accountBalanceServiceInstance,
+      investmentPositionService: investmentPositionServiceInstance,
+    },
+  ) {}
 
   private parseDate(value: string) {
     const date = new Date(value);
@@ -58,22 +84,74 @@ export class InvestmentContributionService {
     return date;
   }
 
+  async validateContribution(
+    userId: string,
+    investmentId: string,
+    data: ICreateInvestmentContributionDto,
+  ) {
+    const investment = await this.deps.investmentService.ensureInvestment(
+      userId,
+      investmentId,
+    );
+
+    if (data.accountId) {
+      const account = await this.deps.db.account.findFirst({
+        where: { id: data.accountId, userId },
+        select: { id: true, currencyId: true },
+      });
+
+      if (!account) {
+        throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
+      }
+
+      if (!investment.baseCurrencyId) {
+        if (account.currencyId !== investment.currencyId) {
+          throwAppError(
+            ErrorCode.INVALID_CURRENCY_MISMATCH,
+            'Account currency must match investment currency',
+          );
+        }
+      }
+    }
+
+    if (investment.currencyId !== data.currencyId) {
+      throwAppError(
+        ErrorCode.INVALID_CURRENCY_MISMATCH,
+        'Contribution currency must match investment currency',
+      );
+    }
+
+    if (
+      data.type === 'withdrawal' &&
+      investment.mode === InvestmentMode.manual
+    ) {
+      const position = await this.deps.investmentPositionService.getPosition(
+        userId,
+        investmentId,
+      );
+      if (data.amount > position.costBasis) {
+        throwAppError(
+          ErrorCode.WITHDRAWAL_EXCEEDS_BALANCE,
+          'Withdrawal amount exceeds current cost basis',
+        );
+      }
+    }
+
+    return investment;
+  }
+
   async createContribution(
     userId: string,
     investmentId: string,
     data: ICreateInvestmentContributionDto,
   ): Promise<InvestmentContributionResponse> {
-    await this.investmentService.validateContribution(
-      userId,
-      investmentId,
-      data,
-    );
+    await this.validateContribution(userId, investmentId, data);
 
     const timestamp = this.parseDate(data.timestamp);
 
     // Only update balance if accountId is provided
     if (data.accountId) {
-      const account = await prisma.account.findFirst({
+      const account = await this.deps.db.account.findFirst({
         where: { id: data.accountId, userId },
         select: { id: true },
       });
@@ -83,7 +161,7 @@ export class InvestmentContributionService {
       }
     }
 
-    return prisma.$transaction(async (tx) => {
+    return this.deps.db.$transaction(async (tx) => {
       const contribution = await tx.investmentContribution.create({
         data: {
           userId,
@@ -102,7 +180,7 @@ export class InvestmentContributionService {
       });
 
       if (data.accountId) {
-        await accountBalanceServiceInstance.applyContributionBalance(
+        await this.deps.accountBalanceService.applyContributionBalance(
           tx,
           data.type as ContributionType,
           data.accountId,
@@ -119,7 +197,7 @@ export class InvestmentContributionService {
     investmentId: string,
     query: IListInvestmentContributionsQueryDto = {},
   ): Promise<InvestmentContributionListResponse> {
-    await this.investmentService.ensureInvestment(userId, investmentId);
+    await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
     const {
       accountIds,
@@ -150,14 +228,14 @@ export class InvestmentContributionService {
     const skip = (page - 1) * limit;
 
     const [contributions, total] = await Promise.all([
-      prisma.investmentContribution.findMany({
+      this.deps.db.investmentContribution.findMany({
         where,
         orderBy: { timestamp: sortOrder },
         skip,
         take: limit,
         select: CONTRIBUTION_SELECT_FULL,
       }),
-      prisma.investmentContribution.count({ where }),
+      this.deps.db.investmentContribution.count({ where }),
     ]);
 
     return {
@@ -176,9 +254,9 @@ export class InvestmentContributionService {
     investmentId: string,
     contributionId: string,
   ) {
-    await this.investmentService.ensureInvestment(userId, investmentId);
+    await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const contribution = await prisma.investmentContribution.findFirst({
+    const contribution = await this.deps.db.investmentContribution.findFirst({
       where: {
         id: contributionId,
         userId,
@@ -192,9 +270,9 @@ export class InvestmentContributionService {
       throwAppError(ErrorCode.CONTRIBUTION_NOT_FOUND, 'Contribution not found');
     }
 
-    return prisma.$transaction(async (tx) => {
+    return this.deps.db.$transaction(async (tx) => {
       if (contribution.accountId) {
-        await accountBalanceServiceInstance.revertContributionBalance(
+        await this.deps.accountBalanceService.revertContributionBalance(
           tx,
           contribution.type,
           contribution.accountId,

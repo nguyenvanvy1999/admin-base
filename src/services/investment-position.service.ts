@@ -5,7 +5,13 @@ import {
   TradeSide,
 } from '@server/generated/prisma/enums';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
+import Elysia from 'elysia';
 import type { InvestmentPositionResponse } from '../dto/investment.dto';
+import {
+  type InvestmentService,
+  investmentServiceInstance,
+} from './investment.service';
 import {
   CONTRIBUTION_SELECT_FOR_POSITION,
   TRADE_SELECT_FOR_POSITION,
@@ -59,10 +65,15 @@ const safeNumber = (value: unknown) =>
     : Number(value ?? 0);
 
 export class InvestmentPositionService {
-  private get investmentService() {
-    // biome-ignore lint/style/noCommonJs: Fix circular dependency
-    return require('./investment.service').investmentServiceInstance;
-  }
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      investmentService: InvestmentService;
+    } = {
+      db: prisma,
+      investmentService: investmentServiceInstance,
+    },
+  ) {}
 
   calculatePricedPosition(
     trades: TradeLike[],
@@ -316,19 +327,19 @@ export class InvestmentPositionService {
     userId: string,
     investmentId: string,
   ): Promise<InvestmentPositionResponse> {
-    const investment = await this.investmentService.ensureInvestment(
+    const investment = await this.deps.investmentService.ensureInvestment(
       userId,
       investmentId,
     );
 
     if (investment.mode === InvestmentMode.priced) {
       const [trades, valuation] = await Promise.all([
-        prisma.investmentTrade.findMany({
+        this.deps.db.investmentTrade.findMany({
           where: { userId, investmentId, deletedAt: null },
           orderBy: { timestamp: 'asc' },
           select: TRADE_SELECT_FOR_POSITION,
         }),
-        this.investmentService.getLatestValuation(userId, investmentId),
+        this.deps.investmentService.getLatestValuation(userId, investmentId),
       ]);
       const position = this.calculatePricedPosition(
         trades,
@@ -354,12 +365,12 @@ export class InvestmentPositionService {
     }
 
     const [contributions, valuation] = await Promise.all([
-      prisma.investmentContribution.findMany({
+      this.deps.db.investmentContribution.findMany({
         where: { userId, investmentId, deletedAt: null },
         orderBy: { timestamp: 'asc' },
         select: CONTRIBUTION_SELECT_FOR_POSITION,
       }),
-      this.investmentService.getLatestValuation(userId, investmentId),
+      this.deps.investmentService.getLatestValuation(userId, investmentId),
     ]);
 
     const position = this.calculateManualPosition(
@@ -388,3 +399,8 @@ export class InvestmentPositionService {
 
 export const investmentPositionServiceInstance =
   new InvestmentPositionService();
+
+export default new Elysia().decorate(
+  'investmentPositionService',
+  investmentPositionServiceInstance,
+);

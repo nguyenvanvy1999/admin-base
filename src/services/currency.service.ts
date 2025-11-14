@@ -1,9 +1,12 @@
 import { prisma } from '@server/configs/db';
+import type { IDb } from '@server/share/type';
 import { Elysia } from 'elysia';
 
 export class CurrencyService {
+  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+
   getAllCurrencies() {
-    return prisma.currency.findMany({
+    return this.deps.db.currency.findMany({
       where: {
         isActive: true,
       },

@@ -1,11 +1,23 @@
 import { prisma } from '@server/configs/db';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import Decimal from 'decimal.js';
-import { exchangeRateServiceInstance } from './exchange-rate.service';
+import {
+  type ExchangeRateService,
+  exchangeRateServiceInstance,
+} from './exchange-rate.service';
 import { CURRENCY_SELECT_BASIC } from './selects';
 
 export class CurrencyConversionService {
-  constructor(private exchangeRateService = exchangeRateServiceInstance) {}
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      exchangeRateService: ExchangeRateService;
+    } = {
+      db: prisma,
+      exchangeRateService: exchangeRateServiceInstance,
+    },
+  ) {}
 
   async convertCurrency(
     amount: Decimal | number,
@@ -23,11 +35,11 @@ export class CurrencyConversionService {
       return new Decimal(amount);
     }
 
-    const fromCurrency = await prisma.currency.findUnique({
+    const fromCurrency = await this.deps.db.currency.findUnique({
       where: { id: fromCurrencyId },
       select: CURRENCY_SELECT_BASIC,
     });
-    const toCurrency = await prisma.currency.findUnique({
+    const toCurrency = await this.deps.db.currency.findUnique({
       where: { id: toCurrencyId },
       select: CURRENCY_SELECT_BASIC,
     });
@@ -37,7 +49,7 @@ export class CurrencyConversionService {
     }
 
     try {
-      const rate = await this.exchangeRateService.getRateDecimal(
+      const rate = await this.deps.exchangeRateService.getRateDecimal(
         fromCurrency.code,
         toCurrency.code,
       );

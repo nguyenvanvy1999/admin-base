@@ -3,13 +3,20 @@ import type { Prisma } from '@server/generated/prisma/client';
 import type { TradeSide } from '@server/generated/prisma/enums';
 import type { InvestmentTradeWhereInput } from '@server/generated/prisma/models';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import { Elysia } from 'elysia';
 import type {
   ICreateInvestmentTradeDto,
   IListInvestmentTradesQueryDto,
 } from '../dto/trade.dto';
-import { accountBalanceServiceInstance } from './account-balance.service';
-import { investmentServiceInstance } from './investment.service';
+import {
+  type AccountBalanceService,
+  accountBalanceServiceInstance,
+} from './account-balance.service';
+import {
+  type InvestmentService,
+  investmentServiceInstance,
+} from './investment.service';
 import { TRADE_SELECT_FULL } from './selects';
 
 const mapTrade = (
@@ -32,7 +39,17 @@ const mapTrade = (
 });
 
 export class InvestmentTradeService {
-  private readonly investmentService = investmentServiceInstance;
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      investmentService: InvestmentService;
+      accountBalanceService: AccountBalanceService;
+    } = {
+      db: prisma,
+      investmentService: investmentServiceInstance,
+      accountBalanceService: accountBalanceServiceInstance,
+    },
+  ) {}
 
   private parseDate(value: string) {
     const date = new Date(value);
@@ -46,7 +63,7 @@ export class InvestmentTradeService {
     userId: string,
     transactionId: string,
   ) {
-    const transaction = await prisma.transaction.findFirst({
+    const transaction = await this.deps.db.transaction.findFirst({
       where: { id: transactionId, userId },
       select: { id: true },
     });
@@ -61,7 +78,7 @@ export class InvestmentTradeService {
     investmentId: string,
     data: ICreateInvestmentTradeDto,
   ) {
-    await this.investmentService.validateTrade(userId, investmentId, data);
+    await this.deps.investmentService.validateTrade(userId, investmentId, data);
 
     const timestamp = this.parseDate(data.timestamp);
     const priceFetchedAt = data.priceFetchedAt
@@ -72,7 +89,7 @@ export class InvestmentTradeService {
       await this.validateTransactionOwnership(userId, data.transactionId);
     }
 
-    const account = await prisma.account.findFirst({
+    const account = await this.deps.db.account.findFirst({
       where: { id: data.accountId, userId },
       select: { id: true, currencyId: true },
     });
@@ -81,7 +98,7 @@ export class InvestmentTradeService {
       throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
     }
 
-    return prisma.$transaction(async (tx) => {
+    return this.deps.db.$transaction(async (tx) => {
       const trade = await tx.investmentTrade.create({
         data: {
           userId,
@@ -107,7 +124,7 @@ export class InvestmentTradeService {
         select: TRADE_SELECT_FULL,
       });
 
-      await accountBalanceServiceInstance.applyTradeBalance(
+      await this.deps.accountBalanceService.applyTradeBalance(
         tx,
         data.side as TradeSide,
         data.accountId,
@@ -124,7 +141,7 @@ export class InvestmentTradeService {
     investmentId: string,
     query: IListInvestmentTradesQueryDto = {},
   ) {
-    await this.investmentService.ensureInvestment(userId, investmentId);
+    await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
     const {
       side,
@@ -160,14 +177,14 @@ export class InvestmentTradeService {
     const skip = (page - 1) * limit;
 
     const [trades, total] = await Promise.all([
-      prisma.investmentTrade.findMany({
+      this.deps.db.investmentTrade.findMany({
         where,
         orderBy: { timestamp: sortOrder },
         skip,
         take: limit,
         select: TRADE_SELECT_FULL,
       }),
-      prisma.investmentTrade.count({ where }),
+      this.deps.db.investmentTrade.count({ where }),
     ]);
 
     return {
@@ -182,9 +199,9 @@ export class InvestmentTradeService {
   }
 
   async deleteTrade(userId: string, investmentId: string, tradeId: string) {
-    await this.investmentService.ensureInvestment(userId, investmentId);
+    await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const trade = await prisma.investmentTrade.findFirst({
+    const trade = await this.deps.db.investmentTrade.findFirst({
       where: {
         id: tradeId,
         userId,
@@ -198,8 +215,8 @@ export class InvestmentTradeService {
       throwAppError(ErrorCode.TRADE_NOT_FOUND, 'Trade not found');
     }
 
-    return prisma.$transaction(async (tx) => {
-      await accountBalanceServiceInstance.revertTradeBalance(
+    return this.deps.db.$transaction(async (tx) => {
+      await this.deps.accountBalanceService.revertTradeBalance(
         tx,
         trade.side,
         trade.accountId,

@@ -6,6 +6,7 @@ import type {
   BudgetWhereInput,
 } from '@server/generated/prisma/models/Budget';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import {
   dateToIsoString,
   dateToNullableIsoString,
@@ -18,7 +19,10 @@ import type {
   IListBudgetsQueryDto,
   IUpsertBudgetDto,
 } from '../dto/budget.dto';
-import { currencyConversionServiceInstance } from './currency-conversion.service';
+import {
+  type CurrencyConversionService,
+  currencyConversionServiceInstance,
+} from './currency-conversion.service';
 
 import { BUDGET_SELECT_FULL, BUDGET_SELECT_MINIMAL } from './selects';
 
@@ -41,8 +45,18 @@ const mapBudget = (budget: BudgetRecord, baseCurrencyId: string) => ({
 });
 
 export class BudgetService {
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      currencyConversionService: CurrencyConversionService;
+    } = {
+      db: prisma,
+      currencyConversionService: currencyConversionServiceInstance,
+    },
+  ) {}
+
   private async getUserBaseCurrencyId(userId: string): Promise<string> {
-    const user = await prisma.user.findUnique({
+    const user = await this.deps.db.user.findUnique({
       where: { id: userId },
       select: { baseCurrencyId: true },
     });
@@ -53,7 +67,7 @@ export class BudgetService {
   }
 
   private async validateBudgetOwnership(userId: string, budgetId: string) {
-    const budget = await prisma.budget.findFirst({
+    const budget = await this.deps.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,
@@ -73,7 +87,7 @@ export class BudgetService {
     categoryIds: string[],
   ) {
     const [accounts, categories] = await Promise.all([
-      prisma.account.findMany({
+      this.deps.db.account.findMany({
         where: {
           id: { in: accountIds },
           userId,
@@ -81,7 +95,7 @@ export class BudgetService {
         },
         select: { id: true },
       }),
-      prisma.category.findMany({
+      this.deps.db.category.findMany({
         where: {
           id: { in: categoryIds },
           userId,
@@ -162,7 +176,7 @@ export class BudgetService {
     periodStart: Date,
     periodEnd: Date,
   ): Promise<Decimal> {
-    const budget = await prisma.budget.findFirst({
+    const budget = await this.deps.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,
@@ -182,7 +196,7 @@ export class BudgetService {
     const categoryIds = budget.categories.map((c) => c.categoryId);
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
 
-    const transactions = await prisma.transaction.findMany({
+    const transactions = await this.deps.db.transaction.findMany({
       where: {
         userId,
         deletedAt: null,
@@ -213,7 +227,7 @@ export class BudgetService {
         amountInBase = new Decimal(transaction.priceInBaseCurrency);
       } else {
         amountInBase =
-          await currencyConversionServiceInstance.convertToBaseCurrency(
+          await this.deps.currencyConversionService.convertToBaseCurrency(
             transaction.amount,
             transaction.currencyId,
             baseCurrencyId,
@@ -229,7 +243,7 @@ export class BudgetService {
           feeInBase = new Decimal(transaction.feeInBaseCurrency);
         } else {
           feeInBase =
-            await currencyConversionServiceInstance.convertToBaseCurrency(
+            await this.deps.currencyConversionService.convertToBaseCurrency(
               transaction.fee,
               transaction.currencyId,
               baseCurrencyId,
@@ -248,7 +262,7 @@ export class BudgetService {
     budgetId: string,
     previousPeriodEnd: Date,
   ): Promise<Decimal> {
-    const budget = await prisma.budget.findFirst({
+    const budget = await this.deps.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,
@@ -329,7 +343,7 @@ export class BudgetService {
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
 
     if (data.id) {
-      const budget = await prisma.budget.update({
+      const budget = await this.deps.db.budget.update({
         where: { id: data.id },
         data: {
           name: data.name,
@@ -355,7 +369,7 @@ export class BudgetService {
       });
       return mapBudget(budget, baseCurrencyId);
     } else {
-      const budget = await prisma.budget.create({
+      const budget = await this.deps.db.budget.create({
         data: {
           userId,
           name: data.name,
@@ -383,7 +397,7 @@ export class BudgetService {
 
   async getBudget(userId: string, budgetId: string) {
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
-    const budget = await prisma.budget.findFirst({
+    const budget = await this.deps.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,
@@ -442,14 +456,14 @@ export class BudgetService {
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
 
     const [budgets, total] = await Promise.all([
-      prisma.budget.findMany({
+      this.deps.db.budget.findMany({
         where,
         orderBy,
         skip,
         take: limit,
         select: BUDGET_SELECT_FULL,
       }),
-      prisma.budget.count({ where }),
+      this.deps.db.budget.count({ where }),
     ]);
 
     return {
@@ -466,7 +480,7 @@ export class BudgetService {
   async deleteBudget(userId: string, budgetId: string) {
     await this.validateBudgetOwnership(userId, budgetId);
 
-    await prisma.budget.update({
+    await this.deps.db.budget.update({
       where: { id: budgetId },
       data: {
         deletedAt: new Date(),
@@ -483,7 +497,7 @@ export class BudgetService {
   ) {
     await this.validateBudgetOwnership(userId, budgetId);
 
-    const budget = await prisma.budget.findFirst({
+    const budget = await this.deps.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,
@@ -534,7 +548,7 @@ export class BudgetService {
       const periodEndDate =
         periodEnd < actualEndDate ? periodEnd : actualEndDate;
 
-      let existingPeriod = await prisma.budgetPeriodRecord.findUnique({
+      let existingPeriod = await this.deps.db.budgetPeriodRecord.findUnique({
         where: {
           budget_period_unique: {
             budgetId,
@@ -557,7 +571,7 @@ export class BudgetService {
           previousPeriodEnd,
         );
 
-        existingPeriod = await prisma.budgetPeriodRecord.create({
+        existingPeriod = await this.deps.db.budgetPeriodRecord.create({
           data: {
             budgetId,
             periodStartDate: currentStart,
@@ -611,7 +625,7 @@ export class BudgetService {
   ) {
     await this.validateBudgetOwnership(userId, budgetId);
 
-    const period = await prisma.budgetPeriodRecord.findFirst({
+    const period = await this.deps.db.budgetPeriodRecord.findFirst({
       where: {
         id: periodId,
         budgetId,
@@ -625,7 +639,7 @@ export class BudgetService {
       );
     }
 
-    const budget = await prisma.budget.findFirst({
+    const budget = await this.deps.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,

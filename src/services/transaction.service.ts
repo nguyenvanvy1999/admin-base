@@ -7,6 +7,7 @@ import type {
 } from '@server/generated/prisma/models/Transaction';
 import { CATEGORY_NAME } from '@server/share/constants/category';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import {
   dateToIsoString,
   dateToNullableIsoString,
@@ -27,9 +28,15 @@ import type {
   TransactionDetail,
   TransactionListResponse,
 } from '../dto/transaction.dto';
-import { accountBalanceServiceInstance } from './account-balance.service';
+import {
+  type AccountBalanceService,
+  accountBalanceServiceInstance,
+} from './account-balance.service';
 import { CategoryService } from './category.service';
-import { currencyConversionServiceInstance } from './currency-conversion.service';
+import {
+  type CurrencyConversionService,
+  currencyConversionServiceInstance,
+} from './currency-conversion.service';
 import { CURRENCY_SELECT_BASIC } from './selects';
 
 type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -144,12 +151,15 @@ const formatTransactionRecord = (
 
 class TransactionHandlerFactory {
   constructor(
-    private balanceService = accountBalanceServiceInstance,
-    private currencyConverter = currencyConversionServiceInstance,
+    private readonly deps: {
+      db: IDb;
+      balanceService: AccountBalanceService;
+      currencyConverter: CurrencyConversionService;
+    },
   ) {}
 
   private async validateAccountOwnership(userId: string, accountId: string) {
-    const account = await prisma.account.findFirst({
+    const account = await this.deps.db.account.findFirst({
       where: {
         id: accountId,
         userId,
@@ -164,7 +174,7 @@ class TransactionHandlerFactory {
   }
 
   private async validateCategoryOwnership(userId: string, categoryId: string) {
-    const category = await prisma.category.findFirst({
+    const category = await this.deps.db.category.findFirst({
       where: {
         id: categoryId,
         userId,
@@ -178,7 +188,7 @@ class TransactionHandlerFactory {
   }
 
   private async validateEntityOwnership(userId: string, entityId: string) {
-    const entity = await prisma.entity.findFirst({
+    const entity = await this.deps.db.entity.findFirst({
       where: {
         id: entityId,
         userId,
@@ -198,7 +208,7 @@ class TransactionHandlerFactory {
     if (!eventId) {
       return;
     }
-    const event = await prisma.event.findFirst({
+    const event = await this.deps.db.event.findFirst({
       where: {
         id: eventId,
         userId,
@@ -241,11 +251,12 @@ class TransactionHandlerFactory {
       feeDecimal.gt(0) &&
       !feeInBaseCurrency
     ) {
-      feeInBaseCurrency = await this.currencyConverter.convertToBaseCurrency(
-        feeDecimal,
-        currencyId,
-        userBaseCurrencyId,
-      );
+      feeInBaseCurrency =
+        await this.deps.currencyConverter.convertToBaseCurrency(
+          feeDecimal,
+          currencyId,
+          userBaseCurrencyId,
+        );
     }
 
     const baseData = {
@@ -333,8 +344,8 @@ class TransactionHandlerFactory {
     accountCurrencyId: string,
     toAccountCurrencyId?: string,
   ) {
-    return prisma.$transaction(async (tx: PrismaTx) => {
-      await this.balanceService.applyTransactionBalance(
+    return this.deps.db.$transaction(async (tx: PrismaTx) => {
+      await this.deps.balanceService.applyTransactionBalance(
         tx,
         type,
         accountId,
@@ -366,7 +377,7 @@ class TransactionHandlerFactory {
     accountCurrencyId: string,
     toAccountCurrencyId?: string,
   ) {
-    const existingTransaction = await prisma.transaction.findUnique({
+    const existingTransaction = await this.deps.db.transaction.findUnique({
       where: { id: transactionId },
       select: TRANSACTION_SELECT_FOR_BALANCE,
     });
@@ -378,8 +389,8 @@ class TransactionHandlerFactory {
       throwAppError(ErrorCode.FORBIDDEN, 'Transaction not owned by user');
     }
 
-    return prisma.$transaction(async (tx: PrismaTx) => {
-      await this.balanceService.revertTransactionBalance(
+    return this.deps.db.$transaction(async (tx: PrismaTx) => {
+      await this.deps.balanceService.revertTransactionBalance(
         tx,
         existingTransaction.type,
         existingTransaction.accountId,
@@ -391,7 +402,7 @@ class TransactionHandlerFactory {
         existingTransaction.toAccount?.currencyId,
       );
 
-      await this.balanceService.applyTransactionBalance(
+      await this.deps.balanceService.applyTransactionBalance(
         tx,
         type,
         accountId,
@@ -434,8 +445,8 @@ class TransactionHandlerFactory {
       CATEGORY_NAME.TRANSFER,
     );
 
-    return prisma.$transaction(async (tx: PrismaTx) => {
-      await this.balanceService.applyTransactionBalance(
+    return this.deps.db.$transaction(async (tx: PrismaTx) => {
+      await this.deps.balanceService.applyTransactionBalance(
         tx,
         TransactionType.transfer,
         fromAccount.id,
@@ -473,7 +484,7 @@ class TransactionHandlerFactory {
 
       const amountInToCurrency = toAmountDecimal
         ? toAmountDecimal
-        : await this.currencyConverter.convertToToAccountCurrency(
+        : await this.deps.currencyConverter.convertToToAccountCurrency(
             amountDecimal,
             currencyId,
             toAccount.currencyId,
@@ -511,7 +522,7 @@ class TransactionHandlerFactory {
     fromAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
   ) {
     // Load existing primary
-    const existing = await prisma.transaction.findUnique({
+    const existing = await this.deps.db.transaction.findUnique({
       where: { id: data.id },
       select: TRANSACTION_SELECT_FOR_BALANCE,
     });
@@ -546,7 +557,7 @@ class TransactionHandlerFactory {
 
     // Get existing mirror to get original toAmount for revert
     const existingMirrorForRevert = existing.transferGroupId
-      ? await prisma.transaction.findFirst({
+      ? await this.deps.db.transaction.findFirst({
           where: {
             userId,
             transferGroupId: existing.transferGroupId,
@@ -557,14 +568,14 @@ class TransactionHandlerFactory {
         })
       : null;
 
-    return prisma.$transaction(async (tx: PrismaTx) => {
+    return this.deps.db.$transaction(async (tx: PrismaTx) => {
       // Revert balances from old primary only
       // Use existing mirror amount if available for accurate revert
       const existingToAmount = existingMirrorForRevert
         ? new Decimal(existingMirrorForRevert.amount)
         : undefined;
 
-      await this.balanceService.revertTransactionBalance(
+      await this.deps.balanceService.revertTransactionBalance(
         tx,
         existing.type,
         existing.accountId,
@@ -577,7 +588,7 @@ class TransactionHandlerFactory {
         existingToAmount,
       );
 
-      await this.balanceService.applyTransactionBalance(
+      await this.deps.balanceService.applyTransactionBalance(
         tx,
         TransactionType.transfer,
         fromAccount.id,
@@ -615,7 +626,7 @@ class TransactionHandlerFactory {
 
       const amountInToCurrency = toAmountDecimal
         ? toAmountDecimal
-        : await this.currencyConverter.convertToToAccountCurrency(
+        : await this.deps.currencyConverter.convertToToAccountCurrency(
             amountDecimal,
             currencyId,
             toAccount.currencyId,
@@ -783,18 +794,32 @@ class TransactionHandlerFactory {
 
 export class TransactionService {
   private handlerFactory: TransactionHandlerFactory;
-  private categoryService: CategoryService;
 
-  constructor() {
-    this.handlerFactory = new TransactionHandlerFactory();
-    this.categoryService = new CategoryService();
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      categoryService: CategoryService;
+      accountBalanceService: AccountBalanceService;
+      currencyConversionService: CurrencyConversionService;
+    } = {
+      db: prisma,
+      categoryService: new CategoryService(),
+      accountBalanceService: accountBalanceServiceInstance,
+      currencyConversionService: currencyConversionServiceInstance,
+    },
+  ) {
+    this.handlerFactory = new TransactionHandlerFactory({
+      db: this.deps.db,
+      balanceService: this.deps.accountBalanceService,
+      currencyConverter: this.deps.currencyConversionService,
+    });
   }
 
   async upsertTransaction(
     userId: string,
     data: IUpsertTransaction,
   ): Promise<TransactionDetail> {
-    const account = await prisma.account.findFirst({
+    const account = await this.deps.db.account.findFirst({
       where: {
         id: data.accountId,
         userId,
@@ -807,7 +832,7 @@ export class TransactionService {
       throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
     }
 
-    const user = await prisma.user.findUniqueOrThrow({
+    const user = await this.deps.db.user.findUniqueOrThrow({
       where: { id: userId },
       select: { id: true, baseCurrencyId: true },
     });
@@ -860,7 +885,7 @@ export class TransactionService {
     userId: string,
     transactionId: string,
   ): Promise<TransactionDetail> {
-    const transaction = await prisma.transaction.findFirst({
+    const transaction = await this.deps.db.transaction.findFirst({
       where: {
         id: transactionId,
         userId,
@@ -934,15 +959,15 @@ export class TransactionService {
     const skip = (page - 1) * limit;
 
     const [transactions, total, summaryGroups] = await Promise.all([
-      prisma.transaction.findMany({
+      this.deps.db.transaction.findMany({
         where,
         orderBy,
         skip,
         take: limit,
         select: TRANSACTION_SELECT_FULL,
       }),
-      prisma.transaction.count({ where }),
-      prisma.transaction.groupBy({
+      this.deps.db.transaction.count({ where }),
+      this.deps.db.transaction.groupBy({
         by: ['currencyId', 'type'],
         where,
         _sum: {
@@ -953,7 +978,7 @@ export class TransactionService {
 
     const currencyIds = [...new Set(summaryGroups.map((g) => g.currencyId))];
 
-    const currencies = await prisma.currency.findMany({
+    const currencies = await this.deps.db.currency.findMany({
       where: {
         id: { in: currencyIds },
       },
@@ -1012,7 +1037,7 @@ export class TransactionService {
   }
 
   async deleteTransaction(userId: string, transactionId: string) {
-    const transaction = await prisma.transaction.findUnique({
+    const transaction = await this.deps.db.transaction.findUnique({
       where: { id: transactionId },
       select: {
         id: true,
@@ -1043,7 +1068,7 @@ export class TransactionService {
       const isPrimary = !transaction.isTransferMirror;
       const primary = isPrimary
         ? transaction
-        : await prisma.transaction.findFirst({
+        : await this.deps.db.transaction.findFirst({
             where: {
               userId,
               transferGroupId: transaction.transferGroupId ?? undefined,
@@ -1066,7 +1091,7 @@ export class TransactionService {
 
       // Get mirror transaction amount for accurate revert
       const mirrorForRevert = primary?.transferGroupId
-        ? await prisma.transaction.findFirst({
+        ? await this.deps.db.transaction.findFirst({
             where: {
               userId,
               transferGroupId: primary.transferGroupId,
@@ -1077,7 +1102,7 @@ export class TransactionService {
           })
         : null;
 
-      await prisma.$transaction(async (tx: PrismaTx) => {
+      await this.deps.db.$transaction(async (tx: PrismaTx) => {
         if (primary) {
           const existingToAmount = mirrorForRevert
             ? new Decimal(mirrorForRevert.amount)
@@ -1114,7 +1139,7 @@ export class TransactionService {
         }
       });
     } else {
-      await prisma.$transaction(async (tx: PrismaTx) => {
+      await this.deps.db.$transaction(async (tx: PrismaTx) => {
         await accountBalanceServiceInstance.revertTransactionBalance(
           tx,
           transaction.type,
@@ -1141,7 +1166,7 @@ export class TransactionService {
     userId: string,
     data: IBatchTransactionsDto,
   ): Promise<BatchTransactionsResponse> {
-    const user = await prisma.user.findUniqueOrThrow({
+    const user = await this.deps.db.user.findUniqueOrThrow({
       where: { id: userId },
       select: { id: true, baseCurrencyId: true },
     });
@@ -1152,7 +1177,7 @@ export class TransactionService {
       error?: string;
     }> = [];
 
-    await prisma.$transaction(async (tx: PrismaTx) => {
+    await this.deps.db.$transaction(async (tx: PrismaTx) => {
       for (const transactionData of data.transactions) {
         try {
           const account = await tx.account.findFirst({
@@ -1290,7 +1315,7 @@ export class TransactionService {
     userId: string,
     data: IBalanceAdjustmentDto,
   ): Promise<TransactionDetail> {
-    const account = await prisma.account.findFirst({
+    const account = await this.deps.db.account.findFirst({
       where: {
         id: data.accountId,
         userId,
@@ -1323,12 +1348,12 @@ export class TransactionService {
       : TransactionType.expense;
     const categoryType = difference.isPositive() ? 'income' : 'expense';
     const categoryId =
-      await this.categoryService.getOrCreateBalanceAdjustmentCategory(
+      await this.deps.categoryService.getOrCreateBalanceAdjustmentCategory(
         userId,
         categoryType,
       );
 
-    const user = await prisma.user.findUniqueOrThrow({
+    const user = await this.deps.db.user.findUniqueOrThrow({
       where: { id: userId },
       select: { id: true, baseCurrencyId: true },
     });

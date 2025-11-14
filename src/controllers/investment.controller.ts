@@ -10,6 +10,7 @@ import {
   UpsertInvestmentDto,
 } from '../dto/investment.dto';
 import investmentService from '../services/investment.service';
+import investmentPositionService from '../services/investment-position.service';
 import { castToRes, ResWrapper } from '../share';
 
 const INVESTMENT_DETAIL = {
@@ -29,6 +30,7 @@ const investmentController = new Elysia().group(
   (group) =>
     group
       .use(investmentService)
+      .use(investmentPositionService)
       .use(authCheck)
       .post(
         '/',
@@ -92,9 +94,12 @@ const investmentController = new Elysia().group(
       )
       .get(
         '/:id/holdings',
-        async ({ currentUser, params, investmentService }) => {
+        async ({ currentUser, params, investmentPositionService }) => {
           return castToRes(
-            await investmentService.getPosition(currentUser.id, params.id),
+            await investmentPositionService.getPosition(
+              currentUser.id,
+              params.id,
+            ),
           );
         },
         {

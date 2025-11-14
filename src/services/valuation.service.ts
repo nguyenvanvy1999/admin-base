@@ -1,16 +1,28 @@
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import { Elysia } from 'elysia';
 import type {
   IListInvestmentValuationsQueryDto,
   IUpsertInvestmentValuationDto,
 } from '../dto/valuation.dto';
-import { investmentServiceInstance } from './investment.service';
+import {
+  type InvestmentService,
+  investmentServiceInstance,
+} from './investment.service';
 import { VALUATION_SELECT_FULL } from './selects';
 
 export class InvestmentValuationService {
-  private readonly investmentService = investmentServiceInstance;
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      investmentService: InvestmentService;
+    } = {
+      db: prisma,
+      investmentService: investmentServiceInstance,
+    },
+  ) {}
 
   private parseDate(value: string) {
     const date = new Date(value);
@@ -26,12 +38,16 @@ export class InvestmentValuationService {
     investmentId: string,
     data: IUpsertInvestmentValuationDto,
   ) {
-    await this.investmentService.validateValuation(userId, investmentId, data);
+    await this.deps.investmentService.validateValuation(
+      userId,
+      investmentId,
+      data,
+    );
 
     const timestamp = this.parseDate(data.timestamp);
     const fetchedAt = data.fetchedAt ? this.parseDate(data.fetchedAt) : null;
 
-    const existing = await prisma.investmentValuation.findFirst({
+    const existing = await this.deps.db.investmentValuation.findFirst({
       where: {
         userId,
         investmentId,
@@ -43,7 +59,7 @@ export class InvestmentValuationService {
 
     if (existing) {
       return this.mapValuation(
-        await prisma.investmentValuation.update({
+        await this.deps.db.investmentValuation.update({
           where: { id: existing.id },
           data: {
             price: data.price,
@@ -61,7 +77,7 @@ export class InvestmentValuationService {
     }
 
     return this.mapValuation(
-      await prisma.investmentValuation.create({
+      await this.deps.db.investmentValuation.create({
         data: {
           userId,
           investmentId,
@@ -101,7 +117,7 @@ export class InvestmentValuationService {
     investmentId: string,
     query: IListInvestmentValuationsQueryDto = {},
   ) {
-    await this.investmentService.ensureInvestment(userId, investmentId);
+    await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
     const {
       dateFrom,
@@ -127,14 +143,14 @@ export class InvestmentValuationService {
     const skip = (page - 1) * limit;
 
     const [valuations, total] = await Promise.all([
-      prisma.investmentValuation.findMany({
+      this.deps.db.investmentValuation.findMany({
         where,
         orderBy: { timestamp: sortOrder },
         skip,
         take: limit,
         select: VALUATION_SELECT_FULL,
       }),
-      prisma.investmentValuation.count({ where }),
+      this.deps.db.investmentValuation.count({ where }),
     ]);
 
     return {
@@ -149,9 +165,9 @@ export class InvestmentValuationService {
   }
 
   async getLatestValuation(userId: string, investmentId: string) {
-    await this.investmentService.ensureInvestment(userId, investmentId);
+    await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const valuation = await prisma.investmentValuation.findFirst({
+    const valuation = await this.deps.db.investmentValuation.findFirst({
       where: { userId, investmentId, deletedAt: null },
       orderBy: { timestamp: 'desc' },
       select: VALUATION_SELECT_FULL,
@@ -168,9 +184,9 @@ export class InvestmentValuationService {
     investmentId: string,
     valuationId: string,
   ) {
-    await this.investmentService.ensureInvestment(userId, investmentId);
+    await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const valuation = await prisma.investmentValuation.findFirst({
+    const valuation = await this.deps.db.investmentValuation.findFirst({
       where: {
         id: valuationId,
         userId,
@@ -184,7 +200,7 @@ export class InvestmentValuationService {
       throwAppError(ErrorCode.VALUATION_NOT_FOUND, 'Valuation not found');
     }
 
-    await prisma.investmentValuation.update({
+    await this.deps.db.investmentValuation.update({
       where: { id: valuationId },
       data: { deletedAt: new Date() },
     });

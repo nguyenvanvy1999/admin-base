@@ -5,8 +5,8 @@ import {
 } from '@server/generated/prisma/enums';
 import type { InvestmentWhereInput } from '@server/generated/prisma/models/Investment';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import { Elysia } from 'elysia';
-import type { ICreateInvestmentContributionDto } from '../dto/contribution.dto';
 import type {
   IListInvestmentsQueryDto,
   InvestmentLatestValuationResponse,
@@ -15,7 +15,6 @@ import type {
 } from '../dto/investment.dto';
 import type { ICreateInvestmentTradeDto } from '../dto/trade.dto';
 import type { IUpsertInvestmentValuationDto } from '../dto/valuation.dto';
-import { investmentPositionServiceInstance } from './investment-position.service';
 import { INVESTMENT_SELECT_FULL } from './selects';
 
 const serializeInvestment = (investment: {
@@ -52,8 +51,16 @@ const serializeInvestment = (investment: {
 });
 
 export class InvestmentService {
+  constructor(
+    private readonly deps: {
+      db: IDb;
+    } = {
+      db: prisma,
+    },
+  ) {}
+
   private async ensureCurrency(currencyId: string) {
-    const exists = await prisma.currency.findUnique({
+    const exists = await this.deps.db.currency.findUnique({
       where: { id: currencyId },
       select: { id: true },
     });
@@ -63,7 +70,7 @@ export class InvestmentService {
   }
 
   async ensureInvestment(userId: string, investmentId: string) {
-    const investment = await prisma.investment.findFirst({
+    const investment = await this.deps.db.investment.findFirst({
       where: {
         id: investmentId,
         userId,
@@ -97,7 +104,7 @@ export class InvestmentService {
 
     if (data.id) {
       const investment = await this.ensureInvestment(userId, data.id);
-      const updated = await prisma.investment.update({
+      const updated = await this.deps.db.investment.update({
         where: { id: investment.id },
         data: payload,
         select: INVESTMENT_SELECT_FULL,
@@ -105,7 +112,7 @@ export class InvestmentService {
       return serializeInvestment(updated);
     }
 
-    const created = await prisma.investment.create({
+    const created = await this.deps.db.investment.create({
       data: {
         ...payload,
         userId,
@@ -157,14 +164,14 @@ export class InvestmentService {
     const skip = (page - 1) * limit;
 
     const [items, total] = await Promise.all([
-      prisma.investment.findMany({
+      this.deps.db.investment.findMany({
         where,
         orderBy,
         skip,
         take: limit,
         select: INVESTMENT_SELECT_FULL,
       }),
-      prisma.investment.count({ where }),
+      this.deps.db.investment.count({ where }),
     ]);
 
     return {
@@ -184,7 +191,7 @@ export class InvestmentService {
   }
 
   getLatestValuation(userId: string, investmentId: string) {
-    return prisma.investmentValuation
+    return this.deps.db.investmentValuation
       .findFirst({
         where: {
           userId,
@@ -228,10 +235,6 @@ export class InvestmentService {
       });
   }
 
-  getPosition(userId: string, investmentId: string) {
-    return investmentPositionServiceInstance.getPosition(userId, investmentId);
-  }
-
   async validateTrade(
     userId: string,
     investmentId: string,
@@ -253,7 +256,7 @@ export class InvestmentService {
       );
     }
 
-    const account = await prisma.account.findFirst({
+    const account = await this.deps.db.account.findFirst({
       where: { id: data.accountId, userId },
       select: { id: true, currencyId: true },
     });
@@ -267,59 +270,6 @@ export class InvestmentService {
         throwAppError(
           ErrorCode.INVALID_CURRENCY_MISMATCH,
           'Account currency must match investment currency',
-        );
-      }
-    }
-
-    return investment;
-  }
-
-  async validateContribution(
-    userId: string,
-    investmentId: string,
-    data: ICreateInvestmentContributionDto,
-  ) {
-    const investment = await this.ensureInvestment(userId, investmentId);
-
-    if (data.accountId) {
-      const account = await prisma.account.findFirst({
-        where: { id: data.accountId, userId },
-        select: { id: true, currencyId: true },
-      });
-
-      if (!account) {
-        throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
-      }
-
-      if (!investment.baseCurrencyId) {
-        if (account.currencyId !== investment.currencyId) {
-          throwAppError(
-            ErrorCode.INVALID_CURRENCY_MISMATCH,
-            'Account currency must match investment currency',
-          );
-        }
-      }
-    }
-
-    if (investment.currencyId !== data.currencyId) {
-      throwAppError(
-        ErrorCode.INVALID_CURRENCY_MISMATCH,
-        'Contribution currency must match investment currency',
-      );
-    }
-
-    if (
-      data.type === 'withdrawal' &&
-      investment.mode === InvestmentMode.manual
-    ) {
-      const position = await investmentPositionServiceInstance.getPosition(
-        userId,
-        investmentId,
-      );
-      if (data.amount > position.costBasis) {
-        throwAppError(
-          ErrorCode.WITHDRAWAL_EXCEEDS_BALANCE,
-          'Withdrawal amount exceeds current cost basis',
         );
       }
     }
@@ -347,7 +297,7 @@ export class InvestmentService {
   async deleteInvestment(userId: string, investmentId: string) {
     await this.ensureInvestment(userId, investmentId);
 
-    await prisma.investment.update({
+    await this.deps.db.investment.update({
       where: { id: investmentId },
       data: { deletedAt: new Date() },
     });

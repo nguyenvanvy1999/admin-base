@@ -5,6 +5,7 @@ import type {
   EntityWhereInput,
 } from '@server/generated/prisma/models/Entity';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import { Elysia } from 'elysia';
 import type {
   IListEntitiesQueryDto,
@@ -24,8 +25,10 @@ const mapEntity = (
 });
 
 export class EntityService {
+  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+
   private async validateEntityOwnership(userId: string, entityId: string) {
-    const entity = await prisma.entity.findFirst({
+    const entity = await this.deps.db.entity.findFirst({
       where: {
         id: entityId,
         userId,
@@ -54,7 +57,7 @@ export class EntityService {
       where.id = { not: excludeId };
     }
 
-    const count = await prisma.entity.count({ where });
+    const count = await this.deps.db.entity.count({ where });
 
     if (count > 0) {
       throwAppError(ErrorCode.DUPLICATE_NAME, 'Entity name already exists');
@@ -69,7 +72,7 @@ export class EntityService {
     await this.validateUniqueName(userId, data.name, data.id);
 
     if (data.id) {
-      const entity = await prisma.entity.update({
+      const entity = await this.deps.db.entity.update({
         where: { id: data.id },
         data: {
           name: data.name,
@@ -83,7 +86,7 @@ export class EntityService {
       });
       return mapEntity(entity);
     } else {
-      const entity = await prisma.entity.create({
+      const entity = await this.deps.db.entity.create({
         data: {
           userId,
           name: data.name,
@@ -100,7 +103,7 @@ export class EntityService {
   }
 
   async getEntity(userId: string, entityId: string) {
-    const entity = await prisma.entity.findFirst({
+    const entity = await this.deps.db.entity.findFirst({
       where: {
         id: entityId,
         userId,
@@ -154,14 +157,14 @@ export class EntityService {
     const skip = (page - 1) * limit;
 
     const [entities, total] = await Promise.all([
-      prisma.entity.findMany({
+      this.deps.db.entity.findMany({
         where,
         orderBy,
         skip,
         take: limit,
         select: ENTITY_SELECT_FULL,
       }),
-      prisma.entity.count({ where }),
+      this.deps.db.entity.count({ where }),
     ]);
 
     return {
@@ -178,7 +181,7 @@ export class EntityService {
   async deleteEntity(userId: string, entityId: string) {
     await this.validateEntityOwnership(userId, entityId);
 
-    await prisma.entity.update({
+    await this.deps.db.entity.update({
       where: { id: entityId },
       data: {
         deletedAt: new Date(),
@@ -189,7 +192,7 @@ export class EntityService {
   }
 
   async deleteManyEntities(userId: string, ids: string[]) {
-    const entities = await prisma.entity.findMany({
+    const entities = await this.deps.db.entity.findMany({
       where: {
         id: { in: ids },
         userId,
@@ -205,7 +208,7 @@ export class EntityService {
       );
     }
 
-    const result = await prisma.entity.updateMany({
+    const result = await this.deps.db.entity.updateMany({
       where: {
         id: { in: ids },
         userId,

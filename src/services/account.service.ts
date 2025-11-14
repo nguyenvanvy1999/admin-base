@@ -2,6 +2,7 @@ import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
 import type { AccountWhereInput } from '@server/generated/prisma/models/Account';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import type { IDb } from '@server/share/type';
 import {
   dateToIsoString,
   decimalToNullableString,
@@ -38,8 +39,10 @@ const formatAccount = (account: AccountRecord): AccountResponse => ({
 });
 
 export class AccountService {
+  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+
   private async validateAccountOwnership(userId: string, accountId: string) {
-    const account = await prisma.account.findFirst({
+    const account = await this.deps.db.account.findFirst({
       where: {
         id: accountId,
         userId,
@@ -54,7 +57,7 @@ export class AccountService {
   }
 
   private async validateCurrency(currencyId: string) {
-    const count = await prisma.currency.count({
+    const count = await this.deps.db.currency.count({
       where: { id: currencyId },
     });
     if (count === 0) {
@@ -90,7 +93,7 @@ export class AccountService {
     }
 
     if (data.id) {
-      const account = await prisma.account.update({
+      const account = await this.deps.db.account.update({
         where: { id: data.id },
         data: {
           type: data.type,
@@ -106,7 +109,7 @@ export class AccountService {
       });
       return formatAccount(account);
     } else {
-      const account = await prisma.account.create({
+      const account = await this.deps.db.account.create({
         data: {
           type: data.type,
           name: data.name,
@@ -129,7 +132,7 @@ export class AccountService {
     userId: string,
     accountId: string,
   ): Promise<AccountResponse> {
-    const account = await prisma.account.findFirst({
+    const account = await this.deps.db.account.findFirst({
       where: {
         id: accountId,
         userId,
@@ -191,15 +194,15 @@ export class AccountService {
     const skip = (page - 1) * limit;
 
     const [accounts, total, summaryGroups] = await Promise.all([
-      prisma.account.findMany({
+      this.deps.db.account.findMany({
         where,
         orderBy,
         skip,
         take: limit,
         select: ACCOUNT_SELECT_FULL,
       }),
-      prisma.account.count({ where }),
-      prisma.account.groupBy({
+      this.deps.db.account.count({ where }),
+      this.deps.db.account.groupBy({
         by: ['currencyId'],
         where,
         _sum: {
@@ -210,7 +213,7 @@ export class AccountService {
 
     const currencyIds = [...new Set(summaryGroups.map((g) => g.currencyId))];
 
-    const currencies = await prisma.currency.findMany({
+    const currencies = await this.deps.db.currency.findMany({
       where: {
         id: { in: currencyIds },
       },
@@ -254,7 +257,7 @@ export class AccountService {
   ): Promise<AccountDeleteResponse> {
     await this.validateAccountOwnership(userId, accountId);
 
-    await prisma.account.update({
+    await this.deps.db.account.update({
       where: { id: accountId },
       data: {
         deletedAt: new Date(),
