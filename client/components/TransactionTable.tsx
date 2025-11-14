@@ -12,6 +12,7 @@ import {
   Group,
   NumberFormatter,
   Select,
+  Text,
 } from '@mantine/core';
 import type { TransactionDetail } from '@server/dto/transaction.dto';
 import { TransactionType } from '@server/generated/prisma/enums';
@@ -179,7 +180,9 @@ const TransactionTable = ({
           const category = row.category;
           if (!category) {
             return (
-              <div className="text-sm text-gray-500 dark:text-gray-400">-</div>
+              <Text size="sm" c="dimmed">
+                -
+              </Text>
             );
           }
 
@@ -189,7 +192,7 @@ const TransactionTable = ({
           const categoryLabel = getCategoryLabel(category.name, t);
 
           return (
-            <div className="flex items-center justify-center gap-2">
+            <Group gap="xs" justify="center">
               {IconComponent && (
                 <IconComponent
                   style={{
@@ -209,10 +212,8 @@ const TransactionTable = ({
                   }}
                 />
               )}
-              <span className="text-sm text-gray-900 dark:text-gray-100">
-                {categoryLabel}
-              </span>
-            </div>
+              <Text size="sm">{categoryLabel}</Text>
+            </Group>
           );
         },
       },
@@ -252,16 +253,16 @@ const TransactionTable = ({
           const amount = parseFloat(String(row.amount));
           const isExpense = row.type === TransactionType.expense;
           const isIncome = row.type === TransactionType.income;
-          const colorClass = isExpense
-            ? 'text-red-600 dark:text-red-400'
-            : isIncome
-              ? 'text-green-600 dark:text-green-400'
-              : 'text-gray-900 dark:text-gray-100';
+          const color = isExpense ? 'red' : isIncome ? 'green' : undefined;
           const currencySymbol = row.account?.currency?.symbol || '';
 
           return (
-            <div className={`text-sm font-medium ${colorClass}`}>
-              {isIncome && <span className="mr-1">+</span>}
+            <Text size="sm" fw={500} c={color}>
+              {isIncome && (
+                <Text component="span" mr={4}>
+                  +
+                </Text>
+              )}
               <NumberFormatter
                 value={isExpense ? -amount : amount}
                 prefix={currencySymbol ? `${currencySymbol} ` : ''}
@@ -269,7 +270,7 @@ const TransactionTable = ({
                 decimalScale={2}
                 allowNegative={true}
               />
-            </div>
+            </Text>
           );
         },
       },
@@ -281,15 +282,13 @@ const TransactionTable = ({
           const event = row.event;
           if (!event) {
             return (
-              <div className="text-sm text-gray-500 dark:text-gray-400">-</div>
+              <Text size="sm" c="dimmed">
+                -
+              </Text>
             );
           }
 
-          return (
-            <div className="text-sm text-gray-900 dark:text-gray-100">
-              {event.name}
-            </div>
-          );
+          return <Text size="sm">{event.name}</Text>;
         },
       },
       {
@@ -303,7 +302,7 @@ const TransactionTable = ({
         textAlign: 'center',
         width: '8rem',
         render: (value: unknown, row: TransactionDetail) => (
-          <div className="flex items-center justify-center gap-2">
+          <Group gap="xs" justify="center">
             <ActionIcon
               variant="subtle"
               color="blue"
@@ -324,7 +323,7 @@ const TransactionTable = ({
             >
               <IconTrash size={16} />
             </ActionIcon>
-          </div>
+          </Group>
         ),
       },
     ],

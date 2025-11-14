@@ -1,6 +1,5 @@
 export * from './base';
-export * from './DataTable';
-export * from './DataTable/types';
+export { DataTable } from './DataTable';
 export * from './DateRangePicker';
 export * from './DeleteConfirmationModal';
 export * from './DeleteManyConfirmationModal';
@@ -12,6 +11,12 @@ export * from './MetaVisualizer';
 export * from './PageContainer';
 export * from './Select';
 export * from './Switch';
+export type {
+  ColumnFilter,
+  DataTableColumn,
+  DataTableProps,
+  SortingState,
+} from './tables/types';
 export * from './ui';
 export * from './user';
 export * from './ZodFormController';

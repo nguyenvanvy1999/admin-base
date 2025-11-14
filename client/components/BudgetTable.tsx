@@ -1,4 +1,4 @@
-import { ActionIcon, Badge, Button } from '@mantine/core';
+import { ActionIcon, Badge, Button, Group, Text } from '@mantine/core';
 import type { BudgetResponse } from '@server/dto/budget.dto';
 import { BudgetPeriod } from '@server/generated/prisma/enums';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
@@ -121,7 +121,7 @@ const BudgetTable = ({
         accessor: 'startDate',
         title: 'budgets.startDate',
         render: (value: unknown) => {
-          if (!value) return <span className="text-gray-400">-</span>;
+          if (!value) return <Text c="dimmed">-</Text>;
           return new Date(value as string).toLocaleDateString();
         },
       },
@@ -129,7 +129,7 @@ const BudgetTable = ({
         accessor: 'endDate',
         title: 'budgets.endDate',
         render: (value: unknown) => {
-          if (!value) return <span className="text-gray-400">-</span>;
+          if (!value) return <Text c="dimmed">-</Text>;
           return new Date(value as string).toLocaleDateString();
         },
       },
@@ -153,7 +153,7 @@ const BudgetTable = ({
         title: 'budgets.actions',
         accessor: 'actions',
         render: (_value: unknown, row: BudgetResponse) => (
-          <div className="flex items-center gap-2">
+          <Group gap="xs">
             <Button
               size="xs"
               variant="light"
@@ -184,7 +184,7 @@ const BudgetTable = ({
             >
               <IconTrash size={16} />
             </ActionIcon>
-          </div>
+          </Group>
         ),
       },
     ],
