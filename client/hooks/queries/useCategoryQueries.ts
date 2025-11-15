@@ -1,6 +1,6 @@
 import { categoryService } from '@client/services';
 import type { CategoryTreeResponse } from '@server/dto/category.dto';
-import type { CategoryType } from '@server/generated/prisma/enums';
+import type { CategoryType } from '@server/generated';
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 
 type ListCategoriesQuery = {

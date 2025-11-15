@@ -35,7 +35,7 @@ import {
   type IUpsertAccountDto,
   ListAccountsQueryDto,
 } from '@server/dto/account.dto';
-import { AccountType } from '@server/generated/prisma/enums';
+import { AccountType } from '@server/generated';
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 

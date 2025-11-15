@@ -1,10 +1,7 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import {
-  type InvestmentAssetType,
-  InvestmentMode,
-} from '@server/generated/prisma/enums';
-import type { InvestmentWhereInput } from '@server/generated/prisma/models/Investment';
+import type { InvestmentWhereInput } from '@server/generated';
+import { type InvestmentAssetType, InvestmentMode } from '@server/generated';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import type {
   IListInvestmentsQueryDto,

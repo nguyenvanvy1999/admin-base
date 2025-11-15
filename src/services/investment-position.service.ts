@@ -1,10 +1,6 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import {
-  ContributionType,
-  InvestmentMode,
-  TradeSide,
-} from '@server/generated/prisma/enums';
+import { ContributionType, InvestmentMode, TradeSide } from '@server/generated';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import type { InvestmentPositionResponse } from '../dto/investment.dto';
 import {

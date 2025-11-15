@@ -1,10 +1,7 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type { Prisma } from '@server/generated/prisma/client';
-import {
-  type ContributionType,
-  InvestmentMode,
-} from '@server/generated/prisma/enums';
+import type { Prisma } from '@server/generated';
+import { type ContributionType, InvestmentMode } from '@server/generated';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import {
   dateToIsoString,

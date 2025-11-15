@@ -1,7 +1,6 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type { CategoryType } from '@server/generated/prisma/enums';
-import type { CategoryWhereInput } from '@server/generated/prisma/models/Category';
+import type { CategoryType, CategoryWhereInput } from '@server/generated';
 import {
   BALANCE_ADJUSTMENT_CATEGORIES,
   CATEGORY_NAME,

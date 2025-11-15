@@ -4,7 +4,7 @@ import {
   ContributionType,
   TradeSide,
   TransactionType,
-} from '@server/generated/prisma/enums';
+} from '@server/generated';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import Decimal from 'decimal.js';
 import {

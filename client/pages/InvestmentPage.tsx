@@ -30,10 +30,7 @@ import type {
   IUpsertInvestmentDto,
 } from '@server/dto/investment.dto';
 import { ListInvestmentsQueryDto } from '@server/dto/investment.dto';
-import {
-  InvestmentAssetType,
-  InvestmentMode,
-} from '@server/generated/prisma/enums';
+import { InvestmentAssetType, InvestmentMode } from '@server/generated';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';

@@ -1,6 +1,6 @@
 import { type IDb, prisma } from '@server/configs/db';
-import { UserRole } from '@server/generated/prisma/enums';
-import type { UserUncheckedUpdateInput } from '@server/generated/prisma/models/User';
+import type { UserUncheckedUpdateInput } from '@server/generated';
+import { UserRole } from '@server/generated';
 import { userUtilService } from '@server/services/auth/auth-util.service';
 import { DB_PREFIX, defaultRoles, IdUtil, SUPER_ADMIN_ID } from '@server/share';
 import { CURRENCY_IDS } from '@server/share/constants/currency';

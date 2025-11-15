@@ -1,4 +1,4 @@
-import { CategoryType } from '@server/generated/prisma/enums';
+import { CategoryType } from '@server/generated';
 import { t } from 'elysia';
 import { z } from 'zod';
 import { createArrayPreprocess, DeleteResponseDto } from './common.dto';

@@ -1,7 +1,7 @@
 import { usePermission } from '@client/hooks/usePermission';
 import { ActionIcon } from '@mantine/core';
 import type { UserResponse } from '@server/dto/admin/user.dto';
-import { UserRole } from '@server/generated/prisma/enums';
+import { UserRole } from '@server/generated';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

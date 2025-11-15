@@ -1,4 +1,4 @@
-import { UserRole } from '@server/generated/prisma/enums';
+import { UserRole } from '@server/generated';
 import { t } from 'elysia';
 import { z } from 'zod';
 

@@ -8,7 +8,7 @@ import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Group, Stack, Text } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { IUpsertTransaction } from '@server/dto/transaction.dto';
-import { TransactionType } from '@server/generated/prisma/enums';
+import { TransactionType } from '@server/generated';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';

@@ -6,7 +6,7 @@ import {
   type IUpsertAccountDto,
   UpsertAccountDto,
 } from '@server/dto/account.dto';
-import { AccountType } from '@server/generated/prisma/enums';
+import { AccountType } from '@server/generated';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';

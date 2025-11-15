@@ -1,5 +1,5 @@
 import { prisma } from '@server/configs/db';
-import type { Prisma } from '@server/generated/prisma/client';
+import type { Prisma } from '@server/generated';
 import { authorize, has } from '@server/services/auth/authorization';
 import { castToRes, ResWrapper } from '@server/share';
 import type { AppAuthMeta } from '@server/share/type';

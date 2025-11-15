@@ -1,10 +1,10 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type { Prisma } from '@server/generated/prisma/client';
 import type {
+  Prisma,
   TagOrderByWithRelationInput,
   TagWhereInput,
-} from '@server/generated/prisma/models/Tag';
+} from '@server/generated';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import { dateToIsoString } from '@server/share/utils/formatters';
 import type {

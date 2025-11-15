@@ -1,5 +1,5 @@
 import { budgetService } from '@client/services';
-import { BudgetPeriod } from '@server/generated/prisma/enums';
+import { BudgetPeriod } from '@server/generated';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { createQueryHook } from './createQueryHook';

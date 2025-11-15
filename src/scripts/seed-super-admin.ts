@@ -1,7 +1,7 @@
 import { prisma } from '@server/configs/db';
 import { appEnv } from '@server/configs/env';
 import { logger } from '@server/configs/logger';
-import { UserRole } from '@server/generated/prisma/enums';
+import { UserRole } from '@server/generated';
 import { DB_PREFIX, defaultRoles, IdUtil, SUPER_ADMIN_ID } from '@server/share';
 import { CURRENCY_IDS } from '@server/share/constants/currency';
 

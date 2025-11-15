@@ -1,10 +1,10 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type { Prisma } from '@server/generated/prisma/client';
 import type {
   EntityOrderByWithRelationInput,
   EntityWhereInput,
-} from '@server/generated/prisma/models/Entity';
+  Prisma,
+} from '@server/generated';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import type {
   IListEntitiesQueryDto,

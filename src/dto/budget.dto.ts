@@ -1,4 +1,4 @@
-import { BudgetPeriod } from '@server/generated/prisma/enums';
+import { BudgetPeriod } from '@server/generated';
 import { t } from 'elysia';
 import { z } from 'zod';
 import {

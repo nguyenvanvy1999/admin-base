@@ -1,5 +1,5 @@
 import { prisma } from '@server/configs/db';
-import { UserRole } from '@server/generated/prisma/enums';
+import { UserRole } from '@server/generated';
 import {
   authCheck,
   userResSelect,

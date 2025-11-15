@@ -1,11 +1,11 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type { Prisma } from '@server/generated/prisma/client';
-import { BudgetPeriod, TransactionType } from '@server/generated/prisma/enums';
 import type {
   BudgetOrderByWithRelationInput,
   BudgetWhereInput,
-} from '@server/generated/prisma/models/Budget';
+  Prisma,
+} from '@server/generated';
+import { BudgetPeriod, TransactionType } from '@server/generated';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import {
   dateToIsoString,

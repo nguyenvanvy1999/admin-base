@@ -28,7 +28,7 @@ import {
   type IUpsertEntityDto,
   ListEntitiesQueryDto,
 } from '@server/dto/entity.dto';
-import { EntityType } from '@server/generated/prisma/enums';
+import { EntityType } from '@server/generated';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 

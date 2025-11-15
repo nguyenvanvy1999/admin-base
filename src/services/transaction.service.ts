@@ -1,11 +1,11 @@
 import type { IDb } from '@server/configs/db';
 import { type PrismaTx, prisma } from '@server/configs/db';
-import type { Prisma } from '@server/generated/prisma/client';
-import { TransactionType } from '@server/generated/prisma/enums';
 import type {
+  Prisma,
   TransactionOrderByWithRelationInput,
   TransactionWhereInput,
-} from '@server/generated/prisma/models/Transaction';
+} from '@server/generated';
+import { TransactionType } from '@server/generated';
 import { CATEGORY_NAME } from '@server/share/constants/category';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import {

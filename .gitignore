@@ -44,4 +44,4 @@ package-lock.json
 **/*.bun
 .idea
 server
-src/generated
+src/generated/prisma

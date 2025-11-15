@@ -1,5 +1,5 @@
 import { prisma } from '@server/configs/db';
-import type { Prisma } from '@server/generated/prisma/client';
+import type { Prisma } from '@server/generated';
 import { anyOf, authorize, has } from '@server/services/auth/authorization';
 import { castToRes, defaultRoles, ResWrapper } from '@server/share';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';

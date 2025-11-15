@@ -1,4 +1,4 @@
-import { AccountType } from '@server/generated/prisma/enums';
+import { AccountType } from '@server/generated';
 import { t } from 'elysia';
 import { z } from 'zod';
 import {

@@ -1,4 +1,4 @@
-import { TradeSide } from '@server/generated/prisma/enums';
+import { TradeSide } from '@server/generated';
 import { t } from 'elysia';
 import { z } from 'zod';
 import {

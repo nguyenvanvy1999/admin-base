@@ -24,7 +24,7 @@ import type {
   InvestmentAssetType,
   InvestmentMode,
   TradeSide,
-} from '@server/generated/prisma/enums';
+} from '@server/generated';
 
 export class InvestmentService extends ServiceBase {
   constructor() {

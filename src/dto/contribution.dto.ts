@@ -1,4 +1,4 @@
-import { ContributionType } from '@server/generated/prisma/enums';
+import { ContributionType } from '@server/generated';
 import { t } from 'elysia';
 import { z } from 'zod';
 import {

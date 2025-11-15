@@ -19,7 +19,7 @@ import {
   Title,
 } from '@mantine/core';
 import type { TransactionDetail } from '@server/dto/transaction.dto';
-import { TransactionType } from '@server/generated/prisma/enums';
+import { TransactionType } from '@server/generated';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';

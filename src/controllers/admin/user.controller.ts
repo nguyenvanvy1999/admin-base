@@ -1,6 +1,6 @@
 import { prisma } from '@server/configs/db';
-import type { Prisma } from '@server/generated/prisma/client';
-import { UserRole } from '@server/generated/prisma/enums';
+import type { Prisma } from '@server/generated';
+import { UserRole } from '@server/generated';
 import { anyOf, authorize, has } from '@server/services/auth/authorization';
 import { castToRes, ResWrapper, SUPER_ADMIN_ID } from '@server/share';
 import { CURRENCY_IDS } from '@server/share/constants/currency';

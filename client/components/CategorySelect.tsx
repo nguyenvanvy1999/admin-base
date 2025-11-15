@@ -1,7 +1,7 @@
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
 import { Box, Select } from '@mantine/core';
 import type { CategoryTreeResponse } from '@server/dto/category.dto';
-import type { CategoryType } from '@server/generated/prisma/enums';
+import type { CategoryType } from '@server/generated';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { flattenCategories, getCategoryIcon } from './utils/category';

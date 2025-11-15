@@ -1,7 +1,7 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import { logger } from '@server/configs/logger';
-import { TransactionType } from '@server/generated/prisma/enums';
+import { TransactionType } from '@server/generated';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
 import type {
   DebtStatisticsResponse,
