@@ -1,11 +1,11 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
+import { ActionResDto } from '../dto/common.dto';
 import {
   BalanceAdjustmentElysiaDto,
   BatchTransactionsDto,
   BatchTransactionsResponseDto,
   ListTransactionsQueryDto,
-  TransactionDeleteResponseDto,
   TransactionDetailDto,
   TransactionListResponseDto,
   UpsertTransactionDto,
@@ -132,7 +132,7 @@ const transactionController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: ResWrapper(TransactionDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       )

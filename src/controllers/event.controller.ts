@@ -1,8 +1,7 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
+import { ActionResDto, DeleteManyDto } from '../dto/common.dto';
 import {
-  DeleteManyEventsDto,
-  EventDeleteResponseDto,
   EventDto,
   EventListResponseDto,
   ListEventsQueryDto,
@@ -100,11 +99,11 @@ const eventController = new Elysia().group(
             ...EVENT_DETAIL,
             summary: 'Delete event',
             description:
-              'Soft delete an event by its ID. This action cannot be undone.',
+              'Permanently delete an event by its ID. This action cannot be undone.',
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: ResWrapper(EventDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       )
@@ -120,11 +119,11 @@ const eventController = new Elysia().group(
             ...EVENT_DETAIL,
             summary: 'Delete many events',
             description:
-              'Soft delete multiple events by their IDs. This action cannot be undone.',
+              'Permanently delete multiple events by their IDs. This action cannot be undone.',
           },
-          body: DeleteManyEventsDto,
+          body: DeleteManyDto,
           response: {
-            200: ResWrapper(EventDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

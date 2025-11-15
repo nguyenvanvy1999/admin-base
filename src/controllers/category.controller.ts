@@ -1,12 +1,12 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
 import {
-  CategoryDeleteResponseDto,
   CategoryDto,
   CategoryListResponseDto,
   ListCategoriesQueryDto,
   UpsertCategoryDto,
 } from '../dto/category.dto';
+import { ActionResDto } from '../dto/common.dto';
 import { categoryService } from '../services/category.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -124,11 +124,11 @@ const categoryController = new Elysia().group(
             ...CATEGORY_DETAIL,
             summary: 'Delete category',
             description:
-              'Soft delete a category by its ID. Locked categories and categories with children cannot be deleted.',
+              'Permanently delete a category by its ID. Locked categories and categories with children cannot be deleted. This action cannot be undone.',
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: ResWrapper(CategoryDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

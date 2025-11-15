@@ -1,8 +1,7 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
+import { ActionResDto, DeleteManyDto } from '../dto/common.dto';
 import {
-  DeleteManyEntitiesDto,
-  EntityDeleteResponseDto,
   EntityDto,
   EntityListResponseDto,
   ListEntitiesQueryDto,
@@ -104,7 +103,7 @@ const entityController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: ResWrapper(EntityDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       )
@@ -122,9 +121,9 @@ const entityController = new Elysia().group(
             description:
               'Permanently delete multiple financial entities by their IDs. This action cannot be undone.',
           },
-          body: DeleteManyEntitiesDto,
+          body: DeleteManyDto,
           response: {
-            200: ResWrapper(EntityDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

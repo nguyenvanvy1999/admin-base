@@ -1,7 +1,7 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
+import { ActionResDto } from '../dto/common.dto';
 import {
-  InvestmentDeleteResponseDto,
   InvestmentDto,
   InvestmentLatestValuationDto,
   InvestmentListResponseDto,
@@ -148,11 +148,11 @@ const investmentController = new Elysia().group(
             ...INVESTMENT_DETAIL,
             summary: 'Delete investment',
             description:
-              'Soft delete an investment by its ID. This will mark the investment as deleted.',
+              'Permanently delete an investment by its ID. This action cannot be undone.',
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: ResWrapper(InvestmentDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

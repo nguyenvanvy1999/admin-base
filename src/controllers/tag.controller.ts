@@ -1,9 +1,8 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
+import { ActionResDto, DeleteManyDto } from '../dto/common.dto';
 import {
-  DeleteManyTagsDto,
   ListTagsQueryDto,
-  TagDeleteResponseDto,
   TagDto,
   TagListResponseDto,
   UpsertTagDto,
@@ -98,7 +97,7 @@ const tagController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: ResWrapper(TagDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       )
@@ -116,9 +115,9 @@ const tagController = new Elysia().group(
             description:
               'Permanently delete multiple tags by their IDs. This action cannot be undone.',
           },
-          body: DeleteManyTagsDto,
+          body: DeleteManyDto,
           response: {
-            200: ResWrapper(TagDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

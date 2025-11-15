@@ -1,11 +1,11 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
+import { ActionResDto } from '../dto/common.dto';
 import {
   CreateInvestmentTradeDto,
   InvestmentTradeDto,
   InvestmentTradeListResponseDto,
   ListInvestmentTradesQueryDto,
-  TradeDeleteResponseDto,
 } from '../dto/trade.dto';
 import { investmentTradeService } from '../services/trade.service';
 import { castToRes, ResWrapper } from '../share';
@@ -97,7 +97,7 @@ const tradeController = new Elysia().group(
           },
           params: t.Object({ id: t.String(), tradeId: t.String() }),
           response: {
-            200: ResWrapper(TradeDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

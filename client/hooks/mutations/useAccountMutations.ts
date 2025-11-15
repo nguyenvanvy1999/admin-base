@@ -1,15 +1,15 @@
 import { accountService } from '@client/services';
 import type {
-  AccountDeleteResponse,
   AccountResponse,
   IUpsertAccountDto,
 } from '@server/dto/account.dto';
+import type { ActionRes } from '@server/dto/common.dto';
 import { createMutationHooks } from './createMutationHooks';
 
 const accountMutations = createMutationHooks<
   IUpsertAccountDto,
   AccountResponse,
-  AccountDeleteResponse
+  ActionRes
 >({
   create: (data) => accountService.createAccount(data),
   update: (data) => accountService.updateAccount(data),

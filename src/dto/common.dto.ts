@@ -5,8 +5,6 @@ export const DeleteManyDto = z.object({
   ids: z.array(z.string()).min(1),
 });
 
-export type IDeleteManyDto = z.infer<typeof DeleteManyDto>;
-
 export const PaginationDto = t.NoValidate(
   t.Object({
     page: t.Integer(),
@@ -16,12 +14,13 @@ export const PaginationDto = t.NoValidate(
   }),
 );
 
-export const DeleteResponseDto = t.NoValidate(
+export const ActionResDto = t.NoValidate(
   t.Object({
     success: t.Boolean(),
     message: t.String(),
   }),
 );
+export type ActionRes = typeof ActionResDto.static;
 
 export const CurrencyDto = t.NoValidate(
   t.Object({

@@ -5,7 +5,6 @@ import {
   CurrencyDto,
   createArrayPreprocess,
   createListQueryDto,
-  DeleteResponseDto,
   PaginationDto,
 } from './common.dto';
 
@@ -42,8 +41,6 @@ export const InvestmentContributionAccountDto = t.NoValidate(
   }),
 );
 
-export const InvestmentContributionCurrencyDto = CurrencyDto;
-
 export const InvestmentContributionDto = t.NoValidate(
   t.Object({
     id: t.String(),
@@ -61,8 +58,8 @@ export const InvestmentContributionDto = t.NoValidate(
     created: t.String(),
     modified: t.String(),
     account: t.Nullable(InvestmentContributionAccountDto),
-    currency: InvestmentContributionCurrencyDto,
-    baseCurrency: t.Nullable(InvestmentContributionCurrencyDto),
+    currency: CurrencyDto,
+    baseCurrency: t.Nullable(CurrencyDto),
   }),
 );
 
@@ -72,8 +69,6 @@ export const InvestmentContributionListResponseDto = t.NoValidate(
     pagination: PaginationDto,
   }),
 );
-
-export const ContributionDeleteResponseDto = DeleteResponseDto;
 
 export type InvestmentContributionResponse =
   typeof InvestmentContributionDto.static;

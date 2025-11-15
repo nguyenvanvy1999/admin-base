@@ -5,7 +5,6 @@ import {
   CurrencyDto,
   createArrayPreprocess,
   createListQueryDto,
-  DeleteResponseDto,
   PaginationDto,
 } from './common.dto';
 
@@ -31,8 +30,6 @@ export const ListInvestmentsQueryDto = createListQueryDto({
 export type IUpsertInvestmentDto = z.infer<typeof UpsertInvestmentDto>;
 export type IListInvestmentsQueryDto = z.infer<typeof ListInvestmentsQueryDto>;
 
-export const InvestmentCurrencyDto = CurrencyDto;
-
 export const InvestmentDto = t.NoValidate(
   t.Object({
     id: t.String(),
@@ -47,8 +44,8 @@ export const InvestmentDto = t.NoValidate(
     deletedAt: t.Nullable(t.String()),
     created: t.String(),
     modified: t.String(),
-    currency: InvestmentCurrencyDto,
-    baseCurrency: t.Nullable(InvestmentCurrencyDto),
+    currency: CurrencyDto,
+    baseCurrency: t.Nullable(CurrencyDto),
   }),
 );
 
@@ -91,8 +88,6 @@ export const InvestmentLatestValuationDto = t.NoValidate(
     exchangeRate: t.Nullable(t.String()),
   }),
 );
-
-export const InvestmentDeleteResponseDto = DeleteResponseDto;
 
 export type InvestmentResponse = typeof InvestmentDto.static;
 export type InvestmentListResponse = typeof InvestmentListResponseDto.static;

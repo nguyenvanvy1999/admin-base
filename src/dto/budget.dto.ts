@@ -4,8 +4,6 @@ import { z } from 'zod';
 import {
   createArrayPreprocess,
   createListQueryDto,
-  DeleteManyDto,
-  DeleteResponseDto,
   PaginationDto,
 } from './common.dto';
 
@@ -33,8 +31,6 @@ export const BudgetPeriodQueryDto = z.object({
   startDate: z.iso.datetime().optional(),
   endDate: z.iso.datetime().optional(),
 });
-
-export const DeleteManyBudgetsDto = DeleteManyDto;
 
 export type IUpsertBudgetDto = z.infer<typeof UpsertBudgetDto>;
 export type IListBudgetsQueryDto = z.infer<typeof ListBudgetsQueryDto>;
@@ -98,11 +94,8 @@ export const BudgetPeriodListResponseDto = t.NoValidate(
   }),
 );
 
-export const BudgetDeleteResponseDto = DeleteResponseDto;
-
 export type BudgetResponse = typeof BudgetDto.static;
 export type BudgetListResponse = typeof BudgetListResponseDto.static;
 export type BudgetPeriodDetailResponse = typeof BudgetPeriodDetailDto.static;
 export type BudgetPeriodListResponse =
   typeof BudgetPeriodListResponseDto.static;
-export type BudgetDeleteResponse = typeof BudgetDeleteResponseDto.static;

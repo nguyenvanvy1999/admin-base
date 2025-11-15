@@ -5,7 +5,6 @@ import {
   CurrencyDto,
   createArrayPreprocess,
   createListQueryDto,
-  DeleteResponseDto,
   PaginationDto,
 } from './common.dto';
 
@@ -32,8 +31,6 @@ export const ListAccountsQueryDto = createListQueryDto({
 export type IUpsertAccountDto = z.infer<typeof UpsertAccountDto>;
 export type IListAccountsQueryDto = z.infer<typeof ListAccountsQueryDto>;
 
-export const AccountCurrencyDto = CurrencyDto;
-
 export const AccountDto = t.NoValidate(
   t.Object({
     id: t.String(),
@@ -48,13 +45,13 @@ export const AccountDto = t.NoValidate(
     meta: t.Nullable(t.Any()),
     created: t.String(),
     modified: t.String(),
-    currency: AccountCurrencyDto,
+    currency: CurrencyDto,
   }),
 );
 
 export const AccountSummaryDto = t.NoValidate(
   t.Object({
-    currency: AccountCurrencyDto,
+    currency: CurrencyDto,
     totalBalance: t.Number(),
   }),
 );
@@ -67,9 +64,6 @@ export const AccountListResponseDto = t.NoValidate(
   }),
 );
 
-export const AccountDeleteResponseDto = DeleteResponseDto;
-
 export type AccountResponse = typeof AccountDto.static;
 export type AccountSummary = typeof AccountSummaryDto.static;
 export type AccountListResponse = typeof AccountListResponseDto.static;
-export type AccountDeleteResponse = typeof AccountDeleteResponseDto.static;

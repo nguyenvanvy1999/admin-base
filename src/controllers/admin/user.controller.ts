@@ -1,21 +1,19 @@
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated';
-import { UserRole } from '@server/generated';
 import { anyOf, authorize, has } from '@server/services/auth/authorization';
 import type { AppAuthMeta } from '@server/share';
 import {
   CURRENCY_IDS,
   castToRes,
+  DB_PREFIX,
   ErrorCode,
+  idUtil,
   ResWrapper,
   SUPER_ADMIN_ID,
   throwAppError,
 } from '@server/share';
 import { Elysia, t } from 'elysia';
 import {
-  type IListUsersQueryDto,
-  type IUpsertUserDto,
-  type IUserStatisticsQueryDto,
   ListUsersQueryDto,
   UpsertUserDto,
   UserListResponseDto,
@@ -33,12 +31,11 @@ export const userController = new Elysia<'users', AppAuthMeta>({
     async ({ query }) => {
       const {
         search,
-        role,
         page = 1,
         limit = 20,
         sortBy = 'created',
         sortOrder = 'desc',
-      } = query as IListUsersQueryDto;
+      } = query;
 
       const where: Prisma.UserWhereInput = {};
 
@@ -49,17 +46,11 @@ export const userController = new Elysia<'users', AppAuthMeta>({
         ];
       }
 
-      if (role && role.length > 0) {
-        where.role = { in: role };
-      }
-
       const orderBy: Prisma.UserOrderByWithRelationInput = {};
       if (sortBy === 'username') {
         orderBy.username = sortOrder;
       } else if (sortBy === 'name') {
         orderBy.name = sortOrder;
-      } else if (sortBy === 'role') {
-        orderBy.role = sortOrder;
       } else if (sortBy === 'created') {
         orderBy.created = sortOrder;
       }
@@ -76,7 +67,6 @@ export const userController = new Elysia<'users', AppAuthMeta>({
             id: true,
             username: true,
             name: true,
-            role: true,
             baseCurrencyId: true,
             created: true,
             modified: true,
@@ -98,7 +88,6 @@ export const userController = new Elysia<'users', AppAuthMeta>({
           id: user.id,
           username: user.username,
           name: user.name,
-          role: user.role,
           baseCurrencyId: user.baseCurrencyId,
           created: user.created.toISOString(),
           modified: user.modified.toISOString(),
@@ -137,7 +126,6 @@ export const userController = new Elysia<'users', AppAuthMeta>({
           id: true,
           username: true,
           name: true,
-          role: true,
           baseCurrencyId: true,
           created: true,
           modified: true,
@@ -160,7 +148,6 @@ export const userController = new Elysia<'users', AppAuthMeta>({
         id: user.id,
         username: user.username,
         name: user.name,
-        role: user.role,
         baseCurrencyId: user.baseCurrencyId,
         created: user.created.toISOString(),
         modified: user.modified.toISOString(),
@@ -184,11 +171,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
   .get(
     '/statistics',
     async ({ query }) => {
-      const {
-        dateFrom,
-        dateTo,
-        groupBy = 'month',
-      } = query as IUserStatisticsQueryDto;
+      const { dateFrom, dateTo, groupBy = 'month' } = query;
 
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -342,8 +325,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
   .post(
     '/',
     async ({ body }) => {
-      const { id, username, password, name, role, baseCurrencyId } =
-        body as IUpsertUserDto;
+      const { id, username, password, name, baseCurrencyId } = body;
 
       if (id && id === SUPER_ADMIN_ID) {
         throwAppError(ErrorCode.PERMISSION_DENIED, 'Permission denied');
@@ -360,7 +342,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
 
       if (id) {
         const existingUser = await prisma.user.findFirst({
-          where: { id, deletedAt: null },
+          where: { id },
         });
         if (!existingUser) {
           throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
@@ -368,7 +350,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
 
         if (username && username !== existingUser.username) {
           const usernameExists = await prisma.user.findFirst({
-            where: { username, deletedAt: null },
+            where: { username },
           });
           if (usernameExists) {
             throwAppError(ErrorCode.USER_ALREADY_EXISTS, 'User already exists');
@@ -392,7 +374,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
         });
       } else {
         const usernameExists = await prisma.user.findFirst({
-          where: { username, deletedAt: null },
+          where: { username },
         });
         if (usernameExists) {
           throwAppError(ErrorCode.USER_ALREADY_EXISTS, 'User already exists');
@@ -406,10 +388,10 @@ export const userController = new Elysia<'users', AppAuthMeta>({
 
         await prisma.user.create({
           data: {
+            id: idUtil.dbId(DB_PREFIX.USER),
             username,
             password: hashPassword,
             name: name ?? null,
-            role: role || UserRole.user,
             baseCurrencyId: baseCurrencyId || CURRENCY_IDS.VND,
           },
         });
@@ -433,12 +415,9 @@ export const userController = new Elysia<'users', AppAuthMeta>({
         throwAppError(ErrorCode.PERMISSION_DENIED, 'Permission denied');
       }
 
-      await prisma.user.updateMany({
+      await prisma.user.deleteMany({
         where: {
           id: { in: ids },
-        },
-        data: {
-          deletedAt: new Date(),
         },
       });
 

@@ -1,7 +1,7 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
+import { ActionResDto } from '../dto/common.dto';
 import {
-  ContributionDeleteResponseDto,
   CreateInvestmentContributionDto,
   InvestmentContributionDto,
   InvestmentContributionListResponseDto,
@@ -97,7 +97,7 @@ const contributionController = new Elysia().group(
           },
           params: t.Object({ id: t.String(), contributionId: t.String() }),
           response: {
-            200: ResWrapper(ContributionDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

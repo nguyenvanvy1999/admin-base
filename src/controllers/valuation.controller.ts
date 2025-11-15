@@ -1,11 +1,11 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
+import { ActionResDto } from '../dto/common.dto';
 import {
   InvestmentValuationDto,
   InvestmentValuationListResponseDto,
   ListInvestmentValuationsQueryDto,
   UpsertInvestmentValuationDto,
-  ValuationDeleteResponseDto,
 } from '../dto/valuation.dto';
 import { investmentValuationService } from '../services/valuation.service';
 import { castToRes, ResWrapper } from '../share';
@@ -120,7 +120,7 @@ const valuationController = new Elysia().group(
           },
           params: t.Object({ id: t.String(), valuationId: t.String() }),
           response: {
-            200: ResWrapper(ValuationDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

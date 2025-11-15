@@ -1,6 +1,6 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import { logger } from '@server/configs/logger';
+import { type ILogger, logger } from '@server/configs/logger';
 import { TransactionType } from '@server/generated';
 import { ErrorCode, throwAppError } from '@server/share';
 import type {
@@ -38,9 +38,11 @@ export class ReportService {
     private readonly deps: {
       db: IDb;
       exchangeRateService: ExchangeRateService;
+      logger: ILogger;
     } = {
       db: prisma,
       exchangeRateService: exchangeRateService,
+      logger,
     },
   ) {}
 
@@ -1866,7 +1868,7 @@ export class ReportService {
     try {
       return await this.deps.exchangeRateService.getRate(fromCode, toCode);
     } catch (error) {
-      logger.error('Failed to get exchange rate', { error });
+      this.deps.logger.error('Failed to get exchange rate', { error });
       return 1;
     }
   }

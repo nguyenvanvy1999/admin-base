@@ -1,16 +1,15 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
 import {
-  BudgetDeleteResponseDto,
   BudgetDto,
   BudgetListResponseDto,
   BudgetPeriodDetailDto,
   BudgetPeriodListResponseDto,
   BudgetPeriodQueryDto,
-  DeleteManyBudgetsDto,
   ListBudgetsQueryDto,
   UpsertBudgetDto,
 } from '../dto/budget.dto';
+import { ActionResDto, DeleteManyDto } from '../dto/common.dto';
 import { budgetService } from '../services/budget.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -107,7 +106,7 @@ const budgetController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: ResWrapper(BudgetDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       )
@@ -183,9 +182,9 @@ const budgetController = new Elysia().group(
             description:
               'Permanently delete multiple budgets by their IDs. This action cannot be undone.',
           },
-          body: DeleteManyBudgetsDto,
+          body: DeleteManyDto,
           response: {
-            200: ResWrapper(BudgetDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

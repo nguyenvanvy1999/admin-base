@@ -4,8 +4,6 @@ import { z } from 'zod';
 import {
   createArrayPreprocess,
   createListQueryDto,
-  DeleteManyDto,
-  DeleteResponseDto,
   PaginationDto,
 } from './common.dto';
 
@@ -24,8 +22,6 @@ export const ListEntitiesQueryDto = createListQueryDto({
   type: createArrayPreprocess(z.enum(EntityType)),
   sortBy: z.enum(['name', 'type', 'created']).optional(),
 });
-
-export const DeleteManyEntitiesDto = DeleteManyDto;
 
 export type IUpsertEntityDto = z.infer<typeof UpsertEntityDto>;
 export type IListEntitiesQueryDto = z.infer<typeof ListEntitiesQueryDto>;
@@ -51,8 +47,5 @@ export const EntityListResponseDto = t.NoValidate(
   }),
 );
 
-export const EntityDeleteResponseDto = DeleteResponseDto;
-
 export type EntityResponse = typeof EntityDto.static;
 export type EntityListResponse = typeof EntityListResponseDto.static;
-export type EntityDeleteResponse = typeof EntityDeleteResponseDto.static;

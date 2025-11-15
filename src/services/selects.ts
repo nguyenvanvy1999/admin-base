@@ -328,7 +328,6 @@ export const USER_SELECT_FOR_INFO = {
   id: true,
   username: true,
   name: true,
-  role: true,
   baseCurrencyId: true,
   settings: true,
   created: true,
@@ -344,7 +343,6 @@ export const USER_SELECT_FOR_VALIDATION = {
 export const USER_SELECT_FOR_LOGIN = {
   id: true,
   username: true,
-  role: true,
   name: true,
   baseCurrencyId: true,
   settings: true,

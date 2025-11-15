@@ -1,8 +1,8 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
 import type {
-  AccountDeleteResponse,
   AccountListResponse,
   AccountResponse,
+  ActionRes,
   IUpsertAccountDto,
 } from '@server/dto/account.dto';
 import type { AccountType } from '@server/generated';
@@ -34,8 +34,8 @@ export class AccountService extends ServiceBase {
     return this.post<AccountResponse>(data);
   }
 
-  deleteAccount(accountId: string): Promise<AccountDeleteResponse> {
-    return this.delete<AccountDeleteResponse>({
+  deleteAccount(accountId: string): Promise<ActionRes> {
+    return this.delete<ActionRes>({
       endpoint: accountId,
     });
   }

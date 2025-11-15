@@ -9,6 +9,8 @@ export enum DB_PREFIX {
   SETTING = 'setting',
   USER_AUTH_PROVIDER = 'user_oauth',
   AUTH_PROVIDER = 'auth_prov',
+  ACCOUNT = 'acc',
+  TRANSACTION = 'txn',
 }
 
 export class IdUtil {
