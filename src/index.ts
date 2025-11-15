@@ -1,9 +1,8 @@
-import openapi from '@elysiajs/openapi';
 import { staticPlugin } from '@elysiajs/static';
 import { appEnv } from '@server/configs/env';
 import { redis } from '@server/configs/redis';
+import { swaggerConfig } from '@server/configs/swagger';
 import { Elysia } from 'elysia';
-import z from 'zod';
 import { logger } from './configs/logger';
 import accountController from './controllers/account.controller';
 import { adminController } from './controllers/admin';
@@ -27,35 +26,7 @@ import { seedSuperAdmin } from './services/super-admin-seed.service';
 import { withErrorHandler } from './share/middlewares/error-middleware';
 
 export const app = new Elysia()
-  .use(
-    openapi({
-      mapJsonSchema: {
-        zod: z.toJSONSchema,
-      },
-      path: '/docs',
-      provider: 'swagger-ui',
-      documentation: {
-        info: {
-          title: 'FinTrack',
-          description: 'FinTrack API Documentation',
-          version: '1.0.0',
-        },
-        components: {
-          securitySchemes: {
-            JwtAuth: {
-              type: 'http',
-              scheme: 'bearer',
-              bearerFormat: 'JWT',
-              description: 'Enter JWT Bearer token **_only_**',
-            },
-          },
-        },
-      },
-      swagger: {
-        persistAuthorization: true,
-      },
-    }),
-  )
+  .use(swaggerConfig())
   .use(
     await staticPlugin({
       prefix: '/',
@@ -113,7 +84,4 @@ if (appEnv.AUTO_SEED) {
 
 logger.info(
   `Server started open http://${app.server?.hostname}:${app.server?.port} in the browser`,
-);
-logger.info(
-  `API can be found at  http://${app.server?.hostname}:${app.server?.port}/docs in the browser`,
 );

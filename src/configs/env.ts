@@ -1,62 +1,58 @@
 import { LOG_LEVEL } from '@server/share/constants/log';
-import { type Static, Type as t } from '@sinclair/typebox';
-import { TypeCompiler } from '@sinclair/typebox/compiler';
-import { Value } from '@sinclair/typebox/value';
+import { z } from 'zod';
 
-export const envSchema = t.Object({
-  PORT: t.Number({ minimum: 0, maximum: 65535, default: 3000 }),
-  POSTGRES_URL: t.String(),
-  JWT_SECRET: t.String({ default: 'secret' }),
-  JWT_ACCESS_TOKEN_EXPIRED: t.String({ default: '60 minutes' }),
-  JWT_REFRESH_TOKEN_EXPIRED: t.String({ default: '30 days' }),
-  JWT_AUDIENCE: t.String({ default: 'https://example.com' }),
-  JWT_ISSUER: t.String({ default: 'investment' }),
-  JWT_SUBJECT: t.String({ default: 'investment' }),
-  ENCRYPT_KEY: t.String(),
-  ENCRYPT_IV: t.String(),
-  LOG_LEVEL: t.Union(
-    [
-      t.Literal(LOG_LEVEL.DEBUG),
-      t.Literal(LOG_LEVEL.INFO),
-      t.Literal(LOG_LEVEL.WARNING),
-      t.Literal(LOG_LEVEL.ERROR),
-    ],
-    { default: LOG_LEVEL.INFO },
-  ),
-  EXCHANGE_RATE_API_URL: t.Optional(
-    t.String({
-      default:
-        'https://latest.currency-api.pages.dev/v1/currencies/vnd.min.json',
-    }),
-  ),
-  EXCHANGE_RATE_CACHE_TTL: t.Optional(
-    t.Number({ minimum: 0, default: 3600000 }),
-  ),
-  REDIS_URI: t.String({ default: 'redis://localhost:6379' }),
+export const envSchema = z.object({
+  PORT: z.coerce.number().int().min(0).max(65535).default(3000),
+  LOG_LEVEL: z
+    .enum([LOG_LEVEL.DEBUG, LOG_LEVEL.INFO, LOG_LEVEL.WARNING, LOG_LEVEL.ERROR])
+    .default(LOG_LEVEL.INFO),
+  POSTGRES_URL: z.string(),
 
-  AUTO_SEED: t.Optional(t.Boolean({ default: true })),
-  AUTO_SEED_SUPER_ADMIN: t.Optional(t.Boolean({ default: true })),
+  JWT_SECRET: z.string().default('secret'),
+  JWT_ACCESS_TOKEN_EXPIRED: z.string().default('60 minutes'),
+  JWT_REFRESH_TOKEN_EXPIRED: z.string().default('30 days'),
+  JWT_AUDIENCE: z.string().default('https://example.com'),
+  JWT_ISSUER: z.string().default('investment'),
+  JWT_SUBJECT: z.string().default('investment'),
 
-  SUPER_ADMIN_USERNAME: t.String({ default: 'superadmin' }),
-  SUPER_ADMIN_PASSWORD: t.String(),
+  ENCRYPT_KEY: z.string(),
+  ENCRYPT_IV: z.string(),
+
+  ENB_SWAGGER_UI: z.coerce.boolean().default(true).optional(),
+
+  EXCHANGE_RATE_API_URL: z
+    .string()
+    .default('https://latest.currency-api.pages.dev/v1/currencies/vnd.min.json')
+    .optional(),
+  EXCHANGE_RATE_CACHE_TTL: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .default(3600000)
+    .optional(),
+
+  REDIS_URI: z.string().default('redis://localhost:6379'),
+
+  AUTO_SEED: z.coerce.boolean().default(true).optional(),
+  AUTO_SEED_SUPER_ADMIN: z.coerce.boolean().default(true).optional(),
+
+  SUPER_ADMIN_USERNAME: z.string().default('superadmin'),
+  SUPER_ADMIN_PASSWORD: z.string(),
 });
 
-const Compiler = TypeCompiler.Compile(envSchema);
+const result = envSchema.safeParse(process.env);
 
-const appEnv = Value.Parse(
-  ['Clone', 'Clean', 'Default', 'Decode', 'Convert'],
-  envSchema,
-  process.env,
-) as Static<typeof envSchema>;
-
-if (!Compiler.Check(appEnv)) {
-  const errors = [...Compiler.Errors(appEnv)].reduce((errors, e) => {
-    const path = e.path.substring(1);
-    return { ...errors, [path]: e.message };
-  }, {});
+if (!result.success) {
+  const errors = result.error.issues.reduce(
+    (acc: Record<string, string>, e) => {
+      const path = e.path.join('.');
+      return { ...acc, [path]: e.message };
+    },
+    {},
+  );
   console.error('❌ Invalid environment variables:', errors);
   process.exit(1);
 }
 
-export type IEnv = Static<typeof envSchema>;
-export { appEnv };
+export type IEnv = z.infer<typeof envSchema>;
+export const appEnv = result.data;

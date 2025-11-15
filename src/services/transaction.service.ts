@@ -789,7 +789,7 @@ class TransactionHandlerFactory {
 }
 
 export class TransactionService {
-  private handlerFactory: TransactionHandlerFactory;
+  private readonly handlerFactory: TransactionHandlerFactory;
 
   constructor(
     private readonly deps: {
