@@ -117,7 +117,7 @@ model Setting {
   description String?
   isSecret    Boolean @default(false) @map("is_secret")
 
-  type SettingDataType @default(STRING)
+  type SettingDataType @default(string)
 
   @@index([key])
   @@map("settings")

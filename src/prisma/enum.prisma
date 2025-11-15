@@ -86,3 +86,12 @@ enum ProxyProtocol {
   socks4
   socks5
 }
+
+// Data types for application settings
+enum SettingDataType {
+  string
+  number
+  boolean
+  date
+  json
+}
