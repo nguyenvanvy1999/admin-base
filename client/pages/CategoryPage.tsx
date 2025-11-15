@@ -32,7 +32,7 @@ import type {
   CategoryTreeResponse,
   IUpsertCategoryDto,
 } from '@server/dto/category.dto';
-import { CategoryType } from '@server/generated';
+import { CategoryType } from '@server/generated/browser-index';
 import {
   IconCategory,
   IconEdit,

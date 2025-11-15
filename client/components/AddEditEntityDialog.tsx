@@ -5,7 +5,7 @@ import {
   type IUpsertEntityDto,
   UpsertEntityDto,
 } from '@server/dto/entity.dto';
-import { EntityType } from '@server/generated';
+import { EntityType } from '@server/generated/browser-index';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';

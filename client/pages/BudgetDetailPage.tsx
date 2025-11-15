@@ -15,7 +15,7 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { BudgetPeriod } from '@server/generated';
+import { BudgetPeriod } from '@server/generated/browser-index';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';

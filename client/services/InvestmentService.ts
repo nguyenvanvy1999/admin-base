@@ -24,7 +24,7 @@ import type {
   InvestmentAssetType,
   InvestmentMode,
   TradeSide,
-} from '@server/generated';
+} from '@server/generated/browser-index';
 
 export class InvestmentService extends ServiceBase {
   constructor() {

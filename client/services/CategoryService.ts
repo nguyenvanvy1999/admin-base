@@ -5,7 +5,7 @@ import type {
   CategoryResponse,
   IUpsertCategoryDto,
 } from '@server/dto/category.dto';
-import type { CategoryType } from '@server/generated';
+import type { CategoryType } from '@server/generated/browser-index';
 
 export class CategoryService extends ServiceBase {
   constructor() {

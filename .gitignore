@@ -43,5 +43,5 @@ yarn-error.log*
 package-lock.json
 **/*.bun
 .idea
-server
 src/generated/prisma
+app_server

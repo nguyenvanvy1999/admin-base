@@ -1,5 +1,5 @@
 import { accountService } from '@client/services';
-import { AccountType } from '@server/generated';
+import { AccountType } from '@server/generated/browser-index';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { createQueryHook } from './createQueryHook';

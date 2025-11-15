@@ -8,7 +8,7 @@ import {
   type ICreateInvestmentContributionDto,
 } from '@server/dto/contribution.dto';
 import type { InvestmentResponse } from '@server/dto/investment.dto';
-import { ContributionType } from '@server/generated';
+import { ContributionType } from '@server/generated/browser-index';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';

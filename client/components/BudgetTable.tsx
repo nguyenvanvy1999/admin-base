@@ -1,6 +1,6 @@
 import { ActionIcon, Badge, Button, Group, Text } from '@mantine/core';
 import type { BudgetResponse } from '@server/dto/budget.dto';
-import { BudgetPeriod } from '@server/generated';
+import { BudgetPeriod } from '@server/generated/browser-index';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -15,7 +15,7 @@ import {
   Text,
 } from '@mantine/core';
 import type { TransactionDetail } from '@server/dto/transaction.dto';
-import { TransactionType } from '@server/generated';
+import { TransactionType } from '@server/generated/browser-index';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

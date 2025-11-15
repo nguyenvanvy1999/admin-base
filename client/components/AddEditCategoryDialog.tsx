@@ -6,7 +6,7 @@ import {
   type IUpsertCategoryDto,
   UpsertCategoryDto,
 } from '@server/dto/category.dto';
-import { CategoryType } from '@server/generated';
+import { CategoryType } from '@server/generated/browser-index';
 import type { TFunction } from 'i18next';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

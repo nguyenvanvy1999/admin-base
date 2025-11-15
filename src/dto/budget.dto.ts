@@ -1,4 +1,4 @@
-import { BudgetPeriod } from '@server/generated';
+import { BudgetPeriod } from '@server/generated/browser-index';
 import { t } from 'elysia';
 import { z } from 'zod';
 import {

@@ -1,5 +1,5 @@
 import { userService } from '@client/services';
-import { UserRole } from '@server/generated';
+import { UserRole } from '@server/generated/browser-index';
 import { z } from 'zod';
 import { createQueryHook } from './createQueryHook';
 

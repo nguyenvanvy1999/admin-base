@@ -1,6 +1,6 @@
 import { useDebtStatistics } from '@client/hooks/queries/useDebtStatistics';
 import { NumberFormatter } from '@mantine/core';
-import { TransactionType } from '@server/generated';
+import { TransactionType } from '@server/generated/browser-index';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
 

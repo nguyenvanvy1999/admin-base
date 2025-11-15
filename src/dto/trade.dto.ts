@@ -1,4 +1,4 @@
-import { TradeSide } from '@server/generated';
+import { TradeSide } from '@server/generated/browser-index';
 import { t } from 'elysia';
 import { z } from 'zod';
 import {

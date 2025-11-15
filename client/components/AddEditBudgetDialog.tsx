@@ -11,7 +11,7 @@ import {
 import { DateInput } from '@mantine/dates';
 import type { BudgetResponse, IUpsertBudgetDto } from '@server/dto/budget.dto';
 import { UpsertBudgetDto } from '@server/dto/budget.dto';
-import { BudgetPeriod } from '@server/generated';
+import { BudgetPeriod } from '@server/generated/browser-index';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';

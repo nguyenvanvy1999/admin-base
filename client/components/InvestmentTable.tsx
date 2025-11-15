@@ -1,6 +1,9 @@
 import { ActionIcon, Badge } from '@mantine/core';
 import type { InvestmentResponse } from '@server/dto/investment.dto';
-import { InvestmentAssetType, InvestmentMode } from '@server/generated';
+import {
+  InvestmentAssetType,
+  InvestmentMode,
+} from '@server/generated/browser-index';
 import { IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

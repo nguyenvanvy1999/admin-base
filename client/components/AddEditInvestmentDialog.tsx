@@ -6,7 +6,10 @@ import {
   type IUpsertInvestmentDto,
   UpsertInvestmentDto,
 } from '@server/dto/investment.dto';
-import { InvestmentAssetType, InvestmentMode } from '@server/generated';
+import {
+  InvestmentAssetType,
+  InvestmentMode,
+} from '@server/generated/browser-index';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';

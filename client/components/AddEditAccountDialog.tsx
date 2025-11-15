@@ -6,7 +6,7 @@ import {
   type IUpsertAccountDto,
   UpsertAccountDto,
 } from '@server/dto/account.dto';
-import { AccountType } from '@server/generated';
+import { AccountType } from '@server/generated/browser-index';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';

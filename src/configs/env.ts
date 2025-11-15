@@ -18,7 +18,18 @@ export const envSchema = z.object({
   ENCRYPT_KEY: z.string(),
   ENCRYPT_IV: z.string(),
 
-  ENB_SWAGGER_UI: z.coerce.boolean().default(true).optional(),
+  ENB_SWAGGER_UI: z.coerce.boolean().default(true),
+  ENB_TRACING: z.coerce.boolean().default(false),
+  ENB_HTTP_LOG: z.coerce.boolean().default(true),
+  ENB_CLUSTER: z.coerce.boolean().default(false),
+  ENB_SEED: z.coerce.boolean().default(true),
+
+  CORS_ALLOW_METHOD: z.string().default('GET,HEAD,PUT,PATCH,POST,DELETE'),
+  CORS_ALLOW_HEADERS: z.string().default('*'),
+  CORS_ALLOW_ORIGIN: z.string().default('*'),
+
+  REQ_TIMEOUT_SECOND: z.coerce.number().int().min(1).default(10),
+  REQ_BODY_MAX_SIZE_MB: z.coerce.number().int().min(1).default(256),
 
   EXCHANGE_RATE_API_URL: z
     .string()

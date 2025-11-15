@@ -1,6 +1,6 @@
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
 import { Box, MultiSelect } from '@mantine/core';
-import type { CategoryType } from '@server/generated';
+import type { CategoryType } from '@server/generated/browser-index';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { flattenCategories, getCategoryIcon } from './utils/category';

@@ -25,7 +25,7 @@ import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Group, MultiSelect, TextInput } from '@mantine/core';
 import type { BudgetResponse, IUpsertBudgetDto } from '@server/dto/budget.dto';
 import { ListBudgetsQueryDto } from '@server/dto/budget.dto';
-import { BudgetPeriod } from '@server/generated';
+import { BudgetPeriod } from '@server/generated/browser-index';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 

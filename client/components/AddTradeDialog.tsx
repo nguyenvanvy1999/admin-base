@@ -13,7 +13,7 @@ import {
   CreateInvestmentTradeDto,
   type ICreateInvestmentTradeDto,
 } from '@server/dto/trade.dto';
-import { TradeSide } from '@server/generated';
+import { TradeSide } from '@server/generated/browser-index';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';

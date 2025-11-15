@@ -36,7 +36,11 @@ import {
 import type { InvestmentContributionResponse } from '@server/dto/contribution.dto';
 import type { InvestmentTradeResponse } from '@server/dto/trade.dto';
 import type { InvestmentValuationResponse } from '@server/dto/valuation.dto';
-import { ContributionType, InvestmentMode, TradeSide } from '@server/generated';
+import {
+  ContributionType,
+  InvestmentMode,
+  TradeSide,
+} from '@server/generated/browser-index';
 import { IconArrowLeft, IconTrash } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

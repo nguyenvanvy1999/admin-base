@@ -1,4 +1,4 @@
-import { CategoryType } from '@server/generated';
+import { CategoryType } from '@server/generated/browser-index';
 import { t } from 'elysia';
 import { z } from 'zod';
 import { createArrayPreprocess, DeleteResponseDto } from './common.dto';

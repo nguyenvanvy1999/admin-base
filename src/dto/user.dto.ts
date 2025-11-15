@@ -1,4 +1,4 @@
-import { UserRole } from '@server/generated';
+import { UserRole } from '@server/generated/browser-index';
 import { t } from 'elysia';
 import { z } from 'zod';
 
