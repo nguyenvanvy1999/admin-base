@@ -8,9 +8,9 @@ import {
 import {
   CURRENCY_IDS,
   DB_PREFIX,
-  type DbIdGen,
   defaultRoles,
   defaultSettings,
+  type IdUtil,
   idUtil,
   OAUTH,
   PERMISSIONS,
@@ -25,13 +25,13 @@ export class SeedService {
       passwordService: PasswordService;
       logger: ILogger;
       env: IEnv;
-      dbId: DbIdGen;
+      idUtil: IdUtil;
     } = {
       db: prisma,
       passwordService,
       logger,
       env: appEnv,
-      dbId: idUtil.dbId,
+      idUtil,
     },
   ) {}
 
@@ -77,7 +77,7 @@ export class SeedService {
       await this.deps.db.authProvider.upsert({
         where: { code: OAUTH.GOOGLE },
         create: {
-          id: this.deps.dbId(DB_PREFIX.AUTH_PROVIDER),
+          id: this.deps.idUtil.dbId(DB_PREFIX.AUTH_PROVIDER),
           code: OAUTH.GOOGLE,
           name: 'Google',
           enabled: true,
@@ -104,7 +104,7 @@ export class SeedService {
       });
       await this.deps.db.setting.createMany({
         data: Object.values(SETTING).map((key) => ({
-          id: this.deps.dbId(DB_PREFIX.SETTING),
+          id: this.deps.idUtil.dbId(DB_PREFIX.SETTING),
           key,
           ...defaultSettings[key],
         })),
@@ -136,7 +136,7 @@ export class SeedService {
           const per = perms[category]?.[action];
           if (per) {
             permissionData.push({
-              id: this.deps.dbId(DB_PREFIX.PERMISSION),
+              id: this.deps.idUtil.dbId(DB_PREFIX.PERMISSION),
               title: `${category}.${action}`,
               description: per.description,
               roles: per.roles,
@@ -195,7 +195,7 @@ export class SeedService {
           if (permissionId) {
             permission.roles.forEach((roleId) => {
               rolePermissionData.push({
-                id: this.deps.dbId(),
+                id: this.deps.idUtil.dbId(),
                 roleId,
                 permissionId,
               });
@@ -266,7 +266,7 @@ export class SeedService {
 
         await tx.rolePlayer.createMany({
           data: {
-            id: this.deps.dbId(),
+            id: this.deps.idUtil.dbId(),
             playerId: superAdmin.id,
             roleId: defaultRoles.admin.id,
           },
