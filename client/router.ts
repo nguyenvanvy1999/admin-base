@@ -50,16 +50,16 @@ const router = createHashRouter([
         Component: SessionPage,
       },
       {
-        path: '/transactions',
-        Component: TransactionPage,
+        path: '/debts',
+        Component: DebtPage,
       },
       {
         path: '/transactions/bulk',
         Component: BulkTransactionPage,
       },
       {
-        path: '/debts',
-        Component: DebtPage,
+        path: '/transactions',
+        Component: TransactionPage,
       },
       {
         path: '/budgets',

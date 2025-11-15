@@ -62,6 +62,30 @@ export class TransactionService extends ServiceBase {
       endpoint: 'batch',
     });
   }
+
+  getDebtStatistics(query?: { from?: string; to?: string }): Promise<{
+    totalLoanGiven: number;
+    totalLoanReceived: number;
+    totalPaid: number;
+    totalReceived: number;
+    currency: string;
+  }> {
+    return this.get({
+      endpoint: 'debt-statistics',
+      params: query,
+    });
+  }
+
+  getDebts(query?: {
+    status?: string;
+    from?: string;
+    to?: string;
+  }): Promise<TransactionDetail[]> {
+    return this.get({
+      endpoint: 'debts',
+      params: query,
+    });
+  }
 }
 
 export const transactionService = new TransactionService();

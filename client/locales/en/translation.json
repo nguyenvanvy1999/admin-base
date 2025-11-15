@@ -785,5 +785,44 @@
       "SESSION": "Session",
       "ADMIN": "Admin"
     }
+  },
+  "debts": {
+    "title": "Debt Management",
+    "subtitle": "Track and manage your loans and debts",
+    "debtList": "Debt List",
+    "statistics": "Debt Statistics",
+    "totalLoanGiven": "Total Loan Given",
+    "totalLoanReceived": "Total Loan Received",
+    "totalPaid": "Total Paid",
+    "totalReceived": "Total Received",
+    "noDebts": "No debts found",
+    "date": "Date",
+    "description": "Description",
+    "amount": "Amount",
+    "remainingAmount": "Remaining",
+    "actions": "Actions",
+    "payDebt": "Paid",
+    "receiveDebt": "Received",
+    "loanGiven": "Loan Given",
+    "loanReceived": "Loan Received",
+    "total": "Total",
+    "unknown": "Unknown",
+    "noDescription": "No description",
+    "paymentModal": {
+      "payTitle": "Pay Debt",
+      "receiveTitle": "Receive Debt",
+      "amountToPay": "Amount to pay",
+      "amountToReceive": "Amount to receive",
+      "amount": "Amount",
+      "date": "Date",
+      "account": "Account",
+      "accountPlaceholder": "Select account",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter description (optional)",
+      "confirm": "Confirm",
+      "amountRequired": "Amount must be greater than 0",
+      "accountRequired": "Please select an account",
+      "defaultDescription": "Payment for loan #{{id}}"
+    }
   }
 }

@@ -785,5 +785,44 @@
       "SESSION": "Phiên",
       "ADMIN": "Quản trị"
     }
+  },
+  "debts": {
+    "title": "Quản lý công nợ",
+    "subtitle": "Theo dõi và quản lý các khoản vay nợ của bạn",
+    "debtList": "Danh sách nợ",
+    "statistics": "Thống kê công nợ",
+    "totalLoanGiven": "Tổng đã cho vay",
+    "totalLoanReceived": "Tổng đã đi vay",
+    "totalPaid": "Tổng đã trả",
+    "totalReceived": "Tổng đã thu",
+    "noDebts": "Không có khoản nợ nào",
+    "date": "Ngày",
+    "description": "Mô tả",
+    "amount": "Số tiền",
+    "remainingAmount": "Còn nợ",
+    "actions": "Thao tác",
+    "payDebt": "Đã trả",
+    "receiveDebt": "Đã thu",
+    "loanGiven": "Đã cho vay",
+    "loanReceived": "Đã vay",
+    "total": "Tổng",
+    "unknown": "Không xác định",
+    "noDescription": "Không có mô tả",
+    "paymentModal": {
+      "payTitle": "Thanh toán nợ",
+      "receiveTitle": "Thu nợ",
+      "amountToPay": "Số tiền cần thanh toán",
+      "amountToReceive": "Số tiền cần thu",
+      "amount": "Số tiền",
+      "date": "Ngày",
+      "account": "Tài khoản",
+      "accountPlaceholder": "Chọn tài khoản",
+      "description": "Mô tả",
+      "descriptionPlaceholder": "Nhập mô tả (tùy chọn)",
+      "confirm": "Xác nhận",
+      "amountRequired": "Số tiền phải lớn hơn 0",
+      "accountRequired": "Vui lòng chọn tài khoản",
+      "defaultDescription": "Thanh toán cho khoản vay #{{id}}"
+    }
   }
 }
