@@ -174,11 +174,7 @@ export class CategoryService {
       },
       select: CATEGORY_SELECT_MINIMAL,
     });
-    if (
-      !category ||
-      category.userId !== userId ||
-      category.deletedAt !== null
-    ) {
+    if (!category || category.userId !== userId) {
       throwAppError(ErrorCode.CATEGORY_NOT_FOUND, 'Category not found');
     }
     return category;
@@ -216,16 +212,12 @@ export class CategoryService {
     userId: string,
     query: IListCategoriesQueryDto = {},
   ): Promise<CategoryListResponse> {
-    const { type, includeDeleted = false } = query;
+    const { type } = query;
 
     const where: CategoryWhereInput = {
       type: type && type.length > 0 ? { in: type } : undefined,
       userId,
     };
-
-    if (!includeDeleted) {
-      where.deletedAt = null;
-    }
 
     if (type && type.length > 0) {
       where.type = { in: type };

@@ -14,7 +14,6 @@ export const UpsertCategoryDto = z.object({
 
 export const ListCategoriesQueryDto = z.object({
   type: createArrayPreprocess(z.enum(CategoryType)),
-  includeDeleted: z.boolean().default(false).optional(),
 });
 
 export type IUpsertCategoryDto = z.infer<typeof UpsertCategoryDto>;

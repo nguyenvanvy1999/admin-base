@@ -99,7 +99,6 @@ Người dùng của hệ thống.
 - `role`: UserRole (default: user)
 - `baseCurrencyId`: String - Currency mặc định
 - `settings`: Json? - Cài đặt người dùng
-- `deletedAt`: DateTime? - Soft delete
 - `created`, `modified`: DateTime
 
 **Relations**:
@@ -130,7 +129,6 @@ Tài khoản của người dùng.
 - `paymentDay`: Int? - Ngày thanh toán
 - `notifyDaysBefore`: Int? - Thông báo trước bao nhiêu ngày
 - `meta`: Json? - Metadata
-- `deletedAt`: DateTime? - Soft delete
 - `created`, `modified`: DateTime
 
 **Relations**:
@@ -160,7 +158,6 @@ Danh mục cho giao dịch.
 - `icon`: String?
 - `color`: String?
 - `isLocked`: Boolean (default: false)
-- `deletedAt`: DateTime? - Soft delete
 - `created`, `modified`: DateTime
 
 **Relations**:
@@ -190,7 +187,6 @@ Tài sản đầu tư.
 - `currencyId`: String - Currency của asset
 - `baseCurrencyId`: String? - Currency của tài khoản nguồn (VND)
 - `extra`: Json? - Metadata (ví dụ: ccqId cho CCQ)
-- `deletedAt`: DateTime? - Soft delete
 - `created`, `modified`: DateTime
 
 **Relations**:
@@ -237,7 +233,6 @@ Giao dịch thống nhất cho tất cả loại giao dịch.
 - `note`: String?
 - `receiptUrl`: String?
 - `metadata`: Json?
-- `deletedAt`: DateTime? - Soft delete
 - `created`, `modified`: DateTime
 
 **Relations**:
@@ -405,7 +400,6 @@ Ngân sách theo danh mục.
 - `period`: BudgetPeriod
 - `startDate`: DateTime
 - `endDate`: DateTime?
-- `deletedAt`: DateTime? - Soft delete
 - `created`, `modified`: DateTime
 
 **Relations**:
@@ -429,7 +423,6 @@ Ngân sách theo danh mục.
 - `email`: String?
 - `address`: String?
 - `note`: String?
-- `deletedAt`: DateTime? - Soft delete
 - `created`, `modified`: DateTime
 
 **Relations**:
@@ -480,7 +473,6 @@ Tags cho giao dịch.
 - `userId`: String
 - `name`: String
 - `description`: String?
-- `deletedAt`: DateTime? - Soft delete
 - `created`, `modified`: DateTime
 
 **Relations**:
@@ -533,18 +525,6 @@ Indexes được tạo cho:
 - Frequently queried fields (date, type, etc.)
 - Composite indexes cho queries phức tạp
 - Unique constraints (username, userId+name combinations)
-
-## Soft Delete
-
-Nhiều models hỗ trợ soft delete thông qua trường `deletedAt`:
-- User
-- Account
-- Category
-- Investment
-- Transaction
-- Budget
-- Entity
-- Tag
 
 ## Decimal Precision
 

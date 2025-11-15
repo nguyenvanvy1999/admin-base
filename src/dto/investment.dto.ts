@@ -41,7 +41,6 @@ export const InvestmentDto = t.NoValidate(
     currencyId: t.String(),
     baseCurrencyId: t.Nullable(t.String()),
     extra: t.Nullable(t.Any()),
-    deletedAt: t.Nullable(t.String()),
     created: t.String(),
     modified: t.String(),
     currency: CurrencyDto,

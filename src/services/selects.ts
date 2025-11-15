@@ -33,7 +33,6 @@ export const CATEGORY_SELECT_MINIMAL = {
   isLocked: true,
   type: true,
   parentId: true,
-  deletedAt: true,
 } as const;
 
 export const TAG_SELECT_FULL = {
@@ -120,7 +119,6 @@ export const INVESTMENT_SELECT_FULL = {
   currencyId: true,
   baseCurrencyId: true,
   extra: true,
-  deletedAt: true,
   created: true,
   modified: true,
   currency: {

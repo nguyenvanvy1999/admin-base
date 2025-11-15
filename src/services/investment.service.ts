@@ -29,7 +29,6 @@ const serializeInvestment = (investment: {
   currencyId: string;
   baseCurrencyId: string | null;
   extra: unknown;
-  deletedAt: Date | null;
   created: Date;
   modified: Date;
   currency: {
@@ -47,7 +46,6 @@ const serializeInvestment = (investment: {
 }): InvestmentResponse => ({
   ...investment,
   extra: investment.extra ?? null,
-  deletedAt: investment.deletedAt ? investment.deletedAt.toISOString() : null,
   created: investment.created.toISOString(),
   modified: investment.modified.toISOString(),
 });
