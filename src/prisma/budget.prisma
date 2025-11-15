@@ -16,7 +16,7 @@ model Budget {
   categories BudgetCategory[]
   accounts   BudgetAccount[]
   periods    BudgetPeriodRecord[]
-  category   Category?            @relation(fields: [categoryId], references: [id])
+  category   Category?            @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   categoryId String?
 
   @@index([userId], name: "budget_userId_idx")

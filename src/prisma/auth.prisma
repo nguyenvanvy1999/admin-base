@@ -22,13 +22,13 @@ model UserAuthProvider {
   authUserId String @map("auth_user_id")
 
   providerCode String       @map("provider_code")
-  provider     AuthProvider @relation(fields: [providerCode], references: [code])
+  provider     AuthProvider @relation(fields: [providerCode], references: [code], onDelete: Restrict)
 
   modified   DateTime  @updatedAt()
   created    DateTime  @default(now())
   lastUsedAt DateTime? @map("last_used_at")
 
-  authUser User @relation(fields: [authUserId], references: [id])
+  authUser User @relation(fields: [authUserId], references: [id], onDelete: Cascade)
 
   @@unique([providerCode, providerId])
   @@index([authUserId])
@@ -174,8 +174,8 @@ model Referral {
   created    DateTime       @default(now())
   status     ReferralStatus @default(inactive)
 
-  referrer User @relation("UserReferrer", fields: [referrerId], references: [id])
-  referred User @relation("UserReferred", fields: [referredId], references: [id])
+  referrer User @relation("UserReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referred User @relation("UserReferred", fields: [referredId], references: [id], onDelete: Cascade)
 
   @@index([referrerId, referredId])
   @@map("referrals")
