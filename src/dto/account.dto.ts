@@ -1,4 +1,4 @@
-import { AccountType } from '@server/generated/browser-index';
+import { AccountType } from '@server/generated';
 import { t } from 'elysia';
 import { z } from 'zod';
 import {

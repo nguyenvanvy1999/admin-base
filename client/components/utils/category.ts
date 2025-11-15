@@ -1,5 +1,5 @@
 import type { CategoryTreeResponse } from '@server/dto/category.dto';
-import type { CategoryType } from '@server/generated/browser-index';
+import type { CategoryType } from '@server/generated';
 import {
   IconBabyCarriage,
   IconBed,

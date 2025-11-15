@@ -5,7 +5,7 @@ import type {
   AccountResponse,
   IUpsertAccountDto,
 } from '@server/dto/account.dto';
-import type { AccountType } from '@server/generated/browser-index';
+import type { AccountType } from '@server/generated';
 
 export class AccountService extends ServiceBase {
   constructor() {

@@ -5,7 +5,7 @@ import {
   InvestmentAssetType,
   InvestmentMode,
   type TradeSide,
-} from '@server/generated/browser-index';
+} from '@server/generated';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 

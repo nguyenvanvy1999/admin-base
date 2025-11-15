@@ -8,7 +8,7 @@ import type {
   TransactionDetail,
   TransactionListResponse,
 } from '@server/dto/transaction.dto';
-import type { TransactionType } from '@server/generated/browser-index';
+import type { TransactionType } from '@server/generated';
 
 export class TransactionService extends ServiceBase {
   constructor() {

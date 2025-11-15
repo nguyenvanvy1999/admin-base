@@ -1,7 +1,7 @@
 import type { FormComponentRef } from '@client/components/FormComponent';
 import { transactionService } from '@client/services';
 import { DeferredPromise } from '@open-draft/deferred-promise';
-import { TransactionType } from '@server/generated/browser-index';
+import { TransactionType } from '@server/generated';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 

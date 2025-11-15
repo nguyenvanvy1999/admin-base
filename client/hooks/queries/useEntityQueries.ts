@@ -1,5 +1,5 @@
 import { entityService } from '@client/services';
-import { EntityType } from '@server/generated/browser-index';
+import { EntityType } from '@server/generated';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { createQueryHook } from './createQueryHook';

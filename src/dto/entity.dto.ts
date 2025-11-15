@@ -1,4 +1,4 @@
-import { EntityType } from '@server/generated/browser-index';
+import { EntityType } from '@server/generated';
 import { t } from 'elysia';
 import { z } from 'zod';
 import {

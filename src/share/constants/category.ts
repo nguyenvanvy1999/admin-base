@@ -1,4 +1,4 @@
-import { CategoryType } from '@server/generated/browser-index';
+import { CategoryType } from '@server/generated';
 
 export const CATEGORY_NAME = {
   // Expense categories - Parents

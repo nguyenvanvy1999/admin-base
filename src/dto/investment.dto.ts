@@ -1,7 +1,4 @@
-import {
-  InvestmentAssetType,
-  InvestmentMode,
-} from '@server/generated/browser-index';
+import { InvestmentAssetType, InvestmentMode } from '@server/generated';
 import { t } from 'elysia';
 import { z } from 'zod';
 import {

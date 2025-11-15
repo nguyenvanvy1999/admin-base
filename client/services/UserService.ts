@@ -11,7 +11,7 @@ import type {
   IUpdateProfileDto,
   UpdateProfileRes,
 } from '@server/dto/user.dto';
-import type { UserRole } from '@server/generated/browser-index';
+import type { UserRole } from '@server/generated';
 
 export class UserService extends ServiceBase {
   constructor() {
