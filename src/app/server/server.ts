@@ -6,6 +6,8 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-node';
 import { appEnv } from '@server/configs/env';
 import { logger } from '@server/configs/logger';
+import { httpLoggerMiddleware } from '@server/configs/middlewares/http-logger.middleware';
+import { redis } from '@server/configs/redis';
 import { swaggerConfig } from '@server/configs/swagger';
 import accountController from '@server/controllers/account.controller';
 import { adminController } from '@server/controllers/admin';
@@ -39,9 +41,9 @@ export async function createServer() {
     },
   });
 
-  // if (appEnv.ENB_HTTP_LOG) {
-  //   app.use(httpLoggerMiddleware());
-  // }
+  if (appEnv.ENB_HTTP_LOG) {
+    app.use(httpLoggerMiddleware());
+  }
 
   app
     .use(
@@ -98,8 +100,7 @@ export async function createServer() {
 
   // gracefulShutdownService.setupShutdownHandlers();
   //
-  // await redis.connect();
-  // await subscribeInbox();
+  await redis.connect();
 
   app.listen({
     port: appEnv.PORT,
@@ -107,7 +108,7 @@ export async function createServer() {
   });
 
   logger.info(
-    `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port} (PID: ${process.pid})`,
+    `🦊 App is running at http://${app.server?.hostname}:${app.server?.port} (PID: ${process.pid})`,
   );
 
   return app;
