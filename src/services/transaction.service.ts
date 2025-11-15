@@ -1390,6 +1390,141 @@ export class TransactionService {
 
     return formatTransactionRecord(transaction);
   }
+
+  async getUnpaidDebts(
+    userId: string,
+    query?: {
+      from?: string;
+      to?: string;
+    },
+  ): Promise<Array<TransactionDetail & { remainingAmount: number }>> {
+    const dateFrom = query?.from ? new Date(query.from) : undefined;
+    const dateTo = query?.to ? new Date(query.to) : undefined;
+
+    const whereClause: TransactionWhereInput = {
+      userId,
+      type: {
+        in: [
+          TransactionType.loan_given,
+          TransactionType.loan_received,
+          TransactionType.repay_debt,
+          TransactionType.collect_debt,
+        ],
+      },
+      ...(dateFrom || dateTo
+        ? {
+            date: {
+              ...(dateFrom ? { gte: dateFrom } : {}),
+              ...(dateTo ? { lte: dateTo } : {}),
+            },
+          }
+        : {}),
+    };
+
+    const allLoanTransactions = await this.deps.db.transaction.findMany({
+      where: whereClause,
+      select: TRANSACTION_SELECT_FULL,
+      orderBy: {
+        date: 'desc',
+      },
+    });
+
+    const entityDebtMap = new Map<
+      string,
+      {
+        loans: Array<{
+          id: string;
+          type: TransactionType;
+          amount: Decimal;
+          date: Date;
+          transaction: TransactionRecord;
+        }>;
+        totalRepaid: Decimal;
+        totalCollected: Decimal;
+      }
+    >();
+
+    for (const tx of allLoanTransactions) {
+      if (!tx.entityId) continue;
+
+      const amount = new Decimal(tx.amount);
+      const entityKey = tx.entityId;
+
+      if (!entityDebtMap.has(entityKey)) {
+        entityDebtMap.set(entityKey, {
+          loans: [],
+          totalRepaid: new Decimal(0),
+          totalCollected: new Decimal(0),
+        });
+      }
+
+      const entityDebt = entityDebtMap.get(entityKey)!;
+
+      if (
+        tx.type === TransactionType.loan_given ||
+        tx.type === TransactionType.loan_received
+      ) {
+        entityDebt.loans.push({
+          id: tx.id,
+          type: tx.type,
+          amount,
+          date: tx.date,
+          transaction: tx as TransactionRecord,
+        });
+      } else if (tx.type === TransactionType.repay_debt) {
+        entityDebt.totalRepaid = entityDebt.totalRepaid.plus(amount);
+      } else if (tx.type === TransactionType.collect_debt) {
+        entityDebt.totalCollected = entityDebt.totalCollected.plus(amount);
+      }
+    }
+
+    const debtTransactions: Array<
+      TransactionDetail & { remainingAmount: number }
+    > = [];
+
+    for (const [_, entityDebt] of entityDebtMap.entries()) {
+      let totalLoanGiven = new Decimal(0);
+      let totalLoanReceived = new Decimal(0);
+
+      for (const loan of entityDebt.loans) {
+        if (loan.type === TransactionType.loan_given) {
+          totalLoanGiven = totalLoanGiven.plus(loan.amount);
+        } else {
+          totalLoanReceived = totalLoanReceived.plus(loan.amount);
+        }
+      }
+
+      const netLoanGiven = totalLoanGiven.minus(entityDebt.totalCollected);
+      const netLoanReceived = totalLoanReceived.minus(entityDebt.totalRepaid);
+
+      for (const loan of entityDebt.loans) {
+        let remainingAmount: number;
+        if (loan.type === TransactionType.loan_given) {
+          const ratio = totalLoanGiven.gt(0)
+            ? loan.amount.div(totalLoanGiven)
+            : new Decimal(0);
+          const calculated = netLoanGiven.times(ratio);
+          remainingAmount = calculated.gt(0) ? calculated.toNumber() : 0;
+        } else {
+          const ratio = totalLoanReceived.gt(0)
+            ? loan.amount.div(totalLoanReceived)
+            : new Decimal(0);
+          const calculated = netLoanReceived.times(ratio);
+          remainingAmount = calculated.gt(0) ? calculated.toNumber() : 0;
+        }
+
+        if (remainingAmount > 0) {
+          const formatted = formatTransactionRecord(loan.transaction);
+          debtTransactions.push({
+            ...formatted,
+            remainingAmount,
+          });
+        }
+      }
+    }
+
+    return debtTransactions;
+  }
 }
 
 export const transactionService = new TransactionService();
