@@ -1,7 +1,13 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share';
+import {
+  DB_PREFIX,
+  ErrorCode,
+  type IdUtil,
+  idUtil,
+  throwAppError,
+} from '@server/share';
 import type {
   IListInvestmentValuationsQueryDto,
   IUpsertInvestmentValuationDto,
@@ -17,9 +23,11 @@ export class InvestmentValuationService {
     private readonly deps: {
       db: IDb;
       investmentService: InvestmentService;
+      idUtil: IdUtil;
     } = {
       db: prisma,
       investmentService: investmentService,
+      idUtil,
     },
   ) {}
 
@@ -76,6 +84,7 @@ export class InvestmentValuationService {
     return this.mapValuation(
       await this.deps.db.investmentValuation.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.VALUATION),
           userId,
           investmentId,
           price: data.price,
@@ -112,7 +121,7 @@ export class InvestmentValuationService {
   async listValuations(
     userId: string,
     investmentId: string,
-    query: IListInvestmentValuationsQueryDto = {},
+    query: IListInvestmentValuationsQueryDto,
   ) {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 

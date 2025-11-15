@@ -1,12 +1,18 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type { Prisma } from '@server/generated';
+import type {
+  InvestmentContributionWhereInput,
+  Prisma,
+} from '@server/generated';
 import { type ContributionType, InvestmentMode } from '@server/generated';
 import {
+  DB_PREFIX,
   dateToIsoString,
   decimalToNullableNumber,
   decimalToNumber,
   ErrorCode,
+  type IdUtil,
+  idUtil,
   throwAppError,
 } from '@server/share';
 import type {
@@ -64,11 +70,13 @@ export class InvestmentContributionService {
       investmentService: InvestmentService;
       accountBalanceService: AccountBalanceService;
       investmentPositionService: InvestmentPositionService;
+      idUtil: IdUtil;
     } = {
       db: prisma,
       investmentService: investmentService,
       accountBalanceService: accountBalanceService,
       investmentPositionService: investmentPositionService,
+      idUtil,
     },
   ) {}
 
@@ -161,6 +169,7 @@ export class InvestmentContributionService {
     return this.deps.db.$transaction(async (tx) => {
       const contribution = await tx.investmentContribution.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.CONTRIBUTION),
           userId,
           investmentId,
           accountId: data.accountId ?? null,
@@ -192,7 +201,7 @@ export class InvestmentContributionService {
   async listContributions(
     userId: string,
     investmentId: string,
-    query: IListInvestmentContributionsQueryDto = {},
+    query: IListInvestmentContributionsQueryDto,
   ): Promise<InvestmentContributionListResponse> {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
@@ -205,7 +214,7 @@ export class InvestmentContributionService {
       sortOrder = 'desc',
     } = query;
 
-    const where: Record<string, unknown> = {
+    const where: InvestmentContributionWhereInput = {
       userId,
       investmentId,
     };

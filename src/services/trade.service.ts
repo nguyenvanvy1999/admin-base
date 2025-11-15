@@ -5,7 +5,13 @@ import type {
   Prisma,
   TradeSide,
 } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share';
+import {
+  DB_PREFIX,
+  ErrorCode,
+  type IdUtil,
+  idUtil,
+  throwAppError,
+} from '@server/share';
 import type {
   ICreateInvestmentTradeDto,
   IListInvestmentTradesQueryDto,
@@ -45,10 +51,12 @@ export class InvestmentTradeService {
       db: IDb;
       investmentService: InvestmentService;
       accountBalanceService: AccountBalanceService;
+      idUtil: IdUtil;
     } = {
       db: prisma,
       investmentService: investmentService,
       accountBalanceService: accountBalanceService,
+      idUtil,
     },
   ) {}
 
@@ -102,6 +110,7 @@ export class InvestmentTradeService {
     return this.deps.db.$transaction(async (tx) => {
       const trade = await tx.investmentTrade.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.TRADE),
           userId,
           investmentId,
           accountId: data.accountId,
@@ -140,7 +149,7 @@ export class InvestmentTradeService {
   async listTrades(
     userId: string,
     investmentId: string,
-    query: IListInvestmentTradesQueryDto = {},
+    query: IListInvestmentTradesQueryDto,
   ) {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 

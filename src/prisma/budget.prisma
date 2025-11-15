@@ -25,7 +25,7 @@ model Budget {
 
 // Categories associated with a budget
 model BudgetCategory {
-  id         String   @id
+  id         String   @id @default(uuid(7))
   budgetId   String   @map("budget_id")
   categoryId String   @map("category_id")
   created    DateTime @default(now())
@@ -41,7 +41,7 @@ model BudgetCategory {
 
 // Accounts associated with a budget
 model BudgetAccount {
-  id        String   @id
+  id        String   @id @default(uuid(7))
   budgetId  String   @map("budget_id")
   accountId String   @map("account_id")
   created   DateTime @default(now())

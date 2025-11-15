@@ -7,10 +7,13 @@ import type {
 } from '@server/generated';
 import { BudgetPeriod, TransactionType } from '@server/generated';
 import {
+  DB_PREFIX,
   dateToIsoString,
   dateToNullableIsoString,
   decimalToString,
   ErrorCode,
+  type IdUtil,
+  idUtil,
   throwAppError,
 } from '@server/share';
 import Decimal from 'decimal.js';
@@ -49,9 +52,11 @@ export class BudgetService {
     private readonly deps: {
       db: IDb;
       currencyConversionService: CurrencyConversionService;
+      idUtil: IdUtil;
     } = {
       db: prisma,
       currencyConversionService: currencyConversionService,
+      idUtil,
     },
   ) {}
 
@@ -364,6 +369,7 @@ export class BudgetService {
     } else {
       const budget = await this.deps.db.budget.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.BUDGET),
           userId,
           name: data.name,
           amount: data.amount,
@@ -564,6 +570,7 @@ export class BudgetService {
         // Always create a period record if it doesn't exist
         existingPeriod = await this.deps.db.budgetPeriodRecord.create({
           data: {
+            id: this.deps.idUtil.dbId(DB_PREFIX.BUDGET_PERIOD),
             budgetId,
             periodStartDate: currentStart,
             periodEndDate,

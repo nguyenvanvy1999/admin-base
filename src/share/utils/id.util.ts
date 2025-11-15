@@ -7,10 +7,18 @@ export enum DB_PREFIX {
   PERMISSION = 'perm',
   ROLE = 'role',
   SETTING = 'setting',
-  USER_AUTH_PROVIDER = 'user_oauth',
   AUTH_PROVIDER = 'auth_prov',
   ACCOUNT = 'acc',
   TRANSACTION = 'txn',
+  TAG = 'tag',
+  EVENT = 'event',
+  ENTITY = 'entity',
+  BUDGET = 'budget',
+  INVESTMENT = 'invest',
+  TRADE = 'trade',
+  CONTRIBUTION = 'contrib',
+  VALUATION = 'val',
+  BUDGET_PERIOD = 'budget_period',
 }
 
 export class IdUtil {

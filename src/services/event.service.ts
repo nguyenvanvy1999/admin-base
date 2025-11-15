@@ -5,7 +5,13 @@ import type {
   EventWhereInput,
   Prisma,
 } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share';
+import {
+  DB_PREFIX,
+  ErrorCode,
+  type IdUtil,
+  idUtil,
+  throwAppError,
+} from '@server/share';
 import type { IListEventsQueryDto, IUpsertEventDto } from '../dto/event.dto';
 
 import { EVENT_SELECT_FULL, EVENT_SELECT_MINIMAL } from './selects';
@@ -23,7 +29,9 @@ const mapEvent = (
 });
 
 export class EventService {
-  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+  constructor(
+    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
+  ) {}
 
   private async validateEventOwnership(userId: string, eventId: string) {
     const event = await this.deps.db.event.findFirst({
@@ -95,6 +103,7 @@ export class EventService {
     } else {
       const event = await this.deps.db.event.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.EVENT),
           userId,
           name: data.name,
           startAt,
@@ -122,7 +131,7 @@ export class EventService {
     return mapEvent(event);
   }
 
-  async listEvents(userId: string, query: IListEventsQueryDto = {}) {
+  async listEvents(userId: string, query: IListEventsQueryDto) {
     const {
       search,
       startAtFrom,

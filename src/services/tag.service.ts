@@ -5,7 +5,14 @@ import type {
   TagOrderByWithRelationInput,
   TagWhereInput,
 } from '@server/generated';
-import { dateToIsoString, ErrorCode, throwAppError } from '@server/share';
+import {
+  DB_PREFIX,
+  dateToIsoString,
+  ErrorCode,
+  type IdUtil,
+  idUtil,
+  throwAppError,
+} from '@server/share';
 import type {
   IListTagsQueryDto,
   IUpsertTagDto,
@@ -25,7 +32,9 @@ const formatTag = (tag: TagRecord): TagResponse => ({
 });
 
 export class TagService {
-  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+  constructor(
+    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
+  ) {}
 
   private async validateTagOwnership(userId: string, tagId: string) {
     const tag = await this.deps.db.tag.findFirst({
@@ -84,6 +93,7 @@ export class TagService {
     } else {
       const tag = await this.deps.db.tag.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.TAG),
           userId,
           name: lowerName,
           description: data.description ?? null,
@@ -112,7 +122,7 @@ export class TagService {
 
   async listTags(
     userId: string,
-    query: IListTagsQueryDto = {},
+    query: IListTagsQueryDto,
   ): Promise<TagListResponse> {
     const {
       search,

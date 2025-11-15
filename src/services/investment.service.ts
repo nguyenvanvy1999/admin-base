@@ -2,7 +2,13 @@ import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { InvestmentWhereInput } from '@server/generated';
 import { type InvestmentAssetType, InvestmentMode } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share';
+import {
+  DB_PREFIX,
+  ErrorCode,
+  type IdUtil,
+  idUtil,
+  throwAppError,
+} from '@server/share';
 import type {
   IListInvestmentsQueryDto,
   InvestmentLatestValuationResponse,
@@ -50,8 +56,10 @@ export class InvestmentService {
   constructor(
     private readonly deps: {
       db: IDb;
+      idUtil: IdUtil;
     } = {
       db: prisma,
+      idUtil,
     },
   ) {}
 
@@ -109,6 +117,7 @@ export class InvestmentService {
 
     const created = await this.deps.db.investment.create({
       data: {
+        id: this.deps.idUtil.dbId(DB_PREFIX.INVESTMENT),
         ...payload,
         userId,
       },
@@ -117,7 +126,7 @@ export class InvestmentService {
     return serializeInvestment(created);
   }
 
-  async listInvestments(userId: string, query: IListInvestmentsQueryDto = {}) {
+  async listInvestments(userId: string, query: IListInvestmentsQueryDto) {
     const {
       assetTypes,
       modes,

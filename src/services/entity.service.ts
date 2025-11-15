@@ -5,7 +5,13 @@ import type {
   EntityWhereInput,
   Prisma,
 } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share';
+import {
+  DB_PREFIX,
+  ErrorCode,
+  type IdUtil,
+  idUtil,
+  throwAppError,
+} from '@server/share';
 import type {
   IListEntitiesQueryDto,
   IUpsertEntityDto,
@@ -24,7 +30,9 @@ const mapEntity = (
 });
 
 export class EntityService {
-  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+  constructor(
+    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
+  ) {}
 
   private async validateEntityOwnership(userId: string, entityId: string) {
     const entity = await this.deps.db.entity.findFirst({
@@ -85,6 +93,7 @@ export class EntityService {
     } else {
       const entity = await this.deps.db.entity.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.ENTITY),
           userId,
           name: data.name,
           type: data.type,
