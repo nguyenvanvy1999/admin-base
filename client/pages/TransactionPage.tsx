@@ -117,7 +117,9 @@ const TransactionPage = () => {
   };
 
   const handleConfirmDelete = async () => {
-    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
+    await deleteHandler.handleConfirmDelete((ids: string[]) =>
+      deleteMutation.mutateAsync(ids[0]),
+    );
   };
 
   const handleSearch = () => {

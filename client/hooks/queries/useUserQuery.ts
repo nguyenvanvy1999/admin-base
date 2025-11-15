@@ -20,7 +20,7 @@ export const useUserQuery = () => {
         id: user.id,
         username: user.username,
         name: user.name,
-        role: user.role,
+        role: user.roleIds && user.roleIds.length > 0 ? 'admin' : 'user',
         isSuperAdmin: user.isSuperAdmin,
         permissions: user.permissions,
       });

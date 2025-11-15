@@ -1,7 +1,7 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
+import type { ActionRes } from '@server/dto/common.dto';
 import type {
   IUpsertTagDto,
-  TagDeleteResponse,
   TagListResponse,
   TagResponse,
 } from '@server/dto/tag.dto';
@@ -31,8 +31,8 @@ export class TagService extends ServiceBase {
     });
   }
 
-  deleteManyTags(ids: string[]): Promise<TagDeleteResponse> {
-    return this.post<TagDeleteResponse>(
+  deleteManyTags(ids: string[]): Promise<ActionRes> {
+    return this.post<ActionRes>(
       { ids },
       {
         endpoint: 'delete-many',

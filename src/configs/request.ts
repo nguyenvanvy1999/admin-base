@@ -1,5 +1,5 @@
 import type { Elysia } from 'elysia';
-import { IdUtil, type IPHeaders, type IReqMeta } from 'src/share';
+import { type IPHeaders, type IReqMeta, idUtil } from 'src/share';
 
 export const headersToCheck: IPHeaders[] = [
   'x-real-ip', // Nginx proxy/FastCGI
@@ -39,7 +39,7 @@ export const reqMeta = (app: Elysia) =>
   app.derive({ as: 'local' }, ({ request, set, server }) => {
     const headers = request.headers;
 
-    const requestId = headers.get('x-request-id') ?? IdUtil.token12();
+    const requestId = headers.get('x-request-id') ?? idUtil.token12();
     const timezone =
       headers.get('x-timezone') ??
       Intl.DateTimeFormat().resolvedOptions().timeZone;

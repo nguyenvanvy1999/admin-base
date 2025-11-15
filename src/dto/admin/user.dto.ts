@@ -18,6 +18,13 @@ export const ListUsersQueryDto = createListQueryDto({
 export type IUpsertUserDto = z.infer<typeof UpsertUserDto>;
 export type IListUsersQueryDto = z.infer<typeof ListUsersQueryDto>;
 
+export const UserRoleDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    title: t.String(),
+  }),
+);
+
 export const UserResDto = t.NoValidate(
   t.Object({
     id: t.String(),
@@ -27,6 +34,7 @@ export const UserResDto = t.NoValidate(
     created: t.String(),
     modified: t.String(),
     baseCurrency: t.Nullable(CurrencyDto),
+    roles: t.Array(UserRoleDto),
   }),
 );
 

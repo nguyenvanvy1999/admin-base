@@ -28,3 +28,4 @@ export class TimeUtil {
     return value * (multipliers[unit] || 60);
   }
 }
+export const timeUtil = new TimeUtil();

@@ -33,9 +33,17 @@ export const useBudgetsQuery = createQueryHook<
   any
 >({
   queryKey: 'budgets',
-  serviceMethod: (query) => budgetService.listBudgets(query),
+  serviceMethod: (query) =>
+    budgetService.listBudgets({
+      ...query,
+      page: query.page ?? 1,
+      limit: query.limit ?? 20,
+      sortOrder: query.sortOrder ?? 'desc',
+    }),
   filterTransformer: (criteria, query) => ({
     ...query,
+    page: query.page ?? 1,
+    limit: query.limit ?? 20,
     search: criteria.search?.trim() || undefined,
     period:
       criteria.period && criteria.period.length > 0

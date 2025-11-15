@@ -1,6 +1,5 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
 import type {
-  BudgetDeleteResponse,
   BudgetListResponse,
   BudgetPeriodDetailResponse,
   BudgetPeriodListResponse,
@@ -9,6 +8,7 @@ import type {
   IListBudgetsQueryDto,
   IUpsertBudgetDto,
 } from '@server/dto/budget.dto';
+import type { ActionRes } from '@server/dto/common.dto';
 
 export class BudgetService extends ServiceBase {
   constructor() {
@@ -35,8 +35,8 @@ export class BudgetService extends ServiceBase {
     return this.post<BudgetResponse>(data);
   }
 
-  deleteManyBudgets(ids: string[]): Promise<BudgetDeleteResponse> {
-    return this.post<BudgetDeleteResponse>(
+  deleteManyBudgets(ids: string[]): Promise<ActionRes> {
+    return this.post<ActionRes>(
       { ids },
       {
         endpoint: 'delete-many',

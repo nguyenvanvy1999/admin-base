@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'bun:test';
-import { ArrayUtil, IdUtil, TimeUtil } from 'src/share/utils';
+import { ArrayUtil, idUtil, timeUtil } from 'src/share/utils';
 import { DB_PREFIX } from 'src/share/utils/id.util';
 
 describe('Functions Utils', () => {
   describe('Token Generation', () => {
     describe('token8', () => {
       it('should generate an 8-character token', () => {
-        const token = IdUtil.token8();
+        const token = idUtil.token8();
         expect(token).toBeDefined();
         expect(typeof token).toBe('string');
         expect(token.length).toBe(8);
       });
       it('should generate token with prefix', () => {
         const prefix = 'TEST';
-        const token = IdUtil.token8(prefix);
+        const token = idUtil.token8(prefix);
         expect(token).toBeDefined();
         expect(token.startsWith(`${prefix}_`)).toBe(true);
         expect(token.length).toBe(prefix.length + 1 + 8);
@@ -21,21 +21,21 @@ describe('Functions Utils', () => {
       it('should generate unique tokens', () => {
         const tokens = new Set();
         for (let i = 0; i < 100; i++) {
-          tokens.add(IdUtil.token8());
+          tokens.add(idUtil.token8());
         }
         expect(tokens.size).toBe(100);
       });
     });
     describe('token12', () => {
       it('should generate a 12-character token', () => {
-        const token = IdUtil.token12();
+        const token = idUtil.token12();
         expect(token).toBeDefined();
         expect(typeof token).toBe('string');
         expect(token.length).toBe(12);
       });
       it('should generate token with prefix', () => {
         const prefix = 'USER';
-        const token = IdUtil.token12(prefix);
+        const token = idUtil.token12(prefix);
         expect(token).toBeDefined();
         expect(token.startsWith(`${prefix}_`)).toBe(true);
         expect(token.length).toBe(prefix.length + 1 + 12);
@@ -43,21 +43,21 @@ describe('Functions Utils', () => {
       it('should generate unique tokens', () => {
         const tokens = new Set();
         for (let i = 0; i < 100; i++) {
-          tokens.add(IdUtil.token12());
+          tokens.add(idUtil.token12());
         }
         expect(tokens.size).toBe(100);
       });
     });
     describe('token16', () => {
       it('should generate a 16-character token', () => {
-        const token = IdUtil.token16();
+        const token = idUtil.token16();
         expect(token).toBeDefined();
         expect(typeof token).toBe('string');
         expect(token.length).toBe(16);
       });
       it('should generate token with prefix', () => {
         const prefix = 'ORDER';
-        const token = IdUtil.token16(prefix);
+        const token = idUtil.token16(prefix);
         expect(token).toBeDefined();
         expect(token.startsWith(`${prefix}_`)).toBe(true);
         expect(token.length).toBe(prefix.length + 1 + 16);
@@ -65,21 +65,21 @@ describe('Functions Utils', () => {
       it('should generate unique tokens', () => {
         const tokens = new Set();
         for (let i = 0; i < 100; i++) {
-          tokens.add(IdUtil.token16());
+          tokens.add(idUtil.token16());
         }
         expect(tokens.size).toBe(100);
       });
     });
     describe('token32', () => {
       it('should generate a 32-character token', () => {
-        const token = IdUtil.token32();
+        const token = idUtil.token32();
         expect(token).toBeDefined();
         expect(typeof token).toBe('string');
         expect(token.length).toBe(32);
       });
       it('should generate token with prefix', () => {
         const prefix = 'SESSION';
-        const token = IdUtil.token32(prefix);
+        const token = idUtil.token32(prefix);
         expect(token).toBeDefined();
         expect(token.startsWith(`${prefix}_`)).toBe(true);
         expect(token.length).toBe(prefix.length + 1 + 32);
@@ -87,21 +87,21 @@ describe('Functions Utils', () => {
       it('should generate unique tokens', () => {
         const tokens = new Set();
         for (let i = 0; i < 100; i++) {
-          tokens.add(IdUtil.token32());
+          tokens.add(idUtil.token32());
         }
         expect(tokens.size).toBe(100);
       });
     });
     describe('dbId', () => {
       it('should generate a 16-character ID', () => {
-        const id = IdUtil.dbId();
+        const id = idUtil.dbId();
         expect(id).toBeDefined();
         expect(typeof id).toBe('string');
         expect(id.length).toBe(16);
       });
       it('should generate ID with DB prefix', () => {
         const prefix = DB_PREFIX.USER;
-        const id = IdUtil.dbId(prefix);
+        const id = idUtil.dbId(prefix);
         expect(id).toBeDefined();
         expect(id.startsWith(`${prefix}_`)).toBe(true);
         expect(id.length).toBe(prefix.length + 1 + 16);
@@ -109,7 +109,7 @@ describe('Functions Utils', () => {
       it('should generate unique IDs', () => {
         const ids = new Set();
         for (let i = 0; i < 100; i++) {
-          ids.add(IdUtil.dbId());
+          ids.add(idUtil.dbId());
         }
         expect(ids.size).toBe(100);
       });
@@ -120,19 +120,19 @@ describe('Functions Utils', () => {
     describe('isExpired', () => {
       it('should return true for past dates', () => {
         const pastDate = new Date(Date.now() - 86400000);
-        expect(TimeUtil.isExpired(pastDate)).toBe(true);
+        expect(timeUtil.isExpired(pastDate)).toBe(true);
       });
       it('should return true for past timestamps', () => {
         const pastTimestamp = Date.now() - 86400000;
-        expect(TimeUtil.isExpired(pastTimestamp)).toBe(true);
+        expect(timeUtil.isExpired(pastTimestamp)).toBe(true);
       });
       it('should return false for future dates', () => {
         const futureDate = new Date(Date.now() + 86400000);
-        expect(TimeUtil.isExpired(futureDate)).toBe(false);
+        expect(timeUtil.isExpired(futureDate)).toBe(false);
       });
       it('should return false for future timestamps', () => {
         const futureTimestamp = Date.now() + 86400000;
-        expect(TimeUtil.isExpired(futureTimestamp)).toBe(false);
+        expect(timeUtil.isExpired(futureTimestamp)).toBe(false);
       });
     });
   });

@@ -1,6 +1,6 @@
 import { appEnv } from '@server/configs/env';
 import { logger } from '@server/configs/logger';
-import seedService from '@server/services/seed.service';
+import { seedService } from '@server/services/misc/seed.service';
 
 export async function initData() {
   if (appEnv.ENB_SEED) {

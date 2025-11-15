@@ -29,7 +29,7 @@
     "loading": "Loading...",
     "noData": "No data available",
     "created": "Created At",
-    "updatedAt": "Updated At",
+    "modified": "Modified",
     "back": "Back",
     "saveAndAdd": "Save and Add",
     "advancedFilter": "Advanced Filter",

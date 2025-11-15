@@ -1,10 +1,10 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
+import type { ActionRes } from '@server/dto/common.dto';
 import type {
   BatchTransactionsResponse,
   IBalanceAdjustmentDto,
   IBatchTransactionsDto,
   IUpsertTransaction,
-  TransactionDeleteResponse,
   TransactionDetail,
   TransactionListResponse,
 } from '@server/dto/transaction.dto';
@@ -43,8 +43,8 @@ export class TransactionService extends ServiceBase {
     return this.post<TransactionDetail>(data);
   }
 
-  deleteTransaction(transactionId: string): Promise<TransactionDeleteResponse> {
-    return this.delete<TransactionDeleteResponse>({
+  deleteTransaction(transactionId: string): Promise<ActionRes> {
+    return this.delete<ActionRes>({
       endpoint: transactionId,
     });
   }

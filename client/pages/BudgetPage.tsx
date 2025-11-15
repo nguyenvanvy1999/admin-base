@@ -10,7 +10,6 @@ import { PageContainer } from '@client/components/PageContainer';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateBudgetMutation,
-  useDeleteBudgetMutation,
   useDeleteManyBudgetsMutation,
   useUpdateBudgetMutation,
 } from '@client/hooks/mutations/useBudgetMutations';
@@ -68,7 +67,6 @@ const BudgetPage = () => {
 
   const createMutation = useCreateBudgetMutation();
   const updateMutation = useUpdateBudgetMutation();
-  const deleteMutation = useDeleteBudgetMutation();
   const deleteManyMutation = useDeleteManyBudgetsMutation();
 
   const handleSubmitForm = async (
@@ -92,7 +90,7 @@ const BudgetPage = () => {
   };
 
   const handleConfirmDelete = async () => {
-    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
+    await deleteHandler.handleConfirmDeleteMany(deleteManyMutation.mutateAsync);
   };
 
   const handleConfirmDeleteMany = async () => {
@@ -106,7 +104,6 @@ const BudgetPage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending ||
     deleteManyMutation.isPending;
 
   return (

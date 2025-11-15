@@ -387,9 +387,9 @@ const InvestmentDetailPage = () => {
     tradeMutation.isPending ||
     contributionMutation.isPending ||
     valuationMutation.isPending ||
-    deleteTradeMutation.isPending ||
-    deleteContributionMutation.isPending ||
-    deleteValuationMutation.isPending;
+    deleteManyTradesMutation.isPending ||
+    deleteManyContributionsMutation.isPending ||
+    deleteManyValuationsMutation.isPending;
 
   return (
     <Container fluid py="md">

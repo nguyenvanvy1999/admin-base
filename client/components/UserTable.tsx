@@ -1,7 +1,6 @@
 import { usePermission } from '@client/hooks/usePermission';
 import { ActionIcon } from '@mantine/core';
 import type { UserResponse } from '@server/dto/admin/user.dto';
-import { UserRole } from '@server/generated';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -63,20 +62,22 @@ const UserTable = ({
         ellipsis: true,
       },
       {
-        accessor: 'role',
+        accessor: 'roles',
         title: 'users.role',
         render: (value, row: UserResponse) => {
-          if (!row.role) return <span className="text-gray-400">-</span>;
-          const label =
-            row.role === UserRole.admin
-              ? t('users.roleAdmin')
-              : row.role === UserRole.user
-                ? t('users.roleUser')
-                : row.role;
+          if (!row.roles || row.roles.length === 0)
+            return <span className="text-gray-400">-</span>;
           return (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-              {label}
-            </span>
+            <div className="flex flex-wrap gap-1">
+              {row.roles.map((role) => (
+                <span
+                  key={role.id}
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+                >
+                  {role.title}
+                </span>
+              ))}
+            </div>
           );
         },
       },

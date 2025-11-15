@@ -328,6 +328,16 @@ export class UserService {
               symbol: true,
             },
           },
+          roles: {
+            select: {
+              role: {
+                select: {
+                  id: true,
+                  title: true,
+                },
+              },
+            },
+          },
         },
       }),
       this.deps.db.user.count({ where }),
@@ -349,6 +359,10 @@ export class UserService {
               symbol: user.baseCurrency.symbol,
             }
           : null,
+        roles: user.roles.map((rp) => ({
+          id: rp.role.id,
+          title: rp.role.title,
+        })),
       })),
       pagination: {
         page,
@@ -379,6 +393,16 @@ export class UserService {
             symbol: true,
           },
         },
+        roles: {
+          select: {
+            role: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -401,6 +425,10 @@ export class UserService {
             symbol: user.baseCurrency.symbol,
           }
         : null,
+      roles: user.roles.map((rp) => ({
+        id: rp.role.id,
+        title: rp.role.title,
+      })),
     };
   }
 

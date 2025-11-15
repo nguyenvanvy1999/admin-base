@@ -11,7 +11,6 @@ import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateRoleMutation,
   useDeleteManyRolesMutation,
-  useDeleteRoleMutation,
   useUpdateRoleMutation,
 } from '@client/hooks/mutations/useRoleMutations';
 import {
@@ -82,8 +81,7 @@ const RolePage = () => {
 
   const createMutation = useCreateRoleMutation();
   const updateMutation = useUpdateRoleMutation();
-  const deleteMutation = useDeleteRoleMutation();
-  const deleteManyMutation = useDeleteManyRolesMutation!();
+  const deleteManyMutation = useDeleteManyRolesMutation();
 
   const handleSubmitForm = async (formData: {
     id?: string;
@@ -107,7 +105,9 @@ const RolePage = () => {
 
   const handleConfirmDelete = async () => {
     try {
-      await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
+      await deleteHandler.handleConfirmDeleteMany(
+        deleteManyMutation.mutateAsync,
+      );
     } catch {
       // Error is already handled by mutation's onError callback
     }
@@ -139,7 +139,6 @@ const RolePage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending ||
     deleteManyMutation.isPending;
 
   return (

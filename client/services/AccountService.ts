@@ -2,9 +2,9 @@ import { ServiceBase } from '@client/libs/ServiceBase';
 import type {
   AccountListResponse,
   AccountResponse,
-  ActionRes,
   IUpsertAccountDto,
 } from '@server/dto/account.dto';
+import type { ActionRes } from '@server/dto/common.dto';
 import type { AccountType } from '@server/generated';
 
 export class AccountService extends ServiceBase {

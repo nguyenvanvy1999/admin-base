@@ -1,6 +1,6 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
+import type { ActionRes } from '@server/dto/common.dto';
 import type {
-  EventDeleteResponse,
   EventListResponse,
   EventResponse,
   IUpsertEventDto,
@@ -41,8 +41,8 @@ export class EventService extends ServiceBase {
     return this.post<EventResponse>(data);
   }
 
-  deleteManyEvents(ids: string[]): Promise<EventDeleteResponse> {
-    return this.post<EventDeleteResponse>(
+  deleteManyEvents(ids: string[]): Promise<ActionRes> {
+    return this.post<ActionRes>(
       { ids },
       {
         endpoint: 'delete-many',
