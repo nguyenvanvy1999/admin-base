@@ -1,3 +1,4 @@
+export * from './activity';
 export * from './category';
 export * from './error';
 export * from './setting';
@@ -56,16 +57,16 @@ export enum CACHE_NS {
   SETTING = 'setting',
 }
 
-export const LOG_LEVEL = {
-  DEBUG: 'debug',
-  INFO: 'info',
-  WARNING: 'warning',
-  ERROR: 'error',
-} as const;
+export const SUPER_ADMIN_ID = 'user_supperadmin';
 
 export enum OAUTH {
   GOOGLE = 'google',
   TELEGRAM = 'telegram',
 }
 
-export const SUPER_ADMIN_ID = 'user_supperadmin';
+export const LOG_LEVEL = {
+  DEBUG: 'debug',
+  INFO: 'info',
+  WARNING: 'warning',
+  ERROR: 'error',
+} as const;

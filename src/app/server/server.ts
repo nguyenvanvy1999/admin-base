@@ -26,6 +26,7 @@ import tradeController from '@server/controllers/trade.controller';
 import transactionController from '@server/controllers/transaction.controller';
 import userController from '@server/controllers/user.controller';
 import valuationController from '@server/controllers/valuation.controller';
+import { gracefulShutdownService } from '@server/services/misc';
 import { Elysia } from 'elysia';
 import { elysiaXSS } from 'elysia-xss';
 import { elysiaHelmet } from 'elysiajs-helmet';
@@ -95,8 +96,8 @@ export async function createServer() {
         .use(reportController),
     );
 
-  // gracefulShutdownService.setupShutdownHandlers();
-  //
+    gracefulShutdownService.setupShutdownHandlers();
+
   await redis.connect();
 
   app.listen({

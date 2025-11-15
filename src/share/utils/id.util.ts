@@ -1,4 +1,5 @@
 import { init } from '@paralleldrive/cuid2';
+import { DiscordSnowflake } from '@sapphire/snowflake';
 
 export enum DB_PREFIX {
   SESSION = 'session',
@@ -40,6 +41,12 @@ export class IdUtil {
     const id = this.i32();
     return prefix.length ? `${prefix}_${id}` : id;
   }
+
+  snowflakeId(): bigint {
+    return DiscordSnowflake.generate();
+  }
 }
 
 export type DbIdGen = InstanceType<typeof IdUtil>['dbId'];
+export type SnowflakeIdGen = InstanceType<typeof IdUtil>['snowflakeId'];
+export type IdGen = InstanceType<typeof IdUtil>['token16'];
