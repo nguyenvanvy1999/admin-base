@@ -9,10 +9,10 @@ Tài liệu này hướng dẫn cách sử dụng các tính năng chính của 
 1. Vào trang **Tài Khoản** từ menu
 2. Click nút **Thêm Mới**
 3. Điền thông tin:
-   - **Loại**: Chọn loại tài khoản (Tiền mặt, Ngân hàng, Thẻ tín dụng, Đầu tư)
-   - **Tên**: Tên tài khoản
-   - **Tiền tệ**: Chọn loại tiền tệ
-   - **Số dư ban đầu**: (Tùy chọn)
+  - **Loại**: Chọn loại tài khoản (Tiền mặt, Ngân hàng, Thẻ tín dụng, Đầu tư)
+  - **Tên**: Tên tài khoản
+  - **Tiền tệ**: Chọn loại tiền tệ
+  - **Số dư ban đầu**: (Tùy chọn)
 4. Click **Lưu**
 
 ### Chỉnh Sửa Tài Khoản
@@ -37,12 +37,12 @@ Tài liệu này hướng dẫn cách sử dụng các tính năng chính của 
 1. Vào trang **Giao Dịch**
 2. Click **Thêm Mới**
 3. Điền thông tin:
-   - **Loại**: Thu nhập hoặc Chi tiêu
-   - **Tài khoản**: Chọn tài khoản
-   - **Danh mục**: Chọn danh mục
-   - **Số tiền**: Nhập số tiền
-   - **Ngày**: Chọn ngày giao dịch
-   - **Ghi chú**: (Tùy chọn)
+  - **Loại**: Thu nhập hoặc Chi tiêu
+  - **Tài khoản**: Chọn tài khoản
+  - **Danh mục**: Chọn danh mục
+  - **Số tiền**: Nhập số tiền
+  - **Ngày**: Chọn ngày giao dịch
+  - **Ghi chú**: (Tùy chọn)
 4. Click **Lưu**
 
 **Lưu ý**: Số dư tài khoản sẽ tự động cập nhật sau khi tạo giao dịch.
@@ -72,14 +72,14 @@ Tài liệu này hướng dẫn cách sử dụng các tính năng chính của 
 1. Vào trang **Đầu Tư**
 2. Click **Thêm Mới**
 3. Điền thông tin:
-   - **Mã**: Mã tài sản (BTC, ETH, etc.)
-   - **Tên**: Tên tài sản
-   - **Loại**: Coin, CCQ, hoặc Tùy chỉnh
-   - **Chế độ**: 
-     - **Priced**: Có lệnh mua/bán chi tiết
-     - **Manual**: Cập nhật số dư thủ công
-   - **Tiền tệ**: Currency của asset
-   - **Tiền tệ cơ sở**: (Tùy chọn) Currency của tài khoản nguồn
+  - **Mã**: Mã tài sản (BTC, ETH, etc.)
+  - **Tên**: Tên tài sản
+  - **Loại**: Coin, CCQ, hoặc Tùy chỉnh
+  - **Chế độ**:
+    - **Priced**: Có lệnh mua/bán chi tiết
+    - **Manual**: Cập nhật số dư thủ công
+  - **Tiền tệ**: Currency của asset
+  - **Tiền tệ cơ sở**: (Tùy chọn) Currency của tài khoản nguồn
 4. Click **Lưu**
 
 ### Thêm Lệnh Mua/Bán (Priced Mode)
@@ -87,13 +87,13 @@ Tài liệu này hướng dẫn cách sử dụng các tính năng chính của 
 1. Vào trang chi tiết đầu tư
 2. Click **Thêm Lệnh**
 3. Điền thông tin:
-   - **Loại**: Mua hoặc Bán
-   - **Tài khoản**: Tài khoản thực hiện giao dịch
-   - **Ngày giờ**: Thời điểm giao dịch
-   - **Giá**: Giá mua/bán
-   - **Số lượng**: Số lượng asset
-   - **Phí**: Phí giao dịch
-   - **Tỉ giá**: (Nếu có) Tỉ giá tại thời điểm giao dịch
+  - **Loại**: Mua hoặc Bán
+  - **Tài khoản**: Tài khoản thực hiện giao dịch
+  - **Ngày giờ**: Thời điểm giao dịch
+  - **Giá**: Giá mua/bán
+  - **Số lượng**: Số lượng asset
+  - **Phí**: Phí giao dịch
+  - **Tỉ giá**: (Nếu có) Tỉ giá tại thời điểm giao dịch
 4. Click **Lưu**
 
 **Lưu ý**: Hệ thống tự động tính average cost và cập nhật holdings.
@@ -103,12 +103,12 @@ Tài liệu này hướng dẫn cách sử dụng các tính năng chính của 
 1. Vào trang chi tiết đầu tư
 2. Click **Thêm Đóng Góp** hoặc **Rút Tiền**
 3. Điền thông tin:
-   - **Loại**: Đóng góp hoặc Rút tiền
-   - **Tài khoản**: (Tùy chọn) Tài khoản nguồn
-   - **Số tiền**: Số tiền đóng góp/rút
-   - **Ngày**: Thời điểm
-   - **Tỉ giá**: (Nếu có) Tỉ giá tại thời điểm
-   - **Ghi chú**: (Tùy chọn)
+  - **Loại**: Đóng góp hoặc Rút tiền
+  - **Tài khoản**: (Tùy chọn) Tài khoản nguồn
+  - **Số tiền**: Số tiền đóng góp/rút
+  - **Ngày**: Thời điểm
+  - **Tỉ giá**: (Nếu có) Tỉ giá tại thời điểm
+  - **Ghi chú**: (Tùy chọn)
 4. Click **Lưu**
 
 ### Cập Nhật Giá Trị Hiện Tại
@@ -116,10 +116,10 @@ Tài liệu này hướng dẫn cách sử dụng các tính năng chính của 
 1. Vào trang chi tiết đầu tư
 2. Click **Cập Nhật Giá Trị**
 3. Điền thông tin:
-   - **Giá trị**: Giá trị hiện tại
-   - **Ngày**: Thời điểm cập nhật
-   - **Nguồn**: (Tùy chọn) Nguồn giá
-   - **Tỉ giá**: (Nếu có) Tỉ giá tại thời điểm
+  - **Giá trị**: Giá trị hiện tại
+  - **Ngày**: Thời điểm cập nhật
+  - **Nguồn**: (Tùy chọn) Nguồn giá
+  - **Tỉ giá**: (Nếu có) Tỉ giá tại thời điểm
 4. Click **Lưu**
 
 **Lưu ý**: Giá trị hiện tại được sử dụng để tính unrealized P&L.
@@ -142,11 +142,11 @@ Trong trang chi tiết đầu tư, bạn có thể xem:
 1. Vào trang **Danh Mục**
 2. Click **Thêm Mới**
 3. Điền thông tin:
-   - **Loại**: Thu nhập, Chi tiêu, Chuyển khoản, Đầu tư, hoặc Vay nợ
-   - **Tên**: Tên danh mục
-   - **Danh mục cha**: (Tùy chọn) Chọn danh mục cha để tạo danh mục con
-   - **Icon**: (Tùy chọn) Chọn icon
-   - **Màu**: (Tùy chọn) Chọn màu
+  - **Loại**: Thu nhập, Chi tiêu, Chuyển khoản, Đầu tư, hoặc Vay nợ
+  - **Tên**: Tên danh mục
+  - **Danh mục cha**: (Tùy chọn) Chọn danh mục cha để tạo danh mục con
+  - **Icon**: (Tùy chọn) Chọn icon
+  - **Màu**: (Tùy chọn) Chọn màu
 4. Click **Lưu**
 
 ### Tạo Danh Mục Con
@@ -165,12 +165,12 @@ Trong trang chi tiết đầu tư, bạn có thể xem:
 1. Vào trang **Đối Tác**
 2. Click **Thêm Mới**
 3. Điền thông tin:
-   - **Tên**: Tên đối tác
-   - **Loại**: Cá nhân hoặc Tổ chức
-   - **Số điện thoại**: (Tùy chọn)
-   - **Email**: (Tùy chọn)
-   - **Địa chỉ**: (Tùy chọn)
-   - **Ghi chú**: (Tùy chọn)
+  - **Tên**: Tên đối tác
+  - **Loại**: Cá nhân hoặc Tổ chức
+  - **Số điện thoại**: (Tùy chọn)
+  - **Email**: (Tùy chọn)
+  - **Địa chỉ**: (Tùy chọn)
+  - **Ghi chú**: (Tùy chọn)
 4. Click **Lưu**
 
 **Lưu ý**: Entities được sử dụng để track các giao dịch vay nợ.
@@ -182,11 +182,67 @@ Trong trang chi tiết đầu tư, bạn có thể xem:
 1. Vào trang **Tags**
 2. Click **Thêm Mới**
 3. Điền thông tin:
-   - **Tên**: Tên tag
-   - **Mô tả**: (Tùy chọn) Mô tả tag
+  - **Tên**: Tên tag
+  - **Mô tả**: (Tùy chọn) Mô tả tag
 4. Click **Lưu**
 
 **Lưu ý**: Tags giúp phân loại và tìm kiếm giao dịch dễ dàng hơn.
+
+## Quản Lý Events (Sự Kiện)
+
+### Tạo Event Mới
+
+1. Vào trang **Sự Kiện**
+2. Click **Thêm Mới**
+3. Điền thông tin:
+  - **Tên**: Tên sự kiện
+  - **Ngày bắt đầu**: Ngày bắt đầu sự kiện
+  - **Ngày kết thúc**: (Tùy chọn) Ngày kết thúc
+4. Click **Lưu**
+
+**Lưu ý**: Events giúp nhóm các giao dịch theo sự kiện hoặc khoảng thời gian.
+
+## Quản Lý Ngân Sách ✅
+
+### Tạo Ngân Sách Mới
+
+1. Vào trang **Ngân Sách**
+2. Click **Thêm Mới**
+3. Điền thông tin:
+  - **Tên**: Tên ngân sách
+  - **Số tiền**: Số tiền ngân sách
+  - **Chu kỳ**: Chọn chu kỳ (Hàng ngày/Hàng tháng/Hàng quý/Hàng năm/Không có)
+  - **Ngày bắt đầu**: Ngày bắt đầu ngân sách
+  - **Ngày kết thúc**: (Tùy chọn) Ngày kết thúc
+  - **Chuyển số dư**: Có chuyển số dư sang chu kỳ sau không
+  - **Danh mục**: (Tùy chọn) Chọn một danh mục hoặc nhiều danh mục
+  - **Tài khoản**: (Tùy chọn) Chọn các tài khoản để theo dõi
+4. Click **Lưu**
+
+### Xem Chi Tiết Ngân Sách
+
+1. Vào trang **Ngân Sách**
+2. Click vào một ngân sách để xem chi tiết
+3. Trong trang chi tiết, bạn có thể:
+  - Xem danh sách các chu kỳ
+  - Xem chi tiết từng chu kỳ (số tiền đã chi, còn lại, theo danh mục, theo tài khoản)
+  - Xem các giao dịch trong chu kỳ
+
+### Xem Chi Tiết Chu Kỳ
+
+1. Vào trang chi tiết ngân sách
+2. Click vào một chu kỳ để xem chi tiết
+3. Trong trang chi tiết chu kỳ, bạn có thể:
+  - Xem tổng số tiền đã chi và còn lại
+  - Xem phân bổ chi tiêu theo danh mục
+  - Xem phân bổ chi tiêu theo tài khoản
+  - Xem danh sách các giao dịch trong chu kỳ
+
+**Lưu ý**:
+
+- Ngân sách tự động tạo các chu kỳ khi bạn xem chúng
+- Số dư có thể được chuyển sang chu kỳ sau nếu bật carry-over
+- Ngân sách có thể liên kết với nhiều danh mục và tài khoản
 
 ## Dashboard (Sắp Có)
 

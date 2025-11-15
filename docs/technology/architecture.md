@@ -471,6 +471,7 @@ const router = createHashRouter([
 ### Global State (Zustand)
 
 Chỉ sử dụng cho state cần share giữa nhiều components:
+
 - User information
 - Theme preferences
 - UI state (sidebar open/close)
@@ -478,6 +479,7 @@ Chỉ sử dụng cho state cần share giữa nhiều components:
 ### Server State (TanStack Query)
 
 Luôn sử dụng cho API data:
+
 - Accounts, Transactions, Investments
 - Automatic caching và synchronization
 - Background refetching
@@ -485,6 +487,7 @@ Luôn sử dụng cho API data:
 ### Local State (useState)
 
 Sử dụng cho component-specific state:
+
 - Form inputs
 - Dialog open/close
 - Selected items

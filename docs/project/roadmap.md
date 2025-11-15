@@ -9,19 +9,27 @@ Tài liệu này mô tả kế hoạch triển khai và trạng thái implementa
 #### Backend
 
 - [x] Database schema design (Prisma)
-- [x] User authentication (JWT)
+- [x] User authentication (JWT với refresh token)
+- [x] RBAC system (Role, Permission, RolePlayer)
+- [x] Session management
+- [x] MFA support (TOTP)
+- [x] External auth providers (AuthProvider, UserAuthProvider)
+- [x] Referral program
 - [x] Account management (CRUD)
 - [x] Category management (CRUD)
 - [x] Entity management (CRUD)
 - [x] Tag management (CRUD)
+- [x] Event management (CRUD)
 - [x] Currency management
-- [x] Transaction management (CRUD)
+- [x] Transaction management (CRUD, bulk operations)
 - [x] Investment management (CRUD)
 - [x] Investment trade management
 - [x] Investment contribution management
 - [x] Investment valuation management
+- [x] Budget management (CRUD, period tracking)
 - [x] Error handling middleware
 - [x] Logging system (Logtape)
+- [x] Audit logging
 - [x] Swagger documentation
 - [x] DTO validation schemas
 
@@ -35,9 +43,13 @@ Tài liệu này mô tả kế hoạch triển khai và trạng thái implementa
 - [x] Category management page
 - [x] Entity management page
 - [x] Tag management page
-- [x] Transaction management page
+- [x] Event management page
+- [x] Transaction management page (với bulk operations)
 - [x] Investment management page
 - [x] Investment detail page
+- [x] Budget management page
+- [x] Budget detail page
+- [x] Budget period detail page
 - [x] DataTable component
 - [x] Toast notifications (Mantine)
 - [x] i18n setup (i18next)
@@ -49,7 +61,6 @@ Tài liệu này mô tả kế hoạch triển khai và trạng thái implementa
 
 ### 🚧 In Progress
 
-- [ ] Budget management
 - [ ] Recurring transactions
 - [ ] Reports & analytics
 - [ ] Dashboard with charts
@@ -162,13 +173,14 @@ Tài liệu này mô tả kế hoạch triển khai và trạng thái implementa
 
 ### Phase 5: Advanced Features 📋
 
-#### 5.1 Budget Management
+#### 5.1 Budget Management ✅
 
-- [ ] Tạo BudgetService.ts
-- [ ] Tạo budget.controller.ts
-- [ ] Implement CRUD endpoints cho budgets
-- [ ] Budget tracking và alerts
-- [ ] Frontend pages và components
+- [x] Tạo BudgetService.ts
+- [x] Tạo budget.controller.ts
+- [x] Implement CRUD endpoints cho budgets
+- [x] Budget tracking theo chu kỳ
+- [x] Frontend pages và components (BudgetPage, BudgetDetailPage, BudgetPeriodDetailPage)
+- [ ] Budget alerts (thông báo khi gần vượt)
 
 #### 5.2 Recurring Transactions
 
@@ -196,36 +208,36 @@ Tài liệu này mô tả kế hoạch triển khai và trạng thái implementa
 ### Functional Requirements
 
 1. **Quản Lý Tài Khoản & Giao Dịch** ✅
-   - Người dùng có thể tạo tài khoản ✅
-   - Người dùng có thể thêm giao dịch (thu/chi) ✅
-   - Người dùng có thể xem balance và cashflow ✅
+  - Người dùng có thể tạo tài khoản ✅
+  - Người dùng có thể thêm giao dịch (thu/chi) ✅
+  - Người dùng có thể xem balance và cashflow ✅
 
 2. **Quản Lý Đầu Tư** ✅
-   - Người dùng có thể thêm asset đầu tư ✅
-   - Người dùng có thể tạo giao dịch mua/bán ✅
-   - Người dùng có thể xem holdings và unrealized/realized P&L ✅
+  - Người dùng có thể thêm asset đầu tư ✅
+  - Người dùng có thể tạo giao dịch mua/bán ✅
+  - Người dùng có thể xem holdings và unrealized/realized P&L ✅
 
 3. **Dashboard & Báo Cáo** 🚧
-   - Dashboard hiển thị biểu đồ time-series của tổng tài sản ⏳
-   - Dashboard hiển thị phân bổ tài sản (pie chart) ⏳
-   - Có thể export báo cáo CSV/PDF ⏳
+  - Dashboard hiển thị biểu đồ time-series của tổng tài sản ⏳
+  - Dashboard hiển thị phân bổ tài sản (pie chart) ⏳
+  - Có thể export báo cáo CSV/PDF ⏳
 
 ### Technical Requirements
 
 1. **API** ✅
-   - Có tests cơ bản cho API ⏳
-   - Bảo mật JWT cho protected routes ✅
-   - Swagger documentation ✅
+  - Có tests cơ bản cho API ⏳
+  - Bảo mật JWT cho protected routes ✅
+  - Swagger documentation ✅
 
 2. **Database** ✅
-   - Schema được định nghĩa trong Prisma ✅
-   - Migrations đã được test ✅
-   - Indexes được tối ưu ✅
+  - Schema được định nghĩa trong Prisma ✅
+  - Migrations đã được test ✅
+  - Indexes được tối ưu ✅
 
 3. **Code Quality** ✅
-   - Code comments bằng tiếng Anh ✅
-   - Tuân theo code style của dự án ✅
-   - Có unit tests cho services ⏳
+  - Code comments bằng tiếng Anh ✅
+  - Tuân theo code style của dự án ✅
+  - Có unit tests cho services ⏳
 
 ## Ưu Tiên Phát Triển
 
