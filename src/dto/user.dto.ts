@@ -1,4 +1,3 @@
-import { UserRole } from '@server/generated';
 import { t } from 'elysia';
 import { z } from 'zod';
 
@@ -33,7 +32,6 @@ export const AuthUserDto = t.NoValidate(
     id: t.String(),
     username: t.String(),
     name: t.Nullable(t.String()),
-    role: t.Enum(UserRole),
     baseCurrencyId: t.Nullable(t.String()),
     permissions: t.Array(t.String()),
     roleIds: t.Array(t.String()),

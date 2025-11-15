@@ -1,13 +1,17 @@
 import { type IDb, prisma } from '@server/configs/db';
 import type { UserUncheckedUpdateInput } from '@server/generated';
-import { UserRole } from '@server/generated';
 import { userUtilService } from '@server/services/auth/auth-util.service';
+import {
+  type PasswordService,
+  passwordService,
+} from '@server/services/auth/password.service';
 import {
   CURRENCY_IDS,
   DB_PREFIX,
   defaultRoles,
   ErrorCode,
-  IdUtil,
+  type IdUtil,
+  idUtil,
   SUPER_ADMIN_ID,
   throwAppError,
 } from '@server/share';
@@ -20,7 +24,6 @@ import type {
   LoginRes,
 } from '../dto/user.dto';
 import { CategoryService } from './category.service';
-
 import {
   USER_SELECT_FOR_INFO,
   USER_SELECT_FOR_LOGIN,
@@ -31,7 +34,6 @@ const formatUser = (user: {
   id: string;
   username: string;
   name: string | null;
-  role: UserRole;
   baseCurrencyId: string | null;
   permissions?: string[];
   roleIds?: string[];
@@ -49,18 +51,13 @@ export class UserService {
     private readonly deps: {
       db: IDb;
       categoryService: CategoryService;
-      passwordService: {
-        hash: (password: string) => Promise<string>;
-        verify: (password: string, hash: string) => Promise<boolean>;
-      };
+      passwordService: PasswordService;
+      idUtil: IdUtil;
     } = {
       db: prisma,
       categoryService: new CategoryService(),
-      passwordService: {
-        hash: (password: string) => Bun.password.hash(password, 'bcrypt'),
-        verify: (password: string, hash: string) =>
-          Bun.password.verify(password, hash, 'bcrypt'),
-      },
+      passwordService,
+      idUtil,
     },
   ) {}
 
@@ -72,28 +69,28 @@ export class UserService {
       throwAppError(ErrorCode.USER_ALREADY_EXISTS, 'User already exists');
     }
 
-    const hashPassword = await this.deps.passwordService.hash(data.password);
+    const password = await this.deps.passwordService.createPassword(
+      data.password,
+    );
 
     const user = await this.deps.db.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.USER),
           username: data.username,
-          password: hashPassword,
           name: data.name,
-          role: UserRole.user,
           baseCurrencyId: CURRENCY_IDS.VND,
+          ...password,
+          roles: {
+            create: {
+              roleId: defaultRoles.user.id,
+            },
+          },
         },
+        select: { id: true },
       });
 
       await this.deps.categoryService.seedDefaultCategories(tx, newUser.id);
-
-      await tx.rolePlayer.create({
-        data: {
-          id: IdUtil.dbId(DB_PREFIX.ROLE),
-          playerId: newUser.id,
-          roleId: defaultRoles.user.id,
-        },
-      });
 
       return newUser;
     });
@@ -104,7 +101,6 @@ export class UserService {
         id: true,
         username: true,
         name: true,
-        role: true,
         baseCurrencyId: true,
         roles: { select: { roleId: true } },
       },
@@ -135,7 +131,7 @@ export class UserService {
     if (!user) {
       throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
-    const isValid = await this.deps.passwordService.verify(
+    const isValid = await this.deps.passwordService.comparePassword(
       data.password,
       user.password,
     );
@@ -144,10 +140,7 @@ export class UserService {
     }
 
     const loginRes = await userUtilService.completeLogin(
-      user as typeof user & {
-        roles: { roleId: string }[];
-        deletedAt: Date | null;
-      },
+      user as any as Parameters<typeof userUtilService.completeLogin>[0],
       clientIp,
       userAgent,
     );
@@ -161,7 +154,6 @@ export class UserService {
         id: loginRes.user.id,
         username: loginRes.user.username,
         name: loginRes.user.name,
-        role: user.role,
         baseCurrencyId: loginRes.user.baseCurrencyId,
         permissions: loginRes.user.permissions,
         roleIds: user.roles.map((r) => r.roleId),
@@ -204,7 +196,7 @@ export class UserService {
       throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
 
-    const isValid = await this.deps.passwordService.verify(
+    const isValid = await this.deps.passwordService.comparePassword(
       data.oldPassword,
       user.password,
     );
@@ -212,18 +204,17 @@ export class UserService {
       throwAppError(ErrorCode.INVALID_OLD_PASSWORD, 'Invalid old password');
     }
 
-    const hashedPassword = await this.deps.passwordService.hash(
+    const password = await this.deps.passwordService.createPassword(
       data.newPassword,
     );
 
     const updatedUser = await this.deps.db.user.update({
       where: { id: userId },
-      data: { password: hashedPassword },
+      data: password,
       select: {
         id: true,
         username: true,
         name: true,
-        role: true,
         baseCurrencyId: true,
       },
     });
@@ -272,7 +263,6 @@ export class UserService {
         id: true,
         username: true,
         name: true,
-        role: true,
         baseCurrencyId: true,
       },
     });

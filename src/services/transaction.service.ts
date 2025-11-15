@@ -3,16 +3,20 @@ import { type PrismaTx, prisma } from '@server/configs/db';
 import type {
   Prisma,
   TransactionOrderByWithRelationInput,
+  TransactionUncheckedCreateInput,
   TransactionWhereInput,
 } from '@server/generated';
 import { TransactionType } from '@server/generated';
 import {
   CATEGORY_NAME,
+  DB_PREFIX,
   dateToIsoString,
   dateToNullableIsoString,
   decimalToNullableString,
   decimalToString,
   ErrorCode,
+  type IdUtil,
+  idUtil,
   throwAppError,
 } from '@server/share';
 import Decimal from 'decimal.js';
@@ -152,6 +156,7 @@ class TransactionHandlerFactory {
       db: IDb;
       balanceService: AccountBalanceService;
       currencyConverter: CurrencyConversionService;
+      idUtil: IdUtil;
     },
   ) {}
 
@@ -327,7 +332,7 @@ class TransactionHandlerFactory {
   }
 
   private createTransaction(
-    transactionData: Parameters<typeof prisma.transaction.create>[0]['data'],
+    transactionData: Omit<TransactionUncheckedCreateInput, 'id'>,
     type: TransactionType,
     accountId: string,
     toAccountId: string | null,
@@ -351,7 +356,10 @@ class TransactionHandlerFactory {
       );
 
       return tx.transaction.create({
-        data: transactionData,
+        data: {
+          ...transactionData,
+          id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
+        },
         select: TRANSACTION_SELECT_FULL,
       });
     });
@@ -455,6 +463,7 @@ class TransactionHandlerFactory {
       // Create primary transaction (from -> to)
       const primary = await tx.transaction.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
           userId,
           accountId: fromAccount.id,
           toAccountId: toAccount.id,
@@ -486,6 +495,7 @@ class TransactionHandlerFactory {
       // Create mirror transaction (to -> from)
       await tx.transaction.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
           userId,
           accountId: toAccount.id,
           toAccountId: fromAccount.id,
@@ -658,6 +668,7 @@ class TransactionHandlerFactory {
       } else {
         await tx.transaction.create({
           data: {
+            id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
             userId,
             accountId: toAccount.id,
             toAccountId: fromAccount.id,
@@ -759,7 +770,7 @@ class TransactionHandlerFactory {
     if (data.id) {
       return this.updatePairedTransfer(
         userId,
-        data as ITransferTransaction & { id: string },
+        { ...data, id: data.id },
         account,
       );
     }
@@ -792,17 +803,20 @@ export class TransactionService {
       categoryService: CategoryService;
       accountBalanceService: AccountBalanceService;
       currencyConversionService: CurrencyConversionService;
+      idUtil: IdUtil;
     } = {
       db: prisma,
       categoryService: new CategoryService(),
       accountBalanceService: accountBalanceService,
       currencyConversionService: currencyConversionService,
+      idUtil,
     },
   ) {
     this.handlerFactory = new TransactionHandlerFactory({
       db: this.deps.db,
       balanceService: this.deps.accountBalanceService,
       currencyConverter: this.deps.currencyConversionService,
+      idUtil: this.deps.idUtil,
     });
   }
 
@@ -1107,19 +1121,17 @@ export class TransactionService {
           );
         }
 
-        // Soft delete both sides if group present, else only this one
+        // Hard delete both sides if group present, else only this one
         if (transaction.transferGroupId) {
-          await tx.transaction.updateMany({
+          await tx.transaction.deleteMany({
             where: {
               userId,
               transferGroupId: transaction.transferGroupId,
             },
-            data: { deletedAt: new Date() },
           });
         } else {
-          await tx.transaction.update({
+          await tx.transaction.delete({
             where: { id: transactionId },
-            data: { deletedAt: new Date() },
           });
         }
       });
@@ -1137,9 +1149,8 @@ export class TransactionService {
           transaction.toAccount?.currencyId,
         );
 
-        await tx.transaction.update({
+        await tx.transaction.delete({
           where: { id: transactionId },
-          data: { deletedAt: new Date() },
         });
       });
     }
@@ -1260,7 +1271,7 @@ export class TransactionService {
             default: {
               results.push({
                 success: false,
-                error: `Invalid transaction type: ${(transactionData as IUpsertTransaction).type}`,
+                error: `Invalid transaction type: ${transactionData.type}`,
               });
               continue;
             }
@@ -1373,9 +1384,7 @@ export class TransactionService {
     const transaction = await this.handlerFactory.handleIncomeExpense(
       userId,
       transactionData,
-      accountRecord as Awaited<
-        ReturnType<(typeof this.handlerFactory)['validateAccountOwnership']>
-      >,
+      accountRecord,
       user.baseCurrencyId,
     );
 
