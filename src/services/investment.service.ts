@@ -298,15 +298,33 @@ export class InvestmentService {
     return investment;
   }
 
-  async deleteInvestment(userId: string, investmentId: string) {
-    await this.ensureInvestment(userId, investmentId);
-
-    await this.deps.db.investment.update({
-      where: { id: investmentId },
-      data: { deletedAt: new Date() },
+  async deleteManyInvestments(userId: string, ids: string[]) {
+    const investments = await this.deps.db.investment.findMany({
+      where: {
+        id: { in: ids },
+        userId,
+      },
+      select: INVESTMENT_SELECT_FULL,
     });
 
-    return { success: true, message: 'Investment deleted successfully' };
+    if (investments.length !== ids.length) {
+      throwAppError(
+        ErrorCode.INVESTMENT_NOT_FOUND,
+        'Some investments were not found or do not belong to you',
+      );
+    }
+
+    await this.deps.db.investment.deleteMany({
+      where: {
+        id: { in: ids },
+        userId,
+      },
+    });
+
+    return {
+      success: true,
+      message: `${ids.length} investment(s) deleted successfully`,
+    };
   }
 }
 

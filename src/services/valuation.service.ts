@@ -167,7 +167,7 @@ export class InvestmentValuationService {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
     const valuation = await this.deps.db.investmentValuation.findFirst({
-      where: { userId, investmentId, deletedAt: null },
+      where: { userId, investmentId },
       orderBy: { timestamp: 'desc' },
       select: VALUATION_SELECT_FULL,
     });
@@ -178,32 +178,41 @@ export class InvestmentValuationService {
     return this.mapValuation(valuation);
   }
 
-  async deleteValuation(
+  async deleteManyValuations(
     userId: string,
     investmentId: string,
-    valuationId: string,
+    valuationIds: string[],
   ) {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const valuation = await this.deps.db.investmentValuation.findFirst({
+    const valuations = await this.deps.db.investmentValuation.findMany({
       where: {
-        id: valuationId,
+        id: { in: valuationIds },
         userId,
         investmentId,
       },
       select: { id: true },
     });
 
-    if (!valuation) {
-      throwAppError(ErrorCode.VALUATION_NOT_FOUND, 'Valuation not found');
+    if (valuations.length !== valuationIds.length) {
+      throwAppError(
+        ErrorCode.VALUATION_NOT_FOUND,
+        'Some valuations were not found or do not belong to you',
+      );
     }
 
-    await this.deps.db.investmentValuation.update({
-      where: { id: valuationId },
-      data: { deletedAt: new Date() },
+    await this.deps.db.investmentValuation.deleteMany({
+      where: {
+        id: { in: valuationIds },
+        userId,
+        investmentId,
+      },
     });
 
-    return { success: true, message: 'Valuation deleted successfully' };
+    return {
+      success: true,
+      message: `${valuationIds.length} valuation(s) deleted successfully`,
+    };
   }
 }
 

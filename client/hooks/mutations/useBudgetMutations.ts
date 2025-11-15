@@ -57,31 +57,6 @@ export const useUpdateBudgetMutation = () => {
   });
 };
 
-export const useDeleteBudgetMutation = () => {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (budgetId: string) => budgetService.deleteBudget(budgetId),
-    onSuccess: (_, budgetId) => {
-      queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      queryClient.removeQueries({ queryKey: ['budget', budgetId] });
-      queryClient.removeQueries({ queryKey: ['budget-periods', budgetId] });
-      toast.success(
-        t('budgets.deleteSuccess', {
-          defaultValue: 'Budget deleted successfully',
-        }),
-      );
-    },
-    onError: (error: Error) => {
-      toast.error(
-        error.message ||
-          t('budgets.deleteError', { defaultValue: 'Failed to delete budget' }),
-      );
-    },
-  });
-};
-
 export const useDeleteManyBudgetsMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();

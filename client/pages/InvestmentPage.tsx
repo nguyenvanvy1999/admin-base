@@ -8,7 +8,7 @@ import { PageContainer } from '@client/components/PageContainer';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateInvestmentMutation,
-  useDeleteInvestmentMutation,
+  useDeleteManyInvestmentsMutation,
   useUpdateInvestmentMutation,
 } from '@client/hooks/mutations/useInvestmentMutations';
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
@@ -89,7 +89,7 @@ const InvestmentPage = () => {
   const { data: currencies = [] } = useCurrenciesQuery();
   const createMutation = useCreateInvestmentMutation();
   const updateMutation = useUpdateInvestmentMutation();
-  const deleteMutation = useDeleteInvestmentMutation();
+  const deleteManyMutation = useDeleteManyInvestmentsMutation();
 
   const handleAdd = () => {
     setSelectedInvestment(null);
@@ -118,7 +118,7 @@ const InvestmentPage = () => {
   const handleConfirmDelete = async () => {
     if (investmentToDelete) {
       try {
-        await deleteMutation.mutateAsync(investmentToDelete.id);
+        await deleteManyMutation.mutateAsync([investmentToDelete.id]);
         handleDeleteDialogClose();
       } catch {
         // Error is already handled by mutation's onError callback
@@ -152,7 +152,7 @@ const InvestmentPage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending ||
+    deleteManyMutation.isPending ||
     isLoading;
 
   const stats = useMemo(() => {

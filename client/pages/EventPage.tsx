@@ -10,7 +10,6 @@ import { PageContainer } from '@client/components/PageContainer';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateEventMutation,
-  useDeleteEventMutation,
   useDeleteManyEventsMutation,
   useUpdateEventMutation,
 } from '@client/hooks/mutations/useEventMutations';
@@ -91,7 +90,6 @@ const EventPage = () => {
   const { data, isLoading, refetch } = useEventsQuery(queryParams);
   const createMutation = useCreateEventMutation();
   const updateMutation = useUpdateEventMutation();
-  const deleteMutation = useDeleteEventMutation();
   const deleteManyMutation = useDeleteManyEventsMutation();
 
   const handleSubmitForm = async (
@@ -115,7 +113,7 @@ const EventPage = () => {
   };
 
   const handleConfirmDelete = () => {
-    handleConfirmDeleteBase(deleteMutation.mutateAsync);
+    handleConfirmDeleteBase(deleteManyMutation.mutateAsync);
   };
 
   const handleConfirmDeleteMany = () => {
@@ -125,7 +123,6 @@ const EventPage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending ||
     deleteManyMutation.isPending;
 
   return (

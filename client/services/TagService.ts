@@ -31,12 +31,6 @@ export class TagService extends ServiceBase {
     });
   }
 
-  deleteTag(tagId: string): Promise<TagDeleteResponse> {
-    return this.delete<TagDeleteResponse>({
-      endpoint: tagId,
-    });
-  }
-
   deleteManyTags(ids: string[]): Promise<TagDeleteResponse> {
     return this.post<TagDeleteResponse>(
       { ids },

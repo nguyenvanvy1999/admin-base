@@ -266,6 +266,35 @@ export class AccountService {
 
     return { success: true, message: 'Account deleted successfully' };
   }
+
+  async deleteManyAccounts(userId: string, ids: string[]): Promise<ActionRes> {
+    const accounts = await this.deps.db.account.findMany({
+      where: {
+        id: { in: ids },
+        userId,
+      },
+      select: ACCOUNT_SELECT_MINIMAL,
+    });
+
+    if (accounts.length !== ids.length) {
+      throwAppError(
+        ErrorCode.ACCOUNT_NOT_FOUND,
+        'Some accounts were not found or do not belong to you',
+      );
+    }
+
+    await this.deps.db.account.deleteMany({
+      where: {
+        id: { in: ids },
+        userId,
+      },
+    });
+
+    return {
+      success: true,
+      message: `${ids.length} account(s) deleted successfully`,
+    };
+  }
 }
 
 export const accountService = new AccountService();

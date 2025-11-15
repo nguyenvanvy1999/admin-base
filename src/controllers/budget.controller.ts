@@ -90,26 +90,6 @@ const budgetController = new Elysia().group(
           },
         },
       )
-      .delete(
-        '/:id',
-        async ({ currentUser, params }) => {
-          return castToRes(
-            await budgetService.deleteBudget(currentUser.id, params.id),
-          );
-        },
-        {
-          detail: {
-            ...BUDGET_DETAIL,
-            summary: 'Delete budget',
-            description:
-              'Permanently delete a budget by its ID. This action cannot be undone.',
-          },
-          params: t.Object({ id: t.String() }),
-          response: {
-            200: ResWrapper(ActionResDto),
-          },
-        },
-      )
       .get(
         '/:id/periods',
         async ({ currentUser, params, query }) => {
@@ -165,15 +145,9 @@ const budgetController = new Elysia().group(
       .post(
         '/delete-many',
         async ({ currentUser, body }) => {
-          const results = await Promise.all(
-            body.ids.map((id) =>
-              budgetService.deleteBudget(currentUser.id, id),
-            ),
+          return castToRes(
+            await budgetService.deleteManyBudgets(currentUser.id, body.ids),
           );
-          return castToRes({
-            success: true,
-            message: `${results.length} budget(s) deleted successfully`,
-          });
         },
         {
           detail: {

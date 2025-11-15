@@ -205,14 +205,7 @@ export class InvestmentContributionService {
   ): Promise<InvestmentContributionListResponse> {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const {
-      accountIds,
-      dateFrom,
-      dateTo,
-      page,
-      limit = 50,
-      sortOrder = 'desc',
-    } = query;
+    const { accountIds, dateFrom, dateTo, page, limit, sortOrder } = query;
 
     const where: InvestmentContributionWhereInput = {
       userId,
@@ -254,42 +247,53 @@ export class InvestmentContributionService {
     };
   }
 
-  async deleteContribution(
+  async deleteManyContributions(
     userId: string,
     investmentId: string,
-    contributionId: string,
+    contributionIds: string[],
   ) {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const contribution = await this.deps.db.investmentContribution.findFirst({
+    const contributions = await this.deps.db.investmentContribution.findMany({
       where: {
-        id: contributionId,
+        id: { in: contributionIds },
         userId,
         investmentId,
       },
       select: CONTRIBUTION_SELECT_FULL,
     });
 
-    if (!contribution) {
-      throwAppError(ErrorCode.CONTRIBUTION_NOT_FOUND, 'Contribution not found');
+    if (contributions.length !== contributionIds.length) {
+      throwAppError(
+        ErrorCode.CONTRIBUTION_NOT_FOUND,
+        'Some contributions were not found or do not belong to you',
+      );
     }
 
     return this.deps.db.$transaction(async (tx) => {
-      if (contribution.accountId) {
-        await this.deps.accountBalanceService.revertContributionBalance(
-          tx,
-          contribution.type,
-          contribution.accountId,
-          contribution.amount,
-        );
+      for (const contribution of contributions) {
+        if (contribution.accountId) {
+          await this.deps.accountBalanceService.revertContributionBalance(
+            tx,
+            contribution.type,
+            contribution.accountId,
+            contribution.amount,
+          );
+        }
       }
 
-      await tx.investmentContribution.update({
-        where: { id: contributionId },
-        data: { deletedAt: new Date() },
+      await tx.investmentContribution.deleteMany({
+        where: {
+          id: { in: contributionIds },
+          userId,
+          investmentId,
+        },
       });
 
-      return { success: true, message: 'Contribution deleted successfully' };
+      return {
+        success: true,
+        message: `${contributionIds.length} contribution(s) deleted successfully`,
+      };
     });
   }
 }

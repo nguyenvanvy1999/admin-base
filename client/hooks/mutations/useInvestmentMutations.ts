@@ -118,32 +118,32 @@ export const useUpsertInvestmentValuationMutation = () => {
   });
 };
 
-export const useDeleteInvestmentMutation = () => {
+export const useDeleteManyInvestmentsMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (investmentId: string) => {
-      return investmentService.deleteInvestment(investmentId);
+    mutationFn: (ids: string[]) => {
+      return investmentService.deleteManyInvestments(ids);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['investments'] });
-      toast.success('Investment deleted successfully');
+      toast.success('Investments deleted successfully');
     },
   });
 };
 
-export const useDeleteInvestmentTradeMutation = () => {
+export const useDeleteManyInvestmentTradesMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({
       investmentId,
-      tradeId,
+      tradeIds,
     }: {
       investmentId: string;
-      tradeId: string;
+      tradeIds: string[];
     }) => {
-      return investmentService.deleteTrade(investmentId, tradeId);
+      return investmentService.deleteManyTrades(investmentId, tradeIds);
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({
@@ -152,23 +152,26 @@ export const useDeleteInvestmentTradeMutation = () => {
       await queryClient.invalidateQueries({
         queryKey: ['investment-position', variables.investmentId],
       });
-      toast.success('Trade deleted successfully');
+      toast.success('Trades deleted successfully');
     },
   });
 };
 
-export const useDeleteInvestmentContributionMutation = () => {
+export const useDeleteManyInvestmentContributionsMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({
       investmentId,
-      contributionId,
+      contributionIds,
     }: {
       investmentId: string;
-      contributionId: string;
+      contributionIds: string[];
     }) => {
-      return investmentService.deleteContribution(investmentId, contributionId);
+      return investmentService.deleteManyContributions(
+        investmentId,
+        contributionIds,
+      );
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({
@@ -177,23 +180,23 @@ export const useDeleteInvestmentContributionMutation = () => {
       await queryClient.invalidateQueries({
         queryKey: ['investment-position', variables.investmentId],
       });
-      toast.success('Contribution deleted successfully');
+      toast.success('Contributions deleted successfully');
     },
   });
 };
 
-export const useDeleteInvestmentValuationMutation = () => {
+export const useDeleteManyInvestmentValuationsMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({
       investmentId,
-      valuationId,
+      valuationIds,
     }: {
       investmentId: string;
-      valuationId: string;
+      valuationIds: string[];
     }) => {
-      return investmentService.deleteValuation(investmentId, valuationId);
+      return investmentService.deleteManyValuations(investmentId, valuationIds);
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({
@@ -205,7 +208,7 @@ export const useDeleteInvestmentValuationMutation = () => {
       await queryClient.invalidateQueries({
         queryKey: ['investment-position', variables.investmentId],
       });
-      toast.success('Valuation deleted successfully');
+      toast.success('Valuations deleted successfully');
     },
   });
 };

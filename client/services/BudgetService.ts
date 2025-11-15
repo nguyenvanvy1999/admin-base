@@ -35,12 +35,6 @@ export class BudgetService extends ServiceBase {
     return this.post<BudgetResponse>(data);
   }
 
-  deleteBudget(budgetId: string): Promise<BudgetDeleteResponse> {
-    return this.delete<BudgetDeleteResponse>({
-      endpoint: budgetId,
-    });
-  }
-
   deleteManyBudgets(ids: string[]): Promise<BudgetDeleteResponse> {
     return this.post<BudgetDeleteResponse>(
       { ids },

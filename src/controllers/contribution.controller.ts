@@ -1,6 +1,6 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
-import { ActionResDto } from '../dto/common.dto';
+import { ActionResDto, DeleteManyDto } from '../dto/common.dto';
 import {
   CreateInvestmentContributionDto,
   InvestmentContributionDto,
@@ -77,25 +77,26 @@ const contributionController = new Elysia().group(
           },
         },
       )
-      .delete(
-        '/:contributionId',
-        async ({ currentUser, params }) => {
+      .post(
+        '/delete-many',
+        async ({ currentUser, params, body }) => {
           return castToRes(
-            await investmentContributionService.deleteContribution(
+            await investmentContributionService.deleteManyContributions(
               currentUser.id,
               params.id,
-              params.contributionId,
+              body.ids,
             ),
           );
         },
         {
           detail: {
             ...CONTRIBUTION_DETAIL,
-            summary: 'Delete investment contribution',
+            summary: 'Delete many investment contributions',
             description:
-              'Delete a contribution by its ID. This will revert the balance effects of the contribution.',
+              'Delete multiple contributions by their IDs. This will revert the balance effects of the contributions.',
           },
-          params: t.Object({ id: t.String(), contributionId: t.String() }),
+          params: t.Object({ id: t.String() }),
+          body: DeleteManyDto,
           response: {
             200: ResWrapper(ActionResDto),
           },

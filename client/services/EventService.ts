@@ -41,12 +41,6 @@ export class EventService extends ServiceBase {
     return this.post<EventResponse>(data);
   }
 
-  deleteEvent(eventId: string): Promise<EventDeleteResponse> {
-    return this.delete<EventDeleteResponse>({
-      endpoint: eventId,
-    });
-  }
-
   deleteManyEvents(ids: string[]): Promise<EventDeleteResponse> {
     return this.post<EventDeleteResponse>(
       { ids },

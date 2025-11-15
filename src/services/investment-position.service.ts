@@ -325,7 +325,7 @@ export class InvestmentPositionService {
     if (investment.mode === InvestmentMode.priced) {
       const [trades, valuation] = await Promise.all([
         this.deps.db.investmentTrade.findMany({
-          where: { userId, investmentId, deletedAt: null },
+          where: { userId, investmentId },
           orderBy: { timestamp: 'asc' },
           select: TRADE_SELECT_FOR_POSITION,
         }),
@@ -356,7 +356,7 @@ export class InvestmentPositionService {
 
     const [contributions, valuation] = await Promise.all([
       this.deps.db.investmentContribution.findMany({
-        where: { userId, investmentId, deletedAt: null },
+        where: { userId, investmentId },
         orderBy: { timestamp: 'asc' },
         select: CONTRIBUTION_SELECT_FOR_POSITION,
       }),

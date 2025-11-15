@@ -29,12 +29,6 @@ export class EntityService extends ServiceBase {
     return this.post<EntityResponse>(data);
   }
 
-  deleteEntity(entityId: string): Promise<EntityDeleteResponse> {
-    return this.delete<EntityDeleteResponse>({
-      endpoint: entityId,
-    });
-  }
-
   deleteManyEntities(ids: string[]): Promise<EntityDeleteResponse> {
     return this.post<EntityDeleteResponse>(
       { ids },

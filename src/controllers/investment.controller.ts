@@ -1,6 +1,6 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
-import { ActionResDto } from '../dto/common.dto';
+import { ActionResDto, DeleteManyDto } from '../dto/common.dto';
 import {
   InvestmentDto,
   InvestmentLatestValuationDto,
@@ -136,21 +136,24 @@ const investmentController = new Elysia().group(
           },
         },
       )
-      .delete(
-        '/:id',
-        async ({ currentUser, params }) => {
+      .post(
+        '/delete-many',
+        async ({ currentUser, body }) => {
           return castToRes(
-            await investmentService.deleteInvestment(currentUser.id, params.id),
+            await investmentService.deleteManyInvestments(
+              currentUser.id,
+              body.ids,
+            ),
           );
         },
         {
           detail: {
             ...INVESTMENT_DETAIL,
-            summary: 'Delete investment',
+            summary: 'Delete many investments',
             description:
-              'Permanently delete an investment by its ID. This action cannot be undone.',
+              'Permanently delete multiple investments by their IDs. This action cannot be undone.',
           },
-          params: t.Object({ id: t.String() }),
+          body: DeleteManyDto,
           response: {
             200: ResWrapper(ActionResDto),
           },

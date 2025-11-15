@@ -33,7 +33,7 @@ export const ListInvestmentTradesQueryDto = createListQueryDto({
   accountIds: createArrayPreprocess(z.string()),
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
-  limit: z.coerce.number().int().min(1).default(50).optional(),
+  limit: z.coerce.number().int().min(1).optional().default(50),
 });
 
 export type ICreateInvestmentTradeDto = z.infer<

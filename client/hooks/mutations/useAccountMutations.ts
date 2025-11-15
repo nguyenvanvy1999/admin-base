@@ -13,19 +13,19 @@ const accountMutations = createMutationHooks<
 >({
   create: (data) => accountService.createAccount(data),
   update: (data) => accountService.updateAccount(data),
-  delete: (id) => accountService.deleteAccount(id),
+  deleteMany: (ids) => accountService.deleteManyAccounts(ids),
 });
 
 export const {
   useCreateMutation: useCreateAccountMutation,
   useUpdateMutation: useUpdateAccountMutation,
-  useDeleteMutation: useDeleteAccountMutation,
+  useDeleteManyMutation: useDeleteManyAccountsMutation,
 } = accountMutations({
   queryKey: 'accounts',
   invalidateKeys: [['account']],
   successMessages: {
     create: 'Account created successfully',
     update: 'Account updated successfully',
-    delete: 'Account deleted successfully',
+    deleteMany: 'Accounts deleted successfully',
   },
 });

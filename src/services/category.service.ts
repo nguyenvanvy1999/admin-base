@@ -489,37 +489,55 @@ export class CategoryService {
     return false;
   }
 
-  async deleteCategory(userId: string, categoryId: string) {
-    const category = await this.validateCategoryOwnership(userId, categoryId);
-
-    if (category.isLocked) {
-      throwAppError(
-        ErrorCode.VALIDATION_ERROR,
-        'Cannot delete locked category',
-      );
-    }
-
-    const childrenCount = await this.deps.db.category.count({
+  async deleteManyCategories(userId: string, ids: string[]) {
+    const categories = await this.deps.db.category.findMany({
       where: {
-        parentId: categoryId,
+        id: { in: ids },
+        userId,
       },
+      select: CATEGORY_SELECT_MINIMAL,
     });
 
-    if (childrenCount > 0) {
+    if (categories.length !== ids.length) {
       throwAppError(
-        ErrorCode.VALIDATION_ERROR,
-        'Cannot delete category with children',
+        ErrorCode.CATEGORY_NOT_FOUND,
+        'Some categories were not found or do not belong to you',
       );
     }
 
-    await this.deps.db.category.update({
-      where: { id: categoryId },
-      data: {
-        deletedAt: new Date(),
+    for (const category of categories) {
+      if (category.isLocked) {
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Cannot delete locked category',
+        );
+      }
+
+      const childrenCount = await this.deps.db.category.count({
+        where: {
+          parentId: category.id,
+        },
+      });
+
+      if (childrenCount > 0) {
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Cannot delete category with children',
+        );
+      }
+    }
+
+    await this.deps.db.category.deleteMany({
+      where: {
+        id: { in: ids },
+        userId,
       },
     });
 
-    return { success: true, message: 'Category deleted successfully' };
+    return {
+      success: true,
+      message: `${ids.length} category(ies) deleted successfully`,
+    };
   }
 }
 

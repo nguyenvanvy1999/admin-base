@@ -153,15 +153,8 @@ export class InvestmentTradeService {
   ) {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const {
-      side,
-      accountIds,
-      dateFrom,
-      dateTo,
-      page,
-      limit = 50,
-      sortOrder = 'desc',
-    } = query;
+    const { side, accountIds, dateFrom, dateTo, page, limit, sortOrder } =
+      query;
 
     const where: InvestmentTradeWhereInput = {
       userId,
@@ -207,37 +200,52 @@ export class InvestmentTradeService {
     };
   }
 
-  async deleteTrade(userId: string, investmentId: string, tradeId: string) {
+  async deleteManyTrades(
+    userId: string,
+    investmentId: string,
+    tradeIds: string[],
+  ) {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const trade = await this.deps.db.investmentTrade.findFirst({
+    const trades = await this.deps.db.investmentTrade.findMany({
       where: {
-        id: tradeId,
+        id: { in: tradeIds },
         userId,
         investmentId,
       },
       select: TRADE_SELECT_FULL,
     });
 
-    if (!trade) {
-      throwAppError(ErrorCode.TRADE_NOT_FOUND, 'Trade not found');
+    if (trades.length !== tradeIds.length) {
+      throwAppError(
+        ErrorCode.TRADE_NOT_FOUND,
+        'Some trades were not found or do not belong to you',
+      );
     }
 
     return this.deps.db.$transaction(async (tx) => {
-      await this.deps.accountBalanceService.revertTradeBalance(
-        tx,
-        trade.side,
-        trade.accountId,
-        trade.amount,
-        trade.fee,
-      );
+      for (const trade of trades) {
+        await this.deps.accountBalanceService.revertTradeBalance(
+          tx,
+          trade.side,
+          trade.accountId,
+          trade.amount,
+          trade.fee,
+        );
+      }
 
-      await tx.investmentTrade.update({
-        where: { id: tradeId },
-        data: { deletedAt: new Date() },
+      await tx.investmentTrade.deleteMany({
+        where: {
+          id: { in: tradeIds },
+          userId,
+          investmentId,
+        },
       });
 
-      return { success: true, message: 'Trade deleted successfully' };
+      return {
+        success: true,
+        message: `${tradeIds.length} trade(s) deleted successfully`,
+      };
     });
   }
 }

@@ -109,7 +109,10 @@ export const ListTransactionsQueryDto = createListQueryDto({
   entityIds: createArrayPreprocess(z.string()),
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
-  sortBy: z.enum(['date', 'amount', 'type', 'accountId']).optional(),
+  sortBy: z
+    .enum(['date', 'amount', 'type', 'accountId'])
+    .optional()
+    .default('date'),
 });
 
 export type IUpsertTransaction = z.infer<typeof UpsertTransactionDto>;

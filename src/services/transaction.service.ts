@@ -906,7 +906,7 @@ export class TransactionService {
 
   async listTransactions(
     userId: string,
-    filters: IListTransactionsQuery = {},
+    filters: IListTransactionsQuery,
   ): Promise<TransactionListResponse> {
     const {
       types,
@@ -916,9 +916,9 @@ export class TransactionService {
       dateFrom,
       dateTo,
       page,
-      limit = 50,
-      sortBy = 'date',
-      sortOrder = 'desc',
+      limit,
+      sortBy,
+      sortOrder,
     } = filters;
 
     const where: TransactionWhereInput = {

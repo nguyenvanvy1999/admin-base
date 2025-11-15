@@ -35,12 +35,12 @@ export function usePageDelete<TItem extends { id: string }>({
   };
 
   const handleConfirmDelete = async (
-    deleteFn: (id: string) => Promise<unknown>,
+    deleteManyFn: (ids: string[]) => Promise<unknown>,
   ) => {
     if (!itemToDelete) return;
 
     try {
-      await deleteFn(itemToDelete.id);
+      await deleteManyFn([itemToDelete.id]);
       const deletedItem = itemToDelete;
       handleDeleteDialogClose();
       onDeleteSuccessCallback?.(deletedItem);

@@ -31,10 +31,13 @@ export class CategoryService extends ServiceBase {
     return this.post<CategoryResponse>(data);
   }
 
-  deleteCategory(categoryId: string): Promise<CategoryDeleteResponse> {
-    return this.delete<CategoryDeleteResponse>({
-      endpoint: categoryId,
-    });
+  deleteManyCategories(ids: string[]): Promise<CategoryDeleteResponse> {
+    return this.post<CategoryDeleteResponse>(
+      { ids },
+      {
+        endpoint: 'delete-many',
+      },
+    );
   }
 }
 

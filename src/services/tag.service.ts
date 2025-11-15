@@ -174,19 +174,6 @@ export class TagService {
     };
   }
 
-  async deleteTag(userId: string, tagId: string) {
-    await this.validateTagOwnership(userId, tagId);
-
-    await this.deps.db.tag.update({
-      where: { id: tagId },
-      data: {
-        deletedAt: new Date(),
-      },
-    });
-
-    return { success: true, message: 'Tag deleted successfully' };
-  }
-
   async deleteManyTags(userId: string, ids: string[]) {
     const tags = await this.deps.db.tag.findMany({
       where: {
@@ -203,19 +190,16 @@ export class TagService {
       );
     }
 
-    const result = await this.deps.db.tag.updateMany({
+    await this.deps.db.tag.deleteMany({
       where: {
         id: { in: ids },
         userId,
-      },
-      data: {
-        deletedAt: new Date(),
       },
     });
 
     return {
       success: true,
-      message: `${result.count} tag(s) deleted successfully`,
+      message: `${ids.length} tag(s) deleted successfully`,
     };
   }
 }

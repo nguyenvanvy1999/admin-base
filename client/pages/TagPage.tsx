@@ -11,7 +11,6 @@ import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateTagMutation,
   useDeleteManyTagsMutation,
-  useDeleteTagMutation,
   useUpdateTagMutation,
 } from '@client/hooks/mutations/useTagMutations';
 import {
@@ -65,8 +64,7 @@ const TagPage = () => {
 
   const createMutation = useCreateTagMutation();
   const updateMutation = useUpdateTagMutation();
-  const deleteMutation = useDeleteTagMutation();
-  const deleteManyMutation = useDeleteManyTagsMutation!();
+  const deleteManyMutation = useDeleteManyTagsMutation();
 
   const handleSubmitForm = async (
     formData: IUpsertTagDto,
@@ -91,7 +89,7 @@ const TagPage = () => {
   };
 
   const handleConfirmDelete = async () => {
-    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
+    await deleteHandler.handleConfirmDelete(deleteManyMutation.mutateAsync);
   };
 
   const handleConfirmDeleteMany = async () => {
@@ -105,7 +103,6 @@ const TagPage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending ||
     deleteManyMutation.isPending;
 
   return (

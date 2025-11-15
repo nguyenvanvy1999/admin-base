@@ -87,26 +87,6 @@ const eventController = new Elysia().group(
           },
         },
       )
-      .delete(
-        '/:id',
-        async ({ currentUser, params }) => {
-          return castToRes(
-            await eventService.deleteEvent(currentUser.id, params.id),
-          );
-        },
-        {
-          detail: {
-            ...EVENT_DETAIL,
-            summary: 'Delete event',
-            description:
-              'Permanently delete an event by its ID. This action cannot be undone.',
-          },
-          params: t.Object({ id: t.String() }),
-          response: {
-            200: ResWrapper(ActionResDto),
-          },
-        },
-      )
       .post(
         '/delete-many',
         async ({ currentUser, body }) => {

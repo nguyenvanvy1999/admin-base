@@ -472,17 +472,33 @@ export class BudgetService {
     };
   }
 
-  async deleteBudget(userId: string, budgetId: string) {
-    await this.validateBudgetOwnership(userId, budgetId);
+  async deleteManyBudgets(userId: string, ids: string[]) {
+    const budgets = await this.deps.db.budget.findMany({
+      where: {
+        id: { in: ids },
+        userId,
+      },
+      select: BUDGET_SELECT_MINIMAL,
+    });
 
-    await this.deps.db.budget.update({
-      where: { id: budgetId },
-      data: {
-        deletedAt: new Date(),
+    if (budgets.length !== ids.length) {
+      throwAppError(
+        ErrorCode.BUDGET_NOT_FOUND,
+        'Some budgets were not found or do not belong to you',
+      );
+    }
+
+    await this.deps.db.budget.deleteMany({
+      where: {
+        id: { in: ids },
+        userId,
       },
     });
 
-    return { success: true, message: 'Budget deleted successfully' };
+    return {
+      success: true,
+      message: `${ids.length} budget(s) deleted successfully`,
+    };
   }
 
   async getBudgetPeriods(

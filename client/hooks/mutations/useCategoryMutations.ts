@@ -42,16 +42,16 @@ export const useUpdateCategoryMutation = () => {
   });
 };
 
-export const useDeleteCategoryMutation = () => {
+export const useDeleteManyCategoriesMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (categoryId: string) => {
-      return categoryService.deleteCategory(categoryId);
+    mutationFn: (ids: string[]) => {
+      return categoryService.deleteManyCategories(ids);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast.success('Category deleted successfully');
+      toast.success('Categories deleted successfully');
     },
   });
 };

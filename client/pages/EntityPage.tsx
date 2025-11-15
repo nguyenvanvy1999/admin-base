@@ -10,7 +10,6 @@ import { PageContainer } from '@client/components/PageContainer';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateEntityMutation,
-  useDeleteEntityMutation,
   useDeleteManyEntitiesMutation,
   useUpdateEntityMutation,
 } from '@client/hooks/mutations/useEntityMutations';
@@ -70,8 +69,7 @@ const EntityPage = () => {
 
   const createMutation = useCreateEntityMutation();
   const updateMutation = useUpdateEntityMutation();
-  const deleteMutation = useDeleteEntityMutation();
-  const deleteManyMutation = useDeleteManyEntitiesMutation!();
+  const deleteManyMutation = useDeleteManyEntitiesMutation();
 
   const handleSubmitForm = async (
     formData: IUpsertEntityDto,
@@ -94,7 +92,7 @@ const EntityPage = () => {
   };
 
   const handleConfirmDelete = async () => {
-    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
+    await deleteHandler.handleConfirmDelete(deleteManyMutation.mutateAsync);
   };
 
   const handleConfirmDeleteMany = async () => {
@@ -108,7 +106,6 @@ const EntityPage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending ||
     deleteManyMutation.isPending;
 
   return (

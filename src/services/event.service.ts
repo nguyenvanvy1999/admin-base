@@ -210,19 +210,6 @@ export class EventService {
     };
   }
 
-  async deleteEvent(userId: string, eventId: string) {
-    await this.validateEventOwnership(userId, eventId);
-
-    await this.deps.db.event.update({
-      where: { id: eventId },
-      data: {
-        deletedAt: new Date(),
-      },
-    });
-
-    return { success: true, message: 'Event deleted successfully' };
-  }
-
   async deleteManyEvents(userId: string, ids: string[]) {
     const events = await this.deps.db.event.findMany({
       where: {
@@ -239,19 +226,16 @@ export class EventService {
       );
     }
 
-    const result = await this.deps.db.event.updateMany({
+    await this.deps.db.event.deleteMany({
       where: {
         id: { in: ids },
         userId,
-      },
-      data: {
-        deletedAt: new Date(),
       },
     });
 
     return {
       success: true,
-      message: `${result.count} event(s) deleted successfully`,
+      message: `${ids.length} event(s) deleted successfully`,
     };
   }
 }

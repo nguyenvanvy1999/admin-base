@@ -13,14 +13,12 @@ const entityMutations = createMutationHooks<
 >({
   create: (data) => entityService.createEntity(data),
   update: (data) => entityService.updateEntity(data),
-  delete: (id) => entityService.deleteEntity(id),
   deleteMany: (ids) => entityService.deleteManyEntities(ids),
 });
 
 export const {
   useCreateMutation: useCreateEntityMutation,
   useUpdateMutation: useUpdateEntityMutation,
-  useDeleteMutation: useDeleteEntityMutation,
   useDeleteManyMutation: useDeleteManyEntitiesMutation,
 } = entityMutations({
   queryKey: 'entities',
@@ -28,7 +26,6 @@ export const {
   successMessages: {
     create: 'Entity created successfully',
     update: 'Entity updated successfully',
-    delete: 'Entity deleted successfully',
     deleteMany: 'Entities deleted successfully',
   },
 });

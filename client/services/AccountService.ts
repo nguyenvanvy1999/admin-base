@@ -34,10 +34,13 @@ export class AccountService extends ServiceBase {
     return this.post<AccountResponse>(data);
   }
 
-  deleteAccount(accountId: string): Promise<ActionRes> {
-    return this.delete<ActionRes>({
-      endpoint: accountId,
-    });
+  deleteManyAccounts(ids: string[]): Promise<ActionRes> {
+    return this.post<ActionRes>(
+      { ids },
+      {
+        endpoint: 'delete-many',
+      },
+    );
   }
 }
 

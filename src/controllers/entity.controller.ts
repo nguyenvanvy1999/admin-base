@@ -87,26 +87,6 @@ const entityController = new Elysia().group(
           },
         },
       )
-      .delete(
-        '/:id',
-        async ({ currentUser, params }) => {
-          return castToRes(
-            await entityService.deleteEntity(currentUser.id, params.id),
-          );
-        },
-        {
-          detail: {
-            ...ENTITY_DETAIL,
-            summary: 'Delete entity',
-            description:
-              'Permanently delete a financial entity by its ID. This action cannot be undone.',
-          },
-          params: t.Object({ id: t.String() }),
-          response: {
-            200: ResWrapper(ActionResDto),
-          },
-        },
-      )
       .post(
         '/delete-many',
         async ({ currentUser, body }) => {

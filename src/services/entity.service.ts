@@ -175,19 +175,6 @@ export class EntityService {
     };
   }
 
-  async deleteEntity(userId: string, entityId: string) {
-    await this.validateEntityOwnership(userId, entityId);
-
-    await this.deps.db.entity.update({
-      where: { id: entityId },
-      data: {
-        deletedAt: new Date(),
-      },
-    });
-
-    return { success: true, message: 'Entity deleted successfully' };
-  }
-
   async deleteManyEntities(userId: string, ids: string[]) {
     const entities = await this.deps.db.entity.findMany({
       where: {
@@ -204,19 +191,16 @@ export class EntityService {
       );
     }
 
-    const result = await this.deps.db.entity.updateMany({
+    await this.deps.db.entity.deleteMany({
       where: {
         id: { in: ids },
         userId,
-      },
-      data: {
-        deletedAt: new Date(),
       },
     });
 
     return {
       success: true,
-      message: `${result.count} entity(ies) deleted successfully`,
+      message: `${ids.length} entity(ies) deleted successfully`,
     };
   }
 }
