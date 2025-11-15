@@ -28,7 +28,10 @@ export class PasswordService {
     },
   ) {}
 
-  async createPassword(password: string): Promise<{
+  async createPassword(
+    password: string,
+    expiredAfter?: string,
+  ): Promise<{
     password: string;
     passwordExpired: Date;
     passwordCreated: Date;
@@ -38,7 +41,12 @@ export class PasswordService {
     const passwordHash =
       await this.deps.passwordHasher.hash(passwordWithPepper);
     const passwordExpired = dayjs()
-      .add(this.deps.timeUtil.parseTime(this.deps.env.PASSWORD_EXPIRED), 's')
+      .add(
+        this.deps.timeUtil.parseTime(
+          expiredAfter ?? this.deps.env.PASSWORD_EXPIRED,
+        ),
+        's',
+      )
       .toDate();
     const passwordCreated = new Date();
     return {
