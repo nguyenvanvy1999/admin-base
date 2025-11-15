@@ -1,3 +1,4 @@
+// Budget plans with period-based tracking
 model Budget {
   id        String       @id
   userId    String       @map("user_id")
@@ -22,6 +23,7 @@ model Budget {
   @@map("budgets")
 }
 
+// Categories associated with a budget
 model BudgetCategory {
   id         String   @id
   budgetId   String   @map("budget_id")
@@ -37,6 +39,7 @@ model BudgetCategory {
   @@map("budget_categories")
 }
 
+// Accounts associated with a budget
 model BudgetAccount {
   id        String   @id
   budgetId  String   @map("budget_id")
@@ -52,6 +55,7 @@ model BudgetAccount {
   @@map("budget_accounts")
 }
 
+// Historical period records for budget tracking
 model BudgetPeriodRecord {
   id                String   @id
   budgetId          String   @map("budget_id")

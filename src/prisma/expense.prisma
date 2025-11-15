@@ -1,3 +1,4 @@
+// User financial accounts (cash, bank, credit card, investment)
 model Account {
   id               String      @id
   userId           String      @map("user_id")
@@ -28,6 +29,7 @@ model Account {
   @@map("accounts")
 }
 
+// Hierarchical categories for organizing transactions
 model Category {
   id       String       @id
   userId   String       @map("user_id")
@@ -56,6 +58,7 @@ model Category {
   @@map("categories")
 }
 
+// Core financial transaction records
 model Transaction {
   id                  String          @id
   userId              String          @map("user_id")
@@ -111,6 +114,7 @@ model Transaction {
   @@map("transactions")
 }
 
+// Scheduled recurring transactions (subscriptions, salaries, etc.)
 model RecurringTransaction {
   id         String             @id
   userId     String             @map("user_id")

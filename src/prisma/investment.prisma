@@ -1,3 +1,4 @@
+// Buy/sell trades for investment assets
 model InvestmentTrade {
   id                   String    @id
   userId               String    @map("user_id")
@@ -39,6 +40,7 @@ model InvestmentTrade {
   @@map("investment_trades")
 }
 
+// Investment assets (stocks, crypto, custom investments)
 model Investment {
   id             String              @id
   userId         String              @map("user_id")
@@ -69,6 +71,7 @@ model Investment {
   @@map("investments")
 }
 
+// Deposits and withdrawals to/from investment accounts
 model InvestmentContribution {
   id                   String           @id
   userId               String           @map("user_id")
@@ -99,6 +102,7 @@ model InvestmentContribution {
   @@map("investment_contributions")
 }
 
+// Historical price valuations for investments
 model InvestmentValuation {
   id                  String    @id
   userId              String    @map("user_id")
@@ -128,6 +132,7 @@ model InvestmentValuation {
   @@map("investment_valuations")
 }
 
+// Current holdings summary for each investment
 model Holding {
   id                    String    @id
   userId                String    @map("user_id")

@@ -1,3 +1,4 @@
+// Account types for categorizing user financial accounts
 enum AccountType {
   cash
   bank
@@ -5,6 +6,7 @@ enum AccountType {
   investment
 }
 
+// Category types for organizing transactions
 enum CategoryType {
   expense
   income
@@ -13,6 +15,7 @@ enum CategoryType {
   loan
 }
 
+// Transaction types representing different financial operations
 enum TransactionType {
   income
   expense
@@ -24,22 +27,26 @@ enum TransactionType {
   investment
 }
 
+// Types of investment assets
 enum InvestmentAssetType {
   coin
   ccq
   custom
 }
 
+// Investment tracking modes: priced (auto price fetching) or manual entry
 enum InvestmentMode {
   priced
   manual
 }
 
+// Entity types for tracking individuals or organizations
 enum EntityType {
   individual
   organization
 }
 
+// Budget period intervals
 enum BudgetPeriod {
   daily
   monthly
@@ -48,23 +55,34 @@ enum BudgetPeriod {
   none
 }
 
+// Frequencies for recurring transactions
 enum RecurringFrequency {
   daily
   weekly
   monthly
 }
 
+// Trade side for investment transactions
 enum TradeSide {
   buy
   sell
 }
 
+// Investment contribution types
 enum ContributionType {
   deposit
   withdrawal
 }
 
+// Referral program status
 enum ReferralStatus {
   active
   inactive
+}
+
+enum ProxyProtocol {
+  http
+  https
+  socks4
+  socks5
 }

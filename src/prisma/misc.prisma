@@ -1,3 +1,4 @@
+// User-defined tags for organizing transactions
 model Tag {
   id          String  @id
   userId      String  @map("user_id")
@@ -15,6 +16,7 @@ model Tag {
   @@map("tags")
 }
 
+// Events for grouping transactions by time periods or occasions
 model Event {
   id      String    @id
   userId  String    @map("user_id")
@@ -36,6 +38,7 @@ model Event {
   @@map("events")
 }
 
+// Currency reference data
 model Currency {
   id       String   @id
   code     String   @unique
@@ -62,6 +65,7 @@ model Currency {
   @@map("currencies")
 }
 
+// Contacts/entities for tracking transactions with people or organizations
 model Entity {
   id       String     @id
   userId   String     @map("user_id")
@@ -82,4 +86,80 @@ model Entity {
   @@index([name], name: "entity_name_idx")
   @@index([type], name: "entity_type_idx")
   @@map("entities")
+}
+
+// Internationalization translations
+model I18n {
+  id  String  @id
+  key String  @unique()
+  en  String?
+  vi  String?
+
+  @@index([key])
+  @@map("i18n")
+}
+
+// IP addresses allowed to access restricted resources
+model IPWhitelist {
+  id   String  @id
+  ip   String  @unique
+  note String?
+
+  @@index([ip])
+  @@map("ip_whitelist")
+}
+
+// Application configuration settings
+model Setting {
+  id          String  @id
+  key         String  @unique
+  value       String
+  description String?
+  isSecret    Boolean @default(false) @map("is_secret")
+
+  type SettingDataType @default(STRING)
+
+  @@index([key])
+  @@map("settings")
+}
+
+// Proxy server configurations for external connections
+model Proxy {
+  id       String        @id
+  protocol ProxyProtocol
+  host     String
+  port     Int
+  username String
+  password String
+  enabled  Boolean       @default(true)
+  modified DateTime      @updatedAt()
+  created  DateTime      @default(now())
+
+  @@unique([host, port, protocol, username, password])
+  @@map("proxies")
+}
+
+model AuditLog {
+  id            BigInt   @id
+  payload       Json
+  level         String
+  logType       String   @map("log_type")
+  userId        String?  @map("user_id")
+  sessionId     String?  @map("session_id")
+  ip            String?
+  userAgent     String?  @map("user_agent")
+  requestId     String?  @map("request_id")
+  traceId       String?  @map("trace_id")
+  correlationId String?  @map("correlation_id")
+  occurredAt    DateTime @default(now()) @map("occurred_at")
+  created       DateTime @default(now())
+
+  @@index([created], map: "audit_log_created_idx")
+  @@index([level], map: "audit_log_level_idx")
+  @@index([logType], map: "audit_log_type_idx")
+  @@index([userId, occurredAt(sort: Desc)], map: "audit_log_user_id_occurred_at_idx")
+  @@index([sessionId, occurredAt(sort: Desc)], map: "audit_log_session_id_occurred_at_idx")
+  @@index([traceId], map: "audit_log_trace_id_idx")
+  @@index([correlationId], map: "audit_log_correlation_id_idx")
+  @@map("audit_logs")
 }
