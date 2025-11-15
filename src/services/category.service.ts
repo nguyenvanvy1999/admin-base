@@ -5,13 +5,14 @@ import {
   BALANCE_ADJUSTMENT_CATEGORIES,
   CATEGORY_NAME,
   type CategorySeedData,
+  ErrorCode,
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   INVESTMENT_CATEGORY,
   LOAN_CATEGORIES,
   TRANSFER_CATEGORY,
-} from '@server/share/constants/category';
-import { ErrorCode, throwAppError } from '@server/share/constants/error';
+  throwAppError,
+} from '@server/share';
 import type {
   CategoryListResponse,
   CategoryResponse,

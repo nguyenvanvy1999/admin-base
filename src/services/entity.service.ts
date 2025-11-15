@@ -5,7 +5,7 @@ import type {
   EntityWhereInput,
   Prisma,
 } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import { ErrorCode, throwAppError } from '@server/share';
 import type {
   IListEntitiesQueryDto,
   IUpsertEntityDto,

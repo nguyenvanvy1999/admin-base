@@ -5,7 +5,7 @@ import type {
   EventWhereInput,
   Prisma,
 } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import { ErrorCode, throwAppError } from '@server/share';
 import type { IListEventsQueryDto, IUpsertEventDto } from '../dto/event.dto';
 
 import { EVENT_SELECT_FULL, EVENT_SELECT_MINIMAL } from './selects';

@@ -1,6 +1,6 @@
 import { appEnv, type IEnv } from '@server/configs/env';
-import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import type { ITokenPayload } from '@server/share/type';
+import type { ITokenPayload } from '@server/share';
+import { ErrorCode, throwAppError } from '@server/share';
 import dayjs from 'dayjs';
 import { type JWTPayload, jwtVerify, SignJWT } from 'jose';
 import { EncryptService } from './encrypt.service';

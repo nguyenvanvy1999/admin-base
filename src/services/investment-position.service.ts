@@ -1,7 +1,7 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import { ContributionType, InvestmentMode, TradeSide } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import { ErrorCode, throwAppError } from '@server/share';
 import type { InvestmentPositionResponse } from '../dto/investment.dto';
 import {
   type InvestmentService,

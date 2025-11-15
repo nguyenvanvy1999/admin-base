@@ -1,4 +1,4 @@
-import { defaultRoles } from '@server/share/constants';
+import { defaultRoles } from '@server/share';
 
 export const RoleFixtures = {
   createRole(

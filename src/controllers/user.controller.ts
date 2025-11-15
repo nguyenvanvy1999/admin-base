@@ -6,7 +6,7 @@ import {
 } from '@server/services/auth/auth.middleware';
 import { userUtilService } from '@server/services/auth/auth-util.service';
 import { tokenService } from '@server/services/auth/token.service';
-import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import { ErrorCode, throwAppError } from '@server/share';
 import dayjs from 'dayjs';
 import { Elysia, t } from 'elysia';
 import {

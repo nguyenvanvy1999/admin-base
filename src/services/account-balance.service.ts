@@ -5,7 +5,7 @@ import {
   TradeSide,
   TransactionType,
 } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import { ErrorCode, throwAppError } from '@server/share';
 import Decimal from 'decimal.js';
 import {
   type CurrencyConversionService,

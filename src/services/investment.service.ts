@@ -2,7 +2,7 @@ import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { InvestmentWhereInput } from '@server/generated';
 import { type InvestmentAssetType, InvestmentMode } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import { ErrorCode, throwAppError } from '@server/share';
 import type {
   IListInvestmentsQueryDto,
   InvestmentLatestValuationResponse,

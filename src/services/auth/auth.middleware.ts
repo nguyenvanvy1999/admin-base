@@ -1,8 +1,8 @@
 import { currentUserCache } from '@server/configs/cache';
 import { prisma } from '@server/configs/db';
 import { tokenService } from '@server/services/auth/token.service';
-import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import type { ICurrentUser } from '@server/share/type';
+import type { ICurrentUser } from '@server/share';
+import { ErrorCode, throwAppError } from '@server/share';
 import type { Elysia } from 'elysia';
 import { userUtilService } from './auth-util.service';
 

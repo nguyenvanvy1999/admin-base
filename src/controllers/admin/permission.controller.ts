@@ -1,8 +1,8 @@
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated';
 import { authorize, has } from '@server/services/auth/authorization';
+import type { AppAuthMeta } from '@server/share';
 import { castToRes, ResWrapper } from '@server/share';
-import type { AppAuthMeta } from '@server/share/type';
 import { Elysia, t } from 'elysia';
 import { PermissionQueryDto, PermissionResDto } from '../../dto/admin';
 

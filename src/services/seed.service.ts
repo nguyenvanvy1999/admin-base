@@ -1,9 +1,83 @@
-import { prisma } from '@server/configs/db';
+import { type IDb, prisma } from '@server/configs/db';
+import { appEnv } from '@server/configs/env';
 import { logger } from '@server/configs/logger';
-import { DB_PREFIX, defaultRoles, IdUtil, PERMISSIONS } from '@server/share';
-import { CURRENCY_IDS } from '@server/share/constants/currency';
+import { UserRole } from '@server/generated';
+import {
+  type PasswordService,
+  passwordService,
+} from '@server/services/auth/password.service';
+import {
+  CURRENCY_IDS,
+  DB_PREFIX,
+  defaultRoles,
+  IdUtil,
+  PERMISSIONS,
+  SUPER_ADMIN_ID,
+} from '@server/share';
 
 export class SeedService {
+  constructor(
+    private readonly deps: { db: IDb; passwordService: PasswordService } = {
+      db: prisma,
+      passwordService,
+    },
+  ) {}
+
+  async seedSuperAdmin(): Promise<void> {
+    try {
+      const existingSuperAdmin = await this.deps.db.user.findUnique({
+        where: { id: SUPER_ADMIN_ID },
+      });
+
+      if (existingSuperAdmin) {
+        logger.info('Super admin already exists, skipping seed');
+        return;
+      }
+
+      const superAdminUsername = appEnv.SUPER_ADMIN_USERNAME || 'superadmin';
+      const superAdminPassword = appEnv.SUPER_ADMIN_PASSWORD;
+
+      if (!superAdminPassword) {
+        logger.warn(
+          'SUPER_ADMIN_PASSWORD environment variable is not set, skipping super admin seed',
+        );
+        return;
+      }
+
+      const hashedPassword = await Bun.password.hash(
+        superAdminPassword,
+        'bcrypt',
+      );
+
+      await this.deps.db.$transaction(async (tx) => {
+        const superAdmin = await tx.user.create({
+          data: {
+            id: SUPER_ADMIN_ID,
+            username: superAdminUsername,
+            password: hashedPassword,
+            role: UserRole.admin,
+            baseCurrencyId: CURRENCY_IDS.VND,
+          },
+        });
+
+        await tx.rolePlayer.create({
+          data: {
+            id: IdUtil.dbId(DB_PREFIX.ROLE),
+            playerId: superAdmin.id,
+            roleId: defaultRoles.admin.id,
+          },
+        });
+
+        logger.info(
+          `Super admin created successfully with username: ${superAdminUsername}`,
+        );
+      });
+    } catch (error) {
+      logger.error('Error seeding super admin', { error });
+      throw error;
+    }
+  }
+
   async seedCurrencies(): Promise<void> {
     const currencies = [
       {
@@ -23,7 +97,7 @@ export class SeedService {
     ];
 
     for (const currency of currencies) {
-      await prisma.currency.upsert({
+      await this.deps.db.currency.upsert({
         where: { code: currency.code },
         update: {
           name: currency.name,
@@ -39,7 +113,7 @@ export class SeedService {
     try {
       const roles = Object.values(defaultRoles);
 
-      await prisma.$transaction(async (tx) => {
+      await this.deps.db.$transaction(async (tx) => {
         const existingRoles = await tx.role.findMany({
           where: {
             title: { in: roles.map((role) => role.title) },
@@ -98,7 +172,7 @@ export class SeedService {
         });
       });
 
-      await prisma.$transaction(async (tx) => {
+      await this.deps.db.$transaction(async (tx) => {
         const existingPermissions = await tx.permission.findMany({
           where: {
             title: { in: permissionData.map((p) => p.title) },

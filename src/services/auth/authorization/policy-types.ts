@@ -1,4 +1,4 @@
-import type { ICurrentUser, UPermission } from '@server/share/type';
+import type { ICurrentUser, UPermission } from '@server/share';
 
 export type Loader<TResource> = (args: {
   params: Record<string, string>;

@@ -1,4 +1,4 @@
-import { LOG_LEVEL } from '@server/share/constants/log';
+import { LOG_LEVEL, REGEX_TIME } from '@server/share/constants';
 import { z } from 'zod';
 
 export const envSchema = z.object({
@@ -23,6 +23,11 @@ export const envSchema = z.object({
   ENB_HTTP_LOG: z.coerce.boolean().default(true),
   ENB_CLUSTER: z.coerce.boolean().default(false),
   ENB_SEED: z.coerce.boolean().default(true),
+
+  SALT_LENGTH: z.coerce.number().int().min(8).max(30).default(10),
+  PASSWORD_MAX_ATTEMPT: z.coerce.number().int().min(1).max(100).default(5),
+  PASSWORD_PEPPER: z.string(),
+  PASSWORD_EXPIRED: z.string().regex(REGEX_TIME).default('180 day'),
 
   CORS_ALLOW_METHOD: z.string().default('GET,HEAD,PUT,PATCH,POST,DELETE'),
   CORS_ALLOW_HEADERS: z.string().default('*'),

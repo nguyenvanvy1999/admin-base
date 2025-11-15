@@ -1,6 +1,6 @@
 import { logger } from '@server/configs/logger';
-import type { ErrorCodeType } from '@server/share/constants/error';
-import { AppError, ErrorCode } from '@server/share/constants/error';
+import type { ErrorCodeType } from '@server/share';
+import { AppError, ErrorCode } from '@server/share';
 import type { Elysia } from 'elysia';
 
 const HTTP_STATUS = {

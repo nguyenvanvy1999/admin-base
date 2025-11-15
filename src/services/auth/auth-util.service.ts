@@ -1,7 +1,7 @@
 import { prisma } from '@server/configs/db';
 import type { User } from '@server/generated';
+import type { ITokenPayload, UPermission } from '@server/share';
 import { ArrayUtil, DB_PREFIX, IdUtil } from '@server/share';
-import type { ITokenPayload, UPermission } from '@server/share/type';
 import dayjs from 'dayjs';
 import { sessionService } from './session.service';
 import { tokenService } from './token.service';

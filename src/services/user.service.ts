@@ -2,9 +2,15 @@ import { type IDb, prisma } from '@server/configs/db';
 import type { UserUncheckedUpdateInput } from '@server/generated';
 import { UserRole } from '@server/generated';
 import { userUtilService } from '@server/services/auth/auth-util.service';
-import { DB_PREFIX, defaultRoles, IdUtil, SUPER_ADMIN_ID } from '@server/share';
-import { CURRENCY_IDS } from '@server/share/constants/currency';
-import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import {
+  CURRENCY_IDS,
+  DB_PREFIX,
+  defaultRoles,
+  ErrorCode,
+  IdUtil,
+  SUPER_ADMIN_ID,
+  throwAppError,
+} from '@server/share';
 import type {
   AuthUserRes,
   IChangePasswordDto,

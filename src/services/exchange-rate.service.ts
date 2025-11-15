@@ -1,6 +1,6 @@
 import { appEnv } from '@server/configs/env';
 import { logger } from '@server/configs/logger';
-import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import { ErrorCode, throwAppError } from '@server/share';
 import Decimal from 'decimal.js';
 
 interface ExchangeRateResponse {
