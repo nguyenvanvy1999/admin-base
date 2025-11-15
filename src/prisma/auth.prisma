@@ -126,6 +126,10 @@ model User {
   lastLoginAt DateTime? @map("last_login_at") // Last successful login
   refCode     String?   @unique @map("ref_code") // Referral code for this user
 
+  mfaTotpEnabled Boolean @default(false) @map("mfa_totp_enabled")
+  totpSecret     String? @map("totp_secret")
+  backupCodes    String? @map("backup_codes")
+
   baseCurrency            Currency                 @relation(fields: [baseCurrencyId], references: [id], onDelete: Restrict)
   accounts                Account[]
   categories              Category[]

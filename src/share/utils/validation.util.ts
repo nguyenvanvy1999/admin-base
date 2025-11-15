@@ -1,5 +1,5 @@
 import { prisma } from '@server/configs/db';
-import { ErrorCode, throwAppError } from '../constants/error';
+import { ErrorCode, throwAppError } from '@server/share/constants/error';
 
 export interface OwnershipValidationOptions {
   userId: string;
