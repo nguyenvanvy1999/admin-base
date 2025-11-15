@@ -46,7 +46,7 @@ export class IdUtil {
     return DiscordSnowflake.generate();
   }
 }
-
+export const idUtil = new IdUtil();
 export type DbIdGen = InstanceType<typeof IdUtil>['dbId'];
 export type SnowflakeIdGen = InstanceType<typeof IdUtil>['snowflakeId'];
 export type IdGen = InstanceType<typeof IdUtil>['token16'];

@@ -11,7 +11,7 @@ import {
   type DbIdGen,
   defaultRoles,
   defaultSettings,
-  IdUtil,
+  idUtil,
   OAUTH,
   PERMISSIONS,
   SETTING,
@@ -31,7 +31,7 @@ export class SeedService {
       passwordService,
       logger,
       env: appEnv,
-      dbId: new IdUtil().dbId,
+      dbId: idUtil.dbId,
     },
   ) {}
 

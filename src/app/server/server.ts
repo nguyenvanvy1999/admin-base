@@ -96,7 +96,7 @@ export async function createServer() {
         .use(reportController),
     );
 
-    gracefulShutdownService.setupShutdownHandlers();
+  gracefulShutdownService.setupShutdownHandlers();
 
   await redis.connect();
 

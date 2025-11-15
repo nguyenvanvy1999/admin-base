@@ -55,6 +55,7 @@ export const CURRENCY_IDS = {
 export enum CACHE_NS {
   CURRENT_USER = 'current-user',
   SETTING = 'setting',
+  CAPTCHA = 'captcha',
 }
 
 export const SUPER_ADMIN_ID = 'user_supperadmin';

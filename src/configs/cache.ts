@@ -67,3 +67,9 @@ export const settingCache = new RedisCache({
   ttl: FIVE_MINUTES,
 });
 export type ISettingCache = typeof settingCache;
+
+export const captchaCache = new RedisCache<string>({
+  namespace: CACHE_NS.CAPTCHA,
+  ttl: FIVE_MINUTES,
+});
+export type ICaptchaCache = typeof captchaCache;
