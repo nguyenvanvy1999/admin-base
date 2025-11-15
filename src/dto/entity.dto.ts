@@ -20,7 +20,7 @@ export const UpsertEntityDto = z.object({
 export const ListEntitiesQueryDto = createListQueryDto({
   search: z.string().optional(),
   type: createArrayPreprocess(z.enum(EntityType)),
-  sortBy: z.enum(['name', 'type', 'created']).optional(),
+  sortBy: z.enum(['name', 'type', 'created']).optional().default('created'),
 });
 
 export type IUpsertEntityDto = z.infer<typeof UpsertEntityDto>;

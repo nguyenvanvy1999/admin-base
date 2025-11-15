@@ -1,6 +1,5 @@
-import { prisma } from '@server/configs/db';
-import type { Prisma } from '@server/generated';
 import { authorize, has } from '@server/services/auth/authorization';
+import { permissionService } from '@server/services/auth/permission.service';
 import type { AppAuthMeta } from '@server/share';
 import { castToRes, ResWrapper } from '@server/share';
 import { Elysia, t } from 'elysia';
@@ -13,14 +12,8 @@ export const permissionController = new Elysia<'permissions', AppAuthMeta>({
   .get(
     '/',
     async ({ query: { roleId } }) => {
-      const where: Prisma.PermissionWhereInput = roleId
-        ? { roles: { some: { roleId } } }
-        : {};
-      const permissions = await prisma.permission.findMany({
-        where,
-        orderBy: { title: 'desc' },
-      });
-      return castToRes(permissions);
+      const result = await permissionService.listPermissions(roleId);
+      return castToRes(result);
     },
     {
       query: PermissionQueryDto,

@@ -116,13 +116,7 @@ export class InvestmentValuationService {
   ) {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const {
-      dateFrom,
-      dateTo,
-      page = 1,
-      limit = 50,
-      sortOrder = 'desc',
-    } = query;
+    const { dateFrom, dateTo, page, limit = 50, sortOrder = 'desc' } = query;
 
     const where: Record<string, unknown> = {
       userId,

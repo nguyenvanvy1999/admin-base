@@ -32,10 +32,10 @@ export const CurrencyDto = t.NoValidate(
 );
 
 export const BaseListQueryDto = z.object({
-  page: z.coerce.number().int().min(1).default(1).optional(),
-  limit: z.coerce.number().int().min(1).default(20).optional(),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  limit: z.coerce.number().int().min(1).optional().default(20),
   sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
 export function createArrayPreprocess<T extends z.ZodTypeAny>(schema: T) {

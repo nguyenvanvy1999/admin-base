@@ -123,8 +123,8 @@ export class InvestmentService {
       modes,
       currencyIds,
       search,
-      page = 1,
-      limit = 20,
+      page,
+      limit,
       sortBy = 'created',
       sortOrder = 'desc',
     } = query;

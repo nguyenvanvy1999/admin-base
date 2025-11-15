@@ -149,7 +149,7 @@ export class InvestmentTradeService {
       accountIds,
       dateFrom,
       dateTo,
-      page = 1,
+      page,
       limit = 50,
       sortOrder = 'desc',
     } = query;

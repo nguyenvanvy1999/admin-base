@@ -129,8 +129,8 @@ export class EventService {
       startAtTo,
       endAtFrom,
       endAtTo,
-      page = 1,
-      limit = 20,
+      page,
+      limit,
       sortBy = 'created',
       sortOrder = 'desc',
     } = query;

@@ -404,12 +404,12 @@ export class BudgetService {
     return mapBudget(budget);
   }
 
-  async listBudgets(userId: string, query: IListBudgetsQueryDto = {}) {
+  async listBudgets(userId: string, query: IListBudgetsQueryDto) {
     const {
       period,
       search,
-      page = 1,
-      limit = 20,
+      page,
+      limit,
       sortBy = 'created',
       sortOrder = 'desc',
     } = query;

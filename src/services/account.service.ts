@@ -157,14 +157,14 @@ export class AccountService {
 
   async listAccounts(
     userId: string,
-    query: IListAccountsQueryDto = {},
+    query: IListAccountsQueryDto,
   ): Promise<AccountListResponse> {
     const {
       type,
       currencyId,
       search,
-      page = 1,
-      limit = 20,
+      page,
+      limit,
       sortBy = 'created',
       sortOrder = 'desc',
     } = query;

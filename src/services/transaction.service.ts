@@ -915,7 +915,7 @@ export class TransactionService {
       entityIds,
       dateFrom,
       dateTo,
-      page = 1,
+      page,
       limit = 50,
       sortBy = 'date',
       sortOrder = 'desc',

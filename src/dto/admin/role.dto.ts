@@ -23,7 +23,7 @@ export const UpsertRoleDtoZod = z.object({
 export const ListRolesQueryDto = createListQueryDto({
   search: z.string().optional(),
   userId: z.string().optional(),
-  sortBy: z.enum(['title', 'created']).optional(),
+  sortBy: z.enum(['title', 'created']).optional().default('created'),
 });
 
 export type IListRolesQueryDto = z.infer<typeof ListRolesQueryDto>;

@@ -62,7 +62,7 @@ model Role {
 
 // Many-to-many relationship between roles and permissions
 model RolePermission {
-  id           String   @id
+  id           String   @id @default(uuid(7))
   roleId       String   @map("role_id")
   permissionId String   @map("permission_id")
   created      DateTime @default(now())
@@ -79,7 +79,7 @@ model RolePermission {
 
 // Assigns roles to users
 model RolePlayer {
-  id          String   @id
+  id          String   @id @default(uuid(7))
   playerId    String   @map("player_id")
   roleId      String   @map("role_id")
   description String?

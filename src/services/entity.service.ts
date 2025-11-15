@@ -115,15 +115,8 @@ export class EntityService {
     return mapEntity(entity);
   }
 
-  async listEntities(userId: string, query: IListEntitiesQueryDto = {}) {
-    const {
-      type,
-      search,
-      page = 1,
-      limit = 20,
-      sortBy = 'created',
-      sortOrder = 'desc',
-    } = query;
+  async listEntities(userId: string, query: IListEntitiesQueryDto) {
+    const { type, search, page, limit, sortBy, sortOrder } = query;
 
     const where: EntityWhereInput = {
       userId,
