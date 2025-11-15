@@ -25,7 +25,7 @@ export const ListInvestmentsQueryDto = createListQueryDto({
   modes: createArrayPreprocess(z.enum(InvestmentMode)),
   currencyIds: createArrayPreprocess(z.string()),
   search: z.string().optional(),
-  sortBy: z.enum(['name', 'createdAt', 'updatedAt']).optional(),
+  sortBy: z.enum(['name', 'created', 'modified']).optional(),
 });
 
 export type IUpsertInvestmentDto = z.infer<typeof UpsertInvestmentDto>;
@@ -45,8 +45,8 @@ export const InvestmentDto = t.NoValidate(
     baseCurrencyId: t.Nullable(t.String()),
     extra: t.Nullable(t.Any()),
     deletedAt: t.Nullable(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
     currency: InvestmentCurrencyDto,
     baseCurrency: t.Nullable(InvestmentCurrencyDto),
   }),

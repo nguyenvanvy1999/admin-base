@@ -19,8 +19,8 @@ const mapEntity = (
   }>,
 ) => ({
   ...entity,
-  createdAt: entity.createdAt.toISOString(),
-  updatedAt: entity.updatedAt.toISOString(),
+  created: entity.created.toISOString(),
+  modified: entity.modified.toISOString(),
 });
 
 export class EntityService {
@@ -31,7 +31,6 @@ export class EntityService {
       where: {
         id: entityId,
         userId,
-        deletedAt: null,
       },
       select: ENTITY_SELECT_MINIMAL,
     });
@@ -49,7 +48,6 @@ export class EntityService {
     const where: EntityWhereInput = {
       userId,
       name,
-      deletedAt: null,
     };
 
     if (excludeId) {
@@ -106,7 +104,6 @@ export class EntityService {
       where: {
         id: entityId,
         userId,
-        deletedAt: null,
       },
       select: ENTITY_SELECT_FULL,
     });
@@ -124,13 +121,12 @@ export class EntityService {
       search,
       page = 1,
       limit = 20,
-      sortBy = 'createdAt',
+      sortBy = 'created',
       sortOrder = 'desc',
     } = query;
 
     const where: EntityWhereInput = {
       userId,
-      deletedAt: null,
     };
 
     if (type && type.length > 0) {
@@ -149,8 +145,8 @@ export class EntityService {
       orderBy.name = sortOrder;
     } else if (sortBy === 'type') {
       orderBy.type = sortOrder;
-    } else if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
+    } else if (sortBy === 'created') {
+      orderBy.created = sortOrder;
     }
 
     const skip = (page - 1) * limit;
@@ -195,7 +191,6 @@ export class EntityService {
       where: {
         id: { in: ids },
         userId,
-        deletedAt: null,
       },
       select: ENTITY_SELECT_MINIMAL,
     });
@@ -211,7 +206,6 @@ export class EntityService {
       where: {
         id: { in: ids },
         userId,
-        deletedAt: null,
       },
       data: {
         deletedAt: new Date(),

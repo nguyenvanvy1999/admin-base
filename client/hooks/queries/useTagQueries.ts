@@ -12,7 +12,7 @@ type ListTagsQuery = {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'name' | 'createdAt';
+  sortBy?: 'name' | 'created';
   sortOrder?: 'asc' | 'desc';
 };
 
@@ -22,7 +22,7 @@ export const useTagsQuery = createQueryHook<
   {
     page?: number;
     limit?: number;
-    sortBy?: 'name' | 'createdAt';
+    sortBy?: 'name' | 'created';
     sortOrder?: 'asc' | 'desc';
   },
   ListTagsQuery,

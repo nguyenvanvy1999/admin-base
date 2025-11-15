@@ -20,7 +20,7 @@ export const UpsertUserDto = z.object({
 export const ListUsersQueryDto = createListQueryDto({
   search: z.string().optional(),
   role: createArrayPreprocess(z.enum([UserRole.user, UserRole.admin])),
-  sortBy: z.enum(['username', 'name', 'role', 'createdAt']).optional(),
+  sortBy: z.enum(['username', 'name', 'role', 'created']).optional(),
 });
 
 export type IUpsertUserDto = z.infer<typeof UpsertUserDto>;
@@ -35,8 +35,8 @@ export const UserResDto = t.NoValidate(
     name: t.Nullable(t.String()),
     role: t.Enum(UserRole),
     baseCurrencyId: t.Nullable(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
     baseCurrency: t.Nullable(UserCurrencyDto),
   }),
 );

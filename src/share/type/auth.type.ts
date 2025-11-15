@@ -13,8 +13,8 @@ export interface ICurrentUser {
   sessionId: string;
   username: string;
   name: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  created: Date;
+  modified: Date;
   baseCurrencyId: string | null;
   settings: any;
   permissions: UPermission[];

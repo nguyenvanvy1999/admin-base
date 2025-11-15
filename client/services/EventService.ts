@@ -19,7 +19,7 @@ export class EventService extends ServiceBase {
     endAtTo?: string;
     page?: number;
     limit?: number;
-    sortBy?: 'name' | 'startAt' | 'endAt' | 'createdAt';
+    sortBy?: 'name' | 'startAt' | 'endAt' | 'created';
     sortOrder?: 'asc' | 'desc';
   }): Promise<EventListResponse> {
     return this.get<EventListResponse>({

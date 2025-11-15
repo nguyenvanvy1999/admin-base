@@ -75,7 +75,7 @@ Quản lý các loại tiền tệ.
 - `name`: String - Tên tiền tệ
 - `symbol`: String? - Ký hiệu ($, ₫, etc.)
 - `isActive`: Boolean - Trạng thái hoạt động
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `users`: User[]
@@ -100,7 +100,7 @@ Người dùng của hệ thống.
 - `baseCurrencyId`: String - Currency mặc định
 - `settings`: Json? - Cài đặt người dùng
 - `deletedAt`: DateTime? - Soft delete
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `baseCurrency`: Currency
@@ -131,7 +131,7 @@ Tài khoản của người dùng.
 - `notifyDaysBefore`: Int? - Thông báo trước bao nhiêu ngày
 - `meta`: Json? - Metadata
 - `deletedAt`: DateTime? - Soft delete
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `currency`: Currency
@@ -161,7 +161,7 @@ Danh mục cho giao dịch.
 - `color`: String?
 - `isLocked`: Boolean (default: false)
 - `deletedAt`: DateTime? - Soft delete
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `user`: User
@@ -191,7 +191,7 @@ Tài sản đầu tư.
 - `baseCurrencyId`: String? - Currency của tài khoản nguồn (VND)
 - `extra`: Json? - Metadata (ví dụ: ccqId cho CCQ)
 - `deletedAt`: DateTime? - Soft delete
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `currency`: Currency
@@ -238,7 +238,7 @@ Giao dịch thống nhất cho tất cả loại giao dịch.
 - `receiptUrl`: String?
 - `metadata`: Json?
 - `deletedAt`: DateTime? - Soft delete
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `currency`: Currency
@@ -289,7 +289,7 @@ Lệnh mua/bán cho đầu tư priced mode.
 - `externalId`: String? - ID từ exchange
 - `transactionId`: String? (unique) - Link đến Transaction
 - `meta`: Json?
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `currency`: Currency
@@ -323,7 +323,7 @@ Lệnh mua/bán cho đầu tư priced mode.
 - `baseCurrencyId`: String?
 - `timestamp`: DateTime
 - `note`: String?
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `user`: User
@@ -355,7 +355,7 @@ Giá trị hiện tại của đầu tư.
 - `timestamp`: DateTime
 - `source`: String? - Nguồn giá
 - `fetchedAt`: DateTime? - Thời gian fetch
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `user`: User
@@ -381,10 +381,10 @@ Cache/snapshot của position (chưa được sử dụng nhiều).
 - `quantity`: Decimal
 - `avgCost`: Decimal
 - `unrealizedPnl`: Decimal?
-- `unrealizedPnlUpdatedAt`: DateTime?
+- `unrealizedPnlmodified`: DateTime?
 - `lastPrice`: Decimal?
 - `lastPriceAt`: DateTime?
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `user`: User
@@ -406,7 +406,7 @@ Ngân sách theo danh mục.
 - `startDate`: DateTime
 - `endDate`: DateTime?
 - `deletedAt`: DateTime? - Soft delete
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `user`: User
@@ -430,7 +430,7 @@ Ngân sách theo danh mục.
 - `address`: String?
 - `note`: String?
 - `deletedAt`: DateTime? - Soft delete
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `user`: User
@@ -458,7 +458,7 @@ Giao dịch định kỳ.
 - `nextDate`: DateTime
 - `endDate`: DateTime?
 - `note`: String?
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `currency`: Currency
@@ -481,7 +481,7 @@ Tags cho giao dịch.
 - `name`: String
 - `description`: String?
 - `deletedAt`: DateTime? - Soft delete
-- `createdAt`, `updatedAt`: DateTime
+- `created`, `modified`: DateTime
 
 **Relations**:
 - `user`: User

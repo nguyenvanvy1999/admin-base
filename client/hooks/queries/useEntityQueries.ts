@@ -16,7 +16,7 @@ type ListEntitiesQuery = {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'name' | 'type' | 'createdAt';
+  sortBy?: 'name' | 'type' | 'created';
   sortOrder?: 'asc' | 'desc';
 };
 
@@ -26,7 +26,7 @@ export const useEntitiesQuery = createQueryHook<
   {
     page?: number;
     limit?: number;
-    sortBy?: 'name' | 'type' | 'createdAt';
+    sortBy?: 'name' | 'type' | 'created';
     sortOrder?: 'asc' | 'desc';
   },
   ListEntitiesQuery,

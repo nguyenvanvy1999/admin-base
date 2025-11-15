@@ -24,8 +24,8 @@ const serializeInvestment = (investment: {
   baseCurrencyId: string | null;
   extra: unknown;
   deletedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+  created: Date;
+  modified: Date;
   currency: {
     id: string;
     code: string;
@@ -42,8 +42,8 @@ const serializeInvestment = (investment: {
   ...investment,
   extra: investment.extra ?? null,
   deletedAt: investment.deletedAt ? investment.deletedAt.toISOString() : null,
-  createdAt: investment.createdAt.toISOString(),
-  updatedAt: investment.updatedAt.toISOString(),
+  created: investment.created.toISOString(),
+  modified: investment.modified.toISOString(),
 });
 
 export class InvestmentService {
@@ -70,7 +70,6 @@ export class InvestmentService {
       where: {
         id: investmentId,
         userId,
-        deletedAt: null,
       },
       select: INVESTMENT_SELECT_FULL,
     });
@@ -126,13 +125,13 @@ export class InvestmentService {
       search,
       page = 1,
       limit = 20,
-      sortBy = 'createdAt',
+      sortBy = 'created',
       sortOrder = 'desc',
     } = query;
 
     const where: InvestmentWhereInput = {
       userId,
-      deletedAt: null,
+
       ...(assetTypes && assetTypes.length > 0
         ? { assetType: { in: assetTypes } }
         : {}),
@@ -153,9 +152,9 @@ export class InvestmentService {
     const orderBy =
       sortBy === 'name'
         ? { name: sortOrder }
-        : sortBy === 'updatedAt'
-          ? { updatedAt: sortOrder }
-          : { createdAt: sortOrder };
+        : sortBy === 'modified'
+          ? { modified: sortOrder }
+          : { created: sortOrder };
 
     const skip = (page - 1) * limit;
 

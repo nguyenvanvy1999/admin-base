@@ -18,8 +18,8 @@ const mapEvent = (
   ...event,
   startAt: event.startAt.toISOString(),
   endAt: event.endAt ? event.endAt.toISOString() : null,
-  createdAt: event.createdAt.toISOString(),
-  updatedAt: event.updatedAt.toISOString(),
+  created: event.created.toISOString(),
+  modified: event.modified.toISOString(),
 });
 
 export class EventService {
@@ -30,7 +30,6 @@ export class EventService {
       where: {
         id: eventId,
         userId,
-        deletedAt: null,
       },
       select: EVENT_SELECT_MINIMAL,
     });
@@ -48,7 +47,6 @@ export class EventService {
     const where: EventWhereInput = {
       userId,
       name,
-      deletedAt: null,
     };
 
     if (excludeId) {
@@ -113,7 +111,6 @@ export class EventService {
       where: {
         id: eventId,
         userId,
-        deletedAt: null,
       },
       select: EVENT_SELECT_FULL,
     });
@@ -134,13 +131,12 @@ export class EventService {
       endAtTo,
       page = 1,
       limit = 20,
-      sortBy = 'createdAt',
+      sortBy = 'created',
       sortOrder = 'desc',
     } = query;
 
     const where: EventWhereInput = {
       userId,
-      deletedAt: null,
     };
 
     if (search && search.trim()) {
@@ -177,8 +173,8 @@ export class EventService {
       orderBy.startAt = sortOrder;
     } else if (sortBy === 'endAt') {
       orderBy.endAt = sortOrder;
-    } else if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
+    } else if (sortBy === 'created') {
+      orderBy.created = sortOrder;
     }
 
     const skip = (page - 1) * limit;
@@ -223,7 +219,6 @@ export class EventService {
       where: {
         id: { in: ids },
         userId,
-        deletedAt: null,
       },
       select: EVENT_SELECT_MINIMAL,
     });
@@ -239,7 +234,6 @@ export class EventService {
       where: {
         id: { in: ids },
         userId,
-        deletedAt: null,
       },
       data: {
         deletedAt: new Date(),

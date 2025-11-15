@@ -61,8 +61,8 @@ const InvestmentPage = () => {
     useState<InvestmentResponse | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
-  const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'updatedAt'>(
-    'createdAt',
+  const [sortBy, setSortBy] = useState<'name' | 'created' | 'modified'>(
+    'created',
   );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -326,10 +326,10 @@ const InvestmentPage = () => {
                 )
               : updater;
           if (newSorting.length > 0) {
-            setSortBy(newSorting[0].id as 'name' | 'createdAt' | 'updatedAt');
+            setSortBy(newSorting[0].id as 'name' | 'created' | 'modified');
             setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
           } else {
-            setSortBy('createdAt');
+            setSortBy('created');
             setSortOrder('desc');
           }
           setPage(1);

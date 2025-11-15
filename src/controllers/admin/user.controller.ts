@@ -36,13 +36,11 @@ export const userController = new Elysia<'users', AppAuthMeta>({
         role,
         page = 1,
         limit = 20,
-        sortBy = 'createdAt',
+        sortBy = 'created',
         sortOrder = 'desc',
       } = query as IListUsersQueryDto;
 
-      const where: Prisma.UserWhereInput = {
-        deletedAt: null,
-      };
+      const where: Prisma.UserWhereInput = {};
 
       if (search && search.trim()) {
         where.OR = [
@@ -62,8 +60,8 @@ export const userController = new Elysia<'users', AppAuthMeta>({
         orderBy.name = sortOrder;
       } else if (sortBy === 'role') {
         orderBy.role = sortOrder;
-      } else if (sortBy === 'createdAt') {
-        orderBy.createdAt = sortOrder;
+      } else if (sortBy === 'created') {
+        orderBy.created = sortOrder;
       }
 
       const skip = (page - 1) * limit;
@@ -80,8 +78,8 @@ export const userController = new Elysia<'users', AppAuthMeta>({
             name: true,
             role: true,
             baseCurrencyId: true,
-            createdAt: true,
-            updatedAt: true,
+            created: true,
+            modified: true,
             baseCurrency: {
               select: {
                 id: true,
@@ -102,8 +100,8 @@ export const userController = new Elysia<'users', AppAuthMeta>({
           name: user.name,
           role: user.role,
           baseCurrencyId: user.baseCurrencyId,
-          createdAt: user.createdAt.toISOString(),
-          updatedAt: user.updatedAt.toISOString(),
+          created: user.created.toISOString(),
+          modified: user.modified.toISOString(),
           baseCurrency: user.baseCurrency
             ? {
                 id: user.baseCurrency.id,
@@ -134,7 +132,6 @@ export const userController = new Elysia<'users', AppAuthMeta>({
       const user = await prisma.user.findFirst({
         where: {
           id: params.id,
-          deletedAt: null,
         },
         select: {
           id: true,
@@ -142,8 +139,8 @@ export const userController = new Elysia<'users', AppAuthMeta>({
           name: true,
           role: true,
           baseCurrencyId: true,
-          createdAt: true,
-          updatedAt: true,
+          created: true,
+          modified: true,
           baseCurrency: {
             select: {
               id: true,
@@ -165,8 +162,8 @@ export const userController = new Elysia<'users', AppAuthMeta>({
         name: user.name,
         role: user.role,
         baseCurrencyId: user.baseCurrencyId,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
+        created: user.created.toISOString(),
+        modified: user.modified.toISOString(),
         baseCurrency: user.baseCurrency
           ? {
               id: user.baseCurrency.id,
@@ -202,9 +199,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
       const dateFromDate = dateFrom ? new Date(dateFrom) : undefined;
       const dateToDate = dateTo ? new Date(dateTo) : undefined;
 
-      const baseWhere: Prisma.UserWhereInput = {
-        deletedAt: null,
-      };
+      const baseWhere: Prisma.UserWhereInput = {};
 
       const [totalUsers, newUsersThisMonth, newUsersThisWeek, usersByRole] =
         await Promise.all([
@@ -212,13 +207,13 @@ export const userController = new Elysia<'users', AppAuthMeta>({
           prisma.user.count({
             where: {
               ...baseWhere,
-              createdAt: { gte: startOfMonth },
+              created: { gte: startOfMonth },
             },
           }),
           prisma.user.count({
             where: {
               ...baseWhere,
-              createdAt: { gte: startOfWeek },
+              created: { gte: startOfWeek },
             },
           }),
           prisma.user.groupBy({
@@ -244,7 +239,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
         ...baseWhere,
         ...(dateFromDate || dateToDate
           ? {
-              createdAt: {
+              created: {
                 ...(dateFromDate ? { gte: dateFromDate } : {}),
                 ...(dateToDate ? { lte: dateToDate } : {}),
               },
@@ -255,17 +250,17 @@ export const userController = new Elysia<'users', AppAuthMeta>({
       const allUsers = await prisma.user.findMany({
         where: timeSeriesWhere,
         select: {
-          createdAt: true,
+          created: true,
         },
         orderBy: {
-          createdAt: 'asc',
+          created: 'asc',
         },
       });
 
       const statsMap = new Map<string, { count: number; newUsers: number }>();
 
       let cumulativeCount = 0;
-      const filterStartDate = dateFromDate || allUsers[0]?.createdAt;
+      const filterStartDate = dateFromDate || allUsers[0]?.created;
       if (filterStartDate) {
         const startDate = new Date(filterStartDate);
         if (groupBy === 'day') {
@@ -298,7 +293,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
       }
 
       for (const user of allUsers) {
-        const date = new Date(user.createdAt);
+        const date = new Date(user.created);
         let dateKey: string;
         if (groupBy === 'day') {
           dateKey = date.toISOString().split('T')[0];
@@ -380,7 +375,7 @@ export const userController = new Elysia<'users', AppAuthMeta>({
           }
         }
 
-        const updateData: Prisma.UserUncheckedUpdateInput = {
+        const modifieda: Prisma.UserUncheckedUpdateInput = {
           username: username || existingUser.username,
           name: name ?? null,
           role: role || existingUser.role,
@@ -388,12 +383,12 @@ export const userController = new Elysia<'users', AppAuthMeta>({
         };
 
         if (password) {
-          updateData.password = await Bun.password.hash(password, 'bcrypt');
+          modifieda.password = await Bun.password.hash(password, 'bcrypt');
         }
 
         await prisma.user.update({
           where: { id },
-          data: updateData,
+          data: modifieda,
         });
       } else {
         const usernameExists = await prisma.user.findFirst({
@@ -441,7 +436,6 @@ export const userController = new Elysia<'users', AppAuthMeta>({
       await prisma.user.updateMany({
         where: {
           id: { in: ids },
-          deletedAt: null,
         },
         data: {
           deletedAt: new Date(),

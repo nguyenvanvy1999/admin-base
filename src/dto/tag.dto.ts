@@ -15,7 +15,7 @@ export const UpsertTagDto = z.object({
 
 export const ListTagsQueryDto = createListQueryDto({
   search: z.string().optional(),
-  sortBy: z.enum(['name', 'createdAt']).optional(),
+  sortBy: z.enum(['name', 'created']).optional(),
 });
 
 export const DeleteManyTagsDto = DeleteManyDto;
@@ -28,8 +28,8 @@ export const TagDto = t.NoValidate(
     id: t.String(),
     name: t.String(),
     description: t.Nullable(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
   }),
 );
 

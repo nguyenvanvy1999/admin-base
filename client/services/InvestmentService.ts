@@ -38,7 +38,7 @@ export class InvestmentService extends ServiceBase {
     search?: string;
     page?: number;
     limit?: number;
-    sortBy?: 'name' | 'createdAt' | 'updatedAt';
+    sortBy?: 'name' | 'created' | 'modified';
     sortOrder?: 'asc' | 'desc';
   }): Promise<InvestmentListResponse> {
     return this.get<InvestmentListResponse>({

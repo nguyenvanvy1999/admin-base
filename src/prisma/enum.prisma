@@ -1,0 +1,70 @@
+enum AccountType {
+  cash
+  bank
+  credit_card
+  investment
+}
+
+enum CategoryType {
+  expense
+  income
+  transfer
+  investment
+  loan
+}
+
+enum TransactionType {
+  income
+  expense
+  transfer
+  loan_given
+  loan_received
+  repay_debt
+  collect_debt
+  investment
+}
+
+enum InvestmentAssetType {
+  coin
+  ccq
+  custom
+}
+
+enum InvestmentMode {
+  priced
+  manual
+}
+
+enum EntityType {
+  individual
+  organization
+}
+
+enum BudgetPeriod {
+  daily
+  monthly
+  quarterly
+  yearly
+  none
+}
+
+enum RecurringFrequency {
+  daily
+  weekly
+  monthly
+}
+
+enum TradeSide {
+  buy
+  sell
+}
+
+enum ContributionType {
+  deposit
+  withdrawal
+}
+
+enum ReferralStatus {
+  active
+  inactive
+}

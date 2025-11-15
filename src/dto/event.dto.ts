@@ -20,7 +20,7 @@ export const ListEventsQueryDto = createListQueryDto({
   startAtTo: z.iso.datetime().optional(),
   endAtFrom: z.iso.datetime().optional(),
   endAtTo: z.iso.datetime().optional(),
-  sortBy: z.enum(['name', 'startAt', 'endAt', 'createdAt']).optional(),
+  sortBy: z.enum(['name', 'startAt', 'endAt', 'created']).optional(),
 });
 
 export const DeleteManyEventsDto = DeleteManyDto;
@@ -34,8 +34,8 @@ export const EventDto = t.NoValidate(
     name: t.String(),
     startAt: t.String(),
     endAt: t.Nullable(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
   }),
 );
 

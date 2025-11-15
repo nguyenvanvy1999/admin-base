@@ -128,8 +128,8 @@ const SessionTable = ({
         enableSorting: false,
       },
       {
-        accessor: 'createdAt',
-        title: 'sessions.createdAt',
+        accessor: 'created',
+        title: 'sessions.created',
         render: (value) => {
           if (!value) return <span className="text-gray-400">-</span>;
           return <span>{formatDate(value as string | Date)}</span>;

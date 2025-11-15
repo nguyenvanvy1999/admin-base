@@ -22,7 +22,7 @@ export const UpsertEntityDto = z.object({
 export const ListEntitiesQueryDto = createListQueryDto({
   search: z.string().optional(),
   type: createArrayPreprocess(z.enum(EntityType)),
-  sortBy: z.enum(['name', 'type', 'createdAt']).optional(),
+  sortBy: z.enum(['name', 'type', 'created']).optional(),
 });
 
 export const DeleteManyEntitiesDto = DeleteManyDto;
@@ -39,8 +39,8 @@ export const EntityDto = t.NoValidate(
     email: t.Nullable(t.String()),
     address: t.Nullable(t.String()),
     note: t.Nullable(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
   }),
 );
 

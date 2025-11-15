@@ -46,14 +46,12 @@ const EntityPage = () => {
   const { t } = useTranslation();
   const formRef = useRef<FormComponentRef>(null);
 
-  const paginationSorting = usePaginationSorting<'name' | 'type' | 'createdAt'>(
-    {
-      defaultPage: 1,
-      defaultLimit: 20,
-      defaultSortBy: 'createdAt',
-      defaultSortOrder: 'desc',
-    },
-  );
+  const paginationSorting = usePaginationSorting<'name' | 'type' | 'created'>({
+    defaultPage: 1,
+    defaultLimit: 20,
+    defaultSortBy: 'created',
+    defaultSortOrder: 'desc',
+  });
 
   const dialog = usePageDialog<EntityResponse>();
 
@@ -181,7 +179,7 @@ const EntityPage = () => {
         totalRecords={data?.pagination?.total}
         sorting={paginationSorting.sorting}
         onSortingChange={(updater) =>
-          paginationSorting.setSorting(updater, 'createdAt')
+          paginationSorting.setSorting(updater, 'created')
         }
         selectedRecords={deleteHandler.selectedRecords}
         onSelectedRecordsChange={deleteHandler.setSelectedRecords}

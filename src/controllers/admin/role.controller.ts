@@ -35,7 +35,7 @@ export const roleController = new Elysia<'roles', AppAuthMeta>({
         userId,
         page = 1,
         limit = 20,
-        sortBy = 'createdAt',
+        sortBy = 'created',
         sortOrder = 'desc',
       } = query as IListRolesQueryDto;
 
@@ -54,8 +54,8 @@ export const roleController = new Elysia<'roles', AppAuthMeta>({
       const orderBy: Prisma.RoleOrderByWithRelationInput = {};
       if (sortBy === 'title') {
         orderBy.title = sortOrder;
-      } else if (sortBy === 'createdAt') {
-        orderBy.createdAt = sortOrder;
+      } else if (sortBy === 'created') {
+        orderBy.created = sortOrder;
       }
 
       const skip = (page - 1) * limit;
@@ -71,8 +71,8 @@ export const roleController = new Elysia<'roles', AppAuthMeta>({
             title: true,
             description: true,
             enabled: true,
-            createdAt: true,
-            updatedAt: true,
+            created: true,
+            modified: true,
             permissions: { select: { permissionId: true } },
             players: { select: { playerId: true } },
           },
@@ -88,8 +88,8 @@ export const roleController = new Elysia<'roles', AppAuthMeta>({
           enabled: role.enabled,
           permissionIds: role.permissions.map((p) => p.permissionId),
           playerIds: role.players.map((p) => p.playerId),
-          createdAt: role.createdAt.toISOString(),
-          updatedAt: role.updatedAt.toISOString(),
+          created: role.created.toISOString(),
+          modified: role.modified.toISOString(),
         })),
         pagination: {
           page,

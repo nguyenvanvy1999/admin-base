@@ -44,11 +44,11 @@ const BudgetPage = () => {
   const formRef = useRef<FormComponentRef>(null);
 
   const paginationSorting = usePaginationSorting<
-    'name' | 'amount' | 'period' | 'startDate' | 'createdAt'
+    'name' | 'amount' | 'period' | 'startDate' | 'created'
   >({
     defaultPage: 1,
     defaultLimit: 20,
-    defaultSortBy: 'createdAt',
+    defaultSortBy: 'created',
     defaultSortOrder: 'desc',
   });
 
@@ -202,7 +202,7 @@ const BudgetPage = () => {
           totalRecords={data?.pagination?.total}
           sorting={paginationSorting.sorting}
           onSortingChange={(updater) =>
-            paginationSorting.setSorting(updater, 'createdAt')
+            paginationSorting.setSorting(updater, 'created')
           }
           selectedRecords={deleteHandler.selectedRecords}
           onSelectedRecordsChange={deleteHandler.setSelectedRecords}

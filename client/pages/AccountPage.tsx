@@ -58,11 +58,11 @@ const AccountPage = () => {
   const formRef = useRef<FormComponentRef>(null);
 
   const paginationSorting = usePaginationSorting<
-    'name' | 'createdAt' | 'balance'
+    'name' | 'created' | 'balance'
   >({
     defaultPage: 1,
     defaultLimit: 20,
-    defaultSortBy: 'createdAt',
+    defaultSortBy: 'created',
     defaultSortOrder: 'desc',
   });
 
@@ -230,7 +230,7 @@ const AccountPage = () => {
         totalRecords={data?.pagination?.total}
         sorting={paginationSorting.sorting}
         onSortingChange={(updater) =>
-          paginationSorting.setSorting(updater, 'createdAt')
+          paginationSorting.setSorting(updater, 'created')
         }
       />
 

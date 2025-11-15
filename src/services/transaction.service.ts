@@ -136,8 +136,8 @@ const formatTransactionRecord = (
   note: transaction.note ?? null,
   receiptUrl: transaction.receiptUrl ?? null,
   metadata: transaction.metadata ?? null,
-  createdAt: dateToIsoString(transaction.createdAt),
-  updatedAt: dateToIsoString(transaction.updatedAt),
+  created: dateToIsoString(transaction.created),
+  modified: dateToIsoString(transaction.modified),
   account: formatAccountRecord(transaction.account!),
   toAccount: formatOptionalAccountRecord(transaction.toAccount),
   category: formatCategoryRecord(transaction.category),
@@ -160,7 +160,6 @@ class TransactionHandlerFactory {
       where: {
         id: accountId,
         userId,
-        deletedAt: null,
       },
       select: TRANSACTION_SELECT_MINIMAL,
     });
@@ -175,7 +174,6 @@ class TransactionHandlerFactory {
       where: {
         id: categoryId,
         userId,
-        deletedAt: null,
       },
       select: { id: true, userId: true },
     });
@@ -189,7 +187,6 @@ class TransactionHandlerFactory {
       where: {
         id: entityId,
         userId,
-        deletedAt: null,
       },
       select: { id: true, userId: true },
     });
@@ -209,7 +206,6 @@ class TransactionHandlerFactory {
       where: {
         id: eventId,
         userId,
-        deletedAt: null,
       },
       select: { id: true, userId: true },
     });
@@ -559,7 +555,6 @@ class TransactionHandlerFactory {
             userId,
             transferGroupId: existing.transferGroupId,
             isTransferMirror: true,
-            deletedAt: null,
           },
           select: { amount: true },
         })
@@ -636,7 +631,6 @@ class TransactionHandlerFactory {
               userId,
               transferGroupId: existing.transferGroupId,
               isTransferMirror: true,
-              deletedAt: null,
             },
             select: { id: true },
           })
@@ -820,7 +814,6 @@ export class TransactionService {
       where: {
         id: data.accountId,
         userId,
-        deletedAt: null,
       },
       select: TRANSACTION_SELECT_MINIMAL,
     });
@@ -886,7 +879,6 @@ export class TransactionService {
       where: {
         id: transactionId,
         userId,
-        deletedAt: null,
       },
       select: TRANSACTION_SELECT_FULL,
     });
@@ -917,7 +909,6 @@ export class TransactionService {
 
     const where: TransactionWhereInput = {
       userId,
-      deletedAt: null,
     };
 
     if (types && types.length > 0) {
@@ -1070,7 +1061,6 @@ export class TransactionService {
               userId,
               transferGroupId: transaction.transferGroupId ?? undefined,
               isTransferMirror: false,
-              deletedAt: null,
             },
             select: {
               id: true,
@@ -1093,7 +1083,6 @@ export class TransactionService {
               userId,
               transferGroupId: primary.transferGroupId,
               isTransferMirror: true,
-              deletedAt: null,
             },
             select: { amount: true },
           })
@@ -1124,7 +1113,6 @@ export class TransactionService {
             where: {
               userId,
               transferGroupId: transaction.transferGroupId,
-              deletedAt: null,
             },
             data: { deletedAt: new Date() },
           });
@@ -1181,7 +1169,6 @@ export class TransactionService {
             where: {
               id: transactionData.accountId,
               userId,
-              deletedAt: null,
             },
             select: TRANSACTION_SELECT_MINIMAL,
           });
@@ -1204,7 +1191,6 @@ export class TransactionService {
                 where: {
                   id: incomeExpenseData.categoryId,
                   userId,
-                  deletedAt: null,
                 },
               });
               if (!category) {
@@ -1229,7 +1215,6 @@ export class TransactionService {
                 where: {
                   id: transferData.toAccountId,
                   userId,
-                  deletedAt: null,
                 },
               });
               if (!toAccount) {
@@ -1254,7 +1239,6 @@ export class TransactionService {
                 where: {
                   id: loanData.entityId,
                   userId,
-                  deletedAt: null,
                 },
               });
               if (!entity) {
@@ -1316,7 +1300,6 @@ export class TransactionService {
       where: {
         id: data.accountId,
         userId,
-        deletedAt: null,
       },
       select: {
         id: true,

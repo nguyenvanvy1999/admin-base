@@ -16,7 +16,7 @@ type ListBudgetsQuery = {
   period?: BudgetPeriod[];
   page?: number;
   limit?: number;
-  sortBy?: 'name' | 'amount' | 'period' | 'startDate' | 'createdAt';
+  sortBy?: 'name' | 'amount' | 'period' | 'startDate' | 'created';
   sortOrder?: 'asc' | 'desc';
 };
 
@@ -26,7 +26,7 @@ export const useBudgetsQuery = createQueryHook<
   {
     page?: number;
     limit?: number;
-    sortBy?: 'name' | 'amount' | 'period' | 'startDate' | 'createdAt';
+    sortBy?: 'name' | 'amount' | 'period' | 'startDate' | 'created';
     sortOrder?: 'asc' | 'desc';
   },
   ListBudgetsQuery,

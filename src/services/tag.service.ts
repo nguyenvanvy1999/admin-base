@@ -20,8 +20,8 @@ type TagRecord = Prisma.TagGetPayload<{ select: typeof TAG_SELECT_FULL }>;
 const formatTag = (tag: TagRecord): TagResponse => ({
   ...tag,
   description: tag.description ?? null,
-  createdAt: dateToIsoString(tag.createdAt),
-  updatedAt: dateToIsoString(tag.updatedAt),
+  created: dateToIsoString(tag.created),
+  modified: dateToIsoString(tag.modified),
 });
 
 export class TagService {
@@ -32,7 +32,6 @@ export class TagService {
       where: {
         id: tagId,
         userId,
-        deletedAt: null,
       },
       select: TAG_SELECT_MINIMAL,
     });
@@ -51,7 +50,6 @@ export class TagService {
     const where: TagWhereInput = {
       userId,
       name: lowerName,
-      deletedAt: null,
     };
 
     if (excludeId) {
@@ -101,7 +99,6 @@ export class TagService {
       where: {
         id: tagId,
         userId,
-        deletedAt: null,
       },
       select: TAG_SELECT_FULL,
     });
@@ -121,13 +118,12 @@ export class TagService {
       search,
       page = 1,
       limit = 20,
-      sortBy = 'createdAt',
+      sortBy = 'created',
       sortOrder = 'desc',
     } = query;
 
     const where: TagWhereInput = {
       userId,
-      deletedAt: null,
     };
 
     if (search && search.trim()) {
@@ -140,8 +136,8 @@ export class TagService {
     const orderBy: TagOrderByWithRelationInput = {};
     if (sortBy === 'name') {
       orderBy.name = sortOrder;
-    } else if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
+    } else if (sortBy === 'created') {
+      orderBy.created = sortOrder;
     }
 
     const skip = (page - 1) * limit;
@@ -186,7 +182,6 @@ export class TagService {
       where: {
         id: { in: ids },
         userId,
-        deletedAt: null,
       },
       select: TAG_SELECT_MINIMAL,
     });
@@ -202,7 +197,6 @@ export class TagService {
       where: {
         id: { in: ids },
         userId,
-        deletedAt: null,
       },
       data: {
         deletedAt: new Date(),

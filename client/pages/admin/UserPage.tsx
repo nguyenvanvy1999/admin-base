@@ -60,11 +60,11 @@ const UserPage = () => {
   }
 
   const paginationSorting = usePaginationSorting<
-    'username' | 'name' | 'role' | 'createdAt'
+    'username' | 'name' | 'role' | 'created'
   >({
     defaultPage: 1,
     defaultLimit: 20,
-    defaultSortBy: 'createdAt',
+    defaultSortBy: 'created',
     defaultSortOrder: 'desc',
   });
 
@@ -176,7 +176,7 @@ const UserPage = () => {
         totalRecords={data?.pagination?.total}
         sorting={paginationSorting.sorting}
         onSortingChange={(updater) =>
-          paginationSorting.setSorting(updater, 'createdAt')
+          paginationSorting.setSorting(updater, 'created')
         }
       />
 

@@ -18,7 +18,7 @@ export class AccountService extends ServiceBase {
     search?: string;
     page?: number;
     limit?: number;
-    sortBy?: 'name' | 'createdAt' | 'balance';
+    sortBy?: 'name' | 'created' | 'balance';
     sortOrder?: 'asc' | 'desc';
   }): Promise<AccountListResponse> {
     return this.get<AccountListResponse>({

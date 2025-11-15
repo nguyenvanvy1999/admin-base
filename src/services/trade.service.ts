@@ -35,8 +35,8 @@ const mapTrade = (
   amountInBaseCurrency: trade.amountInBaseCurrency?.toNumber() ?? null,
   exchangeRate: trade.exchangeRate?.toNumber() ?? null,
   priceFetchedAt: trade.priceFetchedAt?.toISOString() ?? null,
-  createdAt: trade.createdAt.toISOString(),
-  updatedAt: trade.updatedAt.toISOString(),
+  created: trade.created.toISOString(),
+  modified: trade.modified.toISOString(),
 });
 
 export class InvestmentTradeService {
@@ -157,7 +157,6 @@ export class InvestmentTradeService {
     const where: InvestmentTradeWhereInput = {
       userId,
       investmentId,
-      deletedAt: null,
     };
 
     if (side) {
@@ -207,7 +206,6 @@ export class InvestmentTradeService {
         id: tradeId,
         userId,
         investmentId,
-        deletedAt: null,
       },
       select: TRADE_SELECT_FULL,
     });

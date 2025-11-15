@@ -20,8 +20,8 @@ export interface ILoginRes {
     id: string;
     username: string;
     name: string | null;
-    createdAt: Date;
-    updatedAt: Date;
+    created: Date;
+    modified: Date;
     baseCurrencyId: string | null;
     settings: any;
     permissions: UPermission[];
@@ -82,8 +82,8 @@ export const userUtilService = {
       id: user.id,
       username: user.username,
       name: user.name,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      created: user.created,
+      modified: user.modified,
       baseCurrencyId: user.baseCurrencyId,
       settings: user.settings,
       permissions: await userUtilService.getPermissions(user),

@@ -26,7 +26,6 @@ export async function validateOwnership<T = { id: string }>(
     where: {
       id: entityId,
       userId,
-      deletedAt: null,
     },
     select,
   });
@@ -96,7 +95,6 @@ export async function validateUniqueName(
   const where: any = {
     userId,
     [nameField]: lowerName,
-    deletedAt: null,
   };
 
   if (excludeId) {

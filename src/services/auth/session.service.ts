@@ -15,7 +15,7 @@ export class SessionService {
       userId,
       page = 1,
       limit = 20,
-      sortBy = 'createdAt',
+      sortBy = 'created',
       sortOrder = 'desc',
       revoked,
     } = query;
@@ -33,8 +33,8 @@ export class SessionService {
     }
 
     const orderBy: Prisma.SessionOrderByWithRelationInput = {};
-    if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
+    if (sortBy === 'created') {
+      orderBy.created = sortOrder;
     } else if (sortBy === 'expired') {
       orderBy.expired = sortOrder;
     } else if (sortBy === 'revoked') {
@@ -56,8 +56,8 @@ export class SessionService {
           ip: true,
           expired: true,
           revoked: true,
-          createdAt: true,
-          updatedAt: true,
+          created: true,
+          modified: true,
           user: isAdmin
             ? {
                 select: {
@@ -80,8 +80,8 @@ export class SessionService {
         ip: session.ip,
         expired: session.expired,
         revoked: session.revoked,
-        createdAt: session.createdAt,
-        updatedAt: session.updatedAt,
+        created: session.created,
+        modified: session.modified,
         user: session.user
           ? {
               id: session.user.id,

@@ -4,7 +4,7 @@ import { appEnv } from './env';
 import { logger } from './logger';
 
 const adapter = new PrismaPg({
-  connectionString: appEnv.POSTGRES_URL,
+  connectionString: appEnv.POSTGRESQL_URI,
   pool: {
     min: 2,
     max: 10,

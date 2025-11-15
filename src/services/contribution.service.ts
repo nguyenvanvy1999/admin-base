@@ -46,8 +46,8 @@ const formatContribution = (
   baseCurrencyId: contribution.baseCurrencyId ?? null,
   timestamp: dateToIsoString(contribution.timestamp),
   note: contribution.note ?? null,
-  createdAt: dateToIsoString(contribution.createdAt),
-  updatedAt: dateToIsoString(contribution.updatedAt),
+  created: dateToIsoString(contribution.created),
+  modified: dateToIsoString(contribution.modified),
   account: contribution.account
     ? {
         id: contribution.account.id,
@@ -208,7 +208,6 @@ export class InvestmentContributionService {
     const where: Record<string, unknown> = {
       userId,
       investmentId,
-      deletedAt: null,
     };
 
     if (accountIds && accountIds.length > 0) {
@@ -258,7 +257,6 @@ export class InvestmentContributionService {
         id: contributionId,
         userId,
         investmentId,
-        deletedAt: null,
       },
       select: CONTRIBUTION_SELECT_FULL,
     });

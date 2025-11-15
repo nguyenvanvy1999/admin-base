@@ -20,7 +20,7 @@ export class RoleService extends ServiceBase {
     userId?: string;
     page?: number;
     limit?: number;
-    sortBy?: 'title' | 'createdAt';
+    sortBy?: 'title' | 'created';
     sortOrder?: 'asc' | 'desc';
   }): Promise<RoleListResponse> {
     return this.get<RoleListResponse>({

@@ -9,8 +9,8 @@ t.Object({
   ip: t.Nullable(t.String()),
   expired: t.Date(),
   revoked: t.Boolean(),
-  createdAt: t.Date(),
-  updatedAt: t.Date(),
+  created: t.Date(),
+  modified: t.Date(),
 });
 export const SessionResWithUserDto = t.NoValidate(
   t.Object({
@@ -20,8 +20,8 @@ export const SessionResWithUserDto = t.NoValidate(
     ip: t.Nullable(t.String()),
     expired: t.Date(),
     revoked: t.Boolean(),
-    createdAt: t.Date(),
-    updatedAt: t.Date(),
+    created: t.Date(),
+    modified: t.Date(),
     user: t.Nullable(
       t.Object({
         id: t.String(),
@@ -34,7 +34,7 @@ export const SessionResWithUserDto = t.NoValidate(
 
 export const SessionQueryDto = createListQueryDto({
   userId: z.string().optional(),
-  sortBy: z.enum(['createdAt', 'expired', 'revoked']).optional(),
+  sortBy: z.enum(['created', 'expired', 'revoked']).optional(),
   revoked: z
     .preprocess((val) => {
       if (val === undefined || val === null) return undefined;

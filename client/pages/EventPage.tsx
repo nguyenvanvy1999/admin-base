@@ -41,8 +41,8 @@ const EventPage = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<
-    'name' | 'startAt' | 'endAt' | 'createdAt'
-  >('createdAt');
+    'name' | 'startAt' | 'endAt' | 'created'
+  >('created');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const {
@@ -192,11 +192,11 @@ const EventPage = () => {
               : updater;
           if (newSorting.length > 0) {
             setSortBy(
-              newSorting[0].id as 'name' | 'startAt' | 'endAt' | 'createdAt',
+              newSorting[0].id as 'name' | 'startAt' | 'endAt' | 'created',
             );
             setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
           } else {
-            setSortBy('createdAt');
+            setSortBy('created');
             setSortOrder('desc');
           }
           setPage(1);

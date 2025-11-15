@@ -95,8 +95,8 @@ const UserTable = ({
         },
       },
       {
-        accessor: 'createdAt',
-        title: 'users.createdAt',
+        accessor: 'created',
+        title: 'users.created',
       },
       {
         title: 'users.actions',

@@ -26,7 +26,7 @@ export const ListAccountsQueryDto = createListQueryDto({
   type: createArrayPreprocess(z.enum(AccountType)),
   currencyId: createArrayPreprocess(z.string()),
   search: z.string().optional(),
-  sortBy: z.enum(['name', 'createdAt', 'balance']).optional(),
+  sortBy: z.enum(['name', 'created', 'balance']).optional(),
 });
 
 export type IUpsertAccountDto = z.infer<typeof UpsertAccountDto>;
@@ -46,8 +46,8 @@ export const AccountDto = t.NoValidate(
     paymentDay: t.Nullable(t.Integer()),
     notifyDaysBefore: t.Nullable(t.Integer()),
     meta: t.Nullable(t.Any()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
     currency: AccountCurrencyDto,
   }),
 );

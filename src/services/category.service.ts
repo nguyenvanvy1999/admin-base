@@ -244,7 +244,7 @@ export class CategoryService {
         color: true,
       },
       orderBy: {
-        createdAt: 'asc',
+        created: 'asc',
       },
     });
 
@@ -261,7 +261,6 @@ export class CategoryService {
       where: {
         id: categoryId,
         userId,
-        deletedAt: null,
       },
       select: {
         id: true,
@@ -503,7 +502,6 @@ export class CategoryService {
     const childrenCount = await this.deps.db.category.count({
       where: {
         parentId: categoryId,
-        deletedAt: null,
       },
     });
 

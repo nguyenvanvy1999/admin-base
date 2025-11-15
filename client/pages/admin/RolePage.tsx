@@ -58,10 +58,10 @@ const RolePage = () => {
     return <NotFoundPage />;
   }
 
-  const paginationSorting = usePaginationSorting<'title' | 'createdAt'>({
+  const paginationSorting = usePaginationSorting<'title' | 'created'>({
     defaultPage: 1,
     defaultLimit: 20,
-    defaultSortBy: 'createdAt',
+    defaultSortBy: 'created',
     defaultSortOrder: 'desc',
   });
 
@@ -191,7 +191,7 @@ const RolePage = () => {
         totalRecords={data?.pagination?.total}
         sorting={paginationSorting.sorting}
         onSortingChange={(updater) =>
-          paginationSorting.setSorting(updater, 'createdAt')
+          paginationSorting.setSorting(updater, 'created')
         }
         selectedRecords={deleteHandler.selectedRecords}
         onSelectedRecordsChange={deleteHandler.setSelectedRecords}

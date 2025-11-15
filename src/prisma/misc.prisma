@@ -1,0 +1,85 @@
+model Tag {
+  id          String  @id
+  userId      String  @map("user_id")
+  name        String
+  description String?
+
+  created  DateTime @default(now())
+  modified DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name], name: "tag_userId_name_unique")
+  @@index([userId], name: "tag_userId_idx")
+  @@index([name], name: "tag_name_idx")
+  @@map("tags")
+}
+
+model Event {
+  id      String    @id
+  userId  String    @map("user_id")
+  name    String
+  startAt DateTime  @map("start_at")
+  endAt   DateTime? @map("end_at")
+
+  created  DateTime @default(now())
+  modified DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([userId, name], name: "event_userId_name_unique")
+  @@index([userId], name: "event_userId_idx")
+  @@index([name], name: "event_name_idx")
+  @@index([startAt], name: "event_startAt_idx")
+  @@index([endAt], name: "event_endAt_idx")
+  @@map("events")
+}
+
+model Currency {
+  id       String   @id
+  code     String   @unique
+  name     String
+  symbol   String?
+  isActive Boolean  @default(true) @map("is_active")
+  created  DateTime @default(now())
+  modified DateTime @updatedAt
+
+  users                               User[]
+  accounts                            Account[]
+  investments                         Investment[]             @relation("InvestmentCurrency")
+  investmentsBaseCurrency             Investment[]             @relation("InvestmentBaseCurrency")
+  transactions                        Transaction[]
+  recurringTransactions               RecurringTransaction[]
+  investmentTrades                    InvestmentTrade[]
+  investmentTradesBaseCurrency        InvestmentTrade[]        @relation("TradeBaseCurrency")
+  investmentContributions             InvestmentContribution[]
+  investmentContributionsBaseCurrency InvestmentContribution[] @relation("ContributionBaseCurrency")
+  investmentValuations                InvestmentValuation[]
+  investmentValuationsBaseCurrency    InvestmentValuation[]    @relation("ValuationBaseCurrency")
+
+  @@index([code], name: "currency_code_idx")
+  @@map("currencies")
+}
+
+model Entity {
+  id       String     @id
+  userId   String     @map("user_id")
+  name     String
+  type     EntityType @default(individual)
+  phone    String?
+  email    String?
+  address  String?
+  note     String?
+  created  DateTime   @default(now())
+  modified DateTime   @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([userId, name], name: "entity_userId_name_unique")
+  @@index([userId], name: "entity_userId_idx")
+  @@index([name], name: "entity_name_idx")
+  @@index([type], name: "entity_type_idx")
+  @@map("entities")
+}

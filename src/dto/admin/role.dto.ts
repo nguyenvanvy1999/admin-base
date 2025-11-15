@@ -23,7 +23,7 @@ export const UpsertRoleDtoZod = z.object({
 export const ListRolesQueryDto = createListQueryDto({
   search: z.string().optional(),
   userId: z.string().optional(),
-  sortBy: z.enum(['title', 'createdAt']).optional(),
+  sortBy: z.enum(['title', 'created']).optional(),
 });
 
 export type IListRolesQueryDto = z.infer<typeof ListRolesQueryDto>;
@@ -36,8 +36,8 @@ export const RoleResDto = t.NoValidate(
     enabled: t.Boolean(),
     permissionIds: t.Array(t.String()),
     playerIds: t.Array(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
   }),
 );
 
@@ -56,6 +56,6 @@ export const RolePaginationQueryDto = t.Object({
   search: t.Optional(t.String()),
   page: t.Optional(t.Integer()),
   limit: t.Optional(t.Integer()),
-  sortBy: t.Optional(t.Union([t.Literal('title'), t.Literal('createdAt')])),
+  sortBy: t.Optional(t.Union([t.Literal('title'), t.Literal('created')])),
   sortOrder: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
 });

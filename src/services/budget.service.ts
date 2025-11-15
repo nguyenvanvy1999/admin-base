@@ -40,8 +40,8 @@ const mapBudget = (budget: BudgetRecord) => ({
   carryOver: budget.carryOver,
   accountIds: budget.accounts.map((a) => a.accountId),
   categoryIds: budget.categories.map((c) => c.categoryId),
-  createdAt: dateToIsoString(budget.createdAt),
-  updatedAt: dateToIsoString(budget.updatedAt),
+  created: dateToIsoString(budget.created),
+  modified: dateToIsoString(budget.modified),
 });
 
 export class BudgetService {
@@ -71,7 +71,6 @@ export class BudgetService {
       where: {
         id: budgetId,
         userId,
-        deletedAt: null,
       },
       select: BUDGET_SELECT_MINIMAL,
     });
@@ -91,7 +90,6 @@ export class BudgetService {
         where: {
           id: { in: accountIds },
           userId,
-          deletedAt: null,
         },
         select: { id: true },
       }),
@@ -99,7 +97,6 @@ export class BudgetService {
         where: {
           id: { in: categoryIds },
           userId,
-          deletedAt: null,
         },
         select: { id: true },
       }),
@@ -180,7 +177,6 @@ export class BudgetService {
       where: {
         id: budgetId,
         userId,
-        deletedAt: null,
       },
       select: {
         accounts: { select: { accountId: true } },
@@ -199,7 +195,7 @@ export class BudgetService {
     const transactions = await this.deps.db.transaction.findMany({
       where: {
         userId,
-        deletedAt: null,
+
         type: TransactionType.expense,
         accountId: { in: accountIds },
         categoryId: { in: categoryIds },
@@ -266,7 +262,6 @@ export class BudgetService {
       where: {
         id: budgetId,
         userId,
-        deletedAt: null,
       },
       select: BUDGET_SELECT_MINIMAL,
     });
@@ -398,7 +393,6 @@ export class BudgetService {
       where: {
         id: budgetId,
         userId,
-        deletedAt: null,
       },
       select: BUDGET_SELECT_FULL,
     });
@@ -416,13 +410,12 @@ export class BudgetService {
       search,
       page = 1,
       limit = 20,
-      sortBy = 'createdAt',
+      sortBy = 'created',
       sortOrder = 'desc',
     } = query;
 
     const where: BudgetWhereInput = {
       userId,
-      deletedAt: null,
     };
 
     if (period && period.length > 0) {
@@ -445,8 +438,8 @@ export class BudgetService {
       orderBy.period = sortOrder;
     } else if (sortBy === 'startDate') {
       orderBy.startDate = sortOrder;
-    } else if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
+    } else if (sortBy === 'created') {
+      orderBy.created = sortOrder;
     }
 
     const skip = (page - 1) * limit;
@@ -497,7 +490,6 @@ export class BudgetService {
       where: {
         id: budgetId,
         userId,
-        deletedAt: null,
       },
       select: BUDGET_SELECT_MINIMAL,
     });
@@ -532,8 +524,8 @@ export class BudgetService {
       spentAmount: string;
       remainingAmount: string;
       isOverBudget: boolean;
-      createdAt: string;
-      updatedAt: string;
+      created: string;
+      modified: string;
     }> = [];
 
     let currentStart = new Date(actualStartDate);
@@ -603,8 +595,8 @@ export class BudgetService {
         spentAmount: decimalToString(spent),
         remainingAmount: decimalToString(remaining),
         isOverBudget,
-        createdAt: dateToIsoString(existingPeriod.createdAt),
-        updatedAt: dateToIsoString(existingPeriod.updatedAt),
+        created: dateToIsoString(existingPeriod.created),
+        modified: dateToIsoString(existingPeriod.modified),
       });
 
       currentStart = this.calculateNextPeriodStart(budget.period, currentStart);
@@ -638,7 +630,6 @@ export class BudgetService {
       where: {
         id: budgetId,
         userId,
-        deletedAt: null,
       },
       select: BUDGET_SELECT_MINIMAL,
     });
@@ -671,8 +662,8 @@ export class BudgetService {
       spentAmount: decimalToString(spent),
       remainingAmount: decimalToString(remaining),
       isOverBudget,
-      createdAt: dateToIsoString(period.createdAt),
-      updatedAt: dateToIsoString(period.updatedAt),
+      created: dateToIsoString(period.created),
+      modified: dateToIsoString(period.modified),
     };
   }
 }

@@ -1,0 +1,169 @@
+model AuthProvider {
+  id          String  @id
+  name        String  @unique // Human-readable name (e.g., "Google", "Telegram")
+  code        String  @unique // Unique code for the provider (e.g., "GOOGLE", "TELEGRAM")
+  description String?
+  config      Json?
+  enabled     Boolean @default(true)
+
+  usersAuth UserAuthProvider[]
+
+  created  DateTime @default(now())
+  modified DateTime @updatedAt()
+
+  @@map("auth_providers")
+}
+
+model UserAuthProvider {
+  id         String @id
+  providerId String @map("provider_id")
+  authUserId String @map("auth_user_id")
+
+  providerCode String       @map("provider_code")
+  provider     AuthProvider @relation(fields: [providerCode], references: [code])
+
+  modified   DateTime  @updatedAt()
+  created    DateTime  @default(now())
+  lastUsedAt DateTime? @map("last_used_at")
+
+  authUser User @relation(fields: [authUserId], references: [id])
+
+  @@unique([providerCode, providerId])
+  @@index([authUserId])
+  @@index([providerCode])
+  @@map("user_auth_providers")
+}
+
+model Permission {
+  id          String           @id
+  title       String           @unique
+  description String?
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model Role {
+  id          String           @id
+  title       String           @unique
+  description String?
+  enabled     Boolean          @default(true)
+  permissions RolePermission[]
+  players     RolePlayer[]
+  created     DateTime         @default(now())
+  modified    DateTime         @updatedAt
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id           String   @id
+  roleId       String   @map("role_id")
+  permissionId String   @map("permission_id")
+  created      DateTime @default(now())
+  modified     DateTime @updatedAt
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId], name: "role_permission_unique")
+  @@index([roleId], name: "role_permission_roleId_idx")
+  @@index([permissionId], name: "role_permission_permissionId_idx")
+  @@map("role_permissions")
+}
+
+model RolePlayer {
+  id          String   @id
+  playerId    String   @map("player_id")
+  roleId      String   @map("role_id")
+  description String?
+  created     DateTime @default(now())
+  modified    DateTime @updatedAt
+
+  player User @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, playerId], name: "role_player_unique")
+  @@index([playerId], name: "role_player_playerId_idx")
+  @@index([roleId], name: "role_player_roleId_idx")
+  @@map("role_players")
+}
+
+model Session {
+  id       String   @id
+  userId   String   @map("user_id")
+  token    String   @unique
+  device   String?
+  ip       String?
+  expired  DateTime
+  revoked  Boolean  @default(false)
+  created  DateTime @default(now())
+  modified DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "session_userId_idx")
+  @@index([token], name: "session_token_idx")
+  @@map("sessions")
+}
+
+model User {
+  id       String @id
+  username String @unique
+
+  password             String
+  passwordExpired      DateTime? @default(now()) @map("password_expired") // When password expires
+  passwordCreated      DateTime? @default(now()) @map("password_created") // When password was created
+  passwordAttempt      Int       @default(0) @map("password_attempt") // Failed login attempts count
+  lastPasswordChangeAt DateTime? @map("last_password_change_at") // Last time password was changed
+
+  name           String?
+  baseCurrencyId String  @map("base_currency_id")
+  settings       Json?
+
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+  lastLoginAt DateTime? @map("last_login_at") // Last successful login
+  refCode     String?   @unique @map("ref_code") // Referral code for this user
+
+  baseCurrency            Currency                 @relation(fields: [baseCurrencyId], references: [id], onDelete: Restrict)
+  accounts                Account[]
+  categories              Category[]
+  investments             Investment[]
+  transactions            Transaction[]
+  investmentContributions InvestmentContribution[]
+  investmentValuations    InvestmentValuation[]
+  budgets                 Budget[]
+  entities                Entity[]
+  recurringTransactions   RecurringTransaction[]
+  investmentTrades        InvestmentTrade[]
+  holdings                Holding[]
+  tags                    Tag[]
+  events                  Event[]
+  roles                   RolePlayer[]
+  sessions                Session[]
+  referralMade            Referral?                @relation("UserReferrer")
+  referralsGot            Referral[]               @relation("UserReferred")
+  authProviders           UserAuthProvider[]
+
+  pendingRef Int @default(0) @map("pending_ref") // Number of pending referrals
+  activeRef  Int @default(0) @map("active_ref") // Number of active referrals
+
+  @@index([username], name: "user_username_idx")
+  @@index([baseCurrencyId], name: "user_baseCurrencyId_idx")
+  @@map("users")
+}
+
+model Referral {
+  id         String         @id
+  referrerId String         @unique @map("referrer_id")
+  referredId String         @map("referred_id")
+  created    DateTime       @default(now())
+  status     ReferralStatus @default(inactive)
+
+  referrer User @relation("UserReferrer", fields: [referrerId], references: [id])
+  referred User @relation("UserReferred", fields: [referredId], references: [id])
+
+  @@index([referrerId, referredId])
+  @@map("referrals")
+}

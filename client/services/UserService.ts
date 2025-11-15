@@ -41,7 +41,7 @@ export class UserService extends ServiceBase {
     role?: UserRole[];
     page?: number;
     limit?: number;
-    sortBy?: 'username' | 'name' | 'role' | 'createdAt';
+    sortBy?: 'username' | 'name' | 'role' | 'created';
     sortOrder?: 'asc' | 'desc';
   }): Promise<UserListResponse> {
     return this.get<UserListResponse>({

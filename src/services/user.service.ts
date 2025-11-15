@@ -256,18 +256,18 @@ export class UserService {
       }
     }
 
-    const updateData: UserUncheckedUpdateInput = {};
+    const modifieda: UserUncheckedUpdateInput = {};
 
     if (data.name?.length) {
-      updateData.name = data.name;
+      modifieda.name = data.name;
     }
     if (data.baseCurrencyId) {
-      updateData.baseCurrencyId = data.baseCurrencyId;
+      modifieda.baseCurrencyId = data.baseCurrencyId;
     }
 
     const updatedUser = await this.deps.db.user.update({
       where: { id: userId },
-      data: updateData,
+      data: modifieda,
       select: {
         id: true,
         username: true,

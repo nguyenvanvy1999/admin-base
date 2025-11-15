@@ -37,8 +37,8 @@ const formatAccount = (account: AccountRecord): AccountResponse => ({
   paymentDay: account.paymentDay ?? null,
   notifyDaysBefore: account.notifyDaysBefore ?? null,
   meta: account.meta ?? null,
-  createdAt: dateToIsoString(account.createdAt),
-  updatedAt: dateToIsoString(account.updatedAt),
+  created: dateToIsoString(account.created),
+  modified: dateToIsoString(account.modified),
 });
 
 export class AccountService {
@@ -49,7 +49,6 @@ export class AccountService {
       where: {
         id: accountId,
         userId,
-        deletedAt: null,
       },
       select: ACCOUNT_SELECT_MINIMAL,
     });
@@ -139,7 +138,6 @@ export class AccountService {
       where: {
         id: accountId,
         userId,
-        deletedAt: null,
       },
       select: ACCOUNT_SELECT_FULL,
     });
@@ -161,13 +159,12 @@ export class AccountService {
       search,
       page = 1,
       limit = 20,
-      sortBy = 'createdAt',
+      sortBy = 'created',
       sortOrder = 'desc',
     } = query;
 
     const where: AccountWhereInput = {
       userId,
-      deletedAt: null,
     };
 
     if (type && type.length > 0) {
@@ -188,8 +185,8 @@ export class AccountService {
     const orderBy: AccountOrderByWithRelationInput = {};
     if (sortBy === 'name') {
       orderBy.name = sortOrder;
-    } else if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
+    } else if (sortBy === 'created') {
+      orderBy.created = sortOrder;
     } else if (sortBy === 'balance') {
       orderBy.balance = sortOrder;
     }

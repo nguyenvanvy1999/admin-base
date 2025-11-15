@@ -126,8 +126,8 @@ const AccountTable = ({
         },
       },
       {
-        accessor: 'createdAt',
-        title: 'common.createdAt',
+        accessor: 'created',
+        title: 'common.created',
         enableSorting: true,
       },
       {

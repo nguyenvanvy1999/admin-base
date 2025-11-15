@@ -51,7 +51,6 @@ export class InvestmentValuationService {
         userId,
         investmentId,
         timestamp,
-        deletedAt: null,
       },
       select: { id: true },
     });
@@ -68,7 +67,6 @@ export class InvestmentValuationService {
             baseCurrencyId: data.baseCurrencyId ?? null,
             source: data.source ?? null,
             fetchedAt,
-            deletedAt: null,
           },
           select: VALUATION_SELECT_FULL,
         }),
@@ -106,8 +104,8 @@ export class InvestmentValuationService {
       fetchedAt: valuation.fetchedAt?.toISOString() ?? null,
       priceInBaseCurrency: valuation.priceInBaseCurrency?.toNumber() ?? null,
       exchangeRate: valuation.exchangeRate?.toNumber() ?? null,
-      createdAt: valuation.createdAt.toISOString(),
-      updatedAt: valuation.updatedAt.toISOString(),
+      created: valuation.created.toISOString(),
+      modified: valuation.modified.toISOString(),
     };
   }
 
@@ -129,7 +127,6 @@ export class InvestmentValuationService {
     const where: Record<string, unknown> = {
       userId,
       investmentId,
-      deletedAt: null,
     };
 
     if (dateFrom || dateTo) {
@@ -190,7 +187,6 @@ export class InvestmentValuationService {
         id: valuationId,
         userId,
         investmentId,
-        deletedAt: null,
       },
       select: { id: true },
     });

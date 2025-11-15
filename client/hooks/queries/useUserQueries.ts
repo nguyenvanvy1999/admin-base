@@ -15,7 +15,7 @@ type ListUsersQuery = {
   role?: UserRole[];
   page?: number;
   limit?: number;
-  sortBy?: 'username' | 'name' | 'role' | 'createdAt';
+  sortBy?: 'username' | 'name' | 'role' | 'created';
   sortOrder?: 'asc' | 'desc';
 };
 
@@ -25,7 +25,7 @@ export const useUsersQuery = createQueryHook<
   {
     page?: number;
     limit?: number;
-    sortBy?: 'username' | 'name' | 'role' | 'createdAt';
+    sortBy?: 'username' | 'name' | 'role' | 'created';
     sortOrder?: 'asc' | 'desc';
   },
   ListUsersQuery,

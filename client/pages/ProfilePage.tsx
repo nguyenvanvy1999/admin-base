@@ -82,24 +82,24 @@ const ProfilePage = () => {
   }, [user, isEditMode, resetProfile]);
 
   const onSubmitProfileForm = handleProfileSubmit((data) => {
-    const updateData: {
+    const modifieda: {
       name?: string;
       baseCurrencyId?: string;
     } = {};
 
     if (data.name !== user?.name) {
-      updateData.name = data.name;
+      modifieda.name = data.name;
     }
     if (data.baseCurrencyId !== user?.baseCurrencyId) {
-      updateData.baseCurrencyId = data.baseCurrencyId;
+      modifieda.baseCurrencyId = data.baseCurrencyId;
     }
 
-    if (Object.keys(updateData).length === 0) {
+    if (Object.keys(modifieda).length === 0) {
       setIsEditMode(false);
       return;
     }
 
-    updateProfileMutation.mutate(updateData, {
+    updateProfileMutation.mutate(modifieda, {
       onSuccess: () => {
         setIsEditMode(false);
       },

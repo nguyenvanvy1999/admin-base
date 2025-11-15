@@ -19,9 +19,9 @@ export const UserFixtures = {
       role: overrides?.role || UserRole.user,
       baseCurrencyId: overrides?.baseCurrencyId || 'currency_vnd',
       settings: null,
-      deletedAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+
+      created: new Date(),
+      modified: new Date(),
     };
   },
 };

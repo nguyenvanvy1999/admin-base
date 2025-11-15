@@ -25,7 +25,7 @@ export const ListBudgetsQueryDto = createListQueryDto({
   search: z.string().optional(),
   period: createArrayPreprocess(z.nativeEnum(BudgetPeriod)),
   sortBy: z
-    .enum(['name', 'amount', 'period', 'startDate', 'createdAt'])
+    .enum(['name', 'amount', 'period', 'startDate', 'created'])
     .optional(),
 });
 
@@ -51,8 +51,8 @@ export const BudgetDto = t.NoValidate(
     carryOver: t.Boolean(),
     accountIds: t.Array(t.String()),
     categoryIds: t.Array(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
   }),
 );
 
@@ -70,8 +70,8 @@ export const BudgetPeriodDto = t.NoValidate(
     periodStartDate: t.String(),
     periodEndDate: t.String(),
     carriedOverAmount: t.String(),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
   }),
 );
 
@@ -87,8 +87,8 @@ export const BudgetPeriodDetailDto = t.NoValidate(
     spentAmount: t.String(),
     remainingAmount: t.String(),
     isOverBudget: t.Boolean(),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
   }),
 );
 
