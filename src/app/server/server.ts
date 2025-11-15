@@ -6,7 +6,8 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-node';
 import { appEnv } from '@server/configs/env';
 import { logger } from '@server/configs/logger';
-import { httpLoggerMiddleware } from '@server/configs/middlewares/http-logger.middleware';
+import { httpError } from '@server/configs/middlewares/error.middleware';
+import { httpLogger } from '@server/configs/middlewares/http-logger.middleware';
 import { redis } from '@server/configs/redis';
 import { swaggerConfig } from '@server/configs/swagger';
 import accountController from '@server/controllers/account.controller';
@@ -26,7 +27,6 @@ import transactionController from '@server/controllers/transaction.controller';
 import userController from '@server/controllers/user.controller';
 import valuationController from '@server/controllers/valuation.controller';
 import { Elysia } from 'elysia';
-import { rateLimit } from 'elysia-rate-limit';
 import { elysiaXSS } from 'elysia-xss';
 import { elysiaHelmet } from 'elysiajs-helmet';
 
@@ -42,7 +42,7 @@ export async function createServer() {
   });
 
   if (appEnv.ENB_HTTP_LOG) {
-    app.use(httpLoggerMiddleware());
+    app.use(httpLogger());
   }
 
   app
@@ -52,10 +52,7 @@ export async function createServer() {
         assets: './client',
       }),
     )
-    // .use(httpError())
-    .use(rateLimit({ max: 300 }))
-    // .onBeforeHandle(adminAuthMiddleware)
-    // .use(bullBoardConfig())
+    .use(httpError())
     .use(swaggerConfig())
     .group('/api', (app) =>
       app

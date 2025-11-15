@@ -1,11 +1,11 @@
 import { init } from '@paralleldrive/cuid2';
 
-export enum DB_PREFIX {
-  SESSION = 'session',
-  USER = 'user',
-  PERMISSION = 'perm',
-  ROLE = 'role',
-}
+export const DB_PREFIX = {
+  SESSION: 'session',
+  USER: 'user',
+  PERMISSION: 'perm',
+  ROLE: 'role',
+} as const;
 
 export class IdUtil {
   private static readonly i16 = init({ length: 16 });
@@ -28,7 +28,7 @@ export class IdUtil {
     return prefix.length ? `${prefix}_${id}` : id;
   }
 
-  static dbId(prefix?: DB_PREFIX): string {
+  static dbId(prefix?: typeof DB_PREFIX): string {
     const id = IdUtil.i16();
     return prefix ? `${prefix}_${id}` : id;
   }

@@ -2,7 +2,7 @@ import { slowReqLogger } from '@server/configs/logger';
 import { getIP } from '@server/configs/request';
 import type { Elysia } from 'elysia';
 
-export const httpLoggerMiddleware =
+export const httpLogger =
   () =>
   (
     app: Elysia<
