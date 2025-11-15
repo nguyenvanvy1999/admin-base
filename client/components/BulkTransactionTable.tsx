@@ -8,7 +8,7 @@ import {
   Table,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
-import { TransactionType } from '@server/generated/browser-index';
+import { TransactionType } from '@server/generated';
 import { IconMinus, IconPlus } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

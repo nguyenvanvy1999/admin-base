@@ -25,7 +25,7 @@ import NotFoundPage from '@client/pages/NotFoundPage';
 import { Button, Group, MultiSelect, TextInput } from '@mantine/core';
 import type { IUpsertUserDto, UserResponse } from '@server/dto/admin/user.dto';
 import { ListUsersQueryDto } from '@server/dto/admin/user.dto';
-import { UserRole } from '@server/generated/browser-index';
+import { UserRole } from '@server/generated';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';

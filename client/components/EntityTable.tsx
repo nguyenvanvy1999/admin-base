@@ -1,6 +1,6 @@
 import { ActionIcon, Button } from '@mantine/core';
 import type { EntityResponse } from '@server/dto/entity.dto';
-import { EntityType } from '@server/generated/browser-index';
+import { EntityType } from '@server/generated';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

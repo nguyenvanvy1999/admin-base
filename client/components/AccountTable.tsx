@@ -1,6 +1,6 @@
 import { ActionIcon, NumberFormatter } from '@mantine/core';
 import type { AccountResponse } from '@server/dto/account.dto';
-import { AccountType } from '@server/generated/browser-index';
+import { AccountType } from '@server/generated';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

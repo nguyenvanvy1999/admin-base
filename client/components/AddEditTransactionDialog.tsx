@@ -17,7 +17,7 @@ import type {
   IUpsertTransaction,
   TransactionDetail,
 } from '@server/dto/transaction.dto';
-import { TransactionType } from '@server/generated/browser-index';
+import { TransactionType } from '@server/generated';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';

@@ -37,7 +37,7 @@ import type {
   TransactionDetail,
 } from '@server/dto/transaction.dto';
 import { ListTransactionsQueryDto } from '@server/dto/transaction.dto';
-import { TransactionType } from '@server/generated/browser-index';
+import { TransactionType } from '@server/generated';
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
