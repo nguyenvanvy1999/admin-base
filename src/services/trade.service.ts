@@ -4,7 +4,6 @@ import type { Prisma } from '@server/generated/prisma/client';
 import type { TradeSide } from '@server/generated/prisma/enums';
 import type { InvestmentTradeWhereInput } from '@server/generated/prisma/models';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import { Elysia } from 'elysia';
 import type {
   ICreateInvestmentTradeDto,
   IListInvestmentTradesQueryDto,
@@ -234,9 +233,4 @@ export class InvestmentTradeService {
   }
 }
 
-export const investmentTradeServiceInstance = new InvestmentTradeService();
-
-export default new Elysia().decorate(
-  'investmentTradeService',
-  investmentTradeServiceInstance,
-);
+export const investmentTradeService = new InvestmentTradeService();

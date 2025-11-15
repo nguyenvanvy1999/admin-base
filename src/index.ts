@@ -3,6 +3,7 @@ import { staticPlugin } from '@elysiajs/static';
 import { appEnv } from '@server/configs/env';
 import { redis } from '@server/configs/redis';
 import { Elysia } from 'elysia';
+import z from 'zod';
 import { logger } from './configs/logger';
 import accountController from './controllers/account.controller';
 import { adminController } from './controllers/admin';
@@ -28,6 +29,9 @@ import { withErrorHandler } from './share/middlewares/error-middleware';
 export const app = new Elysia()
   .use(
     openapi({
+      mapJsonSchema: {
+        zod: z.toJSONSchema,
+      },
       path: '/docs',
       provider: 'swagger-ui',
       documentation: {

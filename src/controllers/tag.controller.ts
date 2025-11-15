@@ -8,7 +8,7 @@ import {
   TagListResponseDto,
   UpsertTagDto,
 } from '../dto/tag.dto';
-import tagService from '../services/tag.service';
+import { tagService } from '../services/tag.service';
 import { castToRes, ResWrapper } from '../share';
 
 const TAG_DETAIL = {
@@ -27,11 +27,10 @@ const tagController = new Elysia().group(
   },
   (group) =>
     group
-      .use(tagService)
       .use(authCheck)
       .post(
         '/',
-        async ({ currentUser, body, tagService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(await tagService.upsertTag(currentUser.id, body));
         },
         {
@@ -49,7 +48,7 @@ const tagController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ currentUser, params, tagService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(await tagService.getTag(currentUser.id, params.id));
         },
         {
@@ -67,7 +66,7 @@ const tagController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ currentUser, query, tagService }) => {
+        async ({ currentUser, query }) => {
           return castToRes(await tagService.listTags(currentUser.id, query));
         },
         {
@@ -85,7 +84,7 @@ const tagController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ currentUser, params, tagService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await tagService.deleteTag(currentUser.id, params.id),
           );
@@ -105,7 +104,7 @@ const tagController = new Elysia().group(
       )
       .post(
         '/delete-many',
-        async ({ currentUser, body, tagService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await tagService.deleteManyTags(currentUser.id, body.ids),
           );

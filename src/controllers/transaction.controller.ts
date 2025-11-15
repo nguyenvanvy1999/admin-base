@@ -10,7 +10,7 @@ import {
   TransactionListResponseDto,
   UpsertTransactionDto,
 } from '../dto/transaction.dto';
-import transactionService from '../services/transaction.service';
+import { transactionService } from '../services/transaction.service';
 import { castToRes, ResWrapper } from '../share';
 
 const TRANSACTION_DETAIL = {
@@ -29,11 +29,10 @@ const transactionController = new Elysia().group(
   },
   (group) =>
     group
-      .use(transactionService)
       .use(authCheck)
       .post(
         '/',
-        async ({ currentUser, body, transactionService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await transactionService.upsertTransaction(currentUser.id, body),
           );
@@ -53,7 +52,7 @@ const transactionController = new Elysia().group(
       )
       .post(
         '/batch',
-        async ({ currentUser, body, transactionService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await transactionService.createBatchTransactions(
               currentUser.id,
@@ -76,7 +75,7 @@ const transactionController = new Elysia().group(
       )
       .get(
         '/:id',
-        async ({ currentUser, params, transactionService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await transactionService.getTransaction(currentUser.id, params.id),
           );
@@ -96,7 +95,7 @@ const transactionController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ currentUser, query, transactionService }) => {
+        async ({ currentUser, query }) => {
           return castToRes(
             await transactionService.listTransactions(currentUser.id, query),
           );
@@ -116,7 +115,7 @@ const transactionController = new Elysia().group(
       )
       .delete(
         '/:id',
-        async ({ currentUser, params, transactionService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await transactionService.deleteTransaction(
               currentUser.id,
@@ -139,7 +138,7 @@ const transactionController = new Elysia().group(
       )
       .post(
         '/adjust-balance',
-        async ({ currentUser, body, transactionService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await transactionService.adjustAccountBalance(currentUser.id, body),
           );

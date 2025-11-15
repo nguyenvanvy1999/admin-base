@@ -17,7 +17,7 @@ import {
   RegisterDto,
   UpdateProfileDto,
 } from '../dto/user.dto';
-import userService from '../services/user.service';
+import { userService } from '../services/user.service';
 import { castToRes, ResWrapper, SUPER_ADMIN_ID } from '../share';
 import type { ITokenPayload } from '../share/type';
 
@@ -41,10 +41,9 @@ const userController = new Elysia().group(
   },
   (group) =>
     group
-      .use(userService)
       .post(
         '/register',
-        async ({ body, userService }) => {
+        async ({ body }) => {
           return castToRes(await userService.register(body));
         },
         {
@@ -62,7 +61,7 @@ const userController = new Elysia().group(
       )
       .post(
         '/login',
-        async ({ body, userService, request, headers }) => {
+        async ({ body, request, headers }) => {
           const clientIp =
             headers['x-forwarded-for']?.split(',')[0]?.trim() ||
             headers['x-real-ip'] ||
@@ -167,7 +166,7 @@ const userController = new Elysia().group(
       .use(authCheck)
       .get(
         '/me',
-        async ({ currentUser, userService }) => {
+        async ({ currentUser }) => {
           return castToRes(await userService.getUserInfo(currentUser.id));
         },
         {
@@ -184,7 +183,7 @@ const userController = new Elysia().group(
       )
       .put(
         '/profile',
-        async ({ currentUser, body, userService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await userService.updateProfile(currentUser.id, body),
           );
@@ -204,7 +203,7 @@ const userController = new Elysia().group(
       )
       .post(
         '/change-password',
-        async ({ currentUser, body, userService }) => {
+        async ({ currentUser, body }) => {
           return castToRes(
             await userService.changePassword(currentUser.id, body),
           );

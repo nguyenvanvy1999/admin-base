@@ -2,7 +2,6 @@ import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated/prisma/client';
 import { ErrorCode, throwAppError } from '@server/share/constants/error';
-import { Elysia } from 'elysia';
 import type {
   IListInvestmentValuationsQueryDto,
   IUpsertInvestmentValuationDto,
@@ -209,10 +208,4 @@ export class InvestmentValuationService {
   }
 }
 
-export const investmentValuationServiceInstance =
-  new InvestmentValuationService();
-
-export default new Elysia().decorate(
-  'investmentValuationService',
-  investmentValuationServiceInstance,
-);
+export const investmentValuationService = new InvestmentValuationService();

@@ -20,7 +20,7 @@ import {
   ReportTransactionsDto,
   ReportTransactionsQueryDto,
 } from '../dto/report.dto';
-import reportService from '../services/report.service';
+import { reportService } from '../services/report.service';
 import { castToRes, ResWrapper } from '../share';
 
 const REPORT_DETAIL = {
@@ -30,11 +30,10 @@ const REPORT_DETAIL = {
 
 const reportController = new Elysia().group('/reports', (group) =>
   group
-    .use(reportService)
     .use(authCheck)
     .get(
       '/summary',
-      async ({ currentUser, query, reportService }) => {
+      async ({ currentUser, query }) => {
         return castToRes(await reportService.getSummary(currentUser.id, query));
       },
       {
@@ -52,7 +51,7 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/transactions',
-      async ({ currentUser, query, reportService }) => {
+      async ({ currentUser, query }) => {
         return castToRes(
           await reportService.getTransactions(currentUser.id, query),
         );
@@ -72,7 +71,7 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/investments',
-      async ({ currentUser, query, reportService }) => {
+      async ({ currentUser, query }) => {
         return castToRes(
           await reportService.getInvestments(currentUser.id, query),
         );
@@ -92,7 +91,7 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/income-expense-detailed',
-      async ({ currentUser, query, reportService }) => {
+      async ({ currentUser, query }) => {
         return castToRes(
           await reportService.getIncomeExpenseDetailed(currentUser.id, query),
         );
@@ -112,7 +111,7 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/investments/performance-detailed',
-      async ({ currentUser, query, reportService }) => {
+      async ({ currentUser, query }) => {
         return castToRes(
           await reportService.getInvestmentPerformanceDetailed(
             currentUser.id,
@@ -135,7 +134,7 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/investments/trades-detailed',
-      async ({ currentUser, query, reportService }) => {
+      async ({ currentUser, query }) => {
         return castToRes(
           await reportService.getInvestmentTradesDetailed(
             currentUser.id,
@@ -158,7 +157,7 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/investments/fees-detailed',
-      async ({ currentUser, query, reportService }) => {
+      async ({ currentUser, query }) => {
         return castToRes(
           await reportService.getInvestmentFeesDetailed(currentUser.id, query),
         );
@@ -178,7 +177,7 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/investments/contributions-detailed',
-      async ({ currentUser, query, reportService }) => {
+      async ({ currentUser, query }) => {
         return castToRes(
           await reportService.getInvestmentContributionsDetailed(
             currentUser.id,
@@ -201,7 +200,7 @@ const reportController = new Elysia().group('/reports', (group) =>
     )
     .get(
       '/debt-statistics',
-      async ({ currentUser, query, reportService }) => {
+      async ({ currentUser, query }) => {
         return castToRes(
           await reportService.getDebtStatistics(currentUser.id, query),
         );

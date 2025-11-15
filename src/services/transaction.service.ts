@@ -15,7 +15,6 @@ import {
   decimalToString,
 } from '@server/share/utils/formatters';
 import Decimal from 'decimal.js';
-import { Elysia } from 'elysia';
 import type {
   BatchTransactionsResponse,
   IBalanceAdjustmentDto,
@@ -1400,7 +1399,4 @@ export class TransactionService {
   }
 }
 
-export default new Elysia().decorate(
-  'transactionService',
-  new TransactionService(),
-);
+export const transactionService = new TransactionService();

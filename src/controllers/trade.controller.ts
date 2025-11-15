@@ -7,7 +7,7 @@ import {
   ListInvestmentTradesQueryDto,
   TradeDeleteResponseDto,
 } from '../dto/trade.dto';
-import investmentTradeService from '../services/trade.service';
+import { investmentTradeService } from '../services/trade.service';
 import { castToRes, ResWrapper } from '../share';
 
 const TRADE_DETAIL = {
@@ -26,11 +26,10 @@ const tradeController = new Elysia().group(
   },
   (group) =>
     group
-      .use(investmentTradeService)
       .use(authCheck)
       .post(
         '/',
-        async ({ currentUser, params, body, investmentTradeService }) => {
+        async ({ currentUser, params, body }) => {
           return castToRes(
             await investmentTradeService.createTrade(
               currentUser.id,
@@ -55,7 +54,7 @@ const tradeController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ currentUser, params, query, investmentTradeService }) => {
+        async ({ currentUser, params, query }) => {
           return castToRes(
             await investmentTradeService.listTrades(
               currentUser.id,
@@ -80,7 +79,7 @@ const tradeController = new Elysia().group(
       )
       .delete(
         '/:tradeId',
-        async ({ currentUser, params, investmentTradeService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await investmentTradeService.deleteTrade(
               currentUser.id,

@@ -7,7 +7,7 @@ import {
   UpsertInvestmentValuationDto,
   ValuationDeleteResponseDto,
 } from '../dto/valuation.dto';
-import investmentValuationService from '../services/valuation.service';
+import { investmentValuationService } from '../services/valuation.service';
 import { castToRes, ResWrapper } from '../share';
 
 const VALUATION_DETAIL = {
@@ -26,11 +26,10 @@ const valuationController = new Elysia().group(
   },
   (group) =>
     group
-      .use(investmentValuationService)
       .use(authCheck)
       .post(
         '/',
-        async ({ currentUser, params, body, investmentValuationService }) => {
+        async ({ currentUser, params, body }) => {
           return castToRes(
             await investmentValuationService.upsertValuation(
               currentUser.id,
@@ -55,7 +54,7 @@ const valuationController = new Elysia().group(
       )
       .get(
         '/',
-        async ({ currentUser, params, query, investmentValuationService }) => {
+        async ({ currentUser, params, query }) => {
           return castToRes(
             await investmentValuationService.listValuations(
               currentUser.id,
@@ -80,7 +79,7 @@ const valuationController = new Elysia().group(
       )
       .get(
         '/latest',
-        async ({ currentUser, params, investmentValuationService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await investmentValuationService.getLatestValuation(
               currentUser.id,
@@ -103,7 +102,7 @@ const valuationController = new Elysia().group(
       )
       .delete(
         '/:valuationId',
-        async ({ currentUser, params, investmentValuationService }) => {
+        async ({ currentUser, params }) => {
           return castToRes(
             await investmentValuationService.deleteValuation(
               currentUser.id,
