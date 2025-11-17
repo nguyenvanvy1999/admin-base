@@ -6,15 +6,20 @@ import type {
 } from '@server/generated';
 import { type ContributionType, InvestmentMode } from '@server/generated';
 import {
+  type ContributionRepository,
+  contributionRepository,
+} from '@server/repositories/contribution.repository';
+import {
   DB_PREFIX,
-  dateToIsoString,
-  decimalToNullableNumber,
-  decimalToNumber,
   ErrorCode,
   type IdUtil,
   idUtil,
   throwAppError,
 } from '@server/share';
+import {
+  dateFormatter,
+  decimalFormatter,
+} from '@server/share/utils/service.util';
 import type {
   ICreateInvestmentContributionDto,
   IListInvestmentContributionsQueryDto,
@@ -25,10 +30,17 @@ import {
   type AccountBalanceService,
   accountBalanceService,
 } from './account-balance.service';
-import {
-  type InvestmentService,
-  investmentService,
-} from './investment.service';
+import { BaseService } from './base/base.service';
+import type { CacheService } from './base/cache.service';
+import { cacheService } from './base/cache.service';
+import type {
+  ICacheService,
+  IDb,
+  IIdUtil,
+  IOwnershipValidatorService,
+} from './base/interfaces';
+import { ownershipValidatorService } from './base/ownership-validator.service';
+import { investmentService } from './investment.service';
 import {
   type InvestmentPositionService,
   investmentPositionService,
@@ -39,110 +51,80 @@ type ContributionRecord = Prisma.InvestmentContributionGetPayload<{
   select: typeof CONTRIBUTION_SELECT_FULL;
 }>;
 
-const formatContribution = (
-  contribution: ContributionRecord,
-): InvestmentContributionResponse => ({
-  ...contribution,
-  accountId: contribution.accountId ?? null,
-  amount: decimalToNumber(contribution.amount),
-  amountInBaseCurrency: decimalToNullableNumber(
-    contribution.amountInBaseCurrency,
-  ),
-  exchangeRate: decimalToNullableNumber(contribution.exchangeRate),
-  baseCurrencyId: contribution.baseCurrencyId ?? null,
-  timestamp: dateToIsoString(contribution.timestamp),
-  note: contribution.note ?? null,
-  created: dateToIsoString(contribution.created),
-  modified: dateToIsoString(contribution.modified),
-  account: contribution.account
-    ? {
-        id: contribution.account.id,
-        name: contribution.account.name,
-      }
-    : null,
-  baseCurrency: contribution.baseCurrency ?? null,
-});
-
-export class InvestmentContributionService {
+export class ContributionService extends BaseService<
+  ContributionRecord,
+  ICreateInvestmentContributionDto,
+  InvestmentContributionResponse,
+  InvestmentContributionListResponse,
+  ContributionRepository
+> {
   constructor(
-    private readonly deps: {
+    deps: {
       db: IDb;
-      investmentService: InvestmentService;
+      repository: ContributionRepository;
+      ownershipValidator: IOwnershipValidatorService;
+      idUtil: IIdUtil;
+      cache: ICacheService;
       accountBalanceService: AccountBalanceService;
       investmentPositionService: InvestmentPositionService;
-      idUtil: IdUtil;
     } = {
       db: prisma,
-      investmentService: investmentService,
+      repository: contributionRepository,
+      ownershipValidator: ownershipValidatorService,
+      idUtil,
+      cache: cacheService,
       accountBalanceService: accountBalanceService,
       investmentPositionService: investmentPositionService,
-      idUtil,
     },
-  ) {}
+  ) {
+    super(deps, {
+      entityName: 'Contribution',
+      dbPrefix: DB_PREFIX.CONTRIBUTION,
+    });
+  }
 
-  private parseDate(value: string) {
+  protected formatEntity(
+    contribution: ContributionRecord,
+  ): InvestmentContributionResponse {
+    return {
+      ...contribution,
+      accountId: contribution.accountId ?? null,
+      amount: decimalFormatter.toString(contribution.amount),
+      amountInBaseCurrency: decimalFormatter.toNullableString(
+        contribution.amountInBaseCurrency,
+      ),
+      exchangeRate: decimalFormatter.toNullableString(
+        contribution.exchangeRate,
+      ),
+      baseCurrencyId: contribution.baseCurrencyId ?? null,
+      timestamp: dateFormatter.toIsoStringRequired(contribution.timestamp),
+      note: contribution.note ?? null,
+      created: dateFormatter.toIsoStringRequired(contribution.created),
+      modified: dateFormatter.toIsoStringRequired(contribution.modified),
+      account: contribution.account
+        ? {
+            id: contribution.account.id,
+            name: contribution.account.name,
+          }
+        : null,
+      baseCurrency: contribution.baseCurrency ?? null,
+    };
+  }
+
+  private parseDate(value: string): Date {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
       throwAppError(ErrorCode.INVALID_DATE, 'Invalid date provided');
     }
-
     return date;
   }
 
-  async validateContribution(
+  // `upsert` is not applicable for contributions, as they are immutable records.
+  async upsert(
     userId: string,
-    investmentId: string,
-    data: ICreateInvestmentContributionDto,
-  ) {
-    const investment = await this.deps.investmentService.ensureInvestment(
-      userId,
-      investmentId,
-    );
-
-    if (data.accountId) {
-      const account = await this.deps.db.account.findFirst({
-        where: { id: data.accountId, userId },
-        select: { id: true, currencyId: true },
-      });
-
-      if (!account) {
-        throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
-      }
-
-      if (!investment.baseCurrencyId) {
-        if (account.currencyId !== investment.currencyId) {
-          throwAppError(
-            ErrorCode.INVALID_CURRENCY_MISMATCH,
-            'Account currency must match investment currency',
-          );
-        }
-      }
-    }
-
-    if (investment.currencyId !== data.currencyId) {
-      throwAppError(
-        ErrorCode.INVALID_CURRENCY_MISMATCH,
-        'Contribution currency must match investment currency',
-      );
-    }
-
-    if (
-      data.type === 'withdrawal' &&
-      investment.mode === InvestmentMode.manual
-    ) {
-      const position = await this.deps.investmentPositionService.getPosition(
-        userId,
-        investmentId,
-      );
-      if (data.amount > position.costBasis) {
-        throwAppError(
-          ErrorCode.WITHDRAWAL_EXCEEDS_BALANCE,
-          'Withdrawal amount exceeds current cost basis',
-        );
-      }
-    }
-
-    return investment;
+    data: ICreateInvestmentContributionDto & { investmentId: string },
+  ): Promise<InvestmentContributionResponse> {
+    return this.createContribution(userId, data.investmentId, data);
   }
 
   async createContribution(
@@ -154,22 +136,17 @@ export class InvestmentContributionService {
 
     const timestamp = this.parseDate(data.timestamp);
 
-    // Only update balance if accountId is provided
     if (data.accountId) {
-      const account = await this.deps.db.account.findFirst({
-        where: { id: data.accountId, userId },
-        select: { id: true },
-      });
-
-      if (!account) {
-        throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
-      }
+      await this.deps.ownershipValidator.validateAccountOwnership(
+        userId,
+        data.accountId,
+      );
     }
 
     return this.deps.db.$transaction(async (tx) => {
       const contribution = await tx.investmentContribution.create({
         data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.CONTRIBUTION),
+          id: this.deps.idUtil.dbId(this.config.dbPrefix),
           userId,
           investmentId,
           accountId: data.accountId ?? null,
@@ -194,27 +171,24 @@ export class InvestmentContributionService {
         );
       }
 
-      return formatContribution(contribution);
+      return this.formatEntity(contribution);
     });
   }
 
-  async listContributions(
+  async list(
     userId: string,
-    investmentId: string,
-    query: IListInvestmentContributionsQueryDto,
+    query: IListInvestmentContributionsQueryDto & { investmentId: string },
   ): Promise<InvestmentContributionListResponse> {
-    await this.deps.investmentService.ensureInvestment(userId, investmentId);
+    await investmentService.ensureInvestment(userId, query.investmentId);
 
     const { accountIds, dateFrom, dateTo, page, limit, sortOrder } = query;
 
     const where: InvestmentContributionWhereInput = {
       userId,
-      investmentId,
+      investmentId: query.investmentId,
     };
 
-    if (accountIds && accountIds.length > 0) {
-      where.accountId = { in: accountIds };
-    }
+    if (accountIds?.length) where.accountId = { in: accountIds };
 
     if (dateFrom || dateTo) {
       where.timestamp = {
@@ -223,27 +197,22 @@ export class InvestmentContributionService {
       };
     }
 
-    const skip = (page - 1) * limit;
+    const skip = this.calculateSkip(page, limit);
 
     const [contributions, total] = await Promise.all([
-      this.deps.db.investmentContribution.findMany({
+      this.deps.repository.findManyByUserId(
+        userId,
         where,
-        orderBy: { timestamp: sortOrder },
+        { timestamp: sortOrder },
         skip,
-        take: limit,
-        select: CONTRIBUTION_SELECT_FULL,
-      }),
-      this.deps.db.investmentContribution.count({ where }),
+        limit,
+      ),
+      this.deps.repository.countByUserId(userId, where),
     ]);
 
     return {
-      contributions: contributions.map(formatContribution),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      contributions: contributions.map((c) => this.formatEntity(c)),
+      pagination: this.buildPaginationResponse(page, limit, total),
     };
   }
 
@@ -252,14 +221,10 @@ export class InvestmentContributionService {
     investmentId: string,
     contributionIds: string[],
   ) {
-    await this.deps.investmentService.ensureInvestment(userId, investmentId);
+    await investmentService.ensureInvestment(userId, investmentId);
 
     const contributions = await this.deps.db.investmentContribution.findMany({
-      where: {
-        id: { in: contributionIds },
-        userId,
-        investmentId,
-      },
+      where: { id: { in: contributionIds }, userId, investmentId },
       select: CONTRIBUTION_SELECT_FULL,
     });
 
@@ -283,11 +248,7 @@ export class InvestmentContributionService {
       }
 
       await tx.investmentContribution.deleteMany({
-        where: {
-          id: { in: contributionIds },
-          userId,
-          investmentId,
-        },
+        where: { id: { in: contributionIds }, userId, investmentId },
       });
 
       return {
@@ -296,7 +257,56 @@ export class InvestmentContributionService {
       };
     });
   }
+
+  private async validateContribution(
+    userId: string,
+    investmentId: string,
+    data: ICreateInvestmentContributionDto,
+  ) {
+    const investment = await investmentService.ensureInvestment(
+      userId,
+      investmentId,
+    );
+
+    if (data.accountId) {
+      await this.deps.ownershipValidator.validateAccountOwnership(
+        userId,
+        data.accountId,
+      );
+    }
+
+    if (investment.currencyId !== data.currencyId) {
+      throwAppError(
+        ErrorCode.INVALID_CURRENCY_MISMATCH,
+        'Contribution currency must match investment currency',
+      );
+    }
+
+    if (
+      data.type === 'withdrawal' &&
+      investment.mode === InvestmentMode.manual
+    ) {
+      const position = await this.deps.investmentPositionService.getPosition(
+        userId,
+        investmentId,
+      );
+      if (data.amount > position.costBasis) {
+        throwAppError(
+          ErrorCode.WITHDRAWAL_EXCEEDS_BALANCE,
+          'Withdrawal amount exceeds current cost basis',
+        );
+      }
+    }
+  }
+
+  // Legacy Methods
+  async listContributions(
+    userId: string,
+    investmentId: string,
+    query: IListInvestmentContributionsQueryDto,
+  ): Promise<InvestmentContributionListResponse> {
+    return this.list(userId, { ...query, investmentId });
+  }
 }
 
-export const investmentContributionService =
-  new InvestmentContributionService();
+export const contributionService = new ContributionService();

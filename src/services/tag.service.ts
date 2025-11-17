@@ -24,7 +24,12 @@ import type {
 import { BaseService } from './base/base.service';
 import type { CacheService } from './base/cache.service';
 import { cacheService } from './base/cache.service';
-import type { OwnershipValidatorService } from './base/ownership-validator.service';
+import type {
+  ICacheService,
+  IDb,
+  IIdUtil,
+  IOwnershipValidatorService,
+} from './base/interfaces';
 import { ownershipValidatorService } from './base/ownership-validator.service';
 import type { TAG_SELECT_FULL } from './selects';
 
@@ -45,9 +50,9 @@ export class TagService extends BaseService<
     deps: {
       db: IDb;
       repository: TagRepository;
-      ownershipValidator: OwnershipValidatorService;
-      idUtil: IdUtil;
-      cache: CacheService;
+      ownershipValidator: IOwnershipValidatorService;
+      idUtil: IIdUtil;
+      cache: ICacheService;
     } = {
       db: prisma,
       repository: tagRepository,

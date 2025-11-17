@@ -1,4 +1,3 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated';
 import { EVENT_SELECT_FULL } from '@server/services/selects';
@@ -9,21 +8,22 @@ type EventRecord = Prisma.EventGetPayload<{
 }>;
 
 export class EventRepository extends BaseRepository<
+  typeof prisma.event,
   EventRecord,
   typeof EVENT_SELECT_FULL
 > {
-  constructor(db: IDb = prisma) {
-    super(db, 'event', EVENT_SELECT_FULL);
+  constructor() {
+    super(prisma.event, EVENT_SELECT_FULL);
   }
 
   /**
-   * Find event by name and user ID
+   * Find event by name and user ID (specific method)
    */
   async findByNameAndUserId(
     name: string,
     userId: string,
   ): Promise<EventRecord | null> {
-    return this.db.event.findFirst({
+    return prisma.event.findFirst({
       where: { name, userId },
       select: this.select,
     });

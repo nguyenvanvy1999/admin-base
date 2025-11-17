@@ -1,70 +1,45 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type {
-  AccountOrderByWithRelationInput,
-  AccountWhereInput,
-} from '@server/generated';
+import type { AccountWhereInput, Prisma } from '@server/generated';
 import {
   ACCOUNT_SELECT_FULL,
   ACCOUNT_SELECT_MINIMAL,
 } from '@server/services/selects';
 import { BaseRepository } from './base/base.repository';
 
-export class AccountRepository extends BaseRepository {
-  constructor(db: IDb = prisma) {
-    super(db);
+// Define the full entity type based on the select object
+type AccountRecord = Prisma.AccountGetPayload<{
+  select: typeof ACCOUNT_SELECT_FULL;
+}>;
+
+// Define the minimal entity type for specific methods
+type AccountMinimalRecord = Prisma.AccountGetPayload<{
+  select: typeof ACCOUNT_SELECT_MINIMAL;
+}>;
+
+export class AccountRepository extends BaseRepository<
+  typeof prisma.account,
+  AccountRecord,
+  typeof ACCOUNT_SELECT_FULL
+> {
+  constructor() {
+    // Pass the prisma delegate and the default select object to the base class
+    super(prisma.account, ACCOUNT_SELECT_FULL);
   }
 
-  findByIdAndUserId(accountId: string, userId: string) {
-    return this.db.account.findFirst({
-      where: {
-        id: accountId,
-        userId,
-      },
-      select: ACCOUNT_SELECT_FULL,
-    });
-  }
-
-  findByIdAndUserIdMinimal(accountId: string, userId: string) {
-    return this.db.account.findFirst({
-      where: {
-        id: accountId,
-        userId,
-      },
+  // This method is specific because it uses a different (minimal) select object
+  findByIdAndUserIdMinimal(
+    accountId: string,
+    userId: string,
+  ): Promise<AccountMinimalRecord | null> {
+    return prisma.account.findFirst({
+      where: { id: accountId, userId },
       select: ACCOUNT_SELECT_MINIMAL,
     });
   }
 
-  findManyByUserId(
-    userId: string,
-    where: AccountWhereInput,
-    orderBy: AccountOrderByWithRelationInput,
-    skip: number,
-    take: number,
-  ) {
-    return this.db.account.findMany({
-      where: {
-        ...where,
-        userId,
-      },
-      orderBy,
-      skip,
-      take,
-      select: ACCOUNT_SELECT_FULL,
-    });
-  }
-
-  countByUserId(userId: string, where: AccountWhereInput) {
-    return this.db.account.count({
-      where: {
-        ...where,
-        userId,
-      },
-    });
-  }
-
+  // This method is specific because it uses groupBy, which is not in the base repository
   groupByCurrency(userId: string, where: AccountWhereInput) {
-    return this.db.account.groupBy({
+    return prisma.account.groupBy({
       by: ['currencyId'],
       where: {
         ...where,
@@ -76,8 +51,12 @@ export class AccountRepository extends BaseRepository {
     });
   }
 
-  findManyByIdsAndUserId(ids: string[], userId: string) {
-    return this.db.account.findMany({
+  // This method is specific because it uses a different (minimal) select object
+  findManyByIdsAndUserIdMinimal(
+    ids: string[],
+    userId: string,
+  ): Promise<AccountMinimalRecord[]> {
+    return prisma.account.findMany({
       where: {
         id: { in: ids },
         userId,

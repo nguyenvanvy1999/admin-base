@@ -26,10 +26,13 @@ import type {
 import { BaseService } from './base/base.service';
 import type { CacheService } from './base/cache.service';
 import { cacheService } from './base/cache.service';
-import {
-  type OwnershipValidatorService,
-  ownershipValidatorService,
-} from './base/ownership-validator.service';
+import type {
+  ICacheService,
+  IDb,
+  IIdUtil,
+  IOwnershipValidatorService,
+} from './base/interfaces';
+import { ownershipValidatorService } from './base/ownership-validator.service';
 import type { EVENT_SELECT_FULL } from './selects';
 
 type EventRecord = Prisma.EventGetPayload<{
@@ -51,9 +54,9 @@ export class EventService extends BaseService<
     deps: {
       db: IDb;
       repository: EventRepository;
-      ownershipValidator: OwnershipValidatorService;
-      idUtil: IdUtil;
-      cache: CacheService;
+      ownershipValidator: IOwnershipValidatorService;
+      idUtil: IIdUtil;
+      cache: ICacheService;
     } = {
       db: prisma,
       repository: eventRepository,

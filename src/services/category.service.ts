@@ -1,15 +1,21 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type { CategoryType, CategoryWhereInput } from '@server/generated';
+import type { CategoryType, Prisma } from '@server/generated';
+import {
+  type CategoryRepository,
+  categoryRepository,
+} from '@server/repositories/category.repository';
 import {
   BALANCE_ADJUSTMENT_CATEGORIES,
   CATEGORY_NAME,
   type CategorySeedData,
-  ERROR_MESSAGES,
+  DB_PREFIX,
   ErrorCode,
   EXPENSE_CATEGORIES,
+  type IdUtil,
   INCOME_CATEGORIES,
   INVESTMENT_CATEGORY,
+  idUtil,
   LOAN_CATEGORIES,
   TRANSFER_CATEGORY,
   throwAppError,
@@ -21,103 +27,69 @@ import type {
   IListCategoriesQueryDto,
   IUpsertCategoryDto,
 } from '../dto/category.dto';
-import {
-  type OwnershipValidatorService,
-  ownershipValidatorService,
-} from './base/ownership-validator.service';
-import { CATEGORY_SELECT_MINIMAL } from './selects';
+import { BaseService } from './base/base.service';
+import type { CacheService } from './base/cache.service';
+import { cacheService } from './base/cache.service';
+import type {
+  ICacheService,
+  IDb,
+  IIdUtil,
+  IOwnershipValidatorService,
+} from './base/interfaces';
+import { ownershipValidatorService } from './base/ownership-validator.service';
 
-type CategoryWithChildren = {
-  id: string;
-  userId: string;
-  type: CategoryType;
-  name: string;
-  parentId: string | null;
-  isLocked: boolean;
-  icon: string | null;
-  color: string | null;
+// Types for repository and responses
+type CategoryRecord = Prisma.CategoryGetPayload<{
+  select: {
+    id: true;
+    userId: true;
+    type: true;
+    name: true;
+    parentId: true;
+    isLocked: true;
+    icon: true;
+    color: true;
+  };
+}>;
+
+type CategoryWithChildren = CategoryRecord & {
   children?: CategoryWithChildren[];
 };
 
-const formatCategory = (
-  category: Pick<
-    CategoryWithChildren,
-    | 'id'
-    | 'userId'
-    | 'type'
-    | 'name'
-    | 'parentId'
-    | 'icon'
-    | 'color'
-    | 'isLocked'
-  >,
-): CategoryResponse => ({
-  ...category,
-  parentId: category.parentId ?? null,
-  icon: category.icon ?? null,
-  color: category.color ?? null,
-});
-
-const formatCategoryTree = (
-  category: CategoryWithChildren,
-): CategoryTreeResponse => {
-  const children =
-    category.children && category.children.length > 0
-      ? category.children.map(formatCategoryTree)
-      : undefined;
-
-  return {
-    ...formatCategory(category),
-    children,
-  } as CategoryTreeResponse;
-};
-
-export class CategoryService {
+export class CategoryService extends BaseService<
+  CategoryRecord,
+  IUpsertCategoryDto,
+  CategoryResponse,
+  CategoryListResponse,
+  CategoryRepository
+> {
   constructor(
-    private readonly deps: {
+    deps: {
       db: IDb;
-      ownershipValidator: OwnershipValidatorService;
-    } = { db: prisma, ownershipValidator: ownershipValidatorService },
-  ) {}
+      repository: CategoryRepository;
+      ownershipValidator: IOwnershipValidatorService;
+      idUtil: IIdUtil;
+      cache: ICacheService;
+    } = {
+      db: prisma,
+      repository: categoryRepository,
+      ownershipValidator: ownershipValidatorService,
+      idUtil,
+      cache: cacheService,
+    },
+  ) {
+    super(deps, {
+      entityName: 'Category',
+      dbPrefix: DB_PREFIX.CATEGORY,
+    });
+  }
 
+  // #region Special Public Methods
   getCategoryId(userId: string, code: string, type?: string): string {
     if (type) {
       return `category_${code}_${type}_${userId}`;
     }
     return `category_${code}_${userId}`;
-  }
-
-  private flattenCategories(
-    categories: CategorySeedData[],
-    parentName?: string,
-  ): Array<{
-    name: string;
-    type: string;
-    parentName?: string;
-  }> {
-    const result: Array<{
-      name: string;
-      type: string;
-      parentName?: string;
-    }> = [];
-
-    for (const category of categories) {
-      result.push({
-        name: category.name,
-        type: category.type,
-        parentName,
-      });
-
-      if (category.children && category.children.length > 0) {
-        const children = this.flattenCategories(
-          category.children,
-          category.name,
-        );
-        result.push(...children);
-      }
-    }
-
-    return result;
   }
 
   async seedDefaultCategories(tx: any, userId: string): Promise<void> {
@@ -131,10 +103,8 @@ export class CategoryService {
     ];
 
     const flattened = this.flattenCategories(allCategories);
-
     const level0 = flattened.filter((cat) => !cat.parentName);
     const level1 = flattened.filter((cat) => cat.parentName);
-
     const nameToIdMap = new Map<string, string>();
 
     if (level0.length > 0) {
@@ -148,7 +118,6 @@ export class CategoryService {
           isLocked: true,
         })),
       });
-
       for (const cat of level0) {
         nameToIdMap.set(
           `${cat.name}_${cat.type}`,
@@ -177,22 +146,183 @@ export class CategoryService {
     }
   }
 
-  private async validateCategoryOwnership(userId: string, categoryId: string) {
-    await this.deps.ownershipValidator.validateCategoryOwnership(
-      userId,
-      categoryId,
-    );
-    const category = await this.deps.db.category.findUnique({
-      where: { id: categoryId },
-      select: CATEGORY_SELECT_MINIMAL,
-    });
-    if (!category) {
-      throwAppError(
-        ErrorCode.CATEGORY_NOT_FOUND,
-        ERROR_MESSAGES.CATEGORY_NOT_FOUND,
-      );
+  async getOrCreateBalanceAdjustmentCategory(
+    userId: string,
+    type: 'income' | 'expense',
+  ): Promise<string> {
+    const categoryType = type === 'income' ? 'income' : 'expense';
+    const categoryName = CATEGORY_NAME.BALANCE_ADJUSTMENT;
+    const categoryId = this.getCategoryId(userId, categoryName, categoryType);
+
+    const existingCategory = await this.deps.repository.findById(categoryId);
+    if (existingCategory) {
+      return existingCategory.id;
     }
-    return category;
+
+    const newCategory = await this.deps.repository.create({
+      id: categoryId,
+      userId,
+      name: categoryName,
+      type: categoryType,
+      parentId: null,
+      isLocked: true,
+    });
+    return newCategory.id;
+  }
+  // #endregion
+
+  // #region BaseService Implementation
+  protected formatEntity(category: CategoryRecord): CategoryResponse {
+    return {
+      ...category,
+      parentId: category.parentId ?? null,
+      icon: category.icon ?? null,
+      color: category.color ?? null,
+    };
+  }
+
+  async list(
+    userId: string,
+    query: IListCategoriesQueryDto = {},
+  ): Promise<CategoryListResponse> {
+    const { type } = query;
+    const categories = await this.deps.repository.findAllByUserIdForTree(
+      userId,
+      type,
+    );
+    const tree = this.buildCategoryTree(categories as CategoryWithChildren[]);
+    return { categories: tree.map((c) => this.formatCategoryTree(c)) };
+  }
+
+  async upsert(
+    userId: string,
+    data: IUpsertCategoryDto & { id?: string },
+  ): Promise<CategoryResponse> {
+    const { id, ...rest } = data;
+
+    if (id) {
+      const category = await this.deps.repository.findByIdAndUserId(id, userId);
+      if (!category) {
+        throwAppError(ErrorCode.CATEGORY_NOT_FOUND, 'Category not found');
+      }
+      if (category.isLocked) {
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Cannot update locked category',
+        );
+      }
+    }
+
+    if (rest.parentId) {
+      const parent = await this.deps.repository.findByIdAndUserId(
+        rest.parentId,
+        userId,
+      );
+      if (!parent) {
+        throwAppError(
+          ErrorCode.CATEGORY_NOT_FOUND,
+          'Parent category not found',
+        );
+      }
+      if (parent.isLocked) {
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Cannot create child of locked category',
+        );
+      }
+      if (parent.type !== rest.type) {
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Category type must match parent category type',
+        );
+      }
+      if (parent.parentId !== null) {
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Cannot create category with more than 2 levels',
+        );
+      }
+      if (id && rest.parentId === id) {
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          'Category cannot be its own parent',
+        );
+      }
+      if (id) {
+        const hasCircularReference = await this.checkCircularReference(
+          id,
+          rest.parentId,
+        );
+        if (hasCircularReference) {
+          throwAppError(
+            ErrorCode.VALIDATION_ERROR,
+            'Circular reference detected',
+          );
+        }
+      }
+    }
+
+    const payload = {
+      name: rest.name,
+      type: rest.type,
+      parentId: rest.parentId ?? null,
+      icon: rest.icon ?? null,
+      color: rest.color ?? null,
+    };
+
+    if (id) {
+      const updatedCategory = await this.deps.repository.update(id, payload);
+      return this.formatEntity(updatedCategory);
+    }
+
+    const newCategory = await this.deps.repository.create({
+      ...payload,
+      id: this.getCategoryId(userId, data.name),
+      userId,
+    });
+    return this.formatEntity(newCategory);
+  }
+
+  protected async validateBeforeDelete(
+    categories: CategoryRecord[],
+  ): Promise<void> {
+    for (const category of categories) {
+      if (category.isLocked) {
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          `Cannot delete locked category: ${category.name}`,
+        );
+      }
+
+      const childrenCount = await this.deps.repository.countChildren(
+        category.id,
+      );
+      if (childrenCount > 0) {
+        throwAppError(
+          ErrorCode.VALIDATION_ERROR,
+          `Cannot delete category with children: ${category.name}`,
+        );
+      }
+    }
+  }
+  // #endregion
+
+  // #region Private Helpers
+  private flattenCategories(
+    categories: CategorySeedData[],
+    parentName?: string,
+  ): Array<{ name: string; type: string; parentName?: string }> {
+    const result: Array<{ name: string; type: string; parentName?: string }> =
+      [];
+    for (const category of categories) {
+      result.push({ name: category.name, type: category.type, parentName });
+      if (category.children && category.children.length > 0) {
+        result.push(
+          ...this.flattenCategories(category.children, category.name),
+        );
+      }
+    }
+    return result;
   }
 
   private buildCategoryTree(
@@ -212,144 +342,59 @@ export class CategoryService {
       } else {
         const parent = categoryMap.get(category.parentId);
         if (parent) {
-          if (!parent.children) {
-            parent.children = [];
-          }
-          parent.children.push(categoryWithChildren);
+          parent.children?.push(categoryWithChildren);
         }
       }
     }
-
     return rootCategories;
   }
 
+  private formatCategoryTree(
+    category: CategoryWithChildren,
+  ): CategoryTreeResponse {
+    const children =
+      category.children && category.children.length > 0
+        ? category.children.map((c) => this.formatCategoryTree(c))
+        : undefined;
+
+    return {
+      ...this.formatEntity(category),
+      children,
+    };
+  }
+
+  private async checkCircularReference(
+    categoryId: string,
+    potentialParentId: string,
+  ): Promise<boolean> {
+    let currentId: string | null = potentialParentId;
+    const visited = new Set<string>();
+
+    while (currentId) {
+      if (currentId === categoryId) return true;
+      if (visited.has(currentId)) break;
+      visited.add(currentId);
+
+      const category = await this.deps.repository.findById(currentId);
+      currentId = category?.parentId ?? null;
+    }
+    return false;
+  }
+  // #endregion
+
+  // #region Legacy Methods for Backward Compatibility
   async getAllCategories(
     userId: string,
     query: IListCategoriesQueryDto = {},
   ): Promise<CategoryListResponse> {
-    const { type } = query;
-
-    const where: CategoryWhereInput = {
-      type: type && type.length > 0 ? { in: type } : undefined,
-      userId,
-    };
-
-    if (type && type.length > 0) {
-      where.type = { in: type };
-    }
-
-    const categories = await this.deps.db.category.findMany({
-      where,
-      select: {
-        id: true,
-        userId: true,
-        type: true,
-        name: true,
-        parentId: true,
-        isLocked: true,
-        icon: true,
-        color: true,
-      },
-      orderBy: {
-        created: 'asc',
-      },
-    });
-
-    const tree = this.buildCategoryTree(categories as CategoryWithChildren[]);
-
-    return { categories: tree.map(formatCategoryTree) } as CategoryListResponse;
-  }
-
-  async getOrCreateBalanceAdjustmentCategory(
-    userId: string,
-    type: 'income' | 'expense',
-  ): Promise<string> {
-    const categoryType = type === 'income' ? 'income' : 'expense';
-    const categoryName = CATEGORY_NAME.BALANCE_ADJUSTMENT;
-    const categoryId = this.getCategoryId(userId, categoryName, categoryType);
-
-    const existingCategory = await this.deps.db.category.findUnique({
-      where: {
-        id: categoryId,
-      },
-      select: { id: true },
-    });
-
-    if (existingCategory) {
-      return existingCategory.id;
-    }
-
-    const newCategory = await this.deps.db.category.create({
-      data: {
-        id: categoryId,
-        userId,
-        name: categoryName,
-        type: categoryType,
-        parentId: null,
-        isLocked: true,
-      },
-      select: { id: true },
-    });
-
-    return newCategory.id;
+    return this.list(userId, query);
   }
 
   async createCategory(
     userId: string,
     data: IUpsertCategoryDto,
   ): Promise<CategoryResponse> {
-    if (data.parentId) {
-      const parent = await this.validateCategoryOwnership(
-        userId,
-        data.parentId,
-      );
-
-      if (parent.isLocked) {
-        throwAppError(
-          ErrorCode.VALIDATION_ERROR,
-          'Cannot create child of locked category',
-        );
-      }
-
-      if (parent.type !== data.type) {
-        throwAppError(
-          ErrorCode.VALIDATION_ERROR,
-          'Category type must match parent category type',
-        );
-      }
-
-      if (parent.parentId !== null) {
-        throwAppError(
-          ErrorCode.VALIDATION_ERROR,
-          'Cannot create category with more than 2 levels',
-        );
-      }
-    }
-
-    const categoryId = this.getCategoryId(userId, data.name);
-    const category = await this.deps.db.category.create({
-      data: {
-        id: categoryId,
-        userId,
-        name: data.name,
-        type: data.type,
-        parentId: data.parentId ?? null,
-        icon: data.icon ?? null,
-        color: data.color ?? null,
-      },
-      select: {
-        id: true,
-        userId: true,
-        type: true,
-        name: true,
-        parentId: true,
-        isLocked: true,
-        icon: true,
-        color: true,
-      },
-    });
-
-    return formatCategory(category);
+    return this.upsert(userId, data);
   }
 
   async updateCategory(
@@ -357,167 +402,13 @@ export class CategoryService {
     categoryId: string,
     data: IUpsertCategoryDto,
   ): Promise<CategoryResponse> {
-    const category = await this.validateCategoryOwnership(userId, categoryId);
-
-    if (category.isLocked) {
-      throwAppError(
-        ErrorCode.VALIDATION_ERROR,
-        'Cannot update locked category',
-      );
-    }
-
-    if (data.parentId !== undefined) {
-      if (data.parentId === categoryId) {
-        throwAppError(
-          ErrorCode.VALIDATION_ERROR,
-          'Category cannot be its own parent',
-        );
-      }
-
-      if (data.parentId !== null) {
-        const newParent = await this.validateCategoryOwnership(
-          userId,
-          data.parentId,
-        );
-
-        if (newParent.isLocked) {
-          throwAppError(
-            ErrorCode.VALIDATION_ERROR,
-            'Cannot set locked category as parent',
-          );
-        }
-
-        if (newParent.type !== data.type) {
-          throwAppError(
-            ErrorCode.VALIDATION_ERROR,
-            'Category type must match parent category type',
-          );
-        }
-
-        if (newParent.parentId !== null) {
-          throwAppError(
-            ErrorCode.VALIDATION_ERROR,
-            'Cannot create category with more than 2 levels',
-          );
-        }
-
-        const hasCircularReference = await this.checkCircularReference(
-          categoryId,
-          data.parentId,
-        );
-        if (hasCircularReference) {
-          throwAppError(
-            ErrorCode.VALIDATION_ERROR,
-            'Circular reference detected',
-          );
-        }
-      }
-    }
-
-    const updatedCategory = await this.deps.db.category.update({
-      where: { id: categoryId },
-      data: {
-        name: data.name,
-        type: data.type,
-        parentId: data.parentId ?? null,
-        icon: data.icon ?? null,
-        color: data.color ?? null,
-      },
-      select: {
-        id: true,
-        userId: true,
-        type: true,
-        name: true,
-        parentId: true,
-        isLocked: true,
-        icon: true,
-        color: true,
-      },
-    });
-
-    return formatCategory(updatedCategory);
-  }
-
-  private async checkCircularReference(
-    categoryId: string,
-    potentialParentId: string,
-  ): Promise<boolean> {
-    let currentId = potentialParentId;
-    const visited = new Set<string>();
-
-    while (currentId) {
-      if (currentId === categoryId) {
-        return true;
-      }
-      if (visited.has(currentId)) {
-        break;
-      }
-      visited.add(currentId);
-
-      const category = await this.deps.db.category.findUnique({
-        where: { id: currentId },
-        select: { parentId: true },
-      });
-
-      if (!category || !category.parentId) {
-        break;
-      }
-      currentId = category.parentId;
-    }
-
-    return false;
+    return this.upsert(userId, { ...data, id: categoryId });
   }
 
   async deleteManyCategories(userId: string, ids: string[]) {
-    const categories = await this.deps.db.category.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: CATEGORY_SELECT_MINIMAL,
-    });
-
-    if (categories.length !== ids.length) {
-      throwAppError(
-        ErrorCode.CATEGORY_NOT_FOUND,
-        'Some categories were not found or do not belong to you',
-      );
-    }
-
-    for (const category of categories) {
-      if (category.isLocked) {
-        throwAppError(
-          ErrorCode.VALIDATION_ERROR,
-          'Cannot delete locked category',
-        );
-      }
-
-      const childrenCount = await this.deps.db.category.count({
-        where: {
-          parentId: category.id,
-        },
-      });
-
-      if (childrenCount > 0) {
-        throwAppError(
-          ErrorCode.VALIDATION_ERROR,
-          'Cannot delete category with children',
-        );
-      }
-    }
-
-    await this.deps.db.category.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-    });
-
-    return {
-      success: true,
-      message: `${ids.length} category(ies) deleted successfully`,
-    };
+    return this.deleteMany(userId, ids);
   }
+  // #endregion
 }
 
 export const categoryService = new CategoryService();

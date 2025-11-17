@@ -2,134 +2,148 @@ import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated';
 import {
+  type ValuationRepository,
+  valuationRepository,
+} from '@server/repositories/valuation.repository';
+import {
   DB_PREFIX,
   ErrorCode,
   type IdUtil,
   idUtil,
   throwAppError,
 } from '@server/share';
+import {
+  dateFormatter,
+  decimalFormatter,
+} from '@server/share/utils/service.util';
 import type {
   IListInvestmentValuationsQueryDto,
+  InvestmentValuationListResponse,
+  InvestmentValuationResponse,
   IUpsertInvestmentValuationDto,
 } from '../dto/valuation.dto';
-import {
-  type InvestmentService,
-  investmentService,
-} from './investment.service';
-import { VALUATION_SELECT_FULL } from './selects';
+import { BaseService } from './base/base.service';
+import type { CacheService } from './base/cache.service';
+import { cacheService } from './base/cache.service';
+import type {
+  ICacheService,
+  IDb,
+  IIdUtil,
+  IOwnershipValidatorService,
+} from './base/interfaces';
+import { ownershipValidatorService } from './base/ownership-validator.service';
+// This service has a dependency on InvestmentService, which is a bit of a code smell.
+// This will be addressed in a future refactoring.
+import { investmentService } from './investment.service';
+import type { VALUATION_SELECT_FULL } from './selects';
 
-export class InvestmentValuationService {
+type ValuationRecord = Prisma.InvestmentValuationGetPayload<{
+  select: typeof VALUATION_SELECT_FULL;
+}>;
+
+export class ValuationService extends BaseService<
+  ValuationRecord,
+  IUpsertInvestmentValuationDto,
+  InvestmentValuationResponse,
+  InvestmentValuationListResponse,
+  ValuationRepository
+> {
   constructor(
-    private readonly deps: {
+    deps: {
       db: IDb;
-      investmentService: InvestmentService;
-      idUtil: IdUtil;
+      repository: ValuationRepository;
+      ownershipValidator: IOwnershipValidatorService;
+      idUtil: IIdUtil;
+      cache: ICacheService;
     } = {
       db: prisma,
-      investmentService: investmentService,
+      repository: valuationRepository,
+      ownershipValidator: ownershipValidatorService,
       idUtil,
+      cache: cacheService,
     },
-  ) {}
+  ) {
+    super(deps, {
+      entityName: 'Valuation',
+      dbPrefix: DB_PREFIX.VALUATION,
+    });
+  }
 
-  private parseDate(value: string) {
+  protected formatEntity(
+    valuation: ValuationRecord,
+  ): InvestmentValuationResponse {
+    return {
+      ...valuation,
+      price: decimalFormatter.toString(valuation.price),
+      timestamp: dateFormatter.toIsoStringRequired(valuation.timestamp),
+      fetchedAt: dateFormatter.toIsoString(valuation.fetchedAt),
+      priceInBaseCurrency: decimalFormatter.toNullableString(
+        valuation.priceInBaseCurrency,
+      ),
+      exchangeRate: decimalFormatter.toNullableString(valuation.exchangeRate),
+      created: dateFormatter.toIsoStringRequired(valuation.created),
+      modified: dateFormatter.toIsoStringRequired(valuation.modified),
+    };
+  }
+
+  private parseDate(value: string): Date {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
       throwAppError(ErrorCode.INVALID_DATE, 'Invalid date provided');
     }
-
     return date;
   }
 
-  async upsertValuation(
+  async upsert(
     userId: string,
-    investmentId: string,
-    data: IUpsertInvestmentValuationDto,
-  ) {
-    await this.deps.investmentService.validateValuation(
-      userId,
-      investmentId,
-      data,
-    );
+    data: IUpsertInvestmentValuationDto & { investmentId: string },
+  ): Promise<InvestmentValuationResponse> {
+    await investmentService.validateValuation(userId, data.investmentId, data);
 
     const timestamp = this.parseDate(data.timestamp);
     const fetchedAt = data.fetchedAt ? this.parseDate(data.fetchedAt) : null;
 
     const existing = await this.deps.db.investmentValuation.findFirst({
-      where: {
-        userId,
-        investmentId,
-        timestamp,
-      },
+      where: { userId, investmentId: data.investmentId, timestamp },
       select: { id: true },
     });
 
+    const payload = {
+      price: data.price,
+      currencyId: data.currencyId,
+      priceInBaseCurrency: data.priceInBaseCurrency ?? null,
+      exchangeRate: data.exchangeRate ?? null,
+      baseCurrencyId: data.baseCurrencyId ?? null,
+      source: data.source ?? null,
+      fetchedAt,
+      timestamp,
+    };
+
     if (existing) {
-      return this.mapValuation(
-        await this.deps.db.investmentValuation.update({
-          where: { id: existing.id },
-          data: {
-            price: data.price,
-            currencyId: data.currencyId,
-            priceInBaseCurrency: data.priceInBaseCurrency ?? null,
-            exchangeRate: data.exchangeRate ?? null,
-            baseCurrencyId: data.baseCurrencyId ?? null,
-            source: data.source ?? null,
-            fetchedAt,
-          },
-          select: VALUATION_SELECT_FULL,
-        }),
-      );
+      const updated = await this.deps.repository.update(existing.id, payload);
+      return this.formatEntity(updated);
     }
 
-    return this.mapValuation(
-      await this.deps.db.investmentValuation.create({
-        data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.VALUATION),
-          userId,
-          investmentId,
-          price: data.price,
-          currencyId: data.currencyId,
-          priceInBaseCurrency: data.priceInBaseCurrency ?? null,
-          exchangeRate: data.exchangeRate ?? null,
-          baseCurrencyId: data.baseCurrencyId ?? null,
-          timestamp,
-          source: data.source ?? null,
-          fetchedAt,
-        },
-        select: VALUATION_SELECT_FULL,
-      }),
-    );
+    const created = await this.deps.repository.create({
+      ...payload,
+      id: this.deps.idUtil.dbId(this.config.dbPrefix),
+      userId,
+      investmentId: data.investmentId,
+    });
+    return this.formatEntity(created);
   }
 
-  mapValuation(
-    valuation: Prisma.InvestmentValuationGetPayload<{
-      select: typeof VALUATION_SELECT_FULL;
-    }>,
-  ) {
-    return {
-      ...valuation,
-      price: valuation.price.toNumber(),
-      timestamp: valuation.timestamp.toISOString(),
-      fetchedAt: valuation.fetchedAt?.toISOString() ?? null,
-      priceInBaseCurrency: valuation.priceInBaseCurrency?.toNumber() ?? null,
-      exchangeRate: valuation.exchangeRate?.toNumber() ?? null,
-      created: valuation.created.toISOString(),
-      modified: valuation.modified.toISOString(),
-    };
-  }
-
-  async listValuations(
+  async list(
     userId: string,
-    investmentId: string,
-    query: IListInvestmentValuationsQueryDto,
-  ) {
-    await this.deps.investmentService.ensureInvestment(userId, investmentId);
+    query: IListInvestmentValuationsQueryDto & { investmentId: string },
+  ): Promise<InvestmentValuationListResponse> {
+    await investmentService.ensureInvestment(userId, query.investmentId);
 
     const { dateFrom, dateTo, page, limit = 50, sortOrder = 'desc' } = query;
 
     const where: Record<string, unknown> = {
       userId,
-      investmentId,
+      investmentId: query.investmentId,
     };
 
     if (dateFrom || dateTo) {
@@ -139,43 +153,55 @@ export class InvestmentValuationService {
       };
     }
 
-    const skip = (page - 1) * limit;
+    const skip = this.calculateSkip(page, limit);
 
     const [valuations, total] = await Promise.all([
-      this.deps.db.investmentValuation.findMany({
+      this.deps.repository.findManyByUserId(
+        userId,
         where,
-        orderBy: { timestamp: sortOrder },
+        { timestamp: sortOrder },
         skip,
-        take: limit,
-        select: VALUATION_SELECT_FULL,
-      }),
-      this.deps.db.investmentValuation.count({ where }),
+        limit,
+      ),
+      this.deps.repository.countByUserId(userId, where),
     ]);
 
     return {
-      valuations: valuations.map(this.mapValuation),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      valuations: valuations.map((v) => this.formatEntity(v)),
+      pagination: this.buildPaginationResponse(page, limit, total),
     };
   }
 
-  async getLatestValuation(userId: string, investmentId: string) {
-    await this.deps.investmentService.ensureInvestment(userId, investmentId);
+  async getLatestValuation(
+    userId: string,
+    investmentId: string,
+  ): Promise<InvestmentValuationResponse | null> {
+    await investmentService.ensureInvestment(userId, investmentId);
 
-    const valuation = await this.deps.db.investmentValuation.findFirst({
-      where: { userId, investmentId },
-      orderBy: { timestamp: 'desc' },
-      select: VALUATION_SELECT_FULL,
-    });
+    const valuation =
+      await this.deps.repository.findLatestByInvestmentId(investmentId);
 
     if (!valuation) {
       return null;
     }
-    return this.mapValuation(valuation);
+    return this.formatEntity(valuation);
+  }
+
+  // Legacy Methods
+  async upsertValuation(
+    userId: string,
+    investmentId: string,
+    data: IUpsertInvestmentValuationDto,
+  ): Promise<InvestmentValuationResponse> {
+    return this.upsert(userId, { ...data, investmentId });
+  }
+
+  async listValuations(
+    userId: string,
+    investmentId: string,
+    query: IListInvestmentValuationsQueryDto,
+  ): Promise<InvestmentValuationListResponse> {
+    return this.list(userId, { ...query, investmentId });
   }
 
   async deleteManyValuations(
@@ -183,8 +209,9 @@ export class InvestmentValuationService {
     investmentId: string,
     valuationIds: string[],
   ) {
-    await this.deps.investmentService.ensureInvestment(userId, investmentId);
-
+    await investmentService.ensureInvestment(userId, investmentId);
+    // The base deleteMany doesn't support composite keys like (userId, investmentId, id)
+    // So we need to do it manually.
     const valuations = await this.deps.db.investmentValuation.findMany({
       where: {
         id: { in: valuationIds },
@@ -216,4 +243,4 @@ export class InvestmentValuationService {
   }
 }
 
-export const investmentValuationService = new InvestmentValuationService();
+export const valuationService = new ValuationService();

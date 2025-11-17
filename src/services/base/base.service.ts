@@ -1,30 +1,36 @@
 import type { IDb } from '@server/configs/db';
 import type { ActionRes } from '@server/dto/common.dto';
-import { ERROR_MESSAGES, ErrorCode, throwAppError } from '@server/share';
-import type { IdUtil } from '@server/share/utils/id.util';
+import {
+  type DB_PREFIX,
+  ERROR_MESSAGES,
+  ErrorCode,
+  throwAppError,
+} from '@server/share';
 import type { IBaseRepository } from '../../repositories/base/base.repository';
-import type { CacheService } from './cache.service';
-import type { OwnershipValidatorService } from './ownership-validator.service';
+import type {
+  ICacheService,
+  IDb,
+  IIdUtil,
+  IOwnershipValidatorService,
+} from './interfaces';
 
 /**
  * Base service configuration
  */
 export interface BaseServiceConfig {
   entityName: string;
-  dbPrefix: string;
+  dbPrefix: DB_PREFIX;
 }
 
 /**
  * Base service dependencies
  */
-export interface BaseServiceDeps<
-  TRepository extends IBaseRepository<any, any>,
-> {
+export interface BaseServiceDeps<TRepository extends IBaseRepository<any>> {
   db: IDb;
   repository: TRepository;
-  ownershipValidator: OwnershipValidatorService;
-  idUtil: IdUtil;
-  cache?: CacheService;
+  ownershipValidator: IOwnershipValidatorService;
+  idUtil: IIdUtil;
+  cache?: ICacheService;
 }
 
 /**
@@ -52,7 +58,7 @@ export abstract class BaseService<
   TDto,
   TResponse,
   TListResponse,
-  TRepository extends IBaseRepository<any, any>,
+  TRepository extends IBaseRepository<any>,
 > implements IBaseService<TDto, TResponse, TListResponse>
 {
   constructor(

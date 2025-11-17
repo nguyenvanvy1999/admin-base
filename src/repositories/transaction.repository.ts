@@ -1,16 +1,30 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type { TransactionWhereInput } from '@server/generated';
+import type { Prisma, TransactionWhereInput } from '@server/generated';
 import { TransactionType } from '@server/generated';
 import { TRANSACTION_SELECT_FULL } from '@server/services/selects';
 import { BaseRepository } from './base/base.repository';
 
-export class TransactionRepository extends BaseRepository {
-  constructor(db: IDb = prisma) {
-    super(db);
+// Define the full entity type based on the select object
+type TransactionRecord = Prisma.TransactionGetPayload<{
+  select: typeof TRANSACTION_SELECT_FULL;
+}>;
+
+export class TransactionRepository extends BaseRepository<
+  typeof prisma.transaction,
+  TransactionRecord,
+  typeof TRANSACTION_SELECT_FULL
+> {
+  constructor() {
+    // Pass the prisma delegate and the default select object to the base class
+    super(prisma.transaction, TRANSACTION_SELECT_FULL);
   }
 
-  findManyForDebtCalculation(userId: string, dateFrom?: Date, dateTo?: Date) {
+  // This is a specific method that doesn't fit the base repository pattern
+  findManyForDebtCalculation(
+    userId: string,
+    dateFrom?: Date,
+    dateTo?: Date,
+  ): Promise<TransactionRecord[]> {
     const where: TransactionWhereInput = {
       userId,
       type: {
@@ -31,7 +45,7 @@ export class TransactionRepository extends BaseRepository {
         : {}),
     };
 
-    return this.db.transaction.findMany({
+    return prisma.transaction.findMany({
       where,
       select: TRANSACTION_SELECT_FULL,
       orderBy: {

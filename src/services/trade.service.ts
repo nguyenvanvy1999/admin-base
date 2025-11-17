@@ -6,61 +6,99 @@ import type {
   TradeSide,
 } from '@server/generated';
 import {
+  type TradeRepository,
+  tradeRepository,
+} from '@server/repositories/trade.repository';
+import {
   DB_PREFIX,
   ErrorCode,
   type IdUtil,
   idUtil,
   throwAppError,
 } from '@server/share';
+import {
+  dateFormatter,
+  decimalFormatter,
+} from '@server/share/utils/service.util';
 import type {
   ICreateInvestmentTradeDto,
   IListInvestmentTradesQueryDto,
+  InvestmentTradeListResponse,
+  InvestmentTradeResponse,
 } from '../dto/trade.dto';
 import {
   type AccountBalanceService,
   accountBalanceService,
 } from './account-balance.service';
-import {
-  type InvestmentService,
-  investmentService,
-} from './investment.service';
+import { BaseService } from './base/base.service';
+import type { CacheService } from './base/cache.service';
+import { cacheService } from './base/cache.service';
+import type {
+  ICacheService,
+  IDb,
+  IIdUtil,
+  IOwnershipValidatorService,
+} from './base/interfaces';
+import { ownershipValidatorService } from './base/ownership-validator.service';
+import { investmentService } from './investment.service';
 import { TRADE_SELECT_FULL } from './selects';
 
-const mapTrade = (
-  trade: Prisma.InvestmentTradeGetPayload<{
-    select: typeof TRADE_SELECT_FULL;
-  }>,
-) => ({
-  ...trade,
-  timestamp: trade.timestamp.toISOString(),
-  price: trade.price.toNumber(),
-  quantity: trade.quantity.toNumber(),
-  amount: trade.amount.toNumber(),
-  fee: trade.fee.toNumber(),
-  priceInBaseCurrency: trade.priceInBaseCurrency?.toNumber() ?? null,
-  amountInBaseCurrency: trade.amountInBaseCurrency?.toNumber() ?? null,
-  exchangeRate: trade.exchangeRate?.toNumber() ?? null,
-  priceFetchedAt: trade.priceFetchedAt?.toISOString() ?? null,
-  created: trade.created.toISOString(),
-  modified: trade.modified.toISOString(),
-});
+type TradeRecord = Prisma.InvestmentTradeGetPayload<{
+  select: typeof TRADE_SELECT_FULL;
+}>;
 
-export class InvestmentTradeService {
+export class TradeService extends BaseService<
+  TradeRecord,
+  ICreateInvestmentTradeDto,
+  InvestmentTradeResponse,
+  InvestmentTradeListResponse,
+  TradeRepository
+> {
   constructor(
-    private readonly deps: {
+    deps: {
       db: IDb;
-      investmentService: InvestmentService;
+      repository: TradeRepository;
+      ownershipValidator: IOwnershipValidatorService;
+      idUtil: IIdUtil;
+      cache: ICacheService;
       accountBalanceService: AccountBalanceService;
-      idUtil: IdUtil;
     } = {
       db: prisma,
-      investmentService: investmentService,
-      accountBalanceService: accountBalanceService,
+      repository: tradeRepository,
+      ownershipValidator: ownershipValidatorService,
       idUtil,
+      cache: cacheService,
+      accountBalanceService: accountBalanceService,
     },
-  ) {}
+  ) {
+    super(deps, {
+      entityName: 'Trade',
+      dbPrefix: DB_PREFIX.TRADE,
+    });
+  }
 
-  private parseDate(value: string) {
+  protected formatEntity(trade: TradeRecord): InvestmentTradeResponse {
+    return {
+      ...trade,
+      timestamp: dateFormatter.toIsoStringRequired(trade.timestamp),
+      price: decimalFormatter.toString(trade.price),
+      quantity: decimalFormatter.toString(trade.quantity),
+      amount: decimalFormatter.toString(trade.amount),
+      fee: decimalFormatter.toString(trade.fee),
+      priceInBaseCurrency: decimalFormatter.toNullableString(
+        trade.priceInBaseCurrency,
+      ),
+      amountInBaseCurrency: decimalFormatter.toNullableString(
+        trade.amountInBaseCurrency,
+      ),
+      exchangeRate: decimalFormatter.toNullableString(trade.exchangeRate),
+      priceFetchedAt: dateFormatter.toIsoString(trade.priceFetchedAt),
+      created: dateFormatter.toIsoStringRequired(trade.created),
+      modified: dateFormatter.toIsoStringRequired(trade.modified),
+    };
+  }
+
+  private parseDate(value: string): Date {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
       throwAppError(ErrorCode.INVALID_DATE, 'Invalid date provided');
@@ -68,26 +106,21 @@ export class InvestmentTradeService {
     return date;
   }
 
-  private async validateTransactionOwnership(
+  // `upsert` is not applicable for trades, as they are immutable records.
+  // We use `create` instead.
+  async upsert(
     userId: string,
-    transactionId: string,
-  ) {
-    const transaction = await this.deps.db.transaction.findFirst({
-      where: { id: transactionId, userId },
-      select: { id: true },
-    });
-
-    if (!transaction) {
-      throwAppError(ErrorCode.NOT_FOUND, 'Transaction not found');
-    }
+    data: ICreateInvestmentTradeDto & { investmentId: string },
+  ): Promise<InvestmentTradeResponse> {
+    return this.createTrade(userId, data.investmentId, data);
   }
 
   async createTrade(
     userId: string,
     investmentId: string,
     data: ICreateInvestmentTradeDto,
-  ) {
-    await this.deps.investmentService.validateTrade(userId, investmentId, data);
+  ): Promise<InvestmentTradeResponse> {
+    await investmentService.validateTrade(userId, investmentId, data);
 
     const timestamp = this.parseDate(data.timestamp);
     const priceFetchedAt = data.priceFetchedAt
@@ -95,14 +128,16 @@ export class InvestmentTradeService {
       : undefined;
 
     if (data.transactionId) {
-      await this.validateTransactionOwnership(userId, data.transactionId);
+      await this.deps.ownershipValidator.validateTransactionOwnership(
+        userId,
+        data.transactionId,
+      );
     }
 
     const account = await this.deps.db.account.findFirst({
       where: { id: data.accountId, userId },
       select: { id: true, currencyId: true },
     });
-
     if (!account) {
       throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
     }
@@ -110,7 +145,7 @@ export class InvestmentTradeService {
     return this.deps.db.$transaction(async (tx) => {
       const trade = await tx.investmentTrade.create({
         data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.TRADE),
+          id: this.deps.idUtil.dbId(this.config.dbPrefix),
           userId,
           investmentId,
           accountId: data.accountId,
@@ -142,32 +177,26 @@ export class InvestmentTradeService {
         data.fee ?? 0,
       );
 
-      return mapTrade(trade);
+      return this.formatEntity(trade);
     });
   }
 
-  async listTrades(
+  async list(
     userId: string,
-    investmentId: string,
-    query: IListInvestmentTradesQueryDto,
-  ) {
-    await this.deps.investmentService.ensureInvestment(userId, investmentId);
+    query: IListInvestmentTradesQueryDto & { investmentId: string },
+  ): Promise<InvestmentTradeListResponse> {
+    await investmentService.ensureInvestment(userId, query.investmentId);
 
     const { side, accountIds, dateFrom, dateTo, page, limit, sortOrder } =
       query;
 
     const where: InvestmentTradeWhereInput = {
       userId,
-      investmentId,
+      investmentId: query.investmentId,
     };
 
-    if (side) {
-      where.side = side as TradeSide;
-    }
-
-    if (accountIds && accountIds.length > 0) {
-      where.accountId = { in: accountIds };
-    }
+    if (side) where.side = side as TradeSide;
+    if (accountIds?.length) where.accountId = { in: accountIds };
 
     if (dateFrom || dateTo) {
       where.timestamp = {
@@ -176,27 +205,22 @@ export class InvestmentTradeService {
       };
     }
 
-    const skip = (page - 1) * limit;
+    const skip = this.calculateSkip(page, limit);
 
     const [trades, total] = await Promise.all([
-      this.deps.db.investmentTrade.findMany({
+      this.deps.repository.findManyByUserId(
+        userId,
         where,
-        orderBy: { timestamp: sortOrder },
+        { timestamp: sortOrder },
         skip,
-        take: limit,
-        select: TRADE_SELECT_FULL,
-      }),
-      this.deps.db.investmentTrade.count({ where }),
+        limit,
+      ),
+      this.deps.repository.countByUserId(userId, where),
     ]);
 
     return {
-      trades: trades.map(mapTrade),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      trades: trades.map((t) => this.formatEntity(t)),
+      pagination: this.buildPaginationResponse(page, limit, total),
     };
   }
 
@@ -205,14 +229,10 @@ export class InvestmentTradeService {
     investmentId: string,
     tradeIds: string[],
   ) {
-    await this.deps.investmentService.ensureInvestment(userId, investmentId);
+    await investmentService.ensureInvestment(userId, investmentId);
 
     const trades = await this.deps.db.investmentTrade.findMany({
-      where: {
-        id: { in: tradeIds },
-        userId,
-        investmentId,
-      },
+      where: { id: { in: tradeIds }, userId, investmentId },
       select: TRADE_SELECT_FULL,
     });
 
@@ -235,11 +255,7 @@ export class InvestmentTradeService {
       }
 
       await tx.investmentTrade.deleteMany({
-        where: {
-          id: { in: tradeIds },
-          userId,
-          investmentId,
-        },
+        where: { id: { in: tradeIds }, userId, investmentId },
       });
 
       return {
@@ -248,6 +264,15 @@ export class InvestmentTradeService {
       };
     });
   }
+
+  // Legacy Methods
+  async listTrades(
+    userId: string,
+    investmentId: string,
+    query: IListInvestmentTradesQueryDto,
+  ): Promise<InvestmentTradeListResponse> {
+    return this.list(userId, { ...query, investmentId });
+  }
 }
 
-export const investmentTradeService = new InvestmentTradeService();
+export const tradeService = new TradeService();

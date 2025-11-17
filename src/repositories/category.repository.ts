@@ -1,4 +1,3 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { CategoryType, Prisma } from '@server/generated';
 import { CATEGORY_SELECT_MINIMAL } from '@server/services/selects';
@@ -8,12 +7,27 @@ type CategoryRecord = Prisma.CategoryGetPayload<{
   select: typeof CATEGORY_SELECT_MINIMAL;
 }>;
 
+// This is a more detailed type for the tree structure
+type CategoryTreeRecord = Prisma.CategoryGetPayload<{
+  select: {
+    id: true;
+    userId: true;
+    type: true;
+    name: true;
+    parentId: true;
+    isLocked: true;
+    icon: true;
+    color: true;
+  };
+}>;
+
 export class CategoryRepository extends BaseRepository<
+  typeof prisma.category,
   CategoryRecord,
   typeof CATEGORY_SELECT_MINIMAL
 > {
-  constructor(db: IDb = prisma) {
-    super(db, 'category', CATEGORY_SELECT_MINIMAL);
+  constructor() {
+    super(prisma.category, CATEGORY_SELECT_MINIMAL);
   }
 
   /**
@@ -22,13 +36,13 @@ export class CategoryRepository extends BaseRepository<
   async findAllByUserIdForTree(
     userId: string,
     types?: CategoryType[],
-  ): Promise<any[]> {
+  ): Promise<CategoryTreeRecord[]> {
     const where: any = { userId };
     if (types && types.length > 0) {
       where.type = { in: types };
     }
 
-    return this.db.category.findMany({
+    return prisma.category.findMany({
       where,
       select: {
         id: true,
@@ -47,20 +61,10 @@ export class CategoryRepository extends BaseRepository<
   }
 
   /**
-   * Find category by parent ID
-   */
-  async findByParentId(parentId: string): Promise<CategoryRecord[]> {
-    return this.db.category.findMany({
-      where: { parentId },
-      select: this.select,
-    });
-  }
-
-  /**
    * Count children of a category
    */
   async countChildren(categoryId: string): Promise<number> {
-    return this.db.category.count({
+    return prisma.category.count({
       where: { parentId: categoryId },
     });
   }

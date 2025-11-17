@@ -26,10 +26,13 @@ import type {
 import { BaseService } from './base/base.service';
 import type { CacheService } from './base/cache.service';
 import { cacheService } from './base/cache.service';
-import {
-  type OwnershipValidatorService,
-  ownershipValidatorService,
-} from './base/ownership-validator.service';
+import type {
+  ICacheService,
+  IDb,
+  IIdUtil,
+  IOwnershipValidatorService,
+} from './base/interfaces';
+import { ownershipValidatorService } from './base/ownership-validator.service';
 import type { ENTITY_SELECT_FULL } from './selects';
 
 type EntityRecord = Prisma.EntityGetPayload<{
@@ -51,9 +54,9 @@ export class EntityService extends BaseService<
     deps: {
       db: IDb;
       repository: EntityRepository;
-      ownershipValidator: OwnershipValidatorService;
-      idUtil: IdUtil;
-      cache: CacheService;
+      ownershipValidator: IOwnershipValidatorService;
+      idUtil: IIdUtil;
+      cache: ICacheService;
     } = {
       db: prisma,
       repository: entityRepository,
@@ -88,7 +91,6 @@ export class EntityService extends BaseService<
     excludeId?: string,
   ): Promise<void> {
     const where: EntityWhereInput = {
-      userId,
       name,
     };
 
@@ -96,7 +98,7 @@ export class EntityService extends BaseService<
       where.id = { not: excludeId };
     }
 
-    const count = await this.deps.db.entity.count({ where });
+    const count = await this.deps.repository.countByUserId(userId, where);
 
     if (count > 0) {
       throwAppError(ErrorCode.DUPLICATE_NAME, 'Entity name already exists');

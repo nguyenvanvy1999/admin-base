@@ -1,4 +1,3 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated';
 import { TAG_SELECT_FULL } from '@server/services/selects';
@@ -9,21 +8,22 @@ type TagRecord = Prisma.TagGetPayload<{
 }>;
 
 export class TagRepository extends BaseRepository<
+  typeof prisma.tag,
   TagRecord,
   typeof TAG_SELECT_FULL
 > {
-  constructor(db: IDb = prisma) {
-    super(db, 'tag', TAG_SELECT_FULL);
+  constructor() {
+    super(prisma.tag, TAG_SELECT_FULL);
   }
 
   /**
-   * Find tag by name and user ID
+   * Find tag by name and user ID (specific method)
    */
   async findByNameAndUserId(
     name: string,
     userId: string,
   ): Promise<TagRecord | null> {
-    return this.db.tag.findFirst({
+    return prisma.tag.findFirst({
       where: { name, userId },
       select: this.select,
     });
