@@ -1,9 +1,10 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type { User } from '@server/generated';
+import type { UserGetPayload } from '@server/generated';
 import type { ITokenPayload, UPermission } from '@server/share';
 import { ArrayUtil, DB_PREFIX, type IdUtil, idUtil } from '@server/share';
 import dayjs from 'dayjs';
+import type { USER_SELECT_FOR_LOGIN } from '../selects';
 import type { SessionService } from './session.service';
 import { sessionService } from './session.service';
 import type { TokenService } from './token.service';
@@ -59,7 +60,9 @@ export class UserUtilService {
   }
 
   async completeLogin(
-    user: User & { roles: { roleId: string }[] },
+    user: UserGetPayload<{ select: typeof USER_SELECT_FOR_LOGIN }> & {
+      roles: { roleId: string }[];
+    },
     clientIp: string,
     userAgent: string,
   ): Promise<ILoginRes> {

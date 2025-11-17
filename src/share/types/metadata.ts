@@ -1,10 +1,3 @@
-import type { Prisma } from '@server/generated';
-
-export type TransactionMetadata = Prisma.JsonValue;
-export type TradeMeta = Prisma.JsonValue;
-export type AccountMeta = Prisma.JsonValue;
-export type InvestmentExtra = Prisma.JsonValue;
-
 export type BalanceAdjustmentMetadata = {
   oldBalance: number;
   newBalance: number;

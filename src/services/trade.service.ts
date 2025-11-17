@@ -12,7 +12,6 @@ import {
   idUtil,
   throwAppError,
 } from '@server/share';
-import type { TradeMeta } from '@server/share/types/metadata';
 import type {
   ICreateInvestmentTradeDto,
   IListInvestmentTradesQueryDto,
@@ -130,7 +129,7 @@ export class InvestmentTradeService {
           baseCurrencyId: data.baseCurrencyId ?? null,
           priceSource: data.priceSource ?? null,
           priceFetchedAt: priceFetchedAt ?? null,
-          meta: (data.meta ?? null) as TradeMeta,
+          meta: data.meta as any,
         },
         select: TRADE_SELECT_FULL,
       });

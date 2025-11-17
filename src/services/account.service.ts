@@ -19,7 +19,6 @@ import {
   throwAppError,
   VALIDATION,
 } from '@server/share';
-import type { AccountMeta } from '@server/share/types/metadata';
 import type {
   AccountListResponse,
   AccountResponse,
@@ -145,7 +144,7 @@ export class AccountService implements IAccountService {
           notifyOnDueDate: data.notifyOnDueDate ?? null,
           paymentDay: data.paymentDay ?? null,
           notifyDaysBefore: data.notifyDaysBefore ?? null,
-          meta: (data.meta ?? null) as AccountMeta,
+          meta: data.meta as any,
         },
         select: ACCOUNT_SELECT_MINIMAL,
       });
@@ -161,7 +160,7 @@ export class AccountService implements IAccountService {
           notifyOnDueDate: data.notifyOnDueDate ?? null,
           paymentDay: data.paymentDay ?? null,
           notifyDaysBefore: data.notifyDaysBefore ?? null,
-          meta: (data.meta ?? null) as AccountMeta,
+          meta: data.meta as any,
           userId,
           balance: data.initialBalance ?? 0,
         },

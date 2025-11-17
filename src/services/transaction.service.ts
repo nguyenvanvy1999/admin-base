@@ -21,7 +21,6 @@ import {
   SUCCESS_MESSAGES,
   throwAppError,
 } from '@server/share';
-import type { TransactionMetadata } from '@server/share/types/metadata';
 import Decimal from 'decimal.js';
 import type {
   BatchTransactionsResponse,
@@ -258,7 +257,7 @@ class TransactionHandlerFactory {
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
       note: data.note ?? null,
       receiptUrl: data.receiptUrl ?? null,
-      metadata: (data.metadata ?? null) as TransactionMetadata,
+      metadata: data.metadata as any,
       eventId: data.eventId ?? null,
     };
 
@@ -482,7 +481,7 @@ class TransactionHandlerFactory {
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
       note: data.note ?? null,
       receiptUrl: data.receiptUrl ?? null,
-      metadata: (data.metadata ?? null) as TransactionMetadata,
+      metadata: data.metadata as any,
     };
   }
 
@@ -789,6 +788,7 @@ class TransactionHandlerFactory {
         data: {
           id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
           userId,
+          type: 'repay_debt', // todo: correct type here
           ...mirrorData,
         },
       });
@@ -978,7 +978,7 @@ export class TransactionService implements ITransactionService {
     const cacheKey = `user:${userId}:baseCurrency`;
     const cached = this.deps.cache?.get<{
       id: string;
-      baseCurrencyId: string | null;
+      baseCurrencyId: string;
     }>(cacheKey);
     if (cached) {
       return cached;
@@ -1000,7 +1000,7 @@ export class TransactionService implements ITransactionService {
     userId: string,
     data: IUpsertTransaction,
     account: Awaited<ReturnType<typeof this.validateAccountForTransaction>>,
-    baseCurrencyId: string | null,
+    baseCurrencyId: string,
   ): Promise<TransactionRecord> {
     switch (data.type) {
       case TransactionType.income:
@@ -1033,7 +1033,7 @@ export class TransactionService implements ITransactionService {
       default: {
         throwAppError(
           ErrorCode.INVALID_TRANSACTION_TYPE,
-          `${ERROR_MESSAGES.INVALID_TRANSACTION_TYPE}: ${data.type}`,
+          ERROR_MESSAGES.INVALID_TRANSACTION_TYPE,
         );
       }
     }
