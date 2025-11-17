@@ -1,11 +1,17 @@
-import { ActionIcon, Badge, Button, Group, Text } from '@mantine/core';
+import { Button, Group } from '@mantine/core';
 import type { BudgetResponse } from '@server/dto/budget.dto';
 import { BudgetPeriod } from '@server/generated';
-import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { DataTable, type DataTableColumn } from './DataTable';
+import {
+  createBooleanColumn,
+  createDateColumn,
+  createTypeColumn,
+} from './tables/columnFactories';
+import { renderActionButtons, renderCurrency } from './tables/columnRenderers';
+import { DeleteManyToolbar } from './tables/deleteManyToolbar';
 
 type BudgetTableProps = {
   budgets: BudgetResponse[];
@@ -54,25 +60,6 @@ const BudgetTable = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const getPeriodLabel = (period: BudgetPeriod) => {
-    switch (period) {
-      case BudgetPeriod.daily:
-        return t('budgets.periodOptions.daily', { defaultValue: 'Daily' });
-      case BudgetPeriod.monthly:
-        return t('budgets.periodOptions.monthly', { defaultValue: 'Monthly' });
-      case BudgetPeriod.quarterly:
-        return t('budgets.periodOptions.quarterly', {
-          defaultValue: 'Quarterly',
-        });
-      case BudgetPeriod.yearly:
-        return t('budgets.periodOptions.yearly', { defaultValue: 'Yearly' });
-      case BudgetPeriod.none:
-        return t('budgets.periodOptions.none', { defaultValue: 'None' });
-      default:
-        return period;
-    }
-  };
-
   const columns = useMemo(
     (): DataTableColumn<BudgetResponse>[] => [
       {
@@ -98,57 +85,55 @@ const BudgetTable = ({
         title: 'budgets.amount',
         render: (value) => {
           const amount = typeof value === 'string' ? parseFloat(value) : 0;
-          return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2,
-          }).format(amount);
+          return renderCurrency({
+            value: amount,
+            symbol: '$',
+            decimalScale: 2,
+          });
         },
       },
-      {
+      createTypeColumn<BudgetResponse>({
         accessor: 'period',
         title: 'budgets.period',
-        render: (value) => {
-          const period = value as BudgetPeriod;
-          return (
-            <Badge variant="light" color="blue">
-              {getPeriodLabel(period)}
-            </Badge>
-          );
+        getType: (row) => row.period,
+        labelMap: {
+          [BudgetPeriod.daily]: t('budgets.periodOptions.daily', {
+            defaultValue: 'Daily',
+          }),
+          [BudgetPeriod.monthly]: t('budgets.periodOptions.monthly', {
+            defaultValue: 'Monthly',
+          }),
+          [BudgetPeriod.quarterly]: t('budgets.periodOptions.quarterly', {
+            defaultValue: 'Quarterly',
+          }),
+          [BudgetPeriod.yearly]: t('budgets.periodOptions.yearly', {
+            defaultValue: 'Yearly',
+          }),
+          [BudgetPeriod.none]: t('budgets.periodOptions.none', {
+            defaultValue: 'None',
+          }),
         },
-      },
-      {
+        defaultColor: 'blue',
+      }),
+      createDateColumn<BudgetResponse>({
         accessor: 'startDate',
         title: 'budgets.startDate',
-        render: (value) => {
-          if (!value) return <Text c="dimmed">-</Text>;
-          return new Date(value as string).toLocaleDateString();
-        },
-      },
-      {
+        getValue: (row) => row.startDate,
+      }),
+      createDateColumn<BudgetResponse>({
         accessor: 'endDate',
         title: 'budgets.endDate',
-        render: (value) => {
-          if (!value) return <Text c="dimmed">-</Text>;
-          return new Date(value as string).toLocaleDateString();
-        },
-      },
-      {
+        getValue: (row) => row.endDate,
+      }),
+      createBooleanColumn<BudgetResponse>({
         accessor: 'carryOver',
         title: 'budgets.carryOver',
-        render: (value) => {
-          const carryOver = value as boolean;
-          return carryOver ? (
-            <Badge variant="light" color="green">
-              {t('common.yes', { defaultValue: 'Yes' })}
-            </Badge>
-          ) : (
-            <Badge variant="light" color="gray">
-              {t('common.no', { defaultValue: 'No' })}
-            </Badge>
-          );
-        },
-      },
+        getValue: (row) => row.carryOver || false,
+        trueLabel: t('common.yes', { defaultValue: 'Yes' }),
+        falseLabel: t('common.no', { defaultValue: 'No' }),
+        trueColor: 'green',
+        falseColor: 'gray',
+      }),
       {
         title: 'budgets.actions',
         accessor: 'actions',
@@ -164,26 +149,7 @@ const BudgetTable = ({
             >
               {t('budgets.viewPeriods', { defaultValue: 'View Periods' })}
             </Button>
-            <ActionIcon
-              variant="subtle"
-              color="blue"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(row);
-              }}
-            >
-              <IconEdit size={16} />
-            </ActionIcon>
-            <ActionIcon
-              variant="subtle"
-              color="red"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(row);
-              }}
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
+            {renderActionButtons({ onEdit, onDelete }, row)}
           </Group>
         ),
       },
@@ -208,25 +174,13 @@ const BudgetTable = ({
       selectedRecords={selectedRecords}
       onSelectedRecordsChange={onSelectedRecordsChange}
       renderTopToolbarCustomActions={
-        onDeleteMany && selectedRecords && selectedRecords.length > 0
+        onDeleteMany && selectedRecords
           ? () => (
-              <Button
-                color="red"
-                variant="filled"
-                leftSection={<IconTrash size={16} />}
-                onClick={() => {
-                  const selectedIds = selectedRecords?.map((r) => r.id) || [];
-                  if (selectedIds.length > 0 && onDeleteMany) {
-                    onDeleteMany(selectedIds);
-                  }
-                }}
-                disabled={isLoading}
-              >
-                {t('common.deleteSelected', {
-                  defaultValue: `Delete ${selectedRecords.length}`,
-                  count: selectedRecords.length,
-                })}
-              </Button>
+              <DeleteManyToolbar
+                selectedRecords={selectedRecords}
+                onDeleteMany={onDeleteMany}
+                isLoading={isLoading}
+              />
             )
           : undefined
       }

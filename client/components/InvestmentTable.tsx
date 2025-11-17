@@ -1,10 +1,13 @@
-import { ActionIcon, Badge } from '@mantine/core';
 import type { InvestmentResponse } from '@server/dto/investment.dto';
 import { InvestmentAssetType, InvestmentMode } from '@server/generated';
-import { IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTable, type DataTableColumn } from './DataTable';
+import {
+  createActionColumn,
+  createBadgeColumn,
+  createTypeColumn,
+} from './tables/columnFactories';
 
 type InvestmentTableProps = {
   investments: InvestmentResponse[];
@@ -60,46 +63,37 @@ const InvestmentTable = ({
         title: 'investments.symbol',
         enableSorting: false,
       },
-      {
+      createTypeColumn<InvestmentResponse>({
         accessor: 'assetType',
         title: 'investments.assetType',
         enableSorting: false,
-        render: (value, row: InvestmentResponse) => (
-          <Badge color="blue" variant="light">
-            {(() => {
-              switch (row.assetType) {
-                case InvestmentAssetType.coin:
-                  return t('investments.asset.coin', { defaultValue: 'Coin' });
-                case InvestmentAssetType.ccq:
-                  return t('investments.asset.ccq', {
-                    defaultValue: 'Mutual fund',
-                  });
-                case InvestmentAssetType.custom:
-                default:
-                  return t('investments.asset.custom', {
-                    defaultValue: 'Custom',
-                  });
-              }
-            })()}
-          </Badge>
-        ),
-      },
-      {
+        getType: (row) => row.assetType,
+        labelMap: {
+          [InvestmentAssetType.coin]: t('investments.asset.coin', {
+            defaultValue: 'Coin',
+          }),
+          [InvestmentAssetType.ccq]: t('investments.asset.ccq', {
+            defaultValue: 'Mutual fund',
+          }),
+          [InvestmentAssetType.custom]: t('investments.asset.custom', {
+            defaultValue: 'Custom',
+          }),
+        },
+        defaultColor: 'blue',
+      }),
+      createBadgeColumn<InvestmentResponse>({
         accessor: 'mode',
         title: 'investments.mode',
         enableSorting: false,
-        render: (value, row: InvestmentResponse) => (
-          <Badge
-            color={row.mode === InvestmentMode.priced ? 'green' : 'yellow'}
-          >
-            {row.mode === InvestmentMode.priced
-              ? t('investments.modes.priced', { defaultValue: 'Market priced' })
-              : t('investments.modes.manual', {
-                  defaultValue: 'Manual valuation',
-                })}
-          </Badge>
-        ),
-      },
+        getLabel: (row) =>
+          row.mode === InvestmentMode.priced
+            ? t('investments.modes.priced', { defaultValue: 'Market priced' })
+            : t('investments.modes.manual', {
+                defaultValue: 'Manual valuation',
+              }),
+        getColor: (row) =>
+          row.mode === InvestmentMode.priced ? 'green' : 'yellow',
+      }),
       {
         accessor: (row) => row.currency?.code ?? '',
         title: 'investments.currency',
@@ -113,45 +107,12 @@ const InvestmentTable = ({
         accessor: 'modified',
         title: 'common.modified',
       },
-      {
+      createActionColumn<InvestmentResponse>({
         title: 'investments.actions',
-        textAlign: 'center',
-        width: '8rem',
-        render: (value, row: InvestmentResponse) => (
-          <div className="flex items-center justify-center gap-2">
-            <ActionIcon
-              variant="subtle"
-              color="blue"
-              onClick={(e) => {
-                e.stopPropagation();
-                onView(row);
-              }}
-            >
-              <IconEye size={16} />
-            </ActionIcon>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(row);
-              }}
-            >
-              <IconEdit size={16} />
-            </ActionIcon>
-            <ActionIcon
-              variant="subtle"
-              color="red"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(row);
-              }}
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
-          </div>
-        ),
-      },
+        onEdit,
+        onDelete,
+        onView,
+      }),
     ],
     [t, onEdit, onView, onDelete],
   );

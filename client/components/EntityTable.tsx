@@ -1,10 +1,10 @@
-import { ActionIcon, Button } from '@mantine/core';
 import type { EntityResponse } from '@server/dto/entity.dto';
 import { EntityType } from '@server/generated';
-import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTable, type DataTableColumn } from './DataTable';
+import { createActionColumn, createTypeColumn } from './tables/columnFactories';
+import { DeleteManyToolbar } from './tables/deleteManyToolbar';
 
 type EntityTableProps = {
   entities: EntityResponse[];
@@ -58,24 +58,16 @@ const EntityTable = ({
         accessor: 'name',
         title: 'entities.name',
       },
-      {
+      createTypeColumn<EntityResponse>({
         accessor: 'type',
         title: 'entities.type',
-        render: (value, row: EntityResponse) => {
-          if (!row.type) return <span className="text-gray-400">-</span>;
-          const label =
-            row.type === EntityType.individual
-              ? t('entities.individual')
-              : row.type === EntityType.organization
-                ? t('entities.organization')
-                : row.type;
-          return (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-              {label}
-            </span>
-          );
+        getType: (row) => row.type || '',
+        labelMap: {
+          [EntityType.individual]: t('entities.individual'),
+          [EntityType.organization]: t('entities.organization'),
         },
-      },
+        defaultColor: 'blue',
+      }),
       {
         accessor: 'phone',
         title: 'entities.phone',
@@ -96,40 +88,14 @@ const EntityTable = ({
         title: 'entities.note',
         ellipsis: true,
       },
-      {
+      createActionColumn<EntityResponse>({
         title: 'entities.actions',
-        textAlign: 'center',
-        width: '8rem',
-        render: (value, row: EntityResponse) => (
-          <div className="flex items-center justify-center gap-2">
-            <ActionIcon
-              variant="subtle"
-              color="blue"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(row);
-              }}
-            >
-              <IconEdit size={16} />
-            </ActionIcon>
-            <ActionIcon
-              variant="subtle"
-              color="red"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(row);
-              }}
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
-          </div>
-        ),
-      },
+        onEdit,
+        onDelete,
+      }),
     ],
     [t, onEdit, onDelete],
   );
-
-  const selectedCount = selectedRecords?.length || 0;
 
   return (
     <DataTable
@@ -148,25 +114,13 @@ const EntityTable = ({
       selectedRecords={selectedRecords}
       onSelectedRecordsChange={onSelectedRecordsChange}
       renderTopToolbarCustomActions={
-        onDeleteMany && selectedCount > 0
+        onDeleteMany && selectedRecords
           ? () => (
-              <Button
-                color="red"
-                variant="filled"
-                leftSection={<IconTrash size={16} />}
-                onClick={() => {
-                  const selectedIds = selectedRecords?.map((r) => r.id) || [];
-                  if (selectedIds.length > 0 && onDeleteMany) {
-                    onDeleteMany(selectedIds);
-                  }
-                }}
-                disabled={isLoading}
-              >
-                {t('common.deleteSelected', {
-                  defaultValue: `Delete ${selectedCount}`,
-                  count: selectedCount,
-                })}
-              </Button>
+              <DeleteManyToolbar
+                selectedRecords={selectedRecords}
+                onDeleteMany={onDeleteMany}
+                isLoading={isLoading}
+              />
             )
           : undefined
       }
