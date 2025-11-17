@@ -1,10 +1,10 @@
+import { formatDate } from '@client/utils/format';
 import { ActionIcon, Button } from '@mantine/core';
 import type { EventResponse } from '@server/dto/event.dto';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTable, type DataTableColumn } from './DataTable';
-import { formatDate } from './DataTable/formatters';
 
 type EventTableProps = {
   events: EventResponse[];
