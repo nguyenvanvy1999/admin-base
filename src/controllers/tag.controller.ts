@@ -43,24 +43,7 @@ const tagController = new Elysia().group(
           },
         },
       )
-      .get(
-        '/:id',
-        async ({ currentUser, params }) => {
-          return castToRes(await tagService.getTag(currentUser.id, params.id));
-        },
-        {
-          detail: {
-            ...TAG_DETAIL,
-            summary: 'Get tag by ID',
-            description:
-              'Retrieve detailed information about a specific tag by its ID for the authenticated user.',
-          },
-          params: t.Object({ id: t.String() }),
-          response: {
-            200: ResWrapper(TagDto),
-          },
-        },
-      )
+
       .get(
         '/',
         async ({ currentUser, query }) => {

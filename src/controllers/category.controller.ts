@@ -45,26 +45,7 @@ const categoryController = new Elysia().group(
           },
         },
       )
-      .get(
-        '/:id',
-        async ({ currentUser, params }) => {
-          return castToRes(
-            await categoryService.getCategoryById(currentUser.id, params.id),
-          );
-        },
-        {
-          detail: {
-            ...CATEGORY_DETAIL,
-            summary: 'Get category by ID',
-            description:
-              'Retrieve detailed information about a specific category by its ID for the authenticated user.',
-          },
-          params: t.Object({ id: t.String() }),
-          response: {
-            200: ResWrapper(CategoryDto),
-          },
-        },
-      )
+
       .post(
         '/',
         async ({ currentUser, body }) => {

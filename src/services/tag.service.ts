@@ -104,22 +104,6 @@ export class TagService {
     }
   }
 
-  async getTag(userId: string, tagId: string): Promise<TagResponse> {
-    const tag = await this.deps.db.tag.findFirst({
-      where: {
-        id: tagId,
-        userId,
-      },
-      select: TAG_SELECT_FULL,
-    });
-
-    if (!tag) {
-      throwAppError(ErrorCode.TAG_NOT_FOUND, 'Tag not found');
-    }
-
-    return formatTag(tag);
-  }
-
   async listTags(
     userId: string,
     query: IListTagsQueryDto,

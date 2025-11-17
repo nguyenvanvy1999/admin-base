@@ -45,26 +45,7 @@ const entityController = new Elysia().group(
           },
         },
       )
-      .get(
-        '/:id',
-        async ({ currentUser, params }) => {
-          return castToRes(
-            await entityService.getEntity(currentUser.id, params.id),
-          );
-        },
-        {
-          detail: {
-            ...ENTITY_DETAIL,
-            summary: 'Get entity by ID',
-            description:
-              'Retrieve detailed information about a specific financial entity by its ID for the authenticated user.',
-          },
-          params: t.Object({ id: t.String() }),
-          response: {
-            200: ResWrapper(EntityDto),
-          },
-        },
-      )
+
       .get(
         '/',
         async ({ currentUser, query }) => {

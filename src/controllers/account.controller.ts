@@ -45,26 +45,7 @@ const accountController = new Elysia().group(
           },
         },
       )
-      .get(
-        '/:id',
-        async ({ currentUser, params }) => {
-          return castToRes(
-            await accountService.getAccount(currentUser.id, params.id),
-          );
-        },
-        {
-          detail: {
-            ...ACCOUNT_DETAIL,
-            summary: 'Get account by ID',
-            description:
-              'Retrieve detailed information about a specific account by its ID for the authenticated user.',
-          },
-          params: t.Object({ id: t.String() }),
-          response: {
-            200: ResWrapper(AccountDto),
-          },
-        },
-      )
+
       .get(
         '/',
         async ({ currentUser, query }) => {

@@ -124,22 +124,6 @@ export class EntityService {
     }
   }
 
-  async getEntity(userId: string, entityId: string) {
-    const entity = await this.deps.db.entity.findFirst({
-      where: {
-        id: entityId,
-        userId,
-      },
-      select: ENTITY_SELECT_FULL,
-    });
-
-    if (!entity) {
-      throwAppError(ErrorCode.ENTITY_NOT_FOUND, 'Entity not found');
-    }
-
-    return mapEntity(entity);
-  }
-
   async listEntities(userId: string, query: IListEntitiesQueryDto) {
     const { type, search, page, limit, sortBy, sortOrder } = query;
 

@@ -260,34 +260,6 @@ export class CategoryService {
     return { categories: tree.map(formatCategoryTree) } as CategoryListResponse;
   }
 
-  async getCategoryById(
-    userId: string,
-    categoryId: string,
-  ): Promise<CategoryResponse> {
-    const category = await this.deps.db.category.findFirst({
-      where: {
-        id: categoryId,
-        userId,
-      },
-      select: {
-        id: true,
-        userId: true,
-        type: true,
-        name: true,
-        parentId: true,
-        isLocked: true,
-        icon: true,
-        color: true,
-      },
-    });
-
-    if (!category) {
-      throwAppError(ErrorCode.CATEGORY_NOT_FOUND, 'Category not found');
-    }
-
-    return formatCategory(category);
-  }
-
   async getOrCreateBalanceAdjustmentCategory(
     userId: string,
     type: 'income' | 'expense',

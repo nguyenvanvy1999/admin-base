@@ -169,25 +169,6 @@ export class AccountService {
     }
   }
 
-  async getAccount(
-    userId: string,
-    accountId: string,
-  ): Promise<AccountResponse> {
-    const account = await this.deps.accountRepository.findByIdAndUserId(
-      accountId,
-      userId,
-    );
-
-    if (!account) {
-      throwAppError(
-        ErrorCode.ACCOUNT_NOT_FOUND,
-        ERROR_MESSAGES.ACCOUNT_NOT_FOUND,
-      );
-    }
-
-    return formatAccount(account);
-  }
-
   async listAccounts(
     userId: string,
     query: IListAccountsQueryDto,
