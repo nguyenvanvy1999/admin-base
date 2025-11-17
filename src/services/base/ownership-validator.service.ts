@@ -10,7 +10,7 @@ export class OwnershipValidatorService implements IOwnershipValidatorService {
     userId: string,
     accountId: string,
     select?: { id: true } | Record<string, boolean>,
-  ): Promise<{ id: string }> {
+  ): Promise<{ id: string } & Record<string, any>> {
     const account = await this.deps.db.account.findFirst({
       where: {
         id: accountId,
@@ -24,7 +24,7 @@ export class OwnershipValidatorService implements IOwnershipValidatorService {
         ERROR_MESSAGES.ACCOUNT_NOT_FOUND,
       );
     }
-    return account as { id: string };
+    return account as { id: string } & Record<string, any>;
   }
 
   async validateCategoryOwnership(

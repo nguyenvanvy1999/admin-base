@@ -27,6 +27,11 @@ export const ACCOUNT_SELECT_MINIMAL = {
   id: true,
 } as const;
 
+export const ACCOUNT_SELECT_WITH_CURRENCY = {
+  id: true,
+  currencyId: true,
+} as const;
+
 export const CATEGORY_SELECT_MINIMAL = {
   id: true,
   userId: true,

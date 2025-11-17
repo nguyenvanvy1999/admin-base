@@ -15,6 +15,7 @@ import {
   ErrorCode,
   type IdUtil,
   idUtil,
+  SUCCESS_MESSAGES,
   throwAppError,
   VALIDATION,
 } from '@server/share';
@@ -74,7 +75,7 @@ export class AccountService implements IAccountService {
     },
   ) {}
 
-  private async validateAccountOwnership(userId: string, accountId: string) {
+  private validateAccountOwnership(userId: string, accountId: string) {
     return this.deps.ownershipValidator.validateAccountOwnership(
       userId,
       accountId,
@@ -148,7 +149,7 @@ export class AccountService implements IAccountService {
         },
         select: ACCOUNT_SELECT_MINIMAL,
       });
-      return { success: true, message: ERROR_MESSAGES.ACCOUNT_UPDATED };
+      return { success: true, message: SUCCESS_MESSAGES.ACCOUNT_UPDATED };
     } else {
       await this.deps.db.account.create({
         data: {
@@ -166,7 +167,7 @@ export class AccountService implements IAccountService {
         },
         select: ACCOUNT_SELECT_MINIMAL,
       });
-      return { success: true, message: ERROR_MESSAGES.ACCOUNT_CREATED };
+      return { success: true, message: SUCCESS_MESSAGES.ACCOUNT_CREATED };
     }
   }
 
@@ -292,7 +293,7 @@ export class AccountService implements IAccountService {
       where: { id: accountId },
     });
 
-    return { success: true, message: ERROR_MESSAGES.ACCOUNT_DELETED };
+    return { success: true, message: SUCCESS_MESSAGES.ACCOUNT_DELETED };
   }
 
   async deleteManyAccounts(userId: string, ids: string[]): Promise<ActionRes> {
@@ -317,7 +318,7 @@ export class AccountService implements IAccountService {
 
     return {
       success: true,
-      message: ERROR_MESSAGES.ACCOUNTS_DELETED(ids.length),
+      message: SUCCESS_MESSAGES.ACCOUNTS_DELETED(ids.length),
     };
   }
 }

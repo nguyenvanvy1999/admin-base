@@ -18,6 +18,7 @@ import {
   ErrorCode,
   type IdUtil,
   idUtil,
+  SUCCESS_MESSAGES,
   throwAppError,
 } from '@server/share';
 import type { TransactionMetadata } from '@server/share/types/metadata';
@@ -38,6 +39,7 @@ import {
   type AccountBalanceService,
   accountBalanceService,
 } from './account-balance.service';
+import { type CacheService, cacheService } from './base/cache.service';
 import {
   type OwnershipValidatorService,
   ownershipValidatorService,
@@ -53,6 +55,7 @@ import {
 } from './debt-calculation.service';
 import type { ITransactionService } from './interfaces/ITransactionService';
 import {
+  ACCOUNT_SELECT_WITH_CURRENCY,
   CURRENCY_SELECT_BASIC,
   TRANSACTION_SELECT_FOR_BALANCE,
   TRANSACTION_SELECT_FULL,
@@ -173,11 +176,11 @@ class TransactionHandlerFactory {
     },
   ) {}
 
-  private async validateAccountOwnership(userId: string, accountId: string) {
+  private validateAccountOwnership(userId: string, accountId: string) {
     return this.deps.ownershipValidator.validateAccountOwnership(
       userId,
       accountId,
-      TRANSACTION_SELECT_MINIMAL,
+      ACCOUNT_SELECT_WITH_CURRENCY,
     );
   }
 
@@ -503,7 +506,7 @@ class TransactionHandlerFactory {
     );
   }
 
-  private async createPrimaryTransfer(
+  private createPrimaryTransfer(
     tx: PrismaTx,
     userId: string,
     transferData: ReturnType<typeof this.prepareTransferData>,
@@ -543,7 +546,7 @@ class TransactionHandlerFactory {
     if (transferData.toAmountDecimal) {
       return transferData.toAmountDecimal;
     }
-    return this.deps.currencyConverter.convertToToAccountCurrency(
+    return await this.deps.currencyConverter.convertToToAccountCurrency(
       transferData.amountDecimal,
       transferData.currencyId,
       toAccount.currencyId,
@@ -706,7 +709,7 @@ class TransactionHandlerFactory {
     );
   }
 
-  private async updatePrimaryTransfer(
+  private updatePrimaryTransfer(
     tx: PrismaTx,
     transactionId: string,
     userId: string,
@@ -993,7 +996,7 @@ export class TransactionService implements ITransactionService {
     return user;
   }
 
-  private async routeTransactionByType(
+  private routeTransactionByType(
     userId: string,
     data: IUpsertTransaction,
     account: Awaited<ReturnType<typeof this.validateAccountForTransaction>>,
@@ -1306,7 +1309,7 @@ export class TransactionService implements ITransactionService {
       });
     }
 
-    return { success: true, message: ERROR_MESSAGES.TRANSACTION_DELETED };
+    return { success: true, message: SUCCESS_MESSAGES.TRANSACTION_DELETED };
   }
 
   async createBatchTransactions(
@@ -1545,7 +1548,7 @@ export class TransactionService implements ITransactionService {
     return formatTransactionRecord(transaction);
   }
 
-  async getUnpaidDebts(
+  getUnpaidDebts(
     userId: string,
     query?: {
       from?: string;

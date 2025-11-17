@@ -1,6 +1,5 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type { TransactionWhereInput } from '@server/generated';
 import { TransactionType } from '@server/generated';
 import {
   dateToIsoString,
@@ -10,16 +9,11 @@ import {
 } from '@server/share';
 import Decimal from 'decimal.js';
 import type { TransactionDetail } from '../dto/transaction.dto';
+import {
+  type TransactionRepository,
+  transactionRepository,
+} from '../repositories/transaction.repository';
 import type { IDebtCalculationService } from './interfaces/IDebtCalculationService';
-import { TRANSACTION_SELECT_FULL } from './selects';
-
-type TransactionRecord = {
-  id: string;
-  type: TransactionType;
-  amount: Decimal;
-  date: Date;
-  entityId: string | null;
-};
 
 interface EntityDebtData {
   loans: Array<{

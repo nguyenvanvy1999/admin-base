@@ -15,7 +15,7 @@ export class AccountRepository extends BaseRepository {
     super(db);
   }
 
-  async findByIdAndUserId(accountId: string, userId: string) {
+  findByIdAndUserId(accountId: string, userId: string) {
     return this.db.account.findFirst({
       where: {
         id: accountId,
@@ -25,7 +25,7 @@ export class AccountRepository extends BaseRepository {
     });
   }
 
-  async findByIdAndUserIdMinimal(accountId: string, userId: string) {
+  findByIdAndUserIdMinimal(accountId: string, userId: string) {
     return this.db.account.findFirst({
       where: {
         id: accountId,
@@ -35,7 +35,7 @@ export class AccountRepository extends BaseRepository {
     });
   }
 
-  async findManyByUserId(
+  findManyByUserId(
     userId: string,
     where: AccountWhereInput,
     orderBy: AccountOrderByWithRelationInput,
@@ -54,7 +54,7 @@ export class AccountRepository extends BaseRepository {
     });
   }
 
-  async countByUserId(userId: string, where: AccountWhereInput) {
+  countByUserId(userId: string, where: AccountWhereInput) {
     return this.db.account.count({
       where: {
         ...where,
@@ -63,7 +63,7 @@ export class AccountRepository extends BaseRepository {
     });
   }
 
-  async groupByCurrency(userId: string, where: AccountWhereInput) {
+  groupByCurrency(userId: string, where: AccountWhereInput) {
     return this.db.account.groupBy({
       by: ['currencyId'],
       where: {
@@ -76,7 +76,7 @@ export class AccountRepository extends BaseRepository {
     });
   }
 
-  async findManyByIdsAndUserId(ids: string[], userId: string) {
+  findManyByIdsAndUserId(ids: string[], userId: string) {
     return this.db.account.findMany({
       where: {
         id: { in: ids },
