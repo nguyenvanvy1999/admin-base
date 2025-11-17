@@ -6,52 +6,89 @@ import type {
   Prisma,
 } from '@server/generated';
 import {
+  type EventRepository,
+  eventRepository,
+} from '@server/repositories/event.repository';
+import {
   DB_PREFIX,
   ErrorCode,
   type IdUtil,
   idUtil,
   throwAppError,
 } from '@server/share';
-import type { IListEventsQueryDto, IUpsertEventDto } from '../dto/event.dto';
+import { dateFormatter } from '@server/share/utils/service.util';
+import type {
+  EventListResponse,
+  EventResponse,
+  IListEventsQueryDto,
+  IUpsertEventDto,
+} from '../dto/event.dto';
+import { BaseService } from './base/base.service';
+import type { CacheService } from './base/cache.service';
+import { cacheService } from './base/cache.service';
+import {
+  type OwnershipValidatorService,
+  ownershipValidatorService,
+} from './base/ownership-validator.service';
+import type { EVENT_SELECT_FULL } from './selects';
 
-import { EVENT_SELECT_FULL, EVENT_SELECT_MINIMAL } from './selects';
+type EventRecord = Prisma.EventGetPayload<{
+  select: typeof EVENT_SELECT_FULL;
+}>;
 
-const mapEvent = (
-  event: Prisma.EventGetPayload<{
-    select: typeof EVENT_SELECT_FULL;
-  }>,
-) => ({
-  ...event,
-  startAt: event.startAt.toISOString(),
-  endAt: event.endAt ? event.endAt.toISOString() : null,
-  created: event.created.toISOString(),
-  modified: event.modified.toISOString(),
-});
-
-export class EventService {
+/**
+ * Event service
+ * Manages user-defined events for tracking purposes
+ */
+export class EventService extends BaseService<
+  EventRecord,
+  IUpsertEventDto,
+  EventResponse,
+  EventListResponse,
+  EventRepository
+> {
   constructor(
-    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
-  ) {}
-
-  private async validateEventOwnership(userId: string, eventId: string) {
-    const event = await this.deps.db.event.findFirst({
-      where: {
-        id: eventId,
-        userId,
-      },
-      select: EVENT_SELECT_MINIMAL,
+    deps: {
+      db: IDb;
+      repository: EventRepository;
+      ownershipValidator: OwnershipValidatorService;
+      idUtil: IdUtil;
+      cache: CacheService;
+    } = {
+      db: prisma,
+      repository: eventRepository,
+      ownershipValidator: ownershipValidatorService,
+      idUtil,
+      cache: cacheService,
+    },
+  ) {
+    super(deps, {
+      entityName: 'Event',
+      dbPrefix: DB_PREFIX.EVENT,
     });
-    if (!event) {
-      throwAppError(ErrorCode.EVENT_NOT_FOUND, 'Event not found');
-    }
-    return event;
   }
 
-  private async validateUniqueName(
+  /**
+   * Format event for response
+   */
+  protected formatEntity(event: EventRecord): EventResponse {
+    return {
+      ...event,
+      startAt: dateFormatter.toIsoStringRequired(event.startAt),
+      endAt: dateFormatter.toIsoString(event.endAt),
+      created: dateFormatter.toIsoStringRequired(event.created),
+      modified: dateFormatter.toIsoStringRequired(event.modified),
+    };
+  }
+
+  /**
+   * Validate unique name for an event
+   */
+  protected async validateUniqueName(
     userId: string,
     name: string,
     excludeId?: string,
-  ) {
+  ): Promise<void> {
     const where: EventWhereInput = {
       userId,
       name,
@@ -68,6 +105,9 @@ export class EventService {
     }
   }
 
+  /**
+   * Validate date range
+   */
   private validateDateRange(startAt: Date, endAt?: Date | null) {
     if (endAt && endAt < startAt) {
       throwAppError(
@@ -77,9 +117,12 @@ export class EventService {
     }
   }
 
-  async upsertEvent(userId: string, data: IUpsertEventDto) {
+  /**
+   * Create or update event
+   */
+  async upsert(userId: string, data: IUpsertEventDto): Promise<EventResponse> {
     if (data.id) {
-      await this.validateEventOwnership(userId, data.id);
+      await this.validateOwnership(userId, data.id);
     }
 
     await this.validateUniqueName(userId, data.name, data.id);
@@ -89,49 +132,46 @@ export class EventService {
 
     this.validateDateRange(startAt, endAt);
 
+    const payload = {
+      name: data.name,
+      startAt,
+      endAt,
+    };
+
     if (data.id) {
-      const event = await this.deps.db.event.update({
-        where: { id: data.id },
-        data: {
-          name: data.name,
-          startAt,
-          endAt,
-        },
-        select: EVENT_SELECT_FULL,
-      });
-      return mapEvent(event);
-    } else {
-      const event = await this.deps.db.event.create({
-        data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.EVENT),
-          userId,
-          name: data.name,
-          startAt,
-          endAt,
-        },
-        select: EVENT_SELECT_FULL,
-      });
-      return mapEvent(event);
+      const event = await this.deps.repository.update(data.id, payload);
+      return this.formatEntity(event);
     }
+
+    const event = await this.deps.repository.create({
+      ...payload,
+      id: this.deps.idUtil.dbId(this.config.dbPrefix),
+      userId,
+    });
+
+    return this.formatEntity(event);
   }
 
-  async getEvent(userId: string, eventId: string) {
-    const event = await this.deps.db.event.findFirst({
-      where: {
-        id: eventId,
-        userId,
-      },
-      select: EVENT_SELECT_FULL,
-    });
+  /**
+   * Get a single event by ID
+   */
+  async getEvent(userId: string, eventId: string): Promise<EventResponse> {
+    const event = await this.deps.repository.findByIdAndUserId(eventId, userId);
 
     if (!event) {
       throwAppError(ErrorCode.EVENT_NOT_FOUND, 'Event not found');
     }
 
-    return mapEvent(event);
+    return this.formatEntity(event);
   }
 
-  async listEvents(userId: string, query: IListEventsQueryDto) {
+  /**
+   * List events with pagination and filtering
+   */
+  async list(
+    userId: string,
+    query: IListEventsQueryDto,
+  ): Promise<EventListResponse> {
     const {
       search,
       startAtFrom,
@@ -186,57 +226,50 @@ export class EventService {
       orderBy.created = sortOrder;
     }
 
-    const skip = (page - 1) * limit;
+    const skip = this.calculateSkip(page, limit);
 
     const [events, total] = await Promise.all([
-      this.deps.db.event.findMany({
+      this.deps.repository.findManyByUserId(
+        userId,
         where,
         orderBy,
         skip,
-        take: limit,
-        select: EVENT_SELECT_FULL,
-      }),
-      this.deps.db.event.count({ where }),
+        limit,
+      ),
+      this.deps.repository.countByUserId(userId, where),
     ]);
 
     return {
-      events: events.map(mapEvent),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      events: events.map((e) => this.formatEntity(e)),
+      pagination: this.buildPaginationResponse(page, limit, total),
     };
   }
 
+  /**
+   * Legacy method name for backward compatibility
+   */
+  async upsertEvent(
+    userId: string,
+    data: IUpsertEventDto,
+  ): Promise<EventResponse> {
+    return this.upsert(userId, data);
+  }
+
+  /**
+   * Legacy method name for backward compatibility
+   */
+  async listEvents(
+    userId: string,
+    query: IListEventsQueryDto,
+  ): Promise<EventListResponse> {
+    return this.list(userId, query);
+  }
+
+  /**
+   * Legacy method name for backward compatibility
+   */
   async deleteManyEvents(userId: string, ids: string[]) {
-    const events = await this.deps.db.event.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: EVENT_SELECT_MINIMAL,
-    });
-
-    if (events.length !== ids.length) {
-      throwAppError(
-        ErrorCode.EVENT_NOT_FOUND,
-        'Some events were not found or do not belong to you',
-      );
-    }
-
-    await this.deps.db.event.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-    });
-
-    return {
-      success: true,
-      message: `${ids.length} event(s) deleted successfully`,
-    };
+    return this.deleteMany(userId, ids);
   }
 }
 

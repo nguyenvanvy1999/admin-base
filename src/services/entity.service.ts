@@ -6,69 +6,87 @@ import type {
   Prisma,
 } from '@server/generated';
 import {
+  type EntityRepository,
+  entityRepository,
+} from '@server/repositories/entity.repository';
+import {
   DB_PREFIX,
-  ERROR_MESSAGES,
   ErrorCode,
   type IdUtil,
   idUtil,
   throwAppError,
 } from '@server/share';
+import { dateFormatter } from '@server/share/utils/service.util';
 import type {
+  EntityListResponse,
+  EntityResponse,
   IListEntitiesQueryDto,
   IUpsertEntityDto,
 } from '../dto/entity.dto';
+import { BaseService } from './base/base.service';
+import type { CacheService } from './base/cache.service';
+import { cacheService } from './base/cache.service';
 import {
   type OwnershipValidatorService,
   ownershipValidatorService,
 } from './base/ownership-validator.service';
+import type { ENTITY_SELECT_FULL } from './selects';
 
-import { ENTITY_SELECT_FULL, ENTITY_SELECT_MINIMAL } from './selects';
+type EntityRecord = Prisma.EntityGetPayload<{
+  select: typeof ENTITY_SELECT_FULL;
+}>;
 
-const mapEntity = (
-  entity: Prisma.EntityGetPayload<{
-    select: typeof ENTITY_SELECT_FULL;
-  }>,
-) => ({
-  ...entity,
-  created: entity.created.toISOString(),
-  modified: entity.modified.toISOString(),
-});
-
-export class EntityService {
+/**
+ * Entity service
+ * Manages financial entities (companies, individuals, etc.)
+ */
+export class EntityService extends BaseService<
+  EntityRecord,
+  IUpsertEntityDto,
+  EntityResponse,
+  EntityListResponse,
+  EntityRepository
+> {
   constructor(
-    private readonly deps: {
+    deps: {
       db: IDb;
-      idUtil: IdUtil;
+      repository: EntityRepository;
       ownershipValidator: OwnershipValidatorService;
-    } = { db: prisma, idUtil, ownershipValidator: ownershipValidatorService },
-  ) {}
-
-  private async validateEntityOwnership(userId: string, entityId: string) {
-    await this.deps.ownershipValidator.validateEntityOwnership(
-      userId,
-      entityId,
-    );
-    const entity = await this.deps.db.entity.findFirst({
-      where: {
-        id: entityId,
-        userId,
-      },
-      select: ENTITY_SELECT_MINIMAL,
+      idUtil: IdUtil;
+      cache: CacheService;
+    } = {
+      db: prisma,
+      repository: entityRepository,
+      ownershipValidator: ownershipValidatorService,
+      idUtil,
+      cache: cacheService,
+    },
+  ) {
+    super(deps, {
+      entityName: 'Entity',
+      dbPrefix: DB_PREFIX.ENTITY,
     });
-    if (!entity) {
-      throwAppError(
-        ErrorCode.ENTITY_NOT_FOUND,
-        ERROR_MESSAGES.ENTITY_NOT_FOUND,
-      );
-    }
-    return entity;
   }
 
-  private async validateUniqueName(
+  /**
+   * Format entity for response
+   */
+  protected formatEntity(entity: EntityRecord): EntityResponse {
+    return {
+      ...entity,
+      created: dateFormatter.toIsoStringRequired(entity.created),
+      modified: dateFormatter.toIsoStringRequired(entity.modified),
+    };
+  }
+
+  /**
+   * Validate unique name
+   */
+  protected async validateUniqueName(
     userId: string,
     name: string,
     excludeId?: string,
-  ) {
+  ): Promise<void> {
     const where: EntityWhereInput = {
       userId,
       name,
@@ -85,47 +103,60 @@ export class EntityService {
     }
   }
 
-  async upsertEntity(userId: string, data: IUpsertEntityDto) {
+  /**
+   * Create or update entity
+   */
+  async upsert(
+    userId: string,
+    data: IUpsertEntityDto,
+  ): Promise<EntityResponse> {
     if (data.id) {
-      await this.validateEntityOwnership(userId, data.id);
+      await this.validateOwnership(userId, data.id);
     }
 
     await this.validateUniqueName(userId, data.name, data.id);
 
     if (data.id) {
-      const entity = await this.deps.db.entity.update({
-        where: { id: data.id },
-        data: {
-          name: data.name,
-          type: data.type,
-          phone: data.phone ?? null,
-          email: data.email ?? null,
-          address: data.address ?? null,
-          note: data.note ?? null,
-        },
-        select: ENTITY_SELECT_FULL,
+      const entity = await this.deps.repository.update(data.id, {
+        name: data.name,
+        type: data.type,
+        phone: data.phone ?? null,
+        email: data.email ?? null,
+        address: data.address ?? null,
+        note: data.note ?? null,
       });
-      return mapEntity(entity);
-    } else {
-      const entity = await this.deps.db.entity.create({
-        data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.ENTITY),
-          userId,
-          name: data.name,
-          type: data.type,
-          phone: data.phone ?? null,
-          email: data.email ?? null,
-          address: data.address ?? null,
-          note: data.note ?? null,
-        },
-        select: ENTITY_SELECT_FULL,
-      });
-      return mapEntity(entity);
+      return this.formatEntity(entity);
     }
+
+    const entity = await this.deps.repository.create({
+      id: this.deps.idUtil.dbId(this.config.dbPrefix),
+      userId,
+      name: data.name,
+      type: data.type,
+      phone: data.phone ?? null,
+      email: data.email ?? null,
+      address: data.address ?? null,
+      note: data.note ?? null,
+    });
+
+    return this.formatEntity(entity);
   }
 
-  async listEntities(userId: string, query: IListEntitiesQueryDto) {
-    const { type, search, page, limit, sortBy, sortOrder } = query;
+  /**
+   * List entities with pagination and filtering
+   */
+  async list(
+    userId: string,
+    query: IListEntitiesQueryDto,
+  ): Promise<EntityListResponse> {
+    const {
+      type,
+      search,
+      page,
+      limit,
+      sortBy = 'created',
+      sortOrder = 'desc',
+    } = query;
 
     const where: EntityWhereInput = {
       userId,
@@ -151,57 +182,50 @@ export class EntityService {
       orderBy.created = sortOrder;
     }
 
-    const skip = (page - 1) * limit;
+    const skip = this.calculateSkip(page, limit);
 
     const [entities, total] = await Promise.all([
-      this.deps.db.entity.findMany({
+      this.deps.repository.findManyByUserId(
+        userId,
         where,
         orderBy,
         skip,
-        take: limit,
-        select: ENTITY_SELECT_FULL,
-      }),
-      this.deps.db.entity.count({ where }),
+        limit,
+      ),
+      this.deps.repository.countByUserId(userId, where),
     ]);
 
     return {
-      entities: entities.map(mapEntity),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      entities: entities.map((e) => this.formatEntity(e)),
+      pagination: this.buildPaginationResponse(page, limit, total),
     };
   }
 
+  /**
+   * Legacy method name for backward compatibility
+   */
+  async upsertEntity(
+    userId: string,
+    data: IUpsertEntityDto,
+  ): Promise<EntityResponse> {
+    return this.upsert(userId, data);
+  }
+
+  /**
+   * Legacy method name for backward compatibility
+   */
+  async listEntities(
+    userId: string,
+    query: IListEntitiesQueryDto,
+  ): Promise<EntityListResponse> {
+    return this.list(userId, query);
+  }
+
+  /**
+   * Legacy method name for backward compatibility
+   */
   async deleteManyEntities(userId: string, ids: string[]) {
-    const entities = await this.deps.db.entity.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: ENTITY_SELECT_MINIMAL,
-    });
-
-    if (entities.length !== ids.length) {
-      throwAppError(
-        ErrorCode.ENTITY_NOT_FOUND,
-        'Some entities were not found or do not belong to you',
-      );
-    }
-
-    await this.deps.db.entity.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-    });
-
-    return {
-      success: true,
-      message: `${ids.length} entity(ies) deleted successfully`,
-    };
+    return this.deleteMany(userId, ids);
   }
 }
 

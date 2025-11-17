@@ -5,56 +5,83 @@ import type {
   TagOrderByWithRelationInput,
   TagWhereInput,
 } from '@server/generated';
+import type { TagRepository } from '@server/repositories/tag.repository';
+import { tagRepository } from '@server/repositories/tag.repository';
 import {
   DB_PREFIX,
-  dateToIsoString,
   ErrorCode,
   type IdUtil,
   idUtil,
   throwAppError,
 } from '@server/share';
+import { dateFormatter } from '@server/share/utils/service.util';
 import type {
   IListTagsQueryDto,
   IUpsertTagDto,
   TagListResponse,
   TagResponse,
 } from '../dto/tag.dto';
-
-import { TAG_SELECT_FULL, TAG_SELECT_MINIMAL } from './selects';
+import { BaseService } from './base/base.service';
+import type { CacheService } from './base/cache.service';
+import { cacheService } from './base/cache.service';
+import type { OwnershipValidatorService } from './base/ownership-validator.service';
+import { ownershipValidatorService } from './base/ownership-validator.service';
+import type { TAG_SELECT_FULL } from './selects';
 
 type TagRecord = Prisma.TagGetPayload<{ select: typeof TAG_SELECT_FULL }>;
 
-const formatTag = (tag: TagRecord): TagResponse => ({
-  ...tag,
-  description: tag.description ?? null,
-  created: dateToIsoString(tag.created),
-  modified: dateToIsoString(tag.modified),
-});
-
-export class TagService {
+/**
+ * Tag service
+ * Manages tags for categorization and organization
+ */
+export class TagService extends BaseService<
+  TagRecord,
+  IUpsertTagDto,
+  TagResponse,
+  TagListResponse,
+  TagRepository
+> {
   constructor(
-    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
-  ) {}
-
-  private async validateTagOwnership(userId: string, tagId: string) {
-    const tag = await this.deps.db.tag.findFirst({
-      where: {
-        id: tagId,
-        userId,
-      },
-      select: TAG_SELECT_MINIMAL,
+    deps: {
+      db: IDb;
+      repository: TagRepository;
+      ownershipValidator: OwnershipValidatorService;
+      idUtil: IdUtil;
+      cache: CacheService;
+    } = {
+      db: prisma,
+      repository: tagRepository,
+      ownershipValidator: ownershipValidatorService,
+      idUtil,
+      cache: cacheService,
+    },
+  ) {
+    super(deps, {
+      entityName: 'Tag',
+      dbPrefix: DB_PREFIX.TAG,
     });
-    if (!tag) {
-      throwAppError(ErrorCode.TAG_NOT_FOUND, 'Tag not found');
-    }
-    return tag;
   }
 
-  private async validateUniqueName(
+  /**
+   * Format tag for response
+   */
+  protected formatEntity(tag: TagRecord): TagResponse {
+    return {
+      ...tag,
+      description: tag.description ?? null,
+      created: dateFormatter.toIsoStringRequired(tag.created),
+      modified: dateFormatter.toIsoStringRequired(tag.modified),
+    };
+  }
+
+  /**
+   * Validate unique name (case-insensitive)
+   */
+  protected async validateUniqueName(
     userId: string,
     name: string,
     excludeId?: string,
-  ) {
+  ): Promise<void> {
     const lowerName = name.toLowerCase().trim();
     const where: TagWhereInput = {
       userId,
@@ -72,39 +99,39 @@ export class TagService {
     }
   }
 
-  async upsertTag(userId: string, data: IUpsertTagDto): Promise<TagResponse> {
+  /**
+   * Create or update tag
+   */
+  async upsert(userId: string, data: IUpsertTagDto): Promise<TagResponse> {
     if (data.id) {
-      await this.validateTagOwnership(userId, data.id);
+      await this.validateOwnership(userId, data.id);
     }
 
     const lowerName = data.name.toLowerCase().trim();
     await this.validateUniqueName(userId, lowerName, data.id);
 
     if (data.id) {
-      const tag = await this.deps.db.tag.update({
-        where: { id: data.id },
-        data: {
-          name: lowerName,
-          description: data.description ?? null,
-        },
-        select: TAG_SELECT_FULL,
+      const tag = await this.deps.repository.update(data.id, {
+        name: lowerName,
+        description: data.description ?? null,
       });
-      return formatTag(tag);
-    } else {
-      const tag = await this.deps.db.tag.create({
-        data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.TAG),
-          userId,
-          name: lowerName,
-          description: data.description ?? null,
-        },
-        select: TAG_SELECT_FULL,
-      });
-      return formatTag(tag);
+      return this.formatEntity(tag);
     }
+
+    const tag = await this.deps.repository.create({
+      id: this.deps.idUtil.dbId(this.config.dbPrefix),
+      userId,
+      name: lowerName,
+      description: data.description ?? null,
+    });
+
+    return this.formatEntity(tag);
   }
 
-  async listTags(
+  /**
+   * List tags with pagination and filtering
+   */
+  async list(
     userId: string,
     query: IListTagsQueryDto,
   ): Promise<TagListResponse> {
@@ -134,57 +161,47 @@ export class TagService {
       orderBy.created = sortOrder;
     }
 
-    const skip = (page - 1) * limit;
+    const skip = this.calculateSkip(page, limit);
 
     const [tags, total] = await Promise.all([
-      this.deps.db.tag.findMany({
+      this.deps.repository.findManyByUserId(
+        userId,
         where,
         orderBy,
         skip,
-        take: limit,
-        select: TAG_SELECT_FULL,
-      }),
-      this.deps.db.tag.count({ where }),
+        limit,
+      ),
+      this.deps.repository.countByUserId(userId, where),
     ]);
 
     return {
-      tags: tags.map(formatTag),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      tags: tags.map((t) => this.formatEntity(t)),
+      pagination: this.buildPaginationResponse(page, limit, total),
     };
   }
 
+  /**
+   * Legacy method name for backward compatibility
+   */
+  async upsertTag(userId: string, data: IUpsertTagDto): Promise<TagResponse> {
+    return this.upsert(userId, data);
+  }
+
+  /**
+   * Legacy method name for backward compatibility
+   */
+  async listTags(
+    userId: string,
+    query: IListTagsQueryDto,
+  ): Promise<TagListResponse> {
+    return this.list(userId, query);
+  }
+
+  /**
+   * Legacy method name for backward compatibility
+   */
   async deleteManyTags(userId: string, ids: string[]) {
-    const tags = await this.deps.db.tag.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: TAG_SELECT_MINIMAL,
-    });
-
-    if (tags.length !== ids.length) {
-      throwAppError(
-        ErrorCode.TAG_NOT_FOUND,
-        'Some tags were not found or do not belong to you',
-      );
-    }
-
-    await this.deps.db.tag.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-    });
-
-    return {
-      success: true,
-      message: `${ids.length} tag(s) deleted successfully`,
-    };
+    return this.deleteMany(userId, ids);
   }
 }
 
