@@ -20,6 +20,7 @@
     "seed": "bun run src/scripts/seed.ts"
   },
   "dependencies": {
+    "@elysiajs/cors": "^1.4.0",
     "@elysiajs/openapi": "^1.4.11",
     "@elysiajs/opentelemetry": "^1.4.6",
     "@elysiajs/server-timing": "^1.4.0",
