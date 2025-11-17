@@ -14,11 +14,11 @@ export class GracefulShutdownService {
 
   async disconnectDatabase(): Promise<void> {
     try {
-      this.deps.logger.info('🔄 Disconnecting database...');
+      this.deps.logger.info('Disconnecting database...');
       await this.deps.db.$disconnect();
-      this.deps.logger.info('✅ Database disconnected successfully');
+      this.deps.logger.info('Database disconnected successfully');
     } catch (error) {
-      this.deps.logger.error(`❌ Database disconnect failed: ${error}`);
+      this.deps.logger.error(`Database disconnect failed: ${error}`);
       this.deps.logger.error(`Database error details: ${error}`);
       if (error instanceof Error) {
         this.deps.logger.error(`Database error stack: ${error.stack}`);
@@ -28,16 +28,16 @@ export class GracefulShutdownService {
 
   closeRedis(): void {
     try {
-      this.deps.logger.info('🔄 Closing Redis connection...');
+      this.deps.logger.info('Closing Redis connection...');
       redis.close();
-      this.deps.logger.info('✅ Redis closed successfully');
+      this.deps.logger.info('Redis closed successfully');
     } catch (error) {
-      this.deps.logger.error(`❌ Redis close failed: ${error}`);
+      this.deps.logger.error(`Redis close failed: ${error}`);
     }
   }
 
   async shutdown(): Promise<void> {
-    this.deps.logger.info('🔄 Starting graceful shutdown...');
+    this.deps.logger.info('Starting graceful shutdown...');
 
     try {
       // Close Redis
@@ -46,9 +46,9 @@ export class GracefulShutdownService {
       // Finally disconnect database
       await this.disconnectDatabase();
 
-      this.deps.logger.info('✅ Graceful shutdown completed successfully');
+      this.deps.logger.info('Graceful shutdown completed successfully');
     } catch (error) {
-      this.deps.logger.error(`❌ Graceful shutdown failed: ${error}`);
+      this.deps.logger.error(`Graceful shutdown failed: ${error}`);
       this.deps.logger.error(`Shutdown error details: ${error}`);
       if (error instanceof Error) {
         this.deps.logger.error(`Shutdown error stack: ${error.stack}`);
@@ -59,14 +59,14 @@ export class GracefulShutdownService {
   setupShutdownHandlers(): void {
     const shutdown = async (signal: string) => {
       this.deps.logger.info(
-        `📡 Received ${signal}, starting graceful shutdown...`,
+        `Received ${signal}, starting graceful shutdown...`,
       );
       try {
         await this.shutdown();
-        this.deps.logger.info('✅ Shutdown completed, exiting with code 0');
+        this.deps.logger.info('Shutdown completed, exiting with code 0');
         process.exit(0);
       } catch (error) {
-        this.deps.logger.error(`❌ Shutdown failed: ${error}`);
+        this.deps.logger.error(`Shutdown failed: ${error}`);
         this.deps.logger.error(`Shutdown error details: ${error}`);
         if (error instanceof Error) {
           this.deps.logger.error(`Shutdown error stack: ${error.stack}`);
@@ -81,7 +81,7 @@ export class GracefulShutdownService {
 
     // Handle uncaught exceptions
     process.on('uncaughtException', async (error) => {
-      this.deps.logger.error(`💥 Uncaught Exception: ${error}`);
+      this.deps.logger.error(`Uncaught Exception: ${error}`);
       this.deps.logger.error(`Uncaught exception details: ${error}`);
       this.deps.logger.error(`Uncaught exception stack: ${error.stack}`);
       this.deps.logger.error(`Uncaught exception name: ${error.name}`);
@@ -90,12 +90,12 @@ export class GracefulShutdownService {
       try {
         await this.shutdown();
         this.deps.logger.info(
-          '✅ Shutdown completed after uncaught exception, exiting with code 1',
+          'Shutdown completed after uncaught exception, exiting with code 1',
         );
         process.exit(1);
       } catch (shutdownError) {
         this.deps.logger.error(
-          `❌ Shutdown failed after uncaught exception: ${shutdownError}`,
+          `Shutdown failed after uncaught exception: ${shutdownError}`,
         );
         process.exit(1);
       }
@@ -104,7 +104,7 @@ export class GracefulShutdownService {
     // Handle unhandled promise rejections
     process.on('unhandledRejection', async (reason, promise) => {
       this.deps.logger.error(
-        `💥 Unhandled Rejection at: ${promise}, reason: ${reason}`,
+        `Unhandled Rejection at: ${promise}, reason: ${reason}`,
       );
       this.deps.logger.error(`Unhandled rejection details: ${reason}`);
       if (reason instanceof Error) {
@@ -118,18 +118,18 @@ export class GracefulShutdownService {
       try {
         await this.shutdown();
         this.deps.logger.info(
-          '✅ Shutdown completed after unhandled rejection, exiting with code 1',
+          'Shutdown completed after unhandled rejection, exiting with code 1',
         );
         process.exit(1);
       } catch (shutdownError) {
         this.deps.logger.error(
-          `❌ Shutdown failed after unhandled rejection: ${shutdownError}`,
+          `Shutdown failed after unhandled rejection: ${shutdownError}`,
         );
         process.exit(1);
       }
     });
 
-    this.deps.logger.info('✅ Graceful shutdown handlers configured');
+    this.deps.logger.info('Graceful shutdown handlers configured');
   }
 }
 

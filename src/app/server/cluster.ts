@@ -7,14 +7,14 @@ import { type Spawn, spawn } from 'bun';
 const WORKER_BINARY_PATH = './backend_worker';
 
 export async function startCluster() {
-  logger.info('🚀 Starting application in cluster mode...');
+  logger.info('Starting application in cluster mode...');
   logger.info(`Primary process ${process.pid} is running`);
 
   // Initialize data in primary process
   await initData();
 
   const numCPUs = navigator.hardwareConcurrency;
-  logger.info(`🔄 Spawning ${numCPUs} worker processes...`);
+  logger.info(`Spawning ${numCPUs} worker processes...`);
 
   const workers = new Array(numCPUs);
 
@@ -32,9 +32,7 @@ export async function startCluster() {
     });
 
     workers[i].exited.then((exitCode: number) => {
-      logger.warn(
-        `⚠️  Worker process exited with code ${exitCode}. Restarting...`,
-      );
+      logger.warn(`Worker process exited with code ${exitCode}. Restarting...`);
       workers[i] = spawn({
         cmd: [WORKER_BINARY_PATH],
         ...spawnOptions,
@@ -43,7 +41,7 @@ export async function startCluster() {
   }
 
   function killAllWorkers() {
-    logger.info('🛑 Shutting down all worker processes...');
+    logger.info('Shutting down all worker processes...');
     for (const worker of workers) {
       worker.kill();
     }
@@ -54,8 +52,8 @@ export async function startCluster() {
   process.on('SIGTERM', killAllWorkers);
   process.on('exit', killAllWorkers);
 
-  logger.info('✅ All workers spawned successfully');
+  logger.info('All workers spawned successfully');
   logger.info(
-    `🎯 Cluster is ready with ${numCPUs} workers on port ${appEnv.PORT}`,
+    `Cluster is ready with ${numCPUs} workers on port ${appEnv.PORT}`,
   );
 }

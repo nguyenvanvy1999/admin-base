@@ -7,9 +7,7 @@ import packageJson from '../../package.json';
 
 export const swaggerConfig = () => (app: Elysia) => {
   if (appEnv.ENB_SWAGGER_UI) {
-    logger.info(
-      `🔧 Setup Swagger UI at http://localhost:${appEnv.PORT}/swagger`,
-    );
+    logger.info(`Setup Swagger UI at http://localhost:${appEnv.PORT}/swagger`);
     return app.use(
       openapi({
         mapJsonSchema: {

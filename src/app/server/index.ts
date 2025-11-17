@@ -10,14 +10,14 @@ try {
     const { startCluster } = await import('./cluster');
     await startCluster();
   } else {
-    logger.info('🚀 Starting application in single instance mode...');
+    logger.info('Starting application in single instance mode...');
     await initData();
 
     const { createServer } = await import('./server');
     await createServer();
   }
 } catch (e) {
-  logger.error('💥 App start failed!');
+  logger.error('App start failed!');
   logger.error(`Error details: ${e}`);
   logger.error(
     `Error stack: ${e instanceof Error ? e.stack : 'No stack trace'}`,

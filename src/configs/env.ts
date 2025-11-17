@@ -66,7 +66,7 @@ if (!result.success) {
     },
     {},
   );
-  console.error('❌ Invalid environment variables:', errors);
+  console.error('Invalid environment variables:', errors);
   process.exit(1);
 }
 

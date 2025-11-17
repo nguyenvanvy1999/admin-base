@@ -32,7 +32,7 @@ import { elysiaXSS } from 'elysia-xss';
 import { elysiaHelmet } from 'elysiajs-helmet';
 
 export async function createServer() {
-  logger.info('🔧 Setting up Elysia application...');
+  logger.info('Setting up Elysia application...');
 
   const app = new Elysia({
     aot: true,
@@ -78,22 +78,24 @@ export async function createServer() {
               ]
             : []),
         ])
-        .use(userController)
-        .use(adminController)
-        .use(accountController)
-        .use(budgetController)
-        .use(categoryController)
-        .use(currencyController)
-        .use(entityController)
-        .use(eventController)
-        .use(exchangeRateController)
-        .use(tagController)
-        .use(transactionController)
-        .use(investmentController)
-        .use(tradeController)
-        .use(contributionController)
-        .use(valuationController)
-        .use(reportController),
+        .use([
+          userController,
+          adminController,
+          accountController,
+          budgetController,
+          categoryController,
+          currencyController,
+          entityController,
+          eventController,
+          exchangeRateController,
+          tagController,
+          transactionController,
+          investmentController,
+          tradeController,
+          contributionController,
+          valuationController,
+          reportController,
+        ]),
     );
 
   gracefulShutdownService.setupShutdownHandlers();
@@ -106,7 +108,7 @@ export async function createServer() {
   });
 
   logger.info(
-    `🦊 App is running at http://${app.server?.hostname}:${app.server?.port} (PID: ${process.pid})`,
+    `App is running at http://${app.server?.hostname}:${app.server?.port} (PID: ${process.pid})`,
   );
 
   return app;

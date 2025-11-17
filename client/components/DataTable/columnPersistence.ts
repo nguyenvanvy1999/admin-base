@@ -24,7 +24,7 @@ export const useColumnOrder = (
         }
       }
     } catch (error) {
-      console.warn('Failed to load column order from localStorage', error);
+      console.error('Failed to load column order from localStorage', error);
     }
 
     setOrder(defaultOrder);
@@ -39,7 +39,7 @@ export const useColumnOrder = (
           JSON.stringify(newOrder),
         );
       } catch (error) {
-        console.warn('Failed to save column order to localStorage', error);
+        console.error('Failed to save column order to localStorage', error);
       }
     }
   };
