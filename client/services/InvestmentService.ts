@@ -38,7 +38,7 @@ export class InvestmentService extends ServiceBase {
     search?: string;
     page?: number;
     limit?: number;
-    sortBy?: 'name' | 'createdAt' | 'updatedAt';
+    sortBy?: 'name' | 'created' | 'modified';
     sortOrder?: 'asc' | 'desc';
   }): Promise<InvestmentListResponse> {
     return this.get<InvestmentListResponse>({
@@ -156,39 +156,51 @@ export class InvestmentService extends ServiceBase {
     });
   }
 
-  deleteInvestment(
-    investmentId: string,
+  deleteManyInvestments(
+    ids: string[],
   ): Promise<{ success: boolean; message: string }> {
-    return this.delete<{ success: boolean; message: string }>({
-      endpoint: investmentId,
-    });
+    return this.post<{ success: boolean; message: string }>(
+      { ids },
+      {
+        endpoint: 'delete-many',
+      },
+    );
   }
 
-  deleteTrade(
+  deleteManyTrades(
     investmentId: string,
-    tradeId: string,
+    tradeIds: string[],
   ): Promise<{ success: boolean; message: string }> {
-    return this.delete<{ success: boolean; message: string }>({
-      endpoint: `${investmentId}/trades/${tradeId}`,
-    });
+    return this.post<{ success: boolean; message: string }>(
+      { ids: tradeIds },
+      {
+        endpoint: `${investmentId}/trades/delete-many`,
+      },
+    );
   }
 
-  deleteContribution(
+  deleteManyContributions(
     investmentId: string,
-    contributionId: string,
+    contributionIds: string[],
   ): Promise<{ success: boolean; message: string }> {
-    return this.delete<{ success: boolean; message: string }>({
-      endpoint: `${investmentId}/contributions/${contributionId}`,
-    });
+    return this.post<{ success: boolean; message: string }>(
+      { ids: contributionIds },
+      {
+        endpoint: `${investmentId}/contributions/delete-many`,
+      },
+    );
   }
 
-  deleteValuation(
+  deleteManyValuations(
     investmentId: string,
-    valuationId: string,
+    valuationIds: string[],
   ): Promise<{ success: boolean; message: string }> {
-    return this.delete<{ success: boolean; message: string }>({
-      endpoint: `${investmentId}/valuations/${valuationId}`,
-    });
+    return this.post<{ success: boolean; message: string }>(
+      { ids: valuationIds },
+      {
+        endpoint: `${investmentId}/valuations/delete-many`,
+      },
+    );
   }
 }
 

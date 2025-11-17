@@ -1,7 +1,7 @@
+import { ActionResDto, DeleteManyDto } from '@server/dto/common.dto';
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
 import {
-  AccountDeleteResponseDto,
   AccountDto,
   AccountListResponseDto,
   ListAccountsQueryDto,
@@ -43,7 +43,7 @@ const accountController = new Elysia().group(
           },
           body: UpsertAccountDto,
           response: {
-            200: ResWrapper(AccountDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       )
@@ -87,23 +87,23 @@ const accountController = new Elysia().group(
           },
         },
       )
-      .delete(
-        '/:id',
-        async ({ currentUser, params }) => {
+      .post(
+        '/delete-many',
+        async ({ currentUser, body }) => {
           return castToRes(
-            await accountService.deleteAccount(currentUser.id, params.id),
+            await accountService.deleteManyAccounts(currentUser.id, body.ids),
           );
         },
         {
           detail: {
             ...ACCOUNT_DETAIL,
-            summary: 'Delete account',
+            summary: 'Delete many accounts',
             description:
-              'Permanently delete an account by its ID. This action cannot be undone.',
+              'Permanently delete multiple accounts by their IDs. This action cannot be undone.',
           },
-          params: t.Object({ id: t.String() }),
+          body: DeleteManyDto,
           response: {
-            200: ResWrapper(AccountDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

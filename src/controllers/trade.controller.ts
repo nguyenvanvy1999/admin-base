@@ -1,11 +1,11 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
+import { ActionResDto, DeleteManyDto } from '../dto/common.dto';
 import {
   CreateInvestmentTradeDto,
   InvestmentTradeDto,
   InvestmentTradeListResponseDto,
   ListInvestmentTradesQueryDto,
-  TradeDeleteResponseDto,
 } from '../dto/trade.dto';
 import { investmentTradeService } from '../services/trade.service';
 import { castToRes, ResWrapper } from '../share';
@@ -77,27 +77,28 @@ const tradeController = new Elysia().group(
           },
         },
       )
-      .delete(
-        '/:tradeId',
-        async ({ currentUser, params }) => {
+      .post(
+        '/delete-many',
+        async ({ currentUser, params, body }) => {
           return castToRes(
-            await investmentTradeService.deleteTrade(
+            await investmentTradeService.deleteManyTrades(
               currentUser.id,
               params.id,
-              params.tradeId,
+              body.ids,
             ),
           );
         },
         {
           detail: {
             ...TRADE_DETAIL,
-            summary: 'Delete investment trade',
+            summary: 'Delete many investment trades',
             description:
-              'Delete a trade by its ID. This will revert the balance effects of the trade.',
+              'Delete multiple trades by their IDs. This will revert the balance effects of the trades.',
           },
-          params: t.Object({ id: t.String(), tradeId: t.String() }),
+          params: t.Object({ id: t.String() }),
+          body: DeleteManyDto,
           response: {
-            200: ResWrapper(TradeDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

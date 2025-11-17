@@ -5,7 +5,14 @@ import type {
   TagOrderByWithRelationInput,
   TagWhereInput,
 } from '@server/generated';
-import { dateToIsoString, ErrorCode, throwAppError } from '@server/share';
+import {
+  DB_PREFIX,
+  dateToIsoString,
+  ErrorCode,
+  type IdUtil,
+  idUtil,
+  throwAppError,
+} from '@server/share';
 import type {
   IListTagsQueryDto,
   IUpsertTagDto,
@@ -20,19 +27,20 @@ type TagRecord = Prisma.TagGetPayload<{ select: typeof TAG_SELECT_FULL }>;
 const formatTag = (tag: TagRecord): TagResponse => ({
   ...tag,
   description: tag.description ?? null,
-  createdAt: dateToIsoString(tag.createdAt),
-  updatedAt: dateToIsoString(tag.updatedAt),
+  created: dateToIsoString(tag.created),
+  modified: dateToIsoString(tag.modified),
 });
 
 export class TagService {
-  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+  constructor(
+    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
+  ) {}
 
   private async validateTagOwnership(userId: string, tagId: string) {
     const tag = await this.deps.db.tag.findFirst({
       where: {
         id: tagId,
         userId,
-        deletedAt: null,
       },
       select: TAG_SELECT_MINIMAL,
     });
@@ -51,7 +59,6 @@ export class TagService {
     const where: TagWhereInput = {
       userId,
       name: lowerName,
-      deletedAt: null,
     };
 
     if (excludeId) {
@@ -86,6 +93,7 @@ export class TagService {
     } else {
       const tag = await this.deps.db.tag.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.TAG),
           userId,
           name: lowerName,
           description: data.description ?? null,
@@ -101,7 +109,6 @@ export class TagService {
       where: {
         id: tagId,
         userId,
-        deletedAt: null,
       },
       select: TAG_SELECT_FULL,
     });
@@ -115,19 +122,18 @@ export class TagService {
 
   async listTags(
     userId: string,
-    query: IListTagsQueryDto = {},
+    query: IListTagsQueryDto,
   ): Promise<TagListResponse> {
     const {
       search,
-      page = 1,
-      limit = 20,
-      sortBy = 'createdAt',
+      page,
+      limit,
+      sortBy = 'created',
       sortOrder = 'desc',
     } = query;
 
     const where: TagWhereInput = {
       userId,
-      deletedAt: null,
     };
 
     if (search && search.trim()) {
@@ -140,8 +146,8 @@ export class TagService {
     const orderBy: TagOrderByWithRelationInput = {};
     if (sortBy === 'name') {
       orderBy.name = sortOrder;
-    } else if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
+    } else if (sortBy === 'created') {
+      orderBy.created = sortOrder;
     }
 
     const skip = (page - 1) * limit;
@@ -168,25 +174,11 @@ export class TagService {
     };
   }
 
-  async deleteTag(userId: string, tagId: string) {
-    await this.validateTagOwnership(userId, tagId);
-
-    await this.deps.db.tag.update({
-      where: { id: tagId },
-      data: {
-        deletedAt: new Date(),
-      },
-    });
-
-    return { success: true, message: 'Tag deleted successfully' };
-  }
-
   async deleteManyTags(userId: string, ids: string[]) {
     const tags = await this.deps.db.tag.findMany({
       where: {
         id: { in: ids },
         userId,
-        deletedAt: null,
       },
       select: TAG_SELECT_MINIMAL,
     });
@@ -198,20 +190,16 @@ export class TagService {
       );
     }
 
-    const result = await this.deps.db.tag.updateMany({
+    await this.deps.db.tag.deleteMany({
       where: {
         id: { in: ids },
         userId,
-        deletedAt: null,
-      },
-      data: {
-        deletedAt: new Date(),
       },
     });
 
     return {
       success: true,
-      message: `${result.count} tag(s) deleted successfully`,
+      message: `${ids.length} tag(s) deleted successfully`,
     };
   }
 }

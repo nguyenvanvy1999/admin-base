@@ -1,10 +1,10 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
 import type {
-  CategoryDeleteResponse,
   CategoryListResponse,
   CategoryResponse,
   IUpsertCategoryDto,
 } from '@server/dto/category.dto';
+import type { ActionRes } from '@server/dto/common.dto';
 import type { CategoryType } from '@server/generated';
 
 export class CategoryService extends ServiceBase {
@@ -31,10 +31,13 @@ export class CategoryService extends ServiceBase {
     return this.post<CategoryResponse>(data);
   }
 
-  deleteCategory(categoryId: string): Promise<CategoryDeleteResponse> {
-    return this.delete<CategoryDeleteResponse>({
-      endpoint: categoryId,
-    });
+  deleteManyCategories(ids: string[]): Promise<ActionRes> {
+    return this.post<ActionRes>(
+      { ids },
+      {
+        endpoint: 'delete-many',
+      },
+    );
   }
 }
 

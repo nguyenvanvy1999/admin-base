@@ -1,7 +1,13 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { Prisma } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share';
+import {
+  DB_PREFIX,
+  ErrorCode,
+  type IdUtil,
+  idUtil,
+  throwAppError,
+} from '@server/share';
 import type {
   IListInvestmentValuationsQueryDto,
   IUpsertInvestmentValuationDto,
@@ -17,9 +23,11 @@ export class InvestmentValuationService {
     private readonly deps: {
       db: IDb;
       investmentService: InvestmentService;
+      idUtil: IdUtil;
     } = {
       db: prisma,
       investmentService: investmentService,
+      idUtil,
     },
   ) {}
 
@@ -51,7 +59,6 @@ export class InvestmentValuationService {
         userId,
         investmentId,
         timestamp,
-        deletedAt: null,
       },
       select: { id: true },
     });
@@ -68,7 +75,6 @@ export class InvestmentValuationService {
             baseCurrencyId: data.baseCurrencyId ?? null,
             source: data.source ?? null,
             fetchedAt,
-            deletedAt: null,
           },
           select: VALUATION_SELECT_FULL,
         }),
@@ -78,6 +84,7 @@ export class InvestmentValuationService {
     return this.mapValuation(
       await this.deps.db.investmentValuation.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.VALUATION),
           userId,
           investmentId,
           price: data.price,
@@ -106,30 +113,23 @@ export class InvestmentValuationService {
       fetchedAt: valuation.fetchedAt?.toISOString() ?? null,
       priceInBaseCurrency: valuation.priceInBaseCurrency?.toNumber() ?? null,
       exchangeRate: valuation.exchangeRate?.toNumber() ?? null,
-      createdAt: valuation.createdAt.toISOString(),
-      updatedAt: valuation.updatedAt.toISOString(),
+      created: valuation.created.toISOString(),
+      modified: valuation.modified.toISOString(),
     };
   }
 
   async listValuations(
     userId: string,
     investmentId: string,
-    query: IListInvestmentValuationsQueryDto = {},
+    query: IListInvestmentValuationsQueryDto,
   ) {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const {
-      dateFrom,
-      dateTo,
-      page = 1,
-      limit = 50,
-      sortOrder = 'desc',
-    } = query;
+    const { dateFrom, dateTo, page, limit = 50, sortOrder = 'desc' } = query;
 
     const where: Record<string, unknown> = {
       userId,
       investmentId,
-      deletedAt: null,
     };
 
     if (dateFrom || dateTo) {
@@ -167,7 +167,7 @@ export class InvestmentValuationService {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
     const valuation = await this.deps.db.investmentValuation.findFirst({
-      where: { userId, investmentId, deletedAt: null },
+      where: { userId, investmentId },
       orderBy: { timestamp: 'desc' },
       select: VALUATION_SELECT_FULL,
     });
@@ -178,33 +178,41 @@ export class InvestmentValuationService {
     return this.mapValuation(valuation);
   }
 
-  async deleteValuation(
+  async deleteManyValuations(
     userId: string,
     investmentId: string,
-    valuationId: string,
+    valuationIds: string[],
   ) {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const valuation = await this.deps.db.investmentValuation.findFirst({
+    const valuations = await this.deps.db.investmentValuation.findMany({
       where: {
-        id: valuationId,
+        id: { in: valuationIds },
         userId,
         investmentId,
-        deletedAt: null,
       },
       select: { id: true },
     });
 
-    if (!valuation) {
-      throwAppError(ErrorCode.VALUATION_NOT_FOUND, 'Valuation not found');
+    if (valuations.length !== valuationIds.length) {
+      throwAppError(
+        ErrorCode.VALUATION_NOT_FOUND,
+        'Some valuations were not found or do not belong to you',
+      );
     }
 
-    await this.deps.db.investmentValuation.update({
-      where: { id: valuationId },
-      data: { deletedAt: new Date() },
+    await this.deps.db.investmentValuation.deleteMany({
+      where: {
+        id: { in: valuationIds },
+        userId,
+        investmentId,
+      },
     });
 
-    return { success: true, message: 'Valuation deleted successfully' };
+    return {
+      success: true,
+      message: `${valuationIds.length} valuation(s) deleted successfully`,
+    };
   }
 }
 

@@ -106,12 +106,12 @@ const InvestmentTable = ({
         enableSorting: false,
       },
       {
-        accessor: 'createdAt',
-        title: 'common.createdAt',
+        accessor: 'created',
+        title: 'common.created',
       },
       {
-        accessor: 'updatedAt',
-        title: 'common.updatedAt',
+        accessor: 'modified',
+        title: 'common.modified',
       },
       {
         title: 'investments.actions',

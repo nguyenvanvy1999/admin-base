@@ -5,7 +5,6 @@ import {
   CurrencyDto,
   createArrayPreprocess,
   createListQueryDto,
-  DeleteResponseDto,
   PaginationDto,
 } from './common.dto';
 
@@ -25,13 +24,11 @@ export const ListInvestmentsQueryDto = createListQueryDto({
   modes: createArrayPreprocess(z.enum(InvestmentMode)),
   currencyIds: createArrayPreprocess(z.string()),
   search: z.string().optional(),
-  sortBy: z.enum(['name', 'createdAt', 'updatedAt']).optional(),
+  sortBy: z.enum(['name', 'created', 'modified']).optional(),
 });
 
 export type IUpsertInvestmentDto = z.infer<typeof UpsertInvestmentDto>;
 export type IListInvestmentsQueryDto = z.infer<typeof ListInvestmentsQueryDto>;
-
-export const InvestmentCurrencyDto = CurrencyDto;
 
 export const InvestmentDto = t.NoValidate(
   t.Object({
@@ -44,11 +41,10 @@ export const InvestmentDto = t.NoValidate(
     currencyId: t.String(),
     baseCurrencyId: t.Nullable(t.String()),
     extra: t.Nullable(t.Any()),
-    deletedAt: t.Nullable(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
-    currency: InvestmentCurrencyDto,
-    baseCurrency: t.Nullable(InvestmentCurrencyDto),
+    created: t.String(),
+    modified: t.String(),
+    currency: CurrencyDto,
+    baseCurrency: t.Nullable(CurrencyDto),
   }),
 );
 
@@ -91,8 +87,6 @@ export const InvestmentLatestValuationDto = t.NoValidate(
     exchangeRate: t.Nullable(t.String()),
   }),
 );
-
-export const InvestmentDeleteResponseDto = DeleteResponseDto;
 
 export type InvestmentResponse = typeof InvestmentDto.static;
 export type InvestmentListResponse = typeof InvestmentListResponseDto.static;

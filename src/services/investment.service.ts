@@ -2,7 +2,13 @@ import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { InvestmentWhereInput } from '@server/generated';
 import { type InvestmentAssetType, InvestmentMode } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share';
+import {
+  DB_PREFIX,
+  ErrorCode,
+  type IdUtil,
+  idUtil,
+  throwAppError,
+} from '@server/share';
 import type {
   IListInvestmentsQueryDto,
   InvestmentLatestValuationResponse,
@@ -23,9 +29,8 @@ const serializeInvestment = (investment: {
   currencyId: string;
   baseCurrencyId: string | null;
   extra: unknown;
-  deletedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+  created: Date;
+  modified: Date;
   currency: {
     id: string;
     code: string;
@@ -41,17 +46,18 @@ const serializeInvestment = (investment: {
 }): InvestmentResponse => ({
   ...investment,
   extra: investment.extra ?? null,
-  deletedAt: investment.deletedAt ? investment.deletedAt.toISOString() : null,
-  createdAt: investment.createdAt.toISOString(),
-  updatedAt: investment.updatedAt.toISOString(),
+  created: investment.created.toISOString(),
+  modified: investment.modified.toISOString(),
 });
 
 export class InvestmentService {
   constructor(
     private readonly deps: {
       db: IDb;
+      idUtil: IdUtil;
     } = {
       db: prisma,
+      idUtil,
     },
   ) {}
 
@@ -70,7 +76,6 @@ export class InvestmentService {
       where: {
         id: investmentId,
         userId,
-        deletedAt: null,
       },
       select: INVESTMENT_SELECT_FULL,
     });
@@ -110,6 +115,7 @@ export class InvestmentService {
 
     const created = await this.deps.db.investment.create({
       data: {
+        id: this.deps.idUtil.dbId(DB_PREFIX.INVESTMENT),
         ...payload,
         userId,
       },
@@ -118,21 +124,21 @@ export class InvestmentService {
     return serializeInvestment(created);
   }
 
-  async listInvestments(userId: string, query: IListInvestmentsQueryDto = {}) {
+  async listInvestments(userId: string, query: IListInvestmentsQueryDto) {
     const {
       assetTypes,
       modes,
       currencyIds,
       search,
-      page = 1,
-      limit = 20,
-      sortBy = 'createdAt',
+      page,
+      limit,
+      sortBy = 'created',
       sortOrder = 'desc',
     } = query;
 
     const where: InvestmentWhereInput = {
       userId,
-      deletedAt: null,
+
       ...(assetTypes && assetTypes.length > 0
         ? { assetType: { in: assetTypes } }
         : {}),
@@ -153,9 +159,9 @@ export class InvestmentService {
     const orderBy =
       sortBy === 'name'
         ? { name: sortOrder }
-        : sortBy === 'updatedAt'
-          ? { updatedAt: sortOrder }
-          : { createdAt: sortOrder };
+        : sortBy === 'modified'
+          ? { modified: sortOrder }
+          : { created: sortOrder };
 
     const skip = (page - 1) * limit;
 
@@ -290,15 +296,33 @@ export class InvestmentService {
     return investment;
   }
 
-  async deleteInvestment(userId: string, investmentId: string) {
-    await this.ensureInvestment(userId, investmentId);
-
-    await this.deps.db.investment.update({
-      where: { id: investmentId },
-      data: { deletedAt: new Date() },
+  async deleteManyInvestments(userId: string, ids: string[]) {
+    const investments = await this.deps.db.investment.findMany({
+      where: {
+        id: { in: ids },
+        userId,
+      },
+      select: INVESTMENT_SELECT_FULL,
     });
 
-    return { success: true, message: 'Investment deleted successfully' };
+    if (investments.length !== ids.length) {
+      throwAppError(
+        ErrorCode.INVESTMENT_NOT_FOUND,
+        'Some investments were not found or do not belong to you',
+      );
+    }
+
+    await this.deps.db.investment.deleteMany({
+      where: {
+        id: { in: ids },
+        userId,
+      },
+    });
+
+    return {
+      success: true,
+      message: `${ids.length} investment(s) deleted successfully`,
+    };
   }
 }
 

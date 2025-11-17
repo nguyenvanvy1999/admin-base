@@ -21,6 +21,7 @@ Authorization: Bearer <token>
 ## Swagger Documentation
 
 API documentation đầy đủ có thể xem tại:
+
 - **Swagger UI**: http://localhost:3000/docs
 
 ## Authentication Endpoints
@@ -30,6 +31,7 @@ API documentation đầy đủ có thể xem tại:
 Đăng ký tài khoản mới.
 
 **Request Body**:
+
 ```json
 {
   "username": "string",
@@ -40,6 +42,7 @@ API documentation đầy đủ có thể xem tại:
 ```
 
 **Response**:
+
 ```json
 {
   "user": {
@@ -56,6 +59,7 @@ API documentation đầy đủ có thể xem tại:
 Đăng nhập.
 
 **Request Body**:
+
 ```json
 {
   "username": "string",
@@ -64,6 +68,7 @@ API documentation đầy đủ có thể xem tại:
 ```
 
 **Response**:
+
 ```json
 {
   "user": {
@@ -82,6 +87,7 @@ API documentation đầy đủ có thể xem tại:
 Lấy danh sách tài khoản.
 
 **Query Parameters**:
+
 - `type`: AccountType[] (optional)
 - `currencyId`: string[] (optional)
 - `search`: string (optional)
@@ -89,6 +95,7 @@ Lấy danh sách tài khoản.
 - `limit`: number (optional, default: 20)
 
 **Response**:
+
 ```json
 {
   "accounts": [
@@ -118,6 +125,7 @@ Lấy danh sách tài khoản.
 Tạo tài khoản mới.
 
 **Request Body**:
+
 ```json
 {
   "id": "string?",
@@ -129,6 +137,7 @@ Tạo tài khoản mới.
 ```
 
 **Response**:
+
 ```json
 {
   "id": "string",
@@ -152,6 +161,7 @@ Cập nhật tài khoản.
 Xóa tài khoản.
 
 **Response**:
+
 ```json
 {
   "success": true
@@ -165,11 +175,13 @@ Xóa tài khoản.
 Lấy danh sách danh mục.
 
 **Query Parameters**:
+
 - `type`: CategoryType[] (optional)
 - `parentId`: string (optional)
 - `search`: string (optional)
 
 **Response**:
+
 ```json
 {
   "categories": [
@@ -190,6 +202,7 @@ Lấy danh sách danh mục.
 Tạo danh mục mới.
 
 **Request Body**:
+
 ```json
 {
   "id": "string?",
@@ -216,6 +229,7 @@ Xóa danh mục.
 Lấy danh sách giao dịch.
 
 **Query Parameters**:
+
 - `accountId`: string (optional)
 - `toAccountId`: string (optional)
 - `categoryId`: string (optional)
@@ -229,6 +243,7 @@ Lấy danh sách giao dịch.
 - `limit`: number (optional)
 
 **Response**:
+
 ```json
 {
   "transactions": [
@@ -250,6 +265,7 @@ Lấy danh sách giao dịch.
 Tạo giao dịch mới.
 
 **Request Body**:
+
 ```json
 {
   "id": "string?",
@@ -285,6 +301,7 @@ Xóa giao dịch.
 Lấy danh sách đầu tư.
 
 **Query Parameters**:
+
 - `assetType`: InvestmentAssetType[] (optional)
 - `mode`: InvestmentMode[] (optional)
 - `search`: string (optional)
@@ -292,6 +309,7 @@ Lấy danh sách đầu tư.
 - `limit`: number (optional)
 
 **Response**:
+
 ```json
 {
   "investments": [
@@ -313,6 +331,7 @@ Lấy danh sách đầu tư.
 Tạo đầu tư mới.
 
 **Request Body**:
+
 ```json
 {
   "id": "string?",
@@ -331,6 +350,7 @@ Tạo đầu tư mới.
 Lấy thông tin holdings và P&L.
 
 **Response**:
+
 ```json
 {
   "quantity": 1.5,
@@ -360,6 +380,7 @@ Xóa đầu tư.
 Lấy danh sách lệnh mua/bán.
 
 **Query Parameters**:
+
 - `side`: TradeSide[] (optional)
 - `page`: number (optional)
 - `limit`: number (optional)
@@ -369,6 +390,7 @@ Lấy danh sách lệnh mua/bán.
 Thêm lệnh mua/bán.
 
 **Request Body**:
+
 ```json
 {
   "accountId": "string",
@@ -395,6 +417,7 @@ Lấy danh sách đóng góp/rút tiền.
 Thêm đóng góp/rút tiền.
 
 **Request Body**:
+
 ```json
 {
   "accountId": "string?",
@@ -419,6 +442,7 @@ Lấy lịch sử giá trị.
 Cập nhật giá trị hiện tại.
 
 **Request Body**:
+
 ```json
 {
   "price": 60000,
@@ -427,6 +451,128 @@ Cập nhật giá trị hiện tại.
   "source": "coingecko",
   "exchangeRate": 25000,
   "baseCurrencyId": "string?"
+}
+```
+
+## Budgets Endpoints ✅
+
+### GET /api/budgets
+
+Lấy danh sách ngân sách.
+
+**Query Parameters**:
+
+- `period`: BudgetPeriod[] (optional)
+- `search`: string (optional)
+- `page`: number (optional)
+- `limit`: number (optional)
+
+**Response**:
+
+```json
+{
+  "budgets": [
+    {
+      "id": "string",
+      "name": "string",
+      "amount": "1000000",
+      "period": "monthly",
+      "startDate": "2024-01-01T00:00:00Z",
+      "endDate": "2024-12-31T00:00:00Z",
+      "carryOver": false,
+      "category": { ... },
+      "categories": [ ... ],
+      "accounts": [ ... ]
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+### POST /api/budgets
+
+Tạo hoặc cập nhật ngân sách.
+
+**Request Body**:
+
+```json
+{
+  "id": "string?",
+  "name": "string",
+  "amount": 1000000,
+  "period": "monthly",
+  "startDate": "2024-01-01T00:00:00Z",
+  "endDate": "2024-12-31T00:00:00Z",
+  "carryOver": false,
+  "categoryId": "string?",
+  "categoryIds": ["string"],
+  "accountIds": ["string"]
+}
+```
+
+### GET /api/budgets/:id
+
+Lấy chi tiết ngân sách.
+
+### DELETE /api/budgets/:id
+
+Xóa ngân sách.
+
+### POST /api/budgets/delete-many
+
+Xóa nhiều ngân sách.
+
+**Request Body**:
+
+```json
+{
+  "ids": ["string"]
+}
+```
+
+### GET /api/budgets/:id/periods
+
+Lấy danh sách chu kỳ của ngân sách.
+
+**Query Parameters**:
+
+- `dateFrom`: string (optional, ISO date)
+- `dateTo`: string (optional, ISO date)
+
+**Response**:
+
+```json
+{
+  "periods": [
+    {
+      "id": "string",
+      "periodStartDate": "2024-01-01T00:00:00Z",
+      "periodEndDate": "2024-01-31T00:00:00Z",
+      "carriedOverAmount": "0",
+      "spent": "500000",
+      "remaining": "500000"
+    }
+  ]
+}
+```
+
+### GET /api/budgets/:id/periods/:periodId
+
+Lấy chi tiết một chu kỳ.
+
+**Response**:
+
+```json
+{
+  "id": "string",
+  "periodStartDate": "2024-01-01T00:00:00Z",
+  "periodEndDate": "2024-01-31T00:00:00Z",
+  "carriedOverAmount": "0",
+  "spent": "500000",
+  "remaining": "500000",
+  "transactions": [ ... ],
+  "byCategory": [ ... ],
+  "byAccount": [ ... ]
 }
 ```
 
@@ -441,6 +587,7 @@ Tổng quan portfolio.
 Báo cáo dòng tiền.
 
 **Query Parameters**:
+
 - `dateFrom`: string (ISO date)
 - `dateTo`: string (ISO date)
 
@@ -449,6 +596,7 @@ Báo cáo dòng tiền.
 Báo cáo lãi/lỗ.
 
 **Query Parameters**:
+
 - `dateFrom`: string (ISO date)
 - `dateTo`: string (ISO date)
 - `investmentId`: string (optional)
@@ -458,6 +606,7 @@ Báo cáo lãi/lỗ.
 Timeline số dư.
 
 **Query Parameters**:
+
 - `dateFrom`: string (ISO date)
 - `dateTo`: string (ISO date)
 - `accountId`: string[] (optional)
@@ -476,6 +625,7 @@ Tất cả các endpoints có thể trả về lỗi:
 ```
 
 **Status Codes**:
+
 - `200`: Success
 - `201`: Created
 - `400`: Bad Request

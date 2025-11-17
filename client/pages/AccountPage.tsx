@@ -9,7 +9,7 @@ import { PageContainer } from '@client/components/PageContainer';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateAccountMutation,
-  useDeleteAccountMutation,
+  useDeleteManyAccountsMutation,
   useUpdateAccountMutation,
 } from '@client/hooks/mutations/useAccountMutations';
 import {
@@ -58,11 +58,11 @@ const AccountPage = () => {
   const formRef = useRef<FormComponentRef>(null);
 
   const paginationSorting = usePaginationSorting<
-    'name' | 'createdAt' | 'balance'
+    'name' | 'created' | 'balance'
   >({
     defaultPage: 1,
     defaultLimit: 20,
-    defaultSortBy: 'createdAt',
+    defaultSortBy: 'created',
     defaultSortOrder: 'desc',
   });
 
@@ -84,7 +84,7 @@ const AccountPage = () => {
   const { data: currencies = [] } = useCurrenciesQuery();
   const createMutation = useCreateAccountMutation();
   const updateMutation = useUpdateAccountMutation();
-  const deleteMutation = useDeleteAccountMutation();
+  const deleteManyMutation = useDeleteManyAccountsMutation();
 
   const handleSubmitForm = async (formData: IUpsertAccountDto) => {
     try {
@@ -100,7 +100,7 @@ const AccountPage = () => {
   };
 
   const handleConfirmDelete = async () => {
-    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
+    await deleteHandler.handleConfirmDeleteMany(deleteManyMutation.mutateAsync);
   };
 
   const handleSearch = () => {
@@ -110,7 +110,7 @@ const AccountPage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending;
+    deleteManyMutation.isPending;
 
   const statistics = data?.summary || [];
 
@@ -230,7 +230,7 @@ const AccountPage = () => {
         totalRecords={data?.pagination?.total}
         sorting={paginationSorting.sorting}
         onSortingChange={(updater) =>
-          paginationSorting.setSorting(updater, 'createdAt')
+          paginationSorting.setSorting(updater, 'created')
         }
       />
 

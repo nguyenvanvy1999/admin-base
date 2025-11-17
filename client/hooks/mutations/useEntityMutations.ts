@@ -1,26 +1,21 @@
 import { entityService } from '@client/services';
-import type {
-  EntityDeleteResponse,
-  EntityResponse,
-  IUpsertEntityDto,
-} from '@server/dto/entity.dto';
+import type { ActionRes } from '@server/dto/common.dto';
+import type { EntityResponse, IUpsertEntityDto } from '@server/dto/entity.dto';
 import { createMutationHooks } from './createMutationHooks';
 
 const entityMutations = createMutationHooks<
   IUpsertEntityDto,
   EntityResponse,
-  EntityDeleteResponse
+  ActionRes
 >({
   create: (data) => entityService.createEntity(data),
   update: (data) => entityService.updateEntity(data),
-  delete: (id) => entityService.deleteEntity(id),
   deleteMany: (ids) => entityService.deleteManyEntities(ids),
 });
 
 export const {
   useCreateMutation: useCreateEntityMutation,
   useUpdateMutation: useUpdateEntityMutation,
-  useDeleteMutation: useDeleteEntityMutation,
   useDeleteManyMutation: useDeleteManyEntitiesMutation,
 } = entityMutations({
   queryKey: 'entities',
@@ -28,7 +23,6 @@ export const {
   successMessages: {
     create: 'Entity created successfully',
     update: 'Entity updated successfully',
-    delete: 'Entity deleted successfully',
     deleteMany: 'Entities deleted successfully',
   },
 });

@@ -1,6 +1,6 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import { logger } from '@server/configs/logger';
+import { type ILogger, logger } from '@server/configs/logger';
 import { TransactionType } from '@server/generated';
 import { ErrorCode, throwAppError } from '@server/share';
 import type {
@@ -38,9 +38,11 @@ export class ReportService {
     private readonly deps: {
       db: IDb;
       exchangeRateService: ExchangeRateService;
+      logger: ILogger;
     } = {
       db: prisma,
       exchangeRateService: exchangeRateService,
+      logger,
     },
   ) {}
 
@@ -68,7 +70,6 @@ export class ReportService {
       this.deps.db.account.findMany({
         where: {
           userId,
-          deletedAt: null,
         },
         select: {
           balance: true,
@@ -78,7 +79,7 @@ export class ReportService {
       this.deps.db.transaction.findMany({
         where: {
           userId,
-          deletedAt: null,
+
           ...(dateFrom || dateTo
             ? {
                 date: {
@@ -98,7 +99,6 @@ export class ReportService {
       this.deps.db.investment.findMany({
         where: {
           userId,
-          deletedAt: null,
         },
         select: {
           id: true,
@@ -230,7 +230,7 @@ export class ReportService {
     const totalTrades = await this.deps.db.investmentTrade.count({
       where: {
         userId,
-        deletedAt: null,
+
         ...(dateFrom || dateTo
           ? {
               timestamp: {
@@ -268,7 +268,7 @@ export class ReportService {
     const transactions = await this.deps.db.transaction.findMany({
       where: {
         userId,
-        deletedAt: null,
+
         type: {
           in: [TransactionType.income, TransactionType.expense],
         },
@@ -418,7 +418,7 @@ export class ReportService {
     const transactions = await this.deps.db.transaction.findMany({
       where: {
         userId,
-        deletedAt: null,
+
         type: {
           in: [TransactionType.income, TransactionType.expense],
         },
@@ -781,7 +781,6 @@ export class ReportService {
     const investments = await this.deps.db.investment.findMany({
       where: {
         userId,
-        deletedAt: null,
       },
       select: {
         id: true,
@@ -812,7 +811,6 @@ export class ReportService {
     const trades = await this.deps.db.investmentTrade.findMany({
       where: {
         userId,
-        deletedAt: null,
       },
       select: {
         investmentId: true,
@@ -973,7 +971,7 @@ export class ReportService {
     const investments = await this.deps.db.investment.findMany({
       where: {
         userId,
-        deletedAt: null,
+
         ...(query.investmentId ? { id: query.investmentId } : {}),
         ...(query.assetType ? { assetType: query.assetType as any } : {}),
       },
@@ -992,7 +990,7 @@ export class ReportService {
       where: {
         userId,
         investmentId: { in: investmentIds },
-        deletedAt: null,
+
         ...(query.accountId ? { accountId: query.accountId } : {}),
         ...(dateFrom || dateTo
           ? {
@@ -1198,7 +1196,7 @@ export class ReportService {
     const trades = await this.deps.db.investmentTrade.findMany({
       where: {
         userId,
-        deletedAt: null,
+
         ...(query.investmentId ? { investmentId: query.investmentId } : {}),
         ...(query.accountId ? { accountId: query.accountId } : {}),
         ...(dateFrom || dateTo
@@ -1359,7 +1357,7 @@ export class ReportService {
     const trades = await this.deps.db.investmentTrade.findMany({
       where: {
         userId,
-        deletedAt: null,
+
         ...(query.investmentId ? { investmentId: query.investmentId } : {}),
         ...(dateFrom || dateTo
           ? {
@@ -1525,7 +1523,7 @@ export class ReportService {
     const contributions = await this.deps.db.investmentContribution.findMany({
       where: {
         userId,
-        deletedAt: null,
+
         ...(query.investmentId ? { investmentId: query.investmentId } : {}),
         ...(dateFrom || dateTo
           ? {
@@ -1649,7 +1647,7 @@ export class ReportService {
     const transactions = await this.deps.db.transaction.findMany({
       where: {
         userId,
-        deletedAt: null,
+
         type: {
           in: [TransactionType.loan_given, TransactionType.loan_received],
         },
@@ -1870,7 +1868,7 @@ export class ReportService {
     try {
       return await this.deps.exchangeRateService.getRate(fromCode, toCode);
     } catch (error) {
-      logger.error('Failed to get exchange rate', { error });
+      this.deps.logger.error('Failed to get exchange rate', { error });
       return 1;
     }
   }

@@ -5,19 +5,19 @@ import { createMutationHooks } from './createMutationHooks';
 const userMutations = createMutationHooks<IUpsertUserDto, null, null>({
   create: (data) => userService.createUser(data),
   update: (data) => userService.updateUser(data),
-  delete: (id) => userService.deleteUser(id),
+  deleteMany: (ids) => userService.deleteManyUsers(ids),
 });
 
 export const {
   useCreateMutation: useCreateUserMutation,
   useUpdateMutation: useUpdateUserMutation,
-  useDeleteMutation: useDeleteUserMutation,
+  useDeleteManyMutation: useDeleteManyUsersMutation,
 } = userMutations({
   queryKey: 'admin-users',
   invalidateKeys: [['admin-users']],
   successMessages: {
     create: 'User created successfully',
     update: 'User updated successfully',
-    delete: 'User deleted successfully',
+    deleteMany: 'Users deleted successfully',
   },
 });

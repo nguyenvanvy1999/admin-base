@@ -25,7 +25,7 @@ type ListInvestmentsQuery = {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'name' | 'createdAt' | 'updatedAt';
+  sortBy?: 'name' | 'created' | 'modified';
   sortOrder?: 'asc' | 'desc';
 };
 
@@ -60,7 +60,7 @@ export const useInvestmentsQuery = (
   queryParams: {
     page?: number;
     limit?: number;
-    sortBy?: 'name' | 'createdAt' | 'updatedAt';
+    sortBy?: 'name' | 'created' | 'modified';
     sortOrder?: 'asc' | 'desc';
   },
   formRef: React.RefObject<FormComponentRef | null>,

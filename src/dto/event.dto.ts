@@ -1,11 +1,6 @@
 import { t } from 'elysia';
 import { z } from 'zod';
-import {
-  createListQueryDto,
-  DeleteManyDto,
-  DeleteResponseDto,
-  PaginationDto,
-} from './common.dto';
+import { createListQueryDto, PaginationDto } from './common.dto';
 
 export const UpsertEventDto = z.object({
   id: z.string().optional(),
@@ -20,10 +15,8 @@ export const ListEventsQueryDto = createListQueryDto({
   startAtTo: z.iso.datetime().optional(),
   endAtFrom: z.iso.datetime().optional(),
   endAtTo: z.iso.datetime().optional(),
-  sortBy: z.enum(['name', 'startAt', 'endAt', 'createdAt']).optional(),
+  sortBy: z.enum(['name', 'startAt', 'endAt', 'created']).optional(),
 });
-
-export const DeleteManyEventsDto = DeleteManyDto;
 
 export type IUpsertEventDto = z.infer<typeof UpsertEventDto>;
 export type IListEventsQueryDto = z.infer<typeof ListEventsQueryDto>;
@@ -34,8 +27,8 @@ export const EventDto = t.NoValidate(
     name: t.String(),
     startAt: t.String(),
     endAt: t.Nullable(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
   }),
 );
 
@@ -46,8 +39,5 @@ export const EventListResponseDto = t.NoValidate(
   }),
 );
 
-export const EventDeleteResponseDto = DeleteResponseDto;
-
 export type EventResponse = typeof EventDto.static;
 export type EventListResponse = typeof EventListResponseDto.static;
-export type EventDeleteResponse = typeof EventDeleteResponseDto.static;

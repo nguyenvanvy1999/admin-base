@@ -5,8 +5,6 @@ export const DeleteManyDto = z.object({
   ids: z.array(z.string()).min(1),
 });
 
-export type IDeleteManyDto = z.infer<typeof DeleteManyDto>;
-
 export const PaginationDto = t.NoValidate(
   t.Object({
     page: t.Integer(),
@@ -16,12 +14,13 @@ export const PaginationDto = t.NoValidate(
   }),
 );
 
-export const DeleteResponseDto = t.NoValidate(
+export const ActionResDto = t.NoValidate(
   t.Object({
     success: t.Boolean(),
     message: t.String(),
   }),
 );
+export type ActionRes = typeof ActionResDto.static;
 
 export const CurrencyDto = t.NoValidate(
   t.Object({
@@ -33,10 +32,10 @@ export const CurrencyDto = t.NoValidate(
 );
 
 export const BaseListQueryDto = z.object({
-  page: z.coerce.number().int().min(1).default(1).optional(),
-  limit: z.coerce.number().int().min(1).default(20).optional(),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  limit: z.coerce.number().int().min(1).optional().default(20),
   sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
 export function createArrayPreprocess<T extends z.ZodTypeAny>(schema: T) {

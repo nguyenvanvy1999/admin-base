@@ -5,7 +5,13 @@ import type {
   EventWhereInput,
   Prisma,
 } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share';
+import {
+  DB_PREFIX,
+  ErrorCode,
+  type IdUtil,
+  idUtil,
+  throwAppError,
+} from '@server/share';
 import type { IListEventsQueryDto, IUpsertEventDto } from '../dto/event.dto';
 
 import { EVENT_SELECT_FULL, EVENT_SELECT_MINIMAL } from './selects';
@@ -18,19 +24,20 @@ const mapEvent = (
   ...event,
   startAt: event.startAt.toISOString(),
   endAt: event.endAt ? event.endAt.toISOString() : null,
-  createdAt: event.createdAt.toISOString(),
-  updatedAt: event.updatedAt.toISOString(),
+  created: event.created.toISOString(),
+  modified: event.modified.toISOString(),
 });
 
 export class EventService {
-  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+  constructor(
+    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
+  ) {}
 
   private async validateEventOwnership(userId: string, eventId: string) {
     const event = await this.deps.db.event.findFirst({
       where: {
         id: eventId,
         userId,
-        deletedAt: null,
       },
       select: EVENT_SELECT_MINIMAL,
     });
@@ -48,7 +55,6 @@ export class EventService {
     const where: EventWhereInput = {
       userId,
       name,
-      deletedAt: null,
     };
 
     if (excludeId) {
@@ -97,6 +103,7 @@ export class EventService {
     } else {
       const event = await this.deps.db.event.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.EVENT),
           userId,
           name: data.name,
           startAt,
@@ -113,7 +120,6 @@ export class EventService {
       where: {
         id: eventId,
         userId,
-        deletedAt: null,
       },
       select: EVENT_SELECT_FULL,
     });
@@ -125,22 +131,21 @@ export class EventService {
     return mapEvent(event);
   }
 
-  async listEvents(userId: string, query: IListEventsQueryDto = {}) {
+  async listEvents(userId: string, query: IListEventsQueryDto) {
     const {
       search,
       startAtFrom,
       startAtTo,
       endAtFrom,
       endAtTo,
-      page = 1,
-      limit = 20,
-      sortBy = 'createdAt',
+      page,
+      limit,
+      sortBy = 'created',
       sortOrder = 'desc',
     } = query;
 
     const where: EventWhereInput = {
       userId,
-      deletedAt: null,
     };
 
     if (search && search.trim()) {
@@ -177,8 +182,8 @@ export class EventService {
       orderBy.startAt = sortOrder;
     } else if (sortBy === 'endAt') {
       orderBy.endAt = sortOrder;
-    } else if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
+    } else if (sortBy === 'created') {
+      orderBy.created = sortOrder;
     }
 
     const skip = (page - 1) * limit;
@@ -205,25 +210,11 @@ export class EventService {
     };
   }
 
-  async deleteEvent(userId: string, eventId: string) {
-    await this.validateEventOwnership(userId, eventId);
-
-    await this.deps.db.event.update({
-      where: { id: eventId },
-      data: {
-        deletedAt: new Date(),
-      },
-    });
-
-    return { success: true, message: 'Event deleted successfully' };
-  }
-
   async deleteManyEvents(userId: string, ids: string[]) {
     const events = await this.deps.db.event.findMany({
       where: {
         id: { in: ids },
         userId,
-        deletedAt: null,
       },
       select: EVENT_SELECT_MINIMAL,
     });
@@ -235,20 +226,16 @@ export class EventService {
       );
     }
 
-    const result = await this.deps.db.event.updateMany({
+    await this.deps.db.event.deleteMany({
       where: {
         id: { in: ids },
         userId,
-        deletedAt: null,
-      },
-      data: {
-        deletedAt: new Date(),
       },
     });
 
     return {
       success: true,
-      message: `${result.count} event(s) deleted successfully`,
+      message: `${ids.length} event(s) deleted successfully`,
     };
   }
 }

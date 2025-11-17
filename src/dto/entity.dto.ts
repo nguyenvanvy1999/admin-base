@@ -4,8 +4,6 @@ import { z } from 'zod';
 import {
   createArrayPreprocess,
   createListQueryDto,
-  DeleteManyDto,
-  DeleteResponseDto,
   PaginationDto,
 } from './common.dto';
 
@@ -22,10 +20,8 @@ export const UpsertEntityDto = z.object({
 export const ListEntitiesQueryDto = createListQueryDto({
   search: z.string().optional(),
   type: createArrayPreprocess(z.enum(EntityType)),
-  sortBy: z.enum(['name', 'type', 'createdAt']).optional(),
+  sortBy: z.enum(['name', 'type', 'created']).optional().default('created'),
 });
-
-export const DeleteManyEntitiesDto = DeleteManyDto;
 
 export type IUpsertEntityDto = z.infer<typeof UpsertEntityDto>;
 export type IListEntitiesQueryDto = z.infer<typeof ListEntitiesQueryDto>;
@@ -39,8 +35,8 @@ export const EntityDto = t.NoValidate(
     email: t.Nullable(t.String()),
     address: t.Nullable(t.String()),
     note: t.Nullable(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
   }),
 );
 
@@ -51,8 +47,5 @@ export const EntityListResponseDto = t.NoValidate(
   }),
 );
 
-export const EntityDeleteResponseDto = DeleteResponseDto;
-
 export type EntityResponse = typeof EntityDto.static;
 export type EntityListResponse = typeof EntityListResponseDto.static;
-export type EntityDeleteResponse = typeof EntityDeleteResponseDto.static;

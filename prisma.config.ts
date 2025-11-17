@@ -1,5 +1,5 @@
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { defineConfig, env } from 'prisma/config';
 
 const loadEnv = (file = '.env') => {
@@ -18,8 +18,8 @@ const loadEnv = (file = '.env') => {
 loadEnv();
 
 export default defineConfig({
-  schema: path.join('./prisma'),
-  migrations: { path: path.join('./prisma', 'migrations') },
+  schema: path.join('./src', 'prisma'),
+  migrations: { path: path.join('./src', 'prisma', 'migrations') },
   engine: 'classic',
-  datasource: { url: env('POSTGRES_URL') },
+  datasource: { url: env('POSTGRESQL_URI') },
 });

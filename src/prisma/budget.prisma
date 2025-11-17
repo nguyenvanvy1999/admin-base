@@ -1,0 +1,74 @@
+// Budget plans with period-based tracking
+model Budget {
+  id        String       @id
+  userId    String       @map("user_id")
+  name      String
+  amount    Decimal      @db.Decimal(30, 10)
+  period    BudgetPeriod
+  startDate DateTime     @map("start_date")
+  endDate   DateTime?    @map("end_date")
+  carryOver Boolean      @default(false) @map("carry_over")
+
+  created  DateTime @default(now())
+  modified DateTime @updatedAt
+
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories BudgetCategory[]
+  accounts   BudgetAccount[]
+  periods    BudgetPeriodRecord[]
+  category   Category?            @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId String?
+
+  @@index([userId], name: "budget_userId_idx")
+  @@map("budgets")
+}
+
+// Categories associated with a budget
+model BudgetCategory {
+  id         String   @id @default(uuid(7))
+  budgetId   String   @map("budget_id")
+  categoryId String   @map("category_id")
+  created    DateTime @default(now())
+
+  budget   Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([budgetId, categoryId], name: "budget_category_unique")
+  @@index([budgetId], name: "budget_category_budgetId_idx")
+  @@index([categoryId], name: "budget_category_categoryId_idx")
+  @@map("budget_categories")
+}
+
+// Accounts associated with a budget
+model BudgetAccount {
+  id        String   @id @default(uuid(7))
+  budgetId  String   @map("budget_id")
+  accountId String   @map("account_id")
+  created   DateTime @default(now())
+
+  budget  Budget  @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([budgetId, accountId], name: "budget_account_unique")
+  @@index([budgetId], name: "budget_account_budgetId_idx")
+  @@index([accountId], name: "budget_account_accountId_idx")
+  @@map("budget_accounts")
+}
+
+// Historical period records for budget tracking
+model BudgetPeriodRecord {
+  id                String   @id
+  budgetId          String   @map("budget_id")
+  periodStartDate   DateTime @map("period_start_date")
+  periodEndDate     DateTime @map("period_end_date")
+  carriedOverAmount Decimal  @default(0) @map("carried_over_amount") @db.Decimal(30, 10)
+  created           DateTime @default(now())
+  modified          DateTime @updatedAt
+
+  budget Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  @@unique([budgetId, periodStartDate], name: "budget_period_unique")
+  @@index([budgetId], name: "budget_period_budgetId_idx")
+  @@index([periodStartDate], name: "budget_period_startDate_idx")
+  @@map("budget_periods")
+}

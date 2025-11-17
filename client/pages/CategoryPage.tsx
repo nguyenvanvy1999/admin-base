@@ -6,7 +6,7 @@ import {
 } from '@client/components/utils/category';
 import {
   useCreateCategoryMutation,
-  useDeleteCategoryMutation,
+  useDeleteManyCategoriesMutation,
   useUpdateCategoryMutation,
 } from '@client/hooks/mutations/useCategoryMutations';
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
@@ -147,7 +147,7 @@ const CategoryPage = () => {
   const { data, isLoading } = useCategoriesQuery(queryParams);
   const createMutation = useCreateCategoryMutation();
   const updateMutation = useUpdateCategoryMutation();
-  const deleteMutation = useDeleteCategoryMutation();
+  const deleteManyMutation = useDeleteManyCategoriesMutation();
 
   const treeItems = useMemo(() => {
     if (!data?.categories) {
@@ -257,7 +257,7 @@ const CategoryPage = () => {
   };
 
   const handleConfirmDelete = async () => {
-    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
+    await deleteHandler.handleConfirmDelete(deleteManyMutation.mutateAsync);
   };
 
   const hasActiveFilters = useMemo(() => {
@@ -284,7 +284,7 @@ const CategoryPage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending;
+    deleteManyMutation.isPending;
 
   return (
     <Container

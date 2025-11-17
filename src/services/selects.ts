@@ -16,8 +16,8 @@ export const ACCOUNT_SELECT_FULL = {
   paymentDay: true,
   notifyDaysBefore: true,
   meta: true,
-  createdAt: true,
-  updatedAt: true,
+  created: true,
+  modified: true,
   currency: {
     select: CURRENCY_SELECT_BASIC,
   },
@@ -33,15 +33,14 @@ export const CATEGORY_SELECT_MINIMAL = {
   isLocked: true,
   type: true,
   parentId: true,
-  deletedAt: true,
 } as const;
 
 export const TAG_SELECT_FULL = {
   id: true,
   name: true,
   description: true,
-  createdAt: true,
-  updatedAt: true,
+  created: true,
+  modified: true,
 } as const;
 
 export const TAG_SELECT_MINIMAL = {
@@ -56,8 +55,8 @@ export const ENTITY_SELECT_FULL = {
   email: true,
   address: true,
   note: true,
-  createdAt: true,
-  updatedAt: true,
+  created: true,
+  modified: true,
 } as const;
 
 export const ENTITY_SELECT_MINIMAL = {
@@ -69,8 +68,8 @@ export const EVENT_SELECT_FULL = {
   name: true,
   startAt: true,
   endAt: true,
-  createdAt: true,
-  updatedAt: true,
+  created: true,
+  modified: true,
 } as const;
 
 export const EVENT_SELECT_MINIMAL = {
@@ -86,8 +85,8 @@ export const BUDGET_SELECT_FULL = {
   startDate: true,
   endDate: true,
   carryOver: true,
-  createdAt: true,
-  updatedAt: true,
+  created: true,
+  modified: true,
   categories: {
     select: {
       categoryId: true,
@@ -120,9 +119,8 @@ export const INVESTMENT_SELECT_FULL = {
   currencyId: true,
   baseCurrencyId: true,
   extra: true,
-  deletedAt: true,
-  createdAt: true,
-  updatedAt: true,
+  created: true,
+  modified: true,
   currency: {
     select: CURRENCY_SELECT_BASIC,
   },
@@ -143,8 +141,8 @@ export const VALUATION_SELECT_FULL = {
   timestamp: true,
   source: true,
   fetchedAt: true,
-  createdAt: true,
-  updatedAt: true,
+  created: true,
+  modified: true,
   currency: {
     select: CURRENCY_SELECT_BASIC,
   },
@@ -174,8 +172,8 @@ export const TRADE_SELECT_FULL = {
   priceSource: true,
   priceFetchedAt: true,
   meta: true,
-  createdAt: true,
-  updatedAt: true,
+  created: true,
+  modified: true,
   account: {
     select: {
       id: true,
@@ -213,8 +211,8 @@ export const CONTRIBUTION_SELECT_FULL = {
   baseCurrencyId: true,
   timestamp: true,
   note: true,
-  createdAt: true,
-  updatedAt: true,
+  created: true,
+  modified: true,
   account: {
     select: {
       id: true,
@@ -260,8 +258,8 @@ export const TRANSACTION_SELECT_FULL = {
   note: true,
   receiptUrl: true,
   metadata: true,
-  createdAt: true,
-  updatedAt: true,
+  created: true,
+  modified: true,
   account: {
     select: {
       id: true,
@@ -328,11 +326,10 @@ export const USER_SELECT_FOR_INFO = {
   id: true,
   username: true,
   name: true,
-  role: true,
   baseCurrencyId: true,
   settings: true,
-  createdAt: true,
-  updatedAt: true,
+  created: true,
+  modified: true,
   roles: { select: { roleId: true } },
 } as const;
 
@@ -344,12 +341,11 @@ export const USER_SELECT_FOR_VALIDATION = {
 export const USER_SELECT_FOR_LOGIN = {
   id: true,
   username: true,
-  role: true,
   name: true,
   baseCurrencyId: true,
   settings: true,
   password: true,
-  createdAt: true,
-  updatedAt: true,
+  created: true,
+  modified: true,
   roles: { select: { roleId: true } },
 } as const;

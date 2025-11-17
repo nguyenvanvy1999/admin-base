@@ -82,24 +82,24 @@ const ProfilePage = () => {
   }, [user, isEditMode, resetProfile]);
 
   const onSubmitProfileForm = handleProfileSubmit((data) => {
-    const updateData: {
+    const modifieda: {
       name?: string;
       baseCurrencyId?: string;
     } = {};
 
     if (data.name !== user?.name) {
-      updateData.name = data.name;
+      modifieda.name = data.name;
     }
     if (data.baseCurrencyId !== user?.baseCurrencyId) {
-      updateData.baseCurrencyId = data.baseCurrencyId;
+      modifieda.baseCurrencyId = data.baseCurrencyId;
     }
 
-    if (Object.keys(updateData).length === 0) {
+    if (Object.keys(modifieda).length === 0) {
       setIsEditMode(false);
       return;
     }
 
-    updateProfileMutation.mutate(updateData, {
+    updateProfileMutation.mutate(modifieda, {
       onSuccess: () => {
         setIsEditMode(false);
       },
@@ -269,9 +269,19 @@ const ProfilePage = () => {
                 <Text size="sm" c="dimmed">
                   {t('profile.role')}
                 </Text>
-                <Badge color="indigo" variant="light">
-                  {user.role}
-                </Badge>
+                <div className="flex flex-wrap gap-1">
+                  {user.roleIds && user.roleIds.length > 0 ? (
+                    user.roleIds.map((roleId) => (
+                      <Badge key={roleId} color="indigo" variant="light">
+                        {roleId}
+                      </Badge>
+                    ))
+                  ) : (
+                    <Badge color="indigo" variant="light">
+                      {t('users.roleUser')}
+                    </Badge>
+                  )}
+                </div>
               </Stack>
             </Paper>
 

@@ -1,19 +1,22 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
+import type { ActionRes } from '@server/dto/common.dto';
 import type {
   AccountOrderByWithRelationInput,
   AccountWhereInput,
   Prisma,
 } from '@server/generated';
 import {
+  DB_PREFIX,
   dateToIsoString,
   decimalToNullableString,
   decimalToString,
   ErrorCode,
+  type IdUtil,
+  idUtil,
   throwAppError,
 } from '@server/share';
 import type {
-  AccountDeleteResponse,
   AccountListResponse,
   AccountResponse,
   IListAccountsQueryDto,
@@ -37,19 +40,20 @@ const formatAccount = (account: AccountRecord): AccountResponse => ({
   paymentDay: account.paymentDay ?? null,
   notifyDaysBefore: account.notifyDaysBefore ?? null,
   meta: account.meta ?? null,
-  createdAt: dateToIsoString(account.createdAt),
-  updatedAt: dateToIsoString(account.updatedAt),
+  created: dateToIsoString(account.created),
+  modified: dateToIsoString(account.modified),
 });
 
 export class AccountService {
-  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+  constructor(
+    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
+  ) {}
 
   private async validateAccountOwnership(userId: string, accountId: string) {
     const account = await this.deps.db.account.findFirst({
       where: {
         id: accountId,
         userId,
-        deletedAt: null,
       },
       select: ACCOUNT_SELECT_MINIMAL,
     });
@@ -71,7 +75,7 @@ export class AccountService {
   async upsertAccount(
     userId: string,
     data: IUpsertAccountDto,
-  ): Promise<AccountResponse> {
+  ): Promise<ActionRes> {
     await this.validateCurrency(data.currencyId);
 
     if (data.id) {
@@ -96,7 +100,7 @@ export class AccountService {
     }
 
     if (data.id) {
-      const account = await this.deps.db.account.update({
+      await this.deps.db.account.update({
         where: { id: data.id },
         data: {
           type: data.type,
@@ -108,12 +112,13 @@ export class AccountService {
           notifyDaysBefore: data.notifyDaysBefore ?? null,
           meta: (data.meta ?? null) as any,
         },
-        select: ACCOUNT_SELECT_FULL,
+        select: ACCOUNT_SELECT_MINIMAL,
       });
-      return formatAccount(account);
+      return { success: true, message: 'Account updated successfully' };
     } else {
-      const account = await this.deps.db.account.create({
+      await this.deps.db.account.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.ACCOUNT),
           type: data.type,
           name: data.name,
           currencyId: data.currencyId,
@@ -125,9 +130,9 @@ export class AccountService {
           userId,
           balance: data.initialBalance ?? 0,
         },
-        select: ACCOUNT_SELECT_FULL,
+        select: ACCOUNT_SELECT_MINIMAL,
       });
-      return formatAccount(account);
+      return { success: true, message: 'Account created successfully' };
     }
   }
 
@@ -139,7 +144,6 @@ export class AccountService {
       where: {
         id: accountId,
         userId,
-        deletedAt: null,
       },
       select: ACCOUNT_SELECT_FULL,
     });
@@ -153,21 +157,20 @@ export class AccountService {
 
   async listAccounts(
     userId: string,
-    query: IListAccountsQueryDto = {},
+    query: IListAccountsQueryDto,
   ): Promise<AccountListResponse> {
     const {
       type,
       currencyId,
       search,
-      page = 1,
-      limit = 20,
-      sortBy = 'createdAt',
+      page,
+      limit,
+      sortBy = 'created',
       sortOrder = 'desc',
     } = query;
 
     const where: AccountWhereInput = {
       userId,
-      deletedAt: null,
     };
 
     if (type && type.length > 0) {
@@ -188,8 +191,8 @@ export class AccountService {
     const orderBy: AccountOrderByWithRelationInput = {};
     if (sortBy === 'name') {
       orderBy.name = sortOrder;
-    } else if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
+    } else if (sortBy === 'created') {
+      orderBy.created = sortOrder;
     } else if (sortBy === 'balance') {
       orderBy.balance = sortOrder;
     }
@@ -254,20 +257,43 @@ export class AccountService {
     };
   }
 
-  async deleteAccount(
-    userId: string,
-    accountId: string,
-  ): Promise<AccountDeleteResponse> {
+  async deleteAccount(userId: string, accountId: string): Promise<ActionRes> {
     await this.validateAccountOwnership(userId, accountId);
 
-    await this.deps.db.account.update({
+    await this.deps.db.account.delete({
       where: { id: accountId },
-      data: {
-        deletedAt: new Date(),
-      },
     });
 
     return { success: true, message: 'Account deleted successfully' };
+  }
+
+  async deleteManyAccounts(userId: string, ids: string[]): Promise<ActionRes> {
+    const accounts = await this.deps.db.account.findMany({
+      where: {
+        id: { in: ids },
+        userId,
+      },
+      select: ACCOUNT_SELECT_MINIMAL,
+    });
+
+    if (accounts.length !== ids.length) {
+      throwAppError(
+        ErrorCode.ACCOUNT_NOT_FOUND,
+        'Some accounts were not found or do not belong to you',
+      );
+    }
+
+    await this.deps.db.account.deleteMany({
+      where: {
+        id: { in: ids },
+        userId,
+      },
+    });
+
+    return {
+      success: true,
+      message: `${ids.length} account(s) deleted successfully`,
+    };
   }
 }
 

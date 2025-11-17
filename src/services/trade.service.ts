@@ -5,7 +5,13 @@ import type {
   Prisma,
   TradeSide,
 } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share';
+import {
+  DB_PREFIX,
+  ErrorCode,
+  type IdUtil,
+  idUtil,
+  throwAppError,
+} from '@server/share';
 import type {
   ICreateInvestmentTradeDto,
   IListInvestmentTradesQueryDto,
@@ -35,8 +41,8 @@ const mapTrade = (
   amountInBaseCurrency: trade.amountInBaseCurrency?.toNumber() ?? null,
   exchangeRate: trade.exchangeRate?.toNumber() ?? null,
   priceFetchedAt: trade.priceFetchedAt?.toISOString() ?? null,
-  createdAt: trade.createdAt.toISOString(),
-  updatedAt: trade.updatedAt.toISOString(),
+  created: trade.created.toISOString(),
+  modified: trade.modified.toISOString(),
 });
 
 export class InvestmentTradeService {
@@ -45,10 +51,12 @@ export class InvestmentTradeService {
       db: IDb;
       investmentService: InvestmentService;
       accountBalanceService: AccountBalanceService;
+      idUtil: IdUtil;
     } = {
       db: prisma,
       investmentService: investmentService,
       accountBalanceService: accountBalanceService,
+      idUtil,
     },
   ) {}
 
@@ -102,6 +110,7 @@ export class InvestmentTradeService {
     return this.deps.db.$transaction(async (tx) => {
       const trade = await tx.investmentTrade.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.TRADE),
           userId,
           investmentId,
           accountId: data.accountId,
@@ -140,24 +149,16 @@ export class InvestmentTradeService {
   async listTrades(
     userId: string,
     investmentId: string,
-    query: IListInvestmentTradesQueryDto = {},
+    query: IListInvestmentTradesQueryDto,
   ) {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const {
-      side,
-      accountIds,
-      dateFrom,
-      dateTo,
-      page = 1,
-      limit = 50,
-      sortOrder = 'desc',
-    } = query;
+    const { side, accountIds, dateFrom, dateTo, page, limit, sortOrder } =
+      query;
 
     const where: InvestmentTradeWhereInput = {
       userId,
       investmentId,
-      deletedAt: null,
     };
 
     if (side) {
@@ -199,38 +200,52 @@ export class InvestmentTradeService {
     };
   }
 
-  async deleteTrade(userId: string, investmentId: string, tradeId: string) {
+  async deleteManyTrades(
+    userId: string,
+    investmentId: string,
+    tradeIds: string[],
+  ) {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const trade = await this.deps.db.investmentTrade.findFirst({
+    const trades = await this.deps.db.investmentTrade.findMany({
       where: {
-        id: tradeId,
+        id: { in: tradeIds },
         userId,
         investmentId,
-        deletedAt: null,
       },
       select: TRADE_SELECT_FULL,
     });
 
-    if (!trade) {
-      throwAppError(ErrorCode.TRADE_NOT_FOUND, 'Trade not found');
+    if (trades.length !== tradeIds.length) {
+      throwAppError(
+        ErrorCode.TRADE_NOT_FOUND,
+        'Some trades were not found or do not belong to you',
+      );
     }
 
     return this.deps.db.$transaction(async (tx) => {
-      await this.deps.accountBalanceService.revertTradeBalance(
-        tx,
-        trade.side,
-        trade.accountId,
-        trade.amount,
-        trade.fee,
-      );
+      for (const trade of trades) {
+        await this.deps.accountBalanceService.revertTradeBalance(
+          tx,
+          trade.side,
+          trade.accountId,
+          trade.amount,
+          trade.fee,
+        );
+      }
 
-      await tx.investmentTrade.update({
-        where: { id: tradeId },
-        data: { deletedAt: new Date() },
+      await tx.investmentTrade.deleteMany({
+        where: {
+          id: { in: tradeIds },
+          userId,
+          investmentId,
+        },
       });
 
-      return { success: true, message: 'Trade deleted successfully' };
+      return {
+        success: true,
+        message: `${tradeIds.length} trade(s) deleted successfully`,
+      };
     });
   }
 }

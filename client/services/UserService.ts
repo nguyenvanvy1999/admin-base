@@ -11,7 +11,6 @@ import type {
   IUpdateProfileDto,
   UpdateProfileRes,
 } from '@server/dto/user.dto';
-import type { UserRole } from '@server/generated';
 
 export class UserService extends ServiceBase {
   constructor() {
@@ -38,10 +37,9 @@ export class UserService extends ServiceBase {
 
   listUsers(query?: {
     search?: string;
-    role?: UserRole[];
     page?: number;
     limit?: number;
-    sortBy?: 'username' | 'name' | 'role' | 'createdAt';
+    sortBy?: 'username' | 'name' | 'role' | 'created';
     sortOrder?: 'asc' | 'desc';
   }): Promise<UserListResponse> {
     return this.get<UserListResponse>({
@@ -62,9 +60,9 @@ export class UserService extends ServiceBase {
     });
   }
 
-  deleteUser(id: string): Promise<null> {
+  deleteManyUsers(ids: string[]): Promise<null> {
     return this.post<null>(
-      { ids: [id] },
+      { ids },
       {
         endpoint: '/api/admin/users/del',
       },

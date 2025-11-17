@@ -5,7 +5,6 @@ import {
   CurrencyDto,
   createArrayPreprocess,
   createListQueryDto,
-  DeleteResponseDto,
   PaginationDto,
 } from './common.dto';
 
@@ -25,7 +24,7 @@ export const ListInvestmentContributionsQueryDto = createListQueryDto({
   accountIds: createArrayPreprocess(z.string()),
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
-  limit: z.coerce.number().int().min(1).default(50).optional(),
+  limit: z.coerce.number().int().min(1).optional().default(50),
 });
 
 export type ICreateInvestmentContributionDto = z.infer<
@@ -42,8 +41,6 @@ export const InvestmentContributionAccountDto = t.NoValidate(
   }),
 );
 
-export const InvestmentContributionCurrencyDto = CurrencyDto;
-
 export const InvestmentContributionDto = t.NoValidate(
   t.Object({
     id: t.String(),
@@ -58,11 +55,11 @@ export const InvestmentContributionDto = t.NoValidate(
     baseCurrencyId: t.Nullable(t.String()),
     timestamp: t.String(),
     note: t.Nullable(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
     account: t.Nullable(InvestmentContributionAccountDto),
-    currency: InvestmentContributionCurrencyDto,
-    baseCurrency: t.Nullable(InvestmentContributionCurrencyDto),
+    currency: CurrencyDto,
+    baseCurrency: t.Nullable(CurrencyDto),
   }),
 );
 
@@ -72,8 +69,6 @@ export const InvestmentContributionListResponseDto = t.NoValidate(
     pagination: PaginationDto,
   }),
 );
-
-export const ContributionDeleteResponseDto = DeleteResponseDto;
 
 export type InvestmentContributionResponse =
   typeof InvestmentContributionDto.static;

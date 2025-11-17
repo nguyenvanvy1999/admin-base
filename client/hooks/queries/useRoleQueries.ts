@@ -13,7 +13,7 @@ type ListRolesQuery = {
   userId?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'title' | 'createdAt';
+  sortBy?: 'title' | 'created';
   sortOrder?: 'asc' | 'desc';
 };
 
@@ -23,7 +23,7 @@ export const useRolesQuery = createQueryHook<
   {
     page?: number;
     limit?: number;
-    sortBy?: 'title' | 'createdAt';
+    sortBy?: 'title' | 'created';
     sortOrder?: 'asc' | 'desc';
   },
   ListRolesQuery,

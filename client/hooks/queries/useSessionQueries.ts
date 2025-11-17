@@ -13,7 +13,7 @@ type ListSessionsQuery = {
   userId?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'createdAt' | 'expired' | 'revoked';
+  sortBy?: 'created' | 'expired' | 'revoked';
   sortOrder?: 'asc' | 'desc';
   revoked?: boolean;
 };
@@ -24,7 +24,7 @@ export const useSessionsQuery = createQueryHook<
   {
     page?: number;
     limit?: number;
-    sortBy?: 'createdAt' | 'expired' | 'revoked';
+    sortBy?: 'created' | 'expired' | 'revoked';
     sortOrder?: 'asc' | 'desc';
   },
   ListSessionsQuery,

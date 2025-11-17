@@ -14,8 +14,8 @@ export const RoleFixtures = {
       title: overrides?.title || 'Test Role',
       description: overrides?.description ?? 'Test role description',
       enabled: overrides?.enabled ?? true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      created: new Date(),
+      modified: new Date(),
     };
   },
 
@@ -25,8 +25,8 @@ export const RoleFixtures = {
       title: defaultRoles.user.title,
       description: defaultRoles.user.description,
       enabled: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      created: new Date(),
+      modified: new Date(),
     };
   },
 
@@ -36,8 +36,8 @@ export const RoleFixtures = {
       title: defaultRoles.admin.title,
       description: defaultRoles.admin.description,
       enabled: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      created: new Date(),
+      modified: new Date(),
     };
   },
 };

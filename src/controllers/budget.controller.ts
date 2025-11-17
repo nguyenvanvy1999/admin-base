@@ -1,16 +1,15 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
 import {
-  BudgetDeleteResponseDto,
   BudgetDto,
   BudgetListResponseDto,
   BudgetPeriodDetailDto,
   BudgetPeriodListResponseDto,
   BudgetPeriodQueryDto,
-  DeleteManyBudgetsDto,
   ListBudgetsQueryDto,
   UpsertBudgetDto,
 } from '../dto/budget.dto';
+import { ActionResDto, DeleteManyDto } from '../dto/common.dto';
 import { budgetService } from '../services/budget.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -91,26 +90,6 @@ const budgetController = new Elysia().group(
           },
         },
       )
-      .delete(
-        '/:id',
-        async ({ currentUser, params }) => {
-          return castToRes(
-            await budgetService.deleteBudget(currentUser.id, params.id),
-          );
-        },
-        {
-          detail: {
-            ...BUDGET_DETAIL,
-            summary: 'Delete budget',
-            description:
-              'Permanently delete a budget by its ID. This action cannot be undone.',
-          },
-          params: t.Object({ id: t.String() }),
-          response: {
-            200: ResWrapper(BudgetDeleteResponseDto),
-          },
-        },
-      )
       .get(
         '/:id/periods',
         async ({ currentUser, params, query }) => {
@@ -166,15 +145,9 @@ const budgetController = new Elysia().group(
       .post(
         '/delete-many',
         async ({ currentUser, body }) => {
-          const results = await Promise.all(
-            body.ids.map((id) =>
-              budgetService.deleteBudget(currentUser.id, id),
-            ),
+          return castToRes(
+            await budgetService.deleteManyBudgets(currentUser.id, body.ids),
           );
-          return castToRes({
-            success: true,
-            message: `${results.length} budget(s) deleted successfully`,
-          });
         },
         {
           detail: {
@@ -183,9 +156,9 @@ const budgetController = new Elysia().group(
             description:
               'Permanently delete multiple budgets by their IDs. This action cannot be undone.',
           },
-          body: DeleteManyBudgetsDto,
+          body: DeleteManyDto,
           response: {
-            200: ResWrapper(BudgetDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

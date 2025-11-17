@@ -1,10 +1,9 @@
 import { prisma } from '@server/configs/db';
 import { logger } from '@server/configs/logger';
-import { SeedService } from '@server/services/seed.service';
+import { seedService } from '@server/services/misc';
 
 async function main() {
   try {
-    const seedService = new SeedService();
     await seedService.seedAll();
   } catch (error) {
     logger.error('Error seeding', { error });

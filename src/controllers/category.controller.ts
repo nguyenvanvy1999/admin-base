@@ -1,12 +1,12 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
 import {
-  CategoryDeleteResponseDto,
   CategoryDto,
   CategoryListResponseDto,
   ListCategoriesQueryDto,
   UpsertCategoryDto,
 } from '../dto/category.dto';
+import { ActionResDto, DeleteManyDto } from '../dto/common.dto';
 import { categoryService } from '../services/category.service';
 import { castToRes, ResWrapper } from '../share';
 
@@ -112,23 +112,26 @@ const categoryController = new Elysia().group(
           },
         },
       )
-      .delete(
-        '/:id',
-        async ({ currentUser, params }) => {
+      .post(
+        '/delete-many',
+        async ({ currentUser, body }) => {
           return castToRes(
-            await categoryService.deleteCategory(currentUser.id, params.id),
+            await categoryService.deleteManyCategories(
+              currentUser.id,
+              body.ids,
+            ),
           );
         },
         {
           detail: {
             ...CATEGORY_DETAIL,
-            summary: 'Delete category',
+            summary: 'Delete many categories',
             description:
-              'Soft delete a category by its ID. Locked categories and categories with children cannot be deleted.',
+              'Permanently delete multiple categories by their IDs. Locked categories and categories with children cannot be deleted. This action cannot be undone.',
           },
-          params: t.Object({ id: t.String() }),
+          body: DeleteManyDto,
           response: {
-            200: ResWrapper(CategoryDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

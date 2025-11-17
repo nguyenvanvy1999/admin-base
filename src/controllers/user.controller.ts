@@ -1,5 +1,4 @@
 import { prisma } from '@server/configs/db';
-import { UserRole } from '@server/generated';
 import {
   authCheck,
   userResSelect,
@@ -140,7 +139,6 @@ const userController = new Elysia().group(
               id: user.id,
               username: user.username,
               name: user.name,
-              role: UserRole.user,
               baseCurrencyId: user.baseCurrencyId,
               permissions,
               roleIds: user.roles.map((r) => r.roleId),

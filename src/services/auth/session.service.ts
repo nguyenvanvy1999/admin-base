@@ -1,6 +1,9 @@
 import { currentUserCache } from '@server/configs/cache';
 import { type IDb, prisma } from '@server/configs/db';
-import type { ISessionQueryDto } from '@server/dto/admin/session.dto';
+import type {
+  ISessionQueryDto,
+  SessionStatisticsResponse,
+} from '@server/dto/admin/session.dto';
 import type { Prisma } from '@server/generated';
 
 export class SessionService {
@@ -9,21 +12,15 @@ export class SessionService {
   async listSessions(
     currentUserId: string,
     isAdmin: boolean,
-    query: ISessionQueryDto = {},
+    query: ISessionQueryDto,
   ) {
-    const {
-      userId,
-      page = 1,
-      limit = 20,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-      revoked,
-    } = query;
+    const { userId, page, limit, sortBy, sortOrder, revoked } = query;
 
     const where: Prisma.SessionWhereInput = {};
-
-    if (isAdmin && userId) {
-      where.userId = userId;
+    if (isAdmin) {
+      if (userId) {
+        where.userId = userId;
+      }
     } else {
       where.userId = currentUserId;
     }
@@ -33,8 +30,8 @@ export class SessionService {
     }
 
     const orderBy: Prisma.SessionOrderByWithRelationInput = {};
-    if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
+    if (sortBy === 'created') {
+      orderBy.created = sortOrder;
     } else if (sortBy === 'expired') {
       orderBy.expired = sortOrder;
     } else if (sortBy === 'revoked') {
@@ -56,8 +53,8 @@ export class SessionService {
           ip: true,
           expired: true,
           revoked: true,
-          createdAt: true,
-          updatedAt: true,
+          created: true,
+          modified: true,
           user: isAdmin
             ? {
                 select: {
@@ -80,8 +77,8 @@ export class SessionService {
         ip: session.ip,
         expired: session.expired,
         revoked: session.revoked,
-        createdAt: session.createdAt,
-        updatedAt: session.updatedAt,
+        created: session.created,
+        modified: session.modified,
         user: session.user
           ? {
               id: session.user.id,
@@ -139,6 +136,31 @@ export class SessionService {
 
       await Promise.all(idsToRevoke.map((id) => currentUserCache.del(id)));
     }
+  }
+
+  async getStatistics(): Promise<SessionStatisticsResponse> {
+    const now = new Date();
+
+    const [totalSessions, activeSessions, revokedSessions] = await Promise.all([
+      this.deps.db.session.count({}),
+      this.deps.db.session.count({
+        where: {
+          expired: { gt: now },
+          revoked: false,
+        },
+      }),
+      this.deps.db.session.count({
+        where: {
+          revoked: true,
+        },
+      }),
+    ]);
+
+    return {
+      totalSessions,
+      activeSessions,
+      revokedSessions,
+    };
   }
 }
 

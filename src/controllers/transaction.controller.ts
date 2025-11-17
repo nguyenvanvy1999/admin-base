@@ -1,11 +1,11 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
+import { ActionResDto } from '../dto/common.dto';
 import {
   BalanceAdjustmentElysiaDto,
   BatchTransactionsDto,
   BatchTransactionsResponseDto,
   ListTransactionsQueryDto,
-  TransactionDeleteResponseDto,
   TransactionDetailDto,
   TransactionListResponseDto,
   UpsertTransactionDto,
@@ -132,7 +132,7 @@ const transactionController = new Elysia().group(
           },
           params: t.Object({ id: t.String() }),
           response: {
-            200: ResWrapper(TransactionDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       )
@@ -153,6 +153,32 @@ const transactionController = new Elysia().group(
           body: BalanceAdjustmentElysiaDto,
           response: {
             200: ResWrapper(TransactionDetailDto),
+          },
+        },
+      )
+      .get(
+        '/debts',
+        async ({ currentUser, query }) => {
+          return castToRes(
+            await transactionService.getUnpaidDebts(currentUser.id, {
+              from: query.from,
+              to: query.to,
+            }),
+          );
+        },
+        {
+          detail: {
+            ...TRANSACTION_DETAIL,
+            summary: 'Get unpaid debts',
+            description:
+              'Get a list of unpaid loan transactions with remaining amounts calculated.',
+          },
+          query: t.Object({
+            from: t.Optional(t.String({ format: 'date-time' })),
+            to: t.Optional(t.String({ format: 'date-time' })),
+          }),
+          response: {
+            200: ResWrapper(t.Array(TransactionDetailDto)),
           },
         },
       ),

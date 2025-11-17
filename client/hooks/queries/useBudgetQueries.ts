@@ -16,7 +16,7 @@ type ListBudgetsQuery = {
   period?: BudgetPeriod[];
   page?: number;
   limit?: number;
-  sortBy?: 'name' | 'amount' | 'period' | 'startDate' | 'createdAt';
+  sortBy?: 'name' | 'amount' | 'period' | 'startDate' | 'created';
   sortOrder?: 'asc' | 'desc';
 };
 
@@ -26,16 +26,24 @@ export const useBudgetsQuery = createQueryHook<
   {
     page?: number;
     limit?: number;
-    sortBy?: 'name' | 'amount' | 'period' | 'startDate' | 'createdAt';
+    sortBy?: 'name' | 'amount' | 'period' | 'startDate' | 'created';
     sortOrder?: 'asc' | 'desc';
   },
   ListBudgetsQuery,
   any
 >({
   queryKey: 'budgets',
-  serviceMethod: (query) => budgetService.listBudgets(query),
+  serviceMethod: (query) =>
+    budgetService.listBudgets({
+      ...query,
+      page: query.page ?? 1,
+      limit: query.limit ?? 20,
+      sortOrder: query.sortOrder ?? 'desc',
+    }),
   filterTransformer: (criteria, query) => ({
     ...query,
+    page: query.page ?? 1,
+    limit: query.limit ?? 20,
     search: criteria.search?.trim() || undefined,
     period:
       criteria.period && criteria.period.length > 0

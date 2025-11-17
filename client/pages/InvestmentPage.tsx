@@ -8,7 +8,7 @@ import { PageContainer } from '@client/components/PageContainer';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateInvestmentMutation,
-  useDeleteInvestmentMutation,
+  useDeleteManyInvestmentsMutation,
   useUpdateInvestmentMutation,
 } from '@client/hooks/mutations/useInvestmentMutations';
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
@@ -61,8 +61,8 @@ const InvestmentPage = () => {
     useState<InvestmentResponse | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
-  const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'updatedAt'>(
-    'createdAt',
+  const [sortBy, setSortBy] = useState<'name' | 'created' | 'modified'>(
+    'created',
   );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -89,7 +89,7 @@ const InvestmentPage = () => {
   const { data: currencies = [] } = useCurrenciesQuery();
   const createMutation = useCreateInvestmentMutation();
   const updateMutation = useUpdateInvestmentMutation();
-  const deleteMutation = useDeleteInvestmentMutation();
+  const deleteManyMutation = useDeleteManyInvestmentsMutation();
 
   const handleAdd = () => {
     setSelectedInvestment(null);
@@ -118,7 +118,7 @@ const InvestmentPage = () => {
   const handleConfirmDelete = async () => {
     if (investmentToDelete) {
       try {
-        await deleteMutation.mutateAsync(investmentToDelete.id);
+        await deleteManyMutation.mutateAsync([investmentToDelete.id]);
         handleDeleteDialogClose();
       } catch {
         // Error is already handled by mutation's onError callback
@@ -152,7 +152,7 @@ const InvestmentPage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending ||
+    deleteManyMutation.isPending ||
     isLoading;
 
   const stats = useMemo(() => {
@@ -326,10 +326,10 @@ const InvestmentPage = () => {
                 )
               : updater;
           if (newSorting.length > 0) {
-            setSortBy(newSorting[0].id as 'name' | 'createdAt' | 'updatedAt');
+            setSortBy(newSorting[0].id as 'name' | 'created' | 'modified');
             setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
           } else {
-            setSortBy('createdAt');
+            setSortBy('created');
             setSortOrder('desc');
           }
           setPage(1);

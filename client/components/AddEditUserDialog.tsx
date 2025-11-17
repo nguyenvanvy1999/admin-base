@@ -3,7 +3,6 @@ import { useZodForm } from '@client/hooks/useZodForm';
 import { Modal, PasswordInput, Stack, TextInput } from '@mantine/core';
 import type { IUpsertUserDto, UserResponse } from '@server/dto/admin/user.dto';
 import { UpsertUserDto } from '@server/dto/admin/user.dto';
-import { UserRole } from '@server/generated';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -14,9 +13,6 @@ import { ZodFormController } from './ZodFormController';
 const createSchema = UpsertUserDto.extend({
   username: z.string().min(1, 'users.usernameRequired'),
   password: z.string().min(6, 'users.passwordMinLength'),
-  role: z.enum([UserRole.user, UserRole.admin], {
-    message: 'users.roleRequired',
-  }),
 });
 
 const updateSchema = UpsertUserDto.extend({
@@ -26,9 +22,6 @@ const updateSchema = UpsertUserDto.extend({
     .min(6, 'users.passwordMinLength')
     .optional()
     .or(z.literal('')),
-  role: z.enum([UserRole.user, UserRole.admin], {
-    message: 'users.roleRequired',
-  }),
 });
 
 type FormValue = z.infer<typeof createSchema> | z.infer<typeof updateSchema>;
@@ -56,7 +49,6 @@ const AddEditUserDialog = ({
     username: '',
     password: isEditMode ? undefined : '',
     name: undefined,
-    role: UserRole.user,
     baseCurrencyId: undefined,
   } as FormValue;
 
@@ -72,7 +64,6 @@ const AddEditUserDialog = ({
         username: user.username,
         password: undefined,
         name: user.name ?? undefined,
-        role: user.role,
         baseCurrencyId: user.baseCurrencyId ?? undefined,
       });
     } else {
@@ -83,7 +74,6 @@ const AddEditUserDialog = ({
   const onSubmitForm = handleSubmit((data) => {
     const submitData: IUpsertUserDto = {
       username: data.username.trim(),
-      role: data.role,
     };
 
     if (isEditMode && user) {
@@ -173,25 +163,6 @@ const AddEditUserDialog = ({
                 placeholder={t('users.namePlaceholder')}
                 error={error}
                 {...field}
-              />
-            )}
-          />
-
-          <ZodFormController
-            control={control}
-            name="role"
-            render={({ field, fieldState: { error } }) => (
-              <Select
-                label={t('users.role')}
-                placeholder={t('users.rolePlaceholder')}
-                required
-                error={error}
-                items={[
-                  { value: UserRole.user, label: t('users.roleUser') },
-                  { value: UserRole.admin, label: t('users.roleAdmin') },
-                ]}
-                value={field.value || ''}
-                onChange={field.onChange}
               />
             )}
           />

@@ -38,22 +38,6 @@ export const useUpdateEventMutation = () => {
   });
 };
 
-export const useDeleteEventMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (eventId: string) => {
-      return eventService.deleteEvent(eventId);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['events'] });
-      await queryClient.invalidateQueries({ queryKey: ['events-options'] });
-      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      toast.success('Event deleted successfully');
-    },
-  });
-};
-
 export const useDeleteManyEventsMutation = () => {
   const queryClient = useQueryClient();
 

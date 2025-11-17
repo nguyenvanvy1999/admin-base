@@ -1,5 +1,3 @@
-import { UserRole } from '@server/generated';
-
 export const UserFixtures = {
   createUser(
     overrides?: Partial<{
@@ -7,7 +5,6 @@ export const UserFixtures = {
       username: string;
       password: string;
       name: string | null;
-      role: UserRole;
       baseCurrencyId: string;
     }>,
   ) {
@@ -16,12 +13,11 @@ export const UserFixtures = {
       username: overrides?.username || 'testuser',
       password: overrides?.password || 'hashed_password',
       name: overrides?.name ?? 'Test User',
-      role: overrides?.role || UserRole.user,
       baseCurrencyId: overrides?.baseCurrencyId || 'currency_vnd',
       settings: null,
-      deletedAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+
+      created: new Date(),
+      modified: new Date(),
     };
   },
 };

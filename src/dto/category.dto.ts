@@ -1,7 +1,7 @@
 import { CategoryType } from '@server/generated';
 import { t } from 'elysia';
 import { z } from 'zod';
-import { createArrayPreprocess, DeleteResponseDto } from './common.dto';
+import { createArrayPreprocess } from './common.dto';
 
 export const UpsertCategoryDto = z.object({
   id: z.string().optional(),
@@ -14,7 +14,6 @@ export const UpsertCategoryDto = z.object({
 
 export const ListCategoriesQueryDto = z.object({
   type: createArrayPreprocess(z.enum(CategoryType)),
-  includeDeleted: z.boolean().default(false).optional(),
 });
 
 export type IUpsertCategoryDto = z.infer<typeof UpsertCategoryDto>;
@@ -53,9 +52,6 @@ export const CategoryListResponseDto = t.NoValidate(
   }),
 );
 
-export const CategoryDeleteResponseDto = DeleteResponseDto;
-
 export type CategoryResponse = typeof CategoryDto.static;
 export type CategoryTreeResponse = typeof CategoryTreeDto.static;
 export type CategoryListResponse = typeof CategoryListResponseDto.static;
-export type CategoryDeleteResponse = typeof CategoryDeleteResponseDto.static;

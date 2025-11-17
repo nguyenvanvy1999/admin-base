@@ -18,7 +18,7 @@ type ListAccountsQuery = {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'name' | 'createdAt' | 'balance';
+  sortBy?: 'name' | 'created' | 'balance';
   sortOrder?: 'asc' | 'desc';
 };
 
@@ -28,7 +28,7 @@ export const useAccountsQuery = createQueryHook<
   {
     page?: number;
     limit?: number;
-    sortBy?: 'name' | 'createdAt' | 'balance';
+    sortBy?: 'name' | 'created' | 'balance';
     sortOrder?: 'asc' | 'desc';
   },
   ListAccountsQuery,

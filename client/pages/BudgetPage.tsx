@@ -10,7 +10,6 @@ import { PageContainer } from '@client/components/PageContainer';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateBudgetMutation,
-  useDeleteBudgetMutation,
   useDeleteManyBudgetsMutation,
   useUpdateBudgetMutation,
 } from '@client/hooks/mutations/useBudgetMutations';
@@ -44,11 +43,11 @@ const BudgetPage = () => {
   const formRef = useRef<FormComponentRef>(null);
 
   const paginationSorting = usePaginationSorting<
-    'name' | 'amount' | 'period' | 'startDate' | 'createdAt'
+    'name' | 'amount' | 'period' | 'startDate' | 'created'
   >({
     defaultPage: 1,
     defaultLimit: 20,
-    defaultSortBy: 'createdAt',
+    defaultSortBy: 'created',
     defaultSortOrder: 'desc',
   });
 
@@ -68,7 +67,6 @@ const BudgetPage = () => {
 
   const createMutation = useCreateBudgetMutation();
   const updateMutation = useUpdateBudgetMutation();
-  const deleteMutation = useDeleteBudgetMutation();
   const deleteManyMutation = useDeleteManyBudgetsMutation();
 
   const handleSubmitForm = async (
@@ -92,7 +90,7 @@ const BudgetPage = () => {
   };
 
   const handleConfirmDelete = async () => {
-    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
+    await deleteHandler.handleConfirmDeleteMany(deleteManyMutation.mutateAsync);
   };
 
   const handleConfirmDeleteMany = async () => {
@@ -106,7 +104,6 @@ const BudgetPage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending ||
     deleteManyMutation.isPending;
 
   return (
@@ -202,7 +199,7 @@ const BudgetPage = () => {
           totalRecords={data?.pagination?.total}
           sorting={paginationSorting.sorting}
           onSortingChange={(updater) =>
-            paginationSorting.setSorting(updater, 'createdAt')
+            paginationSorting.setSorting(updater, 'created')
           }
           selectedRecords={deleteHandler.selectedRecords}
           onSelectedRecordsChange={deleteHandler.setSelectedRecords}

@@ -1,6 +1,6 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
+import type { ActionRes } from '@server/dto/common.dto';
 import type {
-  EntityDeleteResponse,
   EntityListResponse,
   EntityResponse,
   IUpsertEntityDto,
@@ -29,14 +29,8 @@ export class EntityService extends ServiceBase {
     return this.post<EntityResponse>(data);
   }
 
-  deleteEntity(entityId: string): Promise<EntityDeleteResponse> {
-    return this.delete<EntityDeleteResponse>({
-      endpoint: entityId,
-    });
-  }
-
-  deleteManyEntities(ids: string[]): Promise<EntityDeleteResponse> {
-    return this.post<EntityDeleteResponse>(
+  deleteManyEntities(ids: string[]): Promise<ActionRes> {
+    return this.post<ActionRes>(
       { ids },
       {
         endpoint: 'delete-many',

@@ -5,8 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 type ServiceWithCRUD<TUpsertDto, TResponse, TDeleteResponse> = {
   create: (data: Omit<TUpsertDto, 'id'>) => Promise<TResponse>;
   update: (data: TUpsertDto) => Promise<TResponse>;
-  delete: (id: string) => Promise<TDeleteResponse>;
-  deleteMany?: (ids: string[]) => Promise<TDeleteResponse>;
+  deleteMany: (ids: string[]) => Promise<TDeleteResponse>;
 };
 
 type CreateMutationHooksOptions = {
@@ -14,20 +13,17 @@ type CreateMutationHooksOptions = {
   successMessages?: {
     create?: string;
     update?: string;
-    delete?: string;
     deleteMany?: string;
   };
   errorMessages?: {
     create?: string;
     update?: string;
-    delete?: string;
     deleteMany?: string;
   };
   invalidateKeys?: string[][];
   onSuccess?: {
     create?: () => void | Promise<void>;
     update?: () => void | Promise<void>;
-    delete?: () => void | Promise<void>;
     deleteMany?: () => void | Promise<void>;
   };
 };
@@ -114,12 +110,12 @@ export function createMutationHooks<
       });
     };
 
-    const useDeleteMutation = () => {
+    const useDeleteManyMutation = () => {
       const queryClient = useQueryClient();
 
       return useMutation({
-        mutationFn: (id: string) => {
-          return service.delete(id);
+        mutationFn: (ids: string[]) => {
+          return service.deleteMany(ids);
         },
         onSuccess: async () => {
           for (const key of allInvalidateKeys) {
@@ -127,10 +123,10 @@ export function createMutationHooks<
               queryKey: Array.isArray(key) ? key : [key],
             });
           }
-          if (successMessages.delete) {
-            toast.success(successMessages.delete);
+          if (successMessages.deleteMany) {
+            toast.success(successMessages.deleteMany);
           }
-          await onSuccessCallbacks.delete?.();
+          await onSuccessCallbacks.deleteMany?.();
         },
         onError: (error: Error & { code?: string; message?: string }) => {
           const errorCode = error.code || 'ise';
@@ -138,51 +134,17 @@ export function createMutationHooks<
           const errorMessage =
             (i18n.exists(i18nKey) ? i18n.t(i18nKey as any) : null) ||
             error.message ||
-            errorMessages.delete ||
+            errorMessages.deleteMany ||
             'Failed to delete. Please try again.';
           toast.error(errorMessage);
         },
       });
     };
 
-    const useDeleteManyMutation = service.deleteMany
-      ? () => {
-          const queryClient = useQueryClient();
-
-          return useMutation({
-            mutationFn: (ids: string[]) => {
-              return service.deleteMany!(ids);
-            },
-            onSuccess: async () => {
-              for (const key of allInvalidateKeys) {
-                await queryClient.invalidateQueries({
-                  queryKey: Array.isArray(key) ? key : [key],
-                });
-              }
-              if (successMessages.deleteMany) {
-                toast.success(successMessages.deleteMany);
-              }
-              await onSuccessCallbacks.deleteMany?.();
-            },
-            onError: (error: Error & { code?: string; message?: string }) => {
-              const errorCode = error.code || 'ise';
-              const i18nKey = `api.${errorCode.toLowerCase()}`;
-              const errorMessage =
-                (i18n.exists(i18nKey) ? i18n.t(i18nKey as any) : null) ||
-                error.message ||
-                errorMessages.deleteMany ||
-                'Failed to delete. Please try again.';
-              toast.error(errorMessage);
-            },
-          });
-        }
-      : undefined;
-
     return {
       useCreateMutation,
       useUpdateMutation,
-      useDeleteMutation,
-      ...(useDeleteManyMutation && { useDeleteManyMutation }),
+      useDeleteManyMutation,
     };
   };
 }

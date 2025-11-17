@@ -4,8 +4,6 @@ import { z } from 'zod';
 import {
   createArrayPreprocess,
   createListQueryDto,
-  DeleteManyDto,
-  DeleteResponseDto,
   PaginationDto,
 } from './common.dto';
 
@@ -25,7 +23,7 @@ export const ListBudgetsQueryDto = createListQueryDto({
   search: z.string().optional(),
   period: createArrayPreprocess(z.nativeEnum(BudgetPeriod)),
   sortBy: z
-    .enum(['name', 'amount', 'period', 'startDate', 'createdAt'])
+    .enum(['name', 'amount', 'period', 'startDate', 'created'])
     .optional(),
 });
 
@@ -33,8 +31,6 @@ export const BudgetPeriodQueryDto = z.object({
   startDate: z.iso.datetime().optional(),
   endDate: z.iso.datetime().optional(),
 });
-
-export const DeleteManyBudgetsDto = DeleteManyDto;
 
 export type IUpsertBudgetDto = z.infer<typeof UpsertBudgetDto>;
 export type IListBudgetsQueryDto = z.infer<typeof ListBudgetsQueryDto>;
@@ -51,8 +47,8 @@ export const BudgetDto = t.NoValidate(
     carryOver: t.Boolean(),
     accountIds: t.Array(t.String()),
     categoryIds: t.Array(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
   }),
 );
 
@@ -70,8 +66,8 @@ export const BudgetPeriodDto = t.NoValidate(
     periodStartDate: t.String(),
     periodEndDate: t.String(),
     carriedOverAmount: t.String(),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
   }),
 );
 
@@ -87,8 +83,8 @@ export const BudgetPeriodDetailDto = t.NoValidate(
     spentAmount: t.String(),
     remainingAmount: t.String(),
     isOverBudget: t.Boolean(),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
   }),
 );
 
@@ -98,11 +94,8 @@ export const BudgetPeriodListResponseDto = t.NoValidate(
   }),
 );
 
-export const BudgetDeleteResponseDto = DeleteResponseDto;
-
 export type BudgetResponse = typeof BudgetDto.static;
 export type BudgetListResponse = typeof BudgetListResponseDto.static;
 export type BudgetPeriodDetailResponse = typeof BudgetPeriodDetailDto.static;
 export type BudgetPeriodListResponse =
   typeof BudgetPeriodListResponseDto.static;
-export type BudgetDeleteResponse = typeof BudgetDeleteResponseDto.static;

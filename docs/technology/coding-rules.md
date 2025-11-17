@@ -73,14 +73,14 @@ const token = localStorage.getItem(ACCESS_TOKEN_KEY);
 
 ### Backend
 
-| Type           | Pattern                 | Example                  |
-|----------------|-------------------------|--------------------------|
-| Controllers    | `[name].controller.ts`  | `user.controller.ts`     |
-| Services       | `[Name]Service.ts`      | `UserService.ts`         |
-| DTOs           | `[name].dto.ts`         | `user.dto.ts`            |
-| Constants      | `[name].ts`             | `currency.ts`            |
-| Macros         | `[name].ts`             | `auth.ts`                |
-| Middlewares    | `[name]-middleware.ts`  | `error-middleware.ts`    |
+| Type        | Pattern                | Example               |
+|-------------|------------------------|-----------------------|
+| Controllers | `[name].controller.ts` | `user.controller.ts`  |
+| Services    | `[Name]Service.ts`     | `UserService.ts`      |
+| DTOs        | `[name].dto.ts`        | `user.dto.ts`         |
+| Constants   | `[name].ts`            | `currency.ts`         |
+| Macros      | `[name].ts`            | `auth.ts`             |
+| Middlewares | `[name]-middleware.ts` | `error-middleware.ts` |
 
 ### Frontend
 
@@ -92,7 +92,7 @@ const token = localStorage.getItem(ACCESS_TOKEN_KEY);
 | Mutation Hooks | `use[Name]Mutations.ts` | `useAccountMutations.ts` |
 | Types          | `[name].ts`             | `account.ts`             |
 | Stores         | `[name].ts`             | `user.ts`                |
-| Services       | `[Name]Service.ts`       | `AccountService.ts`      |
+| Services       | `[Name]Service.ts`      | `AccountService.ts`      |
 
 ## Code Comments
 
@@ -185,8 +185,8 @@ const isValid = await Bun.password.verify(password, hashed, "bcrypt");
 
 1. **Schema Management**: Tất cả models phải được định nghĩa trong `prisma/schema.prisma`
 2. **Migrations**:
-   - Tạo migration: `bun run db:migrate`
-   - Generate client: `bun run db:generate`
+  - Tạo migration: `bun run db:migrate`
+  - Generate client: `bun run db:generate`
 3. **Indexes**: Thêm indexes cho các trường thường query (userId, date, type, etc.)
 
 ## Testing

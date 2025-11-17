@@ -4,23 +4,23 @@ import { appEnv } from '@server/configs/env';
 const algorithm = 'aes-256-cbc';
 
 export class EncryptService {
-  private static hexToBuffer(hex: string): Buffer {
+  private hexToBuffer(hex: string): Buffer {
     const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
     return Buffer.from(clean, 'hex');
   }
 
-  private static getKeyAndIv(): { key: Buffer; iv: Buffer } {
+  private getKeyAndIv(): { key: Buffer; iv: Buffer } {
     const encryptKey = appEnv.ENCRYPT_KEY;
     const encryptIv = appEnv.ENCRYPT_IV;
-    const key = EncryptService.hexToBuffer(encryptKey);
-    const iv = EncryptService.hexToBuffer(encryptIv);
+    const key = this.hexToBuffer(encryptKey);
+    const iv = this.hexToBuffer(encryptIv);
     return { key, iv };
   }
 
-  static aes256Encrypt(
+  aes256Encrypt(
     data: string | Record<string, any> | Record<string, any>[],
   ): string {
-    const { key, iv } = EncryptService.getKeyAndIv();
+    const { key, iv } = this.getKeyAndIv();
     const plaintext = typeof data === 'string' ? data : JSON.stringify(data);
     const cipher = createCipheriv(algorithm, key, iv);
     const encrypted = Buffer.concat([
@@ -30,8 +30,8 @@ export class EncryptService {
     return encrypted.toString('base64');
   }
 
-  static aes256Decrypt<T>(encrypted: string): T {
-    const { key, iv } = EncryptService.getKeyAndIv();
+  aes256Decrypt<T>(encrypted: string): T {
+    const { key, iv } = this.getKeyAndIv();
     const decipher = createDecipheriv(algorithm, key, iv);
     const decrypted = Buffer.concat([
       decipher.update(Buffer.from(encrypted, 'base64')),

@@ -6,9 +6,9 @@ import {
   TransactionType,
 } from '../generated/prisma/enums';
 import {
+  CurrencyDto,
   createArrayPreprocess,
   createListQueryDto,
-  DeleteResponseDto,
   PaginationDto,
 } from './common.dto';
 
@@ -109,7 +109,10 @@ export const ListTransactionsQueryDto = createListQueryDto({
   entityIds: createArrayPreprocess(z.string()),
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
-  sortBy: z.enum(['date', 'amount', 'type', 'accountId']).optional(),
+  sortBy: z
+    .enum(['date', 'amount', 'type', 'accountId'])
+    .optional()
+    .default('date'),
 });
 
 export type IUpsertTransaction = z.infer<typeof UpsertTransactionDto>;
@@ -126,22 +129,11 @@ export type ILoanTransaction = z.infer<
 >;
 export type IBatchTransactionsDto = z.infer<typeof BatchTransactionsDto>;
 
-const transactionCurrencyShape = {
-  id: t.String(),
-  code: t.String(),
-  name: t.String(),
-  symbol: t.Nullable(t.String()),
-} as const;
-
-export const TransactionCurrencyDto = t.NoValidate(
-  t.Object(transactionCurrencyShape),
-);
-
 export const TransactionAccountDto = t.NoValidate(
   t.Object({
     id: t.String(),
     name: t.String(),
-    currency: TransactionCurrencyDto,
+    currency: CurrencyDto,
   }),
 );
 
@@ -197,20 +189,20 @@ export const TransactionDetailDto = t.NoValidate(
     note: t.Nullable(t.String()),
     receiptUrl: t.Nullable(t.String()),
     metadata: t.Nullable(t.Any()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
     account: TransactionAccountDto,
     toAccount: t.Nullable(TransactionAccountDto),
     category: t.Nullable(TransactionCategoryDto),
     entity: t.Nullable(TransactionEntityDto),
     event: t.Nullable(TransactionEventDto),
-    currency: t.Nullable(TransactionCurrencyDto),
+    currency: t.Nullable(CurrencyDto),
   }),
 );
 
 export const TransactionSummaryDto = t.NoValidate(
   t.Object({
-    currency: TransactionCurrencyDto,
+    currency: CurrencyDto,
     totalIncome: t.Number(),
     totalExpense: t.Number(),
   }),
@@ -223,8 +215,6 @@ export const TransactionListResponseDto = t.NoValidate(
     summary: t.Array(TransactionSummaryDto),
   }),
 );
-
-export const TransactionDeleteResponseDto = DeleteResponseDto;
 
 export const BatchTransactionResultDto = t.NoValidate(
   t.Object({
@@ -247,7 +237,5 @@ export const BatchTransactionsResponseDto = t.NoValidate(
 
 export type TransactionDetail = typeof TransactionDetailDto.static;
 export type TransactionListResponse = typeof TransactionListResponseDto.static;
-export type TransactionDeleteResponse =
-  typeof TransactionDeleteResponseDto.static;
 export type BatchTransactionsResponse =
   typeof BatchTransactionsResponseDto.static;

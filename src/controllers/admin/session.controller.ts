@@ -1,4 +1,3 @@
-import { prisma } from '@server/configs/db';
 import { anyOf, authorize, has } from '@server/services/auth/authorization';
 import { sessionService } from '@server/services/auth/session.service';
 import type { AppAuthMeta } from '@server/share';
@@ -44,29 +43,8 @@ export const sessionController = new Elysia<'sessions', AppAuthMeta>({
   .get(
     '/statistics',
     async () => {
-      const now = new Date();
-
-      const [totalSessions, activeSessions, revokedSessions] =
-        await Promise.all([
-          prisma.session.count({}),
-          prisma.session.count({
-            where: {
-              expired: { gt: now },
-              revoked: false,
-            },
-          }),
-          prisma.session.count({
-            where: {
-              revoked: true,
-            },
-          }),
-        ]);
-
-      return castToRes({
-        totalSessions,
-        activeSessions,
-        revokedSessions,
-      });
+      const result = await sessionService.getStatistics();
+      return castToRes(result);
     },
     {
       response: {

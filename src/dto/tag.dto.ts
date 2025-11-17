@@ -1,11 +1,6 @@
 import { t } from 'elysia';
 import { z } from 'zod';
-import {
-  createListQueryDto,
-  DeleteManyDto,
-  DeleteResponseDto,
-  PaginationDto,
-} from './common.dto';
+import { createListQueryDto, PaginationDto } from './common.dto';
 
 export const UpsertTagDto = z.object({
   id: z.string().optional(),
@@ -15,10 +10,8 @@ export const UpsertTagDto = z.object({
 
 export const ListTagsQueryDto = createListQueryDto({
   search: z.string().optional(),
-  sortBy: z.enum(['name', 'createdAt']).optional(),
+  sortBy: z.enum(['name', 'created']).optional(),
 });
-
-export const DeleteManyTagsDto = DeleteManyDto;
 
 export type IUpsertTagDto = z.infer<typeof UpsertTagDto>;
 export type IListTagsQueryDto = z.infer<typeof ListTagsQueryDto>;
@@ -28,8 +21,8 @@ export const TagDto = t.NoValidate(
     id: t.String(),
     name: t.String(),
     description: t.Nullable(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    created: t.String(),
+    modified: t.String(),
   }),
 );
 
@@ -40,8 +33,5 @@ export const TagListResponseDto = t.NoValidate(
   }),
 );
 
-export const TagDeleteResponseDto = DeleteResponseDto;
-
 export type TagResponse = typeof TagDto.static;
 export type TagListResponse = typeof TagListResponseDto.static;
-export type TagDeleteResponse = typeof TagDeleteResponseDto.static;

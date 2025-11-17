@@ -1,11 +1,11 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
+import { ActionResDto, DeleteManyDto } from '../dto/common.dto';
 import {
   InvestmentValuationDto,
   InvestmentValuationListResponseDto,
   ListInvestmentValuationsQueryDto,
   UpsertInvestmentValuationDto,
-  ValuationDeleteResponseDto,
 } from '../dto/valuation.dto';
 import { investmentValuationService } from '../services/valuation.service';
 import { castToRes, ResWrapper } from '../share';
@@ -100,27 +100,28 @@ const valuationController = new Elysia().group(
           },
         },
       )
-      .delete(
-        '/:valuationId',
-        async ({ currentUser, params }) => {
+      .post(
+        '/delete-many',
+        async ({ currentUser, params, body }) => {
           return castToRes(
-            await investmentValuationService.deleteValuation(
+            await investmentValuationService.deleteManyValuations(
               currentUser.id,
               params.id,
-              params.valuationId,
+              body.ids,
             ),
           );
         },
         {
           detail: {
             ...VALUATION_DETAIL,
-            summary: 'Delete investment valuation',
+            summary: 'Delete many investment valuations',
             description:
-              'Delete a valuation snapshot by its ID. This action does not affect account balances.',
+              'Delete multiple valuation snapshots by their IDs. This action does not affect account balances.',
           },
-          params: t.Object({ id: t.String(), valuationId: t.String() }),
+          params: t.Object({ id: t.String() }),
+          body: DeleteManyDto,
           response: {
-            200: ResWrapper(ValuationDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

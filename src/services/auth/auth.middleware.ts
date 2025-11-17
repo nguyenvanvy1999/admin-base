@@ -14,8 +14,8 @@ export const userResSelect = {
   name: true,
   baseCurrencyId: true,
   settings: true,
-  createdAt: true,
-  updatedAt: true,
+  created: true,
+  modified: true,
   roles: { select: { roleId: true } },
 } as const;
 
@@ -65,8 +65,8 @@ export const authCheck = (app: Elysia) =>
         sessionId: data.sessionId,
         username: user.username,
         name: user.name,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
+        created: user.created,
+        modified: user.modified,
         baseCurrencyId: user.baseCurrencyId,
         settings: user.settings,
         permissions: await userUtilService.getPermissions(user),

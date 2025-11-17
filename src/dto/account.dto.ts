@@ -5,7 +5,6 @@ import {
   CurrencyDto,
   createArrayPreprocess,
   createListQueryDto,
-  DeleteResponseDto,
   PaginationDto,
 } from './common.dto';
 
@@ -26,13 +25,11 @@ export const ListAccountsQueryDto = createListQueryDto({
   type: createArrayPreprocess(z.enum(AccountType)),
   currencyId: createArrayPreprocess(z.string()),
   search: z.string().optional(),
-  sortBy: z.enum(['name', 'createdAt', 'balance']).optional(),
+  sortBy: z.enum(['name', 'created', 'balance']).optional(),
 });
 
 export type IUpsertAccountDto = z.infer<typeof UpsertAccountDto>;
 export type IListAccountsQueryDto = z.infer<typeof ListAccountsQueryDto>;
-
-export const AccountCurrencyDto = CurrencyDto;
 
 export const AccountDto = t.NoValidate(
   t.Object({
@@ -46,15 +43,15 @@ export const AccountDto = t.NoValidate(
     paymentDay: t.Nullable(t.Integer()),
     notifyDaysBefore: t.Nullable(t.Integer()),
     meta: t.Nullable(t.Any()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
-    currency: AccountCurrencyDto,
+    created: t.String(),
+    modified: t.String(),
+    currency: CurrencyDto,
   }),
 );
 
 export const AccountSummaryDto = t.NoValidate(
   t.Object({
-    currency: AccountCurrencyDto,
+    currency: CurrencyDto,
     totalBalance: t.Number(),
   }),
 );
@@ -67,9 +64,6 @@ export const AccountListResponseDto = t.NoValidate(
   }),
 );
 
-export const AccountDeleteResponseDto = DeleteResponseDto;
-
 export type AccountResponse = typeof AccountDto.static;
 export type AccountSummary = typeof AccountSummaryDto.static;
 export type AccountListResponse = typeof AccountListResponseDto.static;
-export type AccountDeleteResponse = typeof AccountDeleteResponseDto.static;

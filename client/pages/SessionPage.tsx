@@ -66,11 +66,11 @@ const SessionPage = ({ isAdminPage = false }: SessionPageProps = {}) => {
   }
 
   const paginationSorting = usePaginationSorting<
-    'createdAt' | 'expired' | 'revoked'
+    'created' | 'expired' | 'revoked'
   >({
     defaultPage: 1,
     defaultLimit: 20,
-    defaultSortBy: 'createdAt',
+    defaultSortBy: 'created',
     defaultSortOrder: 'desc',
   });
 
@@ -220,7 +220,7 @@ const SessionPage = ({ isAdminPage = false }: SessionPageProps = {}) => {
         totalRecords={data?.pagination?.total}
         sorting={paginationSorting.sorting}
         onSortingChange={(updater) =>
-          paginationSorting.setSorting(updater, 'createdAt')
+          paginationSorting.setSorting(updater, 'created')
         }
         showUserColumn={showAdminFeatures}
       />

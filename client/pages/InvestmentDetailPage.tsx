@@ -5,9 +5,9 @@ import { DataTable, type DataTableColumn } from '@client/components/DataTable';
 import {
   useCreateInvestmentContributionMutation,
   useCreateInvestmentTradeMutation,
-  useDeleteInvestmentContributionMutation,
-  useDeleteInvestmentTradeMutation,
-  useDeleteInvestmentValuationMutation,
+  useDeleteManyInvestmentContributionsMutation,
+  useDeleteManyInvestmentTradesMutation,
+  useDeleteManyInvestmentValuationsMutation,
   useUpsertInvestmentValuationMutation,
 } from '@client/hooks/mutations/useInvestmentMutations';
 import {
@@ -101,9 +101,11 @@ const InvestmentDetailPage = () => {
   const tradeMutation = useCreateInvestmentTradeMutation();
   const contributionMutation = useCreateInvestmentContributionMutation();
   const valuationMutation = useUpsertInvestmentValuationMutation();
-  const deleteTradeMutation = useDeleteInvestmentTradeMutation();
-  const deleteContributionMutation = useDeleteInvestmentContributionMutation();
-  const deleteValuationMutation = useDeleteInvestmentValuationMutation();
+  const deleteManyTradesMutation = useDeleteManyInvestmentTradesMutation();
+  const deleteManyContributionsMutation =
+    useDeleteManyInvestmentContributionsMutation();
+  const deleteManyValuationsMutation =
+    useDeleteManyInvestmentValuationsMutation();
 
   const [tradeToDelete, setTradeToDelete] =
     useState<InvestmentTradeResponse | null>(null);
@@ -164,9 +166,9 @@ const InvestmentDetailPage = () => {
   const handleConfirmDeleteTrade = async () => {
     if (tradeToDelete && investmentId) {
       try {
-        await deleteTradeMutation.mutateAsync({
+        await deleteManyTradesMutation.mutateAsync({
           investmentId,
-          tradeId: tradeToDelete.id,
+          tradeIds: [tradeToDelete.id],
         });
         setTradeToDelete(null);
       } catch {
@@ -178,9 +180,9 @@ const InvestmentDetailPage = () => {
   const handleConfirmDeleteContribution = async () => {
     if (contributionToDelete && investmentId) {
       try {
-        await deleteContributionMutation.mutateAsync({
+        await deleteManyContributionsMutation.mutateAsync({
           investmentId,
-          contributionId: contributionToDelete.id,
+          contributionIds: [contributionToDelete.id],
         });
         setContributionToDelete(null);
       } catch {
@@ -192,9 +194,9 @@ const InvestmentDetailPage = () => {
   const handleConfirmDeleteValuation = async () => {
     if (valuationToDelete && investmentId) {
       try {
-        await deleteValuationMutation.mutateAsync({
+        await deleteManyValuationsMutation.mutateAsync({
           investmentId,
-          valuationId: valuationToDelete.id,
+          valuationIds: [valuationToDelete.id],
         });
         setValuationToDelete(null);
       } catch {
@@ -385,9 +387,9 @@ const InvestmentDetailPage = () => {
     tradeMutation.isPending ||
     contributionMutation.isPending ||
     valuationMutation.isPending ||
-    deleteTradeMutation.isPending ||
-    deleteContributionMutation.isPending ||
-    deleteValuationMutation.isPending;
+    deleteManyTradesMutation.isPending ||
+    deleteManyContributionsMutation.isPending ||
+    deleteManyValuationsMutation.isPending;
 
   return (
     <Container fluid py="md">

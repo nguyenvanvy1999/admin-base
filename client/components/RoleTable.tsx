@@ -105,8 +105,8 @@ const RoleTable = ({
         },
       },
       {
-        accessor: 'createdAt',
-        title: 'roles.createdAt',
+        accessor: 'created',
+        title: 'roles.created',
       },
       {
         title: 'roles.actions',

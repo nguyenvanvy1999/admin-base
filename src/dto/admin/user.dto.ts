@@ -1,43 +1,40 @@
-import { UserRole } from '@server/generated';
 import { t } from 'elysia';
 import { z } from 'zod';
-import {
-  CurrencyDto,
-  createArrayPreprocess,
-  createListQueryDto,
-  PaginationDto,
-} from '../common.dto';
+import { CurrencyDto, createListQueryDto, PaginationDto } from '../common.dto';
 
 export const UpsertUserDto = z.object({
   id: z.string().optional(),
   username: z.string().min(1),
   password: z.string().min(6).optional(),
   name: z.string().optional(),
-  role: z.enum([UserRole.user, UserRole.admin]),
   baseCurrencyId: z.string().optional(),
 });
 
 export const ListUsersQueryDto = createListQueryDto({
   search: z.string().optional(),
-  role: createArrayPreprocess(z.enum([UserRole.user, UserRole.admin])),
-  sortBy: z.enum(['username', 'name', 'role', 'createdAt']).optional(),
+  sortBy: z.enum(['username', 'name', 'role', 'created']).optional(),
 });
 
 export type IUpsertUserDto = z.infer<typeof UpsertUserDto>;
 export type IListUsersQueryDto = z.infer<typeof ListUsersQueryDto>;
 
-export const UserCurrencyDto = CurrencyDto;
+export const UserRoleDto = t.NoValidate(
+  t.Object({
+    id: t.String(),
+    title: t.String(),
+  }),
+);
 
 export const UserResDto = t.NoValidate(
   t.Object({
     id: t.String(),
     username: t.String(),
     name: t.Nullable(t.String()),
-    role: t.Enum(UserRole),
     baseCurrencyId: t.Nullable(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
-    baseCurrency: t.Nullable(UserCurrencyDto),
+    created: t.String(),
+    modified: t.String(),
+    baseCurrency: t.Nullable(CurrencyDto),
+    roles: t.Array(UserRoleDto),
   }),
 );
 

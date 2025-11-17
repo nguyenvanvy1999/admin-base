@@ -6,7 +6,7 @@ export const envSchema = z.object({
   LOG_LEVEL: z
     .enum([LOG_LEVEL.DEBUG, LOG_LEVEL.INFO, LOG_LEVEL.WARNING, LOG_LEVEL.ERROR])
     .default(LOG_LEVEL.INFO),
-  POSTGRES_URL: z.string(),
+  POSTGRESQL_URI: z.string(),
 
   JWT_SECRET: z.string().default('secret'),
   JWT_ACCESS_TOKEN_EXPIRED: z.string().default('60 minutes'),

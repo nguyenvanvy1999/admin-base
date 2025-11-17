@@ -1,10 +1,10 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
 import type {
-  AccountDeleteResponse,
   AccountListResponse,
   AccountResponse,
   IUpsertAccountDto,
 } from '@server/dto/account.dto';
+import type { ActionRes } from '@server/dto/common.dto';
 import type { AccountType } from '@server/generated';
 
 export class AccountService extends ServiceBase {
@@ -18,7 +18,7 @@ export class AccountService extends ServiceBase {
     search?: string;
     page?: number;
     limit?: number;
-    sortBy?: 'name' | 'createdAt' | 'balance';
+    sortBy?: 'name' | 'created' | 'balance';
     sortOrder?: 'asc' | 'desc';
   }): Promise<AccountListResponse> {
     return this.get<AccountListResponse>({
@@ -34,10 +34,13 @@ export class AccountService extends ServiceBase {
     return this.post<AccountResponse>(data);
   }
 
-  deleteAccount(accountId: string): Promise<AccountDeleteResponse> {
-    return this.delete<AccountDeleteResponse>({
-      endpoint: accountId,
-    });
+  deleteManyAccounts(ids: string[]): Promise<ActionRes> {
+    return this.post<ActionRes>(
+      { ids },
+      {
+        endpoint: 'delete-many',
+      },
+    );
   }
 }
 

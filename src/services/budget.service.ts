@@ -7,10 +7,13 @@ import type {
 } from '@server/generated';
 import { BudgetPeriod, TransactionType } from '@server/generated';
 import {
+  DB_PREFIX,
   dateToIsoString,
   dateToNullableIsoString,
   decimalToString,
   ErrorCode,
+  type IdUtil,
+  idUtil,
   throwAppError,
 } from '@server/share';
 import Decimal from 'decimal.js';
@@ -40,8 +43,8 @@ const mapBudget = (budget: BudgetRecord) => ({
   carryOver: budget.carryOver,
   accountIds: budget.accounts.map((a) => a.accountId),
   categoryIds: budget.categories.map((c) => c.categoryId),
-  createdAt: dateToIsoString(budget.createdAt),
-  updatedAt: dateToIsoString(budget.updatedAt),
+  created: dateToIsoString(budget.created),
+  modified: dateToIsoString(budget.modified),
 });
 
 export class BudgetService {
@@ -49,9 +52,11 @@ export class BudgetService {
     private readonly deps: {
       db: IDb;
       currencyConversionService: CurrencyConversionService;
+      idUtil: IdUtil;
     } = {
       db: prisma,
       currencyConversionService: currencyConversionService,
+      idUtil,
     },
   ) {}
 
@@ -71,7 +76,6 @@ export class BudgetService {
       where: {
         id: budgetId,
         userId,
-        deletedAt: null,
       },
       select: BUDGET_SELECT_MINIMAL,
     });
@@ -91,7 +95,6 @@ export class BudgetService {
         where: {
           id: { in: accountIds },
           userId,
-          deletedAt: null,
         },
         select: { id: true },
       }),
@@ -99,7 +102,6 @@ export class BudgetService {
         where: {
           id: { in: categoryIds },
           userId,
-          deletedAt: null,
         },
         select: { id: true },
       }),
@@ -180,7 +182,6 @@ export class BudgetService {
       where: {
         id: budgetId,
         userId,
-        deletedAt: null,
       },
       select: {
         accounts: { select: { accountId: true } },
@@ -199,7 +200,7 @@ export class BudgetService {
     const transactions = await this.deps.db.transaction.findMany({
       where: {
         userId,
-        deletedAt: null,
+
         type: TransactionType.expense,
         accountId: { in: accountIds },
         categoryId: { in: categoryIds },
@@ -266,7 +267,6 @@ export class BudgetService {
       where: {
         id: budgetId,
         userId,
-        deletedAt: null,
       },
       select: BUDGET_SELECT_MINIMAL,
     });
@@ -369,6 +369,7 @@ export class BudgetService {
     } else {
       const budget = await this.deps.db.budget.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.BUDGET),
           userId,
           name: data.name,
           amount: data.amount,
@@ -398,7 +399,6 @@ export class BudgetService {
       where: {
         id: budgetId,
         userId,
-        deletedAt: null,
       },
       select: BUDGET_SELECT_FULL,
     });
@@ -410,19 +410,18 @@ export class BudgetService {
     return mapBudget(budget);
   }
 
-  async listBudgets(userId: string, query: IListBudgetsQueryDto = {}) {
+  async listBudgets(userId: string, query: IListBudgetsQueryDto) {
     const {
       period,
       search,
-      page = 1,
-      limit = 20,
-      sortBy = 'createdAt',
+      page,
+      limit,
+      sortBy = 'created',
       sortOrder = 'desc',
     } = query;
 
     const where: BudgetWhereInput = {
       userId,
-      deletedAt: null,
     };
 
     if (period && period.length > 0) {
@@ -445,8 +444,8 @@ export class BudgetService {
       orderBy.period = sortOrder;
     } else if (sortBy === 'startDate') {
       orderBy.startDate = sortOrder;
-    } else if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
+    } else if (sortBy === 'created') {
+      orderBy.created = sortOrder;
     }
 
     const skip = (page - 1) * limit;
@@ -473,17 +472,33 @@ export class BudgetService {
     };
   }
 
-  async deleteBudget(userId: string, budgetId: string) {
-    await this.validateBudgetOwnership(userId, budgetId);
+  async deleteManyBudgets(userId: string, ids: string[]) {
+    const budgets = await this.deps.db.budget.findMany({
+      where: {
+        id: { in: ids },
+        userId,
+      },
+      select: BUDGET_SELECT_MINIMAL,
+    });
 
-    await this.deps.db.budget.update({
-      where: { id: budgetId },
-      data: {
-        deletedAt: new Date(),
+    if (budgets.length !== ids.length) {
+      throwAppError(
+        ErrorCode.BUDGET_NOT_FOUND,
+        'Some budgets were not found or do not belong to you',
+      );
+    }
+
+    await this.deps.db.budget.deleteMany({
+      where: {
+        id: { in: ids },
+        userId,
       },
     });
 
-    return { success: true, message: 'Budget deleted successfully' };
+    return {
+      success: true,
+      message: `${ids.length} budget(s) deleted successfully`,
+    };
   }
 
   async getBudgetPeriods(
@@ -497,7 +512,6 @@ export class BudgetService {
       where: {
         id: budgetId,
         userId,
-        deletedAt: null,
       },
       select: BUDGET_SELECT_MINIMAL,
     });
@@ -532,8 +546,8 @@ export class BudgetService {
       spentAmount: string;
       remainingAmount: string;
       isOverBudget: boolean;
-      createdAt: string;
-      updatedAt: string;
+      created: string;
+      modified: string;
     }> = [];
 
     let currentStart = new Date(actualStartDate);
@@ -572,6 +586,7 @@ export class BudgetService {
         // Always create a period record if it doesn't exist
         existingPeriod = await this.deps.db.budgetPeriodRecord.create({
           data: {
+            id: this.deps.idUtil.dbId(DB_PREFIX.BUDGET_PERIOD),
             budgetId,
             periodStartDate: currentStart,
             periodEndDate,
@@ -603,8 +618,8 @@ export class BudgetService {
         spentAmount: decimalToString(spent),
         remainingAmount: decimalToString(remaining),
         isOverBudget,
-        createdAt: dateToIsoString(existingPeriod.createdAt),
-        updatedAt: dateToIsoString(existingPeriod.updatedAt),
+        created: dateToIsoString(existingPeriod.created),
+        modified: dateToIsoString(existingPeriod.modified),
       });
 
       currentStart = this.calculateNextPeriodStart(budget.period, currentStart);
@@ -638,7 +653,6 @@ export class BudgetService {
       where: {
         id: budgetId,
         userId,
-        deletedAt: null,
       },
       select: BUDGET_SELECT_MINIMAL,
     });
@@ -671,8 +685,8 @@ export class BudgetService {
       spentAmount: decimalToString(spent),
       remainingAmount: decimalToString(remaining),
       isOverBudget,
-      createdAt: dateToIsoString(period.createdAt),
-      updatedAt: dateToIsoString(period.updatedAt),
+      created: dateToIsoString(period.created),
+      modified: dateToIsoString(period.modified),
     };
   }
 }

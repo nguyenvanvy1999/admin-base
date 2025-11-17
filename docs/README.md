@@ -4,13 +4,15 @@ Chào mừng đến với tài liệu dự án FinTrack - Ứng dụng Quản L�
 
 ## Tổng Quan
 
-FinTrack là một ứng dụng web fullstack hiện đại được xây dựng bằng TypeScript, sử dụng Elysia.js cho backend và React cho frontend, với end-to-end type safety thông qua Eden Treaty.
+FinTrack là một ứng dụng web fullstack hiện đại được xây dựng bằng TypeScript, sử dụng Elysia.js cho backend và React
+cho frontend, với end-to-end type safety thông qua Eden Treaty.
 
 ## Cấu Trúc Tài Liệu
 
 Tài liệu được tổ chức thành 3 phần chính:
 
 ### 📚 [Tài Liệu Công Nghệ](./technology/)
+
 Tài liệu về công nghệ, kiến trúc và quy tắc phát triển:
 
 - [**Tech Stack**](./technology/tech-stack.md) - Danh sách công nghệ và công cụ sử dụng
@@ -19,6 +21,7 @@ Tài liệu về công nghệ, kiến trúc và quy tắc phát triển:
 - [**Hướng Dẫn Phát Triển**](./technology/development-guide.md) - Common tasks và troubleshooting
 
 ### 🎯 [Tài Liệu Dự Án](./project/)
+
 Tài liệu về ý tưởng, thiết kế và kế hoạch dự án:
 
 - [**Tổng Quan Dự Án**](./project/overview.md) - Giới thiệu dự án, tính năng và yêu cầu
@@ -27,6 +30,7 @@ Tài liệu về ý tưởng, thiết kế và kế hoạch dự án:
 - [**Roadmap**](./project/roadmap.md) - Kế hoạch triển khai và trạng thái implementation
 
 ### 👤 [Hướng Dẫn Sử Dụng](./user-guide/)
+
 Tài liệu hướng dẫn cho người dùng và developer:
 
 - [**Bắt Đầu Sử Dụng**](./user-guide/getting-started.md) - Cài đặt và cấu hình
@@ -86,5 +90,6 @@ Khi đóng góp vào dự án, vui lòng:
 
 ---
 
-**Lưu ý**: Tất cả code comments phải bằng tiếng Anh, nhưng documentation này được viết bằng tiếng Việt để dễ hiểu hơn cho team.
+**Lưu ý**: Tất cả code comments phải bằng tiếng Anh, nhưng documentation này được viết bằng tiếng Việt để dễ hiểu hơn
+cho team.
 

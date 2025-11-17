@@ -13,7 +13,7 @@ export class SessionService extends ServiceBase {
     userId?: string;
     page?: number;
     limit?: number;
-    sortBy?: 'createdAt' | 'expired' | 'revoked';
+    sortBy?: 'created' | 'expired' | 'revoked';
     sortOrder?: 'asc' | 'desc';
     revoked?: boolean;
   }): Promise<SessionListResponse> {

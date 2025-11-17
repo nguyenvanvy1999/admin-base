@@ -10,7 +10,6 @@ import { PageContainer } from '@client/components/PageContainer';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateEntityMutation,
-  useDeleteEntityMutation,
   useDeleteManyEntitiesMutation,
   useUpdateEntityMutation,
 } from '@client/hooks/mutations/useEntityMutations';
@@ -46,14 +45,12 @@ const EntityPage = () => {
   const { t } = useTranslation();
   const formRef = useRef<FormComponentRef>(null);
 
-  const paginationSorting = usePaginationSorting<'name' | 'type' | 'createdAt'>(
-    {
-      defaultPage: 1,
-      defaultLimit: 20,
-      defaultSortBy: 'createdAt',
-      defaultSortOrder: 'desc',
-    },
-  );
+  const paginationSorting = usePaginationSorting<'name' | 'type' | 'created'>({
+    defaultPage: 1,
+    defaultLimit: 20,
+    defaultSortBy: 'created',
+    defaultSortOrder: 'desc',
+  });
 
   const dialog = usePageDialog<EntityResponse>();
 
@@ -72,8 +69,7 @@ const EntityPage = () => {
 
   const createMutation = useCreateEntityMutation();
   const updateMutation = useUpdateEntityMutation();
-  const deleteMutation = useDeleteEntityMutation();
-  const deleteManyMutation = useDeleteManyEntitiesMutation!();
+  const deleteManyMutation = useDeleteManyEntitiesMutation();
 
   const handleSubmitForm = async (
     formData: IUpsertEntityDto,
@@ -96,7 +92,7 @@ const EntityPage = () => {
   };
 
   const handleConfirmDelete = async () => {
-    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
+    await deleteHandler.handleConfirmDelete(deleteManyMutation.mutateAsync);
   };
 
   const handleConfirmDeleteMany = async () => {
@@ -110,7 +106,6 @@ const EntityPage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending ||
     deleteManyMutation.isPending;
 
   return (
@@ -181,7 +176,7 @@ const EntityPage = () => {
         totalRecords={data?.pagination?.total}
         sorting={paginationSorting.sorting}
         onSortingChange={(updater) =>
-          paginationSorting.setSorting(updater, 'createdAt')
+          paginationSorting.setSorting(updater, 'created')
         }
         selectedRecords={deleteHandler.selectedRecords}
         onSelectedRecordsChange={deleteHandler.setSelectedRecords}

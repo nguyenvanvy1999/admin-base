@@ -11,7 +11,6 @@ import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateTagMutation,
   useDeleteManyTagsMutation,
-  useDeleteTagMutation,
   useUpdateTagMutation,
 } from '@client/hooks/mutations/useTagMutations';
 import {
@@ -41,10 +40,10 @@ const TagPage = () => {
   const { t } = useTranslation();
   const formRef = useRef<FormComponentRef>(null);
 
-  const paginationSorting = usePaginationSorting<'name' | 'createdAt'>({
+  const paginationSorting = usePaginationSorting<'name' | 'created'>({
     defaultPage: 1,
     defaultLimit: 20,
-    defaultSortBy: 'createdAt',
+    defaultSortBy: 'created',
     defaultSortOrder: 'desc',
   });
 
@@ -65,8 +64,7 @@ const TagPage = () => {
 
   const createMutation = useCreateTagMutation();
   const updateMutation = useUpdateTagMutation();
-  const deleteMutation = useDeleteTagMutation();
-  const deleteManyMutation = useDeleteManyTagsMutation!();
+  const deleteManyMutation = useDeleteManyTagsMutation();
 
   const handleSubmitForm = async (
     formData: IUpsertTagDto,
@@ -91,7 +89,7 @@ const TagPage = () => {
   };
 
   const handleConfirmDelete = async () => {
-    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
+    await deleteHandler.handleConfirmDelete(deleteManyMutation.mutateAsync);
   };
 
   const handleConfirmDeleteMany = async () => {
@@ -105,7 +103,6 @@ const TagPage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending ||
     deleteManyMutation.isPending;
 
   return (
@@ -153,7 +150,7 @@ const TagPage = () => {
         totalRecords={data?.pagination?.total}
         sorting={paginationSorting.sorting}
         onSortingChange={(updater) =>
-          paginationSorting.setSorting(updater, 'createdAt')
+          paginationSorting.setSorting(updater, 'created')
         }
         selectedRecords={deleteHandler.selectedRecords}
         onSelectedRecordsChange={deleteHandler.setSelectedRecords}

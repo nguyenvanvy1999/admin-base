@@ -9,7 +9,7 @@ import UserTable from '@client/components/UserTable';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateUserMutation,
-  useDeleteUserMutation,
+  useDeleteManyUsersMutation,
   useUpdateUserMutation,
 } from '@client/hooks/mutations/useUserMutations';
 import {
@@ -22,22 +22,19 @@ import { usePaginationSorting } from '@client/hooks/usePaginationSorting';
 import { usePermission } from '@client/hooks/usePermission';
 import { useZodForm } from '@client/hooks/useZodForm';
 import NotFoundPage from '@client/pages/NotFoundPage';
-import { Button, Group, MultiSelect, TextInput } from '@mantine/core';
+import { Button, Group, TextInput } from '@mantine/core';
 import type { IUpsertUserDto, UserResponse } from '@server/dto/admin/user.dto';
 import { ListUsersQueryDto } from '@server/dto/admin/user.dto';
-import { UserRole } from '@server/generated';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 const filterSchema = ListUsersQueryDto.pick({
   search: true,
-  role: true,
 });
 
 const defaultFilterValues: FilterFormValue = {
   search: '',
-  role: [],
 };
 
 const UserPage = () => {
@@ -60,11 +57,11 @@ const UserPage = () => {
   }
 
   const paginationSorting = usePaginationSorting<
-    'username' | 'name' | 'role' | 'createdAt'
+    'username' | 'name' | 'role' | 'created'
   >({
     defaultPage: 1,
     defaultLimit: 20,
-    defaultSortBy: 'createdAt',
+    defaultSortBy: 'created',
     defaultSortOrder: 'desc',
   });
 
@@ -85,7 +82,7 @@ const UserPage = () => {
 
   const createMutation = useCreateUserMutation();
   const updateMutation = useUpdateUserMutation();
-  const deleteMutation = useDeleteUserMutation();
+  const deleteManyMutation = useDeleteManyUsersMutation();
 
   const handleSubmitForm = async (formData: IUpsertUserDto) => {
     try {
@@ -101,7 +98,7 @@ const UserPage = () => {
   };
 
   const handleConfirmDelete = async () => {
-    await deleteHandler.handleConfirmDelete(deleteMutation.mutateAsync);
+    await deleteHandler.handleConfirmDeleteMany(deleteManyMutation.mutateAsync);
   };
 
   const handleSearch = () => {
@@ -111,7 +108,7 @@ const UserPage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending;
+    deleteManyMutation.isPending;
 
   return (
     <PageContainer
@@ -127,23 +124,6 @@ const UserPage = () => {
                   error={error}
                   style={{ flex: 1, maxWidth: '300px' }}
                   {...field}
-                />
-              )}
-            />
-            <ZodFormController
-              control={form.control}
-              name="role"
-              render={({ field, fieldState: { error } }) => (
-                <MultiSelect
-                  placeholder={t('users.rolePlaceholder')}
-                  error={error}
-                  data={[
-                    { value: UserRole.user, label: t('users.roleUser') },
-                    { value: UserRole.admin, label: t('users.roleAdmin') },
-                  ]}
-                  value={field.value || []}
-                  onChange={(value) => field.onChange(value as UserRole[])}
-                  style={{ maxWidth: '200px' }}
                 />
               )}
             />
@@ -176,7 +156,7 @@ const UserPage = () => {
         totalRecords={data?.pagination?.total}
         sorting={paginationSorting.sorting}
         onSortingChange={(updater) =>
-          paginationSorting.setSorting(updater, 'createdAt')
+          paginationSorting.setSorting(updater, 'created')
         }
       />
 

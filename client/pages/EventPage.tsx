@@ -10,7 +10,6 @@ import { PageContainer } from '@client/components/PageContainer';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateEventMutation,
-  useDeleteEventMutation,
   useDeleteManyEventsMutation,
   useUpdateEventMutation,
 } from '@client/hooks/mutations/useEventMutations';
@@ -41,8 +40,8 @@ const EventPage = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [sortBy, setSortBy] = useState<
-    'name' | 'startAt' | 'endAt' | 'createdAt'
-  >('createdAt');
+    'name' | 'startAt' | 'endAt' | 'created'
+  >('created');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const {
@@ -91,7 +90,6 @@ const EventPage = () => {
   const { data, isLoading, refetch } = useEventsQuery(queryParams);
   const createMutation = useCreateEventMutation();
   const updateMutation = useUpdateEventMutation();
-  const deleteMutation = useDeleteEventMutation();
   const deleteManyMutation = useDeleteManyEventsMutation();
 
   const handleSubmitForm = async (
@@ -115,7 +113,7 @@ const EventPage = () => {
   };
 
   const handleConfirmDelete = () => {
-    handleConfirmDeleteBase(deleteMutation.mutateAsync);
+    handleConfirmDeleteBase(deleteManyMutation.mutateAsync);
   };
 
   const handleConfirmDeleteMany = () => {
@@ -125,7 +123,6 @@ const EventPage = () => {
   const isSubmitting =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending ||
     deleteManyMutation.isPending;
 
   return (
@@ -192,11 +189,11 @@ const EventPage = () => {
               : updater;
           if (newSorting.length > 0) {
             setSortBy(
-              newSorting[0].id as 'name' | 'startAt' | 'endAt' | 'createdAt',
+              newSorting[0].id as 'name' | 'startAt' | 'endAt' | 'created',
             );
             setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
           } else {
-            setSortBy('createdAt');
+            setSortBy('created');
             setSortOrder('desc');
           }
           setPage(1);

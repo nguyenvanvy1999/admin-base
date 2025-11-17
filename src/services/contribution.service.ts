@@ -1,12 +1,18 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type { Prisma } from '@server/generated';
+import type {
+  InvestmentContributionWhereInput,
+  Prisma,
+} from '@server/generated';
 import { type ContributionType, InvestmentMode } from '@server/generated';
 import {
+  DB_PREFIX,
   dateToIsoString,
   decimalToNullableNumber,
   decimalToNumber,
   ErrorCode,
+  type IdUtil,
+  idUtil,
   throwAppError,
 } from '@server/share';
 import type {
@@ -46,8 +52,8 @@ const formatContribution = (
   baseCurrencyId: contribution.baseCurrencyId ?? null,
   timestamp: dateToIsoString(contribution.timestamp),
   note: contribution.note ?? null,
-  createdAt: dateToIsoString(contribution.createdAt),
-  updatedAt: dateToIsoString(contribution.updatedAt),
+  created: dateToIsoString(contribution.created),
+  modified: dateToIsoString(contribution.modified),
   account: contribution.account
     ? {
         id: contribution.account.id,
@@ -64,11 +70,13 @@ export class InvestmentContributionService {
       investmentService: InvestmentService;
       accountBalanceService: AccountBalanceService;
       investmentPositionService: InvestmentPositionService;
+      idUtil: IdUtil;
     } = {
       db: prisma,
       investmentService: investmentService,
       accountBalanceService: accountBalanceService,
       investmentPositionService: investmentPositionService,
+      idUtil,
     },
   ) {}
 
@@ -161,6 +169,7 @@ export class InvestmentContributionService {
     return this.deps.db.$transaction(async (tx) => {
       const contribution = await tx.investmentContribution.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.CONTRIBUTION),
           userId,
           investmentId,
           accountId: data.accountId ?? null,
@@ -192,23 +201,15 @@ export class InvestmentContributionService {
   async listContributions(
     userId: string,
     investmentId: string,
-    query: IListInvestmentContributionsQueryDto = {},
+    query: IListInvestmentContributionsQueryDto,
   ): Promise<InvestmentContributionListResponse> {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const {
-      accountIds,
-      dateFrom,
-      dateTo,
-      page = 1,
-      limit = 50,
-      sortOrder = 'desc',
-    } = query;
+    const { accountIds, dateFrom, dateTo, page, limit, sortOrder } = query;
 
-    const where: Record<string, unknown> = {
+    const where: InvestmentContributionWhereInput = {
       userId,
       investmentId,
-      deletedAt: null,
     };
 
     if (accountIds && accountIds.length > 0) {
@@ -246,43 +247,53 @@ export class InvestmentContributionService {
     };
   }
 
-  async deleteContribution(
+  async deleteManyContributions(
     userId: string,
     investmentId: string,
-    contributionId: string,
+    contributionIds: string[],
   ) {
     await this.deps.investmentService.ensureInvestment(userId, investmentId);
 
-    const contribution = await this.deps.db.investmentContribution.findFirst({
+    const contributions = await this.deps.db.investmentContribution.findMany({
       where: {
-        id: contributionId,
+        id: { in: contributionIds },
         userId,
         investmentId,
-        deletedAt: null,
       },
       select: CONTRIBUTION_SELECT_FULL,
     });
 
-    if (!contribution) {
-      throwAppError(ErrorCode.CONTRIBUTION_NOT_FOUND, 'Contribution not found');
+    if (contributions.length !== contributionIds.length) {
+      throwAppError(
+        ErrorCode.CONTRIBUTION_NOT_FOUND,
+        'Some contributions were not found or do not belong to you',
+      );
     }
 
     return this.deps.db.$transaction(async (tx) => {
-      if (contribution.accountId) {
-        await this.deps.accountBalanceService.revertContributionBalance(
-          tx,
-          contribution.type,
-          contribution.accountId,
-          contribution.amount,
-        );
+      for (const contribution of contributions) {
+        if (contribution.accountId) {
+          await this.deps.accountBalanceService.revertContributionBalance(
+            tx,
+            contribution.type,
+            contribution.accountId,
+            contribution.amount,
+          );
+        }
       }
 
-      await tx.investmentContribution.update({
-        where: { id: contributionId },
-        data: { deletedAt: new Date() },
+      await tx.investmentContribution.deleteMany({
+        where: {
+          id: { in: contributionIds },
+          userId,
+          investmentId,
+        },
       });
 
-      return { success: true, message: 'Contribution deleted successfully' };
+      return {
+        success: true,
+        message: `${contributionIds.length} contribution(s) deleted successfully`,
+      };
     });
   }
 }

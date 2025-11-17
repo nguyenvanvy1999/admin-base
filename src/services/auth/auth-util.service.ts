@@ -1,9 +1,12 @@
+import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { User } from '@server/generated';
 import type { ITokenPayload, UPermission } from '@server/share';
-import { ArrayUtil, DB_PREFIX, IdUtil } from '@server/share';
+import { ArrayUtil, DB_PREFIX, type IdUtil, idUtil } from '@server/share';
 import dayjs from 'dayjs';
+import type { SessionService } from './session.service';
 import { sessionService } from './session.service';
+import type { TokenService } from './token.service';
 import { tokenService } from './token.service';
 
 export enum LoginResType {
@@ -20,34 +23,48 @@ export interface ILoginRes {
     id: string;
     username: string;
     name: string | null;
-    createdAt: Date;
-    updatedAt: Date;
+    created: Date;
+    modified: Date;
     baseCurrencyId: string | null;
     settings: any;
     permissions: UPermission[];
   };
 }
 
-export const userUtilService = {
+export class UserUtilService {
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      sessionService: SessionService;
+      tokenService: TokenService;
+      idUtil: IdUtil;
+    } = {
+      db: prisma,
+      sessionService,
+      tokenService,
+      idUtil,
+    },
+  ) {}
+
   async getPermissions(user: {
     roles: { roleId: string }[];
   }): Promise<UPermission[]> {
-    const permissions = await prisma.rolePermission.findMany({
+    const permissions = await this.deps.db.rolePermission.findMany({
       where: { roleId: { in: user.roles.map((x) => x.roleId) } },
       select: { permission: { select: { title: true } } },
     });
     return ArrayUtil.uniq(
       permissions.map((x) => x.permission.title),
     ) as UPermission[];
-  },
+  }
 
   async completeLogin(
-    user: User & { roles: { roleId: string }[]; deletedAt?: Date | null },
+    user: User & { roles: { roleId: string }[] },
     clientIp: string,
     userAgent: string,
   ): Promise<ILoginRes> {
-    await sessionService.revoke(user.id, false, []);
-    const sessionId = IdUtil.dbId(DB_PREFIX.SESSION);
+    await this.deps.sessionService.revoke(user.id, false, [], undefined);
+    const sessionId = this.deps.idUtil.dbId(DB_PREFIX.SESSION);
     const payload: ITokenPayload = {
       userId: user.id,
       timestamp: Date.now(),
@@ -60,11 +77,11 @@ export const userUtilService = {
       { accessToken, expirationTime },
       { refreshToken, expirationTime: refreshTokenExpirationTime },
     ] = await Promise.all([
-      tokenService.createAccessToken(payload),
-      tokenService.createRefreshToken(),
+      this.deps.tokenService.createAccessToken(payload),
+      this.deps.tokenService.createRefreshToken(),
     ]);
 
-    await prisma.$transaction(async (tx) => {
+    await this.deps.db.$transaction(async (tx) => {
       await tx.session.create({
         data: {
           id: sessionId,
@@ -82,11 +99,11 @@ export const userUtilService = {
       id: user.id,
       username: user.username,
       name: user.name,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      created: user.created,
+      modified: user.modified,
       baseCurrencyId: user.baseCurrencyId,
       settings: user.settings,
-      permissions: await userUtilService.getPermissions(user),
+      permissions: await this.getPermissions(user),
     };
 
     return {
@@ -97,5 +114,7 @@ export const userUtilService = {
       expired: dayjs(expirationTime).format(),
       user: userRes,
     };
-  },
-};
+  }
+}
+
+export const userUtilService = new UserUtilService();

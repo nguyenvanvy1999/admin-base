@@ -1,6 +1,6 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
+import type { ActionRes } from '@server/dto/common.dto';
 import type {
-  EventDeleteResponse,
   EventListResponse,
   EventResponse,
   IUpsertEventDto,
@@ -19,7 +19,7 @@ export class EventService extends ServiceBase {
     endAtTo?: string;
     page?: number;
     limit?: number;
-    sortBy?: 'name' | 'startAt' | 'endAt' | 'createdAt';
+    sortBy?: 'name' | 'startAt' | 'endAt' | 'created';
     sortOrder?: 'asc' | 'desc';
   }): Promise<EventListResponse> {
     return this.get<EventListResponse>({
@@ -41,14 +41,8 @@ export class EventService extends ServiceBase {
     return this.post<EventResponse>(data);
   }
 
-  deleteEvent(eventId: string): Promise<EventDeleteResponse> {
-    return this.delete<EventDeleteResponse>({
-      endpoint: eventId,
-    });
-  }
-
-  deleteManyEvents(ids: string[]): Promise<EventDeleteResponse> {
-    return this.post<EventDeleteResponse>(
+  deleteManyEvents(ids: string[]): Promise<ActionRes> {
+    return this.post<ActionRes>(
       { ids },
       {
         endpoint: 'delete-many',

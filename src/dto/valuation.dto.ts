@@ -1,11 +1,6 @@
 import { t } from 'elysia';
 import { z } from 'zod';
-import {
-  CurrencyDto,
-  createListQueryDto,
-  DeleteResponseDto,
-  PaginationDto,
-} from './common.dto';
+import { CurrencyDto, createListQueryDto, PaginationDto } from './common.dto';
 
 export const UpsertInvestmentValuationDto = z.object({
   price: z.number().min(0),
@@ -31,8 +26,6 @@ export type IListInvestmentValuationsQueryDto = z.infer<
   typeof ListInvestmentValuationsQueryDto
 >;
 
-export const InvestmentValuationCurrencyDto = CurrencyDto;
-
 export const InvestmentValuationDto = t.NoValidate(
   t.Object({
     id: t.String(),
@@ -46,10 +39,10 @@ export const InvestmentValuationDto = t.NoValidate(
     timestamp: t.String(),
     source: t.Nullable(t.String()),
     fetchedAt: t.Nullable(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
-    currency: InvestmentValuationCurrencyDto,
-    baseCurrency: t.Nullable(InvestmentValuationCurrencyDto),
+    created: t.String(),
+    modified: t.String(),
+    currency: CurrencyDto,
+    baseCurrency: t.Nullable(CurrencyDto),
   }),
 );
 
@@ -59,8 +52,6 @@ export const InvestmentValuationListResponseDto = t.NoValidate(
     pagination: PaginationDto,
   }),
 );
-
-export const ValuationDeleteResponseDto = DeleteResponseDto;
 
 export type InvestmentValuationResponse = typeof InvestmentValuationDto.static;
 export type InvestmentValuationListResponse =

@@ -1,8 +1,7 @@
 import { authCheck } from '@server/services/auth/auth.middleware';
 import { Elysia, t } from 'elysia';
+import { ActionResDto, DeleteManyDto } from '../dto/common.dto';
 import {
-  DeleteManyEntitiesDto,
-  EntityDeleteResponseDto,
   EntityDto,
   EntityListResponseDto,
   ListEntitiesQueryDto,
@@ -88,26 +87,6 @@ const entityController = new Elysia().group(
           },
         },
       )
-      .delete(
-        '/:id',
-        async ({ currentUser, params }) => {
-          return castToRes(
-            await entityService.deleteEntity(currentUser.id, params.id),
-          );
-        },
-        {
-          detail: {
-            ...ENTITY_DETAIL,
-            summary: 'Delete entity',
-            description:
-              'Permanently delete a financial entity by its ID. This action cannot be undone.',
-          },
-          params: t.Object({ id: t.String() }),
-          response: {
-            200: ResWrapper(EntityDeleteResponseDto),
-          },
-        },
-      )
       .post(
         '/delete-many',
         async ({ currentUser, body }) => {
@@ -122,9 +101,9 @@ const entityController = new Elysia().group(
             description:
               'Permanently delete multiple financial entities by their IDs. This action cannot be undone.',
           },
-          body: DeleteManyEntitiesDto,
+          body: DeleteManyDto,
           response: {
-            200: ResWrapper(EntityDeleteResponseDto),
+            200: ResWrapper(ActionResDto),
           },
         },
       ),

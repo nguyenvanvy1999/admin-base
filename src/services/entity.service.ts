@@ -5,7 +5,13 @@ import type {
   EntityWhereInput,
   Prisma,
 } from '@server/generated';
-import { ErrorCode, throwAppError } from '@server/share';
+import {
+  DB_PREFIX,
+  ErrorCode,
+  type IdUtil,
+  idUtil,
+  throwAppError,
+} from '@server/share';
 import type {
   IListEntitiesQueryDto,
   IUpsertEntityDto,
@@ -19,19 +25,20 @@ const mapEntity = (
   }>,
 ) => ({
   ...entity,
-  createdAt: entity.createdAt.toISOString(),
-  updatedAt: entity.updatedAt.toISOString(),
+  created: entity.created.toISOString(),
+  modified: entity.modified.toISOString(),
 });
 
 export class EntityService {
-  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+  constructor(
+    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
+  ) {}
 
   private async validateEntityOwnership(userId: string, entityId: string) {
     const entity = await this.deps.db.entity.findFirst({
       where: {
         id: entityId,
         userId,
-        deletedAt: null,
       },
       select: ENTITY_SELECT_MINIMAL,
     });
@@ -49,7 +56,6 @@ export class EntityService {
     const where: EntityWhereInput = {
       userId,
       name,
-      deletedAt: null,
     };
 
     if (excludeId) {
@@ -87,6 +93,7 @@ export class EntityService {
     } else {
       const entity = await this.deps.db.entity.create({
         data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.ENTITY),
           userId,
           name: data.name,
           type: data.type,
@@ -106,7 +113,6 @@ export class EntityService {
       where: {
         id: entityId,
         userId,
-        deletedAt: null,
       },
       select: ENTITY_SELECT_FULL,
     });
@@ -118,19 +124,11 @@ export class EntityService {
     return mapEntity(entity);
   }
 
-  async listEntities(userId: string, query: IListEntitiesQueryDto = {}) {
-    const {
-      type,
-      search,
-      page = 1,
-      limit = 20,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-    } = query;
+  async listEntities(userId: string, query: IListEntitiesQueryDto) {
+    const { type, search, page, limit, sortBy, sortOrder } = query;
 
     const where: EntityWhereInput = {
       userId,
-      deletedAt: null,
     };
 
     if (type && type.length > 0) {
@@ -149,8 +147,8 @@ export class EntityService {
       orderBy.name = sortOrder;
     } else if (sortBy === 'type') {
       orderBy.type = sortOrder;
-    } else if (sortBy === 'createdAt') {
-      orderBy.createdAt = sortOrder;
+    } else if (sortBy === 'created') {
+      orderBy.created = sortOrder;
     }
 
     const skip = (page - 1) * limit;
@@ -177,25 +175,11 @@ export class EntityService {
     };
   }
 
-  async deleteEntity(userId: string, entityId: string) {
-    await this.validateEntityOwnership(userId, entityId);
-
-    await this.deps.db.entity.update({
-      where: { id: entityId },
-      data: {
-        deletedAt: new Date(),
-      },
-    });
-
-    return { success: true, message: 'Entity deleted successfully' };
-  }
-
   async deleteManyEntities(userId: string, ids: string[]) {
     const entities = await this.deps.db.entity.findMany({
       where: {
         id: { in: ids },
         userId,
-        deletedAt: null,
       },
       select: ENTITY_SELECT_MINIMAL,
     });
@@ -207,20 +191,16 @@ export class EntityService {
       );
     }
 
-    const result = await this.deps.db.entity.updateMany({
+    await this.deps.db.entity.deleteMany({
       where: {
         id: { in: ids },
         userId,
-        deletedAt: null,
-      },
-      data: {
-        deletedAt: new Date(),
       },
     });
 
     return {
       success: true,
-      message: `${result.count} entity(ies) deleted successfully`,
+      message: `${ids.length} entity(ies) deleted successfully`,
     };
   }
 }

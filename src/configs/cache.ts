@@ -61,3 +61,15 @@ export const currentUserCache = new RedisCache<ICurrentUser>({
   namespace: CACHE_NS.CURRENT_USER,
   ttl: FIVE_MINUTES,
 });
+
+export const settingCache = new RedisCache({
+  namespace: CACHE_NS.SETTING,
+  ttl: FIVE_MINUTES,
+});
+export type ISettingCache = typeof settingCache;
+
+export const captchaCache = new RedisCache<string>({
+  namespace: CACHE_NS.CAPTCHA,
+  ttl: FIVE_MINUTES,
+});
+export type ICaptchaCache = typeof captchaCache;

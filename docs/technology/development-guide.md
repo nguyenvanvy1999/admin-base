@@ -171,8 +171,8 @@ model MyEntity {
   id        String   @id @default(uuidv7())
   userId    String   @map("user_id")
   name      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  created DateTime @default(now()) @map("created_at")
+  modified DateTime @modified @map("updated_at")
 
   user User @relation(fields: [userId], references: [id])
 
@@ -259,7 +259,7 @@ async ({ user }) => {
 
 ### 3. Database connection fails
 
-- Verify `POSTGRES_URL` trong .env
+- Verify `POSTGRESQL_URI` trong .env
 - Kiểm tra PostgreSQL đang chạy
 - Đảm bảo database tồn tại
 - Chạy migrations: `bun run db:migrate`

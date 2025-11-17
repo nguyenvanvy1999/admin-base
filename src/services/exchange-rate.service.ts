@@ -1,5 +1,5 @@
 import { appEnv } from '@server/configs/env';
-import { logger } from '@server/configs/logger';
+import { type ILogger, logger } from '@server/configs/logger';
 import { ErrorCode, throwAppError } from '@server/share';
 import Decimal from 'decimal.js';
 
@@ -25,7 +25,11 @@ export class ExchangeRateService {
   private readonly apiUrl: string;
   private readonly cacheTtl: number;
 
-  constructor(apiUrl?: string, cacheTtl?: number) {
+  constructor(
+    private readonly deps: { logger: ILogger } = { logger },
+    apiUrl?: string,
+    cacheTtl?: number,
+  ) {
     this.apiUrl =
       apiUrl ?? appEnv.EXCHANGE_RATE_API_URL ?? DEFAULT_EXCHANGE_RATE_API_URL;
     this.cacheTtl =
@@ -69,7 +73,7 @@ export class ExchangeRateService {
 
     if (!(normalizedCode in rates)) {
       if (currencyCode === 'USD') {
-        logger.warn(
+        this.deps.logger.warn(
           `Currency ${currencyCode} not found in API, using fallback rate`,
         );
         return 1 / FALLBACK_USD_RATE;
@@ -113,7 +117,7 @@ export class ExchangeRateService {
 
   private async fetchRates(): Promise<Record<string, number>> {
     try {
-      logger.info(`Fetching exchange rates from ${this.apiUrl}`);
+      this.deps.logger.info(`Fetching exchange rates from ${this.apiUrl}`);
       const response = await fetch(this.apiUrl, {
         headers: {
           Accept: 'application/json',
@@ -142,19 +146,23 @@ export class ExchangeRateService {
         fetchedAt: Date.now(),
       };
 
-      logger.info(`Exchange rates fetched successfully for date: ${data.date}`);
+      this.deps.logger.info(
+        `Exchange rates fetched successfully for date: ${data.date}`,
+      );
       return data.vnd;
     } catch (error) {
-      logger.warn('Failed to fetch exchange rates, using fallback', {
+      this.deps.logger.warn('Failed to fetch exchange rates, using fallback', {
         error: error instanceof Error ? error.message : String(error),
       });
 
       if (this.cache) {
-        logger.info('Using cached exchange rates as fallback');
+        this.deps.logger.info('Using cached exchange rates as fallback');
         return this.cache.rates;
       }
 
-      logger.warn('No cache available, using hardcoded fallback rates');
+      this.deps.logger.warn(
+        'No cache available, using hardcoded fallback rates',
+      );
       return {
         usd: 1 / FALLBACK_USD_RATE,
       };

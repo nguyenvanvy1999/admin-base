@@ -16,11 +16,16 @@ export const useUserQuery = () => {
 
       const user = await userService.getCurrentUser();
 
+      const isAdminRole =
+        user.isSuperAdmin ||
+        user.roleIds?.includes('role_admin_default') ||
+        false;
+
       setUser({
         id: user.id,
         username: user.username,
         name: user.name,
-        role: user.role,
+        role: isAdminRole ? 'admin' : 'user',
         isSuperAdmin: user.isSuperAdmin,
         permissions: user.permissions,
       });

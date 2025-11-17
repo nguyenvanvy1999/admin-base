@@ -40,7 +40,7 @@ cp .env.example .env
 Chỉnh sửa `.env` với thông tin của bạn:
 
 ```env
-POSTGRES_URL=postgresql://user:password@localhost:5432/investment
+POSTGRESQL_URI=postgresql://user:password@localhost:5432/investment
 JWT_SECRET=your-super-secret-jwt-key-here
 PORT=3000
 ```
@@ -49,7 +49,7 @@ PORT=3000
 
 1. Đảm bảo PostgreSQL đang chạy
 2. Tạo database (ví dụ: `investment`)
-3. Cập nhật `POSTGRES_URL` trong `.env`
+3. Cập nhật `POSTGRESQL_URI` trong `.env`
 4. Chạy migrations:
 
 ```bash
@@ -119,7 +119,7 @@ bun start
 
 3. Cập nhật connection string trong `.env`:
    ```env
-   POSTGRES_URL=postgresql://username:password@localhost:5432/investment
+   POSTGRESQL_URI=postgresql://username:password@localhost:5432/investment
    ```
 
 #### Prisma Migrations
@@ -139,7 +139,7 @@ bun run db:dev:reset
 
 #### Required Variables
 
-- `POSTGRES_URL`: Connection string cho PostgreSQL
+- `POSTGRESQL_URI`: Connection string cho PostgreSQL
 - `JWT_SECRET`: Secret key cho JWT tokens (nên dùng random string mạnh)
 
 #### Optional Variables
@@ -198,7 +198,7 @@ docker run -p 3000:3000 --env-file .env fin-track
 Đảm bảo các biến môi trường được set trong production:
 
 ```env
-POSTGRES_URL=postgresql://user:password@host:5432/database
+POSTGRESQL_URI=postgresql://user:password@host:5432/database
 JWT_SECRET=production-secret-key
 PORT=3000
 NODE_ENV=production
