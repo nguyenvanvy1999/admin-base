@@ -1,9 +1,8 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import { ERROR_MESSAGES, ErrorCode, throwAppError } from '@server/share';
-import type { IOwnershipValidatorService } from '../interfaces/IOwnershipValidatorService';
 
-export class OwnershipValidatorService implements IOwnershipValidatorService {
+export class OwnershipValidatorService {
   constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
 
   async validateAccountOwnership(

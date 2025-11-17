@@ -21,7 +21,6 @@ import {
   type OwnershipValidatorService,
   ownershipValidatorService,
 } from './base/ownership-validator.service';
-import type { IEntityService } from './interfaces/IEntityService';
 
 import { ENTITY_SELECT_FULL, ENTITY_SELECT_MINIMAL } from './selects';
 
@@ -35,7 +34,7 @@ const mapEntity = (
   modified: entity.modified.toISOString(),
 });
 
-export class EntityService implements IEntityService {
+export class EntityService {
   constructor(
     private readonly deps: {
       db: IDb;

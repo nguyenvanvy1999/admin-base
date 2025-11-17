@@ -13,7 +13,6 @@ import {
   type TransactionRepository,
   transactionRepository,
 } from '../repositories/transaction.repository';
-import type { IDebtCalculationService } from './interfaces/IDebtCalculationService';
 
 interface EntityDebtData {
   loans: Array<{
@@ -27,7 +26,7 @@ interface EntityDebtData {
   totalCollected: Decimal;
 }
 
-export class DebtCalculationService implements IDebtCalculationService {
+export class DebtCalculationService {
   constructor(
     private readonly deps: {
       db: IDb;

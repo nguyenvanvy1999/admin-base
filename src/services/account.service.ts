@@ -34,7 +34,6 @@ import {
   type OwnershipValidatorService,
   ownershipValidatorService,
 } from './base/ownership-validator.service';
-import type { IAccountService } from './interfaces/IAccountService';
 import {
   type ACCOUNT_SELECT_FULL,
   ACCOUNT_SELECT_MINIMAL,
@@ -57,7 +56,7 @@ const formatAccount = (account: AccountRecord): AccountResponse => ({
   modified: dateToIsoString(account.modified),
 });
 
-export class AccountService implements IAccountService {
+export class AccountService {
   constructor(
     private readonly deps: {
       db: IDb;

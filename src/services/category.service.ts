@@ -25,7 +25,6 @@ import {
   type OwnershipValidatorService,
   ownershipValidatorService,
 } from './base/ownership-validator.service';
-import type { ICategoryService } from './interfaces/ICategoryService';
 import { CATEGORY_SELECT_MINIMAL } from './selects';
 
 type CategoryWithChildren = {
@@ -73,7 +72,7 @@ const formatCategoryTree = (
   } as CategoryTreeResponse;
 };
 
-export class CategoryService implements ICategoryService {
+export class CategoryService {
   constructor(
     private readonly deps: {
       db: IDb;

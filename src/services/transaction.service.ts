@@ -52,7 +52,6 @@ import {
   type DebtCalculationService,
   debtCalculationService,
 } from './debt-calculation.service';
-import type { ITransactionService } from './interfaces/ITransactionService';
 import {
   ACCOUNT_SELECT_WITH_CURRENCY,
   CURRENCY_SELECT_BASIC,
@@ -897,7 +896,7 @@ class TransactionHandlerFactory {
   }
 }
 
-export class TransactionService implements ITransactionService {
+export class TransactionService {
   private readonly handlerFactory: TransactionHandlerFactory;
 
   constructor(
