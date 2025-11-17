@@ -1,11 +1,11 @@
 import AddContributionDialog from '@client/components/dialogs/AddContributionDialog';
 import AddTradeDialog from '@client/components/dialogs/AddTradeDialog';
 import AddValuationDialog from '@client/components/dialogs/AddValuationDialog';
+import { StatCard } from '@client/components/StatCard';
 import {
   DataTable,
   type DataTableColumn,
 } from '@client/components/tables/DataTable';
-import { StatCard } from '@client/components/ui/StatCard';
 import {
   useCreateInvestmentContributionMutation,
   useCreateInvestmentTradeMutation,

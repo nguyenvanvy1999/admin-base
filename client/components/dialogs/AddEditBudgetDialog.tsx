@@ -7,8 +7,8 @@ import { BudgetPeriod } from '@server/generated';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import CategoryMultiSelect from './CategoryMultiSelect';
-import { CRUDDialog } from './dialogs/CRUDDialog';
+import CategoryMultiSelect from '../CategoryMultiSelect';
+import { CRUDDialog } from './CRUDDialog';
 import { Select } from './Select';
 import { ZodFormController } from './ZodFormController';
 

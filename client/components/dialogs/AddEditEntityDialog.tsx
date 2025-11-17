@@ -7,7 +7,7 @@ import {
 import { EntityType } from '@server/generated';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { CRUDDialog } from './dialogs/CRUDDialog';
+import { CRUDDialog } from './CRUDDialog';
 import { Select } from './Select';
 import { ZodFormController } from './ZodFormController';
 

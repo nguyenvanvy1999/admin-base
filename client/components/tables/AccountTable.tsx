@@ -3,15 +3,15 @@ import { AccountType } from '@server/generated';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  createActionColumn,
+  createCurrencyColumn,
+  createTypeColumn,
+} from './columnFactories';
+import {
   DataTable,
   type DataTableColumn,
   type SortingState,
 } from './DataTable';
-import {
-  createActionColumn,
-  createCurrencyColumn,
-  createTypeColumn,
-} from './tables/columnFactories';
 import { renderCurrency } from './tables/columnRenderers';
 
 type AccountTableProps = {

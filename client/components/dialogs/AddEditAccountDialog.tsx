@@ -8,8 +8,8 @@ import {
 import { AccountType } from '@server/generated';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { CRUDDialog } from './dialogs/CRUDDialog';
-import { Select } from './Select';
+import { Select } from '../Select';
+import { CRUDDialog } from './CRUDDialog';
 import { ZodFormController } from './ZodFormController';
 
 const baseSchema = UpsertAccountDto.extend({
