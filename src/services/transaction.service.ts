@@ -763,6 +763,7 @@ class TransactionHandlerFactory {
       : null;
 
     const mirrorData = {
+      type: TransactionType.transfer,
       accountId: toAccount.id,
       toAccountId: fromAccount.id,
       categoryId: transferCategoryId,
@@ -788,7 +789,6 @@ class TransactionHandlerFactory {
         data: {
           id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
           userId,
-          type: 'repay_debt', // todo: correct type here
           ...mirrorData,
         },
       });
