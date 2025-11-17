@@ -120,7 +120,8 @@ const EntityPage = () => {
                 <TextInput
                   placeholder={t('entities.search')}
                   error={error}
-                  style={{ flex: 1, maxWidth: '300px' }}
+                  style={{ flex: 1 }}
+                  w={{ base: '100%', sm: 300 }}
                   {...field}
                 />
               )}
@@ -144,7 +145,7 @@ const EntityPage = () => {
                   ]}
                   value={field.value || []}
                   onChange={(value) => field.onChange(value as EntityType[])}
-                  style={{ maxWidth: '200px' }}
+                  w={{ base: '100%', sm: 200 }}
                 />
               )}
             />

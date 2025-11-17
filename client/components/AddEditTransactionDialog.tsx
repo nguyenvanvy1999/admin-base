@@ -4,7 +4,7 @@ import {
   Button,
   Group,
   Modal,
-  Radio,
+  Select,
   Stack,
   Switch,
   Tabs,
@@ -676,40 +676,48 @@ const AddEditTransactionDialog = ({
           ) : (
             <Stack gap="md">
               {activeTab === 'debt' && (
-                <Stack gap="xs">
-                  <Text size="sm" fw={500}>
-                    {t('transactions.debtType', { defaultValue: 'Debt Type' })}
-                  </Text>
-                  <Radio.Group
-                    value={debtType}
-                    onChange={(value) => setDebtType(value)}
-                  >
-                    <Stack gap="xs">
-                      <Radio
-                        value="borrow"
-                        label={t('categories.borrow', {
-                          defaultValue: 'Borrow',
-                        })}
-                      />
-                      <Radio
-                        value="lend"
-                        label={t('categories.lend', { defaultValue: 'Lend' })}
-                      />
-                      <Radio
-                        value="repay_debt"
-                        label={t('categories.repay_debt', {
-                          defaultValue: 'Repay Debt',
-                        })}
-                      />
-                      <Radio
-                        value="collect_debt"
-                        label={t('categories.collect_debt', {
-                          defaultValue: 'Collect Debt',
-                        })}
-                      />
-                    </Stack>
-                  </Radio.Group>
-                </Stack>
+                <Select
+                  label={t('transactions.debtType', {
+                    defaultValue: 'Debt Type',
+                  })}
+                  placeholder={t('transactions.selectDebtType', {
+                    defaultValue: 'Select debt type',
+                  })}
+                  required
+                  searchable
+                  data={[
+                    {
+                      value: 'borrow',
+                      label: t('categories.borrow', {
+                        defaultValue: 'Borrow',
+                      }),
+                    },
+                    {
+                      value: 'lend',
+                      label: t('categories.lend', {
+                        defaultValue: 'Lend',
+                      }),
+                    },
+                    {
+                      value: 'repay_debt',
+                      label: t('categories.repay_debt', {
+                        defaultValue: 'Repay Debt',
+                      }),
+                    },
+                    {
+                      value: 'collect_debt',
+                      label: t('categories.collect_debt', {
+                        defaultValue: 'Collect Debt',
+                      }),
+                    },
+                  ]}
+                  value={debtType}
+                  onChange={(value) => {
+                    if (value) {
+                      setDebtType(value);
+                    }
+                  }}
+                />
               )}
               <FormRow cols={2}>
                 <FormSection>

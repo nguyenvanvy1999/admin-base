@@ -194,7 +194,8 @@ const TransactionPage = () => {
                 <TextInput
                   placeholder={t('transactions.search')}
                   error={error}
-                  style={{ flex: 1, maxWidth: '300px' }}
+                  style={{ flex: 1 }}
+                  w={{ base: '100%', sm: 300 }}
                   {...field}
                 />
               )}
@@ -248,7 +249,7 @@ const TransactionPage = () => {
                   onChange={(value) =>
                     field.onChange(value as TransactionType[])
                   }
-                  style={{ maxWidth: '200px' }}
+                  w={{ base: '100%', sm: 200 }}
                 />
               )}
             />
@@ -262,7 +263,7 @@ const TransactionPage = () => {
                   data={accountOptions}
                   value={field.value || []}
                   onChange={field.onChange}
-                  style={{ maxWidth: '200px' }}
+                  w={{ base: '100%', sm: 200 }}
                 />
               )}
             />
@@ -275,7 +276,7 @@ const TransactionPage = () => {
                   onChange={field.onChange}
                   placeholder={t('transactions.categoryPlaceholder')}
                   error={error}
-                  style={{ maxWidth: '200px' }}
+                  w={{ base: '100%', sm: 200 }}
                 />
               )}
             />
@@ -292,7 +293,7 @@ const TransactionPage = () => {
                   value={field.value || []}
                   onChange={field.onChange}
                   searchable
-                  style={{ maxWidth: '200px' }}
+                  w={{ base: '100%', sm: 200 }}
                 />
               )}
             />

@@ -2,6 +2,7 @@ import AddContributionDialog from '@client/components/AddContributionDialog';
 import AddTradeDialog from '@client/components/AddTradeDialog';
 import AddValuationDialog from '@client/components/AddValuationDialog';
 import { DataTable, type DataTableColumn } from '@client/components/DataTable';
+import { StatCard } from '@client/components/StatCard';
 import {
   useCreateInvestmentContributionMutation,
   useCreateInvestmentTradeMutation,
@@ -473,142 +474,105 @@ const InvestmentDetailPage = () => {
 
           <Tabs.Panel value="overview" pt="md">
             <SimpleGrid cols={{ base: 1, md: 2, xl: 4 }} spacing="md">
-              <Card shadow="sm" padding="lg" withBorder>
-                <Text size="sm" c="dimmed">
-                  {t('investments.position.quantity', {
-                    defaultValue: 'Quantity',
-                  })}
-                </Text>
-                <Text size="lg" fw={600}>
-                  {formatNumber(position?.quantity)}
-                </Text>
-              </Card>
-              <Card shadow="sm" padding="lg" withBorder>
-                <Text size="sm" c="dimmed">
-                  {t('investments.position.avgCost', {
-                    defaultValue: 'Average cost',
-                  })}
-                </Text>
-                <Text size="lg" fw={600}>
-                  {formatCurrency(position?.avgCost ?? null)}
-                </Text>
-              </Card>
-              <Card shadow="sm" padding="lg" withBorder>
-                <Text size="sm" c="dimmed">
-                  {t('investments.position.realizedPnl', {
-                    defaultValue: 'Realized PnL',
-                  })}
-                </Text>
-                <Text
-                  size="lg"
-                  fw={600}
-                  c={(position?.realizedPnl ?? 0) >= 0 ? 'green.6' : 'red.6'}
-                >
-                  {formatCurrency(position?.realizedPnl ?? 0)}
-                </Text>
-              </Card>
-              <Card shadow="sm" padding="lg" withBorder>
-                <Text size="sm" c="dimmed">
-                  {t('investments.position.unrealizedPnl', {
-                    defaultValue: 'Unrealized PnL',
-                  })}
-                </Text>
-                <Text
-                  size="lg"
-                  fw={600}
-                  c={(position?.unrealizedPnl ?? 0) >= 0 ? 'green.6' : 'red.6'}
-                >
-                  {formatCurrency(position?.unrealizedPnl ?? 0)}
-                </Text>
-              </Card>
+              <StatCard
+                label={t('investments.position.quantity', {
+                  defaultValue: 'Quantity',
+                })}
+                value={formatNumber(position?.quantity)}
+              />
+              <StatCard
+                label={t('investments.position.avgCost', {
+                  defaultValue: 'Average cost',
+                })}
+                value={formatCurrency(position?.avgCost ?? null)}
+              />
+              <StatCard
+                label={t('investments.position.realizedPnl', {
+                  defaultValue: 'Realized PnL',
+                })}
+                value={formatCurrency(position?.realizedPnl ?? 0)}
+                color={(position?.realizedPnl ?? 0) >= 0 ? 'green.6' : 'red.6'}
+              />
+              <StatCard
+                label={t('investments.position.unrealizedPnl', {
+                  defaultValue: 'Unrealized PnL',
+                })}
+                value={formatCurrency(position?.unrealizedPnl ?? 0)}
+                color={
+                  (position?.unrealizedPnl ?? 0) >= 0 ? 'green.6' : 'red.6'
+                }
+              />
             </SimpleGrid>
 
             {investment?.baseCurrencyId && position && (
               <SimpleGrid cols={{ base: 1, md: 2, xl: 4 }} spacing="md" mt="md">
-                <Card shadow="sm" padding="lg" withBorder>
-                  <Text size="sm" c="dimmed">
-                    {t('investments.position.costBasisInBaseCurrency', {
-                      defaultValue: 'Cost Basis (Base Currency)',
-                    })}
-                  </Text>
-                  <Text size="lg" fw={600}>
-                    {position.costBasisInBaseCurrency !== undefined
+                <StatCard
+                  label={t('investments.position.costBasisInBaseCurrency', {
+                    defaultValue: 'Cost Basis (Base Currency)',
+                  })}
+                  value={
+                    position.costBasisInBaseCurrency !== undefined
                       ? formatCurrency(
                           position.costBasisInBaseCurrency,
                           baseCurrencySymbol,
                         )
-                      : '--'}
-                  </Text>
-                </Card>
-                <Card shadow="sm" padding="lg" withBorder>
-                  <Text size="sm" c="dimmed">
-                    {t('investments.position.realizedPnlInBaseCurrency', {
-                      defaultValue: 'Realized PnL (Base Currency)',
-                    })}
-                  </Text>
-                  <Text
-                    size="lg"
-                    fw={600}
-                    c={
-                      (position.realizedPnlInBaseCurrency ?? 0) >= 0
-                        ? 'green.6'
-                        : 'red.6'
-                    }
-                  >
-                    {position.realizedPnlInBaseCurrency !== undefined
+                      : '--'
+                  }
+                />
+                <StatCard
+                  label={t('investments.position.realizedPnlInBaseCurrency', {
+                    defaultValue: 'Realized PnL (Base Currency)',
+                  })}
+                  value={
+                    position.realizedPnlInBaseCurrency !== undefined
                       ? formatCurrency(
                           position.realizedPnlInBaseCurrency,
                           baseCurrencySymbol,
                         )
-                      : '--'}
-                  </Text>
-                </Card>
-                <Card shadow="sm" padding="lg" withBorder>
-                  <Text size="sm" c="dimmed">
-                    {t('investments.position.unrealizedPnlInBaseCurrency', {
-                      defaultValue: 'Unrealized PnL (Base Currency)',
-                    })}
-                  </Text>
-                  <Text
-                    size="lg"
-                    fw={600}
-                    c={
-                      (position.unrealizedPnlInBaseCurrency ?? 0) >= 0
-                        ? 'green.6'
-                        : 'red.6'
-                    }
-                  >
-                    {position.unrealizedPnlInBaseCurrency !== undefined
+                      : '--'
+                  }
+                  color={
+                    (position.realizedPnlInBaseCurrency ?? 0) >= 0
+                      ? 'green.6'
+                      : 'red.6'
+                  }
+                />
+                <StatCard
+                  label={t('investments.position.unrealizedPnlInBaseCurrency', {
+                    defaultValue: 'Unrealized PnL (Base Currency)',
+                  })}
+                  value={
+                    position.unrealizedPnlInBaseCurrency !== undefined
                       ? formatCurrency(
                           position.unrealizedPnlInBaseCurrency,
                           baseCurrencySymbol,
                         )
-                      : '--'}
-                  </Text>
-                </Card>
-                <Card shadow="sm" padding="lg" withBorder>
-                  <Text size="sm" c="dimmed">
-                    {t('investments.position.exchangeRateGainLoss', {
-                      defaultValue: 'Exchange Rate Impact',
-                    })}
-                  </Text>
-                  <Text
-                    size="lg"
-                    fw={600}
-                    c={
-                      (position.exchangeRateGainLoss ?? 0) >= 0
-                        ? 'green.6'
-                        : 'red.6'
-                    }
-                  >
-                    {position.exchangeRateGainLoss !== undefined
+                      : '--'
+                  }
+                  color={
+                    (position.unrealizedPnlInBaseCurrency ?? 0) >= 0
+                      ? 'green.6'
+                      : 'red.6'
+                  }
+                />
+                <StatCard
+                  label={t('investments.position.exchangeRateGainLoss', {
+                    defaultValue: 'Exchange Rate Impact',
+                  })}
+                  value={
+                    position.exchangeRateGainLoss !== undefined
                       ? formatCurrency(
                           position.exchangeRateGainLoss,
                           baseCurrencySymbol,
                         )
-                      : '--'}
-                  </Text>
-                </Card>
+                      : '--'
+                  }
+                  color={
+                    (position.exchangeRateGainLoss ?? 0) >= 0
+                      ? 'green.6'
+                      : 'red.6'
+                  }
+                />
               </SimpleGrid>
             )}
 

@@ -180,7 +180,8 @@ const InvestmentPage = () => {
                     defaultValue: 'Search investments',
                   })}
                   error={error}
-                  style={{ flex: 1, maxWidth: '300px' }}
+                  style={{ flex: 1 }}
+                  w={{ base: '100%', sm: 300 }}
                   {...field}
                 />
               )}
@@ -218,7 +219,7 @@ const InvestmentPage = () => {
                   onChange={(value) =>
                     field.onChange(value as InvestmentAssetType[])
                   }
-                  style={{ maxWidth: '200px' }}
+                  w={{ base: '100%', sm: 200 }}
                 />
               )}
             />
@@ -249,7 +250,7 @@ const InvestmentPage = () => {
                   onChange={(value) =>
                     field.onChange(value as InvestmentMode[])
                   }
-                  style={{ maxWidth: '200px' }}
+                  w={{ base: '100%', sm: 200 }}
                 />
               )}
             />
@@ -268,7 +269,7 @@ const InvestmentPage = () => {
                   }))}
                   value={field.value || []}
                   onChange={field.onChange}
-                  style={{ maxWidth: '200px' }}
+                  w={{ base: '100%', sm: 200 }}
                 />
               )}
             />

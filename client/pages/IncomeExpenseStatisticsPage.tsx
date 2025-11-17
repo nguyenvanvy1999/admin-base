@@ -1,3 +1,5 @@
+import { PageContainer } from '@client/components/PageContainer';
+import { PageHeader } from '@client/components/PageHeader';
 import { AccountBreakdownChart } from '@client/components/statistics/AccountBreakdownChart';
 import { CategoryBreakdownChart } from '@client/components/statistics/CategoryBreakdownChart';
 import { DateRangeFilter } from '@client/components/statistics/DateRangeFilter';
@@ -7,14 +9,7 @@ import { GroupBySelector } from '@client/components/statistics/GroupBySelector';
 import { IncomeExpenseOverview } from '@client/components/statistics/IncomeExpenseOverview';
 import { IncomeExpenseTable } from '@client/components/statistics/IncomeExpenseTable';
 import { IncomeExpenseTimeChart } from '@client/components/statistics/IncomeExpenseTimeChart';
-import {
-  Container,
-  Group,
-  SimpleGrid,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Group, SimpleGrid, Stack } from '@mantine/core';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -46,20 +41,16 @@ const IncomeExpenseStatisticsPage = () => {
   };
 
   return (
-    <Container size="xl" py="xl">
+    <PageContainer>
       <Stack gap="xl">
-        <Stack gap="xs">
-          <Title order={1}>
-            {t('statistics.incomeExpense.title', {
-              defaultValue: 'Income & Expense Statistics',
-            })}
-          </Title>
-          <Text c="dimmed">
-            {t('statistics.incomeExpense.description', {
-              defaultValue: 'Detailed analysis of your income and expenses',
-            })}
-          </Text>
-        </Stack>
+        <PageHeader
+          title={t('statistics.incomeExpense.title', {
+            defaultValue: 'Income & Expense Statistics',
+          })}
+          description={t('statistics.incomeExpense.description', {
+            defaultValue: 'Detailed analysis of your income and expenses',
+          })}
+        />
 
         <Stack gap="md">
           <DateRangeFilter
@@ -103,7 +94,7 @@ const IncomeExpenseStatisticsPage = () => {
           <IncomeExpenseTable queryParams={queryParams} />
         </Stack>
       </Stack>
-    </Container>
+    </PageContainer>
   );
 };
 

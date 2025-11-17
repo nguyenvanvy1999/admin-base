@@ -269,7 +269,7 @@ const ProfilePage = () => {
                 <Text size="sm" c="dimmed">
                   {t('profile.role')}
                 </Text>
-                <div className="flex flex-wrap gap-1">
+                <Group gap="xs" wrap="wrap">
                   {user.roleIds && user.roleIds.length > 0 ? (
                     user.roleIds.map((roleId) => (
                       <Badge key={roleId} color="indigo" variant="light">
@@ -281,7 +281,7 @@ const ProfilePage = () => {
                       {t('users.roleUser')}
                     </Badge>
                   )}
-                </div>
+                </Group>
               </Stack>
             </Paper>
 

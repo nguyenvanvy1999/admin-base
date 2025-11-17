@@ -5,16 +5,28 @@ import type React from 'react';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MetaVisualizer } from '@/components';
-import type { DataTableColumn } from '../types';
+import type { AccessorFn, DataTableColumn } from '../types';
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+
+function getNestedValue<T>(obj: T, path: string): unknown {
+  const keys = path.split('.');
+  let value: any = obj;
+  for (const key of keys) {
+    value = value?.[key];
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+  }
+  return value;
+}
 
 export function useDataTableColumns<T extends { id: string }>({
   columns,
   autoFormatDisabled,
   themeSpacingXs,
 }: {
-  columns: DataTableColumn<T>[];
+  columns: DataTableColumn<T, any>[];
   autoFormatDisabled?: boolean;
   themeSpacingXs: string;
 }) {
@@ -98,6 +110,16 @@ export function useDataTableColumns<T extends { id: string }>({
         (col.title ? String(col.title) : undefined) ||
         `col_${idx}`;
 
+      const getValue = (row: T): unknown => {
+        if (typeof col.accessor === 'function') {
+          return (col.accessor as AccessorFn<T, unknown>)(row);
+        }
+        if (typeof col.accessor === 'string') {
+          return getNestedValue(row, col.accessor);
+        }
+        return undefined;
+      };
+
       const cellRenderer = ({
         row,
         cell,
@@ -109,12 +131,9 @@ export function useDataTableColumns<T extends { id: string }>({
         const value = cell.getValue();
         let content: React.ReactNode;
         if (col.render) {
-          content = col.render(value, record, row.index);
+          content = col.render(value as any, record, row.index);
         } else if (!autoFormatDisabled) {
-          content =
-            typeof col.accessor === 'function'
-              ? autoFormat((col.accessor as (r: T) => unknown)(record))
-              : autoFormat(value);
+          content = autoFormat(value);
         } else {
           content = value as React.ReactNode;
         }
@@ -154,16 +173,10 @@ export function useDataTableColumns<T extends { id: string }>({
         );
       };
 
-      return {
+      const columnDef = {
         id,
         header: col.title ? t(col.title) : '',
-        Cell: cellRenderer,
-        ...(accessorKey ? { accessorKey } : {}),
-        ...(hasAccessorFn
-          ? {
-              accessorFn: (row: T) => (col.accessor as (r: T) => unknown)(row),
-            }
-          : {}),
+        cell: cellRenderer,
         size: toPx(col.width),
         minSize: toPx(col.minWidth),
         enableColumnFilter: accessorKey !== undefined || hasAccessorFn,
@@ -172,9 +185,9 @@ export function useDataTableColumns<T extends { id: string }>({
         filterSelectOptions: col.filterOptions,
         enableSorting: col.enableSorting ?? false,
         enableGrouping: col.enableGrouping ?? true,
-        aggregationFn: col.aggregationFn,
-        GroupedCell: col.GroupedCell,
-        AggregatedCell: col.AggregatedCell,
+        aggregationFn: col.aggregationFn as any,
+        GroupedCell: col.GroupedCell as any,
+        AggregatedCell: col.AggregatedCell as any,
         mantineTableHeadCellProps: {
           align: 'center',
           style: {
@@ -188,7 +201,15 @@ export function useDataTableColumns<T extends { id: string }>({
             textAlign: col.textAlign || 'center',
           },
         },
-      } as ColumnDef<T>;
+        ...(accessorKey ? { accessorKey } : {}),
+        ...(hasAccessorFn
+          ? {
+              accessorFn: (row: T) => getValue(row),
+            }
+          : {}),
+      } as ColumnDef<T, any>;
+
+      return columnDef;
     });
   }, [columns, t, autoFormatDisabled, autoFormat, toPx, themeSpacingXs]);
 }

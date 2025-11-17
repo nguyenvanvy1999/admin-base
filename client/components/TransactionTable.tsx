@@ -1,25 +1,25 @@
 import {
-  type DateGroupLevel,
   dateGroupByDay,
   dateGroupByMonth,
   dateGroupByYear,
-  formatDateGroupKey,
 } from '@client/utils/dateGrouping';
-import {
-  ActionIcon,
-  Badge,
-  Box,
-  Group,
-  NumberFormatter,
-  Select,
-  Text,
-} from '@mantine/core';
+import { Box, Group, NumberFormatter, Text } from '@mantine/core';
 import type { TransactionDetail } from '@server/dto/transaction.dto';
 import { TransactionType } from '@server/generated';
-import { IconEdit, IconTrash } from '@tabler/icons-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTable, type DataTableColumn } from './DataTable';
+import {
+  createActionColumn,
+  createCurrencyColumn,
+  createTypeColumn,
+} from './tables/columnFactories';
+import type { GroupingLevel } from './tables/groupingUtils';
+import {
+  createDateGroupingConfig,
+  GroupingSelector,
+  useTableGrouping,
+} from './tables/groupingUtils';
 import { getCategoryIcon, getCategoryLabel } from './utils/category';
 
 type TransactionTableProps = {
@@ -61,56 +61,8 @@ const TransactionTable = ({
   onSortingChange,
 }: TransactionTableProps) => {
   const { t, i18n } = useTranslation();
-  const [groupingLevel, setGroupingLevel] = useState<DateGroupLevel | 'none'>(
-    'none',
-  );
-
-  const getTransactionTypeLabel = (type: string) => {
-    switch (type) {
-      case TransactionType.income:
-        return t('transactions.income');
-      case TransactionType.expense:
-        return t('transactions.expense');
-      case TransactionType.transfer:
-        return t('transactions.transfer');
-      case TransactionType.loan_given:
-        return t('transactions.loanGiven');
-      case TransactionType.loan_received:
-        return t('transactions.loanReceived');
-      case TransactionType.repay_debt:
-        return t('categories.repay_debt', { defaultValue: 'Repay Debt' });
-      case TransactionType.collect_debt:
-        return t('categories.collect_debt', { defaultValue: 'Collect Debt' });
-      case TransactionType.investment:
-        return t('transactions.investment');
-      default:
-        return type;
-    }
-  };
-
-  const getTransactionTypeColor = (type: string) => {
-    switch (type) {
-      case TransactionType.income:
-        return 'green';
-      case TransactionType.expense:
-        return 'red';
-      case TransactionType.transfer:
-        return 'blue';
-      case TransactionType.loan_given:
-      case TransactionType.collect_debt:
-        return 'orange';
-      case TransactionType.loan_received:
-      case TransactionType.repay_debt:
-        return 'cyan';
-      default:
-        return 'gray';
-    }
-  };
-
-  const grouping = useMemo(() => {
-    if (groupingLevel === 'none') return [];
-    return ['date'];
-  }, [groupingLevel]);
+  const { groupingLevel, setGroupingLevel, grouping, enableGrouping } =
+    useTableGrouping('none' as GroupingLevel);
 
   const dateAccessor = useCallback(
     (row: TransactionDetail) => {
@@ -128,46 +80,55 @@ const TransactionTable = ({
     [groupingLevel],
   );
 
+  const dateGroupingConfig = useMemo(
+    () =>
+      createDateGroupingConfig<TransactionDetail>(
+        groupingLevel,
+        dateAccessor,
+        i18n.language || 'en',
+      ),
+    [groupingLevel, dateAccessor, i18n.language],
+  );
+
   const columns = useMemo(
     (): DataTableColumn<TransactionDetail>[] => [
       {
         id: 'date',
         accessor: dateAccessor as (row: TransactionDetail) => string,
         title: 'transactions.date',
-        enableGrouping: groupingLevel !== 'none',
-        GroupedCell:
-          groupingLevel !== 'none'
-            ? ({ row, cell }: any) => {
-                const groupValue = cell.getValue() as string;
-                const formatted = formatDateGroupKey(
-                  groupValue,
-                  groupingLevel as DateGroupLevel,
-                  i18n.language || 'en',
-                );
-                const count = row.subRows?.length || 0;
-                return (
-                  <Box
-                    style={{
-                      color: 'var(--mantine-color-blue-6)',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    <strong>{formatted}</strong> ({count})
-                  </Box>
-                );
-              }
-            : undefined,
+        enableGrouping: enableGrouping,
+        GroupedCell: dateGroupingConfig.GroupedCell,
       },
-      {
+      createTypeColumn<TransactionDetail>({
         accessor: 'type',
         title: 'transactions.type',
-        render: (_, row: TransactionDetail) => (
-          <Badge color={getTransactionTypeColor(row.type)}>
-            {getTransactionTypeLabel(row.type)}
-          </Badge>
-        ),
         enableSorting: false,
-      },
+        getType: (row) => row.type,
+        labelMap: {
+          [TransactionType.income]: t('transactions.income'),
+          [TransactionType.expense]: t('transactions.expense'),
+          [TransactionType.transfer]: t('transactions.transfer'),
+          [TransactionType.loan_given]: t('transactions.loanGiven'),
+          [TransactionType.loan_received]: t('transactions.loanReceived'),
+          [TransactionType.repay_debt]: t('categories.repay_debt', {
+            defaultValue: 'Repay Debt',
+          }),
+          [TransactionType.collect_debt]: t('categories.collect_debt', {
+            defaultValue: 'Collect Debt',
+          }),
+          [TransactionType.investment]: t('transactions.investment'),
+        },
+        colorMap: {
+          [TransactionType.income]: 'green',
+          [TransactionType.expense]: 'red',
+          [TransactionType.transfer]: 'blue',
+          [TransactionType.loan_given]: 'orange',
+          [TransactionType.collect_debt]: 'orange',
+          [TransactionType.loan_received]: 'cyan',
+          [TransactionType.repay_debt]: 'cyan',
+          [TransactionType.investment]: 'purple',
+        },
+      }),
       {
         accessor: (row) => row.account?.name ?? '',
         title: 'transactions.account',
@@ -218,7 +179,7 @@ const TransactionTable = ({
           );
         },
       },
-      {
+      createCurrencyColumn<TransactionDetail>({
         id: 'amount',
         accessor: (row) => {
           const amount = parseFloat(String(row.amount));
@@ -226,64 +187,54 @@ const TransactionTable = ({
           return isExpense ? -amount : amount;
         },
         title: 'transactions.amount',
-        aggregationFn: groupingLevel !== 'none' ? 'sum' : undefined,
-        AggregatedCell:
-          groupingLevel !== 'none'
-            ? ({ row, cell }: any) => {
-                const aggregatedValue = cell.getValue() as number;
-                const subRows = row.subRows || [];
-                const firstTransaction = subRows[0]?.original as
-                  | TransactionDetail
-                  | undefined;
-                const currencySymbol =
-                  firstTransaction?.account?.currency?.symbol || '';
-                const isPositive = aggregatedValue >= 0;
-                return (
-                  <Box
-                    style={{
-                      color: isPositive
-                        ? 'var(--mantine-color-green-6)'
-                        : 'var(--mantine-color-red-6)',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {t('transactions.totalAmount', { defaultValue: 'Total' })}:{' '}
-                    <NumberFormatter
-                      value={aggregatedValue}
-                      prefix={currencySymbol ? `${currencySymbol} ` : ''}
-                      thousandSeparator=","
-                      decimalScale={2}
-                      allowNegative={true}
-                    />
-                  </Box>
-                );
-              }
-            : undefined,
-        render: (_, row: TransactionDetail) => {
+        enableGrouping: enableGrouping,
+        aggregationFn: enableGrouping ? 'sum' : undefined,
+        AggregatedCell: enableGrouping
+          ? ({ row, cell }: any) => {
+              const aggregatedValue = cell.getValue() as number;
+              const subRows = row.subRows || [];
+              const firstTransaction = subRows[0]?.original as
+                | TransactionDetail
+                | undefined;
+              const currencySymbol =
+                firstTransaction?.account?.currency?.symbol || '';
+              const isPositive = aggregatedValue >= 0;
+              return (
+                <Box
+                  style={{
+                    color: isPositive
+                      ? 'var(--mantine-color-green-6)'
+                      : 'var(--mantine-color-red-6)',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {t('transactions.totalAmount', { defaultValue: 'Total' })}:{' '}
+                  <NumberFormatter
+                    value={aggregatedValue}
+                    prefix={currencySymbol ? `${currencySymbol} ` : ''}
+                    thousandSeparator=","
+                    decimalScale={2}
+                    allowNegative={true}
+                  />
+                </Box>
+              );
+            }
+          : undefined,
+        getValue: (row) => {
           const amount = parseFloat(String(row.amount));
           const isExpense = row.type === TransactionType.expense;
-          const isIncome = row.type === TransactionType.income;
-          const color = isExpense ? 'red' : isIncome ? 'green' : undefined;
-          const currencySymbol = row.account?.currency?.symbol || '';
-
-          return (
-            <Text size="sm" fw={500} c={color}>
-              {isIncome && (
-                <Text component="span" mr={4}>
-                  +
-                </Text>
-              )}
-              <NumberFormatter
-                value={isExpense ? -amount : amount}
-                prefix={currencySymbol ? `${currencySymbol} ` : ''}
-                thousandSeparator=","
-                decimalScale={2}
-                allowNegative={true}
-              />
-            </Text>
-          );
+          return isExpense ? -amount : amount;
         },
-      },
+        getSymbol: (row) => row.account?.currency?.symbol,
+        decimalScale: 2,
+        allowNegative: true,
+        showPlus: true,
+        getColor: (row) => {
+          const isExpense = row.type === TransactionType.expense;
+          const isIncome = row.type === TransactionType.income;
+          return isExpense ? 'red' : isIncome ? 'green' : undefined;
+        },
+      }),
       {
         enableSorting: false,
         accessor: (row) => row.event?.name,
@@ -307,71 +258,27 @@ const TransactionTable = ({
         ellipsis: true,
         enableSorting: false,
       },
-      {
+      createActionColumn<TransactionDetail>({
         title: 'transactions.actions',
-        textAlign: 'center',
-        width: '8rem',
-        render: (_, row: TransactionDetail) => (
-          <Group gap="xs" justify="center">
-            <ActionIcon
-              variant="subtle"
-              color="blue"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(row);
-              }}
-            >
-              <IconEdit size={16} />
-            </ActionIcon>
-            <ActionIcon
-              variant="subtle"
-              color="red"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(row);
-              }}
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
-          </Group>
-        ),
-      },
+        onEdit,
+        onDelete,
+      }),
     ],
-    [t, onEdit, onDelete, groupingLevel, i18n.language, dateAccessor],
+    [
+      t,
+      onEdit,
+      onDelete,
+      groupingLevel,
+      i18n.language,
+      dateAccessor,
+      enableGrouping,
+      dateGroupingConfig,
+    ],
   );
 
   return (
     <div>
-      <Group mb="md">
-        <Select
-          label={t('transactions.groupBy', { defaultValue: 'Group by' })}
-          value={groupingLevel}
-          onChange={(value) =>
-            setGroupingLevel((value as DateGroupLevel | 'none') || 'none')
-          }
-          data={[
-            {
-              value: 'none',
-              label: t('transactions.noGrouping', {
-                defaultValue: 'No Grouping',
-              }),
-            },
-            {
-              value: 'day',
-              label: t('transactions.groupByDay', { defaultValue: 'Day' }),
-            },
-            {
-              value: 'month',
-              label: t('transactions.groupByMonth', { defaultValue: 'Month' }),
-            },
-            {
-              value: 'year',
-              label: t('transactions.groupByYear', { defaultValue: 'Year' }),
-            },
-          ]}
-          style={{ maxWidth: '200px' }}
-        />
-      </Group>
+      <GroupingSelector value={groupingLevel} onChange={setGroupingLevel} />
       <DataTable
         key={`table-${groupingLevel}`}
         data={transactions}
@@ -386,7 +293,7 @@ const TransactionTable = ({
         totalRecords={totalRecords}
         sorting={sorting}
         onSortingChange={onSortingChange}
-        enableGrouping={groupingLevel !== 'none'}
+        enableGrouping={enableGrouping}
         grouping={grouping}
         onGroupingChange={(updater) => {
           const next =
@@ -395,7 +302,7 @@ const TransactionTable = ({
             setGroupingLevel('none');
           }
         }}
-        initialGrouping={groupingLevel !== 'none' ? grouping : undefined}
+        initialGrouping={enableGrouping ? grouping : undefined}
       />
     </div>
   );

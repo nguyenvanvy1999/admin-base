@@ -1,18 +1,74 @@
+import type { AggregationFn, CellContext, Row } from '@tanstack/react-table';
 import type { ParseKeys } from 'i18next';
 import type React from 'react';
 
-export type AccessorFn<T> = (row: T) => unknown;
+export type AccessorFn<T, V = unknown> = (row: T) => V;
 
 export type FilterVariant = 'text' | 'number' | 'select' | 'date';
 
 export type SortingState = { id: string; desc: boolean }[];
 export type ColumnFilter = { id: string; value: unknown };
 
-export interface DataTableColumn<T> {
+type PathImpl<
+  T,
+  Key extends keyof T,
+  Depth extends readonly unknown[] = [],
+> = Key extends string
+  ? Depth['length'] extends 4
+    ? Key
+    : T[Key] extends Record<string, any>
+      ? T[Key] extends any[]
+        ? Key
+        :
+            | `${Key}.${PathImpl<
+                T[Key],
+                Exclude<keyof T[Key], keyof any[]>,
+                [...Depth, unknown]
+              > &
+                string}`
+            | `${Key}.${Exclude<keyof T[Key], keyof any[]> & string}`
+            | Key
+      : Key
+  : never;
+
+type PathImpl2<T> = PathImpl<T, keyof T> | keyof T;
+
+export type Path<T> = PathImpl2<T> extends string | keyof T
+  ? PathImpl2<T>
+  : string;
+
+export type PathValue<
+  T,
+  P extends Path<T>,
+> = P extends `${infer Key}.${infer Rest}`
+  ? Key extends keyof T
+    ? Rest extends Path<T[Key]>
+      ? PathValue<T[Key], Rest>
+      : never
+    : never
+  : P extends keyof T
+    ? T[P]
+    : never;
+
+export type TypedAccessor<T, V = unknown> = Path<T> | string | AccessorFn<T, V>;
+
+export type GroupedCellProps<T> = {
+  row: Row<T>;
+  cell: CellContext<T, unknown>;
+};
+
+export type AggregatedCellProps<T> = {
+  row: Row<T>;
+  cell: CellContext<T, unknown>;
+};
+
+export type DataTableAggregationFn<T> = AggregationFn<T> | string;
+
+export interface DataTableColumn<T, V = unknown> {
   id?: string;
   title?: ParseKeys;
-  accessor?: string | AccessorFn<T>;
-  render?: (value: unknown, row: T, rowIndex: number) => React.ReactNode;
+  accessor?: TypedAccessor<T, V>;
+  render?: (value: V | unknown, row: T, rowIndex: number) => React.ReactNode;
   width?: `${number}rem`;
   minWidth?: `${number}rem`;
   textAlign?: 'left' | 'center' | 'right';
@@ -33,9 +89,9 @@ export interface DataTableColumn<T> {
   autoFormatDisabled?: boolean;
   enableSorting?: boolean;
   enableGrouping?: boolean;
-  aggregationFn?: string;
-  GroupedCell?: (props: { row: any; cell: any }) => React.ReactNode;
-  AggregatedCell?: (props: { row: any; cell: any }) => React.ReactNode;
+  aggregationFn?: DataTableAggregationFn<T>;
+  GroupedCell?: (props: GroupedCellProps<T>) => React.ReactNode;
+  AggregatedCell?: (props: AggregatedCellProps<T>) => React.ReactNode;
 }
 
 export interface DataTableProps<T extends { id: string } = { id: string }> {

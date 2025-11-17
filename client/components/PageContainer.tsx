@@ -1,5 +1,6 @@
 import {
   Button,
+  Card,
   Group,
   SimpleGrid,
   Stack,
@@ -124,26 +125,20 @@ export const PageContainer: FC<Props> = ({
       {stats && stats.length > 0 && (
         <SimpleGrid cols={stats.length} spacing="md">
           {stats.map((stat, index) => (
-            <Stack
-              key={index}
-              gap="xs"
-              p="md"
-              style={{
-                border: '1px solid var(--mantine-color-gray-3)',
-                borderRadius: 'var(--mantine-radius-sm)',
-              }}
-            >
-              <Text size="sm" c="dimmed">
-                {t(stat.titleI18nKey)}
-              </Text>
-              <Text size="xl" fw={700} c={stat.color}>
-                {typeof stat.value === 'number'
-                  ? stat.value.toLocaleString()
-                  : typeof stat.value === 'string'
-                    ? stat.value
-                    : stat.value}
-              </Text>
-            </Stack>
+            <Card key={index} shadow="sm" padding="md" withBorder>
+              <Stack gap="xs">
+                <Text size="sm" c="dimmed">
+                  {t(stat.titleI18nKey)}
+                </Text>
+                <Text size="xl" fw={700} c={stat.color}>
+                  {typeof stat.value === 'number'
+                    ? stat.value.toLocaleString()
+                    : typeof stat.value === 'string'
+                      ? stat.value
+                      : stat.value}
+                </Text>
+              </Stack>
+            </Card>
           ))}
         </SimpleGrid>
       )}
