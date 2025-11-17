@@ -131,7 +131,7 @@ const AddValuationDialog = ({
                 value={field.value ? new Date(field.value) : new Date()}
                 onChange={(value) => {
                   if (value) {
-                    field.onChange(value.toISOString());
+                    field.onChange(value.toString());
                   }
                 }}
                 valueFormat="DD/MM/YYYY HH:mm"
@@ -215,7 +215,7 @@ const AddValuationDialog = ({
                     field.onChange('');
                     return;
                   }
-                  field.onChange(value.toISOString());
+                  field.onChange(value.toString());
                 }}
                 valueFormat="DD/MM/YYYY HH:mm"
               />

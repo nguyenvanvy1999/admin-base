@@ -4,14 +4,17 @@ import { BudgetPeriod } from '@server/generated';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { DataTable, type DataTableColumn } from './DataTable';
 import {
   createBooleanColumn,
   createDateColumn,
   createTypeColumn,
-} from './tables/columnFactories';
-import { renderActionButtons, renderCurrency } from './tables/columnRenderers';
-import { DeleteManyToolbar } from './tables/deleteManyToolbar';
+} from '@/components/tables/columnFactories';
+import {
+  renderActionButtons,
+  renderCurrency,
+} from '@/components/tables/columnRenderers';
+import { DataTable, type DataTableColumn } from './DataTable';
+import { DeleteManyToolbar } from './deleteManyToolbar';
 
 type BudgetTableProps = {
   budgets: BudgetResponse[];

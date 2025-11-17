@@ -9,8 +9,8 @@ import { AccountType } from '@server/generated';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Select } from '../Select';
+import { ZodFormController } from '../ZodFormController';
 import { CRUDDialog } from './CRUDDialog';
-import { ZodFormController } from './ZodFormController';
 
 const baseSchema = UpsertAccountDto.extend({
   name: z.string().min(1, 'accounts.nameRequired'),

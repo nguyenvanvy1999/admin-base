@@ -12,7 +12,7 @@ import {
   TextareaField,
 } from '../forms';
 
-const createBalanceAdjustmentSchema = (currentBalance: number | null) =>
+export const createBalanceAdjustmentSchema = (currentBalance: number | null) =>
   z.object({
     accountId: z.string().min(1, 'transactions.accountRequired'),
     newBalance: z
@@ -26,7 +26,7 @@ const createBalanceAdjustmentSchema = (currentBalance: number | null) =>
     note: z.string().optional(),
   });
 
-type BalanceAdjustmentFormValue = z.infer<
+export type BalanceAdjustmentFormValue = z.infer<
   ReturnType<typeof createBalanceAdjustmentSchema>
 >;
 

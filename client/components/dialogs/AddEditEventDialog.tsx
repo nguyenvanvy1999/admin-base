@@ -7,8 +7,8 @@ import {
 } from '@server/dto/event.dto';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { CRUDDialog } from './dialogs/CRUDDialog';
-import { ZodFormController } from './ZodFormController';
+import { ZodFormController } from '../ZodFormController';
+import { CRUDDialog } from './CRUDDialog';
 
 const schema = UpsertEventDto.extend({
   name: z.string().min(1, 'events.nameRequired'),

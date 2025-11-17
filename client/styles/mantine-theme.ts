@@ -21,46 +21,6 @@ const CONTAINER_SIZES: Record<string, string> = {
   xxl: rem('1600px'),
 };
 
-// Color palettes generated from CSS variables in tokens.css
-const themeColors = {
-  brand: [
-    '#e0f8ff',
-    '#ccedff',
-    '#99daff',
-    '#66c7ff',
-    '#33b4ff',
-    '#00a1ff',
-    '#008ee6',
-    '#007acc',
-    '#0067b3',
-    '#005499',
-  ],
-  income: [
-    '#e1f9e8',
-    '#cef2d7',
-    '#aee5b9',
-    '#8cd89a',
-    '#69cb7c',
-    '#47be5d',
-    '#39a950',
-    '#2b9343',
-    '#1d7d36',
-    '#0f6729',
-  ],
-  expense: [
-    '#ffe2e2',
-    '#ffcfcf',
-    '#ff9e9e',
-    '#ff6c6c',
-    '#ff3b3b',
-    '#ff0a0a',
-    '#e60000',
-    '#cc0000',
-    '#b30000',
-    '#990000',
-  ],
-};
-
 export const mantineTheme: MantineThemeOverride = createTheme({
   /** Put your mantine theme override here */
   fontSizes: {
@@ -87,9 +47,42 @@ export const mantineTheme: MantineThemeOverride = createTheme({
   },
   primaryColor: 'brand',
   colors: {
-    brand: themeColors.brand,
-    income: themeColors.income,
-    expense: themeColors.expense,
+    brand: [
+      '#e0f8ff',
+      '#ccedff',
+      '#99daff',
+      '#66c7ff',
+      '#33b4ff',
+      '#00a1ff',
+      '#008ee6',
+      '#007acc',
+      '#0067b3',
+      '#005499',
+    ],
+    income: [
+      '#e1f9e8',
+      '#cef2d7',
+      '#aee5b9',
+      '#8cd89a',
+      '#69cb7c',
+      '#47be5d',
+      '#39a950',
+      '#2b9343',
+      '#1d7d36',
+      '#0f6729',
+    ],
+    expense: [
+      '#ffe2e2',
+      '#ffcfcf',
+      '#ff9e9e',
+      '#ff6c6c',
+      '#ff3b3b',
+      '#ff0a0a',
+      '#e60000',
+      '#cc0000',
+      '#b30000',
+      '#990000',
+    ],
   },
   components: {
     Container: Container.extend({

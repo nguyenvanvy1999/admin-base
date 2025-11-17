@@ -128,224 +128,211 @@ const AddTradeDialog = ({
       showSaveAndAdd={false}
       size="md"
     >
-      {({ control, watch, setValue }) => (
-        <TradeFormFields
-          control={control}
-          watch={watch}
-          setValue={setValue}
-          accountOptions={accountOptions}
-          hasBaseCurrency={hasBaseCurrency}
-        />
-      )}
-    </CRUDDialog>
-  );
-};
+      {({ control, watch, setValue }) => {
+        const priceValue = watch('price');
+        const quantityValue = watch('quantity');
 
-// Helper component to handle dynamic form logic
-const TradeFormFields = ({
-  control,
-  watch,
-  setValue,
-  accountOptions,
-  hasBaseCurrency,
-}) => {
-  const { t } = useTranslation();
-  const priceValue = watch('price');
-  const quantityValue = watch('quantity');
-
-  useEffect(() => {
-    if (priceValue > 0 && quantityValue > 0) {
-      const computed = Number(priceValue) * Number(quantityValue);
-      if (Number.isFinite(computed)) {
-        setValue('amount', computed, { shouldValidate: true });
-      }
-    }
-  }, [priceValue, quantityValue, setValue]);
-
-  return (
-    <>
-      <ZodFormController
-        control={control}
-        name="side"
-        render={({ field }) => (
-          <SegmentedControl
-            fullWidth
-            value={field.value || TradeSide.buy}
-            onChange={(value) =>
-              field.onChange((value as TradeSide) || TradeSide.buy)
+        useEffect(() => {
+          if (priceValue > 0 && quantityValue > 0) {
+            const computed = Number(priceValue) * Number(quantityValue);
+            if (Number.isFinite(computed)) {
+              setValue('amount', computed, { shouldValidate: true });
             }
-            data={[
-              {
-                label: t('investments.trade.buy', { defaultValue: 'Buy' }),
-                value: TradeSide.buy,
-              },
-              {
-                label: t('investments.trade.sell', {
-                  defaultValue: 'Sell',
-                }),
-                value: TradeSide.sell,
-              },
-            ]}
-          />
-        )}
-      />
+          }
+        }, [priceValue, quantityValue, setValue]);
 
-      <ZodFormController
-        control={control}
-        name="timestamp"
-        render={({ field, fieldState: { error } }) => (
-          <DateTimePicker
-            label={t('investments.trade.date', { defaultValue: 'Date' })}
-            error={error}
-            value={field.value ? new Date(field.value) : new Date()}
-            onChange={(value) => {
-              if (value) {
-                field.onChange(value.toISOString());
-              }
-            }}
-            valueFormat="DD/MM/YYYY HH:mm"
-            required
-          />
-        )}
-      />
+        return (
+          <>
+            <ZodFormController
+              control={control}
+              name="side"
+              render={({ field }) => (
+                <SegmentedControl
+                  fullWidth
+                  value={field.value || TradeSide.buy}
+                  onChange={(value) =>
+                    field.onChange((value as TradeSide) || TradeSide.buy)
+                  }
+                  data={[
+                    {
+                      label: t('investments.trade.buy', {
+                        defaultValue: 'Buy',
+                      }),
+                      value: TradeSide.buy,
+                    },
+                    {
+                      label: t('investments.trade.sell', {
+                        defaultValue: 'Sell',
+                      }),
+                      value: TradeSide.sell,
+                    },
+                  ]}
+                />
+              )}
+            />
 
-      <ZodFormController
-        control={control}
-        name="accountId"
-        render={({ field, fieldState: { error } }) => (
-          <Select
-            required
-            label={t('investments.trade.account', {
-              defaultValue: 'Settlement account',
-            })}
-            placeholder={t('investments.trade.accountPlaceholder', {
-              defaultValue: 'Select account',
-            })}
-            error={error}
-            items={accountOptions}
-            value={field.value || null}
-            onChange={(value) => field.onChange(value || '')}
-            searchable
-          />
-        )}
-      />
+            <ZodFormController
+              control={control}
+              name="timestamp"
+              render={({ field, fieldState: { error } }) => (
+                <DateTimePicker
+                  label={t('investments.trade.date', { defaultValue: 'Date' })}
+                  error={error}
+                  value={field.value ? new Date(field.value) : new Date()}
+                  onChange={(value) => {
+                    if (value) {
+                      field.onChange(value?.toString());
+                    }
+                  }}
+                  valueFormat="DD/MM/YYYY HH:mm"
+                  required
+                />
+              )}
+            />
 
-      <ZodFormController
-        control={control}
-        name="price"
-        render={({ field, fieldState: { error } }) => (
-          <NumberInput
-            label={t('investments.trade.price', { defaultValue: 'Price' })}
-            error={error}
-            value={field.value ?? 0}
-            onChange={(value) => field.onChange(Number(value) || 0)}
-            min={0}
-            decimalScale={6}
-            thousandSeparator=","
-            required
-          />
-        )}
-      />
+            <ZodFormController
+              control={control}
+              name="accountId"
+              render={({ field, fieldState: { error } }) => (
+                <Select
+                  required
+                  label={t('investments.trade.account', {
+                    defaultValue: 'Settlement account',
+                  })}
+                  placeholder={t('investments.trade.accountPlaceholder', {
+                    defaultValue: 'Select account',
+                  })}
+                  error={error}
+                  items={accountOptions}
+                  value={field.value || null}
+                  onChange={(value) => field.onChange(value || '')}
+                  searchable
+                />
+              )}
+            />
 
-      <ZodFormController
-        control={control}
-        name="quantity"
-        render={({ field, fieldState: { error } }) => (
-          <NumberInput
-            label={t('investments.trade.quantity', {
-              defaultValue: 'Quantity',
-            })}
-            error={error}
-            value={field.value ?? 0}
-            onChange={(value) => field.onChange(Number(value) || 0)}
-            min={0}
-            decimalScale={8}
-            thousandSeparator=","
-            required
-          />
-        )}
-      />
+            <ZodFormController
+              control={control}
+              name="price"
+              render={({ field, fieldState: { error } }) => (
+                <NumberInput
+                  label={t('investments.trade.price', {
+                    defaultValue: 'Price',
+                  })}
+                  error={error}
+                  value={field.value ?? 0}
+                  onChange={(value) => field.onChange(Number(value) || 0)}
+                  min={0}
+                  decimalScale={6}
+                  thousandSeparator=","
+                  required
+                />
+              )}
+            />
 
-      <ZodFormController
-        control={control}
-        name="amount"
-        render={({ field, fieldState: { error } }) => (
-          <NumberInput
-            label={t('investments.trade.amount', {
-              defaultValue: 'Amount',
-            })}
-            error={error}
-            value={field.value ?? 0}
-            onChange={(value) => field.onChange(Number(value) || 0)}
-            min={0}
-            decimalScale={2}
-            thousandSeparator=","
-            required
-          />
-        )}
-      />
+            <ZodFormController
+              control={control}
+              name="quantity"
+              render={({ field, fieldState: { error } }) => (
+                <NumberInput
+                  label={t('investments.trade.quantity', {
+                    defaultValue: 'Quantity',
+                  })}
+                  error={error}
+                  value={field.value ?? 0}
+                  onChange={(value) => field.onChange(Number(value) || 0)}
+                  min={0}
+                  decimalScale={8}
+                  thousandSeparator=","
+                  required
+                />
+              )}
+            />
 
-      <ZodFormController
-        control={control}
-        name="fee"
-        render={({ field, fieldState: { error } }) => (
-          <NumberInput
-            label={t('investments.trade.fee', { defaultValue: 'Fee' })}
-            error={error}
-            value={field.value ?? 0}
-            onChange={(value) => field.onChange(Number(value) || 0)}
-            min={0}
-            decimalScale={2}
-            thousandSeparator=","
-          />
-        )}
-      />
+            <ZodFormController
+              control={control}
+              name="amount"
+              render={({ field, fieldState: { error } }) => (
+                <NumberInput
+                  label={t('investments.trade.amount', {
+                    defaultValue: 'Amount',
+                  })}
+                  error={error}
+                  value={field.value ?? 0}
+                  onChange={(value) => field.onChange(Number(value) || 0)}
+                  min={0}
+                  decimalScale={2}
+                  thousandSeparator=","
+                  required
+                />
+              )}
+            />
 
-      {hasBaseCurrency && (
-        <>
-          <ZodFormController
-            control={control}
-            name="amountInBaseCurrency"
-            render={({ field, fieldState: { error } }) => (
-              <NumberInput
-                label={t('investments.trade.amountInBaseCurrency', {
-                  defaultValue: 'Amount in Base Currency',
-                })}
-                error={error}
-                value={field.value ?? 0}
-                onChange={(value) => field.onChange(Number(value) || 0)}
-                min={0}
-                decimalScale={2}
-                thousandSeparator=","
-              />
+            <ZodFormController
+              control={control}
+              name="fee"
+              render={({ field, fieldState: { error } }) => (
+                <NumberInput
+                  label={t('investments.trade.fee', { defaultValue: 'Fee' })}
+                  error={error}
+                  value={field.value ?? 0}
+                  onChange={(value) => field.onChange(Number(value) || 0)}
+                  min={0}
+                  decimalScale={2}
+                  thousandSeparator=","
+                />
+              )}
+            />
+
+            {hasBaseCurrency && (
+              <>
+                <ZodFormController
+                  control={control}
+                  name="amountInBaseCurrency"
+                  render={({ field, fieldState: { error } }) => (
+                    <NumberInput
+                      label={t('investments.trade.amountInBaseCurrency', {
+                        defaultValue: 'Amount in Base Currency',
+                      })}
+                      error={error}
+                      value={field.value ?? 0}
+                      onChange={(value) => field.onChange(Number(value) || 0)}
+                      min={0}
+                      decimalScale={2}
+                      thousandSeparator=","
+                    />
+                  )}
+                />
+
+                <ZodFormController
+                  control={control}
+                  name="exchangeRate"
+                  render={({ field, fieldState: { error } }) => (
+                    <NumberInput
+                      label={t('investments.trade.exchangeRate', {
+                        defaultValue: 'Exchange Rate',
+                      })}
+                      error={error}
+                      value={field.value ?? 0}
+                      onChange={(value) => field.onChange(Number(value) || 0)}
+                      min={0}
+                      decimalScale={6}
+                    />
+                  )}
+                />
+              </>
             )}
-          />
 
-          <ZodFormController
-            control={control}
-            name="exchangeRate"
-            render={({ field, fieldState: { error } }) => (
-              <NumberInput
-                label={t('investments.trade.exchangeRate', {
-                  defaultValue: 'Exchange Rate',
-                })}
-                error={error}
-                value={field.value ?? 0}
-                onChange={(value) => field.onChange(Number(value) || 0)}
-                min={0}
-                decimalScale={6}
-              />
-            )}
-          />
-        </>
-      )}
-
-      <Text size="xs" c="dimmed">
-        {t('investments.trade.currencyHint', {
-          defaultValue: 'All amounts are recorded in the investment currency.',
-        })}
-      </Text>
-    </>
+            <Text size="xs" c="dimmed">
+              {t('investments.trade.currencyHint', {
+                defaultValue:
+                  'All amounts are recorded in the investment currency.',
+              })}
+            </Text>
+          </>
+        );
+      }}
+    </CRUDDialog>
   );
 };
 

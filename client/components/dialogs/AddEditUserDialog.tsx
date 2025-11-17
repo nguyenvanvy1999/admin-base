@@ -4,9 +4,9 @@ import type { IUpsertUserDto, UserResponse } from '@server/dto/admin/user.dto';
 import { UpsertUserDto } from '@server/dto/admin/user.dto';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { CRUDDialog } from './dialogs/CRUDDialog';
-import { Select } from './Select';
-import { ZodFormController } from './ZodFormController';
+import { Select } from '../Select';
+import { ZodFormController } from '../ZodFormController';
+import { CRUDDialog } from './CRUDDialog';
 
 const createSchema = UpsertUserDto.extend({
   username: z.string().min(1, 'users.usernameRequired'),

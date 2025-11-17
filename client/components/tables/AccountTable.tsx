@@ -2,17 +2,14 @@ import type { AccountResponse } from '@server/dto/account.dto';
 import { AccountType } from '@server/generated';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { SortingState } from '@/components';
+import { renderCurrency } from '@/components/tables/columnRenderers';
 import {
   createActionColumn,
   createCurrencyColumn,
   createTypeColumn,
 } from './columnFactories';
-import {
-  DataTable,
-  type DataTableColumn,
-  type SortingState,
-} from './DataTable';
-import { renderCurrency } from './tables/columnRenderers';
+import { DataTable, type DataTableColumn } from './DataTable';
 
 type AccountTableProps = {
   accounts: AccountResponse[];

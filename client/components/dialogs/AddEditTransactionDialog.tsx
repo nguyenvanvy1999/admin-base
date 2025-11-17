@@ -20,6 +20,11 @@ import { TransactionType } from '@server/generated';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import {
+  type BalanceAdjustmentFormValue,
+  createBalanceAdjustmentSchema,
+} from '@/components/dialogs/AdjustBalanceDialog';
+import { useAdjustBalanceMutation } from '@/hooks/mutations/useTransactionMutations';
 import CategorySelect from '../CategorySelect';
 import EventSelect from '../EventSelect';
 import {

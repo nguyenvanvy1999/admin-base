@@ -9,8 +9,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { CRUDDialog } from './dialogs/CRUDDialog';
-import { ZodFormController } from './ZodFormController';
+import { ZodFormController } from '../ZodFormController';
+import { CRUDDialog } from './CRUDDialog';
 
 const FROZEN_ROLE_IDS = ['role_user_default', 'role_admin_default'];
 

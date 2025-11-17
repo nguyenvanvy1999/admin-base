@@ -11,7 +11,10 @@ import type { ZodType } from 'zod';
 import { DialogFooter } from './base/DialogFooter';
 
 export interface CRUDDialogProps<TData, TFormValue extends FieldValues>
-  extends Omit<ModalProps, 'opened' | 'onClose' | 'title' | 'children'> {
+  extends Omit<
+    ModalProps,
+    'opened' | 'onClose' | 'title' | 'children' | 'onSubmit'
+  > {
   /**
    * Whether the dialog is open
    */
@@ -146,7 +149,7 @@ export function CRUDDialog<TData, TFormValue extends FieldValues>({
 
   const { control, handleSubmit, reset, watch, setValue } = useZodForm({
     zod: schema,
-    defaultValues,
+    defaultValues: defaultValues as any,
   });
 
   // Reset form when dialog opens/closes or item changes

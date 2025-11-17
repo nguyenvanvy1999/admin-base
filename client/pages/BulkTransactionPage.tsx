@@ -1,7 +1,5 @@
 import { PageContainer } from '@client/components/PageContainer';
-import BulkTransactionTable, {
-  type BulkTransactionRow,
-} from '@client/components/tables/BulkTransactionTable';
+
 import { ZodFormController } from '@client/components/ZodFormController';
 import { useCreateBatchTransactionsMutation } from '@client/hooks/mutations/useTransactionMutations';
 import { useZodForm } from '@client/hooks/useZodForm';
@@ -12,6 +10,9 @@ import { TransactionType } from '@server/generated';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import BulkTransactionTable, {
+  type BulkTransactionRow,
+} from '@/components/BulkTransactionTable';
 
 const defaultDateSchema = z.object({
   defaultDate: z.string().min(1, 'Date is required'),

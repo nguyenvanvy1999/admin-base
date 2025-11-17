@@ -6,8 +6,8 @@ import {
 } from '@server/dto/tag.dto';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { CRUDDialog } from './dialogs/CRUDDialog';
-import { ZodFormController } from './ZodFormController';
+import { ZodFormController } from '../ZodFormController';
+import { CRUDDialog } from './CRUDDialog';
 
 const schema = UpsertTagDto.extend({
   name: z.string().min(1, 'tags.nameRequired'),

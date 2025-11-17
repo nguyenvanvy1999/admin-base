@@ -1,8 +1,9 @@
 import type { EventResponse } from '@server/dto/event.dto';
 import { useMemo } from 'react';
+import { createActionColumn } from '@/components/DataTable/utils';
+import { createDateColumn } from '@/components/tables/columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
-import { createActionColumn, createDateColumn } from './tables/columnFactories';
-import { DeleteManyToolbar } from './tables/deleteManyToolbar';
+import { DeleteManyToolbar } from './deleteManyToolbar';
 
 type EventTableProps = {
   events: EventResponse[];
