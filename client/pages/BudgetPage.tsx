@@ -1,12 +1,12 @@
-import AddEditBudgetDialog from '@client/components/AddEditBudgetDialog';
-import BudgetTable from '@client/components/BudgetTable';
-import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
-import { DeleteManyConfirmationModal } from '@client/components/DeleteManyConfirmationModal';
+import AddEditBudgetDialog from '@client/components/dialogs/AddEditBudgetDialog';
+import { DeleteConfirmationModal } from '@client/components/dialogs/DeleteConfirmationModal';
+import { DeleteManyConfirmationModal } from '@client/components/dialogs/DeleteManyConfirmationModal';
 import {
   FormComponent,
   type FormComponentRef,
 } from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
+import BudgetTable from '@client/components/tables/BudgetTable';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateBudgetMutation,

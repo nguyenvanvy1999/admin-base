@@ -1,23 +1,15 @@
 import { usePermissionsQuery } from '@client/hooks/queries/usePermissionQueries';
 import { usePermission } from '@client/hooks/usePermission';
-import { useZodForm } from '@client/hooks/useZodForm';
 import { userService } from '@client/services';
-import {
-  Modal,
-  MultiSelect,
-  Stack,
-  Switch,
-  Textarea,
-  TextInput,
-} from '@mantine/core';
+import { MultiSelect, Switch, Textarea, TextInput } from '@mantine/core';
 import type { RoleResponse } from '@server/dto/admin/role.dto';
 import { UpsertRoleDtoZod } from '@server/dto/admin/role.dto';
 import type { UserResponse } from '@server/dto/admin/user.dto';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { DialogFooterButtons } from './DialogFooterButtons';
+import { CRUDDialog } from './dialogs/CRUDDialog';
 import { ZodFormController } from './ZodFormController';
 
 const FROZEN_ROLE_IDS = ['role_user_default', 'role_admin_default'];
@@ -47,7 +39,6 @@ const AddEditRoleDialog = ({
   role,
   onSubmit,
   isLoading = false,
-  resetTrigger = 0,
 }: AddEditRoleDialogProps) => {
   const { t } = useTranslation();
   const { hasPermission } = usePermission();
@@ -61,7 +52,6 @@ const AddEditRoleDialog = ({
     queryFn: () => userService.listUsers({ page: 1, limit: 1000 }),
   });
 
-  const isEditMode = !!role;
   const isFrozen = role ? isFrozenRole(role.id) : false;
 
   const defaultValues: FormValue = {
@@ -72,25 +62,14 @@ const AddEditRoleDialog = ({
     playerIds: [],
   };
 
-  const { control, handleSubmit, reset } = useZodForm({
-    zod: schema,
-    defaultValues,
+  const getFormValues = (role: RoleResponse): FormValue => ({
+    id: role.id,
+    title: role.title,
+    description: role.description ?? null,
+    enabled: role.enabled,
+    permissionIds: role.permissionIds || [],
+    playerIds: role.playerIds || [],
   });
-
-  useEffect(() => {
-    if (role) {
-      reset({
-        id: role.id,
-        title: role.title,
-        description: role.description ?? null,
-        enabled: role.enabled,
-        permissionIds: role.permissionIds || [],
-        playerIds: role.playerIds || [],
-      });
-    } else {
-      reset(defaultValues);
-    }
-  }, [role, isOpen, reset, resetTrigger]);
 
   const permissionOptions = useMemo(() => {
     if (!permissionsData) return [];
@@ -108,19 +87,29 @@ const AddEditRoleDialog = ({
     }));
   }, [usersData]);
 
-  const onSubmitForm = handleSubmit((data) => {
+  const handleSubmit = (data: FormValue) => {
     onSubmit(data);
-  });
+  };
 
   return (
-    <Modal
-      opened={isOpen}
+    <CRUDDialog
+      isOpen={isOpen}
       onClose={onClose}
-      title={isEditMode ? t('roles.editRole') : t('roles.addRole')}
+      item={role}
+      onSubmit={handleSubmit}
+      isLoading={isLoading}
+      title={{
+        add: t('roles.addRole'),
+        edit: t('roles.editRole'),
+      }}
+      schema={schema}
+      defaultValues={defaultValues}
+      getFormValues={getFormValues}
+      showSaveAndAdd={false}
       size="md"
     >
-      <form onSubmit={onSubmitForm}>
-        <Stack gap="md">
+      {({ control }) => (
+        <>
           <ZodFormController
             control={control}
             name="title"
@@ -199,17 +188,9 @@ const AddEditRoleDialog = ({
               />
             )}
           />
-
-          <DialogFooterButtons
-            isEditMode={isEditMode}
-            isLoading={isLoading}
-            onCancel={onClose}
-            onSave={onSubmitForm}
-            showSaveAndAdd={false}
-          />
-        </Stack>
-      </form>
-    </Modal>
+        </>
+      )}
+    </CRUDDialog>
   );
 };
 

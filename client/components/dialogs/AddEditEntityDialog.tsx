@@ -1,15 +1,13 @@
-import { useZodForm } from '@client/hooks/useZodForm';
-import { Modal, Stack, Textarea, TextInput } from '@mantine/core';
+import { Textarea, TextInput } from '@mantine/core';
 import {
   type EntityResponse,
   type IUpsertEntityDto,
   UpsertEntityDto,
 } from '@server/dto/entity.dto';
 import { EntityType } from '@server/generated';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { DialogFooterButtons } from './DialogFooterButtons';
+import { CRUDDialog } from './dialogs/CRUDDialog';
 import { Select } from './Select';
 import { ZodFormController } from './ZodFormController';
 
@@ -37,10 +35,8 @@ const AddEditEntityDialog = ({
   entity,
   onSubmit,
   isLoading = false,
-  resetTrigger,
 }: AddEditEntityDialogProps) => {
   const { t } = useTranslation();
-  const isEditMode = !!entity;
 
   const defaultValues: FormValue = {
     name: '',
@@ -51,34 +47,19 @@ const AddEditEntityDialog = ({
     note: '',
   };
 
-  const { control, handleSubmit, reset } = useZodForm({
-    zod: schema,
-    defaultValues,
+  const getFormValues = (entity: EntityResponse): FormValue => ({
+    id: entity.id,
+    name: entity.name,
+    type: entity.type || EntityType.individual,
+    phone: entity.phone || '',
+    email: entity.email || '',
+    address: entity.address || '',
+    note: entity.note || '',
   });
 
-  useEffect(() => {
-    if (entity) {
-      reset({
-        id: entity.id,
-        name: entity.name,
-        type: entity.type || EntityType.individual,
-        phone: entity.phone || '',
-        email: entity.email || '',
-        address: entity.address || '',
-        note: entity.note || '',
-      });
-    } else {
-      reset(defaultValues);
-    }
-  }, [entity, isOpen, reset]);
+  const handleSubmit = (data: FormValue, saveAndAdd?: boolean) => {
+    const isEditMode = !!entity;
 
-  useEffect(() => {
-    if (resetTrigger && resetTrigger > 0 && !entity && isOpen) {
-      reset(defaultValues);
-    }
-  }, [resetTrigger, entity, isOpen, reset]);
-
-  const onSubmitForm = handleSubmit((data) => {
     const submitData: IUpsertEntityDto = {
       name: data.name.trim(),
       type: data.type,
@@ -104,43 +85,27 @@ const AddEditEntityDialog = ({
       submitData.note = data.note.trim();
     }
 
-    onSubmit(submitData, false);
-  });
-
-  const onSubmitFormAndAdd = handleSubmit((data) => {
-    const submitData: IUpsertEntityDto = {
-      name: data.name.trim(),
-      type: data.type,
-    };
-
-    if (data.phone && data.phone.trim() !== '') {
-      submitData.phone = data.phone.trim();
-    }
-
-    if (data.email && data.email.trim() !== '') {
-      submitData.email = data.email.trim();
-    }
-
-    if (data.address && data.address.trim() !== '') {
-      submitData.address = data.address.trim();
-    }
-
-    if (data.note && data.note.trim() !== '') {
-      submitData.note = data.note.trim();
-    }
-
-    onSubmit(submitData, true);
-  });
+    onSubmit(submitData, saveAndAdd);
+  };
 
   return (
-    <Modal
-      opened={isOpen}
+    <CRUDDialog
+      isOpen={isOpen}
       onClose={onClose}
-      title={isEditMode ? t('entities.editEntity') : t('entities.addEntity')}
+      item={entity}
+      onSubmit={handleSubmit}
+      isLoading={isLoading}
+      title={{
+        add: t('entities.addEntity'),
+        edit: t('entities.editEntity'),
+      }}
+      schema={schema}
+      defaultValues={defaultValues}
+      getFormValues={getFormValues}
       size="md"
     >
-      <form onSubmit={onSubmitForm}>
-        <Stack gap="md">
+      {({ control }) => (
+        <>
           <ZodFormController
             control={control}
             name="name"
@@ -232,17 +197,9 @@ const AddEditEntityDialog = ({
               />
             )}
           />
-
-          <DialogFooterButtons
-            isEditMode={isEditMode}
-            isLoading={isLoading}
-            onCancel={onClose}
-            onSave={onSubmitForm}
-            onSaveAndAdd={onSubmitFormAndAdd}
-          />
-        </Stack>
-      </form>
-    </Modal>
+        </>
+      )}
+    </CRUDDialog>
   );
 };
 

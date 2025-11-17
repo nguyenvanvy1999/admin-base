@@ -1,6 +1,6 @@
 import BudgetPeriodDetail from '@client/components/BudgetPeriodDetail';
-import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
-import TransactionTable from '@client/components/TransactionTable';
+import { DeleteConfirmationModal } from '@client/components/dialogs/DeleteConfirmationModal';
+import TransactionTable from '@client/components/tables/TransactionTable';
 import { useDeleteTransactionMutation } from '@client/hooks/mutations/useTransactionMutations';
 import {
   useBudgetPeriodDetailQuery,

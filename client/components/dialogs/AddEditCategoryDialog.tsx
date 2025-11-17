@@ -1,6 +1,5 @@
 import { useCategoriesQuery } from '@client/hooks/queries/useCategoryQueries';
-import { useZodForm } from '@client/hooks/useZodForm';
-import { Modal, Stack, TextInput } from '@mantine/core';
+import { TextInput } from '@mantine/core';
 import {
   type CategoryTreeResponse,
   type IUpsertCategoryDto,
@@ -8,12 +7,12 @@ import {
 } from '@server/dto/category.dto';
 import { CategoryType } from '@server/generated';
 import type { TFunction } from 'i18next';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { DialogFooterButtons } from './DialogFooterButtons';
-import { Select } from './Select';
-import { ZodFormController } from './ZodFormController';
+import { Select } from '../Select';
+import { ZodFormController } from '../ZodFormController';
+import { CRUDDialog } from './CRUDDialog';
 
 const getCategoryLabel = (
   categoryName: string,
@@ -106,46 +105,31 @@ const AddEditCategoryDialog = ({
     if (!categoriesData?.categories) {
       return [];
     }
-
-    const excludeId = isEditMode && category ? category.id : undefined;
+    const excludeId = isEditMode ? category.id : undefined;
     return flattenCategories(categoriesData.categories, t, excludeId, 0, true);
   }, [categoriesData, isEditMode, category, t]);
 
-  const defaultValues: FormValue = {
-    name: '',
-    type: CategoryType.expense,
-    parentId: null,
-    icon: '',
-    color: '',
-  };
+  const defaultValues: FormValue = useMemo(
+    () => ({
+      name: '',
+      type: parentType || CategoryType.expense,
+      parentId: parentId || null,
+      icon: '',
+      color: '',
+    }),
+    [parentId, parentType],
+  );
 
-  const { control, handleSubmit, reset } = useZodForm({
-    zod: schema,
-    defaultValues,
+  const getFormValues = (cat: CategoryTreeResponse): FormValue => ({
+    id: cat.id,
+    name: cat.name,
+    type: cat.type,
+    parentId: cat.parentId,
+    icon: cat.icon || '',
+    color: cat.color || '',
   });
 
-  useEffect(() => {
-    if (category) {
-      reset({
-        id: category.id,
-        name: category.name,
-        type: category.type,
-        parentId: category.parentId,
-        icon: category.icon || '',
-        color: category.color || '',
-      });
-    } else if (parentId !== undefined && parentId !== null) {
-      reset({
-        ...defaultValues,
-        parentId: parentId,
-        type: parentType || CategoryType.expense,
-      });
-    } else {
-      reset(defaultValues);
-    }
-  }, [category, parentId, parentType, isOpen, reset]);
-
-  const onSubmitForm = handleSubmit((data) => {
+  const handleSubmit = (data: FormValue) => {
     const submitData: IUpsertCategoryDto = {
       name: data.name.trim(),
       type: data.type,
@@ -168,7 +152,7 @@ const AddEditCategoryDialog = ({
     }
 
     onSubmit(submitData);
-  });
+  };
 
   const categoryTypeOptions = [
     { value: CategoryType.expense, label: t('categories.expense') },
@@ -179,16 +163,24 @@ const AddEditCategoryDialog = ({
   ];
 
   return (
-    <Modal
-      opened={isOpen}
+    <CRUDDialog<CategoryTreeResponse, FormValue>
+      isOpen={isOpen}
       onClose={onClose}
-      title={
-        isEditMode ? t('categories.editCategory') : t('categories.addCategory')
-      }
+      item={category}
+      onSubmit={handleSubmit}
+      isLoading={isLoading}
+      title={{
+        add: t('categories.addCategory'),
+        edit: t('categories.editCategory'),
+      }}
+      schema={schema}
+      defaultValues={defaultValues}
+      getFormValues={getFormValues}
+      showSaveAndAdd={false}
       size="md"
     >
-      <form onSubmit={onSubmitForm}>
-        <Stack gap="md">
+      {({ control }) => (
+        <>
           <ZodFormController
             control={control}
             name="name"
@@ -263,17 +255,9 @@ const AddEditCategoryDialog = ({
               />
             )}
           />
-
-          <DialogFooterButtons
-            isEditMode={isEditMode}
-            isLoading={isLoading}
-            onCancel={onClose}
-            onSave={onSubmitForm}
-            showSaveAndAdd={false}
-          />
-        </Stack>
-      </form>
-    </Modal>
+        </>
+      )}
+    </CRUDDialog>
   );
 };
 

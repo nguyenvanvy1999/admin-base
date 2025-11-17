@@ -1,6 +1,5 @@
 import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
-import { useZodForm } from '@client/hooks/useZodForm';
-import { Modal, NumberInput, Stack, Textarea } from '@mantine/core';
+import { NumberInput, Textarea } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { AccountResponse } from '@server/dto/account.dto';
 import {
@@ -9,12 +8,12 @@ import {
 } from '@server/dto/contribution.dto';
 import type { InvestmentResponse } from '@server/dto/investment.dto';
 import { ContributionType } from '@server/generated';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { DialogFooterButtons } from './DialogFooterButtons';
-import { Select } from './Select';
-import { ZodFormController } from './ZodFormController';
+import { Select } from '../Select';
+import { ZodFormController } from '../ZodFormController';
+import { CRUDDialog } from './CRUDDialog';
 
 const baseSchema = CreateInvestmentContributionDto.extend({
   amount: z.number().min(0.01, 'investments.contribution.amountRequired'),
@@ -44,14 +43,10 @@ const AddContributionDialog = ({
 
   const filteredAccounts = useMemo(() => {
     if (!accountsResponse?.accounts) return [];
-    // Filter by investment currencyId (not baseCurrencyId)
-    // Contributions are executed in the investment's currency
     const targetCurrencyId = investment.currencyId;
     const matched = accountsResponse.accounts.filter(
       (account) => account.currencyId === targetCurrencyId,
     );
-    // If no accounts match the investment currency, show all accounts
-    // This allows users to select any account even if currency doesn't match
     return matched.length > 0 ? matched : accountsResponse.accounts;
   }, [accountsResponse, investment]);
 
@@ -74,33 +69,22 @@ const AddContributionDialog = ({
         baseCurrencyId: true,
       });
 
-  const defaultValues: FormValue = {
-    amount: 0,
-    currencyId: investment.currencyId,
-    type: ContributionType.deposit,
-    timestamp: new Date().toISOString(),
-    accountId: '',
-    note: '',
-    amountInBaseCurrency: 0,
-    exchangeRate: 0,
-    baseCurrencyId: investment.baseCurrencyId || '',
-  };
+  const defaultValues: FormValue = useMemo(
+    () => ({
+      amount: 0,
+      currencyId: investment.currencyId,
+      type: ContributionType.deposit,
+      timestamp: new Date().toISOString(),
+      accountId: accountOptions[0]?.value || '',
+      note: '',
+      amountInBaseCurrency: 0,
+      exchangeRate: 0,
+      baseCurrencyId: investment.baseCurrencyId || '',
+    }),
+    [investment, accountOptions],
+  );
 
-  const { control, handleSubmit, reset } = useZodForm({
-    zod: schema,
-    defaultValues,
-  });
-
-  useEffect(() => {
-    if (isOpen) {
-      reset({
-        ...defaultValues,
-        accountId: accountOptions[0]?.value || '',
-      });
-    }
-  }, [isOpen, accountOptions, reset]);
-
-  const onSubmitForm = handleSubmit(async (data) => {
+  const handleSubmit = async (data: FormValue) => {
     const payload: ICreateInvestmentContributionDto = {
       amount: data.amount,
       currencyId: investment.currencyId,
@@ -120,19 +104,28 @@ const AddContributionDialog = ({
     };
 
     await onSubmit(payload);
-  });
+  };
 
   return (
-    <Modal
-      opened={isOpen}
+    <CRUDDialog<null, FormValue>
+      isOpen={isOpen}
       onClose={onClose}
-      title={t('investments.addContribution', {
-        defaultValue: 'Add contribution',
-      })}
+      item={null}
+      onSubmit={handleSubmit}
+      isLoading={isLoading}
+      title={{
+        add: t('investments.addContribution', {
+          defaultValue: 'Add contribution',
+        }),
+        edit: '', // Not used in add-only mode
+      }}
+      schema={schema}
+      defaultValues={defaultValues}
+      showSaveAndAdd={false}
       size="md"
     >
-      <form onSubmit={onSubmitForm}>
-        <Stack gap="md">
+      {({ control }) => (
+        <>
           <ZodFormController
             control={control}
             name="type"
@@ -287,17 +280,9 @@ const AddContributionDialog = ({
               />
             )}
           />
-
-          <DialogFooterButtons
-            isEditMode={false}
-            isLoading={isLoading}
-            onCancel={onClose}
-            onSave={onSubmitForm}
-            showSaveAndAdd={false}
-          />
-        </Stack>
-      </form>
-    </Modal>
+        </>
+      )}
+    </CRUDDialog>
   );
 };
 

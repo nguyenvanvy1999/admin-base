@@ -1,5 +1,5 @@
-import AddEditCategoryDialog from '@client/components/AddEditCategoryDialog';
-import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
+import AddEditCategoryDialog from '@client/components/dialogs/AddEditCategoryDialog';
+import { DeleteConfirmationModal } from '@client/components/dialogs/DeleteConfirmationModal';
 import {
   getCategoryIcon,
   getCategoryLabel,

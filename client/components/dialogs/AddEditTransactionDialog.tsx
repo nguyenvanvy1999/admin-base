@@ -1,4 +1,3 @@
-import { useAdjustBalanceMutation } from '@client/hooks/mutations/useTransactionMutations';
 import { useZodForm } from '@client/hooks/useZodForm';
 import {
   Button,
@@ -21,9 +20,8 @@ import { TransactionType } from '@server/generated';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import CategorySelect from './CategorySelect';
-import { DialogFooterButtons } from './DialogFooterButtons';
-import EventSelect from './EventSelect';
+import CategorySelect from '../CategorySelect';
+import EventSelect from '../EventSelect';
 import {
   DateTimeField,
   FormRow,
@@ -32,9 +30,10 @@ import {
   SelectField,
   SwitchField,
   TextareaField,
-} from './forms';
-import { flattenCategories, getCategoryIcon } from './utils/category';
-import { ZodFormController } from './ZodFormController';
+} from '../forms';
+import { flattenCategories, getCategoryIcon } from '../utils/category';
+import { ZodFormController } from '../ZodFormController';
+import { DialogFooter } from './base/DialogFooter';
 
 const baseSchema = z.object({
   id: z.string().optional(),
@@ -51,24 +50,7 @@ const baseSchema = z.object({
   borrowToPay: z.boolean().optional(),
 });
 
-const createBalanceAdjustmentSchema = (currentBalance: number | null) =>
-  z.object({
-    accountId: z.string().min(1, 'transactions.accountRequired'),
-    newBalance: z
-      .number()
-      .min(0, 'transactions.newBalanceRequired')
-      .refine(
-        (val) => currentBalance === null || val !== currentBalance,
-        'New balance must be different from current balance',
-      ),
-    date: z.string().min(1, 'transactions.dateRequired'),
-    note: z.string().optional(),
-  });
-
 type FormValue = z.infer<typeof baseSchema>;
-type BalanceAdjustmentFormValue = z.infer<
-  ReturnType<typeof createBalanceAdjustmentSchema>
->;
 
 type AddEditTransactionDialogProps = {
   isOpen: boolean;
@@ -936,7 +918,7 @@ const AddEditTransactionDialog = ({
             </Stack>
           )}
 
-          <DialogFooterButtons
+          <DialogFooter
             isEditMode={isEditMode}
             isLoading={isLoading || adjustBalanceMutation.isPending}
             onCancel={handleClose}

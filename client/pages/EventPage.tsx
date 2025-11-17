@@ -1,12 +1,12 @@
-import AddEditEventDialog from '@client/components/AddEditEventDialog';
-import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
-import { DeleteManyConfirmationModal } from '@client/components/DeleteManyConfirmationModal';
-import EventTable from '@client/components/EventTable';
+import AddEditEventDialog from '@client/components/dialogs/AddEditEventDialog';
+import { DeleteConfirmationModal } from '@client/components/dialogs/DeleteConfirmationModal';
+import { DeleteManyConfirmationModal } from '@client/components/dialogs/DeleteManyConfirmationModal';
 import {
   FormComponent,
   type FormComponentRef,
 } from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
+import EventTable from '@client/components/tables/EventTable';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateEventMutation,

@@ -1,11 +1,11 @@
-import AccountTable from '@client/components/AccountTable';
-import AddEditAccountDialog from '@client/components/AddEditAccountDialog';
-import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
+import AddEditAccountDialog from '@client/components/dialogs/AddEditAccountDialog';
+import { DeleteConfirmationModal } from '@client/components/dialogs/DeleteConfirmationModal';
 import {
   FormComponent,
   type FormComponentRef,
 } from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
+import AccountTable from '@client/components/tables/AccountTable';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateAccountMutation,

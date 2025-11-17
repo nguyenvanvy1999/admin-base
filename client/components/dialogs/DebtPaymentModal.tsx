@@ -7,9 +7,9 @@ import { TransactionType } from '@server/generated';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { DateField, NumberField, TextareaField } from './forms';
-import { Select } from './Select';
-import { ZodFormController } from './ZodFormController';
+import { DateField, NumberField, TextareaField } from '../forms';
+import { Select } from '../Select';
+import { ZodFormController } from '../ZodFormController';
 
 const paymentSchema = z.object({
   amount: z.number().min(1, 'debts.paymentModal.amountRequired'),

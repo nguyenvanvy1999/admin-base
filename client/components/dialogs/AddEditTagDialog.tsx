@@ -1,14 +1,12 @@
-import { useZodForm } from '@client/hooks/useZodForm';
-import { Modal, Stack, Textarea, TextInput } from '@mantine/core';
+import { Textarea, TextInput } from '@mantine/core';
 import {
   type IUpsertTagDto,
   type TagResponse,
   UpsertTagDto,
 } from '@server/dto/tag.dto';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { DialogFooterButtons } from './DialogFooterButtons';
+import { CRUDDialog } from './dialogs/CRUDDialog';
 import { ZodFormController } from './ZodFormController';
 
 const schema = UpsertTagDto.extend({
@@ -32,40 +30,23 @@ const AddEditTagDialog = ({
   tag,
   onSubmit,
   isLoading = false,
-  resetTrigger,
 }: AddEditTagDialogProps) => {
   const { t } = useTranslation();
-  const isEditMode = !!tag;
 
   const defaultValues: FormValue = {
     name: '',
     description: '',
   };
 
-  const { control, handleSubmit, reset } = useZodForm({
-    zod: schema,
-    defaultValues,
+  const getFormValues = (tag: TagResponse): FormValue => ({
+    id: tag.id,
+    name: tag.name,
+    description: tag.description || '',
   });
 
-  useEffect(() => {
-    if (tag) {
-      reset({
-        id: tag.id,
-        name: tag.name,
-        description: tag.description || '',
-      });
-    } else {
-      reset(defaultValues);
-    }
-  }, [tag, isOpen, reset]);
+  const handleSubmit = (data: FormValue, saveAndAdd?: boolean) => {
+    const isEditMode = !!tag;
 
-  useEffect(() => {
-    if (resetTrigger && resetTrigger > 0 && !tag && isOpen) {
-      reset(defaultValues);
-    }
-  }, [resetTrigger, tag, isOpen, reset]);
-
-  const onSubmitForm = handleSubmit((data) => {
     const submitData: IUpsertTagDto = {
       name: data.name.trim(),
     };
@@ -78,30 +59,27 @@ const AddEditTagDialog = ({
       submitData.description = data.description.trim();
     }
 
-    onSubmit(submitData, false);
-  });
-
-  const onSubmitFormAndAdd = handleSubmit((data) => {
-    const submitData: IUpsertTagDto = {
-      name: data.name.trim(),
-    };
-
-    if (data.description && data.description.trim() !== '') {
-      submitData.description = data.description.trim();
-    }
-
-    onSubmit(submitData, true);
-  });
+    onSubmit(submitData, saveAndAdd);
+  };
 
   return (
-    <Modal
-      opened={isOpen}
+    <CRUDDialog
+      isOpen={isOpen}
       onClose={onClose}
-      title={isEditMode ? t('tags.editTag') : t('tags.addTag')}
+      item={tag}
+      onSubmit={handleSubmit}
+      isLoading={isLoading}
+      title={{
+        add: t('tags.addTag'),
+        edit: t('tags.editTag'),
+      }}
+      schema={schema}
+      defaultValues={defaultValues}
+      getFormValues={getFormValues}
       size="md"
     >
-      <form onSubmit={onSubmitForm}>
-        <Stack gap="md">
+      {({ control }) => (
+        <>
           <ZodFormController
             control={control}
             name="name"
@@ -129,17 +107,9 @@ const AddEditTagDialog = ({
               />
             )}
           />
-
-          <DialogFooterButtons
-            isEditMode={isEditMode}
-            isLoading={isLoading}
-            onCancel={onClose}
-            onSave={onSubmitForm}
-            onSaveAndAdd={onSubmitFormAndAdd}
-          />
-        </Stack>
-      </form>
-    </Modal>
+        </>
+      )}
+    </CRUDDialog>
   );
 };
 

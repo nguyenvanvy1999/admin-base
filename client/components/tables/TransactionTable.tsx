@@ -8,19 +8,19 @@ import type { TransactionDetail } from '@server/dto/transaction.dto';
 import { TransactionType } from '@server/generated';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DataTable, type DataTableColumn } from './DataTable';
+import { getCategoryIcon, getCategoryLabel } from '../utils/category';
 import {
   createActionColumn,
   createCurrencyColumn,
   createTypeColumn,
-} from './tables/columnFactories';
-import type { GroupingLevel } from './tables/groupingUtils';
+} from './columnFactories';
+import { DataTable, type DataTableColumn } from './DataTable';
+import type { GroupingLevel } from './groupingUtils';
 import {
   createDateGroupingConfig,
   GroupingSelector,
   useTableGrouping,
-} from './tables/groupingUtils';
-import { getCategoryIcon, getCategoryLabel } from './utils/category';
+} from './groupingUtils';
 
 type TransactionTableProps = {
   transactions: TransactionDetail[];

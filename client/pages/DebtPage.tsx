@@ -1,7 +1,7 @@
-import { DebtPaymentModal } from '@client/components/DebtPaymentModal';
-import { DebtStatistics } from '@client/components/DebtStatistics';
-import { DebtTransactionTable } from '@client/components/DebtTransactionTable';
+import { DebtPaymentModal } from '@client/components/dialogs/DebtPaymentModal';
 import { PageContainer } from '@client/components/PageContainer';
+import { DebtStatistics } from '@client/components/statistics/DebtStatistics';
+import { DebtTransactionTable } from '@client/components/tables/DebtTransactionTable';
 import { useDebtTransactions } from '@client/hooks/queries/useDebtQueries';
 import { Stack, Text, Title } from '@mantine/core';
 import { useState } from 'react';

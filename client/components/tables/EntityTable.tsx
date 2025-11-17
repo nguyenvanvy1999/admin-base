@@ -2,7 +2,11 @@ import type { EntityResponse } from '@server/dto/entity.dto';
 import { EntityType } from '@server/generated';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DataTable, type DataTableColumn } from './DataTable';
+import {
+  DataTable,
+  type DataTableColumn,
+  type SortingState,
+} from './DataTable';
 import { createActionColumn, createTypeColumn } from './tables/columnFactories';
 import { DeleteManyToolbar } from './tables/deleteManyToolbar';
 
@@ -19,14 +23,9 @@ type EntityTableProps = {
   page?: number;
   onPageChange?: (page: number) => void;
   totalRecords?: number;
-  sorting?: { id: string; desc: boolean }[];
+  sorting?: SortingState;
   onSortingChange?: (
-    updater:
-      | { id: string; desc: boolean }[]
-      | ((prev: { id: string; desc: boolean }[]) => {
-          id: string;
-          desc: boolean;
-        }[]),
+    updater: SortingState | ((prev: SortingState) => SortingState),
   ) => void;
   selectedRecords?: EntityResponse[];
   onSelectedRecordsChange?: (records: EntityResponse[]) => void;

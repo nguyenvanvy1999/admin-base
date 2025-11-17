@@ -3,7 +3,7 @@ import {
   type FormComponentRef,
 } from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
-import PermissionTable from '@client/components/PermissionTable';
+import PermissionTable from '@client/components/tables/PermissionTable';
 import { ZodFormController } from '@client/components/ZodFormController';
 import { usePermissionsQuery } from '@client/hooks/queries/usePermissionQueries';
 import { usePermission } from '@client/hooks/usePermission';

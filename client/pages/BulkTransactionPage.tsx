@@ -1,7 +1,7 @@
+import { PageContainer } from '@client/components/PageContainer';
 import BulkTransactionTable, {
   type BulkTransactionRow,
-} from '@client/components/BulkTransactionTable';
-import { PageContainer } from '@client/components/PageContainer';
+} from '@client/components/tables/BulkTransactionTable';
 import { ZodFormController } from '@client/components/ZodFormController';
 import { useCreateBatchTransactionsMutation } from '@client/hooks/mutations/useTransactionMutations';
 import { useZodForm } from '@client/hooks/useZodForm';

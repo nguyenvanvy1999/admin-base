@@ -1,9 +1,11 @@
 import type { MantineThemeOverride } from '@mantine/core';
 import {
   ActionIcon,
+  Button,
   Card,
   Container,
   createTheme,
+  Modal,
   Paper,
   rem,
   Select,
@@ -17,6 +19,46 @@ const CONTAINER_SIZES: Record<string, string> = {
   lg: rem('600px'),
   xl: rem('1400px'),
   xxl: rem('1600px'),
+};
+
+// Color palettes generated from CSS variables in tokens.css
+const themeColors = {
+  brand: [
+    '#e0f8ff',
+    '#ccedff',
+    '#99daff',
+    '#66c7ff',
+    '#33b4ff',
+    '#00a1ff',
+    '#008ee6',
+    '#007acc',
+    '#0067b3',
+    '#005499',
+  ],
+  income: [
+    '#e1f9e8',
+    '#cef2d7',
+    '#aee5b9',
+    '#8cd89a',
+    '#69cb7c',
+    '#47be5d',
+    '#39a950',
+    '#2b9343',
+    '#1d7d36',
+    '#0f6729',
+  ],
+  expense: [
+    '#ffe2e2',
+    '#ffcfcf',
+    '#ff9e9e',
+    '#ff6c6c',
+    '#ff3b3b',
+    '#ff0a0a',
+    '#e60000',
+    '#cc0000',
+    '#b30000',
+    '#990000',
+  ],
 };
 
 export const mantineTheme: MantineThemeOverride = createTheme({
@@ -43,7 +85,12 @@ export const mantineTheme: MantineThemeOverride = createTheme({
     '2xl': rem('28px'),
     '3xl': rem('32px'),
   },
-  primaryColor: 'blue',
+  primaryColor: 'brand',
+  colors: {
+    brand: themeColors.brand,
+    income: themeColors.income,
+    expense: themeColors.expense,
+  },
   components: {
     Container: Container.extend({
       vars: (_, { size, fluid }) => ({
@@ -82,6 +129,20 @@ export const mantineTheme: MantineThemeOverride = createTheme({
       defaultProps: {
         variant: 'subtle',
         size: 'sm',
+      },
+    }),
+    Button: Button.extend({
+      defaultProps: {
+        radius: 'md',
+      },
+    }),
+    Modal: Modal.extend({
+      defaultProps: {
+        centered: true,
+        overlayProps: {
+          backgroundOpacity: 0.55,
+          blur: 3,
+        },
       },
     }),
   },
