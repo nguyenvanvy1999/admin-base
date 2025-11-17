@@ -1,64 +1,13 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type {
-  TransactionOrderByWithRelationInput,
-  TransactionWhereInput,
-} from '@server/generated';
+import type { TransactionWhereInput } from '@server/generated';
 import { TransactionType } from '@server/generated';
-import {
-  TRANSACTION_SELECT_FOR_BALANCE,
-  TRANSACTION_SELECT_FULL,
-} from '@server/services/selects';
+import { TRANSACTION_SELECT_FULL } from '@server/services/selects';
 import { BaseRepository } from './base/base.repository';
 
 export class TransactionRepository extends BaseRepository {
   constructor(db: IDb = prisma) {
     super(db);
-  }
-
-  findByIdAndUserId(transactionId: string, userId: string) {
-    return this.db.transaction.findFirst({
-      where: {
-        id: transactionId,
-        userId,
-      },
-      select: TRANSACTION_SELECT_FULL,
-    });
-  }
-
-  findByIdForBalance(transactionId: string) {
-    return this.db.transaction.findUnique({
-      where: { id: transactionId },
-      select: TRANSACTION_SELECT_FOR_BALANCE,
-    });
-  }
-
-  findManyByUserId(
-    userId: string,
-    where: TransactionWhereInput,
-    orderBy: TransactionOrderByWithRelationInput,
-    skip: number,
-    take: number,
-  ) {
-    return this.db.transaction.findMany({
-      where: {
-        ...where,
-        userId,
-      },
-      orderBy,
-      skip,
-      take,
-      select: TRANSACTION_SELECT_FULL,
-    });
-  }
-
-  countByUserId(userId: string, where: TransactionWhereInput) {
-    return this.db.transaction.count({
-      where: {
-        ...where,
-        userId,
-      },
-    });
   }
 
   findManyForDebtCalculation(userId: string, dateFrom?: Date, dateTo?: Date) {
@@ -88,19 +37,6 @@ export class TransactionRepository extends BaseRepository {
       orderBy: {
         date: 'desc',
       },
-    });
-  }
-
-  findMirrorByTransferGroupId(
-    transferGroupId: string,
-    select?: { amount: true } | { id: true },
-  ) {
-    return this.db.transaction.findFirst({
-      where: {
-        transferGroupId,
-        isTransferMirror: true,
-      },
-      select: select ?? { id: true },
     });
   }
 }

@@ -20,7 +20,7 @@ interface EntityDebtData {
     type: TransactionType;
     amount: Decimal;
     date: Date;
-    transaction: any;
+    transaction: TransactionDetail;
   }>;
   totalRepaid: Decimal;
   totalCollected: Decimal;
@@ -56,7 +56,7 @@ export class DebtCalculationService {
   }
 
   private groupTransactionsByEntity(
-    transactions: any[],
+    transactions: any,
   ): Map<string, EntityDebtData> {
     const entityDebtMap = new Map<string, EntityDebtData>();
 
