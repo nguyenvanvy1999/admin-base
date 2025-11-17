@@ -153,7 +153,8 @@ const AccountPage = () => {
                 <TextInput
                   placeholder={t('accounts.search')}
                   error={error}
-                  style={{ flex: 1, maxWidth: '300px' }}
+                  style={{ flex: 1 }}
+                  w={{ base: '100%', sm: 300 }}
                   {...field}
                 />
               )}
@@ -179,7 +180,7 @@ const AccountPage = () => {
                   ]}
                   value={field.value || []}
                   onChange={(value) => field.onChange(value as AccountType[])}
-                  style={{ maxWidth: '200px' }}
+                  w={{ base: '100%', sm: 200 }}
                 />
               )}
             />
@@ -198,7 +199,7 @@ const AccountPage = () => {
                   }))}
                   value={field.value || []}
                   onChange={field.onChange}
-                  style={{ maxWidth: '200px' }}
+                  w={{ base: '100%', sm: 200 }}
                 />
               )}
             />

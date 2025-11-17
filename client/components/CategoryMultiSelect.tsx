@@ -15,6 +15,16 @@ type CategoryMultiSelectProps = {
   disabled?: boolean;
   error?: React.ReactNode;
   style?: React.CSSProperties;
+  w?:
+    | number
+    | string
+    | {
+        base?: number | string;
+        sm?: number | string;
+        md?: number | string;
+        lg?: number | string;
+        xl?: number | string;
+      };
 };
 
 const CategoryMultiSelect = ({
@@ -27,6 +37,7 @@ const CategoryMultiSelect = ({
   disabled = false,
   error,
   style,
+  w,
 }: CategoryMultiSelectProps) => {
   const { t } = useTranslation();
   const { data: categoriesData } = useCategoriesQuery({});
@@ -61,6 +72,7 @@ const CategoryMultiSelect = ({
       disabled={disabled}
       error={error}
       style={style}
+      w={w}
       renderOption={({ option }) => {
         const item = data.find((d) => d.value === option.value);
         if (!item) return <span>{option.label}</span>;

@@ -3,11 +3,13 @@ import { InvestmentAllocationChart } from '@client/components/charts/InvestmentA
 import { InvestmentPerformanceChart } from '@client/components/charts/InvestmentPerformanceChart';
 import { SummaryCards } from '@client/components/charts/SummaryCards';
 import { TransactionChart } from '@client/components/charts/TransactionChart';
+import { PageContainer } from '@client/components/PageContainer';
+import { PageHeader } from '@client/components/PageHeader';
 import { AdminSummaryCards } from '@client/components/statistics/AdminSummaryCards';
 import { UserGrowthChart } from '@client/components/statistics/UserGrowthChart';
 import { UserRoleDistributionChart } from '@client/components/statistics/UserRoleDistributionChart';
 import useUserStore from '@client/store/user';
-import { Container, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { SimpleGrid, Stack } from '@mantine/core';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -28,12 +30,12 @@ const HomePage = () => {
 
   if (adminUser) {
     return (
-      <Container size="xl" py="xl">
+      <PageContainer>
         <Stack gap="xl">
-          <Stack gap="xs">
-            <Title order={1}>Admin Dashboard</Title>
-            <Text c="dimmed">Overview of user and session statistics</Text>
-          </Stack>
+          <PageHeader
+            title="Admin Dashboard"
+            description="Overview of user and session statistics"
+          />
 
           <Stack gap="md">
             <DateRangePicker
@@ -58,19 +60,17 @@ const HomePage = () => {
             <UserRoleDistributionChart />
           </SimpleGrid>
         </Stack>
-      </Container>
+      </PageContainer>
     );
   }
 
   return (
-    <Container size="xl" py="xl">
+    <PageContainer>
       <Stack gap="xl">
-        <Stack gap="xs">
-          <Title order={1}>
-            {t('home.welcomeBack', { username: user?.username })}
-          </Title>
-          <Text c="dimmed">{t('home.successfullyLogged')}</Text>
-        </Stack>
+        <PageHeader
+          title={t('home.welcomeBack', { username: user?.username })}
+          description={t('home.successfullyLogged')}
+        />
 
         <Stack gap="md">
           <DateRangePicker
@@ -107,7 +107,7 @@ const HomePage = () => {
           />
         </SimpleGrid>
       </Stack>
-    </Container>
+    </PageContainer>
   );
 };
 

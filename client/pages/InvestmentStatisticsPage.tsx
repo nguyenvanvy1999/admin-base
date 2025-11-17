@@ -1,3 +1,5 @@
+import { PageContainer } from '@client/components/PageContainer';
+import { PageHeader } from '@client/components/PageHeader';
 import { Select } from '@client/components/Select';
 import { ContributionChart } from '@client/components/statistics/ContributionChart';
 import { DateRangeFilter } from '@client/components/statistics/DateRangeFilter';
@@ -8,14 +10,7 @@ import { InvestmentPerformanceChart } from '@client/components/statistics/Invest
 import { InvestmentTable } from '@client/components/statistics/InvestmentTable';
 import { TradeStatistics } from '@client/components/statistics/TradeStatistics';
 import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
-import {
-  Container,
-  Group,
-  SimpleGrid,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Group, SimpleGrid, Stack, Text } from '@mantine/core';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -50,20 +45,16 @@ const InvestmentStatisticsPage = () => {
   };
 
   return (
-    <Container size="xl" py="xl">
+    <PageContainer>
       <Stack gap="xl">
-        <Stack gap="xs">
-          <Title order={1}>
-            {t('statistics.investment.title', {
-              defaultValue: 'Investment Statistics',
-            })}
-          </Title>
-          <Text c="dimmed">
-            {t('statistics.investment.description', {
-              defaultValue: 'Detailed analysis of your investments',
-            })}
-          </Text>
-        </Stack>
+        <PageHeader
+          title={t('statistics.investment.title', {
+            defaultValue: 'Investment Statistics',
+          })}
+          description={t('statistics.investment.description', {
+            defaultValue: 'Detailed analysis of your investments',
+          })}
+        />
 
         <Stack gap="md">
           <DateRangeFilter
@@ -75,7 +66,7 @@ const InvestmentStatisticsPage = () => {
           />
           <Group gap="md" align="flex-start" wrap="wrap">
             <GroupBySelector value={groupBy} onChange={setGroupBy} />
-            <Stack gap="xs" style={{ flex: 1, maxWidth: '300px' }}>
+            <Stack gap="xs" w={{ base: '100%', sm: 300 }}>
               <Text size="sm" fw={500}>
                 {t('statistics.filterByAccount', {
                   defaultValue: 'Filter by Account',
@@ -116,7 +107,7 @@ const InvestmentStatisticsPage = () => {
           <InvestmentTable queryParams={queryParams} />
         </Stack>
       </Stack>
-    </Container>
+    </PageContainer>
   );
 };
 

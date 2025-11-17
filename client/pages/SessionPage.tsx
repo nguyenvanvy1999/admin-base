@@ -156,7 +156,7 @@ const SessionPage = ({ isAdminPage = false }: SessionPageProps = {}) => {
                     onChange={(value) => field.onChange(value || undefined)}
                     clearable
                     searchable
-                    style={{ maxWidth: '300px' }}
+                    w={{ base: '100%', sm: 300 }}
                   />
                 )}
               />
@@ -194,7 +194,7 @@ const SessionPage = ({ isAdminPage = false }: SessionPageProps = {}) => {
                       (value as 'all' | 'active' | 'revoked') || 'all',
                     )
                   }
-                  style={{ maxWidth: '200px' }}
+                  w={{ base: '100%', sm: 200 }}
                 />
               )}
             />

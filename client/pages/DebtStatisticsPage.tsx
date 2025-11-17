@@ -1,3 +1,5 @@
+import { PageContainer } from '@client/components/PageContainer';
+import { PageHeader } from '@client/components/PageHeader';
 import { Select } from '@client/components/Select';
 import { DateRangeFilter } from '@client/components/statistics/DateRangeFilter';
 import { DebtOverview } from '@client/components/statistics/DebtOverview';
@@ -6,7 +8,7 @@ import { EntityDebtsTable } from '@client/components/statistics/EntityDebtsTable
 import { GroupBySelector } from '@client/components/statistics/GroupBySelector';
 import { LoanHistoryTable } from '@client/components/statistics/LoanHistoryTable';
 import { useEntitiesOptionsQuery } from '@client/hooks/queries/useEntityQueries';
-import { Container, Group, Stack, Text, Title } from '@mantine/core';
+import { Group, Stack, Text } from '@mantine/core';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -42,12 +44,12 @@ const DebtStatisticsPage = () => {
   };
 
   return (
-    <Container size="xl" py="xl">
+    <PageContainer>
       <Stack gap="xl">
-        <Stack gap="xs">
-          <Title order={1}>{t('statistics.debt.title')}</Title>
-          <Text c="dimmed">{t('statistics.debt.description')}</Text>
-        </Stack>
+        <PageHeader
+          title={t('statistics.debt.title')}
+          description={t('statistics.debt.description')}
+        />
 
         <Stack gap="md">
           <DateRangeFilter
@@ -59,7 +61,7 @@ const DebtStatisticsPage = () => {
           />
           <Group gap="md" align="flex-start" wrap="wrap">
             <GroupBySelector value={groupBy} onChange={setGroupBy} />
-            <Stack gap="xs" style={{ flex: 1, maxWidth: '300px' }}>
+            <Stack gap="xs" w={{ base: '100%', sm: 300 }}>
               <Text size="sm" fw={500}>
                 {t('statistics.debt.filterByEntity')}
               </Text>
@@ -91,7 +93,7 @@ const DebtStatisticsPage = () => {
           <LoanHistoryTable queryParams={queryParams} />
         </Stack>
       </Stack>
-    </Container>
+    </PageContainer>
   );
 };
 

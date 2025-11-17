@@ -117,7 +117,8 @@ const TagPage = () => {
                 <TextInput
                   placeholder={t('tags.search')}
                   error={error}
-                  style={{ flex: 1, maxWidth: '300px' }}
+                  style={{ flex: 1 }}
+                  w={{ base: '100%', sm: 300 }}
                   {...field}
                 />
               )}
