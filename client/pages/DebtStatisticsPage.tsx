@@ -1,5 +1,5 @@
+import { PageHeader } from '@client/components/layout/PageHeader';
 import { PageContainer } from '@client/components/PageContainer';
-import { PageHeader } from '@client/components/PageHeader';
 import { Select } from '@client/components/Select';
 import { DateRangeFilter } from '@client/components/statistics/DateRangeFilter';
 import { DebtOverview } from '@client/components/statistics/DebtOverview';

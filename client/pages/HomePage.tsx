@@ -3,8 +3,8 @@ import { InvestmentAllocationChart } from '@client/components/charts/InvestmentA
 import { InvestmentPerformanceChart } from '@client/components/charts/InvestmentPerformanceChart';
 import { SummaryCards } from '@client/components/charts/SummaryCards';
 import { TransactionChart } from '@client/components/charts/TransactionChart';
+import { PageHeader } from '@client/components/layout/PageHeader';
 import { PageContainer } from '@client/components/PageContainer';
-import { PageHeader } from '@client/components/PageHeader';
 import { AdminSummaryCards } from '@client/components/statistics/AdminSummaryCards';
 import { UserGrowthChart } from '@client/components/statistics/UserGrowthChart';
 import { UserRoleDistributionChart } from '@client/components/statistics/UserRoleDistributionChart';

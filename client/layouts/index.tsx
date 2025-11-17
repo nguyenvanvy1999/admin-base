@@ -23,7 +23,7 @@ const ProtectedPageLayout = () => {
   const isAdminUser = isAdmin();
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--color-background))] dark:bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       <Header />
       {isAdminUser ? (
         <AdminSidebar onWidthChange={setSidebarWidth} />

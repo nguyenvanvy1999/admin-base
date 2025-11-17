@@ -36,7 +36,7 @@ const ExchangeRateStatus = () => {
     <div className="relative">
       <button
         onClick={() => setIsTooltipOpen(!isTooltipOpen)}
-        className="flex items-center space-x-2 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[hsl(var(--color-primary))] hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-200 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+        className="flex items-center space-x-2 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-200 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
         aria-label="Exchange rate status"
       >
         <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />

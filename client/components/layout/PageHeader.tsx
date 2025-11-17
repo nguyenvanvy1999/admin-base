@@ -19,11 +19,13 @@ import Surface from './Surface';
 
 export type PageHeaderProps = {
   title: string;
+  description?: string;
   withActions?: boolean;
   breadcrumbItems?: React.ReactNode[];
   actionButton?: React.ReactNode;
   actionContent?: React.ReactNode;
   onRefresh?: () => void;
+  order?: 1 | 2 | 3 | 4 | 5 | 6;
 } & PaperProps;
 
 export const PageHeader = (props: PageHeaderProps) => {
@@ -31,9 +33,11 @@ export const PageHeader = (props: PageHeaderProps) => {
     withActions,
     breadcrumbItems,
     title,
+    description,
     actionButton,
     actionContent,
     onRefresh,
+    order = 3,
     ...others
   } = props;
   const { user } = useUserStore();
@@ -83,6 +87,23 @@ export const PageHeader = (props: PageHeaderProps) => {
     return null;
   };
 
+  // Simple mode: no Surface wrapper, no Divider, just title + description
+  if (
+    !withActions &&
+    !breadcrumbItems &&
+    !actionButton &&
+    !actionContent &&
+    !onRefresh
+  ) {
+    return (
+      <Stack gap="xs">
+        <Title order={order}>{title}</Title>
+        {description && <Text c="dimmed">{description}</Text>}
+      </Stack>
+    );
+  }
+
+  // Full mode: with Surface wrapper
   return (
     <>
       <Surface p="md" {...others}>
@@ -93,11 +114,15 @@ export const PageHeader = (props: PageHeaderProps) => {
             gap={{ base: 'sm', sm: 4 }}
           >
             <Stack gap={4}>
-              <Title order={3}>{title}</Title>
-              <Text>
-                {t('common.welcomeBack', { defaultValue: 'Welcome back' })},{' '}
-                {user?.name || user?.username}!
-              </Text>
+              <Title order={order}>{title}</Title>
+              {description ? (
+                <Text c="dimmed">{description}</Text>
+              ) : (
+                <Text>
+                  {t('common.welcomeBack', { defaultValue: 'Welcome back' })},{' '}
+                  {user?.name || user?.username}!
+                </Text>
+              )}
             </Stack>
             {renderActions()}
           </Flex>
@@ -109,7 +134,8 @@ export const PageHeader = (props: PageHeaderProps) => {
             gap={{ base: 'sm', sm: 4 }}
           >
             <Stack>
-              <Title order={3}>{title}</Title>
+              <Title order={order}>{title}</Title>
+              {description && <Text c="dimmed">{description}</Text>}
               {breadcrumbItems && breadcrumbItems.length > 0 && (
                 <Breadcrumbs {...BREADCRUMBS_PROPS}>
                   {breadcrumbItems.map((item, index) => (

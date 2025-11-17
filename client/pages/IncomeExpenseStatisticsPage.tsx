@@ -1,5 +1,5 @@
+import { PageHeader } from '@client/components/layout/PageHeader';
 import { PageContainer } from '@client/components/PageContainer';
-import { PageHeader } from '@client/components/PageHeader';
 import { AccountBreakdownChart } from '@client/components/statistics/AccountBreakdownChart';
 import { CategoryBreakdownChart } from '@client/components/statistics/CategoryBreakdownChart';
 import { DateRangeFilter } from '@client/components/statistics/DateRangeFilter';

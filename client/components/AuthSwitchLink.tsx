@@ -20,7 +20,7 @@ export const AuthSwitchLink = ({
         {t(messageKey as any)}{' '}
         <Link
           to={to}
-          className="font-medium text-[hsl(var(--color-primary))] dark:text-[hsl(var(--color-primary))] hover:text-[hsl(var(--color-primary-hover))] dark:hover:text-[hsl(var(--color-primary-hover))] transition duration-200"
+          className="font-medium text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition duration-200"
         >
           {t(linkKey as any)}
         </Link>

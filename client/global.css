@@ -1,43 +1,10 @@
 @import "tailwindcss";
-@import "./styles/tokens.css";
 @custom-variant dark (&:where(
     .dark,
     .dark *,
     [data-mantine-color-scheme="dark"],
     [data-mantine-color-scheme="dark"] *
   ));
-
-@layer base {
-  :root {
-    /* Legacy variables for backward compatibility */
-    --background: var(--color-background);
-    --foreground: var(--color-foreground);
-    --card: var(--color-card);
-    --card-foreground: var(--color-card-foreground);
-    --popover: var(--color-popover);
-    --popover-foreground: var(--color-popover-foreground);
-    --primary: var(--color-primary);
-    --primary-foreground: var(--color-primary-foreground);
-    --secondary: var(--color-secondary);
-    --secondary-foreground: var(--color-secondary-foreground);
-    --muted: var(--color-muted);
-    --muted-foreground: var(--color-muted-foreground);
-    --accent: var(--color-accent);
-    --accent-foreground: var(--color-accent-foreground);
-    --destructive: var(--color-destructive);
-    --destructive-foreground: var(--color-destructive-foreground);
-    --border: var(--color-border);
-    --input: var(--color-input);
-    --ring: var(--color-ring);
-    --radius: var(--radius-lg);
-  }
-}
-
-@layer base {
-  body {
-    @apply bg-[hsl(var(--color-background))] dark:bg-gray-900 text-gray-900 dark:text-gray-100;
-  }
-}
 
 /* Hide horizontal scrollbar for sidebar */
 .sidebar-nav {

@@ -10,7 +10,6 @@ export * from './feedback';
 export * from './layout';
 export * from './MetaVisualizer';
 export * from './PageContainer';
-export { PageHeader } from './PageHeader';
 export * from './Select';
 export { StatCard } from './StatCard';
 export * from './Switch';
