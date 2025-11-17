@@ -11,11 +11,14 @@ import {
   dateToIsoString,
   decimalToNullableString,
   decimalToString,
+  ERROR_MESSAGES,
   ErrorCode,
   type IdUtil,
   idUtil,
   throwAppError,
+  VALIDATION,
 } from '@server/share';
+import type { AccountMeta } from '@server/share/types/metadata';
 import type {
   AccountListResponse,
   AccountResponse,
@@ -23,7 +26,17 @@ import type {
   IUpsertAccountDto,
 } from '../dto/account.dto';
 import {
-  ACCOUNT_SELECT_FULL,
+  type AccountRepository,
+  accountRepository,
+} from '../repositories/account.repository';
+import { type CacheService, cacheService } from './base/cache.service';
+import {
+  type OwnershipValidatorService,
+  ownershipValidatorService,
+} from './base/ownership-validator.service';
+import type { IAccountService } from './interfaces/IAccountService';
+import {
+  type ACCOUNT_SELECT_FULL,
   ACCOUNT_SELECT_MINIMAL,
   CURRENCY_SELECT_BASIC,
 } from './selects';
@@ -44,32 +57,49 @@ const formatAccount = (account: AccountRecord): AccountResponse => ({
   modified: dateToIsoString(account.modified),
 });
 
-export class AccountService {
+export class AccountService implements IAccountService {
   constructor(
-    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
+    private readonly deps: {
+      db: IDb;
+      idUtil: IdUtil;
+      ownershipValidator: OwnershipValidatorService;
+      accountRepository: AccountRepository;
+      cache: CacheService;
+    } = {
+      db: prisma,
+      idUtil,
+      ownershipValidator: ownershipValidatorService,
+      accountRepository: accountRepository,
+      cache: cacheService,
+    },
   ) {}
 
   private async validateAccountOwnership(userId: string, accountId: string) {
-    const account = await this.deps.db.account.findFirst({
-      where: {
-        id: accountId,
-        userId,
-      },
-      select: ACCOUNT_SELECT_MINIMAL,
-    });
-    if (!account) {
-      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
-    }
-    return account;
+    return this.deps.ownershipValidator.validateAccountOwnership(
+      userId,
+      accountId,
+      ACCOUNT_SELECT_MINIMAL,
+    );
   }
 
   private async validateCurrency(currencyId: string) {
+    const cacheKey = `currency:${currencyId}`;
+    const cached = this.deps.cache.get<boolean>(cacheKey);
+    if (cached === true) {
+      return;
+    }
+
     const count = await this.deps.db.currency.count({
       where: { id: currencyId },
     });
     if (count === 0) {
-      throwAppError(ErrorCode.CURRENCY_NOT_FOUND, 'Currency not found');
+      throwAppError(
+        ErrorCode.CURRENCY_NOT_FOUND,
+        ERROR_MESSAGES.CURRENCY_NOT_FOUND,
+      );
     }
+
+    this.deps.cache.set(cacheKey, true, 60 * 60 * 1000);
   }
 
   async upsertAccount(
@@ -84,18 +114,22 @@ export class AccountService {
 
     if (
       data.paymentDay !== undefined &&
-      (data.paymentDay < 1 || data.paymentDay > 31)
+      (data.paymentDay < VALIDATION.PAYMENT_DAY.MIN ||
+        data.paymentDay > VALIDATION.PAYMENT_DAY.MAX)
     ) {
       throwAppError(
         ErrorCode.VALIDATION_ERROR,
-        'Payment day must be between 1 and 31',
+        ERROR_MESSAGES.PAYMENT_DAY_RANGE,
       );
     }
 
-    if (data.notifyDaysBefore !== undefined && data.notifyDaysBefore < 0) {
+    if (
+      data.notifyDaysBefore !== undefined &&
+      data.notifyDaysBefore < VALIDATION.NOTIFY_DAYS_BEFORE.MIN
+    ) {
       throwAppError(
         ErrorCode.VALIDATION_ERROR,
-        'Notify days before must be greater than or equal to 0',
+        ERROR_MESSAGES.NOTIFY_DAYS_BEFORE_MIN,
       );
     }
 
@@ -110,11 +144,11 @@ export class AccountService {
           notifyOnDueDate: data.notifyOnDueDate ?? null,
           paymentDay: data.paymentDay ?? null,
           notifyDaysBefore: data.notifyDaysBefore ?? null,
-          meta: (data.meta ?? null) as any,
+          meta: (data.meta ?? null) as AccountMeta,
         },
         select: ACCOUNT_SELECT_MINIMAL,
       });
-      return { success: true, message: 'Account updated successfully' };
+      return { success: true, message: ERROR_MESSAGES.ACCOUNT_UPDATED };
     } else {
       await this.deps.db.account.create({
         data: {
@@ -126,13 +160,13 @@ export class AccountService {
           notifyOnDueDate: data.notifyOnDueDate ?? null,
           paymentDay: data.paymentDay ?? null,
           notifyDaysBefore: data.notifyDaysBefore ?? null,
-          meta: (data.meta ?? null) as any,
+          meta: (data.meta ?? null) as AccountMeta,
           userId,
           balance: data.initialBalance ?? 0,
         },
         select: ACCOUNT_SELECT_MINIMAL,
       });
-      return { success: true, message: 'Account created successfully' };
+      return { success: true, message: ERROR_MESSAGES.ACCOUNT_CREATED };
     }
   }
 
@@ -140,16 +174,16 @@ export class AccountService {
     userId: string,
     accountId: string,
   ): Promise<AccountResponse> {
-    const account = await this.deps.db.account.findFirst({
-      where: {
-        id: accountId,
-        userId,
-      },
-      select: ACCOUNT_SELECT_FULL,
-    });
+    const account = await this.deps.accountRepository.findByIdAndUserId(
+      accountId,
+      userId,
+    );
 
     if (!account) {
-      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
+      throwAppError(
+        ErrorCode.ACCOUNT_NOT_FOUND,
+        ERROR_MESSAGES.ACCOUNT_NOT_FOUND,
+      );
     }
 
     return formatAccount(account);
@@ -200,21 +234,15 @@ export class AccountService {
     const skip = (page - 1) * limit;
 
     const [accounts, total, summaryGroups] = await Promise.all([
-      this.deps.db.account.findMany({
+      this.deps.accountRepository.findManyByUserId(
+        userId,
         where,
         orderBy,
         skip,
-        take: limit,
-        select: ACCOUNT_SELECT_FULL,
-      }),
-      this.deps.db.account.count({ where }),
-      this.deps.db.account.groupBy({
-        by: ['currencyId'],
-        where,
-        _sum: {
-          balance: true,
-        },
-      }),
+        limit,
+      ),
+      this.deps.accountRepository.countByUserId(userId, where),
+      this.deps.accountRepository.groupByCurrency(userId, where),
     ]);
 
     const currencyIds = [...new Set(summaryGroups.map((g) => g.currencyId))];
@@ -264,17 +292,14 @@ export class AccountService {
       where: { id: accountId },
     });
 
-    return { success: true, message: 'Account deleted successfully' };
+    return { success: true, message: ERROR_MESSAGES.ACCOUNT_DELETED };
   }
 
   async deleteManyAccounts(userId: string, ids: string[]): Promise<ActionRes> {
-    const accounts = await this.deps.db.account.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: ACCOUNT_SELECT_MINIMAL,
-    });
+    const accounts = await this.deps.accountRepository.findManyByIdsAndUserId(
+      ids,
+      userId,
+    );
 
     if (accounts.length !== ids.length) {
       throwAppError(
@@ -292,7 +317,7 @@ export class AccountService {
 
     return {
       success: true,
-      message: `${ids.length} account(s) deleted successfully`,
+      message: ERROR_MESSAGES.ACCOUNTS_DELETED(ids.length),
     };
   }
 }

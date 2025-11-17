@@ -22,6 +22,7 @@ import type {
   IListBudgetsQueryDto,
   IUpsertBudgetDto,
 } from '../dto/budget.dto';
+import { type CacheService, cacheService } from './base/cache.service';
 import {
   type CurrencyConversionService,
   currencyConversionService,
@@ -53,14 +54,22 @@ export class BudgetService {
       db: IDb;
       currencyConversionService: CurrencyConversionService;
       idUtil: IdUtil;
+      cache: CacheService;
     } = {
       db: prisma,
       currencyConversionService: currencyConversionService,
       idUtil,
+      cache: cacheService,
     },
   ) {}
 
   private async getUserBaseCurrencyId(userId: string): Promise<string> {
+    const cacheKey = `user:${userId}:baseCurrencyId`;
+    const cached = this.deps.cache.get<string>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const user = await this.deps.db.user.findUnique({
       where: { id: userId },
       select: { baseCurrencyId: true },
@@ -68,6 +77,14 @@ export class BudgetService {
     if (!user) {
       throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
+    if (!user.baseCurrencyId) {
+      throwAppError(
+        ErrorCode.VALIDATION_ERROR,
+        'User base currency is required',
+      );
+    }
+
+    this.deps.cache.set(cacheKey, user.baseCurrencyId, 5 * 60 * 1000);
     return user.baseCurrencyId;
   }
 

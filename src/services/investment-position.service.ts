@@ -54,10 +54,13 @@ type PositionResult = {
   exchangeRateGainLoss?: number | null;
 };
 
-const safeNumber = (value: unknown) =>
-  value && typeof value === 'object' && 'toNumber' in value
-    ? (value as any).toNumber()
-    : Number(value ?? 0);
+const safeNumber = (value: unknown): number => {
+  if (value && typeof value === 'object' && 'toNumber' in value) {
+    const decimalValue = value as { toNumber: () => number };
+    return decimalValue.toNumber();
+  }
+  return Number(value ?? 0);
+};
 
 export class InvestmentPositionService {
   constructor(

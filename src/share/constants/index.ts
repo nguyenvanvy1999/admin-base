@@ -1,7 +1,9 @@
 export * from './activity';
 export * from './category';
 export * from './error';
+export * from './messages';
 export * from './setting';
+export * from './validation';
 
 export const REGEX_TIME =
   /^\d+\s*(seconds?|minutes?|hours?|days?|weeks?|months?|years?)$/i;

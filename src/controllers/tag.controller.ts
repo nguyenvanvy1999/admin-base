@@ -9,11 +9,9 @@ import {
 } from '../dto/tag.dto';
 import { tagService } from '../services/tag.service';
 import { castToRes, ResWrapper } from '../share';
+import { createControllerDetail } from './base/controller-detail.factory';
 
-const TAG_DETAIL = {
-  tags: ['Tag'],
-  security: [{ JwtAuth: [] }],
-};
+const TAG_DETAIL = createControllerDetail('Tag');
 
 const tagController = new Elysia().group(
   '/tags',

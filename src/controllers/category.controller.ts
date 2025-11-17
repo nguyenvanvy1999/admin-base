@@ -9,11 +9,9 @@ import {
 import { ActionResDto, DeleteManyDto } from '../dto/common.dto';
 import { categoryService } from '../services/category.service';
 import { castToRes, ResWrapper } from '../share';
+import { createControllerDetail } from './base/controller-detail.factory';
 
-const CATEGORY_DETAIL = {
-  tags: ['Category'],
-  security: [{ JwtAuth: [] }],
-};
+const CATEGORY_DETAIL = createControllerDetail('Category');
 
 const categoryController = new Elysia().group(
   '/categories',

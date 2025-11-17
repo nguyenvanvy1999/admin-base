@@ -14,11 +14,13 @@ import {
   dateToNullableIsoString,
   decimalToNullableString,
   decimalToString,
+  ERROR_MESSAGES,
   ErrorCode,
   type IdUtil,
   idUtil,
   throwAppError,
 } from '@server/share';
+import type { TransactionMetadata } from '@server/share/types/metadata';
 import Decimal from 'decimal.js';
 import type {
   BatchTransactionsResponse,
@@ -36,11 +38,20 @@ import {
   type AccountBalanceService,
   accountBalanceService,
 } from './account-balance.service';
+import {
+  type OwnershipValidatorService,
+  ownershipValidatorService,
+} from './base/ownership-validator.service';
 import { CategoryService } from './category.service';
 import {
   type CurrencyConversionService,
   currencyConversionService,
 } from './currency-conversion.service';
+import {
+  type DebtCalculationService,
+  debtCalculationService,
+} from './debt-calculation.service';
+import type { ITransactionService } from './interfaces/ITransactionService';
 import {
   CURRENCY_SELECT_BASIC,
   TRANSACTION_SELECT_FOR_BALANCE,
@@ -157,47 +168,31 @@ class TransactionHandlerFactory {
       balanceService: AccountBalanceService;
       currencyConverter: CurrencyConversionService;
       idUtil: IdUtil;
+      ownershipValidator: OwnershipValidatorService;
+      categoryService: CategoryService;
     },
   ) {}
 
   private async validateAccountOwnership(userId: string, accountId: string) {
-    const account = await this.deps.db.account.findFirst({
-      where: {
-        id: accountId,
-        userId,
-      },
-      select: TRANSACTION_SELECT_MINIMAL,
-    });
-    if (!account) {
-      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
-    }
-    return account;
+    return this.deps.ownershipValidator.validateAccountOwnership(
+      userId,
+      accountId,
+      TRANSACTION_SELECT_MINIMAL,
+    );
   }
 
   private async validateCategoryOwnership(userId: string, categoryId: string) {
-    const category = await this.deps.db.category.findFirst({
-      where: {
-        id: categoryId,
-        userId,
-      },
-      select: { id: true, userId: true },
-    });
-    if (!category) {
-      throwAppError(ErrorCode.NOT_FOUND, 'Category not found');
-    }
+    await this.deps.ownershipValidator.validateCategoryOwnership(
+      userId,
+      categoryId,
+    );
   }
 
   private async validateEntityOwnership(userId: string, entityId: string) {
-    const entity = await this.deps.db.entity.findFirst({
-      where: {
-        id: entityId,
-        userId,
-      },
-      select: { id: true, userId: true },
-    });
-    if (!entity) {
-      throwAppError(ErrorCode.ENTITY_NOT_FOUND, 'Entity not found');
-    }
+    await this.deps.ownershipValidator.validateEntityOwnership(
+      userId,
+      entityId,
+    );
   }
 
   private async validateEventOwnership(
@@ -207,16 +202,7 @@ class TransactionHandlerFactory {
     if (!eventId) {
       return;
     }
-    const event = await this.deps.db.event.findFirst({
-      where: {
-        id: eventId,
-        userId,
-      },
-      select: { id: true, userId: true },
-    });
-    if (!event) {
-      throwAppError(ErrorCode.NOT_FOUND, 'Event not found');
-    }
+    await this.deps.ownershipValidator.validateEventOwnership(userId, eventId);
   }
 
   private async prepareTransactionData(
@@ -228,7 +214,7 @@ class TransactionHandlerFactory {
     if (!userBaseCurrencyId) {
       throwAppError(
         ErrorCode.VALIDATION_ERROR,
-        'User base currency is required',
+        ERROR_MESSAGES.USER_BASE_CURRENCY_REQUIRED,
       );
     }
 
@@ -269,7 +255,7 @@ class TransactionHandlerFactory {
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
       note: data.note ?? null,
       receiptUrl: data.receiptUrl ?? null,
-      metadata: (data.metadata ?? null) as any,
+      metadata: (data.metadata ?? null) as TransactionMetadata,
       eventId: data.eventId ?? null,
     };
 
@@ -290,8 +276,7 @@ class TransactionHandlerFactory {
 
       case TransactionType.transfer: {
         const transferData = data as ITransferTransaction;
-        const categoryService = new CategoryService();
-        const transferCategoryId = categoryService.getCategoryId(
+        const transferCategoryId = this.deps.categoryService.getCategoryId(
           userId,
           CATEGORY_NAME.TRANSFER,
         );
@@ -325,7 +310,7 @@ class TransactionHandlerFactory {
       default: {
         throwAppError(
           ErrorCode.VALIDATION_ERROR,
-          `Invalid transaction type: ${(data as IUpsertTransaction).type}`,
+          `${ERROR_MESSAGES.INVALID_TRANSACTION_TYPE}: ${(data as IUpsertTransaction).type}`,
         );
       }
     }
@@ -384,10 +369,10 @@ class TransactionHandlerFactory {
     });
 
     if (!existingTransaction) {
-      throwAppError(ErrorCode.NOT_FOUND, 'Transaction not found');
+      throwAppError(ErrorCode.NOT_FOUND, ERROR_MESSAGES.TRANSACTION_NOT_FOUND);
     }
     if (existingTransaction.userId !== userId) {
-      throwAppError(ErrorCode.FORBIDDEN, 'Transaction not owned by user');
+      throwAppError(ErrorCode.FORBIDDEN, ERROR_MESSAGES.TRANSACTION_NOT_OWNED);
     }
 
     return this.deps.db.$transaction(async (tx: PrismaTx) => {
@@ -433,89 +418,168 @@ class TransactionHandlerFactory {
       data.toAccountId,
     );
 
+    const transferData = this.prepareTransferData(data, fromAccount, toAccount);
+    const groupId = crypto.randomUUID();
+    const transferCategoryId = this.deps.categoryService.getCategoryId(
+      userId,
+      CATEGORY_NAME.TRANSFER,
+    );
+
+    return this.deps.db.$transaction(async (tx: PrismaTx) => {
+      await this.applyTransferBalance(tx, transferData, fromAccount, toAccount);
+
+      const primary = await this.createPrimaryTransfer(
+        tx,
+        userId,
+        transferData,
+        fromAccount,
+        toAccount,
+        transferCategoryId,
+        groupId,
+      );
+
+      const amountInToCurrency = await this.calculateAmountInToCurrency(
+        transferData,
+        toAccount,
+      );
+
+      await this.createMirrorTransfer(
+        tx,
+        userId,
+        transferData,
+        fromAccount,
+        toAccount,
+        transferCategoryId,
+        groupId,
+        amountInToCurrency,
+      );
+
+      return primary;
+    });
+  }
+
+  private prepareTransferData(
+    data: ITransferTransaction,
+    fromAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    toAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+  ) {
     const currencyId = data.currencyId ?? fromAccount.currencyId;
     const amountDecimal = new Decimal(data.amount);
     const feeDecimal = new Decimal(data.fee ?? 0);
     const toAmountDecimal = data.toAmount
       ? new Decimal(data.toAmount)
       : undefined;
-    const groupId = crypto.randomUUID();
-    const categoryService = new CategoryService();
-    const transferCategoryId = categoryService.getCategoryId(
-      userId,
-      CATEGORY_NAME.TRANSFER,
+
+    return {
+      currencyId,
+      amountDecimal,
+      feeDecimal,
+      toAmountDecimal,
+      date: new Date(data.date),
+      dueDate: data.dueDate ? new Date(data.dueDate) : null,
+      note: data.note ?? null,
+      receiptUrl: data.receiptUrl ?? null,
+      metadata: (data.metadata ?? null) as TransactionMetadata,
+    };
+  }
+
+  private async applyTransferBalance(
+    tx: PrismaTx,
+    transferData: ReturnType<typeof this.prepareTransferData>,
+    fromAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    toAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+  ) {
+    await this.deps.balanceService.applyTransactionBalance(
+      tx,
+      TransactionType.transfer,
+      fromAccount.id,
+      toAccount.id,
+      transferData.amountDecimal,
+      transferData.feeDecimal,
+      transferData.currencyId,
+      fromAccount.currencyId,
+      toAccount.currencyId,
+      transferData.toAmountDecimal,
     );
+  }
 
-    return this.deps.db.$transaction(async (tx: PrismaTx) => {
-      await this.deps.balanceService.applyTransactionBalance(
-        tx,
-        TransactionType.transfer,
-        fromAccount.id,
-        toAccount.id,
-        amountDecimal,
-        feeDecimal,
-        currencyId,
-        fromAccount.currencyId,
-        toAccount.currencyId,
-        toAmountDecimal,
-      );
+  private async createPrimaryTransfer(
+    tx: PrismaTx,
+    userId: string,
+    transferData: ReturnType<typeof this.prepareTransferData>,
+    fromAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    toAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    transferCategoryId: string,
+    groupId: string,
+  ) {
+    return tx.transaction.create({
+      data: {
+        id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
+        userId,
+        accountId: fromAccount.id,
+        toAccountId: toAccount.id,
+        type: TransactionType.transfer,
+        categoryId: transferCategoryId,
+        amount: transferData.amountDecimal.toNumber(),
+        currencyId: transferData.currencyId,
+        fee: transferData.feeDecimal.toNumber(),
+        feeInBaseCurrency: null,
+        date: transferData.date,
+        dueDate: transferData.dueDate,
+        note: transferData.note,
+        receiptUrl: transferData.receiptUrl,
+        metadata: transferData.metadata,
+        transferGroupId: groupId,
+        isTransferMirror: false,
+      },
+      select: TRANSACTION_SELECT_FULL,
+    });
+  }
 
-      // Create primary transaction (from -> to)
-      const primary = await tx.transaction.create({
-        data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
-          userId,
-          accountId: fromAccount.id,
-          toAccountId: toAccount.id,
-          type: TransactionType.transfer,
-          categoryId: transferCategoryId,
-          amount: amountDecimal.toNumber(),
-          currencyId,
-          fee: feeDecimal.toNumber(),
-          feeInBaseCurrency: null,
-          date: new Date(data.date),
-          dueDate: data.dueDate ? new Date(data.dueDate) : null,
-          note: data.note ?? null,
-          receiptUrl: data.receiptUrl ?? null,
-          metadata: (data.metadata ?? null) as any,
-          transferGroupId: groupId,
-          isTransferMirror: false,
-        },
-        select: TRANSACTION_SELECT_FULL,
-      });
+  private async calculateAmountInToCurrency(
+    transferData: ReturnType<typeof this.prepareTransferData>,
+    toAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+  ) {
+    if (transferData.toAmountDecimal) {
+      return transferData.toAmountDecimal;
+    }
+    return this.deps.currencyConverter.convertToToAccountCurrency(
+      transferData.amountDecimal,
+      transferData.currencyId,
+      toAccount.currencyId,
+    );
+  }
 
-      const amountInToCurrency = toAmountDecimal
-        ? toAmountDecimal
-        : await this.deps.currencyConverter.convertToToAccountCurrency(
-            amountDecimal,
-            currencyId,
-            toAccount.currencyId,
-          );
-
-      // Create mirror transaction (to -> from)
-      await tx.transaction.create({
-        data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
-          userId,
-          accountId: toAccount.id,
-          toAccountId: fromAccount.id,
-          type: TransactionType.transfer,
-          categoryId: transferCategoryId,
-          amount: amountInToCurrency.toNumber(),
-          currencyId: toAccount.currencyId,
-          fee: 0,
-          feeInBaseCurrency: null,
-          date: new Date(data.date),
-          dueDate: data.dueDate ? new Date(data.dueDate) : null,
-          note: data.note ?? null,
-          receiptUrl: data.receiptUrl ?? null,
-          metadata: (data.metadata ?? null) as any,
-          transferGroupId: groupId,
-          isTransferMirror: true,
-        },
-      });
-
-      return primary;
+  private async createMirrorTransfer(
+    tx: PrismaTx,
+    userId: string,
+    transferData: ReturnType<typeof this.prepareTransferData>,
+    fromAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    toAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    transferCategoryId: string,
+    groupId: string,
+    amountInToCurrency: Decimal,
+  ) {
+    await tx.transaction.create({
+      data: {
+        id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
+        userId,
+        accountId: toAccount.id,
+        toAccountId: fromAccount.id,
+        type: TransactionType.transfer,
+        categoryId: transferCategoryId,
+        amount: amountInToCurrency.toNumber(),
+        currencyId: toAccount.currencyId,
+        fee: 0,
+        feeInBaseCurrency: null,
+        date: transferData.date,
+        dueDate: transferData.dueDate,
+        note: transferData.note,
+        receiptUrl: transferData.receiptUrl,
+        metadata: transferData.metadata,
+        transferGroupId: groupId,
+        isTransferMirror: true,
+      },
     });
   }
 
@@ -524,172 +588,208 @@ class TransactionHandlerFactory {
     data: ITransferTransaction & { id: string },
     fromAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
   ) {
-    // Load existing primary
-    const existing = await this.deps.db.transaction.findUnique({
-      where: { id: data.id },
-      select: TRANSACTION_SELECT_FOR_BALANCE,
-    });
-    if (!existing || existing.userId !== userId) {
-      throwAppError(ErrorCode.NOT_FOUND, 'Transaction not found');
-    }
-    if (existing.type !== TransactionType.transfer) {
-      throwAppError(
-        ErrorCode.INVALID_TRANSACTION_TYPE,
-        'Invalid transaction type for transfer update',
-      );
-    }
+    const existing = await this.loadExistingTransferForUpdate(userId, data.id);
 
     const toAccount = await this.validateAccountOwnership(
       userId,
       data.toAccountId,
     );
 
-    const currencyId = data.currencyId ?? fromAccount.currencyId;
-    const amountDecimal = new Decimal(data.amount);
-    const feeDecimal = new Decimal(data.fee ?? 0);
-    const toAmountDecimal = data.toAmount
-      ? new Decimal(data.toAmount)
-      : undefined;
-
+    const transferData = this.prepareTransferData(data, fromAccount, toAccount);
     const groupId = existing.transferGroupId ?? crypto.randomUUID();
-    const categoryService = new CategoryService();
-    const transferCategoryId = categoryService.getCategoryId(
+    const transferCategoryId = this.deps.categoryService.getCategoryId(
       userId,
       CATEGORY_NAME.TRANSFER,
     );
 
-    // Get existing mirror to get original toAmount for revert
-    const existingMirrorForRevert = existing.transferGroupId
-      ? await this.deps.db.transaction.findFirst({
-          where: {
-            userId,
-            transferGroupId: existing.transferGroupId,
-            isTransferMirror: true,
-          },
-          select: { amount: true },
-        })
-      : null;
+    const existingMirrorForRevert = await this.getExistingMirrorForRevert(
+      existing.transferGroupId,
+    );
 
     return this.deps.db.$transaction(async (tx: PrismaTx) => {
-      // Revert balances from old primary only
-      // Use existing mirror amount if available for accurate revert
-      const existingToAmount = existingMirrorForRevert
-        ? new Decimal(existingMirrorForRevert.amount)
-        : undefined;
-
-      await this.deps.balanceService.revertTransactionBalance(
+      await this.revertExistingTransferBalance(
         tx,
-        existing.type,
-        existing.accountId,
-        existing.toAccountId,
-        existing.amount,
-        existing.fee,
-        existing.currencyId,
-        existing.account.currencyId,
-        existing.toAccount?.currencyId,
-        existingToAmount,
+        existing,
+        existingMirrorForRevert,
       );
 
-      await this.deps.balanceService.applyTransactionBalance(
+      await this.applyTransferBalance(tx, transferData, fromAccount, toAccount);
+
+      const updatedPrimary = await this.updatePrimaryTransfer(
         tx,
-        TransactionType.transfer,
-        fromAccount.id,
-        toAccount.id,
-        amountDecimal,
-        feeDecimal,
-        currencyId,
-        fromAccount.currencyId,
-        toAccount.currencyId,
-        toAmountDecimal,
+        data.id,
+        userId,
+        transferData,
+        fromAccount,
+        toAccount,
+        transferCategoryId,
+        groupId,
       );
 
-      // Update primary
-      const updatedPrimary = await tx.transaction.update({
-        where: { id: data.id },
-        data: {
-          userId,
-          accountId: fromAccount.id,
-          toAccountId: toAccount.id,
-          type: TransactionType.transfer,
-          categoryId: transferCategoryId,
-          amount: amountDecimal.toNumber(),
-          currencyId,
-          fee: feeDecimal.toNumber(),
-          date: new Date(data.date),
-          dueDate: data.dueDate ? new Date(data.dueDate) : null,
-          note: data.note ?? null,
-          receiptUrl: data.receiptUrl ?? null,
-          metadata: (data.metadata ?? null) as any,
-          transferGroupId: groupId,
-          isTransferMirror: false,
-        },
-        select: TRANSACTION_SELECT_FULL,
-      });
+      const amountInToCurrency = await this.calculateAmountInToCurrency(
+        transferData,
+        toAccount,
+      );
 
-      const amountInToCurrency = toAmountDecimal
-        ? toAmountDecimal
-        : await this.deps.currencyConverter.convertToToAccountCurrency(
-            amountDecimal,
-            currencyId,
-            toAccount.currencyId,
-          );
-
-      // Upsert mirror using groupId
-      const existingMirror = existing.transferGroupId
-        ? await tx.transaction.findFirst({
-            where: {
-              userId,
-              transferGroupId: existing.transferGroupId,
-              isTransferMirror: true,
-            },
-            select: { id: true },
-          })
-        : null;
-
-      if (existingMirror) {
-        await tx.transaction.update({
-          where: { id: existingMirror.id },
-          data: {
-            accountId: toAccount.id,
-            toAccountId: fromAccount.id,
-            categoryId: transferCategoryId,
-            amount: amountInToCurrency.toNumber(),
-            currencyId: toAccount.currencyId,
-            fee: 0,
-            date: new Date(data.date),
-            dueDate: data.dueDate ? new Date(data.dueDate) : null,
-            note: data.note ?? null,
-            receiptUrl: data.receiptUrl ?? null,
-            metadata: (data.metadata ?? null) as any,
-            transferGroupId: groupId,
-            isTransferMirror: true,
-          },
-        });
-      } else {
-        await tx.transaction.create({
-          data: {
-            id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
-            userId,
-            accountId: toAccount.id,
-            toAccountId: fromAccount.id,
-            type: TransactionType.transfer,
-            categoryId: transferCategoryId,
-            amount: amountInToCurrency.toNumber(),
-            currencyId: toAccount.currencyId,
-            fee: 0,
-            date: new Date(data.date),
-            dueDate: data.dueDate ? new Date(data.dueDate) : null,
-            note: data.note ?? null,
-            receiptUrl: data.receiptUrl ?? null,
-            metadata: (data.metadata ?? null) as any,
-            transferGroupId: groupId,
-            isTransferMirror: true,
-          },
-        });
-      }
+      await this.upsertMirrorTransfer(
+        tx,
+        userId,
+        existing.transferGroupId,
+        transferData,
+        fromAccount,
+        toAccount,
+        transferCategoryId,
+        groupId,
+        amountInToCurrency,
+      );
 
       return updatedPrimary;
     });
+  }
+
+  private async loadExistingTransferForUpdate(
+    userId: string,
+    transactionId: string,
+  ) {
+    const existing = await this.deps.db.transaction.findUnique({
+      where: { id: transactionId },
+      select: TRANSACTION_SELECT_FOR_BALANCE,
+    });
+    if (!existing || existing.userId !== userId) {
+      throwAppError(ErrorCode.NOT_FOUND, ERROR_MESSAGES.TRANSACTION_NOT_FOUND);
+    }
+    if (existing.type !== TransactionType.transfer) {
+      throwAppError(
+        ErrorCode.INVALID_TRANSACTION_TYPE,
+        ERROR_MESSAGES.INVALID_TRANSACTION_TYPE_FOR_TRANSFER,
+      );
+    }
+    return existing;
+  }
+
+  private async getExistingMirrorForRevert(
+    transferGroupId: string | null,
+  ): Promise<{ amount: Decimal } | null> {
+    if (!transferGroupId) return null;
+
+    const mirror = await this.deps.db.transaction.findFirst({
+      where: {
+        transferGroupId,
+        isTransferMirror: true,
+      },
+      select: { amount: true },
+    });
+
+    return mirror ? { amount: new Decimal(mirror.amount) } : null;
+  }
+
+  private async revertExistingTransferBalance(
+    tx: PrismaTx,
+    existing: Awaited<ReturnType<typeof this.loadExistingTransferForUpdate>>,
+    existingMirrorForRevert: { amount: Decimal } | null,
+  ) {
+    const existingToAmount = existingMirrorForRevert
+      ? existingMirrorForRevert.amount
+      : undefined;
+
+    await this.deps.balanceService.revertTransactionBalance(
+      tx,
+      existing.type,
+      existing.accountId,
+      existing.toAccountId,
+      existing.amount,
+      existing.fee,
+      existing.currencyId,
+      existing.account.currencyId,
+      existing.toAccount?.currencyId,
+      existingToAmount,
+    );
+  }
+
+  private async updatePrimaryTransfer(
+    tx: PrismaTx,
+    transactionId: string,
+    userId: string,
+    transferData: ReturnType<typeof this.prepareTransferData>,
+    fromAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    toAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    transferCategoryId: string,
+    groupId: string,
+  ) {
+    return tx.transaction.update({
+      where: { id: transactionId },
+      data: {
+        userId,
+        accountId: fromAccount.id,
+        toAccountId: toAccount.id,
+        type: TransactionType.transfer,
+        categoryId: transferCategoryId,
+        amount: transferData.amountDecimal.toNumber(),
+        currencyId: transferData.currencyId,
+        fee: transferData.feeDecimal.toNumber(),
+        date: transferData.date,
+        dueDate: transferData.dueDate,
+        note: transferData.note,
+        receiptUrl: transferData.receiptUrl,
+        metadata: transferData.metadata,
+        transferGroupId: groupId,
+        isTransferMirror: false,
+      },
+      select: TRANSACTION_SELECT_FULL,
+    });
+  }
+
+  private async upsertMirrorTransfer(
+    tx: PrismaTx,
+    userId: string,
+    existingGroupId: string | null,
+    transferData: ReturnType<typeof this.prepareTransferData>,
+    fromAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    toAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
+    transferCategoryId: string,
+    groupId: string,
+    amountInToCurrency: Decimal,
+  ) {
+    const existingMirror = existingGroupId
+      ? await tx.transaction.findFirst({
+          where: {
+            transferGroupId: existingGroupId,
+            isTransferMirror: true,
+          },
+          select: { id: true },
+        })
+      : null;
+
+    const mirrorData = {
+      accountId: toAccount.id,
+      toAccountId: fromAccount.id,
+      categoryId: transferCategoryId,
+      amount: amountInToCurrency.toNumber(),
+      currencyId: toAccount.currencyId,
+      fee: 0,
+      date: transferData.date,
+      dueDate: transferData.dueDate,
+      note: transferData.note,
+      receiptUrl: transferData.receiptUrl,
+      metadata: transferData.metadata,
+      transferGroupId: groupId,
+      isTransferMirror: true,
+    };
+
+    if (existingMirror) {
+      await tx.transaction.update({
+        where: { id: existingMirror.id },
+        data: mirrorData,
+      });
+    } else {
+      await tx.transaction.create({
+        data: {
+          id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
+          userId,
+          ...mirrorData,
+        },
+      });
+    }
   }
 
   private async handleTransaction(
@@ -794,7 +894,7 @@ class TransactionHandlerFactory {
   }
 }
 
-export class TransactionService {
+export class TransactionService implements ITransactionService {
   private readonly handlerFactory: TransactionHandlerFactory;
 
   constructor(
@@ -804,12 +904,18 @@ export class TransactionService {
       accountBalanceService: AccountBalanceService;
       currencyConversionService: CurrencyConversionService;
       idUtil: IdUtil;
+      ownershipValidator: OwnershipValidatorService;
+      debtCalculationService: DebtCalculationService;
+      cache?: CacheService;
     } = {
       db: prisma,
       categoryService: new CategoryService(),
       accountBalanceService: accountBalanceService,
       currencyConversionService: currencyConversionService,
       idUtil,
+      ownershipValidator: ownershipValidatorService,
+      debtCalculationService: debtCalculationService,
+      cache: cacheService,
     },
   ) {
     this.handlerFactory = new TransactionHandlerFactory({
@@ -817,6 +923,8 @@ export class TransactionService {
       balanceService: this.deps.accountBalanceService,
       currencyConverter: this.deps.currencyConversionService,
       idUtil: this.deps.idUtil,
+      ownershipValidator: this.deps.ownershipValidator,
+      categoryService: this.deps.categoryService,
     });
   }
 
@@ -824,16 +932,53 @@ export class TransactionService {
     userId: string,
     data: IUpsertTransaction,
   ): Promise<TransactionDetail> {
+    const account = await this.validateAccountForTransaction(
+      userId,
+      data.accountId,
+    );
+
+    const user = await this.getUserBaseCurrency(userId);
+
+    const transaction = await this.routeTransactionByType(
+      userId,
+      data,
+      account,
+      user.baseCurrencyId,
+    );
+
+    return formatTransactionRecord(transaction);
+  }
+
+  private async validateAccountForTransaction(
+    userId: string,
+    accountId: string,
+  ) {
     const account = await this.deps.db.account.findFirst({
       where: {
-        id: data.accountId,
+        id: accountId,
         userId,
       },
       select: TRANSACTION_SELECT_MINIMAL,
     });
 
     if (!account) {
-      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
+      throwAppError(
+        ErrorCode.ACCOUNT_NOT_FOUND,
+        ERROR_MESSAGES.ACCOUNT_NOT_FOUND,
+      );
+    }
+
+    return account;
+  }
+
+  private async getUserBaseCurrency(userId: string) {
+    const cacheKey = `user:${userId}:baseCurrency`;
+    const cached = this.deps.cache?.get<{
+      id: string;
+      baseCurrencyId: string | null;
+    }>(cacheKey);
+    if (cached) {
+      return cached;
     }
 
     const user = await this.deps.db.user.findUniqueOrThrow({
@@ -841,48 +986,54 @@ export class TransactionService {
       select: { id: true, baseCurrencyId: true },
     });
 
-    const transactionType = data.type;
-    let transaction: TransactionRecord;
-    switch (transactionType) {
+    if (this.deps.cache) {
+      this.deps.cache.set(cacheKey, user, 5 * 60 * 1000);
+    }
+
+    return user;
+  }
+
+  private async routeTransactionByType(
+    userId: string,
+    data: IUpsertTransaction,
+    account: Awaited<ReturnType<typeof this.validateAccountForTransaction>>,
+    baseCurrencyId: string | null,
+  ): Promise<TransactionRecord> {
+    switch (data.type) {
       case TransactionType.income:
       case TransactionType.expense:
-        transaction = await this.handlerFactory.handleIncomeExpense(
+        return this.handlerFactory.handleIncomeExpense(
           userId,
           data as IIncomeExpenseTransaction,
           account,
-          user.baseCurrencyId,
+          baseCurrencyId,
         );
-        break;
 
       case TransactionType.transfer:
-        transaction = await this.handlerFactory.handleTransfer(
+        return this.handlerFactory.handleTransfer(
           userId,
           data as ITransferTransaction,
           account,
         );
-        break;
 
       case TransactionType.loan_given:
       case TransactionType.loan_received:
       case TransactionType.repay_debt:
       case TransactionType.collect_debt:
-        transaction = await this.handlerFactory.handleLoan(
+        return this.handlerFactory.handleLoan(
           userId,
           data as ILoanTransaction,
           account,
-          user.baseCurrencyId,
+          baseCurrencyId,
         );
-        break;
 
       default: {
         throwAppError(
           ErrorCode.INVALID_TRANSACTION_TYPE,
-          `Invalid transaction type: ${transactionType}`,
+          `${ERROR_MESSAGES.INVALID_TRANSACTION_TYPE}: ${data.type}`,
         );
       }
     }
-
-    return formatTransactionRecord(transaction);
   }
 
   async getTransaction(
@@ -898,7 +1049,7 @@ export class TransactionService {
     });
 
     if (!transaction) {
-      throwAppError(ErrorCode.NOT_FOUND, 'Transaction not found');
+      throwAppError(ErrorCode.NOT_FOUND, ERROR_MESSAGES.TRANSACTION_NOT_FOUND);
     }
 
     return formatTransactionRecord(transaction);
@@ -1058,10 +1209,10 @@ export class TransactionService {
     });
 
     if (!transaction) {
-      throwAppError(ErrorCode.NOT_FOUND, 'Transaction not found');
+      throwAppError(ErrorCode.NOT_FOUND, ERROR_MESSAGES.TRANSACTION_NOT_FOUND);
     }
     if (transaction.userId !== userId) {
-      throwAppError(ErrorCode.FORBIDDEN, 'Transaction not owned by user');
+      throwAppError(ErrorCode.FORBIDDEN, ERROR_MESSAGES.TRANSACTION_NOT_OWNED);
     }
 
     // For transfers, delete both sides, but revert balance once using the primary
@@ -1155,7 +1306,7 @@ export class TransactionService {
       });
     }
 
-    return { success: true, message: 'Transaction deleted successfully' };
+    return { success: true, message: ERROR_MESSAGES.TRANSACTION_DELETED };
   }
 
   async createBatchTransactions(
@@ -1187,7 +1338,7 @@ export class TransactionService {
           if (!account) {
             results.push({
               success: false,
-              error: 'Account not found',
+              error: ERROR_MESSAGES.ACCOUNT_NOT_FOUND,
             });
             continue;
           }
@@ -1207,7 +1358,7 @@ export class TransactionService {
               if (!category) {
                 results.push({
                   success: false,
-                  error: 'Category not found',
+                  error: ERROR_MESSAGES.CATEGORY_NOT_FOUND,
                 });
                 continue;
               }
@@ -1231,7 +1382,7 @@ export class TransactionService {
               if (!toAccount) {
                 results.push({
                   success: false,
-                  error: 'To account not found',
+                  error: ERROR_MESSAGES.TO_ACCOUNT_NOT_FOUND,
                 });
                 continue;
               }
@@ -1255,7 +1406,7 @@ export class TransactionService {
               if (!entity) {
                 results.push({
                   success: false,
-                  error: 'Entity not found',
+                  error: ERROR_MESSAGES.ENTITY_NOT_FOUND,
                 });
                 continue;
               }
@@ -1320,7 +1471,10 @@ export class TransactionService {
     });
 
     if (!account) {
-      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
+      throwAppError(
+        ErrorCode.ACCOUNT_NOT_FOUND,
+        ERROR_MESSAGES.ACCOUNT_NOT_FOUND,
+      );
     }
 
     const currentBalance = new Decimal(account.balance);
@@ -1330,7 +1484,7 @@ export class TransactionService {
     if (difference.isZero()) {
       throwAppError(
         ErrorCode.VALIDATION_ERROR,
-        'New balance must be different from current balance',
+        ERROR_MESSAGES.NEW_BALANCE_MUST_DIFFER,
       );
     }
 
@@ -1352,7 +1506,7 @@ export class TransactionService {
     if (!user.baseCurrencyId) {
       throwAppError(
         ErrorCode.VALIDATION_ERROR,
-        'User base currency is required. Please set your base currency in profile settings.',
+        ERROR_MESSAGES.USER_BASE_CURRENCY_REQUIRED_DETAILED,
       );
     }
 
@@ -1398,132 +1552,7 @@ export class TransactionService {
       to?: string;
     },
   ): Promise<Array<TransactionDetail & { remainingAmount: number }>> {
-    const dateFrom = query?.from ? new Date(query.from) : undefined;
-    const dateTo = query?.to ? new Date(query.to) : undefined;
-
-    const whereClause: TransactionWhereInput = {
-      userId,
-      type: {
-        in: [
-          TransactionType.loan_given,
-          TransactionType.loan_received,
-          TransactionType.repay_debt,
-          TransactionType.collect_debt,
-        ],
-      },
-      ...(dateFrom || dateTo
-        ? {
-            date: {
-              ...(dateFrom ? { gte: dateFrom } : {}),
-              ...(dateTo ? { lte: dateTo } : {}),
-            },
-          }
-        : {}),
-    };
-
-    const allLoanTransactions = await this.deps.db.transaction.findMany({
-      where: whereClause,
-      select: TRANSACTION_SELECT_FULL,
-      orderBy: {
-        date: 'desc',
-      },
-    });
-
-    const entityDebtMap = new Map<
-      string,
-      {
-        loans: Array<{
-          id: string;
-          type: TransactionType;
-          amount: Decimal;
-          date: Date;
-          transaction: TransactionRecord;
-        }>;
-        totalRepaid: Decimal;
-        totalCollected: Decimal;
-      }
-    >();
-
-    for (const tx of allLoanTransactions) {
-      if (!tx.entityId) continue;
-
-      const amount = new Decimal(tx.amount);
-      const entityKey = tx.entityId;
-
-      if (!entityDebtMap.has(entityKey)) {
-        entityDebtMap.set(entityKey, {
-          loans: [],
-          totalRepaid: new Decimal(0),
-          totalCollected: new Decimal(0),
-        });
-      }
-
-      const entityDebt = entityDebtMap.get(entityKey)!;
-
-      if (
-        tx.type === TransactionType.loan_given ||
-        tx.type === TransactionType.loan_received
-      ) {
-        entityDebt.loans.push({
-          id: tx.id,
-          type: tx.type,
-          amount,
-          date: tx.date,
-          transaction: tx as TransactionRecord,
-        });
-      } else if (tx.type === TransactionType.repay_debt) {
-        entityDebt.totalRepaid = entityDebt.totalRepaid.plus(amount);
-      } else if (tx.type === TransactionType.collect_debt) {
-        entityDebt.totalCollected = entityDebt.totalCollected.plus(amount);
-      }
-    }
-
-    const debtTransactions: Array<
-      TransactionDetail & { remainingAmount: number }
-    > = [];
-
-    for (const [_, entityDebt] of entityDebtMap.entries()) {
-      let totalLoanGiven = new Decimal(0);
-      let totalLoanReceived = new Decimal(0);
-
-      for (const loan of entityDebt.loans) {
-        if (loan.type === TransactionType.loan_given) {
-          totalLoanGiven = totalLoanGiven.plus(loan.amount);
-        } else {
-          totalLoanReceived = totalLoanReceived.plus(loan.amount);
-        }
-      }
-
-      const netLoanGiven = totalLoanGiven.minus(entityDebt.totalCollected);
-      const netLoanReceived = totalLoanReceived.minus(entityDebt.totalRepaid);
-
-      for (const loan of entityDebt.loans) {
-        let remainingAmount: number;
-        if (loan.type === TransactionType.loan_given) {
-          const ratio = totalLoanGiven.gt(0)
-            ? loan.amount.div(totalLoanGiven)
-            : new Decimal(0);
-          const calculated = netLoanGiven.times(ratio);
-          remainingAmount = calculated.gt(0) ? calculated.toNumber() : 0;
-        } else {
-          const ratio = totalLoanReceived.gt(0)
-            ? loan.amount.div(totalLoanReceived)
-            : new Decimal(0);
-          const calculated = netLoanReceived.times(ratio);
-          remainingAmount = calculated.gt(0) ? calculated.toNumber() : 0;
-        }
-
-        if (remainingAmount > 0) {
-          const formatted = formatTransactionRecord(loan.transaction);
-          debtTransactions.push({
-            ...formatted,
-            remainingAmount,
-          });
-        }
-      }
-    }
-
-    return debtTransactions;
+    return this.deps.debtCalculationService.getUnpaidDebts(userId, query);
   }
 }
 

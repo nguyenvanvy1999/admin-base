@@ -9,11 +9,9 @@ import {
 } from '../dto/valuation.dto';
 import { investmentValuationService } from '../services/valuation.service';
 import { castToRes, ResWrapper } from '../share';
+import { createControllerDetail } from './base/controller-detail.factory';
 
-const VALUATION_DETAIL = {
-  tags: ['Investment Valuation'],
-  security: [{ JwtAuth: [] }],
-};
+const VALUATION_DETAIL = createControllerDetail('Investment Valuation');
 
 const valuationController = new Elysia().group(
   '/investments/:id/valuations',

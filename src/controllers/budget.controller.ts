@@ -12,11 +12,9 @@ import {
 import { ActionResDto, DeleteManyDto } from '../dto/common.dto';
 import { budgetService } from '../services/budget.service';
 import { castToRes, ResWrapper } from '../share';
+import { createControllerDetail } from './base/controller-detail.factory';
 
-const BUDGET_DETAIL = {
-  tags: ['Budget'],
-  security: [{ JwtAuth: [] }],
-};
+const BUDGET_DETAIL = createControllerDetail('Budget');
 
 const budgetController = new Elysia().group(
   '/budgets',

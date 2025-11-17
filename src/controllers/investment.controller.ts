@@ -12,11 +12,9 @@ import {
 import { investmentService } from '../services/investment.service';
 import { investmentPositionService } from '../services/investment-position.service';
 import { castToRes, ResWrapper } from '../share';
+import { createControllerDetail } from './base/controller-detail.factory';
 
-const INVESTMENT_DETAIL = {
-  tags: ['Investment'],
-  security: [{ JwtAuth: [] }],
-};
+const INVESTMENT_DETAIL = createControllerDetail('Investment');
 
 const investmentController = new Elysia().group(
   '/investments',

@@ -9,11 +9,9 @@ import {
 } from '../dto/account.dto';
 import { accountService } from '../services/account.service';
 import { castToRes, ResWrapper } from '../share';
+import { createControllerDetail } from './base/controller-detail.factory';
 
-const ACCOUNT_DETAIL = {
-  tags: ['Account'],
-  security: [{ JwtAuth: [] }],
-};
+const ACCOUNT_DETAIL = createControllerDetail('Account');
 
 const accountController = new Elysia().group(
   '/accounts',

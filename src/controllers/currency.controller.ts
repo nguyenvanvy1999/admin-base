@@ -3,11 +3,9 @@ import { Elysia } from 'elysia';
 import { CurrencyListResponseDto } from '../dto/currency.dto';
 import { currencyService } from '../services/currency.service';
 import { castToRes, ResWrapper } from '../share';
+import { createControllerDetail } from './base/controller-detail.factory';
 
-const CURRENCY_DETAIL = {
-  tags: ['Currency'],
-  security: [{ JwtAuth: [] }],
-};
+const CURRENCY_DETAIL = createControllerDetail('Currency');
 
 const currencyController = new Elysia().group(
   '/currencies',

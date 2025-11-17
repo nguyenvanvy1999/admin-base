@@ -1,7 +1,7 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import { type ILogger, logger } from '@server/configs/logger';
-import { TransactionType } from '@server/generated';
+import { type InvestmentAssetType, TransactionType } from '@server/generated';
 import { ErrorCode, throwAppError } from '@server/share';
 import type {
   DebtStatisticsResponse,
@@ -28,10 +28,13 @@ import {
   exchangeRateService,
 } from './exchange-rate.service';
 
-const safeNumber = (value: unknown) =>
-  value && typeof value === 'object' && 'toNumber' in value
-    ? (value as any).toNumber()
-    : Number(value ?? 0);
+const safeNumber = (value: unknown): number => {
+  if (value && typeof value === 'object' && 'toNumber' in value) {
+    const decimalValue = value as { toNumber: () => number };
+    return decimalValue.toNumber();
+  }
+  return Number(value ?? 0);
+};
 
 export class ReportService {
   constructor(
@@ -973,7 +976,9 @@ export class ReportService {
         userId,
 
         ...(query.investmentId ? { id: query.investmentId } : {}),
-        ...(query.assetType ? { assetType: query.assetType as any } : {}),
+        ...(query.assetType
+          ? { assetType: query.assetType as InvestmentAssetType }
+          : {}),
       },
       select: {
         id: true,

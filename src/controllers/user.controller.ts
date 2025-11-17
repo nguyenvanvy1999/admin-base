@@ -19,15 +19,13 @@ import {
 import { userService } from '../services/user.service';
 import { castToRes, ResWrapper, SUPER_ADMIN_ID } from '../share';
 import type { ITokenPayload } from '../share/type';
+import { createControllerDetail } from './base/controller-detail.factory';
 
 const USER_DETAIL = {
   tags: ['User'],
 };
 
-const USER_DETAIL_AUTH = {
-  tags: ['User'],
-  security: [{ JwtAuth: [] }],
-};
+const USER_DETAIL_AUTH = createControllerDetail('User');
 
 const userController = new Elysia().group(
   '/users',

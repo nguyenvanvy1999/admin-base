@@ -22,11 +22,9 @@ import {
 } from '../dto/report.dto';
 import { reportService } from '../services/report.service';
 import { castToRes, ResWrapper } from '../share';
+import { createControllerDetail } from './base/controller-detail.factory';
 
-const REPORT_DETAIL = {
-  tags: ['Report'],
-  security: [{ JwtAuth: [] }],
-};
+const REPORT_DETAIL = createControllerDetail('Report');
 
 const reportController = new Elysia().group('/reports', (group) =>
   group

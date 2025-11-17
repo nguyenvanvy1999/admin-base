@@ -7,6 +7,7 @@ import type {
 } from '@server/generated';
 import {
   DB_PREFIX,
+  ERROR_MESSAGES,
   ErrorCode,
   type IdUtil,
   idUtil,
@@ -16,6 +17,11 @@ import type {
   IListEntitiesQueryDto,
   IUpsertEntityDto,
 } from '../dto/entity.dto';
+import {
+  type OwnershipValidatorService,
+  ownershipValidatorService,
+} from './base/ownership-validator.service';
+import type { IEntityService } from './interfaces/IEntityService';
 
 import { ENTITY_SELECT_FULL, ENTITY_SELECT_MINIMAL } from './selects';
 
@@ -29,12 +35,20 @@ const mapEntity = (
   modified: entity.modified.toISOString(),
 });
 
-export class EntityService {
+export class EntityService implements IEntityService {
   constructor(
-    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
+    private readonly deps: {
+      db: IDb;
+      idUtil: IdUtil;
+      ownershipValidator: OwnershipValidatorService;
+    } = { db: prisma, idUtil, ownershipValidator: ownershipValidatorService },
   ) {}
 
   private async validateEntityOwnership(userId: string, entityId: string) {
+    await this.deps.ownershipValidator.validateEntityOwnership(
+      userId,
+      entityId,
+    );
     const entity = await this.deps.db.entity.findFirst({
       where: {
         id: entityId,
@@ -43,7 +57,10 @@ export class EntityService {
       select: ENTITY_SELECT_MINIMAL,
     });
     if (!entity) {
-      throwAppError(ErrorCode.ENTITY_NOT_FOUND, 'Entity not found');
+      throwAppError(
+        ErrorCode.ENTITY_NOT_FOUND,
+        ERROR_MESSAGES.ENTITY_NOT_FOUND,
+      );
     }
     return entity;
   }

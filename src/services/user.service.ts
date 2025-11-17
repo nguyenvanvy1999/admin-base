@@ -148,7 +148,7 @@ export class UserService {
     }
 
     const loginRes = await userUtilService.completeLogin(
-      user as any as Parameters<typeof userUtilService.completeLogin>[0],
+      user,
       clientIp,
       userAgent,
     );

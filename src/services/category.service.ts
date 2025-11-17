@@ -5,6 +5,7 @@ import {
   BALANCE_ADJUSTMENT_CATEGORIES,
   CATEGORY_NAME,
   type CategorySeedData,
+  ERROR_MESSAGES,
   ErrorCode,
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
@@ -20,6 +21,11 @@ import type {
   IListCategoriesQueryDto,
   IUpsertCategoryDto,
 } from '../dto/category.dto';
+import {
+  type OwnershipValidatorService,
+  ownershipValidatorService,
+} from './base/ownership-validator.service';
+import type { ICategoryService } from './interfaces/ICategoryService';
 import { CATEGORY_SELECT_MINIMAL } from './selects';
 
 type CategoryWithChildren = {
@@ -67,8 +73,13 @@ const formatCategoryTree = (
   } as CategoryTreeResponse;
 };
 
-export class CategoryService {
-  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+export class CategoryService implements ICategoryService {
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      ownershipValidator: OwnershipValidatorService;
+    } = { db: prisma, ownershipValidator: ownershipValidatorService },
+  ) {}
 
   getCategoryId(userId: string, code: string, type?: string): string {
     if (type) {
@@ -168,14 +179,19 @@ export class CategoryService {
   }
 
   private async validateCategoryOwnership(userId: string, categoryId: string) {
+    await this.deps.ownershipValidator.validateCategoryOwnership(
+      userId,
+      categoryId,
+    );
     const category = await this.deps.db.category.findUnique({
-      where: {
-        id: categoryId,
-      },
+      where: { id: categoryId },
       select: CATEGORY_SELECT_MINIMAL,
     });
-    if (!category || category.userId !== userId) {
-      throwAppError(ErrorCode.CATEGORY_NOT_FOUND, 'Category not found');
+    if (!category) {
+      throwAppError(
+        ErrorCode.CATEGORY_NOT_FOUND,
+        ERROR_MESSAGES.CATEGORY_NOT_FOUND,
+      );
     }
     return category;
   }

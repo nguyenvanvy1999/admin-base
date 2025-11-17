@@ -12,11 +12,9 @@ import {
 } from '../dto/transaction.dto';
 import { transactionService } from '../services/transaction.service';
 import { castToRes, ResWrapper } from '../share';
+import { createControllerDetail } from './base/controller-detail.factory';
 
-const TRANSACTION_DETAIL = {
-  tags: ['Transaction'],
-  security: [{ JwtAuth: [] }],
-};
+const TRANSACTION_DETAIL = createControllerDetail('Transaction');
 
 const transactionController = new Elysia().group(
   '/transactions',

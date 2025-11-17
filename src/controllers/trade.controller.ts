@@ -9,11 +9,9 @@ import {
 } from '../dto/trade.dto';
 import { investmentTradeService } from '../services/trade.service';
 import { castToRes, ResWrapper } from '../share';
+import { createControllerDetail } from './base/controller-detail.factory';
 
-const TRADE_DETAIL = {
-  tags: ['Investment Trade'],
-  security: [{ JwtAuth: [] }],
-};
+const TRADE_DETAIL = createControllerDetail('Investment Trade');
 
 const tradeController = new Elysia().group(
   '/investments/:id/trades',

@@ -9,11 +9,9 @@ import {
 } from '../dto/entity.dto';
 import { entityService } from '../services/entity.service';
 import { castToRes, ResWrapper } from '../share';
+import { createControllerDetail } from './base/controller-detail.factory';
 
-const ENTITY_DETAIL = {
-  tags: ['Entity'],
-  security: [{ JwtAuth: [] }],
-};
+const ENTITY_DETAIL = createControllerDetail('Entity');
 
 const entityController = new Elysia().group(
   '/entities',

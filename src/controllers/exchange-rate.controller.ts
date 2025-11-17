@@ -7,11 +7,9 @@ import {
 } from '../dto/exchange-rate.dto';
 import { exchangeRateService } from '../services/exchange-rate.service';
 import { castToRes, ResWrapper } from '../share';
+import { createControllerDetail } from './base/controller-detail.factory';
 
-const EXCHANGE_RATE_DETAIL = {
-  tags: ['Exchange Rate'],
-  security: [{ JwtAuth: [] }],
-};
+const EXCHANGE_RATE_DETAIL = createControllerDetail('Exchange Rate');
 
 const exchangeRateController = new Elysia().group(
   '/exchange-rates',

@@ -9,6 +9,7 @@ import {
   idUtil,
   throwAppError,
 } from '@server/share';
+import type { InvestmentExtra } from '@server/share/types/metadata';
 import type {
   IListInvestmentsQueryDto,
   InvestmentLatestValuationResponse,
@@ -100,7 +101,7 @@ export class InvestmentService {
       mode: data.mode ?? InvestmentMode.priced,
       currencyId: data.currencyId,
       baseCurrencyId: data.baseCurrencyId ?? null,
-      extra: (data.extra ?? null) as any,
+      extra: (data.extra ?? null) as InvestmentExtra,
     };
 
     if (data.id) {

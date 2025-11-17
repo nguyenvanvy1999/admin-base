@@ -9,11 +9,9 @@ import {
 } from '../dto/event.dto';
 import { eventService } from '../services/event.service';
 import { castToRes, ResWrapper } from '../share';
+import { createControllerDetail } from './base/controller-detail.factory';
 
-const EVENT_DETAIL = {
-  tags: ['Event'],
-  security: [{ JwtAuth: [] }],
-};
+const EVENT_DETAIL = createControllerDetail('Event');
 
 const eventController = new Elysia().group(
   '/events',
