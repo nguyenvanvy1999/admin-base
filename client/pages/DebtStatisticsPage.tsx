@@ -1,12 +1,12 @@
-import { PageContainer } from '@client/components/PageContainer';
-import { PageHeader } from '@client/components/PageHeader';
-import { Select } from '@client/components/Select';
-import { DateRangeFilter } from '@client/components/statistics/DateRangeFilter';
-import { DebtOverview } from '@client/components/statistics/DebtOverview';
-import { DebtTimeChart } from '@client/components/statistics/DebtTimeChart';
-import { EntityDebtsTable } from '@client/components/statistics/EntityDebtsTable';
-import { GroupBySelector } from '@client/components/statistics/GroupBySelector';
-import { LoanHistoryTable } from '@client/components/statistics/LoanHistoryTable';
+import { PageContainer, PageHeader, Select } from '@client/components';
+import {
+  DateRangeFilter,
+  DebtOverview,
+  DebtTimeChart,
+  EntityDebtsTable,
+  GroupBySelector,
+  LoanHistoryTable,
+} from '@client/components/statistics';
 import { useEntitiesOptionsQuery } from '@client/hooks/queries/useEntityQueries';
 import { Group, Stack, Text } from '@mantine/core';
 import dayjs from 'dayjs';

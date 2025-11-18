@@ -1,13 +1,15 @@
-import { DateRangePicker } from '@client/components';
-import { InvestmentAllocationChart } from '@client/components/charts/InvestmentAllocationChart';
-import { InvestmentPerformanceChart } from '@client/components/charts/InvestmentPerformanceChart';
-import { SummaryCards } from '@client/components/charts/SummaryCards';
-import { TransactionChart } from '@client/components/charts/TransactionChart';
-import { PageContainer } from '@client/components/PageContainer';
-import { PageHeader } from '@client/components/PageHeader';
-import { AdminSummaryCards } from '@client/components/statistics/AdminSummaryCards';
-import { UserGrowthChart } from '@client/components/statistics/UserGrowthChart';
-import { UserRoleDistributionChart } from '@client/components/statistics/UserRoleDistributionChart';
+import { DateRangePicker, PageContainer, PageHeader } from '@client/components';
+import {
+  InvestmentAllocationChart,
+  InvestmentPerformanceChart,
+  SummaryCards,
+  TransactionChart,
+} from '@client/components/charts';
+import {
+  AdminSummaryCards,
+  UserGrowthChart,
+  UserRoleDistributionChart,
+} from '@client/components/statistics';
 import useUserStore from '@client/store/user';
 import { SimpleGrid, Stack } from '@mantine/core';
 import dayjs from 'dayjs';

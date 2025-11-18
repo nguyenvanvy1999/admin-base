@@ -1,13 +1,15 @@
-import AddEditTagDialog from '@client/components/dialogs/AddEditTagDialog';
-import { DeleteConfirmationModal } from '@client/components/dialogs/DeleteConfirmationModal';
-import { DeleteManyConfirmationModal } from '@client/components/dialogs/DeleteManyConfirmationModal';
 import {
   FormComponent,
   type FormComponentRef,
-} from '@client/components/FormComponent';
-import { PageContainer } from '@client/components/PageContainer';
+  PageContainer,
+  ZodFormController,
+} from '@client/components';
+import {
+  DeleteConfirmationModal,
+  DeleteManyConfirmationModal,
+} from '@client/components/dialogs';
+import AddEditTagDialog from '@client/components/dialogs/AddEditTagDialog';
 import TagTable from '@client/components/tables/TagTable';
-import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateTagMutation,
   useDeleteManyTagsMutation,

@@ -1,14 +1,15 @@
-import { PageContainer } from '@client/components/PageContainer';
-import { PageHeader } from '@client/components/PageHeader';
-import { AccountBreakdownChart } from '@client/components/statistics/AccountBreakdownChart';
-import { CategoryBreakdownChart } from '@client/components/statistics/CategoryBreakdownChart';
-import { DateRangeFilter } from '@client/components/statistics/DateRangeFilter';
-import { FeeStatistics } from '@client/components/statistics/FeeStatistics';
-import { FilterBar } from '@client/components/statistics/FilterBar';
-import { GroupBySelector } from '@client/components/statistics/GroupBySelector';
-import { IncomeExpenseOverview } from '@client/components/statistics/IncomeExpenseOverview';
-import { IncomeExpenseTable } from '@client/components/statistics/IncomeExpenseTable';
-import { IncomeExpenseTimeChart } from '@client/components/statistics/IncomeExpenseTimeChart';
+import { PageContainer, PageHeader } from '@client/components';
+import {
+  AccountBreakdownChart,
+  CategoryBreakdownChart,
+  DateRangeFilter,
+  FeeStatistics,
+  FilterBar,
+  GroupBySelector,
+  IncomeExpenseOverview,
+  IncomeExpenseTable,
+  IncomeExpenseTimeChart,
+} from '@client/components/statistics';
 import { Group, SimpleGrid, Stack } from '@mantine/core';
 import dayjs from 'dayjs';
 import { useState } from 'react';

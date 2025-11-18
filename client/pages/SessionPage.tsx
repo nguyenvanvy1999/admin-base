@@ -1,11 +1,11 @@
-import { DeleteConfirmationModal } from '@client/components/dialogs/DeleteConfirmationModal';
 import {
   FormComponent,
   type FormComponentRef,
-} from '@client/components/FormComponent';
-import { PageContainer } from '@client/components/PageContainer';
+  PageContainer,
+  ZodFormController,
+} from '@client/components';
+import { DeleteConfirmationModal } from '@client/components/dialogs';
 import SessionTable from '@client/components/tables/SessionTable';
-import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useRevokeManySessionsMutation,
   useRevokeSessionMutation,

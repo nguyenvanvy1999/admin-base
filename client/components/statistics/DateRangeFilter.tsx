@@ -1,7 +1,7 @@
-import { DateRangePicker } from '@client/components';
 import { Box } from '@mantine/core';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
+import { DateRangePicker } from '../DateRangePicker';
 
 interface DateRangeFilterProps {
   dateFrom: string;
