@@ -108,7 +108,7 @@ const EventPage = () => {
         handleDialogClose();
       }
     } catch {
-      // Error is already handled by mutation's onError callback
+      /* handled by mutation */
     }
   };
 

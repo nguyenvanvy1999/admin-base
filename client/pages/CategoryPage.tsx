@@ -252,7 +252,7 @@ const CategoryPage = () => {
         tree.expand(formData.parentId);
       }
     } catch {
-      // Error is already handled by mutation's onError callback
+      /* handled by mutation */
     }
   };
 

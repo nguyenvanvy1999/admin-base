@@ -152,7 +152,6 @@ export function CRUDDialog<TData, TFormValue extends FieldValues>({
     defaultValues: defaultValues as any,
   });
 
-  // Reset form when dialog opens/closes or item changes
   useEffect(() => {
     if (item && getFormValues) {
       reset(getFormValues(item));

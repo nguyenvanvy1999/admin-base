@@ -14,7 +14,7 @@ export function useColumnVisibility(storeColumnsKey?: string) {
           const visibility = JSON.parse(stored);
           setColumnVisibility(visibility);
         } catch {
-          // ignore parse errors
+          /* ignore parse errors */
         }
       }
     }

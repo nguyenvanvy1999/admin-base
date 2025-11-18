@@ -173,7 +173,7 @@ const InvestmentDetailPage = () => {
         });
         setTradeToDelete(null);
       } catch {
-        // Error is already handled by mutation's onError callback
+        /* handled by mutation */
       }
     }
   };
@@ -187,7 +187,7 @@ const InvestmentDetailPage = () => {
         });
         setContributionToDelete(null);
       } catch {
-        // Error is already handled by mutation's onError callback
+        /* handled by mutation */
       }
     }
   };
@@ -201,7 +201,7 @@ const InvestmentDetailPage = () => {
         });
         setValuationToDelete(null);
       } catch {
-        // Error is already handled by mutation's onError callback
+        /* handled by mutation */
       }
     }
   };

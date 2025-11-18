@@ -43,7 +43,7 @@ export function BaseDialog({
             onSave ||
             footerOnSave ||
             (() => {
-              // Empty handler as fallback
+              /* noop */
             })
           }
           onSaveAndAdd={onSaveAndAdd || footerOnSaveAndAdd}

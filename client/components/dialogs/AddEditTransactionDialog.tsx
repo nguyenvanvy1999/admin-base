@@ -502,7 +502,7 @@ const AddEditTransactionDialog = ({
           }, 0);
         }
       } catch (_error) {
-        // Error is handled by mutation
+        /* handled by mutation */
       }
     });
   };
@@ -897,10 +897,8 @@ const AddEditTransactionDialog = ({
                       onChange={(e) => {
                         setFeeEnabled(e.currentTarget.checked);
                         if (!e.currentTarget.checked) {
-                          // Reset fee value when disabled
                           const currentFee = watch('fee');
                           if (currentFee) {
-                            // Use setValue from useZodForm
                             setValue('fee', 0);
                           }
                         }

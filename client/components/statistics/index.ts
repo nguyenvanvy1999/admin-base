@@ -1,4 +1,3 @@
-// Statistics Components
 export { AccountBreakdownChart } from './AccountBreakdownChart';
 export { AdminSummaryCards } from './AdminSummaryCards';
 export { CategoryBreakdownChart } from './CategoryBreakdownChart';

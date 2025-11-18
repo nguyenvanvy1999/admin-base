@@ -120,7 +120,7 @@ export const AdjustBalanceDialog = ({
       });
       handleClose();
     } catch (_error) {
-      // Error is handled by mutation
+      /* handled by mutation */
     }
   });
 

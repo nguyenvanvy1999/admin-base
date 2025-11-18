@@ -95,7 +95,7 @@ const AccountPage = () => {
       }
       dialog.handleClose();
     } catch {
-      // Error is already handled by mutation's onError callback
+      /* handled by mutation */
     }
   };
 

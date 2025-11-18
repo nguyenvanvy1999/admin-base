@@ -121,7 +121,7 @@ const InvestmentPage = () => {
         await deleteManyMutation.mutateAsync([investmentToDelete.id]);
         handleDeleteDialogClose();
       } catch {
-        // Error is already handled by mutation's onError callback
+        /* handled by mutation */
       }
     }
   };

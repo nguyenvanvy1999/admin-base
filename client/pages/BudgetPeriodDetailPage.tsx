@@ -98,7 +98,7 @@ const BudgetPeriodDetailPage = () => {
         await deleteMutation.mutateAsync(transactionToDelete.id);
         setTransactionToDelete(null);
       } catch {
-        // Error is already handled by mutation's onError callback
+        /* handled by mutation */
       }
     }
   };
