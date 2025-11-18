@@ -38,8 +38,8 @@ export function useDataTableColumns<T extends { id: string }>({
         return formatDate(value);
       }
 
-      if (value === null || value === undefined) {
-        return null;
+      if (value === null || value === undefined || value === '') {
+        return <span className="text-gray-400">-</span>;
       }
 
       const valueType = typeof value;

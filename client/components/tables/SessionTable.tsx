@@ -74,9 +74,9 @@ const SessionTable = ({
 
     if (showUserColumn) {
       cols.push({
-        accessor: 'user',
+        accessor: 'user.username',
         title: 'sessions.user',
-        render: (value, row: SessionResponseWithUser) => {
+        render: (_value, row: SessionResponseWithUser) => {
           if (!row.user) {
             return <span className="text-gray-400">-</span>;
           }
@@ -90,6 +90,7 @@ const SessionTable = ({
           );
         },
         enableSorting: false,
+        enableGrouping: false,
       });
     }
 
@@ -186,7 +187,7 @@ const SessionTable = ({
       data={sessions}
       columns={columns}
       loading={isLoading}
-      showIndexColumn={showIndexColumn}
+      enableRowNumbers={showIndexColumn}
       recordsPerPage={recordsPerPage}
       recordsPerPageOptions={recordsPerPageOptions}
       onRecordsPerPageChange={onRecordsPerPageChange}
