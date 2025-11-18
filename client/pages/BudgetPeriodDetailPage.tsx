@@ -1,6 +1,6 @@
 import BudgetPeriodDetail from '@client/components/BudgetPeriodDetail';
-import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
-import TransactionTable from '@client/components/TransactionTable';
+import { DeleteConfirmationModal } from '@client/components/dialogs/DeleteConfirmationModal';
+import TransactionTable from '@client/components/tables/TransactionTable';
 import { useDeleteTransactionMutation } from '@client/hooks/mutations/useTransactionMutations';
 import {
   useBudgetPeriodDetailQuery,
@@ -98,7 +98,7 @@ const BudgetPeriodDetailPage = () => {
         await deleteMutation.mutateAsync(transactionToDelete.id);
         setTransactionToDelete(null);
       } catch {
-        // Error is already handled by mutation's onError callback
+        /* handled by mutation */
       }
     }
   };

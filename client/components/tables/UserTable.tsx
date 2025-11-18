@@ -60,16 +60,28 @@ const UserTable = ({
         accessor: 'name',
         title: 'users.name',
         ellipsis: true,
+        render: (value) => {
+          const name = (value as string) || '';
+          if (!name) {
+            return <span className="text-gray-400">-</span>;
+          }
+          return name;
+        },
       },
       {
-        accessor: 'roles',
+        id: 'roles',
         title: 'users.role',
-        render: (value, row: UserResponse) => {
-          if (!row.roles || row.roles.length === 0)
+        accessor: (row) => (row.roles || []).map((r) => r.title).join(', '),
+        enableSorting: false,
+        enableGrouping: false,
+        render: (_value, row) => {
+          const roles = row.roles;
+          if (!roles || roles.length === 0) {
             return <span className="text-gray-400">-</span>;
+          }
           return (
             <div className="flex flex-wrap gap-1">
-              {row.roles.map((role) => (
+              {roles.map((role) => (
                 <span
                   key={role.id}
                   className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
@@ -82,15 +94,18 @@ const UserTable = ({
         },
       },
       {
-        accessor: 'baseCurrency',
+        id: 'baseCurrency',
         title: 'users.baseCurrency',
-        render: (value, row: UserResponse) => {
-          if (!row.baseCurrency)
+        accessor: 'baseCurrency.code',
+        enableSorting: false,
+        render: (_value, row) => {
+          const currency = row.baseCurrency;
+          if (!currency) {
             return <span className="text-gray-400">-</span>;
+          }
           return (
             <span>
-              {row.baseCurrency.code}{' '}
-              {row.baseCurrency.symbol ? `(${row.baseCurrency.symbol})` : ''}
+              {currency.code} {currency.symbol ? `(${currency.symbol})` : ''}
             </span>
           );
         },
@@ -103,7 +118,7 @@ const UserTable = ({
         title: 'users.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value, row: UserResponse) => (
+        render: (_value, row: UserResponse) => (
           <div className="flex items-center justify-center gap-2">
             {canUpdate && (
               <ActionIcon
@@ -141,7 +156,7 @@ const UserTable = ({
       data={users}
       columns={columns}
       loading={isLoading}
-      showIndexColumn={showIndexColumn}
+      enableRowNumbers={showIndexColumn}
       recordsPerPage={recordsPerPage}
       recordsPerPageOptions={recordsPerPageOptions}
       onRecordsPerPageChange={onRecordsPerPageChange}

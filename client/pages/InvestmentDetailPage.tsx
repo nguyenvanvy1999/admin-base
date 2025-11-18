@@ -1,8 +1,8 @@
-import AddContributionDialog from '@client/components/AddContributionDialog';
-import AddTradeDialog from '@client/components/AddTradeDialog';
-import AddValuationDialog from '@client/components/AddValuationDialog';
-import { DataTable, type DataTableColumn } from '@client/components/DataTable';
+import AddContributionDialog from '@client/components/dialogs/AddContributionDialog';
+import AddTradeDialog from '@client/components/dialogs/AddTradeDialog';
+import AddValuationDialog from '@client/components/dialogs/AddValuationDialog';
 import { StatCard } from '@client/components/StatCard';
+import { DataTable, type DataTableColumn } from '@client/components/tables';
 import {
   useCreateInvestmentContributionMutation,
   useCreateInvestmentTradeMutation,
@@ -173,7 +173,7 @@ const InvestmentDetailPage = () => {
         });
         setTradeToDelete(null);
       } catch {
-        // Error is already handled by mutation's onError callback
+        /* handled by mutation */
       }
     }
   };
@@ -187,7 +187,7 @@ const InvestmentDetailPage = () => {
         });
         setContributionToDelete(null);
       } catch {
-        // Error is already handled by mutation's onError callback
+        /* handled by mutation */
       }
     }
   };
@@ -201,7 +201,7 @@ const InvestmentDetailPage = () => {
         });
         setValuationToDelete(null);
       } catch {
-        // Error is already handled by mutation's onError callback
+        /* handled by mutation */
       }
     }
   };

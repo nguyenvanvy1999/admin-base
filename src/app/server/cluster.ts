@@ -10,7 +10,6 @@ export async function startCluster() {
   logger.info('Starting application in cluster mode...');
   logger.info(`Primary process ${process.pid} is running`);
 
-  // Initialize data in primary process
   await initData();
 
   const numCPUs = navigator.hardwareConcurrency;

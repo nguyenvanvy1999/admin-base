@@ -2,12 +2,12 @@ import type { InvestmentResponse } from '@server/dto/investment.dto';
 import { InvestmentAssetType, InvestmentMode } from '@server/generated';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DataTable, type DataTableColumn } from './DataTable';
 import {
   createActionColumn,
   createBadgeColumn,
   createTypeColumn,
-} from './tables/columnFactories';
+} from './columnFactories';
+import { DataTable, type DataTableColumn } from './DataTable';
 
 type InvestmentTableProps = {
   investments: InvestmentResponse[];

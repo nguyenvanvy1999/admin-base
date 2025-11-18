@@ -1,12 +1,12 @@
-import AddEditRoleDialog from '@client/components/AddEditRoleDialog';
-import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
-import { DeleteManyConfirmationModal } from '@client/components/DeleteManyConfirmationModal';
+import AddEditRoleDialog from '@client/components/dialogs/AddEditRoleDialog';
+import { DeleteConfirmationModal } from '@client/components/dialogs/DeleteConfirmationModal';
+import { DeleteManyConfirmationModal } from '@client/components/dialogs/DeleteManyConfirmationModal';
 import {
   FormComponent,
   type FormComponentRef,
 } from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
-import RoleTable from '@client/components/RoleTable';
+import RoleTable from '@client/components/tables/RoleTable';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateRoleMutation,
@@ -99,7 +99,7 @@ const RolePage = () => {
       }
       dialog.handleClose();
     } catch {
-      // Error is already handled by mutation's onError callback
+      /* handled by mutation */
     }
   };
 
@@ -109,7 +109,7 @@ const RolePage = () => {
         deleteManyMutation.mutateAsync,
       );
     } catch {
-      // Error is already handled by mutation's onError callback
+      /* handled by mutation */
     }
   };
 

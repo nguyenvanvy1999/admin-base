@@ -1,5 +1,5 @@
-import AddEditCategoryDialog from '@client/components/AddEditCategoryDialog';
-import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
+import AddEditCategoryDialog from '@client/components/dialogs/AddEditCategoryDialog';
+import { DeleteConfirmationModal } from '@client/components/dialogs/DeleteConfirmationModal';
 import {
   getCategoryIcon,
   getCategoryLabel,
@@ -252,7 +252,7 @@ const CategoryPage = () => {
         tree.expand(formData.parentId);
       }
     } catch {
-      // Error is already handled by mutation's onError callback
+      /* handled by mutation */
     }
   };
 

@@ -4,6 +4,7 @@ import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTable, type DataTableColumn } from './DataTable';
+import type { SortingState } from './types';
 
 type TagTableProps = {
   tags: TagResponse[];
@@ -18,14 +19,9 @@ type TagTableProps = {
   page?: number;
   onPageChange?: (page: number) => void;
   totalRecords?: number;
-  sorting?: { id: string; desc: boolean }[];
+  sorting?: SortingState;
   onSortingChange?: (
-    updater:
-      | { id: string; desc: boolean }[]
-      | ((prev: { id: string; desc: boolean }[]) => {
-          id: string;
-          desc: boolean;
-        }[]),
+    updater: SortingState | ((prev: SortingState) => SortingState),
   ) => void;
   selectedRecords?: TagResponse[];
   onSelectedRecordsChange?: (records: TagResponse[]) => void;

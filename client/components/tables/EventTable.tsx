@@ -1,15 +1,14 @@
-import type { EntityResponse } from '@server/dto/entity.dto';
-import { EntityType } from '@server/generated';
+import type { EventResponse } from '@server/dto/event.dto';
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import { createActionColumn } from '../DataTable/utils';
+import { createDateColumn } from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
-import { createActionColumn, createTypeColumn } from './tables/columnFactories';
-import { DeleteManyToolbar } from './tables/deleteManyToolbar';
+import { DeleteManyToolbar } from './deleteManyToolbar';
 
-type EntityTableProps = {
-  entities: EntityResponse[];
-  onEdit: (entity: EntityResponse) => void;
-  onDelete: (entity: EntityResponse) => void;
+type EventTableProps = {
+  events: EventResponse[];
+  onEdit: (event: EventResponse) => void;
+  onDelete: (event: EventResponse) => void;
   onDeleteMany?: (ids: string[]) => void;
   isLoading?: boolean;
   showIndexColumn?: boolean;
@@ -28,12 +27,12 @@ type EntityTableProps = {
           desc: boolean;
         }[]),
   ) => void;
-  selectedRecords?: EntityResponse[];
-  onSelectedRecordsChange?: (records: EntityResponse[]) => void;
+  selectedRecords?: EventResponse[];
+  onSelectedRecordsChange?: (records: EventResponse[]) => void;
 };
 
-const EntityTable = ({
-  entities,
+const EventTable = ({
+  events,
   onEdit,
   onDelete,
   onDeleteMany,
@@ -49,57 +48,35 @@ const EntityTable = ({
   onSortingChange,
   selectedRecords,
   onSelectedRecordsChange,
-}: EntityTableProps) => {
-  const { t } = useTranslation();
-
+}: EventTableProps) => {
   const columns = useMemo(
-    (): DataTableColumn<EntityResponse>[] => [
+    (): DataTableColumn<EventResponse>[] => [
       {
         accessor: 'name',
-        title: 'entities.name',
+        title: 'events.name',
       },
-      createTypeColumn<EntityResponse>({
-        accessor: 'type',
-        title: 'entities.type',
-        getType: (row) => row.type || '',
-        labelMap: {
-          [EntityType.individual]: t('entities.individual'),
-          [EntityType.organization]: t('entities.organization'),
-        },
-        defaultColor: 'blue',
+      createDateColumn<EventResponse>({
+        accessor: 'startAt',
+        title: 'events.startAt',
+        getValue: (row) => row.startAt,
       }),
-      {
-        accessor: 'phone',
-        title: 'entities.phone',
-        ellipsis: true,
-      },
-      {
-        accessor: 'email',
-        title: 'entities.email',
-        ellipsis: true,
-      },
-      {
-        accessor: 'address',
-        title: 'entities.address',
-        ellipsis: true,
-      },
-      {
-        accessor: 'note',
-        title: 'entities.note',
-        ellipsis: true,
-      },
-      createActionColumn<EntityResponse>({
-        title: 'entities.actions',
+      createDateColumn<EventResponse>({
+        accessor: 'endAt',
+        title: 'events.endAt',
+        getValue: (row) => row.endAt,
+      }),
+      createActionColumn<EventResponse>({
+        title: 'events.actions',
         onEdit,
         onDelete,
       }),
     ],
-    [t, onEdit, onDelete],
+    [onEdit, onDelete],
   );
 
   return (
     <DataTable
-      data={entities}
+      data={events}
       columns={columns}
       loading={isLoading}
       showIndexColumn={showIndexColumn}
@@ -128,4 +105,4 @@ const EntityTable = ({
   );
 };
 
-export default EntityTable;
+export default EventTable;

@@ -73,8 +73,6 @@ export function usePageDelete<TItem extends { id: string }>({
       onDeleteManySuccessCallback?.(idsToDelete);
     } catch (error) {
       onDeleteManyErrorCallback?.(error, idsToDelete);
-      // Error is already handled by mutation's onError callback
-      // Don't re-throw to prevent unhandled promise rejection
     }
   };
 

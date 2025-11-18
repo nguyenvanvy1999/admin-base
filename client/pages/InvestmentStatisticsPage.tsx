@@ -1,14 +1,14 @@
-import { PageContainer } from '@client/components/PageContainer';
-import { PageHeader } from '@client/components/PageHeader';
-import { Select } from '@client/components/Select';
-import { ContributionChart } from '@client/components/statistics/ContributionChart';
-import { DateRangeFilter } from '@client/components/statistics/DateRangeFilter';
-import { GroupBySelector } from '@client/components/statistics/GroupBySelector';
-import { InvestmentFeesChart } from '@client/components/statistics/InvestmentFeesChart';
-import { InvestmentOverview } from '@client/components/statistics/InvestmentOverview';
-import { InvestmentPerformanceChart } from '@client/components/statistics/InvestmentPerformanceChart';
-import { InvestmentTable } from '@client/components/statistics/InvestmentTable';
-import { TradeStatistics } from '@client/components/statistics/TradeStatistics';
+import { PageContainer, PageHeader, Select } from '@client/components';
+import {
+  ContributionChart,
+  DateRangeFilter,
+  GroupBySelector,
+  InvestmentFeesChart,
+  InvestmentOverview,
+  InvestmentPerformanceDetailedChart,
+  InvestmentTable,
+  TradeStatistics,
+} from '@client/components/statistics';
 import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
 import { Group, SimpleGrid, Stack, Text } from '@mantine/core';
 import dayjs from 'dayjs';
@@ -91,7 +91,7 @@ const InvestmentStatisticsPage = () => {
         </Stack>
 
         <Stack gap="md">
-          <InvestmentPerformanceChart queryParams={queryParams} />
+          <InvestmentPerformanceDetailedChart queryParams={queryParams} />
         </Stack>
 
         <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="xl">

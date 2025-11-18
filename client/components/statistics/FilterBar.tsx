@@ -1,8 +1,8 @@
-import CategoryMultiSelect from '@client/components/CategoryMultiSelect';
-import { Select } from '@client/components/Select';
 import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
 import { useEntitiesOptionsQuery } from '@client/hooks/queries/useEntityQueries';
 import { useTranslation } from 'react-i18next';
+import CategoryMultiSelect from '../CategoryMultiSelect';
+import { Select } from '../Select';
 
 interface FilterBarProps {
   categoryIds?: string[];

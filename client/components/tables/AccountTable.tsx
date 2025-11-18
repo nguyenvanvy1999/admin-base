@@ -2,13 +2,14 @@ import type { AccountResponse } from '@server/dto/account.dto';
 import { AccountType } from '@server/generated';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DataTable, type DataTableColumn } from './DataTable';
 import {
   createActionColumn,
   createCurrencyColumn,
   createTypeColumn,
-} from './tables/columnFactories';
-import { renderCurrency } from './tables/columnRenderers';
+} from './columnFactories';
+import { renderCurrency } from './columnRenderers';
+import { DataTable, type DataTableColumn } from './DataTable';
+import type { SortingState } from './types';
 
 type AccountTableProps = {
   accounts: AccountResponse[];
@@ -22,14 +23,9 @@ type AccountTableProps = {
   page?: number;
   onPageChange?: (page: number) => void;
   totalRecords?: number;
-  sorting?: { id: string; desc: boolean }[];
+  sorting?: SortingState;
   onSortingChange?: (
-    updater:
-      | { id: string; desc: boolean }[]
-      | ((prev: { id: string; desc: boolean }[]) => {
-          id: string;
-          desc: boolean;
-        }[]),
+    updater: SortingState | ((prev: SortingState) => SortingState),
   ) => void;
 };
 

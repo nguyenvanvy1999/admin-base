@@ -1,16 +1,15 @@
-import { useZodForm } from '@client/hooks/useZodForm';
-import { Modal, NumberInput, Stack, TextInput } from '@mantine/core';
+import { NumberInput, TextInput } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import type { InvestmentResponse } from '@server/dto/investment.dto';
 import {
   type IUpsertInvestmentValuationDto,
   UpsertInvestmentValuationDto,
 } from '@server/dto/valuation.dto';
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { DialogFooterButtons } from './DialogFooterButtons';
-import { ZodFormController } from './ZodFormController';
+import { ZodFormController } from '../ZodFormController';
+import { CRUDDialog } from './CRUDDialog';
 
 const baseSchema = UpsertInvestmentValuationDto.extend({
   price: z.number().min(0.01, 'investments.valuation.priceRequired'),
@@ -46,29 +45,21 @@ const AddValuationDialog = ({
         baseCurrencyId: true,
       });
 
-  const defaultValues: FormValue = {
-    price: 0,
-    currencyId: investment.currencyId,
-    timestamp: new Date().toISOString(),
-    source: '',
-    fetchedAt: '',
-    priceInBaseCurrency: 0,
-    exchangeRate: 0,
-    baseCurrencyId: investment.baseCurrencyId || '',
-  };
+  const defaultValues: FormValue = useMemo(
+    () => ({
+      price: 0,
+      currencyId: investment.currencyId,
+      timestamp: new Date().toISOString(),
+      source: '',
+      fetchedAt: '',
+      priceInBaseCurrency: 0,
+      exchangeRate: 0,
+      baseCurrencyId: investment.baseCurrencyId || '',
+    }),
+    [investment],
+  );
 
-  const { control, handleSubmit, reset } = useZodForm({
-    zod: schema,
-    defaultValues,
-  });
-
-  useEffect(() => {
-    if (isOpen) {
-      reset(defaultValues);
-    }
-  }, [isOpen, reset]);
-
-  const onSubmitForm = handleSubmit(async (data) => {
+  const handleSubmit = async (data: FormValue) => {
     const payload: IUpsertInvestmentValuationDto = {
       price: data.price,
       currencyId: investment.currencyId,
@@ -87,19 +78,28 @@ const AddValuationDialog = ({
     };
 
     await onSubmit(payload);
-  });
+  };
 
   return (
-    <Modal
-      opened={isOpen}
+    <CRUDDialog<null, FormValue>
+      isOpen={isOpen}
       onClose={onClose}
-      title={t('investments.addValuation', {
-        defaultValue: 'Add valuation',
-      })}
+      item={null}
+      onSubmit={handleSubmit}
+      isLoading={isLoading}
+      title={{
+        add: t('investments.addValuation', {
+          defaultValue: 'Add valuation',
+        }),
+        edit: '', // Not used
+      }}
+      schema={schema}
+      defaultValues={defaultValues}
+      showSaveAndAdd={false}
       size="md"
     >
-      <form onSubmit={onSubmitForm}>
-        <Stack gap="md">
+      {({ control }) => (
+        <>
           <ZodFormController
             control={control}
             name="price"
@@ -122,32 +122,22 @@ const AddValuationDialog = ({
           <ZodFormController
             control={control}
             name="timestamp"
-            render={({ field, fieldState: { error } }) => {
-              const dateValue = field.value
-                ? new Date(field.value)
-                : new Date();
-              return (
-                <DateTimePicker
-                  label={t('investments.valuation.date', {
-                    defaultValue: 'Valuation date',
-                  })}
-                  error={error}
-                  value={dateValue}
-                  onChange={(value: Date | string | null) => {
-                    if (value) {
-                      field.onChange(
-                        (value instanceof Date
-                          ? value
-                          : new Date(value)
-                        ).toISOString(),
-                      );
-                    }
-                  }}
-                  valueFormat="DD/MM/YYYY HH:mm"
-                  required
-                />
-              );
-            }}
+            render={({ field, fieldState: { error } }) => (
+              <DateTimePicker
+                label={t('investments.valuation.date', {
+                  defaultValue: 'Valuation date',
+                })}
+                error={error}
+                value={field.value ? new Date(field.value) : new Date()}
+                onChange={(value) => {
+                  if (value) {
+                    field.onChange(value.toString());
+                  }
+                }}
+                valueFormat="DD/MM/YYYY HH:mm"
+                required
+              />
+            )}
           />
 
           {hasBaseCurrency && (
@@ -209,47 +199,31 @@ const AddValuationDialog = ({
           <ZodFormController
             control={control}
             name="fetchedAt"
-            render={({ field, fieldState: { error } }) => {
-              const dateValue = field.value ? new Date(field.value) : null;
-              return (
-                <DateTimePicker
-                  label={t('investments.valuation.fetchedAt', {
-                    defaultValue: 'Fetched at',
-                  })}
-                  placeholder={t('investments.valuation.fetchedAtPlaceholder', {
-                    defaultValue: 'Optional fetch timestamp',
-                  })}
-                  error={error}
-                  clearable
-                  value={dateValue}
-                  onChange={(value: Date | string | null) => {
-                    if (!value) {
-                      field.onChange('');
-                      return;
-                    }
-                    field.onChange(
-                      (value instanceof Date
-                        ? value
-                        : new Date(value as string)
-                      ).toISOString(),
-                    );
-                  }}
-                  valueFormat="DD/MM/YYYY HH:mm"
-                />
-              );
-            }}
+            render={({ field, fieldState: { error } }) => (
+              <DateTimePicker
+                label={t('investments.valuation.fetchedAt', {
+                  defaultValue: 'Fetched at',
+                })}
+                placeholder={t('investments.valuation.fetchedAtPlaceholder', {
+                  defaultValue: 'Optional fetch timestamp',
+                })}
+                error={error}
+                clearable
+                value={field.value ? new Date(field.value) : null}
+                onChange={(value) => {
+                  if (!value) {
+                    field.onChange('');
+                    return;
+                  }
+                  field.onChange(value.toString());
+                }}
+                valueFormat="DD/MM/YYYY HH:mm"
+              />
+            )}
           />
-
-          <DialogFooterButtons
-            isEditMode={false}
-            isLoading={isLoading}
-            onCancel={onClose}
-            onSave={onSubmitForm}
-            showSaveAndAdd={false}
-          />
-        </Stack>
-      </form>
-    </Modal>
+        </>
+      )}
+    </CRUDDialog>
   );
 };
 

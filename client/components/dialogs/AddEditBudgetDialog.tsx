@@ -1,24 +1,16 @@
 import { useAccountsOptionsQuery } from '@client/hooks/queries/useAccountQueries';
-import { useZodForm } from '@client/hooks/useZodForm';
-import {
-  Modal,
-  MultiSelect,
-  NumberInput,
-  Stack,
-  Switch,
-  TextInput,
-} from '@mantine/core';
+import { MultiSelect, NumberInput, Switch, TextInput } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import type { BudgetResponse, IUpsertBudgetDto } from '@server/dto/budget.dto';
 import { UpsertBudgetDto } from '@server/dto/budget.dto';
 import { BudgetPeriod } from '@server/generated';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import CategoryMultiSelect from './CategoryMultiSelect';
-import { DialogFooterButtons } from './DialogFooterButtons';
-import { Select } from './Select';
-import { ZodFormController } from './ZodFormController';
+import CategoryMultiSelect from '../CategoryMultiSelect';
+import { Select } from '../Select';
+import { ZodFormController } from '../ZodFormController';
+import { CRUDDialog } from './CRUDDialog';
 
 const schema = UpsertBudgetDto;
 
@@ -39,10 +31,8 @@ const AddEditBudgetDialog = ({
   budget,
   onSubmit,
   isLoading = false,
-  resetTrigger,
 }: AddEditBudgetDialogProps) => {
   const { t } = useTranslation();
-  const isEditMode = !!budget;
   const { data: accountsData } = useAccountsOptionsQuery();
 
   const accountOptions = useMemo(() => {
@@ -64,36 +54,21 @@ const AddEditBudgetDialog = ({
     categoryIds: [],
   };
 
-  const { control, handleSubmit, reset } = useZodForm({
-    zod: schema,
-    defaultValues,
+  const getFormValues = (budget: BudgetResponse): FormValue => ({
+    id: budget.id,
+    name: budget.name,
+    amount: parseFloat(budget.amount),
+    period: budget.period,
+    startDate: budget.startDate,
+    endDate: budget.endDate || undefined,
+    carryOver: budget.carryOver,
+    accountIds: budget.accountIds,
+    categoryIds: budget.categoryIds,
   });
 
-  useEffect(() => {
-    if (budget) {
-      reset({
-        id: budget.id,
-        name: budget.name,
-        amount: parseFloat(budget.amount),
-        period: budget.period,
-        startDate: budget.startDate,
-        endDate: budget.endDate || undefined,
-        carryOver: budget.carryOver,
-        accountIds: budget.accountIds,
-        categoryIds: budget.categoryIds,
-      });
-    } else {
-      reset(defaultValues);
-    }
-  }, [budget, isOpen, reset]);
+  const handleSubmit = (data: FormValue, saveAndAdd?: boolean) => {
+    const isEditMode = !!budget;
 
-  useEffect(() => {
-    if (resetTrigger && resetTrigger > 0 && !budget && isOpen) {
-      reset(defaultValues);
-    }
-  }, [resetTrigger, budget, isOpen, reset]);
-
-  const onSubmitForm = handleSubmit((data) => {
     const submitData: IUpsertBudgetDto = {
       name: data.name.trim(),
       amount: data.amount,
@@ -109,33 +84,27 @@ const AddEditBudgetDialog = ({
       submitData.id = budget.id;
     }
 
-    onSubmit(submitData, false);
-  });
-
-  const onSubmitFormAndAdd = handleSubmit((data) => {
-    const submitData: IUpsertBudgetDto = {
-      name: data.name.trim(),
-      amount: data.amount,
-      period: data.period,
-      startDate: data.startDate,
-      endDate: data.endDate,
-      carryOver: data.carryOver,
-      accountIds: data.accountIds,
-      categoryIds: data.categoryIds,
-    };
-
-    onSubmit(submitData, true);
-  });
+    onSubmit(submitData, saveAndAdd);
+  };
 
   return (
-    <Modal
-      opened={isOpen}
+    <CRUDDialog
+      isOpen={isOpen}
       onClose={onClose}
-      title={isEditMode ? t('budgets.editBudget') : t('budgets.addBudget')}
+      item={budget}
+      onSubmit={handleSubmit}
+      isLoading={isLoading}
+      title={{
+        add: t('budgets.addBudget'),
+        edit: t('budgets.editBudget'),
+      }}
+      schema={schema}
+      defaultValues={defaultValues}
+      getFormValues={getFormValues}
       size="md"
     >
-      <form onSubmit={onSubmitForm}>
-        <Stack gap="md">
+      {({ control }) => (
+        <>
           <ZodFormController
             control={control}
             name="name"
@@ -303,17 +272,9 @@ const AddEditBudgetDialog = ({
               />
             )}
           />
-
-          <DialogFooterButtons
-            isEditMode={isEditMode}
-            isLoading={isLoading}
-            onCancel={onClose}
-            onSave={onSubmitForm}
-            onSaveAndAdd={onSubmitFormAndAdd}
-          />
-        </Stack>
-      </form>
-    </Modal>
+        </>
+      )}
+    </CRUDDialog>
   );
 };
 

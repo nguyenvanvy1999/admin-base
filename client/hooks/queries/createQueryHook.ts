@@ -61,7 +61,7 @@ export function createQueryHook<
             const criteria = await valueDeferred;
             query = filterTransformer(criteria, query) as TQuery;
           } catch {
-            // Form validation failed, use queryParams without filters
+            /* validation failed */
           }
         }
 

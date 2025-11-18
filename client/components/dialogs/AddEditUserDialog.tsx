@@ -1,14 +1,12 @@
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
-import { useZodForm } from '@client/hooks/useZodForm';
-import { Modal, PasswordInput, Stack, TextInput } from '@mantine/core';
+import { PasswordInput, TextInput } from '@mantine/core';
 import type { IUpsertUserDto, UserResponse } from '@server/dto/admin/user.dto';
 import { UpsertUserDto } from '@server/dto/admin/user.dto';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { DialogFooterButtons } from './DialogFooterButtons';
-import { Select } from './Select';
-import { ZodFormController } from './ZodFormController';
+import { Select } from '../Select';
+import { ZodFormController } from '../ZodFormController';
+import { CRUDDialog } from './CRUDDialog';
 
 const createSchema = UpsertUserDto.extend({
   username: z.string().min(1, 'users.usernameRequired'),
@@ -47,31 +45,20 @@ const AddEditUserDialog = ({
 
   const defaultValues = {
     username: '',
-    password: isEditMode ? undefined : '',
+    password: '',
     name: undefined,
     baseCurrencyId: undefined,
   } as FormValue;
 
-  const { control, handleSubmit, reset } = useZodForm({
-    zod: isEditMode ? updateSchema : createSchema,
-    defaultValues,
+  const getFormValues = (user: UserResponse): FormValue => ({
+    id: user.id,
+    username: user.username,
+    password: undefined,
+    name: user.name ?? undefined,
+    baseCurrencyId: user.baseCurrencyId ?? undefined,
   });
 
-  useEffect(() => {
-    if (user) {
-      reset({
-        id: user.id,
-        username: user.username,
-        password: undefined,
-        name: user.name ?? undefined,
-        baseCurrencyId: user.baseCurrencyId ?? undefined,
-      });
-    } else {
-      reset(defaultValues);
-    }
-  }, [user, isOpen, reset]);
-
-  const onSubmitForm = handleSubmit((data) => {
+  const handleSubmit = (data: FormValue) => {
     const submitData: IUpsertUserDto = {
       username: data.username.trim(),
     };
@@ -97,17 +84,27 @@ const AddEditUserDialog = ({
     }
 
     onSubmit(submitData);
-  });
+  };
 
   return (
-    <Modal
-      opened={isOpen}
+    <CRUDDialog
+      isOpen={isOpen}
       onClose={onClose}
-      title={isEditMode ? t('users.editUser') : t('users.addUser')}
+      item={user}
+      onSubmit={handleSubmit}
+      isLoading={isLoading}
+      title={{
+        add: t('users.addUser'),
+        edit: t('users.editUser'),
+      }}
+      schema={isEditMode ? updateSchema : createSchema}
+      defaultValues={defaultValues}
+      getFormValues={getFormValues}
+      showSaveAndAdd={false}
       size="md"
     >
-      <form onSubmit={onSubmitForm}>
-        <Stack gap="md">
+      {({ control, isEditMode }) => (
+        <>
           <ZodFormController
             control={control}
             name="username"
@@ -184,17 +181,9 @@ const AddEditUserDialog = ({
               />
             )}
           />
-
-          <DialogFooterButtons
-            isEditMode={isEditMode}
-            isLoading={isLoading}
-            onCancel={onClose}
-            onSave={onSubmitForm}
-            showSaveAndAdd={false}
-          />
-        </Stack>
-      </form>
-    </Modal>
+        </>
+      )}
+    </CRUDDialog>
   );
 };
 

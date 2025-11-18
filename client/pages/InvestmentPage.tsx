@@ -1,10 +1,10 @@
-import AddEditInvestmentDialog from '@client/components/AddEditInvestmentDialog';
+import AddEditInvestmentDialog from '@client/components/dialogs/AddEditInvestmentDialog';
 import {
   FormComponent,
   type FormComponentRef,
 } from '@client/components/FormComponent';
-import InvestmentTable from '@client/components/InvestmentTable';
 import { PageContainer } from '@client/components/PageContainer';
+import InvestmentTable from '@client/components/tables/InvestmentTable';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateInvestmentMutation,
@@ -121,7 +121,7 @@ const InvestmentPage = () => {
         await deleteManyMutation.mutateAsync([investmentToDelete.id]);
         handleDeleteDialogClose();
       } catch {
-        // Error is already handled by mutation's onError callback
+        /* handled by mutation */
       }
     }
   };

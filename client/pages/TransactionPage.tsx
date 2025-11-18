@@ -1,12 +1,12 @@
-import AddEditTransactionDialog from '@client/components/AddEditTransactionDialog';
 import CategoryMultiSelect from '@client/components/CategoryMultiSelect';
-import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
+import AddEditTransactionDialog from '@client/components/dialogs/AddEditTransactionDialog';
+import { DeleteConfirmationModal } from '@client/components/dialogs/DeleteConfirmationModal';
 import {
   FormComponent,
   type FormComponentRef,
 } from '@client/components/FormComponent';
 import { PageContainer } from '@client/components/PageContainer';
-import TransactionTable from '@client/components/TransactionTable';
+import TransactionTable from '@client/components/tables/TransactionTable';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useCreateTransactionMutation,
@@ -112,7 +112,7 @@ const TransactionPage = () => {
         dialog.handleClose();
       }
     } catch {
-      // Error is already handled by mutation's onError callback
+      /* handled by mutation */
     }
   };
 

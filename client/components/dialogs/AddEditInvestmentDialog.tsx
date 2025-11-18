@@ -1,18 +1,17 @@
 import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
-import { useZodForm } from '@client/hooks/useZodForm';
-import { Modal, Stack, Textarea, TextInput } from '@mantine/core';
+import { Textarea, TextInput } from '@mantine/core';
 import {
   type InvestmentResponse,
   type IUpsertInvestmentDto,
   UpsertInvestmentDto,
 } from '@server/dto/investment.dto';
 import { InvestmentAssetType, InvestmentMode } from '@server/generated';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { DialogFooterButtons } from './DialogFooterButtons';
-import { Select } from './Select';
-import { ZodFormController } from './ZodFormController';
+import { Select } from '../Select';
+import { ZodFormController } from '../ZodFormController';
+import { CRUDDialog } from './CRUDDialog';
 
 const schema = UpsertInvestmentDto.extend({
   name: z.string().min(1, 'investments.nameRequired'),
@@ -41,7 +40,6 @@ const AddEditInvestmentDialog = ({
 }: AddEditInvestmentDialogProps) => {
   const { t } = useTranslation();
   const { data: currencies = [] } = useCurrenciesQuery();
-  const isEditMode = Boolean(investment);
   const [extraError, setExtraError] = useState<string | null>(null);
 
   const defaultValues: FormValue = {
@@ -54,36 +52,21 @@ const AddEditInvestmentDialog = ({
     extra: '',
   };
 
-  const { control, handleSubmit, reset } = useZodForm({
-    zod: schema,
-    defaultValues,
+  const getFormValues = (inv: InvestmentResponse): FormValue => ({
+    id: inv.id,
+    name: inv.name,
+    symbol: inv.symbol,
+    assetType: inv.assetType,
+    mode:
+      inv.mode === InvestmentMode.priced || inv.mode === InvestmentMode.manual
+        ? inv.mode
+        : InvestmentMode.priced,
+    currencyId: inv.currencyId,
+    baseCurrencyId: inv.baseCurrencyId || '',
+    extra: inv.extra ? JSON.stringify(inv.extra, null, 2) : '',
   });
 
-  useEffect(() => {
-    if (investment) {
-      reset({
-        id: investment.id,
-        name: investment.name,
-        symbol: investment.symbol,
-        assetType: investment.assetType,
-        mode:
-          investment.mode === InvestmentMode.priced ||
-          investment.mode === InvestmentMode.manual
-            ? investment.mode
-            : InvestmentMode.priced,
-        currencyId: investment.currencyId,
-        baseCurrencyId: investment.baseCurrencyId || '',
-        extra: investment.extra
-          ? JSON.stringify(investment.extra, null, 2)
-          : '',
-      });
-    } else {
-      reset(defaultValues);
-    }
-    setExtraError(null);
-  }, [investment, isOpen, reset]);
-
-  const onSubmitForm = handleSubmit(async (data) => {
+  const handleSubmit = async (data: FormValue) => {
     setExtraError(null);
 
     let parsedExtra: Record<string, unknown> | null = null;
@@ -114,26 +97,34 @@ const AddEditInvestmentDialog = ({
       extra: parsedExtra ?? undefined,
     };
 
-    if (isEditMode && investment) {
+    if (investment) {
       payload.id = investment.id;
     }
 
     await onSubmit(payload);
-  });
+  };
 
   return (
-    <Modal
-      opened={isOpen}
+    <CRUDDialog<InvestmentResponse, FormValue>
+      isOpen={isOpen}
       onClose={onClose}
-      title={
-        isEditMode
-          ? t('investments.editInvestment', { defaultValue: 'Edit investment' })
-          : t('investments.addInvestment', { defaultValue: 'New investment' })
-      }
+      item={investment}
+      onSubmit={handleSubmit}
+      isLoading={isLoading}
+      title={{
+        add: t('investments.addInvestment', { defaultValue: 'New investment' }),
+        edit: t('investments.editInvestment', {
+          defaultValue: 'Edit investment',
+        }),
+      }}
+      schema={schema}
+      defaultValues={defaultValues}
+      getFormValues={getFormValues}
+      showSaveAndAdd={false}
       size="md"
     >
-      <form onSubmit={onSubmitForm}>
-        <Stack gap="md">
+      {({ control }) => (
+        <>
           <ZodFormController
             control={control}
             name="name"
@@ -304,17 +295,9 @@ const AddEditInvestmentDialog = ({
               />
             )}
           />
-
-          <DialogFooterButtons
-            isEditMode={isEditMode}
-            isLoading={isLoading}
-            onCancel={onClose}
-            onSave={onSubmitForm}
-            showSaveAndAdd={false}
-          />
-        </Stack>
-      </form>
-    </Modal>
+        </>
+      )}
+    </CRUDDialog>
   );
 };
 

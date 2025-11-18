@@ -154,7 +154,6 @@ export class InvestmentContributionService {
 
     const timestamp = this.parseDate(data.timestamp);
 
-    // Only update balance if accountId is provided
     if (data.accountId) {
       const account = await this.deps.db.account.findFirst({
         where: { id: data.accountId, userId },

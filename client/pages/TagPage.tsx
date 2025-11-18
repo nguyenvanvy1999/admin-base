@@ -1,13 +1,15 @@
-import AddEditTagDialog from '@client/components/AddEditTagDialog';
-import { DeleteConfirmationModal } from '@client/components/DeleteConfirmationModal';
-import { DeleteManyConfirmationModal } from '@client/components/DeleteManyConfirmationModal';
 import {
   FormComponent,
   type FormComponentRef,
-} from '@client/components/FormComponent';
-import { PageContainer } from '@client/components/PageContainer';
-import TagTable from '@client/components/TagTable';
-import { ZodFormController } from '@client/components/ZodFormController';
+  PageContainer,
+  ZodFormController,
+} from '@client/components';
+import {
+  DeleteConfirmationModal,
+  DeleteManyConfirmationModal,
+} from '@client/components/dialogs';
+import AddEditTagDialog from '@client/components/dialogs/AddEditTagDialog';
+import TagTable from '@client/components/tables/TagTable';
 import {
   useCreateTagMutation,
   useDeleteManyTagsMutation,
@@ -84,7 +86,7 @@ const TagPage = () => {
         dialog.handleClose();
       }
     } catch {
-      // Error is already handled by mutation's onError callback
+      /* handled by mutation */
     }
   };
 

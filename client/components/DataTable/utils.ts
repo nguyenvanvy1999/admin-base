@@ -1,5 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export type ActionConfig<T> = {
   label: string;
@@ -12,17 +13,18 @@ export type ActionColumnOptions<T> = {
   onEdit?: (row: T) => void;
   onDelete?: (row: T) => void;
   custom?: ActionConfig<T>[] | ((row: T) => React.ReactNode);
-  headerLabel?: string;
+  title?: string;
 };
 
 export function createActionColumn<T extends Record<string, any>>(
   options: ActionColumnOptions<T>,
 ): ColumnDef<T> {
-  const { onEdit, onDelete, custom, headerLabel } = options;
+  const { t } = useTranslation();
+  const { onEdit, onDelete, custom, title } = options;
 
   return {
     id: 'actions',
-    header: headerLabel || 'Actions',
+    header: t(title as any) || 'Actions',
     enableSorting: false,
     cell: (info: any) => {
       const row = info.row.original;
