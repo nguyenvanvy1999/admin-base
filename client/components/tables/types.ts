@@ -9,6 +9,7 @@ export type FilterVariant = 'text' | 'number' | 'select' | 'date';
 export type SortingState = { id: string; desc: boolean }[];
 export type ColumnFilter = { id: string; value: unknown };
 
+// Nested path type helper - supports up to 4 levels deep (e.g., "user.profile.address.city")
 type PathImpl<
   T,
   Key extends keyof T,
@@ -35,8 +36,9 @@ type PathImpl2<T> = PathImpl<T, keyof T> | keyof T;
 
 export type Path<T> = PathImpl2<T> extends string | keyof T
   ? PathImpl2<T>
-  : string;
+  : keyof T;
 
+// Get the value type from a path
 export type PathValue<
   T,
   P extends Path<T>,
@@ -50,7 +52,17 @@ export type PathValue<
     ? T[P]
     : never;
 
-export type TypedAccessor<T, V = unknown> = Path<T> | string | AccessorFn<T, V>;
+// Improved TypedAccessor - no longer accepts arbitrary strings
+export type TypedAccessor<T, V = unknown> = Path<T> | AccessorFn<T, V>;
+
+// Helper type to infer value type from accessor
+export type InferAccessorValue<T, A> = A extends keyof T
+  ? T[A]
+  : A extends Path<T>
+    ? PathValue<T, A>
+    : A extends AccessorFn<T, infer V>
+      ? V
+      : unknown;
 
 export type GroupedCellProps<T> = {
   row: Row<T>;
@@ -64,11 +76,23 @@ export type AggregatedCellProps<T> = {
 
 export type DataTableAggregationFn<T> = AggregationFn<T> | string;
 
-export interface DataTableColumn<T, V = unknown> {
+// Column type variants for better type inference
+export type ColumnType =
+  | 'text'
+  | 'number'
+  | 'currency'
+  | 'date'
+  | 'datetime'
+  | 'boolean'
+  | 'enum'
+  | 'badge'
+  | 'array'
+  | 'custom';
+
+// Base column properties shared by all column types
+interface BaseColumnProps<T> {
   id?: string;
   title?: ParseKeys;
-  accessor?: TypedAccessor<T, V>;
-  render?: (value: V | unknown, row: T, rowIndex: number) => React.ReactNode;
   width?: `${number}rem`;
   minWidth?: `${number}rem`;
   textAlign?: 'left' | 'center' | 'right';
@@ -77,15 +101,6 @@ export interface DataTableColumn<T, V = unknown> {
   cellsStyle?: (row: T) => React.CSSProperties;
   filterVariant?: FilterVariant;
   filterOptions?: { label: string; value: string | number | boolean }[];
-  format?: 'date' | 'number' | 'currency' | 'boolean' | 'array' | 'auto';
-  currency?: string | ((row: T) => string | null | undefined);
-  dateFormat?: string;
-  numberFormat?: {
-    decimalScale?: number;
-    thousandSeparator?: string;
-    prefix?: string;
-    suffix?: string;
-  };
   autoFormatDisabled?: boolean;
   enableSorting?: boolean;
   enableGrouping?: boolean;
@@ -93,6 +108,64 @@ export interface DataTableColumn<T, V = unknown> {
   GroupedCell?: (props: GroupedCellProps<T>) => React.ReactNode;
   AggregatedCell?: (props: AggregatedCellProps<T>) => React.ReactNode;
 }
+
+// Column with typed accessor - value type is inferred
+interface DataTableColumnWithAccessor<T, TAccessor> extends BaseColumnProps<T> {
+  accessor: TAccessor;
+  render?: (
+    value: InferAccessorValue<T, TAccessor>,
+    row: T,
+    rowIndex: number,
+  ) => React.ReactNode;
+  // Type-specific configurations
+  type?: ColumnType;
+  // For 'date' type
+  dateFormat?: string;
+  // For 'number' and 'currency' type
+  numberFormat?: {
+    decimalScale?: number;
+    thousandSeparator?: string;
+    prefix?: string;
+    suffix?: string;
+  };
+  // For 'currency' type
+  currency?: string | ((row: T) => string | null | undefined);
+  // For 'enum' type
+  enumConfig?: {
+    labelMap: Record<string, string>;
+    colorMap?: Record<string, string>;
+    defaultColor?: string;
+  };
+  // For 'badge' type
+  badgeConfig?: {
+    getLabel: (row: T) => string;
+    getColor?: (row: T) => string;
+    variant?: 'light' | 'filled' | 'outline' | 'dot' | 'gradient';
+  };
+  // For 'array' type
+  arrayConfig?: {
+    getLabel: (item: any) => string;
+    variant?: 'badge' | 'chip' | 'text';
+    color?: string | ((item: any) => string);
+    separator?: string;
+  };
+  // For 'text' type
+  emptyValue?: string;
+  emptyStyle?: React.CSSProperties;
+  // Legacy format support (deprecated)
+  format?: 'date' | 'number' | 'currency' | 'boolean' | 'array' | 'auto';
+}
+
+// Column without accessor - only render function
+interface DataTableColumnWithoutAccessor<T> extends BaseColumnProps<T> {
+  accessor?: never;
+  render: (value: undefined, row: T, rowIndex: number) => React.ReactNode;
+}
+
+// Union type for all column variants
+export type DataTableColumn<T, TAccessor = any> =
+  | DataTableColumnWithAccessor<T, TAccessor>
+  | DataTableColumnWithoutAccessor<T>;
 
 export interface DataTableProps<T extends { id: string } = { id: string }> {
   columns: DataTableColumn<T>[];

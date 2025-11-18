@@ -9,7 +9,7 @@ import {
   renderTypeBadge,
 } from './columnRenderers';
 import type { ColumnFactoryOptions } from './commonTypes';
-import type { DataTableColumn } from './types';
+import type { DataTableColumn, TypedAccessor } from './types';
 
 export function createActionColumn<T extends { id: string }>(
   options: ActionColumnOptions<T>,
@@ -19,17 +19,21 @@ export function createActionColumn<T extends { id: string }>(
     textAlign: options.textAlign || 'center',
     width: options.width || '8rem',
     enableSorting: false,
-    render: (value, row) => renderActionButtons(options, row),
-  };
+    render: (_value: any, row: T) => renderActionButtons(options, row),
+  } as DataTableColumn<T>;
 }
 
-export function createBadgeColumn<T extends { id: string }>(
+export function createBadgeColumn<
+  T extends { id: string },
+  TAccessor extends TypedAccessor<T, any> = any,
+>(
   options: ColumnFactoryOptions<T> & {
+    accessor?: TAccessor;
     getLabel: (row: T) => string;
     getColor?: (row: T) => string;
     variant?: 'light' | 'filled' | 'outline' | 'dot' | 'gradient';
   },
-): DataTableColumn<T> {
+): DataTableColumn<T, TAccessor> {
   return {
     id: options.id,
     title: options.title,
@@ -39,23 +43,27 @@ export function createBadgeColumn<T extends { id: string }>(
     width: options.width,
     textAlign: options.textAlign,
     ellipsis: options.ellipsis,
-    render: (value, row) =>
+    render: (_value, row) =>
       renderBadge({
         label: options.getLabel(row),
         color: options.getColor?.(row),
         variant: options.variant || 'light',
       }),
-  };
+  } as DataTableColumn<T, TAccessor>;
 }
 
-export function createTypeColumn<T extends { id: string }>(
+export function createTypeColumn<
+  T extends { id: string },
+  TAccessor extends TypedAccessor<T, any> = any,
+>(
   options: ColumnFactoryOptions<T> & {
+    accessor?: TAccessor;
     getType: (row: T) => string;
     labelMap: Record<string, string>;
     colorMap?: Record<string, string>;
     defaultColor?: string;
   },
-): DataTableColumn<T> {
+): DataTableColumn<T, TAccessor> {
   return {
     id: options.id,
     title: options.title,
@@ -65,18 +73,22 @@ export function createTypeColumn<T extends { id: string }>(
     width: options.width,
     textAlign: options.textAlign,
     ellipsis: options.ellipsis,
-    render: (value, row) =>
+    render: (_value, row) =>
       renderTypeBadge({
         value: options.getType(row),
         labelMap: options.labelMap,
         colorMap: options.colorMap,
         defaultColor: options.defaultColor,
       }),
-  };
+  } as DataTableColumn<T, TAccessor>;
 }
 
-export function createCurrencyColumn<T extends { id: string }>(
+export function createCurrencyColumn<
+  T extends { id: string },
+  TAccessor extends TypedAccessor<T, any> = any,
+>(
   options: ColumnFactoryOptions<T> & {
+    accessor?: TAccessor;
     getValue: (row: T) => number | string;
     getSymbol?: (row: T) => string | null | undefined;
     decimalScale?: number;
@@ -84,7 +96,7 @@ export function createCurrencyColumn<T extends { id: string }>(
     getColor?: (row: T) => string | undefined;
     showPlus?: boolean;
   },
-): DataTableColumn<T> {
+): DataTableColumn<T, TAccessor> {
   return {
     id: options.id,
     title: options.title,
@@ -96,7 +108,7 @@ export function createCurrencyColumn<T extends { id: string }>(
     width: options.width,
     textAlign: options.textAlign || 'right',
     ellipsis: options.ellipsis,
-    render: (value, row) =>
+    render: (_value, row) =>
       renderCurrency({
         value: options.getValue(row),
         symbol: options.getSymbol?.(row) || undefined,
@@ -105,16 +117,20 @@ export function createCurrencyColumn<T extends { id: string }>(
         color: options.getColor?.(row),
         showPlus: options.showPlus,
       }),
-  };
+  } as DataTableColumn<T, TAccessor>;
 }
 
-export function createDateColumn<T extends { id: string }>(
+export function createDateColumn<
+  T extends { id: string },
+  TAccessor extends TypedAccessor<T, any> = any,
+>(
   options: ColumnFactoryOptions<T> & {
+    accessor?: TAccessor;
     getValue: (row: T) => string | Date | null | undefined;
     format?: string;
     fallback?: string;
   },
-): DataTableColumn<T> {
+): DataTableColumn<T, TAccessor> {
   return {
     id: options.id,
     title: options.title,
@@ -124,24 +140,28 @@ export function createDateColumn<T extends { id: string }>(
     width: options.width,
     textAlign: options.textAlign,
     ellipsis: options.ellipsis,
-    render: (value, row) =>
+    render: (_value, row) =>
       renderDate({
         value: options.getValue(row),
         format: options.format,
         fallback: options.fallback,
       }),
-  };
+  } as DataTableColumn<T, TAccessor>;
 }
 
-export function createBooleanColumn<T extends { id: string }>(
+export function createBooleanColumn<
+  T extends { id: string },
+  TAccessor extends TypedAccessor<T, any> = any,
+>(
   options: ColumnFactoryOptions<T> & {
+    accessor?: TAccessor;
     getValue: (row: T) => boolean;
     trueLabel?: string;
     falseLabel?: string;
     trueColor?: string;
     falseColor?: string;
   },
-): DataTableColumn<T> {
+): DataTableColumn<T, TAccessor> {
   return {
     id: options.id,
     title: options.title,
@@ -151,7 +171,7 @@ export function createBooleanColumn<T extends { id: string }>(
     width: options.width,
     textAlign: options.textAlign,
     ellipsis: options.ellipsis,
-    render: (value, row) =>
+    render: (_value, row) =>
       renderBooleanBadge({
         value: options.getValue(row),
         trueLabel: options.trueLabel,
@@ -159,5 +179,5 @@ export function createBooleanColumn<T extends { id: string }>(
         trueColor: options.trueColor,
         falseColor: options.falseColor,
       }),
-  };
+  } as DataTableColumn<T, TAccessor>;
 }

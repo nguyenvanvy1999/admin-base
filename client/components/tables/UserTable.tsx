@@ -1,10 +1,10 @@
 import { usePermission } from '@client/hooks/usePermission';
-import { ActionIcon } from '@mantine/core';
 import type { UserResponse } from '@server/dto/admin/user.dto';
-import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { createActionColumn } from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
+import { createArrayColumn, createTextColumn } from './factories';
 
 type UserTableProps = {
   users: UserResponse[];
@@ -52,53 +52,37 @@ const UserTable = ({
 
   const columns = useMemo(
     (): DataTableColumn<UserResponse>[] => [
-      {
+      // Simple text column with type-safe accessor
+      createTextColumn({
         accessor: 'username',
         title: 'users.username',
-      },
-      {
+      }),
+      // Text column with ellipsis and empty value handling
+      createTextColumn({
         accessor: 'name',
         title: 'users.name',
         ellipsis: true,
-        render: (value) => {
-          const name = (value as string) || '';
-          if (!name) {
-            return <span className="text-gray-400">-</span>;
-          }
-          return name;
-        },
-      },
-      {
+        emptyValue: '-',
+      }),
+      // Array column with badges - much cleaner!
+      createArrayColumn<UserResponse, any, { id: string; title: string }>({
         id: 'roles',
+        accessor: (row) => row.roles || [],
         title: 'users.role',
-        accessor: (row) => (row.roles || []).map((r) => r.title).join(', '),
+        getLabel: (role) => role.title,
+        variant: 'badge',
+        badgeVariant: 'light',
+        getColor: () => 'blue',
+        emptyValue: '-',
         enableSorting: false,
-        enableGrouping: false,
-        render: (_value, row) => {
-          const roles = row.roles;
-          if (!roles || roles.length === 0) {
-            return <span className="text-gray-400">-</span>;
-          }
-          return (
-            <div className="flex flex-wrap gap-1">
-              {roles.map((role) => (
-                <span
-                  key={role.id}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
-                >
-                  {role.title}
-                </span>
-              ))}
-            </div>
-          );
-        },
-      },
+      }),
+      // Custom render for complex nested data
       {
         id: 'baseCurrency',
         title: 'users.baseCurrency',
-        accessor: 'baseCurrency.code',
+        accessor: 'baseCurrency.code' as any,
         enableSorting: false,
-        render: (_value, row) => {
+        render: (_value: any, row: UserResponse) => {
           const currency = row.baseCurrency;
           if (!currency) {
             return <span className="text-gray-400">-</span>;
@@ -109,44 +93,18 @@ const UserTable = ({
             </span>
           );
         },
-      },
-      {
+      } as DataTableColumn<UserResponse>,
+      // Date column
+      createTextColumn({
         accessor: 'created',
         title: 'users.created',
-      },
-      {
+      }),
+      // Action column with permission checks
+      createActionColumn<UserResponse>({
         title: 'users.actions',
-        textAlign: 'center',
-        width: '8rem',
-        render: (_value, row: UserResponse) => (
-          <div className="flex items-center justify-center gap-2">
-            {canUpdate && (
-              <ActionIcon
-                variant="subtle"
-                color="blue"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(row);
-                }}
-              >
-                <IconEdit size={16} />
-              </ActionIcon>
-            )}
-            {canDelete && (
-              <ActionIcon
-                variant="subtle"
-                color="red"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(row);
-                }}
-              >
-                <IconTrash size={16} />
-              </ActionIcon>
-            )}
-          </div>
-        ),
-      },
+        onEdit: canUpdate ? onEdit : undefined,
+        onDelete: canDelete ? onDelete : undefined,
+      }),
     ],
     [t, onEdit, onDelete, canUpdate, canDelete],
   );
