@@ -1,6 +1,5 @@
 export { aggregation, aggregationHelpers } from './aggregation';
-export type { ColumnHelper } from './columnHelpers';
-export { createColumnHelper } from './columnHelpers';
+
 export { DataTable } from './DataTable';
 export type {
   AccessorFn,

@@ -10,6 +10,8 @@ function extractCategory(title: string | null | undefined): string {
   return parts[0] || title;
 }
 
+type PermissionWithCategory = PermissionResponse & { category: string };
+
 type PermissionTableProps = {
   permissions: PermissionResponse[];
   isLoading?: boolean;
@@ -57,7 +59,7 @@ const PermissionTable = ({
   };
 
   const columns = useMemo(
-    (): DataTableColumn<PermissionResponse>[] => [
+    (): DataTableColumn<PermissionWithCategory>[] => [
       {
         accessor: 'title',
         title: 'permissions.permissionTitle',
@@ -65,21 +67,20 @@ const PermissionTable = ({
       {
         accessor: 'category',
         title: 'permissions.category',
-        render: (value, row: PermissionResponse & { category?: string }) => {
-          if (!row || !row.title) {
+        render: (value) => {
+          if (!value) {
             return (
               <Badge color="gray" variant="light">
                 -
               </Badge>
             );
           }
-          const category = row.category || extractCategory(row.title);
           const categoryLabel =
-            t(`permissions.categories.${category}`, {
-              defaultValue: category,
-            }) || category;
+            t(`permissions.categories.${value}`, {
+              defaultValue: value,
+            }) || value;
           return (
-            <Badge color={getCategoryColor(category)} variant="light">
+            <Badge color={getCategoryColor(value)} variant="light">
               {categoryLabel}
             </Badge>
           );
@@ -98,7 +99,7 @@ const PermissionTable = ({
     [t],
   );
 
-  const permissionsWithCategory = useMemo(() => {
+  const permissionsWithCategory = useMemo((): PermissionWithCategory[] => {
     if (!permissions || !Array.isArray(permissions)) {
       return [];
     }

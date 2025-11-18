@@ -26,7 +26,7 @@ export function useDataTableColumns<T extends { id: string }>({
   autoFormatDisabled,
   themeSpacingXs,
 }: {
-  columns: DataTableColumn<T, any>[];
+  columns: DataTableColumn<T>[];
   autoFormatDisabled?: boolean;
   themeSpacingXs: string;
 }) {
@@ -129,9 +129,22 @@ export function useDataTableColumns<T extends { id: string }>({
       }) => {
         const record = row.original;
         const value = cell.getValue();
+        const hasAccessor = col.accessor !== undefined;
         let content: React.ReactNode;
         if (col.render) {
-          content = col.render(value as any, record, row.index);
+          if (hasAccessor) {
+            content = (
+              col.render as (
+                value: unknown,
+                row: T,
+                rowIndex: number,
+              ) => React.ReactNode
+            )(value, record, row.index);
+          } else {
+            content = (
+              col.render as (row: T, rowIndex: number) => React.ReactNode
+            )(record, row.index);
+          }
         } else if (!autoFormatDisabled) {
           content = autoFormat(value);
         } else {

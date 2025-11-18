@@ -6,10 +6,11 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import {
   createBooleanColumn,
+  createCurrencyColumn,
   createDateColumn,
   createTypeColumn,
 } from './columnFactories';
-import { renderActionButtons, renderCurrency } from './columnRenderers';
+import { renderActionButtons } from './columnRenderers';
 import { DataTable, type DataTableColumn } from './DataTable';
 import { DeleteManyToolbar } from './deleteManyToolbar';
 
@@ -65,7 +66,7 @@ const BudgetTable = ({
       {
         accessor: 'name',
         title: 'budgets.name',
-        render: (value, row: BudgetResponse) => (
+        render: (value, row) => (
           <Button
             variant="subtle"
             p={0}
@@ -80,22 +81,15 @@ const BudgetTable = ({
           </Button>
         ),
       },
-      {
+      createCurrencyColumn<BudgetResponse, 'amount'>({
         accessor: 'amount',
         title: 'budgets.amount',
-        render: (value) => {
-          const amount = typeof value === 'string' ? parseFloat(value) : 0;
-          return renderCurrency({
-            value: amount,
-            symbol: '$',
-            decimalScale: 2,
-          });
-        },
-      },
-      createTypeColumn<BudgetResponse>({
+        getSymbol: () => '$',
+        decimalScale: 2,
+      }),
+      createTypeColumn<BudgetResponse, 'period'>({
         accessor: 'period',
         title: 'budgets.period',
-        getType: (row) => row.period,
         labelMap: {
           [BudgetPeriod.daily]: t('budgets.periodOptions.daily', {
             defaultValue: 'Daily',
@@ -115,20 +109,19 @@ const BudgetTable = ({
         },
         defaultColor: 'blue',
       }),
-      createDateColumn<BudgetResponse>({
+      createDateColumn<BudgetResponse, 'startDate'>({
         accessor: 'startDate',
         title: 'budgets.startDate',
-        getValue: (row) => row.startDate,
+        format: 'YYYY-MM-DD',
       }),
-      createDateColumn<BudgetResponse>({
+      createDateColumn<BudgetResponse, 'endDate'>({
         accessor: 'endDate',
         title: 'budgets.endDate',
-        getValue: (row) => row.endDate,
+        format: 'YYYY-MM-DD',
       }),
-      createBooleanColumn<BudgetResponse>({
+      createBooleanColumn<BudgetResponse, 'carryOver'>({
         accessor: 'carryOver',
         title: 'budgets.carryOver',
-        getValue: (row) => row.carryOver || false,
         trueLabel: t('common.yes', { defaultValue: 'Yes' }),
         falseLabel: t('common.no', { defaultValue: 'No' }),
         trueColor: 'green',
@@ -136,8 +129,7 @@ const BudgetTable = ({
       }),
       {
         title: 'budgets.actions',
-        accessor: 'actions',
-        render: (_value, row: BudgetResponse) => (
+        render: (row, rowIndex) => (
           <Group gap="xs">
             <Button
               size="xs"

@@ -255,7 +255,7 @@ const InvestmentDetailPage = () => {
         title: 'common.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value, row: InvestmentTradeResponse) => (
+        render: (row: InvestmentTradeResponse, rowIndex: number) => (
           <Group justify="center" gap="xs">
             <ActionIcon
               variant="subtle"
@@ -307,7 +307,7 @@ const InvestmentDetailPage = () => {
       {
         accessor: (row: InvestmentContributionResponse) => row.account?.name,
         title: 'investments.contribution.account',
-        render: (value) => (value ? String(value) : '--'),
+        render: (value: string | undefined) => (value ? String(value) : '--'),
       },
       {
         accessor: 'note',
@@ -318,7 +318,7 @@ const InvestmentDetailPage = () => {
         title: 'common.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value, row: InvestmentContributionResponse) => (
+        render: (row: InvestmentContributionResponse, rowIndex: number) => (
           <Group justify="center" gap="xs">
             <ActionIcon
               variant="subtle"
@@ -358,7 +358,7 @@ const InvestmentDetailPage = () => {
         title: 'common.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value, row: InvestmentValuationResponse) => (
+        render: (row: InvestmentValuationResponse, rowIndex: number) => (
           <Group justify="center" gap="xs">
             <ActionIcon
               variant="subtle"

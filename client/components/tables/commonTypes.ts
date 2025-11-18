@@ -36,7 +36,7 @@ export type SelectableTableProps<T extends { id: string }> =
 export type ActionSelectableTableProps<T extends { id: string }> =
   ActionTableProps<T> & SelectableTableProps<T>;
 
-export type ColumnFactoryOptions<T> = {
+export type ColumnFactoryOptions<T extends { id: string }> = {
   id?: string;
   title?: DataTableColumn<T>['title'];
   accessor?: DataTableColumn<T>['accessor'];
@@ -47,4 +47,6 @@ export type ColumnFactoryOptions<T> = {
   ellipsis?: boolean;
   aggregationFn?: DataTableColumn<T>['aggregationFn'];
   AggregatedCell?: DataTableColumn<T>['AggregatedCell'];
+  onClick?: DataTableColumn<T>['onClick'];
+  cellsStyle?: DataTableColumn<T>['cellsStyle'];
 };

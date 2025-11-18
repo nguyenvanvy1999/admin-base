@@ -1,7 +1,10 @@
 import type { EventResponse } from '@server/dto/event.dto';
 import { useMemo } from 'react';
-import { createActionColumn } from '../DataTable/utils';
-import { createDateColumn } from './columnFactories';
+import {
+  createActionColumn,
+  createDateColumn,
+  createTextColumn,
+} from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
 import { DeleteManyToolbar } from './deleteManyToolbar';
 
@@ -51,19 +54,19 @@ const EventTable = ({
 }: EventTableProps) => {
   const columns = useMemo(
     (): DataTableColumn<EventResponse>[] => [
-      {
+      createTextColumn<EventResponse, 'name'>({
         accessor: 'name',
         title: 'events.name',
-      },
-      createDateColumn<EventResponse>({
+      }),
+      createDateColumn<EventResponse, 'startAt'>({
         accessor: 'startAt',
         title: 'events.startAt',
-        getValue: (row) => row.startAt,
+        format: 'YYYY-MM-DD HH:mm',
       }),
-      createDateColumn<EventResponse>({
+      createDateColumn<EventResponse, 'endAt'>({
         accessor: 'endAt',
         title: 'events.endAt',
-        getValue: (row) => row.endAt,
+        format: 'YYYY-MM-DD HH:mm',
       }),
       createActionColumn<EventResponse>({
         title: 'events.actions',

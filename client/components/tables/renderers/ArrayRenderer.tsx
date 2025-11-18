@@ -27,10 +27,10 @@ export function renderArray<T = any>(
   }
 
   // Limit items if maxItems is specified
-  const displayItems = config.maxItems
-    ? items.slice(0, config.maxItems)
-    : items;
-  const hasMore = config.maxItems && items.length > config.maxItems;
+  const hasMaxLimit = typeof config.maxItems === 'number';
+  const maxItems = hasMaxLimit ? config.maxItems! : items.length;
+  const displayItems = hasMaxLimit ? items.slice(0, maxItems) : items;
+  const hasMore = hasMaxLimit && items.length > maxItems;
 
   // Text variant - join with separator
   if (config.variant === 'text') {
@@ -40,7 +40,7 @@ export function renderArray<T = any>(
     return (
       <Text size="sm">
         {text}
-        {hasMore && ` +${items.length - config.maxItems}`}
+        {hasMore && ` +${items.length - maxItems}`}
       </Text>
     );
   }
@@ -62,9 +62,9 @@ export function renderArray<T = any>(
           </Badge>
         );
       })}
-      {hasMore && config.maxItems && (
+      {hasMore && (
         <Badge color="gray" variant="light" size="sm">
-          +{items.length - config.maxItems}
+          +{items.length - maxItems}
         </Badge>
       )}
     </Group>

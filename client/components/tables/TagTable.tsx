@@ -1,8 +1,9 @@
-import { ActionIcon, Button } from '@mantine/core';
+import { Button } from '@mantine/core';
 import type { TagResponse } from '@server/dto/tag.dto';
-import { IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { createActionColumn, createTextColumn } from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
 import type { SortingState } from './types';
 
@@ -49,45 +50,21 @@ const TagTable = ({
 
   const columns = useMemo(
     (): DataTableColumn<TagResponse>[] => [
-      {
+      createTextColumn<TagResponse, 'name'>({
         accessor: 'name',
         title: 'tags.name',
-      },
-      {
+      }),
+      createTextColumn<TagResponse, 'description'>({
         accessor: 'description',
         title: 'tags.description',
         ellipsis: true,
         enableSorting: false,
-      },
-      {
+      }),
+      createActionColumn<TagResponse>({
         title: 'tags.actions',
-        textAlign: 'center',
-        width: '8rem',
-        render: (value, row: TagResponse) => (
-          <div className="flex items-center justify-center gap-2">
-            <ActionIcon
-              variant="subtle"
-              color="blue"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(row);
-              }}
-            >
-              <IconEdit size={16} />
-            </ActionIcon>
-            <ActionIcon
-              variant="subtle"
-              color="red"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(row);
-              }}
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
-          </div>
-        ),
-      },
+        onEdit,
+        onDelete,
+      }),
     ],
     [t, onEdit, onDelete],
   );

@@ -74,9 +74,9 @@ const SessionTable = ({
 
     if (showUserColumn) {
       cols.push({
-        accessor: 'user.username',
+        accessor: (row) => row.user?.username,
         title: 'sessions.user',
-        render: (_value, row: SessionResponseWithUser) => {
+        render: (value, row, _rowIndex) => {
           if (!row.user) {
             return <span className="text-gray-400">-</span>;
           }
@@ -98,25 +98,26 @@ const SessionTable = ({
       {
         accessor: 'device',
         title: 'sessions.device',
-        render: (value) => {
+        render: (value, _row, _rowIndex) => {
           if (!value) return <span className="text-gray-400">-</span>;
-          return <span>{value as string}</span>;
+          return <span>{value}</span>;
         },
         enableSorting: false,
       },
       {
         accessor: 'ip',
         title: 'sessions.ip',
-        render: (value) => {
+        render: (value, _row, _rowIndex) => {
           if (!value) return <span className="text-gray-400">-</span>;
-          return <span>{value as string}</span>;
+          return <span>{value}</span>;
         },
         enableSorting: false,
       },
       {
-        accessor: 'status',
+        id: 'status',
         title: 'sessions.statusLabel',
-        render: (value, row: SessionResponseWithUser) => {
+        accessor: (row) => getSessionStatus(row).label, // Add an accessor for sorting/filtering if needed
+        render: (value, row, _rowIndex) => {
           const status = getSessionStatus(row);
           return (
             <Badge color={status.color} variant="light">
@@ -131,17 +132,17 @@ const SessionTable = ({
       {
         accessor: 'created',
         title: 'sessions.created',
-        render: (value) => {
+        render: (value, _row, _rowIndex) => {
           if (!value) return <span className="text-gray-400">-</span>;
-          return <span>{formatDate(value as string | Date)}</span>;
+          return <span>{formatDate(value)}</span>;
         },
       },
       {
         accessor: 'expired',
         title: 'sessions.expired',
-        render: (value) => {
+        render: (value, _row, _rowIndex) => {
           if (!value) return <span className="text-gray-400">-</span>;
-          return <span>{formatDate(value as string | Date)}</span>;
+          return <span>{formatDate(value)}</span>;
         },
       },
     );
@@ -151,7 +152,7 @@ const SessionTable = ({
         title: 'sessions.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value, row: SessionResponseWithUser) => {
+        render: (row: SessionResponseWithUser, rowIndex: number) => {
           const status = getSessionStatus(row);
           const isDisabled =
             status.label === 'Revoked' || status.label === 'Expired';

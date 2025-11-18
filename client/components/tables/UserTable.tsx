@@ -1,10 +1,10 @@
 import { usePermission } from '@client/hooks/usePermission';
+import { Badge } from '@mantine/core';
 import type { UserResponse } from '@server/dto/admin/user.dto';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createActionColumn } from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
-import { createArrayColumn, createTextColumn } from './factories';
 
 type UserTableProps = {
   users: UserResponse[];
@@ -52,37 +52,47 @@ const UserTable = ({
 
   const columns = useMemo(
     (): DataTableColumn<UserResponse>[] => [
-      // Simple text column with type-safe accessor
-      createTextColumn({
+      {
         accessor: 'username',
         title: 'users.username',
-      }),
-      // Text column with ellipsis and empty value handling
-      createTextColumn({
+      },
+      {
         accessor: 'name',
         title: 'users.name',
         ellipsis: true,
-        emptyValue: '-',
-      }),
-      // Array column with badges - much cleaner!
-      createArrayColumn<UserResponse, any, { id: string; title: string }>({
+        render: (value, _row, _rowIndex) => {
+          if (!value) {
+            return <span className="text-gray-400">-</span>;
+          }
+          return value;
+        },
+      },
+      {
         id: 'roles',
-        accessor: (row) => row.roles || [],
         title: 'users.role',
-        getLabel: (role) => role.title,
-        variant: 'badge',
-        badgeVariant: 'light',
-        getColor: () => 'blue',
-        emptyValue: '-',
+        accessor: (row: UserResponse) => row.roles || [],
         enableSorting: false,
-      }),
-      // Custom render for complex nested data
+        render: (roles: UserResponse['roles'], _row, _rowIndex) => {
+          if (!roles || roles.length === 0) {
+            return <span className="text-gray-400">-</span>;
+          }
+          return (
+            <div className="flex flex-wrap gap-1">
+              {roles.map((role) => (
+                <Badge key={role.id} variant="light" color="blue">
+                  {role.title}
+                </Badge>
+              ))}
+            </div>
+          );
+        },
+      },
       {
         id: 'baseCurrency',
         title: 'users.baseCurrency',
-        accessor: 'baseCurrency.code' as any,
+        accessor: (row: UserResponse) => row.baseCurrency?.code,
         enableSorting: false,
-        render: (_value: any, row: UserResponse) => {
+        render: (_value, row, _rowIndex) => {
           const currency = row.baseCurrency;
           if (!currency) {
             return <span className="text-gray-400">-</span>;
@@ -93,14 +103,12 @@ const UserTable = ({
             </span>
           );
         },
-      } as DataTableColumn<UserResponse>,
-      // Date column
-      createTextColumn({
+      },
+      {
         accessor: 'created',
         title: 'users.created',
-      }),
-      // Action column with permission checks
-      createActionColumn<UserResponse>({
+      },
+      createActionColumn({
         title: 'users.actions',
         onEdit: canUpdate ? onEdit : undefined,
         onDelete: canDelete ? onDelete : undefined,
