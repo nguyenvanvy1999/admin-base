@@ -2,11 +2,11 @@ import type { EntityResponse } from '@server/dto/entity.dto';
 import { EntityType } from '@server/generated';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { SortingState } from '@/components';
-import { createActionColumn } from '@/components/DataTable/utils';
-import { createTypeColumn } from '@/components/tables/columnFactories';
+import { createActionColumn } from '../DataTable/utils';
+import { createTypeColumn } from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
 import { DeleteManyToolbar } from './deleteManyToolbar';
+import type { SortingState } from './types';
 
 type EntityTableProps = {
   entities: EntityResponse[];

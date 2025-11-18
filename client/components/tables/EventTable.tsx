@@ -1,7 +1,7 @@
 import type { EventResponse } from '@server/dto/event.dto';
 import { useMemo } from 'react';
-import { createActionColumn } from '@/components/DataTable/utils';
-import { createDateColumn } from '@/components/tables/columnFactories';
+import { createActionColumn } from '../DataTable/utils';
+import { createDateColumn } from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
 import { DeleteManyToolbar } from './deleteManyToolbar';
 

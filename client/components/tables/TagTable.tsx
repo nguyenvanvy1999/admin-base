@@ -3,8 +3,8 @@ import type { TagResponse } from '@server/dto/tag.dto';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { SortingState } from '@/components';
 import { DataTable, type DataTableColumn } from './DataTable';
+import type { SortingState } from './types';
 
 type TagTableProps = {
   tags: TagResponse[];

@@ -4,7 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MetaVisualizer } from '@/components';
+import { MetaVisualizer } from '../../MetaVisualizer';
 import type { AccessorFn, DataTableColumn } from '../types';
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;

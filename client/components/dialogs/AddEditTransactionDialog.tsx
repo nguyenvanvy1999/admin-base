@@ -1,3 +1,4 @@
+import { useAdjustBalanceMutation } from '@client/hooks/mutations/useTransactionMutations';
 import { useZodForm } from '@client/hooks/useZodForm';
 import {
   Button,
@@ -20,11 +21,6 @@ import { TransactionType } from '@server/generated';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import {
-  type BalanceAdjustmentFormValue,
-  createBalanceAdjustmentSchema,
-} from '@/components/dialogs/AdjustBalanceDialog';
-import { useAdjustBalanceMutation } from '@/hooks/mutations/useTransactionMutations';
 import CategorySelect from '../CategorySelect';
 import EventSelect from '../EventSelect';
 import {
@@ -38,6 +34,10 @@ import {
 } from '../forms';
 import { flattenCategories, getCategoryIcon } from '../utils/category';
 import { ZodFormController } from '../ZodFormController';
+import {
+  type BalanceAdjustmentFormValue,
+  createBalanceAdjustmentSchema,
+} from './AdjustBalanceDialog';
 import { DialogFooter } from './base/DialogFooter';
 
 const baseSchema = z.object({

@@ -8,11 +8,8 @@ import {
   createBooleanColumn,
   createDateColumn,
   createTypeColumn,
-} from '@/components/tables/columnFactories';
-import {
-  renderActionButtons,
-  renderCurrency,
-} from '@/components/tables/columnRenderers';
+} from './columnFactories';
+import { renderActionButtons, renderCurrency } from './columnRenderers';
 import { DataTable, type DataTableColumn } from './DataTable';
 import { DeleteManyToolbar } from './deleteManyToolbar';
 
