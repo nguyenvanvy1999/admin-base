@@ -61,6 +61,11 @@ class TransactionHandlerFactory {
   ) {}
 
   private async validateAccountOwnership(userId: string, accountId: string) {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(accountId);
+    if (!extractedUserId || extractedUserId !== userId) {
+      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
+    }
+
     const account = await this.deps.db.account.findFirst({
       where: {
         id: accountId,
@@ -74,47 +79,31 @@ class TransactionHandlerFactory {
     return account;
   }
 
-  private async validateCategoryOwnership(userId: string, categoryId: string) {
-    const category = await this.deps.db.category.findFirst({
-      where: {
-        id: categoryId,
-        userId,
-      },
-      select: { id: true, userId: true },
-    });
-    if (!category) {
+  private validateCategoryOwnership(userId: string, categoryId: string): void {
+    // Category uses different ID format: category_${code}_${type}_${userId}
+    // Check if categoryId ends with userId or extract userId from it
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(categoryId);
+    if (!extractedUserId || extractedUserId !== userId) {
       throwAppError(ErrorCode.NOT_FOUND, 'Category not found');
     }
   }
 
-  private async validateEntityOwnership(userId: string, entityId: string) {
-    const entity = await this.deps.db.entity.findFirst({
-      where: {
-        id: entityId,
-        userId,
-      },
-      select: { id: true, userId: true },
-    });
-    if (!entity) {
+  private validateEntityOwnership(userId: string, entityId: string): void {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(entityId);
+    if (!extractedUserId || extractedUserId !== userId) {
       throwAppError(ErrorCode.ENTITY_NOT_FOUND, 'Entity not found');
     }
   }
 
-  private async validateEventOwnership(
+  private validateEventOwnership(
     userId: string,
     eventId: string | undefined,
-  ) {
+  ): void {
     if (!eventId) {
       return;
     }
-    const event = await this.deps.db.event.findFirst({
-      where: {
-        id: eventId,
-        userId,
-      },
-      select: { id: true, userId: true },
-    });
-    if (!event) {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(eventId);
+    if (!extractedUserId || extractedUserId !== userId) {
       throwAppError(ErrorCode.NOT_FOUND, 'Event not found');
     }
   }
@@ -137,7 +126,7 @@ class TransactionHandlerFactory {
     const feeDecimal = new Decimal(data.fee ?? 0);
 
     if (data.eventId) {
-      await this.validateEventOwnership(userId, data.eventId);
+      this.validateEventOwnership(userId, data.eventId);
     }
 
     let feeInBaseCurrency: Decimal | null = data.feeInBaseCurrency
@@ -657,7 +646,10 @@ class TransactionHandlerFactory {
       data,
       account,
       userBaseCurrencyId,
-      () => this.validateCategoryOwnership(userId, data.categoryId),
+      () =>
+        Promise.resolve(
+          this.validateCategoryOwnership(userId, data.categoryId),
+        ),
       () => Promise.resolve(null),
     );
   }
@@ -688,7 +680,8 @@ class TransactionHandlerFactory {
       data,
       account,
       userBaseCurrencyId,
-      () => this.validateEntityOwnership(userId, data.entityId),
+      () =>
+        Promise.resolve(this.validateEntityOwnership(userId, data.entityId)),
       () => Promise.resolve(null),
     );
   }

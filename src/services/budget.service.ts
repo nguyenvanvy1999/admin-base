@@ -53,18 +53,11 @@ export class BudgetService {
     return user.baseCurrencyId;
   }
 
-  private async validateBudgetOwnership(userId: string, budgetId: string) {
-    const budget = await this.deps.db.budget.findFirst({
-      where: {
-        id: budgetId,
-        userId,
-      },
-      select: BUDGET_SELECT_MINIMAL,
-    });
-    if (!budget) {
+  private validateBudgetOwnership(userId: string, budgetId: string): void {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(budgetId);
+    if (!extractedUserId || extractedUserId !== userId) {
       throwAppError(ErrorCode.BUDGET_NOT_FOUND, 'Budget not found');
     }
-    return budget;
   }
 
   private async validateAccountsAndCategories(
@@ -287,7 +280,7 @@ export class BudgetService {
 
   async upsertBudget(userId: string, data: IUpsertBudgetDto) {
     if (data.id) {
-      await this.validateBudgetOwnership(userId, data.id);
+      this.validateBudgetOwnership(userId, data.id);
     }
 
     await this.validateAccountsAndCategories(
@@ -325,7 +318,7 @@ export class BudgetService {
     } else {
       const budget = await this.deps.db.budget.create({
         data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.BUDGET),
+          id: this.deps.idUtil.dbIdWithUserId(DB_PREFIX.BUDGET, userId),
           userId,
           name: data.name,
           amount: data.amount,
@@ -462,7 +455,7 @@ export class BudgetService {
     budgetId: string,
     query: IBudgetPeriodQueryDto = {},
   ) {
-    await this.validateBudgetOwnership(userId, budgetId);
+    this.validateBudgetOwnership(userId, budgetId);
 
     const budget = await this.deps.db.budget.findFirst({
       where: {
@@ -542,7 +535,10 @@ export class BudgetService {
         // Always create a period record if it doesn't exist
         existingPeriod = await this.deps.db.budgetPeriodRecord.create({
           data: {
-            id: this.deps.idUtil.dbId(DB_PREFIX.BUDGET_PERIOD),
+            id: this.deps.idUtil.dbIdWithUserId(
+              DB_PREFIX.BUDGET_PERIOD,
+              userId,
+            ),
             budgetId,
             periodStartDate: currentStart,
             periodEndDate,
@@ -589,7 +585,7 @@ export class BudgetService {
     budgetId: string,
     periodId: string,
   ) {
-    await this.validateBudgetOwnership(userId, budgetId);
+    this.validateBudgetOwnership(userId, budgetId);
 
     const period = await this.deps.db.budgetPeriodRecord.findFirst({
       where: {

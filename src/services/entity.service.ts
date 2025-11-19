@@ -25,18 +25,11 @@ export class EntityService {
     private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
   ) {}
 
-  private async validateEntityOwnership(userId: string, entityId: string) {
-    const entity = await this.deps.db.entity.findFirst({
-      where: {
-        id: entityId,
-        userId,
-      },
-      select: ENTITY_SELECT_MINIMAL,
-    });
-    if (!entity) {
+  private validateEntityOwnership(userId: string, entityId: string): void {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(entityId);
+    if (!extractedUserId || extractedUserId !== userId) {
       throwAppError(ErrorCode.ENTITY_NOT_FOUND, 'Entity not found');
     }
-    return entity;
   }
 
   private async validateUniqueName(
@@ -56,7 +49,7 @@ export class EntityService {
 
   async upsertEntity(userId: string, data: IUpsertEntityDto) {
     if (data.id) {
-      await this.validateEntityOwnership(userId, data.id);
+      this.validateEntityOwnership(userId, data.id);
     }
 
     await this.validateUniqueName(userId, data.name, data.id);
@@ -78,7 +71,7 @@ export class EntityService {
     } else {
       const entity = await this.deps.db.entity.create({
         data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.ENTITY),
+          id: this.deps.idUtil.dbIdWithUserId(DB_PREFIX.ENTITY, userId),
           userId,
           name: data.name,
           type: data.type,

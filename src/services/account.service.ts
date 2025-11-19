@@ -30,18 +30,11 @@ export class AccountService {
     private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
   ) {}
 
-  private async validateAccountOwnership(userId: string, accountId: string) {
-    const account = await this.deps.db.account.findFirst({
-      where: {
-        id: accountId,
-        userId,
-      },
-      select: ACCOUNT_SELECT_MINIMAL,
-    });
-    if (!account) {
+  private validateAccountOwnership(userId: string, accountId: string): void {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(accountId);
+    if (!extractedUserId || extractedUserId !== userId) {
       throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
     }
-    return account;
   }
 
   private async validateCurrency(currencyId: string) {
@@ -60,7 +53,7 @@ export class AccountService {
     await this.validateCurrency(data.currencyId);
 
     if (data.id) {
-      await this.validateAccountOwnership(userId, data.id);
+      this.validateAccountOwnership(userId, data.id);
     }
 
     if (
@@ -99,7 +92,7 @@ export class AccountService {
     } else {
       await this.deps.db.account.create({
         data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.ACCOUNT),
+          id: this.deps.idUtil.dbIdWithUserId(DB_PREFIX.ACCOUNT, userId),
           type: data.type,
           name: data.name,
           currencyId: data.currencyId,
@@ -239,7 +232,7 @@ export class AccountService {
   }
 
   async deleteAccount(userId: string, accountId: string): Promise<ActionRes> {
-    await this.validateAccountOwnership(userId, accountId);
+    this.validateAccountOwnership(userId, accountId);
 
     await this.deps.db.account.delete({
       where: { id: accountId },

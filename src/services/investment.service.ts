@@ -71,7 +71,19 @@ export class InvestmentService {
     }
   }
 
+  private validateInvestmentOwnership(
+    userId: string,
+    investmentId: string,
+  ): void {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(investmentId);
+    if (!extractedUserId || extractedUserId !== userId) {
+      throwAppError(ErrorCode.INVESTMENT_NOT_FOUND, 'Investment not found');
+    }
+  }
+
   async ensureInvestment(userId: string, investmentId: string) {
+    this.validateInvestmentOwnership(userId, investmentId);
+
     const investment = await this.deps.db.investment.findFirst({
       where: {
         id: investmentId,
@@ -115,7 +127,7 @@ export class InvestmentService {
 
     const created = await this.deps.db.investment.create({
       data: {
-        id: this.deps.idUtil.dbId(DB_PREFIX.INVESTMENT),
+        id: this.deps.idUtil.dbIdWithUserId(DB_PREFIX.INVESTMENT, userId),
         ...payload,
         userId,
       },

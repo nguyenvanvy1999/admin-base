@@ -39,18 +39,11 @@ export class GoalService {
     },
   ) {}
 
-  private async validateGoalOwnership(userId: string, goalId: string) {
-    const goal = await this.deps.db.goal.findFirst({
-      where: {
-        id: goalId,
-        userId,
-      },
-      select: GOAL_SELECT_MINIMAL,
-    });
-    if (!goal) {
+  private validateGoalOwnership(userId: string, goalId: string): void {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(goalId);
+    if (!extractedUserId || extractedUserId !== userId) {
       throwAppError(ErrorCode.GOAL_NOT_FOUND, 'Goal not found');
     }
-    return goal;
   }
 
   private async validateAccounts(userId: string, accountIds: string[]) {
@@ -106,7 +99,7 @@ export class GoalService {
 
   async upsertGoal(userId: string, data: IUpsertGoalDto) {
     if (data.id) {
-      await this.validateGoalOwnership(userId, data.id);
+      this.validateGoalOwnership(userId, data.id);
     }
 
     await this.validateAccounts(userId, data.accountIds);
@@ -133,7 +126,7 @@ export class GoalService {
     } else {
       const goal = await this.deps.db.goal.create({
         data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.GOAL),
+          id: this.deps.idUtil.dbIdWithUserId(DB_PREFIX.GOAL, userId),
           userId,
           name: data.name,
           amount: data.amount,

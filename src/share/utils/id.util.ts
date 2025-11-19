@@ -48,6 +48,21 @@ export class IdUtil {
     return prefix ? `${prefix}_${id}` : id;
   }
 
+  dbIdWithUserId(prefix: DB_PREFIX, userId: string): string {
+    const id = this.i16();
+    return `${prefix}_${id}_${userId}`;
+  }
+
+  extractUserIdFromId(resourceId: string): string | null {
+    const parts = resourceId.split('_');
+    if (parts.length < 3) {
+      return null;
+    }
+    // Format: prefix_unique_userId
+    // userId is the last part
+    return parts[parts.length - 1] ?? null;
+  }
+
   token32(prefix = ''): string {
     const id = this.i32();
     return prefix.length ? `${prefix}_${id}` : id;

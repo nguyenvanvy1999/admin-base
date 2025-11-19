@@ -27,18 +27,11 @@ export class TagService {
     private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
   ) {}
 
-  private async validateTagOwnership(userId: string, tagId: string) {
-    const tag = await this.deps.db.tag.findFirst({
-      where: {
-        id: tagId,
-        userId,
-      },
-      select: TAG_SELECT_MINIMAL,
-    });
-    if (!tag) {
+  private validateTagOwnership(userId: string, tagId: string): void {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(tagId);
+    if (!extractedUserId || extractedUserId !== userId) {
       throwAppError(ErrorCode.TAG_NOT_FOUND, 'Tag not found');
     }
-    return tag;
   }
 
   private async validateUniqueName(
@@ -59,7 +52,7 @@ export class TagService {
 
   async upsertTag(userId: string, data: IUpsertTagDto): Promise<TagResponse> {
     if (data.id) {
-      await this.validateTagOwnership(userId, data.id);
+      this.validateTagOwnership(userId, data.id);
     }
 
     const lowerName = data.name.toLowerCase().trim();
@@ -78,7 +71,7 @@ export class TagService {
     } else {
       const tag = await this.deps.db.tag.create({
         data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.TAG),
+          id: this.deps.idUtil.dbIdWithUserId(DB_PREFIX.TAG, userId),
           userId,
           name: lowerName,
           description: data.description ?? null,

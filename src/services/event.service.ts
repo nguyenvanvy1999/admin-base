@@ -23,18 +23,11 @@ export class EventService {
     private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
   ) {}
 
-  private async validateEventOwnership(userId: string, eventId: string) {
-    const event = await this.deps.db.event.findFirst({
-      where: {
-        id: eventId,
-        userId,
-      },
-      select: EVENT_SELECT_MINIMAL,
-    });
-    if (!event) {
+  private validateEventOwnership(userId: string, eventId: string): void {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(eventId);
+    if (!extractedUserId || extractedUserId !== userId) {
       throwAppError(ErrorCode.EVENT_NOT_FOUND, 'Event not found');
     }
-    return event;
   }
 
   private async validateUniqueName(
@@ -63,7 +56,7 @@ export class EventService {
 
   async upsertEvent(userId: string, data: IUpsertEventDto) {
     if (data.id) {
-      await this.validateEventOwnership(userId, data.id);
+      this.validateEventOwnership(userId, data.id);
     }
 
     await this.validateUniqueName(userId, data.name, data.id);
@@ -87,7 +80,7 @@ export class EventService {
     } else {
       const event = await this.deps.db.event.create({
         data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.EVENT),
+          id: this.deps.idUtil.dbIdWithUserId(DB_PREFIX.EVENT, userId),
           userId,
           name: data.name,
           startAt,
