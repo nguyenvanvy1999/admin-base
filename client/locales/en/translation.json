@@ -68,7 +68,9 @@
     "passwordRequired": "Password is required",
     "passwordMinLength": "Password must be at least 6 characters",
     "confirmPasswordRequired": "Please confirm your password",
-    "passwordsDoNotMatch": "Passwords do not match"
+    "passwordsDoNotMatch": "Passwords do not match",
+    "baseCurrency": "Base Currency",
+    "baseCurrencyPlaceholder": "Select base currency"
   },
   "home": {
     "welcomeBack": "Welcome back, {{username}}!",

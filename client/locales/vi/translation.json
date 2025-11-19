@@ -68,7 +68,9 @@
     "passwordRequired": "Mật khẩu là bắt buộc",
     "passwordMinLength": "Mật khẩu phải có ít nhất 6 ký tự",
     "confirmPasswordRequired": "Vui lòng xác nhận mật khẩu",
-    "passwordsDoNotMatch": "Mật khẩu không khớp"
+    "passwordsDoNotMatch": "Mật khẩu không khớp",
+    "baseCurrency": "Tiền tệ cơ sở",
+    "baseCurrencyPlaceholder": "Chọn tiền tệ cơ sở"
   },
   "home": {
     "welcomeBack": "Chào mừng trở lại, {{username}}!",

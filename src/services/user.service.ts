@@ -77,6 +77,14 @@ export class UserService {
       throwAppError(ErrorCode.USER_ALREADY_EXISTS, 'User already exists');
     }
 
+    // Validate currency exists
+    const currencyExists = await this.deps.db.currency.count({
+      where: { id: data.baseCurrencyId },
+    });
+    if (currencyExists === 0) {
+      throwAppError(ErrorCode.CURRENCY_NOT_FOUND, 'Currency not found');
+    }
+
     const password = await this.deps.passwordService.createPassword(
       data.password,
     );
@@ -87,7 +95,7 @@ export class UserService {
           id: this.deps.idUtil.dbId(DB_PREFIX.USER),
           username: data.username,
           name: data.name,
-          baseCurrencyId: CURRENCY_IDS.VND,
+          baseCurrencyId: data.baseCurrencyId,
           ...password,
           roles: {
             create: {
@@ -246,22 +254,10 @@ export class UserService {
       throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
 
-    if (data.baseCurrencyId) {
-      const count = await this.deps.db.currency.count({
-        where: { id: data.baseCurrencyId },
-      });
-      if (count === 0) {
-        throwAppError(ErrorCode.CURRENCY_NOT_FOUND, 'Currency not found');
-      }
-    }
-
     const modifieda: UserUncheckedUpdateInput = {};
 
     if (data.name?.length) {
       modifieda.name = data.name;
-    }
-    if (data.baseCurrencyId) {
-      modifieda.baseCurrencyId = data.baseCurrencyId;
     }
 
     const updatedUser = await this.deps.db.user.update({

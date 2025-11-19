@@ -60,7 +60,7 @@ const UserTable = ({
         accessor: 'name',
         title: 'users.name',
         ellipsis: true,
-        render: (value, _row, _rowIndex) => {
+        render: (value) => {
           if (!value) {
             return <span className="text-gray-400">-</span>;
           }
@@ -72,17 +72,23 @@ const UserTable = ({
         title: 'users.role',
         accessor: (row: UserResponse) => row.roles || [],
         enableSorting: false,
-        render: (roles: UserResponse['roles'], _row, _rowIndex) => {
+        render: (roles: UserResponse['roles']) => {
           if (!roles || roles.length === 0) {
             return <span className="text-gray-400">-</span>;
           }
           return (
             <div className="flex flex-wrap gap-1">
-              {roles.map((role) => (
-                <Badge key={role.id} variant="light" color="blue">
-                  {role.title}
-                </Badge>
-              ))}
+              {roles.map((role) => {
+                if (!role || typeof role !== 'object') {
+                  return null;
+                }
+                const roleTitle = role.title || role.id || '';
+                return (
+                  <Badge key={role.id} variant="light" color="blue">
+                    {String(roleTitle)}
+                  </Badge>
+                );
+              })}
             </div>
           );
         },

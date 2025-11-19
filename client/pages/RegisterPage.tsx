@@ -1,8 +1,10 @@
 import { AuthFormContainer } from '@client/components/AuthFormContainer';
 import { AuthLayout } from '@client/components/AuthLayout';
 import { AuthSwitchLink } from '@client/components/AuthSwitchLink';
+import { Select } from '@client/components/Select';
 import { ZodFormController } from '@client/components/ZodFormController';
 import { useRegisterMutation } from '@client/hooks/mutations/useAuthMutations';
+import { useCurrenciesQuery } from '@client/hooks/queries/useCurrencyQueries';
 import { useZodForm } from '@client/hooks/useZodForm';
 import { Button, Loader, Stack, TextInput } from '@mantine/core';
 import { RegisterDto } from '@server/dto/user.dto';
@@ -21,6 +23,7 @@ const schema = RegisterDto.extend({
 const RegisterPage = () => {
   const { t } = useTranslation();
   const registerMutation = useRegisterMutation();
+  const { data: currencies = [] } = useCurrenciesQuery();
 
   const { control, handleSubmit } = useZodForm({
     zod: schema,
@@ -28,6 +31,7 @@ const RegisterPage = () => {
       username: '',
       password: '',
       confirmPassword: '',
+      baseCurrencyId: '',
     },
   });
 
@@ -35,6 +39,7 @@ const RegisterPage = () => {
     registerMutation.mutate({
       username: data.username,
       password: data.password,
+      baseCurrencyId: data.baseCurrencyId,
     });
   });
 
@@ -92,6 +97,25 @@ const RegisterPage = () => {
                   required
                   error={error}
                   {...field}
+                />
+              )}
+            />
+
+            <ZodFormController
+              control={control}
+              name="baseCurrencyId"
+              render={({ field, fieldState: { error } }) => (
+                <Select
+                  label={t('register.baseCurrency')}
+                  placeholder={t('register.baseCurrencyPlaceholder')}
+                  required
+                  error={error}
+                  items={currencies.map((currency) => ({
+                    value: currency.id,
+                    label: `${currency.symbol || ''} - ${currency.name} (${currency.code})`,
+                  }))}
+                  value={field.value || ''}
+                  onChange={field.onChange}
                 />
               )}
             />

@@ -10,6 +10,7 @@ type RegisterData = {
   username: string;
   password: string;
   name?: string;
+  baseCurrencyId: string;
 };
 
 export const useLoginMutation = () => {
@@ -49,6 +50,7 @@ export const useRegisterMutation = () => {
         username: data.username,
         password: data.password,
         name: data.name,
+        baseCurrencyId: data.baseCurrencyId,
       });
 
       return authService.login(data);

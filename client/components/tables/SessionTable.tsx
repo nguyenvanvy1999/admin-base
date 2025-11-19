@@ -98,7 +98,7 @@ const SessionTable = ({
       {
         accessor: 'device',
         title: 'sessions.device',
-        render: (value, _row, _rowIndex) => {
+        render: (value) => {
           if (!value) return <span className="text-gray-400">-</span>;
           return <span>{value}</span>;
         },
@@ -107,7 +107,7 @@ const SessionTable = ({
       {
         accessor: 'ip',
         title: 'sessions.ip',
-        render: (value, _row, _rowIndex) => {
+        render: (value) => {
           if (!value) return <span className="text-gray-400">-</span>;
           return <span>{value}</span>;
         },
@@ -116,8 +116,8 @@ const SessionTable = ({
       {
         id: 'status',
         title: 'sessions.statusLabel',
-        accessor: (row) => getSessionStatus(row).label, // Add an accessor for sorting/filtering if needed
-        render: (value, row, _rowIndex) => {
+        accessor: (row) => getSessionStatus(row).label,
+        render: (_value, row, _rowIndex) => {
           const status = getSessionStatus(row);
           return (
             <Badge color={status.color} variant="light">
@@ -132,7 +132,7 @@ const SessionTable = ({
       {
         accessor: 'created',
         title: 'sessions.created',
-        render: (value, _row, _rowIndex) => {
+        render: (value) => {
           if (!value) return <span className="text-gray-400">-</span>;
           return <span>{formatDate(value)}</span>;
         },
@@ -140,7 +140,7 @@ const SessionTable = ({
       {
         accessor: 'expired',
         title: 'sessions.expired',
-        render: (value, _row, _rowIndex) => {
+        render: (value) => {
           if (!value) return <span className="text-gray-400">-</span>;
           return <span>{formatDate(value)}</span>;
         },
