@@ -8,6 +8,7 @@ import {
   IconCash,
   IconCoin,
 } from '@tabler/icons-react';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -24,8 +25,8 @@ export const DebtStatistics = ({ onDateRangeChange }: DebtStatisticsProps) => {
     from: Date | null;
     to: Date | null;
   }>({
-    from: new Date(new Date().setDate(1)),
-    to: new Date(),
+    from: dayjs().startOf('month').toDate(),
+    to: dayjs().toDate(),
   });
 
   const { data } = useDebtStatistics(dateRange);

@@ -12,6 +12,7 @@ import {
   idUtil,
   throwAppError,
 } from '@server/share';
+import dayjs from 'dayjs';
 import Decimal from 'decimal.js';
 import type { IListGoalsQueryDto, IUpsertGoalDto } from '../dto/goal.dto';
 import {
@@ -117,8 +118,8 @@ export class GoalService {
           name: data.name,
           amount: data.amount,
           currencyId: data.currencyId,
-          startDate: new Date(data.startDate),
-          endDate: data.endDate ? new Date(data.endDate) : null,
+          startDate: dayjs(data.startDate).toDate(),
+          endDate: data.endDate ? dayjs(data.endDate).toDate() : null,
           goalAccounts: {
             deleteMany: {},
             create: data.accountIds.map((accountId) => ({
@@ -137,8 +138,8 @@ export class GoalService {
           name: data.name,
           amount: data.amount,
           currencyId: data.currencyId,
-          startDate: new Date(data.startDate),
-          endDate: data.endDate ? new Date(data.endDate) : null,
+          startDate: dayjs(data.startDate).toDate(),
+          endDate: data.endDate ? dayjs(data.endDate).toDate() : null,
           goalAccounts: {
             create: data.accountIds.map((accountId) => ({
               accountId,
@@ -206,13 +207,10 @@ export class GoalService {
     let averageDailyNeeded: string | null = null;
 
     if (goal.endDate) {
-      const endDate = new Date(goal.endDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      endDate.setHours(0, 0, 0, 0);
+      const endDate = dayjs(goal.endDate).startOf('day');
+      const today = dayjs().startOf('day');
 
-      const diffTime = endDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = Math.ceil(endDate.diff(today, 'day', true));
 
       if (diffDays > 0) {
         daysRemaining = diffDays;

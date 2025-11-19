@@ -14,6 +14,7 @@ import {
   idUtil,
   throwAppError,
 } from '@server/share';
+import dayjs from 'dayjs';
 import Decimal from 'decimal.js';
 import type {
   BatchTransactionsResponse,
@@ -164,8 +165,8 @@ class TransactionHandlerFactory {
       currencyId,
       fee: feeDecimal.toNumber(),
       feeInBaseCurrency: feeInBaseCurrency?.toNumber() ?? null,
-      date: new Date(data.date),
-      dueDate: data.dueDate ? new Date(data.dueDate) : null,
+      date: dayjs(data.date).toDate(),
+      dueDate: data.dueDate ? dayjs(data.dueDate).toDate() : null,
       note: data.note ?? null,
       receiptUrl: data.receiptUrl ?? null,
       metadata: (data.metadata ?? null) as any,
@@ -839,10 +840,10 @@ export class TransactionService {
     if (dateFrom || dateTo) {
       where.date = {};
       if (dateFrom) {
-        where.date.gte = new Date(dateFrom);
+        where.date.gte = dayjs(dateFrom).toDate();
       }
       if (dateTo) {
-        where.date.lte = new Date(dateTo);
+        where.date.lte = dayjs(dateTo).toDate();
       }
     }
 
@@ -1297,8 +1298,8 @@ export class TransactionService {
       to?: string;
     },
   ): Promise<Array<TransactionDetail & { remainingAmount: number }>> {
-    const dateFrom = query?.from ? new Date(query.from) : undefined;
-    const dateTo = query?.to ? new Date(query.to) : undefined;
+    const dateFrom = query?.from ? dayjs(query.from).toDate() : undefined;
+    const dateTo = query?.to ? dayjs(query.to).toDate() : undefined;
 
     const whereClause: TransactionWhereInput = {
       userId,

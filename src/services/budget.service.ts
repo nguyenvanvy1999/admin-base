@@ -14,6 +14,7 @@ import {
   idUtil,
   throwAppError,
 } from '@server/share';
+import dayjs from 'dayjs';
 import Decimal from 'decimal.js';
 import type {
   IBudgetPeriodQueryDto,
@@ -100,57 +101,41 @@ export class BudgetService {
     period: BudgetPeriod,
     currentStart: Date,
   ): Date {
-    const next = new Date(currentStart);
+    const next = dayjs(currentStart);
     switch (period) {
       case BudgetPeriod.daily:
-        next.setDate(next.getDate() + 1);
-        break;
+        return next.add(1, 'day').toDate();
       case BudgetPeriod.monthly:
-        next.setMonth(next.getMonth() + 1);
-        break;
+        return next.add(1, 'month').toDate();
       case BudgetPeriod.quarterly:
-        next.setMonth(next.getMonth() + 3);
-        break;
+        return next.add(3, 'month').toDate();
       case BudgetPeriod.yearly:
-        next.setFullYear(next.getFullYear() + 1);
-        break;
+        return next.add(1, 'year').toDate();
       case BudgetPeriod.none:
         throwAppError(
           ErrorCode.VALIDATION_ERROR,
           'Cannot calculate next period for none period type',
         );
     }
-    return next;
   }
 
   private calculatePeriodEnd(period: BudgetPeriod, periodStart: Date): Date {
-    const end = new Date(periodStart);
+    const end = dayjs(periodStart);
     switch (period) {
       case BudgetPeriod.daily:
-        end.setHours(23, 59, 59, 999);
-        break;
+        return end.endOf('day').toDate();
       case BudgetPeriod.monthly:
-        end.setMonth(end.getMonth() + 1);
-        end.setDate(0);
-        end.setHours(23, 59, 59, 999);
-        break;
+        return end.add(1, 'month').subtract(1, 'day').endOf('day').toDate();
       case BudgetPeriod.quarterly:
-        end.setMonth(end.getMonth() + 3);
-        end.setDate(0);
-        end.setHours(23, 59, 59, 999);
-        break;
+        return end.add(3, 'month').subtract(1, 'day').endOf('day').toDate();
       case BudgetPeriod.yearly:
-        end.setFullYear(end.getFullYear() + 1);
-        end.setMonth(0, 0);
-        end.setHours(23, 59, 59, 999);
-        break;
+        return end.add(1, 'year').subtract(1, 'day').endOf('day').toDate();
       case BudgetPeriod.none:
         throwAppError(
           ErrorCode.VALIDATION_ERROR,
           'Cannot calculate period end for none period type',
         );
     }
-    return end;
   }
 
   async calculatePeriodSpending(
@@ -260,8 +245,9 @@ export class BudgetService {
       budget.period,
       previousPeriodEnd,
     );
-    const previousPeriodEndDate = new Date(previousPeriodEnd);
-    previousPeriodEndDate.setHours(23, 59, 59, 999);
+    const previousPeriodEndDate = dayjs(previousPeriodEnd)
+      .endOf('day')
+      .toDate();
 
     const spent = await this.calculatePeriodSpending(
       userId,
@@ -281,33 +267,22 @@ export class BudgetService {
   }
 
   private calculatePeriodStart(period: BudgetPeriod, periodEnd: Date): Date {
-    const start = new Date(periodEnd);
+    const start = dayjs(periodEnd);
     switch (period) {
       case BudgetPeriod.daily:
-        start.setHours(0, 0, 0, 0);
-        break;
+        return start.startOf('day').toDate();
       case BudgetPeriod.monthly:
-        start.setMonth(start.getMonth() - 1);
-        start.setDate(1);
-        start.setHours(0, 0, 0, 0);
-        break;
+        return start.subtract(1, 'month').startOf('month').toDate();
       case BudgetPeriod.quarterly:
-        start.setMonth(start.getMonth() - 3);
-        start.setDate(1);
-        start.setHours(0, 0, 0, 0);
-        break;
+        return start.subtract(3, 'month').startOf('month').toDate();
       case BudgetPeriod.yearly:
-        start.setFullYear(start.getFullYear() - 1);
-        start.setMonth(0, 1);
-        start.setHours(0, 0, 0, 0);
-        break;
+        return start.subtract(1, 'year').startOf('year').toDate();
       case BudgetPeriod.none:
         throwAppError(
           ErrorCode.VALIDATION_ERROR,
           'Cannot calculate period start for none period type',
         );
     }
-    return start;
   }
 
   async upsertBudget(userId: string, data: IUpsertBudgetDto) {
@@ -328,8 +303,8 @@ export class BudgetService {
           name: data.name,
           amount: data.amount,
           period: data.period,
-          startDate: new Date(data.startDate),
-          endDate: data.endDate ? new Date(data.endDate) : null,
+          startDate: dayjs(data.startDate).toDate(),
+          endDate: data.endDate ? dayjs(data.endDate).toDate() : null,
           carryOver: data.carryOver,
           categories: {
             deleteMany: {},
@@ -355,8 +330,8 @@ export class BudgetService {
           name: data.name,
           amount: data.amount,
           period: data.period,
-          startDate: new Date(data.startDate),
-          endDate: data.endDate ? new Date(data.endDate) : null,
+          startDate: dayjs(data.startDate).toDate(),
+          endDate: data.endDate ? dayjs(data.endDate).toDate() : null,
           carryOver: data.carryOver,
           categories: {
             create: data.categoryIds.map((categoryId) => ({
@@ -505,13 +480,15 @@ export class BudgetService {
       return { periods: [] };
     }
 
-    const now = new Date();
-    const endDate = budget.endDate ? new Date(budget.endDate) : now;
-    const queryEndDate = query.endDate ? new Date(query.endDate) : endDate;
+    const now = dayjs().toDate();
+    const endDate = budget.endDate ? dayjs(budget.endDate).toDate() : now;
+    const queryEndDate = query.endDate
+      ? dayjs(query.endDate).toDate()
+      : endDate;
     const actualEndDate = queryEndDate < endDate ? queryEndDate : endDate;
 
     const queryStartDate = query.startDate
-      ? new Date(query.startDate)
+      ? dayjs(query.startDate).toDate()
       : budget.startDate;
     const actualStartDate =
       queryStartDate > budget.startDate ? queryStartDate : budget.startDate;
@@ -531,8 +508,7 @@ export class BudgetService {
       modified: string;
     }> = [];
 
-    let currentStart = new Date(actualStartDate);
-    currentStart.setHours(0, 0, 0, 0);
+    let currentStart = dayjs(actualStartDate).startOf('day').toDate();
 
     while (currentStart <= actualEndDate) {
       const periodEnd = this.calculatePeriodEnd(budget.period, currentStart);
@@ -553,10 +529,9 @@ export class BudgetService {
         carriedOverAmount = new Decimal(existingPeriod.carriedOverAmount);
       } else {
         if (currentStart > budget.startDate) {
-          const previousPeriodEnd = new Date(currentStart);
-          previousPeriodEnd.setMilliseconds(
-            previousPeriodEnd.getMilliseconds() - 1,
-          );
+          const previousPeriodEnd = dayjs(currentStart)
+            .subtract(1, 'millisecond')
+            .toDate();
           carriedOverAmount = await this.getCarryOverAmount(
             userId,
             budgetId,

@@ -12,6 +12,7 @@ import {
   throwAppError,
 } from '@server/share';
 import { validateUniqueNameForService } from '@server/share/utils/service.util';
+import dayjs from 'dayjs';
 import type { IListEventsQueryDto, IUpsertEventDto } from '../dto/event.dto';
 import { mapEvent } from './mappers';
 
@@ -67,8 +68,8 @@ export class EventService {
 
     await this.validateUniqueName(userId, data.name, data.id);
 
-    const startAt = new Date(data.startAt);
-    const endAt = data.endAt ? new Date(data.endAt) : null;
+    const startAt = dayjs(data.startAt).toDate();
+    const endAt = data.endAt ? dayjs(data.endAt).toDate() : null;
 
     this.validateDateRange(startAt, endAt);
 
@@ -141,20 +142,20 @@ export class EventService {
     if (startAtFrom || startAtTo) {
       where.startAt = {};
       if (startAtFrom) {
-        where.startAt.gte = new Date(startAtFrom);
+        where.startAt.gte = dayjs(startAtFrom).toDate();
       }
       if (startAtTo) {
-        where.startAt.lte = new Date(startAtTo);
+        where.startAt.lte = dayjs(startAtTo).toDate();
       }
     }
 
     if (endAtFrom || endAtTo) {
       where.endAt = {};
       if (endAtFrom) {
-        where.endAt.gte = new Date(endAtFrom);
+        where.endAt.gte = dayjs(endAtFrom).toDate();
       }
       if (endAtTo) {
-        where.endAt.lte = new Date(endAtTo);
+        where.endAt.lte = dayjs(endAtTo).toDate();
       }
     }
 

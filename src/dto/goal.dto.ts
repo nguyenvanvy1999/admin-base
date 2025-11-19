@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { t } from 'elysia';
 import { z } from 'zod';
 import { CurrencyDto, createListQueryDto, PaginationDto } from './common.dto';
@@ -15,7 +16,7 @@ export const UpsertGoalDto = z
   .refine(
     (data) => {
       if (data.endDate) {
-        return new Date(data.endDate) > new Date(data.startDate);
+        return dayjs(data.endDate).isAfter(dayjs(data.startDate));
       }
       return true;
     },
