@@ -1,16 +1,11 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type {
   TagOrderByWithRelationInput,
   TagWhereInput,
 } from '@server/generated';
-import {
-  DB_PREFIX,
-  ErrorCode,
-  type IdUtil,
-  idUtil,
-  throwAppError,
-} from '@server/share';
+import { DB_PREFIX, ErrorCode, idUtil, throwAppError } from '@server/share';
+import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { calculatePagination } from '@server/share/utils/pagination.util';
 import { validateUniqueNameForService } from '@server/share/utils/service.util';
 import type {
   IListTagsQueryDto,
@@ -18,20 +13,15 @@ import type {
   TagListResponse,
   TagResponse,
 } from '../dto/tag.dto';
+import { BaseService } from './base/base.service';
+import type { BaseServiceDependencies } from './base/service-dependencies';
 import { mapTag } from './mappers';
 
 import { TAG_SELECT_FULL, TAG_SELECT_MINIMAL } from './selects';
 
-export class TagService {
-  constructor(
-    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
-  ) {}
-
-  private validateTagOwnership(userId: string, tagId: string): void {
-    const extractedUserId = this.deps.idUtil.extractUserIdFromId(tagId);
-    if (!extractedUserId || extractedUserId !== userId) {
-      throwAppError(ErrorCode.TAG_NOT_FOUND, 'Tag not found');
-    }
+export class TagService extends BaseService {
+  constructor(deps: BaseServiceDependencies = { db: prisma, idUtil }) {
+    super(deps);
   }
 
   private async validateUniqueName(
@@ -40,7 +30,7 @@ export class TagService {
     excludeId?: string,
   ) {
     await validateUniqueNameForService({
-      count: (args) => this.deps.db.tag.count(args),
+      count: (args) => this.db.tag.count(args),
       errorCode: ErrorCode.DUPLICATE_NAME,
       errorMessage: 'Tag name already exists',
       userId,
@@ -52,14 +42,19 @@ export class TagService {
 
   async upsertTag(userId: string, data: IUpsertTagDto): Promise<TagResponse> {
     if (data.id) {
-      this.validateTagOwnership(userId, data.id);
+      this.validateOwnership(
+        userId,
+        data.id,
+        ErrorCode.TAG_NOT_FOUND,
+        'Tag not found',
+      );
     }
 
     const lowerName = data.name.toLowerCase().trim();
     await this.validateUniqueName(userId, lowerName, data.id);
 
     if (data.id) {
-      const tag = await this.deps.db.tag.update({
+      const tag = await this.db.tag.update({
         where: { id: data.id },
         data: {
           name: lowerName,
@@ -69,9 +64,9 @@ export class TagService {
       });
       return mapTag(tag);
     } else {
-      const tag = await this.deps.db.tag.create({
+      const tag = await this.db.tag.create({
         data: {
-          id: this.deps.idUtil.dbIdWithUserId(DB_PREFIX.TAG, userId),
+          id: this.idUtil.dbIdWithUserId(DB_PREFIX.TAG, userId),
           userId,
           name: lowerName,
           description: data.description ?? null,
@@ -83,7 +78,7 @@ export class TagService {
   }
 
   async getTag(userId: string, tagId: string): Promise<TagResponse> {
-    const tag = await this.deps.db.tag.findFirst({
+    const tag = await this.db.tag.findFirst({
       where: {
         id: tagId,
         userId,
@@ -121,64 +116,46 @@ export class TagService {
       };
     }
 
-    const orderBy: TagOrderByWithRelationInput = {};
-    if (sortBy === 'name') {
-      orderBy.name = sortOrder;
-    } else if (sortBy === 'created') {
-      orderBy.created = sortOrder;
-    }
+    const orderBy = this.buildOrderBy<TagOrderByWithRelationInput>(
+      sortBy,
+      sortOrder,
+      {
+        name: 'name',
+        created: 'created',
+      },
+    ) as TagOrderByWithRelationInput | undefined;
 
-    const skip = (page - 1) * limit;
+    const { skip, take } = calculatePagination(page, limit);
 
     const [tags, total] = await Promise.all([
-      this.deps.db.tag.findMany({
+      this.db.tag.findMany({
         where,
         orderBy,
         skip,
-        take: limit,
+        take,
         select: TAG_SELECT_FULL,
       }),
-      this.deps.db.tag.count({ where }),
+      this.db.tag.count({ where }),
     ]);
 
     return {
       tags: tags.map(mapTag),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: this.buildPaginationResponse(page, limit, total, [])
+        .pagination,
     };
   }
 
   async deleteManyTags(userId: string, ids: string[]) {
-    const tags = await this.deps.db.tag.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: TAG_SELECT_MINIMAL,
+    return await deleteManyResources({
+      db: this.db,
+      model: 'tag',
+      userId,
+      ids,
+      selectMinimal: TAG_SELECT_MINIMAL,
+      errorCode: ErrorCode.TAG_NOT_FOUND,
+      errorMessage: 'Some tags were not found or do not belong to you',
+      resourceName: 'tag',
     });
-
-    if (tags.length !== ids.length) {
-      throwAppError(
-        ErrorCode.TAG_NOT_FOUND,
-        'Some tags were not found or do not belong to you',
-      );
-    }
-
-    await this.deps.db.tag.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-    });
-
-    return {
-      success: true,
-      message: `${ids.length} tag(s) deleted successfully`,
-    };
   }
 }
 

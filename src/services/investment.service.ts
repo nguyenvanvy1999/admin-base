@@ -1,14 +1,9 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { InvestmentWhereInput } from '@server/generated';
 import { type InvestmentAssetType, InvestmentMode } from '@server/generated';
-import {
-  DB_PREFIX,
-  ErrorCode,
-  type IdUtil,
-  idUtil,
-  throwAppError,
-} from '@server/share';
+import { DB_PREFIX, ErrorCode, idUtil, throwAppError } from '@server/share';
+import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { calculatePagination } from '@server/share/utils/pagination.util';
 import type {
   IListInvestmentsQueryDto,
   InvestmentLatestValuationResponse,
@@ -17,6 +12,8 @@ import type {
 } from '../dto/investment.dto';
 import type { ICreateInvestmentTradeDto } from '../dto/trade.dto';
 import type { IUpsertInvestmentValuationDto } from '../dto/valuation.dto';
+import { BaseService } from './base/base.service';
+import type { BaseServiceDependencies } from './base/service-dependencies';
 import { INVESTMENT_SELECT_FULL } from './selects';
 
 const serializeInvestment = (investment: {
@@ -50,19 +47,13 @@ const serializeInvestment = (investment: {
   modified: investment.modified.toISOString(),
 });
 
-export class InvestmentService {
-  constructor(
-    private readonly deps: {
-      db: IDb;
-      idUtil: IdUtil;
-    } = {
-      db: prisma,
-      idUtil,
-    },
-  ) {}
+export class InvestmentService extends BaseService {
+  constructor(deps: BaseServiceDependencies = { db: prisma, idUtil }) {
+    super(deps);
+  }
 
   private async ensureCurrency(currencyId: string) {
-    const exists = await this.deps.db.currency.findUnique({
+    const exists = await this.db.currency.findUnique({
       where: { id: currencyId },
       select: { id: true },
     });
@@ -71,20 +62,15 @@ export class InvestmentService {
     }
   }
 
-  private validateInvestmentOwnership(
-    userId: string,
-    investmentId: string,
-  ): void {
-    const extractedUserId = this.deps.idUtil.extractUserIdFromId(investmentId);
-    if (!extractedUserId || extractedUserId !== userId) {
-      throwAppError(ErrorCode.INVESTMENT_NOT_FOUND, 'Investment not found');
-    }
-  }
-
   async ensureInvestment(userId: string, investmentId: string) {
-    this.validateInvestmentOwnership(userId, investmentId);
+    this.validateOwnership(
+      userId,
+      investmentId,
+      ErrorCode.INVESTMENT_NOT_FOUND,
+      'Investment not found',
+    );
 
-    const investment = await this.deps.db.investment.findFirst({
+    const investment = await this.db.investment.findFirst({
       where: {
         id: investmentId,
         userId,
@@ -117,7 +103,7 @@ export class InvestmentService {
 
     if (data.id) {
       const investment = await this.ensureInvestment(userId, data.id);
-      const updated = await this.deps.db.investment.update({
+      const updated = await this.db.investment.update({
         where: { id: investment.id },
         data: payload,
         select: INVESTMENT_SELECT_FULL,
@@ -125,9 +111,9 @@ export class InvestmentService {
       return serializeInvestment(updated);
     }
 
-    const created = await this.deps.db.investment.create({
+    const created = await this.db.investment.create({
       data: {
-        id: this.deps.idUtil.dbIdWithUserId(DB_PREFIX.INVESTMENT, userId),
+        id: this.idUtil.dbIdWithUserId(DB_PREFIX.INVESTMENT, userId),
         ...payload,
         userId,
       },
@@ -168,34 +154,29 @@ export class InvestmentService {
         : {}),
     };
 
-    const orderBy =
-      sortBy === 'name'
-        ? { name: sortOrder }
-        : sortBy === 'modified'
-          ? { modified: sortOrder }
-          : { created: sortOrder };
+    const orderBy = this.buildOrderBy(sortBy, sortOrder, {
+      name: 'name',
+      modified: 'modified',
+      created: 'created',
+    }) || { created: sortOrder };
 
-    const skip = (page - 1) * limit;
+    const { skip, take } = calculatePagination(page, limit);
 
     const [items, total] = await Promise.all([
-      this.deps.db.investment.findMany({
+      this.db.investment.findMany({
         where,
         orderBy,
         skip,
-        take: limit,
+        take,
         select: INVESTMENT_SELECT_FULL,
       }),
-      this.deps.db.investment.count({ where }),
+      this.db.investment.count({ where }),
     ]);
 
     return {
       investments: items.map((investment) => serializeInvestment(investment)),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: this.buildPaginationResponse(page, limit, total, [])
+        .pagination,
     };
   }
 
@@ -205,7 +186,7 @@ export class InvestmentService {
   }
 
   getLatestValuation(userId: string, investmentId: string) {
-    return this.deps.db.investmentValuation
+    return this.db.investmentValuation
       .findFirst({
         where: {
           userId,
@@ -270,7 +251,7 @@ export class InvestmentService {
       );
     }
 
-    const account = await this.deps.db.account.findFirst({
+    const account = await this.db.account.findFirst({
       where: { id: data.accountId, userId },
       select: { id: true, currencyId: true },
     });
@@ -309,32 +290,16 @@ export class InvestmentService {
   }
 
   async deleteManyInvestments(userId: string, ids: string[]) {
-    const investments = await this.deps.db.investment.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: INVESTMENT_SELECT_FULL,
+    return await deleteManyResources({
+      db: this.db,
+      model: 'investment',
+      userId,
+      ids,
+      selectMinimal: { id: true },
+      errorCode: ErrorCode.INVESTMENT_NOT_FOUND,
+      errorMessage: 'Some investments were not found or do not belong to you',
+      resourceName: 'investment',
     });
-
-    if (investments.length !== ids.length) {
-      throwAppError(
-        ErrorCode.INVESTMENT_NOT_FOUND,
-        'Some investments were not found or do not belong to you',
-      );
-    }
-
-    await this.deps.db.investment.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-    });
-
-    return {
-      success: true,
-      message: `${ids.length} investment(s) deleted successfully`,
-    };
   }
 }
 

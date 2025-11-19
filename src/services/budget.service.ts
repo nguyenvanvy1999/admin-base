@@ -1,4 +1,3 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type {
   BudgetOrderByWithRelationInput,
@@ -10,10 +9,11 @@ import {
   dateToIsoString,
   decimalToString,
   ErrorCode,
-  type IdUtil,
   idUtil,
   throwAppError,
 } from '@server/share';
+import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { calculatePagination } from '@server/share/utils/pagination.util';
 import dayjs from 'dayjs';
 import Decimal from 'decimal.js';
 import type {
@@ -21,6 +21,8 @@ import type {
   IListBudgetsQueryDto,
   IUpsertBudgetDto,
 } from '../dto/budget.dto';
+import { BaseService } from './base/base.service';
+import type { BaseServiceDependencies } from './base/service-dependencies';
 import {
   type CurrencyConversionService,
   currencyConversionService,
@@ -29,21 +31,26 @@ import { mapBudget } from './mappers';
 
 import { BUDGET_SELECT_FULL, BUDGET_SELECT_MINIMAL } from './selects';
 
-export class BudgetService {
+interface BudgetServiceDependencies extends BaseServiceDependencies {
+  currencyConversionService: CurrencyConversionService;
+}
+
+export class BudgetService extends BaseService {
+  private readonly currencyConversionService: CurrencyConversionService;
+
   constructor(
-    private readonly deps: {
-      db: IDb;
-      currencyConversionService: CurrencyConversionService;
-      idUtil: IdUtil;
-    } = {
+    deps: BudgetServiceDependencies = {
       db: prisma,
-      currencyConversionService: currencyConversionService,
       idUtil,
+      currencyConversionService: currencyConversionService,
     },
-  ) {}
+  ) {
+    super(deps);
+    this.currencyConversionService = deps.currencyConversionService;
+  }
 
   private async getUserBaseCurrencyId(userId: string): Promise<string> {
-    const user = await this.deps.db.user.findUnique({
+    const user = await this.db.user.findUnique({
       where: { id: userId },
       select: { baseCurrencyId: true },
     });
@@ -53,27 +60,20 @@ export class BudgetService {
     return user.baseCurrencyId;
   }
 
-  private validateBudgetOwnership(userId: string, budgetId: string): void {
-    const extractedUserId = this.deps.idUtil.extractUserIdFromId(budgetId);
-    if (!extractedUserId || extractedUserId !== userId) {
-      throwAppError(ErrorCode.BUDGET_NOT_FOUND, 'Budget not found');
-    }
-  }
-
   private async validateAccountsAndCategories(
     userId: string,
     accountIds: string[],
     categoryIds: string[],
   ) {
     const [accounts, categories] = await Promise.all([
-      this.deps.db.account.findMany({
+      this.db.account.findMany({
         where: {
           id: { in: accountIds },
           userId,
         },
         select: { id: true },
       }),
-      this.deps.db.category.findMany({
+      this.db.category.findMany({
         where: {
           id: { in: categoryIds },
           userId,
@@ -137,7 +137,7 @@ export class BudgetService {
     periodStart: Date,
     periodEnd: Date,
   ): Promise<Decimal> {
-    const budget = await this.deps.db.budget.findFirst({
+    const budget = await this.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,
@@ -156,7 +156,7 @@ export class BudgetService {
     const categoryIds = budget.categories.map((c) => c.categoryId);
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
 
-    const transactions = await this.deps.db.transaction.findMany({
+    const transactions = await this.db.transaction.findMany({
       where: {
         userId,
 
@@ -187,7 +187,7 @@ export class BudgetService {
         amountInBase = new Decimal(transaction.priceInBaseCurrency);
       } else {
         amountInBase =
-          await this.deps.currencyConversionService.convertToBaseCurrency(
+          await this.currencyConversionService.convertToBaseCurrency(
             transaction.amount,
             transaction.currencyId,
             baseCurrencyId,
@@ -203,7 +203,7 @@ export class BudgetService {
           feeInBase = new Decimal(transaction.feeInBaseCurrency);
         } else {
           feeInBase =
-            await this.deps.currencyConversionService.convertToBaseCurrency(
+            await this.currencyConversionService.convertToBaseCurrency(
               transaction.fee,
               transaction.currencyId,
               baseCurrencyId,
@@ -222,7 +222,7 @@ export class BudgetService {
     budgetId: string,
     previousPeriodEnd: Date,
   ): Promise<Decimal> {
-    const budget = await this.deps.db.budget.findFirst({
+    const budget = await this.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,
@@ -280,7 +280,12 @@ export class BudgetService {
 
   async upsertBudget(userId: string, data: IUpsertBudgetDto) {
     if (data.id) {
-      this.validateBudgetOwnership(userId, data.id);
+      this.validateOwnership(
+        userId,
+        data.id,
+        ErrorCode.BUDGET_NOT_FOUND,
+        'Budget not found',
+      );
     }
 
     await this.validateAccountsAndCategories(
@@ -290,7 +295,7 @@ export class BudgetService {
     );
 
     if (data.id) {
-      const budget = await this.deps.db.budget.update({
+      const budget = await this.db.budget.update({
         where: { id: data.id },
         data: {
           name: data.name,
@@ -316,9 +321,9 @@ export class BudgetService {
       });
       return mapBudget(budget);
     } else {
-      const budget = await this.deps.db.budget.create({
+      const budget = await this.db.budget.create({
         data: {
-          id: this.deps.idUtil.dbIdWithUserId(DB_PREFIX.BUDGET, userId),
+          id: this.idUtil.dbIdWithUserId(DB_PREFIX.BUDGET, userId),
           userId,
           name: data.name,
           amount: data.amount,
@@ -344,7 +349,7 @@ export class BudgetService {
   }
 
   async getBudget(userId: string, budgetId: string) {
-    const budget = await this.deps.db.budget.findFirst({
+    const budget = await this.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,
@@ -385,69 +390,48 @@ export class BudgetService {
     }
 
     const orderBy: BudgetOrderByWithRelationInput = {};
-    if (sortBy === 'name') {
-      orderBy.name = sortOrder;
-    } else if (sortBy === 'amount') {
-      orderBy.amount = sortOrder;
-    } else if (sortBy === 'period') {
-      orderBy.period = sortOrder;
-    } else if (sortBy === 'startDate') {
-      orderBy.startDate = sortOrder;
-    } else if (sortBy === 'created') {
-      orderBy.created = sortOrder;
+    const orderByResult = this.buildOrderBy(sortBy, sortOrder, {
+      name: 'name',
+      amount: 'amount',
+      period: 'period',
+      startDate: 'startDate',
+      created: 'created',
+    });
+    if (orderByResult) {
+      Object.assign(orderBy, orderByResult);
     }
 
-    const skip = (page - 1) * limit;
+    const { skip, take } = calculatePagination(page, limit);
 
     const [budgets, total] = await Promise.all([
-      this.deps.db.budget.findMany({
+      this.db.budget.findMany({
         where,
         orderBy,
         skip,
-        take: limit,
+        take,
         select: BUDGET_SELECT_FULL,
       }),
-      this.deps.db.budget.count({ where }),
+      this.db.budget.count({ where }),
     ]);
 
     return {
       budgets: budgets.map((budget) => mapBudget(budget)),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: this.buildPaginationResponse(page, limit, total, [])
+        .pagination,
     };
   }
 
   async deleteManyBudgets(userId: string, ids: string[]) {
-    const budgets = await this.deps.db.budget.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: BUDGET_SELECT_MINIMAL,
+    return await deleteManyResources({
+      db: this.db,
+      model: 'budget',
+      userId,
+      ids,
+      selectMinimal: BUDGET_SELECT_MINIMAL,
+      errorCode: ErrorCode.BUDGET_NOT_FOUND,
+      errorMessage: 'Some budgets were not found or do not belong to you',
+      resourceName: 'budget',
     });
-
-    if (budgets.length !== ids.length) {
-      throwAppError(
-        ErrorCode.BUDGET_NOT_FOUND,
-        'Some budgets were not found or do not belong to you',
-      );
-    }
-
-    await this.deps.db.budget.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-    });
-
-    return {
-      success: true,
-      message: `${ids.length} budget(s) deleted successfully`,
-    };
   }
 
   async getBudgetPeriods(
@@ -455,9 +439,14 @@ export class BudgetService {
     budgetId: string,
     query: IBudgetPeriodQueryDto = {},
   ) {
-    this.validateBudgetOwnership(userId, budgetId);
+    this.validateOwnership(
+      userId,
+      budgetId,
+      ErrorCode.BUDGET_NOT_FOUND,
+      'Budget not found',
+    );
 
-    const budget = await this.deps.db.budget.findFirst({
+    const budget = await this.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,
@@ -508,7 +497,7 @@ export class BudgetService {
       const periodEndDate =
         periodEnd < actualEndDate ? periodEnd : actualEndDate;
 
-      let existingPeriod = await this.deps.db.budgetPeriodRecord.findUnique({
+      let existingPeriod = await this.db.budgetPeriodRecord.findUnique({
         where: {
           budget_period_unique: {
             budgetId,
@@ -533,12 +522,9 @@ export class BudgetService {
         }
 
         // Always create a period record if it doesn't exist
-        existingPeriod = await this.deps.db.budgetPeriodRecord.create({
+        existingPeriod = await this.db.budgetPeriodRecord.create({
           data: {
-            id: this.deps.idUtil.dbIdWithUserId(
-              DB_PREFIX.BUDGET_PERIOD,
-              userId,
-            ),
+            id: this.idUtil.dbIdWithUserId(DB_PREFIX.BUDGET_PERIOD, userId),
             budgetId,
             periodStartDate: currentStart,
             periodEndDate,
@@ -585,9 +571,14 @@ export class BudgetService {
     budgetId: string,
     periodId: string,
   ) {
-    this.validateBudgetOwnership(userId, budgetId);
+    this.validateOwnership(
+      userId,
+      budgetId,
+      ErrorCode.BUDGET_NOT_FOUND,
+      'Budget not found',
+    );
 
-    const period = await this.deps.db.budgetPeriodRecord.findFirst({
+    const period = await this.db.budgetPeriodRecord.findFirst({
       where: {
         id: periodId,
         budgetId,
@@ -601,7 +592,7 @@ export class BudgetService {
       );
     }
 
-    const budget = await this.deps.db.budget.findFirst({
+    const budget = await this.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,

@@ -1,4 +1,3 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type {
   GoalOrderByWithRelationInput,
@@ -8,13 +7,16 @@ import {
   DB_PREFIX,
   decimalToString,
   ErrorCode,
-  type IdUtil,
   idUtil,
   throwAppError,
 } from '@server/share';
+import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { calculatePagination } from '@server/share/utils/pagination.util';
 import dayjs from 'dayjs';
 import Decimal from 'decimal.js';
 import type { IListGoalsQueryDto, IUpsertGoalDto } from '../dto/goal.dto';
+import { BaseService } from './base/base.service';
+import type { BaseServiceDependencies } from './base/service-dependencies';
 import {
   type CurrencyConversionService,
   currencyConversionService,
@@ -26,28 +28,26 @@ import {
   GOAL_SELECT_MINIMAL,
 } from './selects';
 
-export class GoalService {
-  constructor(
-    private readonly deps: {
-      db: IDb;
-      currencyConversionService: CurrencyConversionService;
-      idUtil: IdUtil;
-    } = {
-      db: prisma,
-      currencyConversionService: currencyConversionService,
-      idUtil,
-    },
-  ) {}
+interface GoalServiceDependencies extends BaseServiceDependencies {
+  currencyConversionService: CurrencyConversionService;
+}
 
-  private validateGoalOwnership(userId: string, goalId: string): void {
-    const extractedUserId = this.deps.idUtil.extractUserIdFromId(goalId);
-    if (!extractedUserId || extractedUserId !== userId) {
-      throwAppError(ErrorCode.GOAL_NOT_FOUND, 'Goal not found');
-    }
+export class GoalService extends BaseService {
+  private readonly currencyConversionService: CurrencyConversionService;
+
+  constructor(
+    deps: GoalServiceDependencies = {
+      db: prisma,
+      idUtil,
+      currencyConversionService: currencyConversionService,
+    },
+  ) {
+    super(deps);
+    this.currencyConversionService = deps.currencyConversionService;
   }
 
   private async validateAccounts(userId: string, accountIds: string[]) {
-    const accounts = await this.deps.db.account.findMany({
+    const accounts = await this.db.account.findMany({
       where: {
         id: { in: accountIds },
         userId,
@@ -65,7 +65,7 @@ export class GoalService {
     accountIds: string[],
     goalCurrencyId: string,
   ): Promise<Decimal> {
-    const accounts = await this.deps.db.account.findMany({
+    const accounts = await this.db.account.findMany({
       where: {
         id: { in: accountIds },
         userId,
@@ -85,7 +85,7 @@ export class GoalService {
         balanceInGoalCurrency = new Decimal(account.balance);
       } else {
         balanceInGoalCurrency =
-          await this.deps.currencyConversionService.convertToBaseCurrency(
+          await this.currencyConversionService.convertToBaseCurrency(
             account.balance,
             account.currencyId,
             goalCurrencyId,
@@ -99,13 +99,18 @@ export class GoalService {
 
   async upsertGoal(userId: string, data: IUpsertGoalDto) {
     if (data.id) {
-      this.validateGoalOwnership(userId, data.id);
+      this.validateOwnership(
+        userId,
+        data.id,
+        ErrorCode.GOAL_NOT_FOUND,
+        'Goal not found',
+      );
     }
 
     await this.validateAccounts(userId, data.accountIds);
 
     if (data.id) {
-      const goal = await this.deps.db.goal.update({
+      const goal = await this.db.goal.update({
         where: { id: data.id },
         data: {
           name: data.name,
@@ -124,9 +129,9 @@ export class GoalService {
       });
       return mapGoal(goal);
     } else {
-      const goal = await this.deps.db.goal.create({
+      const goal = await this.db.goal.create({
         data: {
-          id: this.deps.idUtil.dbIdWithUserId(DB_PREFIX.GOAL, userId),
+          id: this.idUtil.dbIdWithUserId(DB_PREFIX.GOAL, userId),
           userId,
           name: data.name,
           amount: data.amount,
@@ -146,7 +151,7 @@ export class GoalService {
   }
 
   async getGoal(userId: string, goalId: string) {
-    const goal = await this.deps.db.goal.findFirst({
+    const goal = await this.db.goal.findFirst({
       where: {
         id: goalId,
         userId,
@@ -162,7 +167,7 @@ export class GoalService {
   }
 
   async getGoalDetail(userId: string, goalId: string) {
-    const goal = await this.deps.db.goal.findFirst({
+    const goal = await this.db.goal.findFirst({
       where: {
         id: goalId,
         userId,
@@ -272,70 +277,49 @@ export class GoalService {
       };
     }
 
-    const orderBy: GoalOrderByWithRelationInput = {};
-    if (sortBy === 'name') {
-      orderBy.name = sortOrder;
-    } else if (sortBy === 'amount') {
-      orderBy.amount = sortOrder;
-    } else if (sortBy === 'startDate') {
-      orderBy.startDate = sortOrder;
-    } else if (sortBy === 'endDate') {
-      orderBy.endDate = sortOrder;
-    } else if (sortBy === 'created') {
-      orderBy.created = sortOrder;
-    }
+    const orderBy = this.buildOrderBy<GoalOrderByWithRelationInput>(
+      sortBy,
+      sortOrder,
+      {
+        name: 'name',
+        amount: 'amount',
+        startDate: 'startDate',
+        endDate: 'endDate',
+        created: 'created',
+      },
+    ) as GoalOrderByWithRelationInput | undefined;
 
-    const skip = (page - 1) * limit;
+    const { skip, take } = calculatePagination(page, limit);
 
     const [goals, total] = await Promise.all([
-      this.deps.db.goal.findMany({
+      this.db.goal.findMany({
         where,
         orderBy,
         skip,
-        take: limit,
+        take,
         select: GOAL_SELECT_FULL,
       }),
-      this.deps.db.goal.count({ where }),
+      this.db.goal.count({ where }),
     ]);
 
     return {
       goals: goals.map((goal) => mapGoal(goal)),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: this.buildPaginationResponse(page, limit, total, [])
+        .pagination,
     };
   }
 
   async deleteManyGoals(userId: string, ids: string[]) {
-    const goals = await this.deps.db.goal.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: GOAL_SELECT_MINIMAL,
+    return await deleteManyResources({
+      db: this.db,
+      model: 'goal',
+      userId,
+      ids,
+      selectMinimal: GOAL_SELECT_MINIMAL,
+      errorCode: ErrorCode.GOAL_NOT_FOUND,
+      errorMessage: 'Some goals were not found or do not belong to you',
+      resourceName: 'goal',
     });
-
-    if (goals.length !== ids.length) {
-      throwAppError(
-        ErrorCode.BUDGET_NOT_FOUND,
-        'Some goals were not found or do not belong to you',
-      );
-    }
-
-    await this.deps.db.goal.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-    });
-
-    return {
-      success: true,
-      message: `${ids.length} goal(s) deleted successfully`,
-    };
   }
 }
 

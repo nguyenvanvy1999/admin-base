@@ -56,6 +56,7 @@ class TransactionHandlerFactory {
       db: IDb;
       balanceService: AccountBalanceService;
       currencyConverter: CurrencyConversionService;
+      categoryService: CategoryService;
       idUtil: IdUtil;
     },
   ) {}
@@ -179,8 +180,7 @@ class TransactionHandlerFactory {
 
       case TransactionType.transfer: {
         const transferData = data as ITransferTransaction;
-        const categoryService = new CategoryService();
-        const transferCategoryId = categoryService.getCategoryId(
+        const transferCategoryId = this.deps.categoryService.getCategoryId(
           userId,
           CATEGORY_NAME.TRANSFER,
         );
@@ -709,6 +709,7 @@ export class TransactionService {
       db: this.deps.db,
       balanceService: this.deps.accountBalanceService,
       currencyConverter: this.deps.currencyConversionService,
+      categoryService: this.deps.categoryService,
       idUtil: this.deps.idUtil,
     });
   }

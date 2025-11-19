@@ -1,35 +1,25 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type {
   EntityOrderByWithRelationInput,
   EntityWhereInput,
 } from '@server/generated';
-import {
-  DB_PREFIX,
-  ErrorCode,
-  type IdUtil,
-  idUtil,
-  throwAppError,
-} from '@server/share';
+import { DB_PREFIX, ErrorCode, idUtil, throwAppError } from '@server/share';
+import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { calculatePagination } from '@server/share/utils/pagination.util';
 import { validateUniqueNameForService } from '@server/share/utils/service.util';
 import type {
   IListEntitiesQueryDto,
   IUpsertEntityDto,
 } from '../dto/entity.dto';
+import { BaseService } from './base/base.service';
+import type { BaseServiceDependencies } from './base/service-dependencies';
 import { mapEntity } from './mappers';
 
 import { ENTITY_SELECT_FULL, ENTITY_SELECT_MINIMAL } from './selects';
 
-export class EntityService {
-  constructor(
-    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
-  ) {}
-
-  private validateEntityOwnership(userId: string, entityId: string): void {
-    const extractedUserId = this.deps.idUtil.extractUserIdFromId(entityId);
-    if (!extractedUserId || extractedUserId !== userId) {
-      throwAppError(ErrorCode.ENTITY_NOT_FOUND, 'Entity not found');
-    }
+export class EntityService extends BaseService {
+  constructor(deps: BaseServiceDependencies = { db: prisma, idUtil }) {
+    super(deps);
   }
 
   private async validateUniqueName(
@@ -38,7 +28,7 @@ export class EntityService {
     excludeId?: string,
   ) {
     await validateUniqueNameForService({
-      count: (args) => this.deps.db.entity.count(args),
+      count: (args) => this.db.entity.count(args),
       errorCode: ErrorCode.DUPLICATE_NAME,
       errorMessage: 'Entity name already exists',
       userId,
@@ -49,13 +39,18 @@ export class EntityService {
 
   async upsertEntity(userId: string, data: IUpsertEntityDto) {
     if (data.id) {
-      this.validateEntityOwnership(userId, data.id);
+      this.validateOwnership(
+        userId,
+        data.id,
+        ErrorCode.ENTITY_NOT_FOUND,
+        'Entity not found',
+      );
     }
 
     await this.validateUniqueName(userId, data.name, data.id);
 
     if (data.id) {
-      const entity = await this.deps.db.entity.update({
+      const entity = await this.db.entity.update({
         where: { id: data.id },
         data: {
           name: data.name,
@@ -69,9 +64,9 @@ export class EntityService {
       });
       return mapEntity(entity);
     } else {
-      const entity = await this.deps.db.entity.create({
+      const entity = await this.db.entity.create({
         data: {
-          id: this.deps.idUtil.dbIdWithUserId(DB_PREFIX.ENTITY, userId),
+          id: this.idUtil.dbIdWithUserId(DB_PREFIX.ENTITY, userId),
           userId,
           name: data.name,
           type: data.type,
@@ -87,7 +82,7 @@ export class EntityService {
   }
 
   async getEntity(userId: string, entityId: string) {
-    const entity = await this.deps.db.entity.findFirst({
+    const entity = await this.db.entity.findFirst({
       where: {
         id: entityId,
         userId,
@@ -120,66 +115,47 @@ export class EntityService {
       };
     }
 
-    const orderBy: EntityOrderByWithRelationInput = {};
-    if (sortBy === 'name') {
-      orderBy.name = sortOrder;
-    } else if (sortBy === 'type') {
-      orderBy.type = sortOrder;
-    } else if (sortBy === 'created') {
-      orderBy.created = sortOrder;
-    }
+    const orderBy = this.buildOrderBy<EntityOrderByWithRelationInput>(
+      sortBy,
+      sortOrder,
+      {
+        name: 'name',
+        type: 'type',
+        created: 'created',
+      },
+    ) as EntityOrderByWithRelationInput | undefined;
 
-    const skip = (page - 1) * limit;
+    const { skip, take } = calculatePagination(page, limit);
 
     const [entities, total] = await Promise.all([
-      this.deps.db.entity.findMany({
+      this.db.entity.findMany({
         where,
         orderBy,
         skip,
-        take: limit,
+        take,
         select: ENTITY_SELECT_FULL,
       }),
-      this.deps.db.entity.count({ where }),
+      this.db.entity.count({ where }),
     ]);
 
     return {
       entities: entities.map(mapEntity),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: this.buildPaginationResponse(page, limit, total, [])
+        .pagination,
     };
   }
 
   async deleteManyEntities(userId: string, ids: string[]) {
-    const entities = await this.deps.db.entity.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: ENTITY_SELECT_MINIMAL,
+    return await deleteManyResources({
+      db: this.db,
+      model: 'entity',
+      userId,
+      ids,
+      selectMinimal: ENTITY_SELECT_MINIMAL,
+      errorCode: ErrorCode.ENTITY_NOT_FOUND,
+      errorMessage: 'Some entities were not found or do not belong to you',
+      resourceName: 'entity',
     });
-
-    if (entities.length !== ids.length) {
-      throwAppError(
-        ErrorCode.ENTITY_NOT_FOUND,
-        'Some entities were not found or do not belong to you',
-      );
-    }
-
-    await this.deps.db.entity.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-    });
-
-    return {
-      success: true,
-      message: `${ids.length} entity(ies) deleted successfully`,
-    };
   }
 }
 
