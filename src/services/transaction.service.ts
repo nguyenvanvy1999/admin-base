@@ -81,8 +81,6 @@ class TransactionHandlerFactory {
   }
 
   private validateCategoryOwnership(userId: string, categoryId: string): void {
-    // Category uses different ID format: category_${code}_${type}_${userId}
-    // Check if categoryId ends with userId or extract userId from it
     const extractedUserId = this.deps.idUtil.extractUserIdFromId(categoryId);
     if (!extractedUserId || extractedUserId !== userId) {
       throwAppError(ErrorCode.NOT_FOUND, 'Category not found');
@@ -349,7 +347,6 @@ class TransactionHandlerFactory {
         toAmountDecimal,
       );
 
-      // Create primary transaction (from -> to)
       const primary = await tx.transaction.create({
         data: {
           id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
@@ -381,7 +378,6 @@ class TransactionHandlerFactory {
             toAccount.currencyId,
           );
 
-      // Create mirror transaction (to -> from)
       await tx.transaction.create({
         data: {
           id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
@@ -413,7 +409,6 @@ class TransactionHandlerFactory {
     data: ITransferTransaction & { id: string },
     fromAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
   ) {
-    // Load existing primary
     const existing = await this.deps.db.transaction.findUnique({
       where: { id: data.id },
       select: TRANSACTION_SELECT_FOR_BALANCE,
@@ -447,7 +442,6 @@ class TransactionHandlerFactory {
       CATEGORY_NAME.TRANSFER,
     );
 
-    // Get existing mirror to get original toAmount for revert
     const existingMirrorForRevert = existing.transferGroupId
       ? await this.deps.db.transaction.findFirst({
           where: {
@@ -460,8 +454,6 @@ class TransactionHandlerFactory {
       : null;
 
     return this.deps.db.$transaction(async (tx: PrismaTx) => {
-      // Revert balances from old primary only
-      // Use existing mirror amount if available for accurate revert
       const existingToAmount = existingMirrorForRevert
         ? new Decimal(existingMirrorForRevert.amount)
         : undefined;
@@ -492,7 +484,6 @@ class TransactionHandlerFactory {
         toAmountDecimal,
       );
 
-      // Update primary
       const updatedPrimary = await tx.transaction.update({
         where: { id: data.id },
         data: {
@@ -523,7 +514,6 @@ class TransactionHandlerFactory {
             toAccount.currencyId,
           );
 
-      // Upsert mirror using groupId
       const existingMirror = existing.transferGroupId
         ? await tx.transaction.findFirst({
             where: {
@@ -958,9 +948,7 @@ export class TransactionService {
       throwAppError(ErrorCode.FORBIDDEN, 'Transaction not owned by user');
     }
 
-    // For transfers, delete both sides, but revert balance once using the primary
     if (transaction.type === TransactionType.transfer) {
-      // Determine primary row
       const isPrimary = !transaction.isTransferMirror;
       const primary = isPrimary
         ? transaction
@@ -984,7 +972,6 @@ export class TransactionService {
             },
           });
 
-      // Get mirror transaction amount for accurate revert
       const mirrorForRevert = primary?.transferGroupId
         ? await this.deps.db.transaction.findFirst({
             where: {
@@ -1015,7 +1002,6 @@ export class TransactionService {
           );
         }
 
-        // Hard delete both sides if group present, else only this one
         if (transaction.transferGroupId) {
           await tx.transaction.deleteMany({
             where: {

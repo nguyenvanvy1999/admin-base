@@ -521,7 +521,6 @@ export class BudgetService extends BaseService {
           );
         }
 
-        // Always create a period record if it doesn't exist
         existingPeriod = await this.db.budgetPeriodRecord.create({
           data: {
             id: this.idUtil.dbIdWithUserId(DB_PREFIX.BUDGET_PERIOD, userId),

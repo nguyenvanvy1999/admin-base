@@ -229,7 +229,6 @@ export class GoalService extends BaseService {
       }),
     );
 
-    // Map goal manually since we have different structure
     const baseGoal = {
       id: goal.id,
       userId: goal.userId,

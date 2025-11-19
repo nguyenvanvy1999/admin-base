@@ -40,7 +40,6 @@ export class SeedService {
       const roles = Object.values(defaultRoles);
 
       await this.deps.db.$transaction(async (tx) => {
-        // Get existing roles to avoid duplicates
         const existingRoles = await tx.role.findMany({
           where: {
             title: { in: roles.map((role) => role.title) },
@@ -53,7 +52,6 @@ export class SeedService {
           (role) => !existingTitles.has(role.title),
         );
 
-        // Create new roles in a batch
         if (newRoles.length > 0) {
           await tx.role.createMany({
             data: newRoles.map((role) => ({
@@ -123,7 +121,6 @@ export class SeedService {
         Record<string, { roles: string[]; description?: string }>
       > = PERMISSIONS;
 
-      // Prepare all permission data for batch operations
       const permissionData: Array<{
         id: string;
         title: string;
@@ -158,7 +155,6 @@ export class SeedService {
           (p) => !existingTitles.has(p.title),
         );
 
-        // Create new permissions in a batch
         if (newPermissions.length > 0) {
           await tx.permission.createMany({
             data: newPermissions.map(({ id, title, description }) => ({
@@ -170,14 +166,12 @@ export class SeedService {
           });
         }
 
-        // Prepare role-permission relationships for batch creation
         const rolePermissionData: Array<{
           id: string;
           roleId: string;
           permissionId: string;
         }> = [];
 
-        // For existing permissions, get their IDs
         const allPermissions = await tx.permission.findMany({
           where: {
             title: { in: permissionData.map((p) => p.title) },
@@ -189,7 +183,6 @@ export class SeedService {
           allPermissions.map((p) => [p.title, p.id]),
         );
 
-        // Generate role-permission relationships
         permissionData.forEach((permission) => {
           const permissionId = permissionMap.get(permission.title);
           if (permissionId) {
@@ -203,7 +196,6 @@ export class SeedService {
           }
         });
 
-        // Create role-permission relationships in batch
         if (rolePermissionData.length > 0) {
           await tx.rolePermission.createMany({
             data: rolePermissionData,

@@ -78,7 +78,6 @@ export class UserService {
       throwAppError(ErrorCode.USER_ALREADY_EXISTS, 'User already exists');
     }
 
-    // Validate currency exists
     const currencyExists = await this.deps.db.currency.count({
       where: { id: data.baseCurrencyId },
     });
