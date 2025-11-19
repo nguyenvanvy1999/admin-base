@@ -1,8 +1,7 @@
 import type { PermissionResponse } from '@client/services/PermissionService';
-import { Badge } from '@mantine/core';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { renderEmpty } from './columnRenderers';
+import { createTextColumn, createTypeColumn } from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
 
 function extractCategory(title: string | null | undefined): string {
@@ -59,45 +58,43 @@ const PermissionTable = ({
     return colors[category] || 'gray';
   };
 
+  const categoryLabelMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    ['USER', 'ROLE', 'SESSION', 'ADMIN'].forEach((cat) => {
+      map[cat] =
+        t(`permissions.categories.${cat}`, { defaultValue: cat }) || cat;
+    });
+    return map;
+  }, [t]);
+
+  const categoryColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    ['USER', 'ROLE', 'SESSION', 'ADMIN'].forEach((cat) => {
+      map[cat] = getCategoryColor(cat);
+    });
+    return map;
+  }, []);
+
   const columns = useMemo(
     (): DataTableColumn<PermissionWithCategory>[] => [
-      {
+      createTextColumn<PermissionWithCategory, 'title'>({
         accessor: 'title',
         title: 'permissions.permissionTitle',
-      },
-      {
+      }),
+      createTypeColumn<PermissionWithCategory, 'category'>({
         accessor: 'category',
         title: 'permissions.category',
-        render: ({ value }) => {
-          if (!value) {
-            return (
-              <Badge color="gray" variant="light">
-                -
-              </Badge>
-            );
-          }
-          const categoryLabel =
-            t(`permissions.categories.${value}`, {
-              defaultValue: value,
-            }) || value;
-          return (
-            <Badge color={getCategoryColor(value)} variant="light">
-              {categoryLabel}
-            </Badge>
-          );
-        },
-      },
-      {
+        labelMap: categoryLabelMap,
+        colorMap: categoryColorMap,
+        defaultColor: 'gray',
+      }),
+      createTextColumn<PermissionWithCategory, 'description'>({
         accessor: 'description',
         title: 'permissions.description',
         ellipsis: true,
-        render: ({ value }) => {
-          if (!value) return renderEmpty();
-          return <span>{String(value)}</span>;
-        },
-      },
+      }),
     ],
-    [t],
+    [categoryLabelMap, categoryColorMap],
   );
 
   const permissionsWithCategory = useMemo((): PermissionWithCategory[] => {

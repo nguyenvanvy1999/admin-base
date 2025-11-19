@@ -1,11 +1,14 @@
+import { Button } from '@mantine/core';
 import type { ParseKeys } from 'i18next';
-import type React from 'react';
+import React from 'react';
 import {
   type ActionColumnOptions,
   renderActionButtons,
+  renderArrayBadges,
   renderBadge,
   renderBooleanBadge,
   renderCurrency,
+  renderCurrencyDisplay,
   renderDate,
   renderEmpty,
   renderTypeBadge,
@@ -259,6 +262,149 @@ export function createTextColumn<
         return renderEmpty();
       }
       return typedValue as React.ReactNode;
+    },
+  };
+}
+
+export function createLinkableColumn<
+  TData extends { id: string },
+  TAccessor extends TypedAccessor<TData, any>,
+>(
+  options: ColumnFactoryOptions<TData> & {
+    accessor: TAccessor;
+    onClick: (row: TData, e: React.MouseEvent) => void;
+    getHref?: (row: TData) => string;
+  },
+): DataTableColumn<TData> {
+  return {
+    id: options.id,
+    title: options.title,
+    accessor: options.accessor,
+    enableSorting: options.enableSorting ?? true,
+    enableGrouping: options.enableGrouping,
+    width: options.width,
+    textAlign: options.textAlign,
+    ellipsis: options.ellipsis,
+    cellsStyle: options.cellsStyle,
+    render: ({ value, row }: { value: any; row: TData }) => {
+      const handleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        options.onClick(row, e);
+      };
+
+      return React.createElement(
+        Button as any,
+        {
+          variant: 'subtle',
+          p: 0,
+          h: 'auto',
+          onClick: handleClick,
+          style: { fontWeight: 'inherit' },
+        },
+        value as React.ReactNode,
+      );
+    },
+  };
+}
+
+export function createArrayBadgeColumn<
+  TData extends { id: string },
+  TAccessor extends TypedAccessor<TData, any[]>,
+>(
+  options: ColumnFactoryOptions<TData> & {
+    accessor: TAccessor;
+    getLabel: (item: any) => string;
+    getKey?: (item: any, index: number) => string | number;
+    getColor?: (item: any) => string;
+    variant?: 'light' | 'filled' | 'outline' | 'dot' | 'gradient';
+    emptyMessage?: React.ReactNode;
+  },
+): DataTableColumn<TData> {
+  return {
+    id: options.id,
+    title: options.title,
+    accessor: options.accessor,
+    enableSorting: options.enableSorting ?? false,
+    enableGrouping: options.enableGrouping,
+    width: options.width,
+    textAlign: options.textAlign,
+    ellipsis: options.ellipsis,
+    onClick: options.onClick,
+    cellsStyle: options.cellsStyle,
+    render: ({ value, row }: { value: any; row: TData }) => {
+      const items = (value as any[]) || [];
+      return renderArrayBadges({
+        items,
+        getLabel: options.getLabel,
+        getKey: options.getKey,
+        getColor: options.getColor,
+        variant: options.variant,
+        emptyMessage: options.emptyMessage,
+      });
+    },
+  };
+}
+
+export function createCurrencyDisplayColumn<
+  TData extends { id: string },
+  TAccessor extends TypedAccessor<TData, any>,
+>(
+  options: ColumnFactoryOptions<TData> & {
+    accessor: TAccessor;
+    getSymbol?: (row: TData) => string | null | undefined;
+    emptyMessage?: React.ReactNode;
+  },
+): DataTableColumn<TData> {
+  return {
+    id: options.id,
+    title: options.title,
+    accessor: options.accessor,
+    enableSorting: options.enableSorting ?? false,
+    enableGrouping: options.enableGrouping,
+    width: options.width,
+    textAlign: options.textAlign,
+    ellipsis: options.ellipsis,
+    onClick: options.onClick,
+    cellsStyle: options.cellsStyle,
+    render: ({ value, row }: { value: any; row: TData }) => {
+      const code = value as string;
+      const symbol = options.getSymbol?.(row);
+      return renderCurrencyDisplay({
+        code,
+        symbol,
+        emptyMessage: options.emptyMessage,
+      });
+    },
+  };
+}
+
+export function createCountColumn<
+  TData extends { id: string },
+  TAccessor extends TypedAccessor<TData, any>,
+>(
+  options: ColumnFactoryOptions<TData> & {
+    accessor: TAccessor;
+    emptyMessage?: React.ReactNode;
+  },
+): DataTableColumn<TData> {
+  return {
+    id: options.id,
+    title: options.title,
+    accessor: options.accessor,
+    enableSorting: options.enableSorting ?? false,
+    enableGrouping: options.enableGrouping,
+    width: options.width,
+    textAlign: options.textAlign || 'center',
+    ellipsis: options.ellipsis,
+    onClick: options.onClick,
+    cellsStyle: options.cellsStyle,
+    render: ({ value }: { value: any }) => {
+      const items = (value as any[]) || [];
+      const count = items.length;
+      if (count === 0 && options.emptyMessage !== undefined) {
+        return options.emptyMessage;
+      }
+      return React.createElement('span', null, count);
     },
   };
 }

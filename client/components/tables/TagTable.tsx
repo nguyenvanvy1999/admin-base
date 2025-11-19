@@ -1,10 +1,8 @@
-import { Button } from '@mantine/core';
 import type { TagResponse } from '@server/dto/tag.dto';
-import { IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { createActionColumn, createTextColumn } from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
+import { DeleteManyToolbar } from './deleteManyToolbar';
 import type { SortingState } from './types';
 
 type TagTableProps = {
@@ -46,8 +44,6 @@ const TagTable = ({
   selectedRecords,
   onSelectedRecordsChange,
 }: TagTableProps) => {
-  const { t } = useTranslation();
-
   const columns = useMemo(
     (): DataTableColumn<TagResponse>[] => [
       createTextColumn<TagResponse, 'name'>({
@@ -66,10 +62,8 @@ const TagTable = ({
         onDelete,
       }),
     ],
-    [t, onEdit, onDelete],
+    [onEdit, onDelete],
   );
-
-  const selectedCount = selectedRecords?.length || 0;
 
   return (
     <DataTable
@@ -88,25 +82,13 @@ const TagTable = ({
       selectedRecords={selectedRecords}
       onSelectedRecordsChange={onSelectedRecordsChange}
       renderTopToolbarCustomActions={
-        onDeleteMany && selectedCount > 0
+        onDeleteMany && selectedRecords
           ? () => (
-              <Button
-                color="red"
-                variant="filled"
-                leftSection={<IconTrash size={16} />}
-                onClick={() => {
-                  const selectedIds = selectedRecords?.map((r) => r.id) || [];
-                  if (selectedIds.length > 0 && onDeleteMany) {
-                    onDeleteMany(selectedIds);
-                  }
-                }}
-                disabled={isLoading}
-              >
-                {t('common.deleteSelected', {
-                  defaultValue: `Delete ${selectedCount}`,
-                  count: selectedCount,
-                })}
-              </Button>
+              <DeleteManyToolbar
+                selectedRecords={selectedRecords}
+                onDeleteMany={onDeleteMany}
+                isLoading={isLoading}
+              />
             )
           : undefined
       }

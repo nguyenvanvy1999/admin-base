@@ -1,11 +1,13 @@
-import { usePermission } from '@client/hooks/usePermission';
-import { Badge } from '@mantine/core';
 import type { UserResponse } from '@server/dto/admin/user.dto';
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { createActionColumn } from './columnFactories';
-import { renderEmpty } from './columnRenderers';
+import {
+  createArrayBadgeColumn,
+  createCurrencyDisplayColumn,
+  createDateColumn,
+  createTextColumn,
+} from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
+import { useCreatePermissionActionColumn } from './hooks/usePermissionActionColumn';
 
 type UserTableProps = {
   users: UserResponse[];
@@ -45,85 +47,56 @@ const UserTable = ({
   sorting,
   onSortingChange,
 }: UserTableProps) => {
-  const { t } = useTranslation();
-  const { hasPermission } = usePermission();
-
-  const canUpdate = hasPermission('USER.UPDATE');
-  const canDelete = hasPermission('USER.DELETE');
+  const actionColumn = useCreatePermissionActionColumn<UserResponse>({
+    title: 'users.actions',
+    onEdit,
+    onDelete,
+    editPermission: 'USER.UPDATE',
+    deletePermission: 'USER.DELETE',
+  });
 
   const columns = useMemo(
     (): DataTableColumn<UserResponse>[] => [
-      {
+      createTextColumn<UserResponse, 'username'>({
         accessor: 'username',
         title: 'users.username',
-      },
-      {
+      }),
+      createTextColumn<UserResponse, 'name'>({
         accessor: 'name',
         title: 'users.name',
         ellipsis: true,
-        render: ({ value }) => {
-          if (!value) {
-            return renderEmpty();
-          }
-          return value;
-        },
-      },
-      {
+      }),
+      createArrayBadgeColumn<
+        UserResponse,
+        (row: UserResponse) => UserResponse['roles']
+      >({
         id: 'roles',
         title: 'users.role',
-        accessor: (row) => row.roles.map((role) => role.title).join(', ') || [],
+        accessor: (row) => row.roles || [],
         enableSorting: false,
         enableGrouping: false,
-        render: ({ row }: { row: UserResponse }) => {
-          const roles = row.roles || [];
-          if (!roles || roles.length === 0) {
-            return renderEmpty();
-          }
-          return (
-            <div className="flex flex-wrap gap-1">
-              {roles.map((role) => {
-                if (!role || typeof role !== 'object') {
-                  return null;
-                }
-                const roleTitle = role.title || role.id || '';
-                return (
-                  <Badge key={role.id} variant="light" color="blue">
-                    {String(roleTitle)}
-                  </Badge>
-                );
-              })}
-            </div>
-          );
-        },
-      },
-      {
+        getLabel: (role) => role.title || role.id || '',
+        getKey: (role) => role.id,
+        getColor: () => 'blue',
+        variant: 'light',
+      }),
+      createCurrencyDisplayColumn<
+        UserResponse,
+        (row: UserResponse) => string | undefined
+      >({
         id: 'baseCurrency',
         title: 'users.baseCurrency',
         accessor: (row: UserResponse) => row.baseCurrency?.code,
         enableSorting: false,
-        render: ({ row }: { row: UserResponse }) => {
-          const currency = row.baseCurrency;
-          if (!currency) {
-            return renderEmpty();
-          }
-          return (
-            <span>
-              {currency.code} {currency.symbol ? `(${currency.symbol})` : ''}
-            </span>
-          );
-        },
-      },
-      {
+        getSymbol: (row) => row.baseCurrency?.symbol,
+      }),
+      createDateColumn<UserResponse, 'created'>({
         accessor: 'created',
         title: 'users.created',
-      },
-      createActionColumn({
-        title: 'users.actions',
-        onEdit: canUpdate ? onEdit : undefined,
-        onDelete: canDelete ? onDelete : undefined,
       }),
+      actionColumn,
     ],
-    [t, onEdit, onDelete, canUpdate, canDelete],
+    [actionColumn],
   );
 
   return (

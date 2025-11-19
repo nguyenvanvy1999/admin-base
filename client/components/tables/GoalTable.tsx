@@ -1,10 +1,13 @@
-import { Button, Group } from '@mantine/core';
 import type { GoalResponse } from '@server/dto/goal.dto';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { createCurrencyColumn, createDateColumn } from './columnFactories';
-import { renderActionButtons } from './columnRenderers';
+import {
+  createActionColumn,
+  createCurrencyColumn,
+  createDateColumn,
+  createLinkableColumn,
+} from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
 import { DeleteManyToolbar } from './deleteManyToolbar';
 
@@ -57,24 +60,14 @@ const GoalTable = ({
 
   const columns = useMemo(
     (): DataTableColumn<GoalResponse>[] => [
-      {
+      createLinkableColumn<GoalResponse, 'name'>({
         accessor: 'name',
         title: 'goals.name',
-        render: ({ value, row }) => (
-          <Button
-            variant="subtle"
-            p={0}
-            h="auto"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/goals/${row.id}`);
-            }}
-            style={{ fontWeight: 'inherit' }}
-          >
-            {value as string}
-          </Button>
-        ),
-      },
+        onClick: (row, e) => {
+          e?.stopPropagation();
+          navigate(`/goals/${row.id}`);
+        },
+      }),
       createCurrencyColumn<GoalResponse, 'amount'>({
         accessor: 'amount',
         title: 'goals.amount',
@@ -91,24 +84,18 @@ const GoalTable = ({
         title: 'goals.endDate',
         format: 'YYYY-MM-DD',
       }),
-      {
+      createActionColumn<GoalResponse>({
         title: 'goals.actions',
-        render: ({ row }) => (
-          <Group gap="xs">
-            <Button
-              size="xs"
-              variant="light"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/goals/${row.id}`);
-              }}
-            >
-              {t('goals.viewDetail', { defaultValue: 'View Detail' })}
-            </Button>
-            {renderActionButtons({ onEdit, onDelete }, row)}
-          </Group>
-        ),
-      },
+        onEdit,
+        onDelete,
+        custom: [
+          {
+            label: t('goals.viewDetail', { defaultValue: 'View Detail' }),
+            onClick: (row) => navigate(`/goals/${row.id}`),
+            variant: 'light',
+          },
+        ],
+      }),
     ],
     [t, onEdit, onDelete, navigate],
   );

@@ -1,16 +1,16 @@
-import { Button, Group } from '@mantine/core';
 import type { BudgetResponse } from '@server/dto/budget.dto';
 import { BudgetPeriod } from '@server/generated';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import {
+  createActionColumn,
   createBooleanColumn,
   createCurrencyColumn,
   createDateColumn,
+  createLinkableColumn,
   createTypeColumn,
 } from './columnFactories';
-import { renderActionButtons } from './columnRenderers';
 import { DataTable, type DataTableColumn } from './DataTable';
 import { DeleteManyToolbar } from './deleteManyToolbar';
 
@@ -63,24 +63,14 @@ const BudgetTable = ({
 
   const columns = useMemo(
     (): DataTableColumn<BudgetResponse>[] => [
-      {
+      createLinkableColumn<BudgetResponse, 'name'>({
         accessor: 'name',
         title: 'budgets.name',
-        render: ({ value, row }) => (
-          <Button
-            variant="subtle"
-            p={0}
-            h="auto"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/budgets/${row.id}`);
-            }}
-            style={{ fontWeight: 'inherit' }}
-          >
-            {value as string}
-          </Button>
-        ),
-      },
+        onClick: (row, e) => {
+          e?.stopPropagation();
+          navigate(`/budgets/${row.id}`);
+        },
+      }),
       createCurrencyColumn<BudgetResponse, 'amount'>({
         accessor: 'amount',
         title: 'budgets.amount',
@@ -127,24 +117,18 @@ const BudgetTable = ({
         trueColor: 'green',
         falseColor: 'gray',
       }),
-      {
+      createActionColumn<BudgetResponse>({
         title: 'budgets.actions',
-        render: ({ row }) => (
-          <Group gap="xs">
-            <Button
-              size="xs"
-              variant="light"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/budgets/${row.id}`);
-              }}
-            >
-              {t('budgets.viewPeriods', { defaultValue: 'View Periods' })}
-            </Button>
-            {renderActionButtons({ onEdit, onDelete }, row)}
-          </Group>
-        ),
-      },
+        onEdit,
+        onDelete,
+        custom: [
+          {
+            label: t('budgets.viewPeriods', { defaultValue: 'View Periods' }),
+            onClick: (row) => navigate(`/budgets/${row.id}`),
+            variant: 'light',
+          },
+        ],
+      }),
     ],
     [t, onEdit, onDelete, navigate],
   );

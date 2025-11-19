@@ -78,7 +78,7 @@ interface BaseColumnProps<TData extends { id: string }> {
   width?: `${number}rem`;
   minWidth?: `${number}rem`;
   textAlign?: 'left' | 'center' | 'right';
-  onClick?: (row: TData) => void;
+  onClick?: (row: TData, e?: React.MouseEvent) => void;
   ellipsis?: boolean;
   cellsStyle?: (row: TData) => React.CSSProperties;
   filterVariant?: FilterVariant;

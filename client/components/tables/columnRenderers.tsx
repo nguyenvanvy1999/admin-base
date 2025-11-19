@@ -1,5 +1,5 @@
 import { formatDate } from '@client/utils/format';
-import { ActionIcon, Badge, NumberFormatter, Text } from '@mantine/core';
+import { ActionIcon, Badge, Group, NumberFormatter, Text } from '@mantine/core';
 import { IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
 import type React from 'react';
 
@@ -97,7 +97,9 @@ export function renderActionButtons<T>(
   if (buttons.length === 0) return null;
 
   return (
-    <div className="flex items-center justify-center gap-2">{buttons}</div>
+    <Group gap="xs" justify="center" wrap="nowrap">
+      {buttons}
+    </Group>
   );
 }
 
@@ -220,4 +222,56 @@ export function renderBooleanBadge(config: BooleanBadgeConfig) {
  */
 export function renderEmpty(): React.ReactNode {
   return <span className="text-gray-400">-</span>;
+}
+
+export type ArrayBadgeConfig<T> = {
+  items: T[];
+  getLabel: (item: T) => string;
+  getKey?: (item: T, index: number) => string | number;
+  getColor?: (item: T) => string;
+  variant?: 'light' | 'filled' | 'outline' | 'dot' | 'gradient';
+  emptyMessage?: React.ReactNode;
+};
+
+export function renderArrayBadges<T>(config: ArrayBadgeConfig<T>) {
+  if (!config.items || config.items.length === 0) {
+    return config.emptyMessage || renderEmpty();
+  }
+
+  return (
+    <Group gap="xs" wrap="wrap">
+      {config.items.map((item, index) => {
+        const key = config.getKey
+          ? config.getKey(item, index)
+          : (item as any)?.id || index;
+        const label = config.getLabel(item);
+        const color = config.getColor?.(item) || 'blue';
+
+        return (
+          <Badge key={key} color={color} variant={config.variant || 'light'}>
+            {label}
+          </Badge>
+        );
+      })}
+    </Group>
+  );
+}
+
+export type CurrencyDisplayConfig = {
+  code: string;
+  symbol?: string | null;
+  emptyMessage?: React.ReactNode;
+};
+
+export function renderCurrencyDisplay(config: CurrencyDisplayConfig) {
+  if (!config.code) {
+    return config.emptyMessage || renderEmpty();
+  }
+
+  return (
+    <Text size="sm">
+      {config.code}
+      {config.symbol && ` (${config.symbol})`}
+    </Text>
+  );
 }

@@ -186,7 +186,9 @@ export function useDataTableColumns<T extends { id: string }>({
               width: '100%',
               ...style,
             }}
-            onClick={col.onClick ? () => col.onClick?.(record) : undefined}
+            onClick={
+              col.onClick ? (event) => col.onClick?.(record, event) : undefined
+            }
           >
             {content}
           </span>

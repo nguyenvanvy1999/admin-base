@@ -1,6 +1,6 @@
 import { usePermission } from '@client/hooks/usePermission';
 import { formatDate } from '@client/utils/format';
-import { ActionIcon, Badge, Button } from '@mantine/core';
+import { ActionIcon, Badge, Button, Group } from '@mantine/core';
 import type { SessionResponseWithUser } from '@server/dto/admin/session.dto';
 import { IconBan } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
@@ -159,7 +159,7 @@ const SessionTable = ({
             status.label === 'Revoked' || status.label === 'Expired';
 
           return (
-            <div className="flex items-center justify-center gap-2">
+            <Group gap="xs" justify="center" wrap="nowrap">
               <ActionIcon
                 variant="subtle"
                 color="red"
@@ -173,7 +173,7 @@ const SessionTable = ({
               >
                 <IconBan size={16} />
               </ActionIcon>
-            </div>
+            </Group>
           );
         },
       });
