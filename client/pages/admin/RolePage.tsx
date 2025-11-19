@@ -17,6 +17,7 @@ import {
   type FilterFormValue,
   useRolesQuery,
 } from '@client/hooks/queries/useRoleQueries';
+import { useUserQuery } from '@client/hooks/queries/useUserQuery';
 import { usePageDelete } from '@client/hooks/usePageDelete';
 import { usePageDialog } from '@client/hooks/usePageDialog';
 import { usePaginationSorting } from '@client/hooks/usePaginationSorting';
@@ -43,19 +44,10 @@ const RolePage = () => {
   const navigate = useNavigate();
   const formRef = useRef<FormComponentRef>(null);
   const { hasPermission } = usePermission();
+  const { isPending: isUserLoading } = useUserQuery();
 
   const canView = hasPermission('ROLE.VIEW');
   const canCreate = hasPermission('ROLE.CREATE');
-
-  useEffect(() => {
-    if (!canView) {
-      navigate('/404');
-    }
-  }, [canView, navigate]);
-
-  if (!canView) {
-    return <NotFoundPage />;
-  }
 
   const paginationSorting = usePaginationSorting<'title' | 'created'>({
     defaultPage: 1,
@@ -77,6 +69,9 @@ const RolePage = () => {
     paginationSorting.queryParams,
     formRef,
     form.handleSubmit,
+    {
+      enabled: !isUserLoading && canView,
+    },
   );
 
   const createMutation = useCreateRoleMutation();
@@ -140,6 +135,20 @@ const RolePage = () => {
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteManyMutation.isPending;
+
+  useEffect(() => {
+    if (!isUserLoading && !canView) {
+      navigate('/404');
+    }
+  }, [canView, isUserLoading, navigate]);
+
+  if (isUserLoading) {
+    return null;
+  }
+
+  if (!canView) {
+    return <NotFoundPage />;
+  }
 
   return (
     <PageContainer

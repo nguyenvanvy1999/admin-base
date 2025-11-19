@@ -15,6 +15,7 @@ import {
   useSessionsQuery,
 } from '@client/hooks/queries/useSessionQueries';
 import { useUsersQuery } from '@client/hooks/queries/useUserQueries';
+import { useUserQuery } from '@client/hooks/queries/useUserQuery';
 import { usePageDelete } from '@client/hooks/usePageDelete';
 import { usePaginationSorting } from '@client/hooks/usePaginationSorting';
 import { usePermission } from '@client/hooks/usePermission';
@@ -47,6 +48,7 @@ const SessionPage = ({ isAdminPage = false }: SessionPageProps = {}) => {
   const navigate = useNavigate();
   const formRef = useRef<FormComponentRef>(null);
   const { hasPermission } = usePermission();
+  const { isPending: isUserLoading } = useUserQuery();
 
   const canView =
     hasPermission('SESSION.VIEW') || hasPermission('SESSION.VIEW_ALL');
@@ -54,16 +56,6 @@ const SessionPage = ({ isAdminPage = false }: SessionPageProps = {}) => {
     hasPermission('SESSION.REVOKE') || hasPermission('SESSION.REVOKE_ALL');
   const isAdmin = hasPermission('SESSION.VIEW_ALL');
   const showAdminFeatures = isAdminPage && isAdmin;
-
-  useEffect(() => {
-    if (!canView) {
-      navigate('/404');
-    }
-  }, [canView, navigate]);
-
-  if (!canView) {
-    return <NotFoundPage />;
-  }
 
   const paginationSorting = usePaginationSorting<
     'created' | 'expired' | 'revoked'
@@ -85,13 +77,16 @@ const SessionPage = ({ isAdminPage = false }: SessionPageProps = {}) => {
     paginationSorting.queryParams,
     formRef,
     form.handleSubmit,
+    {
+      enabled: !isUserLoading && canView,
+    },
   );
 
   const { data: usersData } = useUsersQuery(
     { page: 1, limit: 1000 },
     { current: null },
     () => () => Promise.resolve(),
-    { enabled: showAdminFeatures },
+    { enabled: !isUserLoading && showAdminFeatures },
   );
 
   const userOptions = useMemo(() => {
@@ -129,6 +124,20 @@ const SessionPage = ({ isAdminPage = false }: SessionPageProps = {}) => {
       sessionIds,
     });
   };
+
+  useEffect(() => {
+    if (!isUserLoading && !canView) {
+      navigate('/404');
+    }
+  }, [canView, isUserLoading, navigate]);
+
+  if (isUserLoading) {
+    return null;
+  }
+
+  if (!canView) {
+    return <NotFoundPage />;
+  }
 
   const handleSearch = () => {
     refetch();
