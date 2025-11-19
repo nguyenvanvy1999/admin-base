@@ -178,8 +178,8 @@ export class EventService extends BaseService {
     };
   }
 
-  async deleteManyEvents(userId: string, ids: string[]) {
-    return await deleteManyResources({
+  deleteManyEvents(userId: string, ids: string[]) {
+    return deleteManyResources({
       db: this.db,
       model: 'event',
       userId,

@@ -31,15 +31,13 @@ import { mapBudget } from './mappers';
 
 import { BUDGET_SELECT_FULL, BUDGET_SELECT_MINIMAL } from './selects';
 
-interface BudgetServiceDependencies extends BaseServiceDependencies {
-  currencyConversionService: CurrencyConversionService;
-}
-
 export class BudgetService extends BaseService {
   private readonly currencyConversionService: CurrencyConversionService;
 
   constructor(
-    deps: BudgetServiceDependencies = {
+    deps: BaseServiceDependencies & {
+      currencyConversionService: CurrencyConversionService;
+    } = {
       db: prisma,
       idUtil,
       currencyConversionService: currencyConversionService,
@@ -421,8 +419,8 @@ export class BudgetService extends BaseService {
     };
   }
 
-  async deleteManyBudgets(userId: string, ids: string[]) {
-    return await deleteManyResources({
+  deleteManyBudgets(userId: string, ids: string[]) {
+    return deleteManyResources({
       db: this.db,
       model: 'budget',
       userId,

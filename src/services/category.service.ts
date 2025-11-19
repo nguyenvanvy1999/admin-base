@@ -491,7 +491,7 @@ export class CategoryService extends BaseService {
       }
     }
 
-    return await deleteManyResources({
+    return deleteManyResources({
       db: this.db,
       model: 'category',
       userId,

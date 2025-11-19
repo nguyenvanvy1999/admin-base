@@ -145,8 +145,8 @@ export class EntityService extends BaseService {
     };
   }
 
-  async deleteManyEntities(userId: string, ids: string[]) {
-    return await deleteManyResources({
+  deleteManyEntities(userId: string, ids: string[]) {
+    return deleteManyResources({
       db: this.db,
       model: 'entity',
       userId,

@@ -145,8 +145,8 @@ export class TagService extends BaseService {
     };
   }
 
-  async deleteManyTags(userId: string, ids: string[]) {
-    return await deleteManyResources({
+  deleteManyTags(userId: string, ids: string[]) {
+    return deleteManyResources({
       db: this.db,
       model: 'tag',
       userId,

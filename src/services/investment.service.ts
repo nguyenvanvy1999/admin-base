@@ -289,8 +289,8 @@ export class InvestmentService extends BaseService {
     return investment;
   }
 
-  async deleteManyInvestments(userId: string, ids: string[]) {
-    return await deleteManyResources({
+  deleteManyInvestments(userId: string, ids: string[]) {
+    return deleteManyResources({
       db: this.db,
       model: 'investment',
       userId,

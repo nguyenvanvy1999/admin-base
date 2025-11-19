@@ -7,9 +7,6 @@ import {
 } from '@server/share/utils/pagination.util';
 import type { BaseServiceDependencies } from './service-dependencies';
 
-/**
- * Base service class providing common functionality for all services
- */
 export abstract class BaseService {
   protected readonly db: BaseServiceDependencies['db'];
   protected readonly idUtil: BaseServiceDependencies['idUtil'];
@@ -19,9 +16,6 @@ export abstract class BaseService {
     this.idUtil = deps.idUtil;
   }
 
-  /**
-   * Validates that a resource belongs to a specific user
-   */
   protected validateOwnership(
     userId: string,
     resourceId: string,
@@ -37,23 +31,14 @@ export abstract class BaseService {
     );
   }
 
-  /**
-   * Calculates pagination skip value
-   */
   protected calculateSkip(page: number, limit: number): number {
     return calculatePagination(page, limit).skip;
   }
 
-  /**
-   * Calculates total pages for pagination
-   */
   protected calculateTotalPages(total: number, limit: number): number {
     return buildPaginationMeta(1, limit, total).totalPages;
   }
 
-  /**
-   * Builds pagination response metadata
-   */
   protected buildPaginationResponse<T>(
     page: number,
     limit: number,
@@ -74,9 +59,6 @@ export abstract class BaseService {
     };
   }
 
-  /**
-   * Builds orderBy object for Prisma queries
-   */
   protected buildOrderBy<T extends Record<string, any>>(
     sortBy: string | undefined,
     sortOrder: 'asc' | 'desc' = 'desc',

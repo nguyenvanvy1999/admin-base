@@ -28,15 +28,13 @@ import {
   GOAL_SELECT_MINIMAL,
 } from './selects';
 
-interface GoalServiceDependencies extends BaseServiceDependencies {
-  currencyConversionService: CurrencyConversionService;
-}
-
 export class GoalService extends BaseService {
   private readonly currencyConversionService: CurrencyConversionService;
 
   constructor(
-    deps: GoalServiceDependencies = {
+    deps: BaseServiceDependencies & {
+      currencyConversionService: CurrencyConversionService;
+    } = {
       db: prisma,
       idUtil,
       currencyConversionService: currencyConversionService,
@@ -308,8 +306,8 @@ export class GoalService extends BaseService {
     };
   }
 
-  async deleteManyGoals(userId: string, ids: string[]) {
-    return await deleteManyResources({
+  deleteManyGoals(userId: string, ids: string[]) {
+    return deleteManyResources({
       db: this.db,
       model: 'goal',
       userId,

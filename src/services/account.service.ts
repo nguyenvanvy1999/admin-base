@@ -238,8 +238,8 @@ export class AccountService extends BaseService {
     return { success: true, message: 'Account deleted successfully' };
   }
 
-  async deleteManyAccounts(userId: string, ids: string[]): Promise<ActionRes> {
-    return await deleteManyResources({
+  deleteManyAccounts(userId: string, ids: string[]): Promise<ActionRes> {
+    return deleteManyResources({
       db: this.db,
       model: 'account',
       userId,
