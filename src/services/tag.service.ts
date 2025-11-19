@@ -1,35 +1,26 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type {
-  Prisma,
   TagOrderByWithRelationInput,
   TagWhereInput,
 } from '@server/generated';
 import {
   DB_PREFIX,
-  dateToIsoString,
   ErrorCode,
   type IdUtil,
   idUtil,
   throwAppError,
 } from '@server/share';
+import { validateUniqueNameForService } from '@server/share/utils/service.util';
 import type {
   IListTagsQueryDto,
   IUpsertTagDto,
   TagListResponse,
   TagResponse,
 } from '../dto/tag.dto';
+import { mapTag } from './mappers';
 
 import { TAG_SELECT_FULL, TAG_SELECT_MINIMAL } from './selects';
-
-type TagRecord = Prisma.TagGetPayload<{ select: typeof TAG_SELECT_FULL }>;
-
-const formatTag = (tag: TagRecord): TagResponse => ({
-  ...tag,
-  description: tag.description ?? null,
-  created: dateToIsoString(tag.created),
-  modified: dateToIsoString(tag.modified),
-});
 
 export class TagService {
   constructor(
@@ -55,21 +46,15 @@ export class TagService {
     name: string,
     excludeId?: string,
   ) {
-    const lowerName = name.toLowerCase().trim();
-    const where: TagWhereInput = {
+    await validateUniqueNameForService({
+      count: (args) => this.deps.db.tag.count(args),
+      errorCode: ErrorCode.DUPLICATE_NAME,
+      errorMessage: 'Tag name already exists',
       userId,
-      name: lowerName,
-    };
-
-    if (excludeId) {
-      where.id = { not: excludeId };
-    }
-
-    const count = await this.deps.db.tag.count({ where });
-
-    if (count > 0) {
-      throwAppError(ErrorCode.DUPLICATE_NAME, 'Tag name already exists');
-    }
+      name,
+      excludeId,
+      normalizeName: (n) => n.toLowerCase().trim(),
+    });
   }
 
   async upsertTag(userId: string, data: IUpsertTagDto): Promise<TagResponse> {
@@ -89,7 +74,7 @@ export class TagService {
         },
         select: TAG_SELECT_FULL,
       });
-      return formatTag(tag);
+      return mapTag(tag);
     } else {
       const tag = await this.deps.db.tag.create({
         data: {
@@ -100,7 +85,7 @@ export class TagService {
         },
         select: TAG_SELECT_FULL,
       });
-      return formatTag(tag);
+      return mapTag(tag);
     }
   }
 
@@ -117,7 +102,7 @@ export class TagService {
       throwAppError(ErrorCode.TAG_NOT_FOUND, 'Tag not found');
     }
 
-    return formatTag(tag);
+    return mapTag(tag);
   }
 
   async listTags(
@@ -164,7 +149,7 @@ export class TagService {
     ]);
 
     return {
-      tags: tags.map(formatTag),
+      tags: tags.map(mapTag),
       pagination: {
         page,
         limit,

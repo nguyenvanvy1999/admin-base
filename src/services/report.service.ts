@@ -1859,17 +1859,14 @@ export class ReportService {
     };
   }
 
-  private async getExchangeRate(
-    fromCode: string,
-    toCode: string,
-  ): Promise<number> {
-    if (fromCode === toCode) return 1;
+  private getExchangeRate(fromCode: string, toCode: string): Promise<number> {
+    if (fromCode === toCode) return Promise.resolve(1);
 
     try {
-      return await this.deps.exchangeRateService.getRate(fromCode, toCode);
+      return this.deps.exchangeRateService.getRate(fromCode, toCode);
     } catch (error) {
       this.deps.logger.error('Failed to get exchange rate', { error });
-      return 1;
+      return Promise.resolve(1);
     }
   }
 }

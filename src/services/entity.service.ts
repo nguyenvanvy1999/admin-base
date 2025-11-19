@@ -3,7 +3,6 @@ import { prisma } from '@server/configs/db';
 import type {
   EntityOrderByWithRelationInput,
   EntityWhereInput,
-  Prisma,
 } from '@server/generated';
 import {
   DB_PREFIX,
@@ -12,22 +11,14 @@ import {
   idUtil,
   throwAppError,
 } from '@server/share';
+import { validateUniqueNameForService } from '@server/share/utils/service.util';
 import type {
   IListEntitiesQueryDto,
   IUpsertEntityDto,
 } from '../dto/entity.dto';
+import { mapEntity } from './mappers';
 
 import { ENTITY_SELECT_FULL, ENTITY_SELECT_MINIMAL } from './selects';
-
-const mapEntity = (
-  entity: Prisma.EntityGetPayload<{
-    select: typeof ENTITY_SELECT_FULL;
-  }>,
-) => ({
-  ...entity,
-  created: entity.created.toISOString(),
-  modified: entity.modified.toISOString(),
-});
 
 export class EntityService {
   constructor(
@@ -53,20 +44,14 @@ export class EntityService {
     name: string,
     excludeId?: string,
   ) {
-    const where: EntityWhereInput = {
+    await validateUniqueNameForService({
+      count: (args) => this.deps.db.entity.count(args),
+      errorCode: ErrorCode.DUPLICATE_NAME,
+      errorMessage: 'Entity name already exists',
       userId,
       name,
-    };
-
-    if (excludeId) {
-      where.id = { not: excludeId };
-    }
-
-    const count = await this.deps.db.entity.count({ where });
-
-    if (count > 0) {
-      throwAppError(ErrorCode.DUPLICATE_NAME, 'Entity name already exists');
-    }
+      excludeId,
+    });
   }
 
   async upsertEntity(userId: string, data: IUpsertEntityDto) {

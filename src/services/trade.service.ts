@@ -1,10 +1,6 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type {
-  InvestmentTradeWhereInput,
-  Prisma,
-  TradeSide,
-} from '@server/generated';
+import type { InvestmentTradeWhereInput, TradeSide } from '@server/generated';
 import {
   DB_PREFIX,
   ErrorCode,
@@ -24,26 +20,8 @@ import {
   type InvestmentService,
   investmentService,
 } from './investment.service';
+import { mapTrade } from './mappers';
 import { TRADE_SELECT_FULL } from './selects';
-
-const mapTrade = (
-  trade: Prisma.InvestmentTradeGetPayload<{
-    select: typeof TRADE_SELECT_FULL;
-  }>,
-) => ({
-  ...trade,
-  timestamp: trade.timestamp.toISOString(),
-  price: trade.price.toNumber(),
-  quantity: trade.quantity.toNumber(),
-  amount: trade.amount.toNumber(),
-  fee: trade.fee.toNumber(),
-  priceInBaseCurrency: trade.priceInBaseCurrency?.toNumber() ?? null,
-  amountInBaseCurrency: trade.amountInBaseCurrency?.toNumber() ?? null,
-  exchangeRate: trade.exchangeRate?.toNumber() ?? null,
-  priceFetchedAt: trade.priceFetchedAt?.toISOString() ?? null,
-  created: trade.created.toISOString(),
-  modified: trade.modified.toISOString(),
-});
 
 export class InvestmentTradeService {
   constructor(

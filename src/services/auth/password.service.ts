@@ -4,12 +4,12 @@ import { TimeUtil } from '@server/share';
 import dayjs from 'dayjs';
 
 export class BunPasswordHasher {
-  async hash(password: string): Promise<string> {
-    return await Bun.password.hash(password, 'bcrypt');
+  hash(password: string): Promise<string> {
+    return Bun.password.hash(password, 'bcrypt');
   }
 
-  async verify(password: string, hash: string): Promise<boolean> {
-    return await Bun.password.verify(password, hash, 'bcrypt');
+  verify(password: string, hash: string): Promise<boolean> {
+    return Bun.password.verify(password, hash, 'bcrypt');
   }
 }
 
@@ -65,15 +65,9 @@ export class PasswordService {
     });
   }
 
-  async comparePassword(
-    password: string,
-    passwordHash: string,
-  ): Promise<boolean> {
+  comparePassword(password: string, passwordHash: string): Promise<boolean> {
     const passwordWithPepper = password + this.deps.env.PASSWORD_PEPPER;
-    return await this.deps.passwordHasher.verify(
-      passwordWithPepper,
-      passwordHash,
-    );
+    return this.deps.passwordHasher.verify(passwordWithPepper, passwordHash);
   }
 }
 

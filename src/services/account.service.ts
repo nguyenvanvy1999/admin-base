@@ -4,13 +4,9 @@ import type { ActionRes } from '@server/dto/common.dto';
 import type {
   AccountOrderByWithRelationInput,
   AccountWhereInput,
-  Prisma,
 } from '@server/generated';
 import {
   DB_PREFIX,
-  dateToIsoString,
-  decimalToNullableString,
-  decimalToString,
   ErrorCode,
   type IdUtil,
   idUtil,
@@ -22,27 +18,12 @@ import type {
   IListAccountsQueryDto,
   IUpsertAccountDto,
 } from '../dto/account.dto';
+import { mapAccount } from './mappers';
 import {
   ACCOUNT_SELECT_FULL,
   ACCOUNT_SELECT_MINIMAL,
   CURRENCY_SELECT_BASIC,
 } from './selects';
-
-type AccountRecord = Prisma.AccountGetPayload<{
-  select: typeof ACCOUNT_SELECT_FULL;
-}>;
-
-const formatAccount = (account: AccountRecord): AccountResponse => ({
-  ...account,
-  balance: decimalToString(account.balance),
-  creditLimit: decimalToNullableString(account.creditLimit),
-  notifyOnDueDate: account.notifyOnDueDate ?? null,
-  paymentDay: account.paymentDay ?? null,
-  notifyDaysBefore: account.notifyDaysBefore ?? null,
-  meta: account.meta ?? null,
-  created: dateToIsoString(account.created),
-  modified: dateToIsoString(account.modified),
-});
 
 export class AccountService {
   constructor(
@@ -152,7 +133,7 @@ export class AccountService {
       throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
     }
 
-    return formatAccount(account);
+    return mapAccount(account);
   }
 
   async listAccounts(
@@ -246,7 +227,7 @@ export class AccountService {
       );
 
     return {
-      accounts: accounts.map(formatAccount),
+      accounts: accounts.map(mapAccount),
       pagination: {
         page,
         limit,

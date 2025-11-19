@@ -1,15 +1,9 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type {
-  InvestmentContributionWhereInput,
-  Prisma,
-} from '@server/generated';
+import type { InvestmentContributionWhereInput } from '@server/generated';
 import { type ContributionType, InvestmentMode } from '@server/generated';
 import {
   DB_PREFIX,
-  dateToIsoString,
-  decimalToNullableNumber,
-  decimalToNumber,
   ErrorCode,
   type IdUtil,
   idUtil,
@@ -33,35 +27,8 @@ import {
   type InvestmentPositionService,
   investmentPositionService,
 } from './investment-position.service';
+import { mapContribution } from './mappers';
 import { CONTRIBUTION_SELECT_FULL } from './selects';
-
-type ContributionRecord = Prisma.InvestmentContributionGetPayload<{
-  select: typeof CONTRIBUTION_SELECT_FULL;
-}>;
-
-const formatContribution = (
-  contribution: ContributionRecord,
-): InvestmentContributionResponse => ({
-  ...contribution,
-  accountId: contribution.accountId ?? null,
-  amount: decimalToNumber(contribution.amount),
-  amountInBaseCurrency: decimalToNullableNumber(
-    contribution.amountInBaseCurrency,
-  ),
-  exchangeRate: decimalToNullableNumber(contribution.exchangeRate),
-  baseCurrencyId: contribution.baseCurrencyId ?? null,
-  timestamp: dateToIsoString(contribution.timestamp),
-  note: contribution.note ?? null,
-  created: dateToIsoString(contribution.created),
-  modified: dateToIsoString(contribution.modified),
-  account: contribution.account
-    ? {
-        id: contribution.account.id,
-        name: contribution.account.name,
-      }
-    : null,
-  baseCurrency: contribution.baseCurrency ?? null,
-});
 
 export class InvestmentContributionService {
   constructor(
@@ -193,7 +160,7 @@ export class InvestmentContributionService {
         );
       }
 
-      return formatContribution(contribution);
+      return mapContribution(contribution);
     });
   }
 
@@ -236,7 +203,7 @@ export class InvestmentContributionService {
     ]);
 
     return {
-      contributions: contributions.map(formatContribution),
+      contributions: contributions.map(mapContribution),
       pagination: {
         page,
         limit,

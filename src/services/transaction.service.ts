@@ -1,7 +1,6 @@
 import type { IDb } from '@server/configs/db';
 import { type PrismaTx, prisma } from '@server/configs/db';
 import type {
-  Prisma,
   TransactionOrderByWithRelationInput,
   TransactionUncheckedCreateInput,
   TransactionWhereInput,
@@ -10,10 +9,6 @@ import { TransactionType } from '@server/generated';
 import {
   CATEGORY_NAME,
   DB_PREFIX,
-  dateToIsoString,
-  dateToNullableIsoString,
-  decimalToNullableString,
-  decimalToString,
   ErrorCode,
   type IdUtil,
   idUtil,
@@ -42,113 +37,17 @@ import {
   currencyConversionService,
 } from './currency-conversion.service';
 import {
+  type MinimalCurrency,
+  mapCurrencyRecord,
+  mapTransaction,
+  type TransactionRecord,
+} from './mappers';
+import {
   CURRENCY_SELECT_BASIC,
   TRANSACTION_SELECT_FOR_BALANCE,
   TRANSACTION_SELECT_FULL,
   TRANSACTION_SELECT_MINIMAL,
 } from './selects';
-
-type TransactionRecord = Prisma.TransactionGetPayload<{
-  select: typeof TRANSACTION_SELECT_FULL;
-}>;
-type MinimalCurrency = {
-  id: string;
-  code: string;
-  name: string;
-  symbol: string | null;
-};
-
-const formatCurrencyRecord = (currency: MinimalCurrency | null | undefined) => {
-  if (!currency) {
-    return null;
-  }
-  return {
-    ...currency,
-    symbol: currency.symbol ?? null,
-  };
-};
-
-const formatAccountRecord = (
-  account: NonNullable<TransactionRecord['account']>,
-) => ({
-  ...account,
-  currency: formatCurrencyRecord(account.currency)!,
-});
-
-const formatOptionalAccountRecord = (
-  account: TransactionRecord['toAccount'],
-) => {
-  if (!account) {
-    return null;
-  }
-  return {
-    ...account,
-    currency: formatCurrencyRecord(account.currency)!,
-  };
-};
-
-const formatCategoryRecord = (category: TransactionRecord['category']) => {
-  if (!category) {
-    return null;
-  }
-  return {
-    ...category,
-    icon: category.icon ?? null,
-    color: category.color ?? null,
-  };
-};
-
-const formatEntityRecord = (entity: TransactionRecord['entity']) => {
-  if (!entity) {
-    return null;
-  }
-  return { ...entity };
-};
-
-const formatEventRecord = (
-  event: TransactionRecord['event'],
-): TransactionDetail['event'] => {
-  if (!event) {
-    return null;
-  }
-  return {
-    id: event.id,
-    name: event.name,
-    startAt: event.startAt.toISOString(),
-    endAt: event.endAt ? event.endAt.toISOString() : null,
-  };
-};
-
-const formatTransactionRecord = (
-  transaction: TransactionRecord,
-): TransactionDetail => ({
-  ...transaction,
-  toAccountId: transaction.toAccountId ?? null,
-  transferGroupId: transaction.transferGroupId ?? null,
-  categoryId: transaction.categoryId,
-  entityId: transaction.entityId ?? null,
-  investmentId: transaction.investmentId ?? null,
-  eventId: transaction.eventId ?? null,
-  amount: decimalToString(transaction.amount),
-  price: decimalToNullableString(transaction.price),
-  priceInBaseCurrency: decimalToNullableString(transaction.priceInBaseCurrency),
-  quantity: decimalToNullableString(transaction.quantity),
-  fee: decimalToString(transaction.fee),
-  feeInBaseCurrency: decimalToNullableString(transaction.feeInBaseCurrency),
-  date: dateToIsoString(transaction.date),
-  dueDate: dateToNullableIsoString(transaction.dueDate),
-  note: transaction.note ?? null,
-  receiptUrl: transaction.receiptUrl ?? null,
-  metadata: transaction.metadata ?? null,
-  created: dateToIsoString(transaction.created),
-  modified: dateToIsoString(transaction.modified),
-  account: formatAccountRecord(transaction.account!),
-  toAccount: formatOptionalAccountRecord(transaction.toAccount),
-  category: formatCategoryRecord(transaction.category),
-  entity: formatEntityRecord(transaction.entity),
-  event: formatEventRecord(transaction.event),
-  currency: formatCurrencyRecord(transaction.currency),
-});
 
 class TransactionHandlerFactory {
   constructor(
@@ -882,7 +781,7 @@ export class TransactionService {
       }
     }
 
-    return formatTransactionRecord(transaction);
+    return mapTransaction(transaction);
   }
 
   async getTransaction(
@@ -901,7 +800,7 @@ export class TransactionService {
       throwAppError(ErrorCode.NOT_FOUND, 'Transaction not found');
     }
 
-    return formatTransactionRecord(transaction);
+    return mapTransaction(transaction);
   }
 
   async listTransactions(
@@ -1021,13 +920,13 @@ export class TransactionService {
     }
 
     const summary = Array.from(summaryByCurrency.values()).map((item) => ({
-      currency: formatCurrencyRecord(item.currency)!,
+      currency: mapCurrencyRecord(item.currency)!,
       totalIncome: item.totalIncome.toNumber(),
       totalExpense: item.totalExpense.toNumber(),
     }));
 
     return {
-      transactions: transactions.map(formatTransactionRecord),
+      transactions: transactions.map(mapTransaction),
       pagination: {
         page,
         limit,
@@ -1280,7 +1179,7 @@ export class TransactionService {
           if (result) {
             results.push({
               success: true,
-              data: formatTransactionRecord(result),
+              data: mapTransaction(result),
             });
           }
         } catch (error) {
@@ -1388,7 +1287,7 @@ export class TransactionService {
       user.baseCurrencyId,
     );
 
-    return formatTransactionRecord(transaction);
+    return mapTransaction(transaction);
   }
 
   async getUnpaidDebts(
@@ -1514,7 +1413,7 @@ export class TransactionService {
         }
 
         if (remainingAmount > 0) {
-          const formatted = formatTransactionRecord(loan.transaction);
+          const formatted = mapTransaction(loan.transaction);
           debtTransactions.push({
             ...formatted,
             remainingAmount,

@@ -3,13 +3,11 @@ import { prisma } from '@server/configs/db';
 import type {
   BudgetOrderByWithRelationInput,
   BudgetWhereInput,
-  Prisma,
 } from '@server/generated';
 import { BudgetPeriod, TransactionType } from '@server/generated';
 import {
   DB_PREFIX,
   dateToIsoString,
-  dateToNullableIsoString,
   decimalToString,
   ErrorCode,
   type IdUtil,
@@ -26,26 +24,9 @@ import {
   type CurrencyConversionService,
   currencyConversionService,
 } from './currency-conversion.service';
+import { mapBudget } from './mappers';
 
 import { BUDGET_SELECT_FULL, BUDGET_SELECT_MINIMAL } from './selects';
-
-type BudgetRecord = Prisma.BudgetGetPayload<{
-  select: typeof BUDGET_SELECT_FULL;
-}>;
-
-const mapBudget = (budget: BudgetRecord) => ({
-  id: budget.id,
-  name: budget.name,
-  amount: decimalToString(budget.amount),
-  period: budget.period,
-  startDate: dateToIsoString(budget.startDate),
-  endDate: dateToNullableIsoString(budget.endDate),
-  carryOver: budget.carryOver,
-  accountIds: budget.accounts.map((a) => a.accountId),
-  categoryIds: budget.categories.map((c) => c.categoryId),
-  created: dateToIsoString(budget.created),
-  modified: dateToIsoString(budget.modified),
-});
 
 export class BudgetService {
   constructor(

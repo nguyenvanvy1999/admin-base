@@ -3,7 +3,6 @@ import { prisma } from '@server/configs/db';
 import type {
   EventOrderByWithRelationInput,
   EventWhereInput,
-  Prisma,
 } from '@server/generated';
 import {
   DB_PREFIX,
@@ -12,21 +11,11 @@ import {
   idUtil,
   throwAppError,
 } from '@server/share';
+import { validateUniqueNameForService } from '@server/share/utils/service.util';
 import type { IListEventsQueryDto, IUpsertEventDto } from '../dto/event.dto';
+import { mapEvent } from './mappers';
 
 import { EVENT_SELECT_FULL, EVENT_SELECT_MINIMAL } from './selects';
-
-const mapEvent = (
-  event: Prisma.EventGetPayload<{
-    select: typeof EVENT_SELECT_FULL;
-  }>,
-) => ({
-  ...event,
-  startAt: event.startAt.toISOString(),
-  endAt: event.endAt ? event.endAt.toISOString() : null,
-  created: event.created.toISOString(),
-  modified: event.modified.toISOString(),
-});
 
 export class EventService {
   constructor(
@@ -52,20 +41,14 @@ export class EventService {
     name: string,
     excludeId?: string,
   ) {
-    const where: EventWhereInput = {
+    await validateUniqueNameForService({
+      count: (args) => this.deps.db.event.count(args),
+      errorCode: ErrorCode.DUPLICATE_NAME,
+      errorMessage: 'Event name already exists',
       userId,
       name,
-    };
-
-    if (excludeId) {
-      where.id = { not: excludeId };
-    }
-
-    const count = await this.deps.db.event.count({ where });
-
-    if (count > 0) {
-      throwAppError(ErrorCode.DUPLICATE_NAME, 'Event name already exists');
-    }
+      excludeId,
+    });
   }
 
   private validateDateRange(startAt: Date, endAt?: Date | null) {

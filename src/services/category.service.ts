@@ -16,10 +16,10 @@ import {
 import type {
   CategoryListResponse,
   CategoryResponse,
-  CategoryTreeResponse,
   IListCategoriesQueryDto,
   IUpsertCategoryDto,
 } from '../dto/category.dto';
+import { mapCategory, mapCategoryTree } from './mappers';
 import { CATEGORY_SELECT_MINIMAL } from './selects';
 
 type CategoryWithChildren = {
@@ -32,39 +32,6 @@ type CategoryWithChildren = {
   icon: string | null;
   color: string | null;
   children?: CategoryWithChildren[];
-};
-
-const formatCategory = (
-  category: Pick<
-    CategoryWithChildren,
-    | 'id'
-    | 'userId'
-    | 'type'
-    | 'name'
-    | 'parentId'
-    | 'icon'
-    | 'color'
-    | 'isLocked'
-  >,
-): CategoryResponse => ({
-  ...category,
-  parentId: category.parentId ?? null,
-  icon: category.icon ?? null,
-  color: category.color ?? null,
-});
-
-const formatCategoryTree = (
-  category: CategoryWithChildren,
-): CategoryTreeResponse => {
-  const children =
-    category.children && category.children.length > 0
-      ? category.children.map(formatCategoryTree)
-      : undefined;
-
-  return {
-    ...formatCategory(category),
-    children,
-  } as CategoryTreeResponse;
 };
 
 export class CategoryService {
@@ -242,7 +209,7 @@ export class CategoryService {
 
     const tree = this.buildCategoryTree(categories as CategoryWithChildren[]);
 
-    return { categories: tree.map(formatCategoryTree) } as CategoryListResponse;
+    return { categories: tree.map(mapCategoryTree) } as CategoryListResponse;
   }
 
   async getCategoryById(
@@ -270,7 +237,7 @@ export class CategoryService {
       throwAppError(ErrorCode.CATEGORY_NOT_FOUND, 'Category not found');
     }
 
-    return formatCategory(category);
+    return mapCategory(category);
   }
 
   async getOrCreateBalanceAdjustmentCategory(
@@ -362,7 +329,7 @@ export class CategoryService {
       },
     });
 
-    return formatCategory(category);
+    return mapCategory(category);
   }
 
   async updateCategory(
@@ -448,7 +415,7 @@ export class CategoryService {
       },
     });
 
-    return formatCategory(updatedCategory);
+    return mapCategory(updatedCategory);
   }
 
   private async checkCircularReference(
