@@ -80,7 +80,7 @@ export const DebtTransactionTable = ({
             </Box>
           );
         },
-        render: (value, row, rowIndex) => (
+        render: ({ row }) => (
           <Text size="sm">{row.entity?.name || t('debts.unknown')}</Text>
         ),
         enableSorting: false,
@@ -95,7 +95,7 @@ export const DebtTransactionTable = ({
         title: 'debts.description',
         ellipsis: true,
         enableSorting: false,
-        render: (value, row, rowIndex) => (
+        render: ({ value }) => (
           <Text size="sm">{value || t('debts.noDescription')}</Text>
         ),
       },
@@ -103,7 +103,7 @@ export const DebtTransactionTable = ({
         id: 'amount',
         accessor: (row: DebtTransaction) => parseFloat(String(row.amount)),
         title: 'debts.amount',
-        render: (value, row, rowIndex) => {
+        render: ({ row }: { row: DebtTransaction }) => {
           const amount = parseFloat(String(row.amount));
           const currency =
             row.currency?.code || row.account?.currency?.code || 'VND';
@@ -147,7 +147,7 @@ export const DebtTransactionTable = ({
         title: 'debts.actions',
         textAlign: 'center',
         width: '10rem',
-        render: (row: DebtTransaction, rowIndex: number) => (
+        render: ({ row }) => (
           <Group gap="xs" justify="center">
             {row.type === 'loan_given' ? (
               <Button

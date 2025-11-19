@@ -213,3 +213,11 @@ export function renderBooleanBadge(config: BooleanBadgeConfig) {
     </Badge>
   );
 }
+
+/**
+ * Renders an empty cell with a dash when data is missing
+ * @returns React element with gray dash indicator
+ */
+export function renderEmpty(): React.ReactNode {
+  return <span className="text-gray-400">-</span>;
+}

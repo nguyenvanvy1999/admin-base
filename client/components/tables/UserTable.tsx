@@ -4,6 +4,7 @@ import type { UserResponse } from '@server/dto/admin/user.dto';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createActionColumn } from './columnFactories';
+import { renderEmpty } from './columnRenderers';
 import { DataTable, type DataTableColumn } from './DataTable';
 
 type UserTableProps = {
@@ -60,9 +61,9 @@ const UserTable = ({
         accessor: 'name',
         title: 'users.name',
         ellipsis: true,
-        render: (value) => {
+        render: ({ value }) => {
           if (!value) {
-            return <span className="text-gray-400">-</span>;
+            return renderEmpty();
           }
           return value;
         },
@@ -70,11 +71,13 @@ const UserTable = ({
       {
         id: 'roles',
         title: 'users.role',
-        accessor: (row: UserResponse) => row.roles || [],
+        accessor: (row) => row.roles.map((role) => role.title).join(', ') || [],
         enableSorting: false,
-        render: (roles: UserResponse['roles']) => {
+        enableGrouping: false,
+        render: ({ row }: { row: UserResponse }) => {
+          const roles = row.roles || [];
           if (!roles || roles.length === 0) {
-            return <span className="text-gray-400">-</span>;
+            return renderEmpty();
           }
           return (
             <div className="flex flex-wrap gap-1">
@@ -98,10 +101,10 @@ const UserTable = ({
         title: 'users.baseCurrency',
         accessor: (row: UserResponse) => row.baseCurrency?.code,
         enableSorting: false,
-        render: (_value, row, _rowIndex) => {
+        render: ({ row }: { row: UserResponse }) => {
           const currency = row.baseCurrency;
           if (!currency) {
-            return <span className="text-gray-400">-</span>;
+            return renderEmpty();
           }
           return (
             <span>

@@ -5,6 +5,7 @@ import type { SessionResponseWithUser } from '@server/dto/admin/session.dto';
 import { IconBan } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { renderEmpty } from './columnRenderers';
 import { DataTable, type DataTableColumn } from './DataTable';
 
 type SessionTableProps = {
@@ -76,9 +77,9 @@ const SessionTable = ({
       cols.push({
         accessor: (row) => row.user?.username,
         title: 'sessions.user',
-        render: (value, row, _rowIndex) => {
+        render: ({ row }: { row: SessionResponseWithUser }) => {
           if (!row.user) {
-            return <span className="text-gray-400">-</span>;
+            return renderEmpty();
           }
           return (
             <div>
@@ -98,8 +99,8 @@ const SessionTable = ({
       {
         accessor: 'device',
         title: 'sessions.device',
-        render: (value) => {
-          if (!value) return <span className="text-gray-400">-</span>;
+        render: ({ value }) => {
+          if (!value) return renderEmpty();
           return <span>{value}</span>;
         },
         enableSorting: false,
@@ -107,8 +108,8 @@ const SessionTable = ({
       {
         accessor: 'ip',
         title: 'sessions.ip',
-        render: (value) => {
-          if (!value) return <span className="text-gray-400">-</span>;
+        render: ({ value }) => {
+          if (!value) return renderEmpty();
           return <span>{value}</span>;
         },
         enableSorting: false,
@@ -117,7 +118,7 @@ const SessionTable = ({
         id: 'status',
         title: 'sessions.statusLabel',
         accessor: (row) => getSessionStatus(row).label,
-        render: (_value, row, _rowIndex) => {
+        render: ({ row }: { row: SessionResponseWithUser }) => {
           const status = getSessionStatus(row);
           return (
             <Badge color={status.color} variant="light">
@@ -132,16 +133,16 @@ const SessionTable = ({
       {
         accessor: 'created',
         title: 'sessions.created',
-        render: (value) => {
-          if (!value) return <span className="text-gray-400">-</span>;
+        render: ({ value }) => {
+          if (!value) return renderEmpty();
           return <span>{formatDate(value)}</span>;
         },
       },
       {
         accessor: 'expired',
         title: 'sessions.expired',
-        render: (value) => {
-          if (!value) return <span className="text-gray-400">-</span>;
+        render: ({ value }) => {
+          if (!value) return renderEmpty();
           return <span>{formatDate(value)}</span>;
         },
       },
@@ -152,7 +153,7 @@ const SessionTable = ({
         title: 'sessions.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (row: SessionResponseWithUser, rowIndex: number) => {
+        render: ({ row }) => {
           const status = getSessionStatus(row);
           const isDisabled =
             status.label === 'Revoked' || status.label === 'Expired';

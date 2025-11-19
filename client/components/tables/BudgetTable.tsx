@@ -66,7 +66,7 @@ const BudgetTable = ({
       {
         accessor: 'name',
         title: 'budgets.name',
-        render: (value, row) => (
+        render: ({ value, row }) => (
           <Button
             variant="subtle"
             p={0}
@@ -129,7 +129,7 @@ const BudgetTable = ({
       }),
       {
         title: 'budgets.actions',
-        render: (row, rowIndex) => (
+        render: ({ row }) => (
           <Group gap="xs">
             <Button
               size="xs"

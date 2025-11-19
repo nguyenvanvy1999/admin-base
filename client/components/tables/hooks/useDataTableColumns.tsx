@@ -128,26 +128,33 @@ export function useDataTableColumns<T extends { id: string }>({
         cell: { getValue: () => unknown };
       }) => {
         const record = row.original;
-        const value = cell.getValue();
         const hasAccessor = col.accessor !== undefined;
         let content: React.ReactNode;
+
+        // Priority: render function always takes precedence over autoFormat
         if (col.render) {
           if (hasAccessor) {
+            const value = cell.getValue();
             content = (
-              col.render as (
-                value: unknown,
-                row: T,
-                rowIndex: number,
-              ) => React.ReactNode
-            )(value, record, row.index);
+              col.render as (props: {
+                value: unknown;
+                row: T;
+                rowIndex: number;
+              }) => React.ReactNode
+            )({ value, row: record, rowIndex: row.index });
           } else {
             content = (
-              col.render as (row: T, rowIndex: number) => React.ReactNode
-            )(record, row.index);
+              col.render as (props: {
+                row: T;
+                rowIndex: number;
+              }) => React.ReactNode
+            )({ row: record, rowIndex: row.index });
           }
         } else if (!autoFormatDisabled) {
+          const value = cell.getValue();
           content = autoFormat(value);
         } else {
+          const value = cell.getValue();
           content = value as React.ReactNode;
         }
         const style: React.CSSProperties = {

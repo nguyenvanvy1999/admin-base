@@ -216,7 +216,7 @@ const InvestmentDetailPage = () => {
       {
         accessor: 'side',
         title: 'investments.trade.side',
-        render: (value, row: InvestmentTradeResponse) => (
+        render: ({ row }) => (
           <Badge
             color={row.side === TradeSide.buy ? 'green' : 'red'}
             variant="light"
@@ -234,28 +234,32 @@ const InvestmentDetailPage = () => {
       {
         accessor: 'quantity',
         title: 'investments.trade.quantity',
-        render: (value) => formatNumber(parseFloat(String(value))),
+        render: ({ value }: { value: any }) =>
+          formatNumber(parseFloat(String(value))),
       },
       {
         accessor: 'price',
         title: 'investments.trade.price',
-        render: (value) => formatCurrency(parseFloat(String(value))),
+        render: ({ value }: { value: any }) =>
+          formatCurrency(parseFloat(String(value))),
       },
       {
         accessor: 'amount',
         title: 'investments.trade.amount',
-        render: (value) => formatCurrency(parseFloat(String(value))),
+        render: ({ value }: { value: any }) =>
+          formatCurrency(parseFloat(String(value))),
       },
       {
         accessor: 'fee',
         title: 'investments.trade.fee',
-        render: (value) => formatCurrency(parseFloat(String(value))),
+        render: ({ value }: { value: any }) =>
+          formatCurrency(parseFloat(String(value))),
       },
       {
         title: 'common.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (row: InvestmentTradeResponse, rowIndex: number) => (
+        render: ({ row }: { row: InvestmentTradeResponse }) => (
           <Group justify="center" gap="xs">
             <ActionIcon
               variant="subtle"
@@ -284,7 +288,13 @@ const InvestmentDetailPage = () => {
       {
         accessor: 'type',
         title: 'investments.contribution.type',
-        render: (value, row: InvestmentContributionResponse) => (
+        render: ({
+          value,
+          row,
+        }: {
+          value: any;
+          row: InvestmentContributionResponse;
+        }) => (
           <Badge
             color={row.type === ContributionType.deposit ? 'green' : 'red'}
             variant="light"
@@ -302,12 +312,14 @@ const InvestmentDetailPage = () => {
       {
         accessor: 'amount',
         title: 'investments.contribution.amount',
-        render: (value) => formatCurrency(parseFloat(String(value))),
+        render: ({ value }: { value: any }) =>
+          formatCurrency(parseFloat(String(value))),
       },
       {
         accessor: (row: InvestmentContributionResponse) => row.account?.name,
         title: 'investments.contribution.account',
-        render: (value: string | undefined) => (value ? String(value) : '--'),
+        render: ({ value }: { value: string | undefined }) =>
+          value ? String(value) : '--',
       },
       {
         accessor: 'note',
@@ -318,7 +330,7 @@ const InvestmentDetailPage = () => {
         title: 'common.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (row: InvestmentContributionResponse, rowIndex: number) => (
+        render: ({ row }: { row: InvestmentContributionResponse }) => (
           <Group justify="center" gap="xs">
             <ActionIcon
               variant="subtle"
@@ -347,7 +359,8 @@ const InvestmentDetailPage = () => {
       {
         accessor: 'price',
         title: 'investments.valuation.price',
-        render: (value) => formatCurrency(parseFloat(String(value))),
+        render: ({ value }: { value: any }) =>
+          formatCurrency(parseFloat(String(value))),
       },
       {
         accessor: 'source',
@@ -358,7 +371,7 @@ const InvestmentDetailPage = () => {
         title: 'common.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (row: InvestmentValuationResponse, rowIndex: number) => (
+        render: ({ row }: { row: InvestmentValuationResponse }) => (
           <Group justify="center" gap="xs">
             <ActionIcon
               variant="subtle"

@@ -96,11 +96,11 @@ interface DataTableColumnWithAccessor<
   TAccessor extends TypedAccessor<TData, any>,
 > extends BaseColumnProps<TData> {
   accessor: TAccessor;
-  render?: (
-    value: InferAccessorValue<TData, TAccessor>,
-    row: TData,
-    rowIndex: number,
-  ) => React.ReactNode;
+  render?: (props: {
+    value: InferAccessorValue<TData, TAccessor>;
+    row: TData;
+    rowIndex: number;
+  }) => React.ReactNode;
   format?: 'date' | 'number' | 'currency' | 'boolean' | 'array' | 'auto';
   currency?: string | ((row: TData) => string | null | undefined);
   dateFormat?: string;
@@ -115,7 +115,7 @@ interface DataTableColumnWithAccessor<
 interface DataTableColumnWithoutAccessor<TData extends { id: string }>
   extends BaseColumnProps<TData> {
   accessor?: never;
-  render: (row: TData, rowIndex: number) => React.ReactNode;
+  render: (props: { row: TData; rowIndex: number }) => React.ReactNode;
 }
 
 export type DataTableColumn<TData extends { id: string }> =

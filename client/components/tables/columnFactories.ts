@@ -7,6 +7,7 @@ import {
   renderBooleanBadge,
   renderCurrency,
   renderDate,
+  renderEmpty,
   renderTypeBadge,
 } from './columnRenderers';
 import type { ColumnFactoryOptions } from './commonTypes';
@@ -24,7 +25,7 @@ export function createActionColumn<TData extends { id: string }>(
     textAlign: options.textAlign || 'center',
     width: options.width || '8rem',
     enableSorting: false,
-    render: (row: TData, rowIndex: number) => renderActionButtons(options, row),
+    render: ({ row }: { row: TData }) => renderActionButtons(options, row),
   };
 }
 
@@ -56,7 +57,7 @@ export function createBadgeColumn<
     ellipsis: options.ellipsis,
     onClick: options.onClick,
     cellsStyle: options.cellsStyle,
-    render: (value: any, row: TData, rowIndex: number) =>
+    render: ({ value, row }: { value: any; row: TData }) =>
       renderBadge({
         label: options.getLabel(
           value as InferAccessorValue<TData, TAccessor>,
@@ -93,7 +94,7 @@ export function createTypeColumn<
     ellipsis: options.ellipsis,
     onClick: options.onClick,
     cellsStyle: options.cellsStyle,
-    render: (value: any, row: TData, rowIndex: number) =>
+    render: ({ value }: { value: any }) =>
       renderTypeBadge({
         value: String(value),
         labelMap: options.labelMap,
@@ -132,13 +133,16 @@ export function createCurrencyColumn<
     ellipsis: options.ellipsis,
     onClick: options.onClick,
     cellsStyle: options.cellsStyle,
-    render: (value: any, row: TData, rowIndex: number) =>
+    render: ({ value, row }: { value: any; row: TData }) =>
       renderCurrency({
         value: value as number | string,
         symbol: options.getSymbol?.(row) || undefined,
         decimalScale: options.decimalScale,
         allowNegative: options.allowNegative,
-        color: options.getColor?.(value, row),
+        color: options.getColor?.(
+          value as InferAccessorValue<TData, TAccessor>,
+          row,
+        ),
         showPlus: options.showPlus,
       }),
   };
@@ -165,7 +169,7 @@ export function createDateColumn<
     ellipsis: options.ellipsis,
     onClick: options.onClick,
     cellsStyle: options.cellsStyle,
-    render: (value: any, row: TData, rowIndex: number) =>
+    render: ({ value }: { value: any }) =>
       renderDate({
         value: value as string | Date | null | undefined,
         format: options.format,
@@ -197,7 +201,7 @@ export function createBooleanColumn<
     ellipsis: options.ellipsis,
     onClick: options.onClick,
     cellsStyle: options.cellsStyle,
-    render: (value: any, row: TData, rowIndex: number) =>
+    render: ({ value }: { value: any }) =>
       renderBooleanBadge({
         value: value as boolean,
         trueLabel: options.trueLabel,
@@ -231,7 +235,15 @@ export function createTextColumn<
     width: options.width,
     textAlign: options.textAlign,
     ellipsis: options.ellipsis,
-    render: (value: any, row: TData, rowIndex: number) => {
+    render: ({
+      value,
+      row,
+      rowIndex,
+    }: {
+      value: any;
+      row: TData;
+      rowIndex: number;
+    }) => {
       const typedValue = value as InferAccessorValue<TData, TAccessor>;
       if (options.transform) {
         return options.transform(typedValue, row, rowIndex);
@@ -244,7 +256,7 @@ export function createTextColumn<
         if (options.emptyValue !== undefined) {
           return options.emptyValue;
         }
-        return '-';
+        return renderEmpty();
       }
       return typedValue as React.ReactNode;
     },

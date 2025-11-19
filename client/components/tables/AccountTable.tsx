@@ -93,7 +93,7 @@ const AccountTable = ({
         accessor: 'creditLimit',
         title: 'accounts.creditLimit',
         enableSorting: false,
-        render: (value, row) => {
+        render: ({ value, row }) => {
           if (!value) return null;
           return renderCurrency({
             value: parseFloat(String(value)),

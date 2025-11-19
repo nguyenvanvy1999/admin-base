@@ -2,6 +2,7 @@ import type { PermissionResponse } from '@client/services/PermissionService';
 import { Badge } from '@mantine/core';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { renderEmpty } from './columnRenderers';
 import { DataTable, type DataTableColumn } from './DataTable';
 
 function extractCategory(title: string | null | undefined): string {
@@ -67,7 +68,7 @@ const PermissionTable = ({
       {
         accessor: 'category',
         title: 'permissions.category',
-        render: (value) => {
+        render: ({ value }) => {
           if (!value) {
             return (
               <Badge color="gray" variant="light">
@@ -90,8 +91,8 @@ const PermissionTable = ({
         accessor: 'description',
         title: 'permissions.description',
         ellipsis: true,
-        render: (value) => {
-          if (!value) return <span className="text-gray-400">-</span>;
+        render: ({ value }) => {
+          if (!value) return renderEmpty();
           return <span>{String(value)}</span>;
         },
       },

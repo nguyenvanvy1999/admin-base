@@ -138,7 +138,11 @@ const TransactionTable = ({
         enableSorting: false,
         accessor: (row: TransactionDetail) => row.category,
         title: 'transactions.category',
-        render: (category: TransactionDetail['category'], _row, _rowIndex) => {
+        render: ({
+          value: category,
+        }: {
+          value: TransactionDetail['category'];
+        }) => {
           if (!category) {
             return (
               <Text size="sm" c="dimmed">

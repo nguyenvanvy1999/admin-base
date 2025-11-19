@@ -4,6 +4,7 @@ import type { RoleResponse } from '@server/dto/admin/role.dto';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { renderEmpty } from './columnRenderers';
 import { DataTable, type DataTableColumn } from './DataTable';
 
 const FROZEN_ROLE_IDS = ['role_user_default', 'role_admin_default'];
@@ -71,15 +72,15 @@ const RoleTable = ({
         accessor: 'description',
         title: 'roles.description',
         ellipsis: true,
-        render: (value: string | null) => {
-          if (!value) return <span className="text-gray-400">-</span>;
+        render: ({ value }) => {
+          if (!value) return renderEmpty();
           return <span>{String(value)}</span>;
         },
       },
       {
         accessor: 'enabled',
         title: 'roles.enabled',
-        render: (value: boolean) => {
+        render: ({ value }) => {
           return (
             <Badge color={value ? 'green' : 'red'} variant="light">
               {value ? t('common.enabled') : t('common.disabled')}
@@ -90,14 +91,14 @@ const RoleTable = ({
       {
         accessor: 'permissionIds',
         title: 'roles.permissions',
-        render: (value: string[]) => {
+        render: ({ value }) => {
           return <span>{value.length}</span>;
         },
       },
       {
         accessor: 'playerIds',
         title: 'roles.players',
-        render: (value: string[]) => {
+        render: ({ value }) => {
           return <span>{value.length}</span>;
         },
       },
@@ -109,7 +110,7 @@ const RoleTable = ({
         title: 'roles.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (row: RoleResponse, rowIndex: number) => {
+        render: ({ row }) => {
           const frozen = isFrozenRole(row.id);
           const canEdit = canUpdate && !frozen;
           const canDeleteRole = canDelete && !frozen;
