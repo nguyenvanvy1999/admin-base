@@ -60,6 +60,7 @@ model Currency {
   investmentContributionsBaseCurrency InvestmentContribution[] @relation("ContributionBaseCurrency")
   investmentValuations                InvestmentValuation[]
   investmentValuationsBaseCurrency    InvestmentValuation[]    @relation("ValuationBaseCurrency")
+  goals                                Goal[]
 
   @@index([code], name: "currency_code_idx")
   @@map("currencies")

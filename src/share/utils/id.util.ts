@@ -19,6 +19,7 @@ export enum DB_PREFIX {
   CONTRIBUTION = 'contrib',
   VALUATION = 'val',
   BUDGET_PERIOD = 'budget_period',
+  GOAL = 'goal',
 }
 
 export class IdUtil {

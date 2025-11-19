@@ -22,6 +22,7 @@ model Account {
   investmentTrades        InvestmentTrade[]
   investmentContributions InvestmentContribution[]
   budgetAccounts          BudgetAccount[]
+  goalAccounts            GoalAccount[]
 
   @@index([userId], name: "account_userId_idx")
   @@index([type], name: "account_type_idx")

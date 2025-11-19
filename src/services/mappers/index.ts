@@ -4,6 +4,7 @@ export * from './category.mapper';
 export * from './contribution.mapper';
 export * from './entity.mapper';
 export * from './event.mapper';
+export * from './goal.mapper';
 export * from './tag.mapper';
 export * from './trade.mapper';
 export * from './transaction.mapper';
