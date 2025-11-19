@@ -5,6 +5,7 @@ import type {
 } from '@server/generated';
 import { DB_PREFIX, ErrorCode, idUtil, throwAppError } from '@server/share';
 import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { validateResourceOwnership } from '@server/share/utils/ownership.util';
 import { calculatePagination } from '@server/share/utils/pagination.util';
 import { validateUniqueNameForService } from '@server/share/utils/service.util';
 import dayjs from 'dayjs';
@@ -46,9 +47,10 @@ export class EventService extends BaseService {
 
   async upsertEvent(userId: string, data: IUpsertEventDto) {
     if (data.id) {
-      this.validateOwnership(
+      validateResourceOwnership(
         userId,
         data.id,
+        this.idUtil,
         ErrorCode.EVENT_NOT_FOUND,
         'Event not found',
       );
@@ -147,16 +149,16 @@ export class EventService extends BaseService {
       }
     }
 
-    const orderBy = this.buildOrderBy<EventOrderByWithRelationInput>(
-      sortBy,
-      sortOrder,
-      {
-        name: 'name',
-        startAt: 'startAt',
-        endAt: 'endAt',
-        created: 'created',
-      },
-    ) as EventOrderByWithRelationInput | undefined;
+    type EventSortKey = NonNullable<IListEventsQueryDto['sortBy']>;
+    const orderBy = this.buildOrderBy<
+      EventSortKey,
+      EventOrderByWithRelationInput
+    >(sortBy, sortOrder, {
+      name: 'name',
+      startAt: 'startAt',
+      endAt: 'endAt',
+      created: 'created',
+    }) as EventOrderByWithRelationInput | undefined;
 
     const { skip, take } = calculatePagination(page, limit);
 

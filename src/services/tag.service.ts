@@ -5,6 +5,7 @@ import type {
 } from '@server/generated';
 import { DB_PREFIX, ErrorCode, idUtil, throwAppError } from '@server/share';
 import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { validateResourceOwnership } from '@server/share/utils/ownership.util';
 import { calculatePagination } from '@server/share/utils/pagination.util';
 import { validateUniqueNameForService } from '@server/share/utils/service.util';
 import type {
@@ -42,9 +43,10 @@ export class TagService extends BaseService {
 
   async upsertTag(userId: string, data: IUpsertTagDto): Promise<TagResponse> {
     if (data.id) {
-      this.validateOwnership(
+      validateResourceOwnership(
         userId,
         data.id,
+        this.idUtil,
         ErrorCode.TAG_NOT_FOUND,
         'Tag not found',
       );
@@ -116,7 +118,8 @@ export class TagService extends BaseService {
       };
     }
 
-    const orderBy = this.buildOrderBy<TagOrderByWithRelationInput>(
+    type TagSortKey = NonNullable<IListTagsQueryDto['sortBy']>;
+    const orderBy = this.buildOrderBy<TagSortKey, TagOrderByWithRelationInput>(
       sortBy,
       sortOrder,
       {

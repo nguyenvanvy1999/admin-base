@@ -1,6 +1,5 @@
-/**
- * Calculates pagination skip and take values
- */
+export type SortOrder = 'asc' | 'desc';
+
 export function calculatePagination(
   page: number,
   limit: number,
@@ -14,9 +13,6 @@ export function calculatePagination(
   };
 }
 
-/**
- * Builds pagination metadata response
- */
 export function buildPaginationMeta(
   page: number,
   limit: number,
@@ -35,18 +31,14 @@ export function buildPaginationMeta(
   };
 }
 
-/**
- * Builds an orderBy object for Prisma queries
- * @param sortBy - The field to sort by
- * @param sortOrder - The sort order ('asc' or 'desc')
- * @param fieldMap - Map of allowed sort fields to their corresponding Prisma field names
- * @returns OrderBy object or undefined if sortBy is not in fieldMap
- */
-export function buildOrderByFromMap<T extends Record<string, any>>(
-  sortBy: string | undefined,
-  sortOrder: 'asc' | 'desc' = 'desc',
-  fieldMap: Record<string, keyof T>,
-): Partial<Record<keyof T, 'asc' | 'desc'>> | undefined {
+export function buildOrderByFromMap<
+  TSortKey extends string,
+  TModel extends Record<string, unknown>,
+>(
+  sortBy: TSortKey | undefined,
+  sortOrder: SortOrder = 'desc',
+  fieldMap: Record<TSortKey, keyof TModel>,
+): Partial<Record<keyof TModel, SortOrder>> | undefined {
   if (!sortBy || !(sortBy in fieldMap)) {
     return undefined;
   }
@@ -54,5 +46,5 @@ export function buildOrderByFromMap<T extends Record<string, any>>(
   const field = fieldMap[sortBy];
   return {
     [field]: sortOrder,
-  } as Partial<Record<keyof T, 'asc' | 'desc'>>;
+  } as Partial<Record<keyof TModel, SortOrder>>;
 }

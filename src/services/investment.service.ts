@@ -3,6 +3,7 @@ import type { InvestmentWhereInput } from '@server/generated';
 import { type InvestmentAssetType, InvestmentMode } from '@server/generated';
 import { DB_PREFIX, ErrorCode, idUtil, throwAppError } from '@server/share';
 import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { validateResourceOwnership } from '@server/share/utils/ownership.util';
 import { calculatePagination } from '@server/share/utils/pagination.util';
 import type {
   IListInvestmentsQueryDto,
@@ -63,9 +64,10 @@ export class InvestmentService extends BaseService {
   }
 
   async ensureInvestment(userId: string, investmentId: string) {
-    this.validateOwnership(
+    validateResourceOwnership(
       userId,
       investmentId,
+      this.idUtil,
       ErrorCode.INVESTMENT_NOT_FOUND,
       'Investment not found',
     );

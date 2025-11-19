@@ -1,9 +1,8 @@
-import type { ErrorCodeType } from '@server/share/constants/error';
-import { validateResourceOwnership } from '@server/share/utils/ownership.util';
 import {
   buildOrderByFromMap,
   buildPaginationMeta,
   calculatePagination,
+  type SortOrder,
 } from '@server/share/utils/pagination.util';
 import type { BaseServiceDependencies } from './service-dependencies';
 
@@ -14,21 +13,6 @@ export abstract class BaseService {
   constructor(protected readonly deps: BaseServiceDependencies) {
     this.db = deps.db;
     this.idUtil = deps.idUtil;
-  }
-
-  protected validateOwnership(
-    userId: string,
-    resourceId: string,
-    errorCode: ErrorCodeType,
-    errorMessage: string,
-  ): void {
-    validateResourceOwnership(
-      userId,
-      resourceId,
-      this.idUtil,
-      errorCode,
-      errorMessage,
-    );
   }
 
   protected calculateSkip(page: number, limit: number): number {
@@ -59,11 +43,14 @@ export abstract class BaseService {
     };
   }
 
-  protected buildOrderBy<T extends Record<string, any>>(
-    sortBy: string | undefined,
-    sortOrder: 'asc' | 'desc' = 'desc',
-    fieldMap: Record<string, keyof T>,
-  ): Partial<Record<keyof T, 'asc' | 'desc'>> | undefined {
-    return buildOrderByFromMap(sortBy, sortOrder, fieldMap);
+  protected buildOrderBy<
+    TSortKey extends string,
+    TModel extends Record<string, unknown>,
+  >(
+    sortBy: TSortKey | undefined,
+    sortOrder: SortOrder = 'desc',
+    fieldMap: Record<TSortKey, keyof TModel>,
+  ): Partial<Record<keyof TModel, SortOrder>> | undefined {
+    return buildOrderByFromMap<TSortKey, TModel>(sortBy, sortOrder, fieldMap);
   }
 }

@@ -6,6 +6,7 @@ import type {
 } from '@server/generated';
 import { DB_PREFIX, ErrorCode, idUtil, throwAppError } from '@server/share';
 import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { validateResourceOwnership } from '@server/share/utils/ownership.util';
 import { calculatePagination } from '@server/share/utils/pagination.util';
 import type {
   AccountListResponse,
@@ -43,9 +44,10 @@ export class AccountService extends BaseService {
     await this.validateCurrency(data.currencyId);
 
     if (data.id) {
-      this.validateOwnership(
+      validateResourceOwnership(
         userId,
         data.id,
+        this.idUtil,
         ErrorCode.ACCOUNT_NOT_FOUND,
         'Account not found',
       );
@@ -157,15 +159,15 @@ export class AccountService extends BaseService {
       };
     }
 
-    const orderBy = this.buildOrderBy<AccountOrderByWithRelationInput>(
-      sortBy,
-      sortOrder,
-      {
-        name: 'name',
-        created: 'created',
-        balance: 'balance',
-      },
-    ) as AccountOrderByWithRelationInput | undefined;
+    type AccountSortKey = NonNullable<IListAccountsQueryDto['sortBy']>;
+    const orderBy = this.buildOrderBy<
+      AccountSortKey,
+      AccountOrderByWithRelationInput
+    >(sortBy, sortOrder, {
+      name: 'name',
+      created: 'created',
+      balance: 'balance',
+    }) as AccountOrderByWithRelationInput | undefined;
 
     const { skip, take } = calculatePagination(page, limit);
 
@@ -224,9 +226,10 @@ export class AccountService extends BaseService {
   }
 
   async deleteAccount(userId: string, accountId: string): Promise<ActionRes> {
-    this.validateOwnership(
+    validateResourceOwnership(
       userId,
       accountId,
+      this.idUtil,
       ErrorCode.ACCOUNT_NOT_FOUND,
       'Account not found',
     );

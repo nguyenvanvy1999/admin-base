@@ -11,6 +11,7 @@ import {
   throwAppError,
 } from '@server/share';
 import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { validateResourceOwnership } from '@server/share/utils/ownership.util';
 import { calculatePagination } from '@server/share/utils/pagination.util';
 import dayjs from 'dayjs';
 import Decimal from 'decimal.js';
@@ -97,9 +98,10 @@ export class GoalService extends BaseService {
 
   async upsertGoal(userId: string, data: IUpsertGoalDto) {
     if (data.id) {
-      this.validateOwnership(
+      validateResourceOwnership(
         userId,
         data.id,
+        this.idUtil,
         ErrorCode.GOAL_NOT_FOUND,
         'Goal not found',
       );
@@ -274,17 +276,17 @@ export class GoalService extends BaseService {
       };
     }
 
-    const orderBy = this.buildOrderBy<GoalOrderByWithRelationInput>(
-      sortBy,
-      sortOrder,
-      {
-        name: 'name',
-        amount: 'amount',
-        startDate: 'startDate',
-        endDate: 'endDate',
-        created: 'created',
-      },
-    ) as GoalOrderByWithRelationInput | undefined;
+    type GoalSortKey = NonNullable<IListGoalsQueryDto['sortBy']>;
+    const orderBy = this.buildOrderBy<
+      GoalSortKey,
+      GoalOrderByWithRelationInput
+    >(sortBy, sortOrder, {
+      name: 'name',
+      amount: 'amount',
+      startDate: 'startDate',
+      endDate: 'endDate',
+      created: 'created',
+    }) as GoalOrderByWithRelationInput | undefined;
 
     const { skip, take } = calculatePagination(page, limit);
 

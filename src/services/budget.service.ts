@@ -13,6 +13,7 @@ import {
   throwAppError,
 } from '@server/share';
 import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { validateResourceOwnership } from '@server/share/utils/ownership.util';
 import { calculatePagination } from '@server/share/utils/pagination.util';
 import dayjs from 'dayjs';
 import Decimal from 'decimal.js';
@@ -278,9 +279,10 @@ export class BudgetService extends BaseService {
 
   async upsertBudget(userId: string, data: IUpsertBudgetDto) {
     if (data.id) {
-      this.validateOwnership(
+      validateResourceOwnership(
         userId,
         data.id,
+        this.idUtil,
         ErrorCode.BUDGET_NOT_FOUND,
         'Budget not found',
       );
@@ -437,9 +439,10 @@ export class BudgetService extends BaseService {
     budgetId: string,
     query: IBudgetPeriodQueryDto = {},
   ) {
-    this.validateOwnership(
+    validateResourceOwnership(
       userId,
       budgetId,
+      this.idUtil,
       ErrorCode.BUDGET_NOT_FOUND,
       'Budget not found',
     );
@@ -568,9 +571,10 @@ export class BudgetService extends BaseService {
     budgetId: string,
     periodId: string,
   ) {
-    this.validateOwnership(
+    validateResourceOwnership(
       userId,
       budgetId,
+      this.idUtil,
       ErrorCode.BUDGET_NOT_FOUND,
       'Budget not found',
     );

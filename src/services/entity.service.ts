@@ -5,6 +5,7 @@ import type {
 } from '@server/generated';
 import { DB_PREFIX, ErrorCode, idUtil, throwAppError } from '@server/share';
 import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { validateResourceOwnership } from '@server/share/utils/ownership.util';
 import { calculatePagination } from '@server/share/utils/pagination.util';
 import { validateUniqueNameForService } from '@server/share/utils/service.util';
 import type {
@@ -39,9 +40,10 @@ export class EntityService extends BaseService {
 
   async upsertEntity(userId: string, data: IUpsertEntityDto) {
     if (data.id) {
-      this.validateOwnership(
+      validateResourceOwnership(
         userId,
         data.id,
+        this.idUtil,
         ErrorCode.ENTITY_NOT_FOUND,
         'Entity not found',
       );
@@ -115,15 +117,15 @@ export class EntityService extends BaseService {
       };
     }
 
-    const orderBy = this.buildOrderBy<EntityOrderByWithRelationInput>(
-      sortBy,
-      sortOrder,
-      {
-        name: 'name',
-        type: 'type',
-        created: 'created',
-      },
-    ) as EntityOrderByWithRelationInput | undefined;
+    type EntitySortKey = NonNullable<IListEntitiesQueryDto['sortBy']>;
+    const orderBy = this.buildOrderBy<
+      EntitySortKey,
+      EntityOrderByWithRelationInput
+    >(sortBy, sortOrder, {
+      name: 'name',
+      type: 'type',
+      created: 'created',
+    }) as EntityOrderByWithRelationInput | undefined;
 
     const { skip, take } = calculatePagination(page, limit);
 
