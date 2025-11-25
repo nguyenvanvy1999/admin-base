@@ -20,6 +20,5 @@ loadEnv();
 export default defineConfig({
   schema: path.join('./src', 'prisma'),
   migrations: { path: path.join('./src', 'prisma', 'migrations') },
-  engine: 'classic',
   datasource: { url: env('POSTGRESQL_URI') },
 });

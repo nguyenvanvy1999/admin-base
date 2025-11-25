@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import {
   createActionColumn,
   createBadgeColumn,
+  createDateColumn,
+  createTextColumn,
   createTypeColumn,
 } from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
@@ -53,21 +55,20 @@ const InvestmentTable = ({
 
   const columns = useMemo(
     (): DataTableColumn<InvestmentResponse>[] => [
-      {
+      createTextColumn<InvestmentResponse, 'name'>({
         accessor: 'name',
         title: 'investments.name',
         onClick: onView,
-      },
-      {
+      }),
+      createTextColumn<InvestmentResponse, 'symbol'>({
         accessor: 'symbol',
         title: 'investments.symbol',
         enableSorting: false,
-      },
-      createTypeColumn<InvestmentResponse>({
+      }),
+      createTypeColumn<InvestmentResponse, 'assetType'>({
         accessor: 'assetType',
         title: 'investments.assetType',
         enableSorting: false,
-        getType: (row) => row.assetType,
         labelMap: {
           [InvestmentAssetType.coin]: t('investments.asset.coin', {
             defaultValue: 'Coin',
@@ -81,32 +82,34 @@ const InvestmentTable = ({
         },
         defaultColor: 'blue',
       }),
-      createBadgeColumn<InvestmentResponse>({
+      createBadgeColumn<InvestmentResponse, 'mode'>({
         accessor: 'mode',
         title: 'investments.mode',
         enableSorting: false,
-        getLabel: (row) =>
-          row.mode === InvestmentMode.priced
+        getLabel: (value) =>
+          value === InvestmentMode.priced
             ? t('investments.modes.priced', { defaultValue: 'Market priced' })
             : t('investments.modes.manual', {
                 defaultValue: 'Manual valuation',
               }),
-        getColor: (row) =>
-          row.mode === InvestmentMode.priced ? 'green' : 'yellow',
+        getColor: (value) =>
+          value === InvestmentMode.priced ? 'green' : 'yellow',
       }),
       {
-        accessor: (row) => row.currency?.code ?? '',
+        accessor: (row: InvestmentResponse) => row.currency?.code ?? '',
         title: 'investments.currency',
         enableSorting: false,
       },
-      {
+      createDateColumn<InvestmentResponse, 'created'>({
         accessor: 'created',
         title: 'common.created',
-      },
-      {
+        format: 'YYYY-MM-DD HH:mm',
+      }),
+      createDateColumn<InvestmentResponse, 'modified'>({
         accessor: 'modified',
         title: 'common.modified',
-      },
+        format: 'YYYY-MM-DD HH:mm',
+      }),
       createActionColumn<InvestmentResponse>({
         title: 'investments.actions',
         onEdit,

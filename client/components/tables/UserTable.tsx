@@ -1,10 +1,13 @@
-import { usePermission } from '@client/hooks/usePermission';
-import { ActionIcon } from '@mantine/core';
 import type { UserResponse } from '@server/dto/admin/user.dto';
-import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import {
+  createArrayBadgeColumn,
+  createCurrencyDisplayColumn,
+  createDateColumn,
+  createTextColumn,
+} from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
+import { useCreatePermissionActionColumn } from './hooks/usePermissionActionColumn';
 
 type UserTableProps = {
   users: UserResponse[];
@@ -44,111 +47,56 @@ const UserTable = ({
   sorting,
   onSortingChange,
 }: UserTableProps) => {
-  const { t } = useTranslation();
-  const { hasPermission } = usePermission();
-
-  const canUpdate = hasPermission('USER.UPDATE');
-  const canDelete = hasPermission('USER.DELETE');
+  const actionColumn = useCreatePermissionActionColumn<UserResponse>({
+    title: 'users.actions',
+    onEdit,
+    onDelete,
+    editPermission: 'USER.UPDATE',
+    deletePermission: 'USER.DELETE',
+  });
 
   const columns = useMemo(
     (): DataTableColumn<UserResponse>[] => [
-      {
+      createTextColumn<UserResponse, 'username'>({
         accessor: 'username',
         title: 'users.username',
-      },
-      {
+      }),
+      createTextColumn<UserResponse, 'name'>({
         accessor: 'name',
         title: 'users.name',
         ellipsis: true,
-        render: (value) => {
-          const name = (value as string) || '';
-          if (!name) {
-            return <span className="text-gray-400">-</span>;
-          }
-          return name;
-        },
-      },
-      {
+      }),
+      createArrayBadgeColumn<
+        UserResponse,
+        (row: UserResponse) => UserResponse['roles']
+      >({
         id: 'roles',
         title: 'users.role',
-        accessor: (row) => (row.roles || []).map((r) => r.title).join(', '),
+        accessor: (row) => row.roles || [],
         enableSorting: false,
         enableGrouping: false,
-        render: (_value, row) => {
-          const roles = row.roles;
-          if (!roles || roles.length === 0) {
-            return <span className="text-gray-400">-</span>;
-          }
-          return (
-            <div className="flex flex-wrap gap-1">
-              {roles.map((role) => (
-                <span
-                  key={role.id}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
-                >
-                  {role.title}
-                </span>
-              ))}
-            </div>
-          );
-        },
-      },
-      {
+        getLabel: (role) => role.title || role.id || '',
+        getKey: (role) => role.id,
+        getColor: () => 'blue',
+        variant: 'light',
+      }),
+      createCurrencyDisplayColumn<
+        UserResponse,
+        (row: UserResponse) => string | undefined
+      >({
         id: 'baseCurrency',
         title: 'users.baseCurrency',
-        accessor: 'baseCurrency.code',
+        accessor: (row: UserResponse) => row.baseCurrency?.code,
         enableSorting: false,
-        render: (_value, row) => {
-          const currency = row.baseCurrency;
-          if (!currency) {
-            return <span className="text-gray-400">-</span>;
-          }
-          return (
-            <span>
-              {currency.code} {currency.symbol ? `(${currency.symbol})` : ''}
-            </span>
-          );
-        },
-      },
-      {
+        getSymbol: (row) => row.baseCurrency?.symbol,
+      }),
+      createDateColumn<UserResponse, 'created'>({
         accessor: 'created',
         title: 'users.created',
-      },
-      {
-        title: 'users.actions',
-        textAlign: 'center',
-        width: '8rem',
-        render: (_value, row: UserResponse) => (
-          <div className="flex items-center justify-center gap-2">
-            {canUpdate && (
-              <ActionIcon
-                variant="subtle"
-                color="blue"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(row);
-                }}
-              >
-                <IconEdit size={16} />
-              </ActionIcon>
-            )}
-            {canDelete && (
-              <ActionIcon
-                variant="subtle"
-                color="red"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(row);
-                }}
-              >
-                <IconTrash size={16} />
-              </ActionIcon>
-            )}
-          </div>
-        ),
-      },
+      }),
+      actionColumn,
     ],
-    [t, onEdit, onDelete, canUpdate, canDelete],
+    [actionColumn],
   );
 
   return (

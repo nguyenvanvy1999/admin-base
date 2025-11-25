@@ -26,8 +26,8 @@ export class TokenService {
     },
   ) {}
 
-  async signJwt(payload: Record<string, any>): Promise<string> {
-    return await new SignJWT(payload)
+  signJwt(payload: Record<string, any>): Promise<string> {
+    return new SignJWT(payload)
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime(this.deps.env.JWT_ACCESS_TOKEN_EXPIRED)

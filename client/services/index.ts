@@ -6,6 +6,7 @@ export * from './CurrencyService';
 export * from './EntityService';
 export * from './EventService';
 export * from './ExchangeRateService';
+export * from './GoalService';
 export * from './InvestmentService';
 export * from './PermissionService';
 export * from './ReportService';

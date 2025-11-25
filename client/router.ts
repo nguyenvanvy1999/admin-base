@@ -15,6 +15,8 @@ import DebtPage from './pages/DebtPage';
 import DebtStatisticsPage from './pages/DebtStatisticsPage';
 import EntityPage from './pages/EntityPage';
 import EventPage from './pages/EventPage';
+import GoalDetailPage from './pages/GoalDetailPage';
+import GoalPage from './pages/GoalPage';
 import HomePage from './pages/HomePage';
 import IncomeExpenseStatisticsPage from './pages/IncomeExpenseStatisticsPage';
 import InvestmentDetailPage from './pages/InvestmentDetailPage';
@@ -67,6 +69,14 @@ const router = createHashRouter([
       {
         path: '/budgets/:budgetId',
         Component: BudgetDetailPage,
+      },
+      {
+        path: '/goals',
+        Component: GoalPage,
+      },
+      {
+        path: '/goals/:goalId',
+        Component: GoalDetailPage,
       },
       {
         path: '/accounts',

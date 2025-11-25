@@ -1,9 +1,8 @@
-import { ActionIcon, Button } from '@mantine/core';
 import type { TagResponse } from '@server/dto/tag.dto';
-import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import { createActionColumn, createTextColumn } from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
+import { DeleteManyToolbar } from './deleteManyToolbar';
 import type { SortingState } from './types';
 
 type TagTableProps = {
@@ -45,54 +44,26 @@ const TagTable = ({
   selectedRecords,
   onSelectedRecordsChange,
 }: TagTableProps) => {
-  const { t } = useTranslation();
-
   const columns = useMemo(
     (): DataTableColumn<TagResponse>[] => [
-      {
+      createTextColumn<TagResponse, 'name'>({
         accessor: 'name',
         title: 'tags.name',
-      },
-      {
+      }),
+      createTextColumn<TagResponse, 'description'>({
         accessor: 'description',
         title: 'tags.description',
         ellipsis: true,
         enableSorting: false,
-      },
-      {
+      }),
+      createActionColumn<TagResponse>({
         title: 'tags.actions',
-        textAlign: 'center',
-        width: '8rem',
-        render: (value, row: TagResponse) => (
-          <div className="flex items-center justify-center gap-2">
-            <ActionIcon
-              variant="subtle"
-              color="blue"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(row);
-              }}
-            >
-              <IconEdit size={16} />
-            </ActionIcon>
-            <ActionIcon
-              variant="subtle"
-              color="red"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(row);
-              }}
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
-          </div>
-        ),
-      },
+        onEdit,
+        onDelete,
+      }),
     ],
-    [t, onEdit, onDelete],
+    [onEdit, onDelete],
   );
-
-  const selectedCount = selectedRecords?.length || 0;
 
   return (
     <DataTable
@@ -111,25 +82,13 @@ const TagTable = ({
       selectedRecords={selectedRecords}
       onSelectedRecordsChange={onSelectedRecordsChange}
       renderTopToolbarCustomActions={
-        onDeleteMany && selectedCount > 0
+        onDeleteMany && selectedRecords
           ? () => (
-              <Button
-                color="red"
-                variant="filled"
-                leftSection={<IconTrash size={16} />}
-                onClick={() => {
-                  const selectedIds = selectedRecords?.map((r) => r.id) || [];
-                  if (selectedIds.length > 0 && onDeleteMany) {
-                    onDeleteMany(selectedIds);
-                  }
-                }}
-                disabled={isLoading}
-              >
-                {t('common.deleteSelected', {
-                  defaultValue: `Delete ${selectedCount}`,
-                  count: selectedCount,
-                })}
-              </Button>
+              <DeleteManyToolbar
+                selectedRecords={selectedRecords}
+                onDeleteMany={onDeleteMany}
+                isLoading={isLoading}
+              />
             )
           : undefined
       }

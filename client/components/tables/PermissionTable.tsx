@@ -1,7 +1,6 @@
 import type { PermissionResponse } from '@client/services/PermissionService';
-import { Badge } from '@mantine/core';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { createTextColumn, createTypeColumn } from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
 
 function extractCategory(title: string | null | undefined): string {
@@ -9,6 +8,8 @@ function extractCategory(title: string | null | undefined): string {
   const parts = title.split('.');
   return parts[0] || title;
 }
+
+type PermissionWithCategory = PermissionResponse & { category: string };
 
 type PermissionTableProps = {
   permissions: PermissionResponse[];
@@ -56,59 +57,53 @@ const PermissionTable = ({
     return colors[category] || 'gray';
   };
 
-  const columns = useMemo(
-    (): DataTableColumn<PermissionResponse>[] => [
-      {
-        accessor: 'title',
-        title: 'permissions.permissionTitle',
-      },
-      {
-        accessor: 'category',
-        title: 'permissions.category',
-        render: (value, row: PermissionResponse & { category?: string }) => {
-          if (!row || !row.title) {
-            return (
-              <Badge color="gray" variant="light">
-                -
-              </Badge>
-            );
-          }
-          const category = row.category || extractCategory(row.title);
-          const categoryLabel =
-            t(`permissions.categories.${category}`, {
-              defaultValue: category,
-            }) || category;
-          return (
-            <Badge color={getCategoryColor(category)} variant="light">
-              {categoryLabel}
-            </Badge>
-          );
-        },
-      },
-      {
-        accessor: 'description',
-        title: 'permissions.description',
-        ellipsis: true,
-        render: (value) => {
-          if (!value) return <span className="text-gray-400">-</span>;
-          return <span>{String(value)}</span>;
-        },
-      },
-    ],
-    [t],
+  const categories = ['USER', 'ROLE', 'SESSION', 'ADMIN'];
+  const categoryLabelMap: Record<string, string> = categories.reduce(
+    (acc, cat) => {
+      acc[cat] =
+        t(`permissions.categories.${cat}`, { defaultValue: cat }) || cat;
+      return acc;
+    },
+    {} as Record<string, string>,
   );
 
-  const permissionsWithCategory = useMemo(() => {
-    if (!permissions || !Array.isArray(permissions)) {
-      return [];
-    }
-    return permissions
-      .filter((perm) => perm && perm.id && perm.title)
-      .map((perm) => ({
-        ...perm,
-        category: extractCategory(perm.title),
-      }));
-  }, [permissions]);
+  const categoryColorMap: Record<string, string> = categories.reduce(
+    (acc, cat) => {
+      acc[cat] = getCategoryColor(cat);
+      return acc;
+    },
+    {} as Record<string, string>,
+  );
+
+  const columns: DataTableColumn<PermissionWithCategory>[] = [
+    createTextColumn<PermissionWithCategory, 'title'>({
+      accessor: 'title',
+      title: 'permissions.permissionTitle',
+    }),
+    createTypeColumn<PermissionWithCategory, 'category'>({
+      accessor: 'category',
+      title: 'permissions.category',
+      labelMap: categoryLabelMap,
+      colorMap: categoryColorMap,
+      defaultColor: 'gray',
+    }),
+    createTextColumn<PermissionWithCategory, 'description'>({
+      accessor: 'description',
+      title: 'permissions.description',
+      ellipsis: true,
+    }),
+  ];
+
+  const permissionsWithCategory: PermissionWithCategory[] = Array.isArray(
+    permissions,
+  )
+    ? permissions
+        .filter((perm) => perm && perm.id && perm.title)
+        .map((perm) => ({
+          ...perm,
+          category: extractCategory(perm.title),
+        }))
+    : [];
 
   return (
     <DataTable

@@ -1,67 +1,55 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type {
   BudgetOrderByWithRelationInput,
   BudgetWhereInput,
-  Prisma,
 } from '@server/generated';
 import { BudgetPeriod, TransactionType } from '@server/generated';
 import {
   DB_PREFIX,
   dateToIsoString,
-  dateToNullableIsoString,
   decimalToString,
   ErrorCode,
-  type IdUtil,
   idUtil,
   throwAppError,
 } from '@server/share';
+import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { validateResourceOwnership } from '@server/share/utils/ownership.util';
+import { calculatePagination } from '@server/share/utils/pagination.util';
+import dayjs from 'dayjs';
 import Decimal from 'decimal.js';
 import type {
   IBudgetPeriodQueryDto,
   IListBudgetsQueryDto,
   IUpsertBudgetDto,
 } from '../dto/budget.dto';
+import { BaseService } from './base/base.service';
+import type { BaseServiceDependencies } from './base/service-dependencies';
 import {
   type CurrencyConversionService,
   currencyConversionService,
 } from './currency-conversion.service';
+import { mapBudget } from './mappers';
 
 import { BUDGET_SELECT_FULL, BUDGET_SELECT_MINIMAL } from './selects';
 
-type BudgetRecord = Prisma.BudgetGetPayload<{
-  select: typeof BUDGET_SELECT_FULL;
-}>;
+export class BudgetService extends BaseService {
+  private readonly currencyConversionService: CurrencyConversionService;
 
-const mapBudget = (budget: BudgetRecord) => ({
-  id: budget.id,
-  name: budget.name,
-  amount: decimalToString(budget.amount),
-  period: budget.period,
-  startDate: dateToIsoString(budget.startDate),
-  endDate: dateToNullableIsoString(budget.endDate),
-  carryOver: budget.carryOver,
-  accountIds: budget.accounts.map((a) => a.accountId),
-  categoryIds: budget.categories.map((c) => c.categoryId),
-  created: dateToIsoString(budget.created),
-  modified: dateToIsoString(budget.modified),
-});
-
-export class BudgetService {
   constructor(
-    private readonly deps: {
-      db: IDb;
+    deps: BaseServiceDependencies & {
       currencyConversionService: CurrencyConversionService;
-      idUtil: IdUtil;
     } = {
       db: prisma,
-      currencyConversionService: currencyConversionService,
       idUtil,
+      currencyConversionService: currencyConversionService,
     },
-  ) {}
+  ) {
+    super(deps);
+    this.currencyConversionService = deps.currencyConversionService;
+  }
 
   private async getUserBaseCurrencyId(userId: string): Promise<string> {
-    const user = await this.deps.db.user.findUnique({
+    const user = await this.db.user.findUnique({
       where: { id: userId },
       select: { baseCurrencyId: true },
     });
@@ -71,34 +59,20 @@ export class BudgetService {
     return user.baseCurrencyId;
   }
 
-  private async validateBudgetOwnership(userId: string, budgetId: string) {
-    const budget = await this.deps.db.budget.findFirst({
-      where: {
-        id: budgetId,
-        userId,
-      },
-      select: BUDGET_SELECT_MINIMAL,
-    });
-    if (!budget) {
-      throwAppError(ErrorCode.BUDGET_NOT_FOUND, 'Budget not found');
-    }
-    return budget;
-  }
-
   private async validateAccountsAndCategories(
     userId: string,
     accountIds: string[],
     categoryIds: string[],
   ) {
     const [accounts, categories] = await Promise.all([
-      this.deps.db.account.findMany({
+      this.db.account.findMany({
         where: {
           id: { in: accountIds },
           userId,
         },
         select: { id: true },
       }),
-      this.deps.db.category.findMany({
+      this.db.category.findMany({
         where: {
           id: { in: categoryIds },
           userId,
@@ -119,57 +93,41 @@ export class BudgetService {
     period: BudgetPeriod,
     currentStart: Date,
   ): Date {
-    const next = new Date(currentStart);
+    const next = dayjs(currentStart);
     switch (period) {
       case BudgetPeriod.daily:
-        next.setDate(next.getDate() + 1);
-        break;
+        return next.add(1, 'day').toDate();
       case BudgetPeriod.monthly:
-        next.setMonth(next.getMonth() + 1);
-        break;
+        return next.add(1, 'month').toDate();
       case BudgetPeriod.quarterly:
-        next.setMonth(next.getMonth() + 3);
-        break;
+        return next.add(3, 'month').toDate();
       case BudgetPeriod.yearly:
-        next.setFullYear(next.getFullYear() + 1);
-        break;
+        return next.add(1, 'year').toDate();
       case BudgetPeriod.none:
         throwAppError(
           ErrorCode.VALIDATION_ERROR,
           'Cannot calculate next period for none period type',
         );
     }
-    return next;
   }
 
   private calculatePeriodEnd(period: BudgetPeriod, periodStart: Date): Date {
-    const end = new Date(periodStart);
+    const end = dayjs(periodStart);
     switch (period) {
       case BudgetPeriod.daily:
-        end.setHours(23, 59, 59, 999);
-        break;
+        return end.endOf('day').toDate();
       case BudgetPeriod.monthly:
-        end.setMonth(end.getMonth() + 1);
-        end.setDate(0);
-        end.setHours(23, 59, 59, 999);
-        break;
+        return end.add(1, 'month').subtract(1, 'day').endOf('day').toDate();
       case BudgetPeriod.quarterly:
-        end.setMonth(end.getMonth() + 3);
-        end.setDate(0);
-        end.setHours(23, 59, 59, 999);
-        break;
+        return end.add(3, 'month').subtract(1, 'day').endOf('day').toDate();
       case BudgetPeriod.yearly:
-        end.setFullYear(end.getFullYear() + 1);
-        end.setMonth(0, 0);
-        end.setHours(23, 59, 59, 999);
-        break;
+        return end.add(1, 'year').subtract(1, 'day').endOf('day').toDate();
       case BudgetPeriod.none:
         throwAppError(
           ErrorCode.VALIDATION_ERROR,
           'Cannot calculate period end for none period type',
         );
     }
-    return end;
   }
 
   async calculatePeriodSpending(
@@ -178,7 +136,7 @@ export class BudgetService {
     periodStart: Date,
     periodEnd: Date,
   ): Promise<Decimal> {
-    const budget = await this.deps.db.budget.findFirst({
+    const budget = await this.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,
@@ -197,7 +155,7 @@ export class BudgetService {
     const categoryIds = budget.categories.map((c) => c.categoryId);
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
 
-    const transactions = await this.deps.db.transaction.findMany({
+    const transactions = await this.db.transaction.findMany({
       where: {
         userId,
 
@@ -228,7 +186,7 @@ export class BudgetService {
         amountInBase = new Decimal(transaction.priceInBaseCurrency);
       } else {
         amountInBase =
-          await this.deps.currencyConversionService.convertToBaseCurrency(
+          await this.currencyConversionService.convertToBaseCurrency(
             transaction.amount,
             transaction.currencyId,
             baseCurrencyId,
@@ -244,7 +202,7 @@ export class BudgetService {
           feeInBase = new Decimal(transaction.feeInBaseCurrency);
         } else {
           feeInBase =
-            await this.deps.currencyConversionService.convertToBaseCurrency(
+            await this.currencyConversionService.convertToBaseCurrency(
               transaction.fee,
               transaction.currencyId,
               baseCurrencyId,
@@ -263,7 +221,7 @@ export class BudgetService {
     budgetId: string,
     previousPeriodEnd: Date,
   ): Promise<Decimal> {
-    const budget = await this.deps.db.budget.findFirst({
+    const budget = await this.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,
@@ -279,8 +237,9 @@ export class BudgetService {
       budget.period,
       previousPeriodEnd,
     );
-    const previousPeriodEndDate = new Date(previousPeriodEnd);
-    previousPeriodEndDate.setHours(23, 59, 59, 999);
+    const previousPeriodEndDate = dayjs(previousPeriodEnd)
+      .endOf('day')
+      .toDate();
 
     const spent = await this.calculatePeriodSpending(
       userId,
@@ -300,38 +259,33 @@ export class BudgetService {
   }
 
   private calculatePeriodStart(period: BudgetPeriod, periodEnd: Date): Date {
-    const start = new Date(periodEnd);
+    const start = dayjs(periodEnd);
     switch (period) {
       case BudgetPeriod.daily:
-        start.setHours(0, 0, 0, 0);
-        break;
+        return start.startOf('day').toDate();
       case BudgetPeriod.monthly:
-        start.setMonth(start.getMonth() - 1);
-        start.setDate(1);
-        start.setHours(0, 0, 0, 0);
-        break;
+        return start.subtract(1, 'month').startOf('month').toDate();
       case BudgetPeriod.quarterly:
-        start.setMonth(start.getMonth() - 3);
-        start.setDate(1);
-        start.setHours(0, 0, 0, 0);
-        break;
+        return start.subtract(3, 'month').startOf('month').toDate();
       case BudgetPeriod.yearly:
-        start.setFullYear(start.getFullYear() - 1);
-        start.setMonth(0, 1);
-        start.setHours(0, 0, 0, 0);
-        break;
+        return start.subtract(1, 'year').startOf('year').toDate();
       case BudgetPeriod.none:
         throwAppError(
           ErrorCode.VALIDATION_ERROR,
           'Cannot calculate period start for none period type',
         );
     }
-    return start;
   }
 
   async upsertBudget(userId: string, data: IUpsertBudgetDto) {
     if (data.id) {
-      await this.validateBudgetOwnership(userId, data.id);
+      validateResourceOwnership(
+        userId,
+        data.id,
+        this.idUtil,
+        ErrorCode.BUDGET_NOT_FOUND,
+        'Budget not found',
+      );
     }
 
     await this.validateAccountsAndCategories(
@@ -341,14 +295,14 @@ export class BudgetService {
     );
 
     if (data.id) {
-      const budget = await this.deps.db.budget.update({
+      const budget = await this.db.budget.update({
         where: { id: data.id },
         data: {
           name: data.name,
           amount: data.amount,
           period: data.period,
-          startDate: new Date(data.startDate),
-          endDate: data.endDate ? new Date(data.endDate) : null,
+          startDate: dayjs(data.startDate).toDate(),
+          endDate: data.endDate ? dayjs(data.endDate).toDate() : null,
           carryOver: data.carryOver,
           categories: {
             deleteMany: {},
@@ -367,15 +321,15 @@ export class BudgetService {
       });
       return mapBudget(budget);
     } else {
-      const budget = await this.deps.db.budget.create({
+      const budget = await this.db.budget.create({
         data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.BUDGET),
+          id: this.idUtil.dbIdWithUserId(DB_PREFIX.BUDGET, userId),
           userId,
           name: data.name,
           amount: data.amount,
           period: data.period,
-          startDate: new Date(data.startDate),
-          endDate: data.endDate ? new Date(data.endDate) : null,
+          startDate: dayjs(data.startDate).toDate(),
+          endDate: data.endDate ? dayjs(data.endDate).toDate() : null,
           carryOver: data.carryOver,
           categories: {
             create: data.categoryIds.map((categoryId) => ({
@@ -395,7 +349,7 @@ export class BudgetService {
   }
 
   async getBudget(userId: string, budgetId: string) {
-    const budget = await this.deps.db.budget.findFirst({
+    const budget = await this.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,
@@ -436,69 +390,48 @@ export class BudgetService {
     }
 
     const orderBy: BudgetOrderByWithRelationInput = {};
-    if (sortBy === 'name') {
-      orderBy.name = sortOrder;
-    } else if (sortBy === 'amount') {
-      orderBy.amount = sortOrder;
-    } else if (sortBy === 'period') {
-      orderBy.period = sortOrder;
-    } else if (sortBy === 'startDate') {
-      orderBy.startDate = sortOrder;
-    } else if (sortBy === 'created') {
-      orderBy.created = sortOrder;
+    const orderByResult = this.buildOrderBy(sortBy, sortOrder, {
+      name: 'name',
+      amount: 'amount',
+      period: 'period',
+      startDate: 'startDate',
+      created: 'created',
+    });
+    if (orderByResult) {
+      Object.assign(orderBy, orderByResult);
     }
 
-    const skip = (page - 1) * limit;
+    const { skip, take } = calculatePagination(page, limit);
 
     const [budgets, total] = await Promise.all([
-      this.deps.db.budget.findMany({
+      this.db.budget.findMany({
         where,
         orderBy,
         skip,
-        take: limit,
+        take,
         select: BUDGET_SELECT_FULL,
       }),
-      this.deps.db.budget.count({ where }),
+      this.db.budget.count({ where }),
     ]);
 
     return {
       budgets: budgets.map((budget) => mapBudget(budget)),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: this.buildPaginationResponse(page, limit, total, [])
+        .pagination,
     };
   }
 
-  async deleteManyBudgets(userId: string, ids: string[]) {
-    const budgets = await this.deps.db.budget.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: BUDGET_SELECT_MINIMAL,
+  deleteManyBudgets(userId: string, ids: string[]) {
+    return deleteManyResources({
+      db: this.db,
+      model: 'budget',
+      userId,
+      ids,
+      selectMinimal: BUDGET_SELECT_MINIMAL,
+      errorCode: ErrorCode.BUDGET_NOT_FOUND,
+      errorMessage: 'Some budgets were not found or do not belong to you',
+      resourceName: 'budget',
     });
-
-    if (budgets.length !== ids.length) {
-      throwAppError(
-        ErrorCode.BUDGET_NOT_FOUND,
-        'Some budgets were not found or do not belong to you',
-      );
-    }
-
-    await this.deps.db.budget.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-    });
-
-    return {
-      success: true,
-      message: `${ids.length} budget(s) deleted successfully`,
-    };
   }
 
   async getBudgetPeriods(
@@ -506,9 +439,15 @@ export class BudgetService {
     budgetId: string,
     query: IBudgetPeriodQueryDto = {},
   ) {
-    await this.validateBudgetOwnership(userId, budgetId);
+    validateResourceOwnership(
+      userId,
+      budgetId,
+      this.idUtil,
+      ErrorCode.BUDGET_NOT_FOUND,
+      'Budget not found',
+    );
 
-    const budget = await this.deps.db.budget.findFirst({
+    const budget = await this.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,
@@ -524,13 +463,15 @@ export class BudgetService {
       return { periods: [] };
     }
 
-    const now = new Date();
-    const endDate = budget.endDate ? new Date(budget.endDate) : now;
-    const queryEndDate = query.endDate ? new Date(query.endDate) : endDate;
+    const now = dayjs().toDate();
+    const endDate = budget.endDate ? dayjs(budget.endDate).toDate() : now;
+    const queryEndDate = query.endDate
+      ? dayjs(query.endDate).toDate()
+      : endDate;
     const actualEndDate = queryEndDate < endDate ? queryEndDate : endDate;
 
     const queryStartDate = query.startDate
-      ? new Date(query.startDate)
+      ? dayjs(query.startDate).toDate()
       : budget.startDate;
     const actualStartDate =
       queryStartDate > budget.startDate ? queryStartDate : budget.startDate;
@@ -550,15 +491,14 @@ export class BudgetService {
       modified: string;
     }> = [];
 
-    let currentStart = new Date(actualStartDate);
-    currentStart.setHours(0, 0, 0, 0);
+    let currentStart = dayjs(actualStartDate).startOf('day').toDate();
 
     while (currentStart <= actualEndDate) {
       const periodEnd = this.calculatePeriodEnd(budget.period, currentStart);
       const periodEndDate =
         periodEnd < actualEndDate ? periodEnd : actualEndDate;
 
-      let existingPeriod = await this.deps.db.budgetPeriodRecord.findUnique({
+      let existingPeriod = await this.db.budgetPeriodRecord.findUnique({
         where: {
           budget_period_unique: {
             budgetId,
@@ -572,10 +512,9 @@ export class BudgetService {
         carriedOverAmount = new Decimal(existingPeriod.carriedOverAmount);
       } else {
         if (currentStart > budget.startDate) {
-          const previousPeriodEnd = new Date(currentStart);
-          previousPeriodEnd.setMilliseconds(
-            previousPeriodEnd.getMilliseconds() - 1,
-          );
+          const previousPeriodEnd = dayjs(currentStart)
+            .subtract(1, 'millisecond')
+            .toDate();
           carriedOverAmount = await this.getCarryOverAmount(
             userId,
             budgetId,
@@ -583,10 +522,9 @@ export class BudgetService {
           );
         }
 
-        // Always create a period record if it doesn't exist
-        existingPeriod = await this.deps.db.budgetPeriodRecord.create({
+        existingPeriod = await this.db.budgetPeriodRecord.create({
           data: {
-            id: this.deps.idUtil.dbId(DB_PREFIX.BUDGET_PERIOD),
+            id: this.idUtil.dbIdWithUserId(DB_PREFIX.BUDGET_PERIOD, userId),
             budgetId,
             periodStartDate: currentStart,
             periodEndDate,
@@ -633,9 +571,15 @@ export class BudgetService {
     budgetId: string,
     periodId: string,
   ) {
-    await this.validateBudgetOwnership(userId, budgetId);
+    validateResourceOwnership(
+      userId,
+      budgetId,
+      this.idUtil,
+      ErrorCode.BUDGET_NOT_FOUND,
+      'Budget not found',
+    );
 
-    const period = await this.deps.db.budgetPeriodRecord.findFirst({
+    const period = await this.db.budgetPeriodRecord.findFirst({
       where: {
         id: periodId,
         budgetId,
@@ -649,7 +593,7 @@ export class BudgetService {
       );
     }
 
-    const budget = await this.deps.db.budget.findFirst({
+    const budget = await this.db.budget.findFirst({
       where: {
         id: budgetId,
         userId,

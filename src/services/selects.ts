@@ -349,3 +349,32 @@ export const USER_SELECT_FOR_LOGIN = {
   modified: true,
   roles: { select: { roleId: true } },
 } as const;
+
+export const GOAL_SELECT_FULL = {
+  id: true,
+  userId: true,
+  name: true,
+  amount: true,
+  currencyId: true,
+  startDate: true,
+  endDate: true,
+  created: true,
+  modified: true,
+  currency: {
+    select: CURRENCY_SELECT_BASIC,
+  },
+  goalAccounts: {
+    select: {
+      accountId: true,
+    },
+  },
+} as const;
+
+export const GOAL_SELECT_MINIMAL = {
+  id: true,
+  userId: true,
+  amount: true,
+  currencyId: true,
+  startDate: true,
+  endDate: true,
+} as const;

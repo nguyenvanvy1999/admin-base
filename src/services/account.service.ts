@@ -1,70 +1,35 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { ActionRes } from '@server/dto/common.dto';
 import type {
   AccountOrderByWithRelationInput,
   AccountWhereInput,
-  Prisma,
 } from '@server/generated';
-import {
-  DB_PREFIX,
-  dateToIsoString,
-  decimalToNullableString,
-  decimalToString,
-  ErrorCode,
-  type IdUtil,
-  idUtil,
-  throwAppError,
-} from '@server/share';
+import { DB_PREFIX, ErrorCode, idUtil, throwAppError } from '@server/share';
+import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { validateResourceOwnership } from '@server/share/utils/ownership.util';
+import { calculatePagination } from '@server/share/utils/pagination.util';
 import type {
   AccountListResponse,
   AccountResponse,
   IListAccountsQueryDto,
   IUpsertAccountDto,
 } from '../dto/account.dto';
+import { BaseService } from './base/base.service';
+import type { BaseServiceDependencies } from './base/service-dependencies';
+import { mapAccount } from './mappers';
 import {
   ACCOUNT_SELECT_FULL,
   ACCOUNT_SELECT_MINIMAL,
   CURRENCY_SELECT_BASIC,
 } from './selects';
 
-type AccountRecord = Prisma.AccountGetPayload<{
-  select: typeof ACCOUNT_SELECT_FULL;
-}>;
-
-const formatAccount = (account: AccountRecord): AccountResponse => ({
-  ...account,
-  balance: decimalToString(account.balance),
-  creditLimit: decimalToNullableString(account.creditLimit),
-  notifyOnDueDate: account.notifyOnDueDate ?? null,
-  paymentDay: account.paymentDay ?? null,
-  notifyDaysBefore: account.notifyDaysBefore ?? null,
-  meta: account.meta ?? null,
-  created: dateToIsoString(account.created),
-  modified: dateToIsoString(account.modified),
-});
-
-export class AccountService {
-  constructor(
-    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
-  ) {}
-
-  private async validateAccountOwnership(userId: string, accountId: string) {
-    const account = await this.deps.db.account.findFirst({
-      where: {
-        id: accountId,
-        userId,
-      },
-      select: ACCOUNT_SELECT_MINIMAL,
-    });
-    if (!account) {
-      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
-    }
-    return account;
+export class AccountService extends BaseService {
+  constructor(deps: BaseServiceDependencies = { db: prisma, idUtil }) {
+    super(deps);
   }
 
   private async validateCurrency(currencyId: string) {
-    const count = await this.deps.db.currency.count({
+    const count = await this.db.currency.count({
       where: { id: currencyId },
     });
     if (count === 0) {
@@ -79,7 +44,13 @@ export class AccountService {
     await this.validateCurrency(data.currencyId);
 
     if (data.id) {
-      await this.validateAccountOwnership(userId, data.id);
+      validateResourceOwnership(
+        userId,
+        data.id,
+        this.idUtil,
+        ErrorCode.ACCOUNT_NOT_FOUND,
+        'Account not found',
+      );
     }
 
     if (
@@ -100,7 +71,7 @@ export class AccountService {
     }
 
     if (data.id) {
-      await this.deps.db.account.update({
+      await this.db.account.update({
         where: { id: data.id },
         data: {
           type: data.type,
@@ -116,9 +87,9 @@ export class AccountService {
       });
       return { success: true, message: 'Account updated successfully' };
     } else {
-      await this.deps.db.account.create({
+      await this.db.account.create({
         data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.ACCOUNT),
+          id: this.idUtil.dbIdWithUserId(DB_PREFIX.ACCOUNT, userId),
           type: data.type,
           name: data.name,
           currencyId: data.currencyId,
@@ -140,7 +111,7 @@ export class AccountService {
     userId: string,
     accountId: string,
   ): Promise<AccountResponse> {
-    const account = await this.deps.db.account.findFirst({
+    const account = await this.db.account.findFirst({
       where: {
         id: accountId,
         userId,
@@ -152,7 +123,7 @@ export class AccountService {
       throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
     }
 
-    return formatAccount(account);
+    return mapAccount(account);
   }
 
   async listAccounts(
@@ -188,27 +159,28 @@ export class AccountService {
       };
     }
 
-    const orderBy: AccountOrderByWithRelationInput = {};
-    if (sortBy === 'name') {
-      orderBy.name = sortOrder;
-    } else if (sortBy === 'created') {
-      orderBy.created = sortOrder;
-    } else if (sortBy === 'balance') {
-      orderBy.balance = sortOrder;
-    }
+    type AccountSortKey = NonNullable<IListAccountsQueryDto['sortBy']>;
+    const orderBy = this.buildOrderBy<
+      AccountSortKey,
+      AccountOrderByWithRelationInput
+    >(sortBy, sortOrder, {
+      name: 'name',
+      created: 'created',
+      balance: 'balance',
+    }) as AccountOrderByWithRelationInput | undefined;
 
-    const skip = (page - 1) * limit;
+    const { skip, take } = calculatePagination(page, limit);
 
     const [accounts, total, summaryGroups] = await Promise.all([
-      this.deps.db.account.findMany({
+      this.db.account.findMany({
         where,
         orderBy,
         skip,
-        take: limit,
+        take,
         select: ACCOUNT_SELECT_FULL,
       }),
-      this.deps.db.account.count({ where }),
-      this.deps.db.account.groupBy({
+      this.db.account.count({ where }),
+      this.db.account.groupBy({
         by: ['currencyId'],
         where,
         _sum: {
@@ -219,7 +191,7 @@ export class AccountService {
 
     const currencyIds = [...new Set(summaryGroups.map((g) => g.currencyId))];
 
-    const currencies = await this.deps.db.currency.findMany({
+    const currencies = await this.db.currency.findMany({
       where: {
         id: { in: currencyIds },
       },
@@ -246,54 +218,40 @@ export class AccountService {
       );
 
     return {
-      accounts: accounts.map(formatAccount),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      accounts: accounts.map(mapAccount),
+      pagination: this.buildPaginationResponse(page, limit, total, [])
+        .pagination,
       summary,
     };
   }
 
   async deleteAccount(userId: string, accountId: string): Promise<ActionRes> {
-    await this.validateAccountOwnership(userId, accountId);
+    validateResourceOwnership(
+      userId,
+      accountId,
+      this.idUtil,
+      ErrorCode.ACCOUNT_NOT_FOUND,
+      'Account not found',
+    );
 
-    await this.deps.db.account.delete({
+    await this.db.account.delete({
       where: { id: accountId },
     });
 
     return { success: true, message: 'Account deleted successfully' };
   }
 
-  async deleteManyAccounts(userId: string, ids: string[]): Promise<ActionRes> {
-    const accounts = await this.deps.db.account.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: ACCOUNT_SELECT_MINIMAL,
+  deleteManyAccounts(userId: string, ids: string[]): Promise<ActionRes> {
+    return deleteManyResources({
+      db: this.db,
+      model: 'account',
+      userId,
+      ids,
+      selectMinimal: ACCOUNT_SELECT_MINIMAL,
+      errorCode: ErrorCode.ACCOUNT_NOT_FOUND,
+      errorMessage: 'Some accounts were not found or do not belong to you',
+      resourceName: 'account',
     });
-
-    if (accounts.length !== ids.length) {
-      throwAppError(
-        ErrorCode.ACCOUNT_NOT_FOUND,
-        'Some accounts were not found or do not belong to you',
-      );
-    }
-
-    await this.deps.db.account.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-    });
-
-    return {
-      success: true,
-      message: `${ids.length} account(s) deleted successfully`,
-    };
   }
 }
 

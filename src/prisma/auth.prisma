@@ -157,6 +157,7 @@ model User {
   referralMade            Referral?                @relation("UserReferrer")
   referralsGot            Referral[]               @relation("UserReferred")
   authProviders           UserAuthProvider[]
+  goals                   Goal[]
 
   pendingRef Int @default(0) @map("pending_ref")
   activeRef  Int @default(0) @map("active_ref")

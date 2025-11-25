@@ -16,6 +16,7 @@ import {
   type FilterFormValue,
   useUsersQuery,
 } from '@client/hooks/queries/useUserQueries';
+import { useUserQuery } from '@client/hooks/queries/useUserQuery';
 import { usePageDelete } from '@client/hooks/usePageDelete';
 import { usePageDialog } from '@client/hooks/usePageDialog';
 import { usePaginationSorting } from '@client/hooks/usePaginationSorting';
@@ -42,19 +43,10 @@ const UserPage = () => {
   const navigate = useNavigate();
   const formRef = useRef<FormComponentRef>(null);
   const { hasPermission } = usePermission();
+  const { isPending: isUserLoading } = useUserQuery();
 
   const canView = hasPermission('USER.VIEW') || hasPermission('USER.VIEW_ALL');
   const canUpdate = hasPermission('USER.UPDATE');
-
-  useEffect(() => {
-    if (!canView) {
-      navigate('/404');
-    }
-  }, [canView, navigate]);
-
-  if (!canView) {
-    return <NotFoundPage />;
-  }
 
   const paginationSorting = usePaginationSorting<
     'username' | 'name' | 'role' | 'created'
@@ -78,7 +70,24 @@ const UserPage = () => {
     paginationSorting.queryParams,
     formRef,
     form.handleSubmit,
+    {
+      enabled: !isUserLoading && canView,
+    },
   );
+
+  useEffect(() => {
+    if (!isUserLoading && !canView) {
+      navigate('/404');
+    }
+  }, [canView, isUserLoading, navigate]);
+
+  if (isUserLoading) {
+    return null;
+  }
+
+  if (!canView) {
+    return <NotFoundPage />;
+  }
 
   const createMutation = useCreateUserMutation();
   const updateMutation = useUpdateUserMutation();

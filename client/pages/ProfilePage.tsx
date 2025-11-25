@@ -1,5 +1,4 @@
 import { PageContainer } from '@client/components/PageContainer';
-import { Select } from '@client/components/Select';
 import { ZodFormController } from '@client/components/ZodFormController';
 import {
   useChangePasswordMutation,
@@ -45,7 +44,6 @@ const ProfilePage = () => {
 
   const profileDefaultValues: ProfileFormValue = {
     name: '',
-    baseCurrencyId: '',
   };
 
   const passwordDefaultValues: ChangePasswordFormValue = {
@@ -76,7 +74,6 @@ const ProfilePage = () => {
     if (user && !isEditMode) {
       resetProfile({
         name: user.name || '',
-        baseCurrencyId: user.baseCurrencyId || '',
       });
     }
   }, [user, isEditMode, resetProfile]);
@@ -84,14 +81,10 @@ const ProfilePage = () => {
   const onSubmitProfileForm = handleProfileSubmit((data) => {
     const modifieda: {
       name?: string;
-      baseCurrencyId?: string;
     } = {};
 
     if (data.name !== user?.name) {
       modifieda.name = data.name;
-    }
-    if (data.baseCurrencyId !== user?.baseCurrencyId) {
-      modifieda.baseCurrencyId = data.baseCurrencyId;
     }
 
     if (Object.keys(modifieda).length === 0) {
@@ -124,7 +117,6 @@ const ProfilePage = () => {
     if (user) {
       resetProfile({
         name: user.name || '',
-        baseCurrencyId: user.baseCurrencyId || '',
       });
     }
     setIsEditMode(true);
@@ -135,7 +127,6 @@ const ProfilePage = () => {
     if (user) {
       resetProfile({
         name: user.name || '',
-        baseCurrencyId: user.baseCurrencyId || '',
       });
     }
   };
@@ -199,23 +190,6 @@ const ProfilePage = () => {
                     placeholder={t('profile.namePlaceholder')}
                     error={error}
                     {...field}
-                  />
-                )}
-              />
-
-              <ZodFormController
-                control={profileControl}
-                name="baseCurrencyId"
-                render={({ field, fieldState: { error } }) => (
-                  <Select
-                    label={t('profile.baseCurrency')}
-                    error={error}
-                    items={currencies.map((currency) => ({
-                      value: currency.id,
-                      label: `${currency.symbol || ''} - ${currency.name} (${currency.code})`,
-                    }))}
-                    value={field.value || ''}
-                    onChange={field.onChange}
                   />
                 )}
               />

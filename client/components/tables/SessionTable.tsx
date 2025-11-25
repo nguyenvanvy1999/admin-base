@@ -1,10 +1,11 @@
 import { usePermission } from '@client/hooks/usePermission';
 import { formatDate } from '@client/utils/format';
-import { ActionIcon, Badge, Button } from '@mantine/core';
+import { ActionIcon, Badge, Button, Group } from '@mantine/core';
 import type { SessionResponseWithUser } from '@server/dto/admin/session.dto';
 import { IconBan } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { renderEmpty } from './columnRenderers';
 import { DataTable, type DataTableColumn } from './DataTable';
 
 type SessionTableProps = {
@@ -74,11 +75,11 @@ const SessionTable = ({
 
     if (showUserColumn) {
       cols.push({
-        accessor: 'user.username',
+        accessor: (row) => row.user?.username,
         title: 'sessions.user',
-        render: (_value, row: SessionResponseWithUser) => {
+        render: ({ row }: { row: SessionResponseWithUser }) => {
           if (!row.user) {
-            return <span className="text-gray-400">-</span>;
+            return renderEmpty();
           }
           return (
             <div>
@@ -98,25 +99,26 @@ const SessionTable = ({
       {
         accessor: 'device',
         title: 'sessions.device',
-        render: (value) => {
-          if (!value) return <span className="text-gray-400">-</span>;
-          return <span>{value as string}</span>;
+        render: ({ value }) => {
+          if (!value) return renderEmpty();
+          return <span>{value}</span>;
         },
         enableSorting: false,
       },
       {
         accessor: 'ip',
         title: 'sessions.ip',
-        render: (value) => {
-          if (!value) return <span className="text-gray-400">-</span>;
-          return <span>{value as string}</span>;
+        render: ({ value }) => {
+          if (!value) return renderEmpty();
+          return <span>{value}</span>;
         },
         enableSorting: false,
       },
       {
-        accessor: 'status',
+        id: 'status',
         title: 'sessions.statusLabel',
-        render: (value, row: SessionResponseWithUser) => {
+        accessor: (row) => getSessionStatus(row).label,
+        render: ({ row }: { row: SessionResponseWithUser }) => {
           const status = getSessionStatus(row);
           return (
             <Badge color={status.color} variant="light">
@@ -131,17 +133,17 @@ const SessionTable = ({
       {
         accessor: 'created',
         title: 'sessions.created',
-        render: (value) => {
-          if (!value) return <span className="text-gray-400">-</span>;
-          return <span>{formatDate(value as string | Date)}</span>;
+        render: ({ value }) => {
+          if (!value) return renderEmpty();
+          return <span>{formatDate(value)}</span>;
         },
       },
       {
         accessor: 'expired',
         title: 'sessions.expired',
-        render: (value) => {
-          if (!value) return <span className="text-gray-400">-</span>;
-          return <span>{formatDate(value as string | Date)}</span>;
+        render: ({ value }) => {
+          if (!value) return renderEmpty();
+          return <span>{formatDate(value)}</span>;
         },
       },
     );
@@ -151,13 +153,13 @@ const SessionTable = ({
         title: 'sessions.actions',
         textAlign: 'center',
         width: '8rem',
-        render: (value, row: SessionResponseWithUser) => {
+        render: ({ row }) => {
           const status = getSessionStatus(row);
           const isDisabled =
             status.label === 'Revoked' || status.label === 'Expired';
 
           return (
-            <div className="flex items-center justify-center gap-2">
+            <Group gap="xs" justify="center" wrap="nowrap">
               <ActionIcon
                 variant="subtle"
                 color="red"
@@ -171,7 +173,7 @@ const SessionTable = ({
               >
                 <IconBan size={16} />
               </ActionIcon>
-            </div>
+            </Group>
           );
         },
       });

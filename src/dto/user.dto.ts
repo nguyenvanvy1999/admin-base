@@ -5,6 +5,7 @@ export const RegisterDto = z.object({
   username: z.string().min(1),
   password: z.string().min(6),
   name: z.string().optional(),
+  baseCurrencyId: z.string().min(1),
 });
 
 export const LoginDto = z.object({
@@ -14,7 +15,6 @@ export const LoginDto = z.object({
 
 export const UpdateProfileDto = z.object({
   name: z.string().optional(),
-  baseCurrencyId: z.string().optional(),
 });
 
 export const ChangePasswordDto = z.object({

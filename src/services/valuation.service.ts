@@ -1,6 +1,5 @@
 import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
-import type { Prisma } from '@server/generated';
 import {
   DB_PREFIX,
   ErrorCode,
@@ -16,6 +15,7 @@ import {
   type InvestmentService,
   investmentService,
 } from './investment.service';
+import { mapValuation } from './mappers';
 import { VALUATION_SELECT_FULL } from './selects';
 
 export class InvestmentValuationService {
@@ -64,7 +64,7 @@ export class InvestmentValuationService {
     });
 
     if (existing) {
-      return this.mapValuation(
+      return mapValuation(
         await this.deps.db.investmentValuation.update({
           where: { id: existing.id },
           data: {
@@ -81,7 +81,7 @@ export class InvestmentValuationService {
       );
     }
 
-    return this.mapValuation(
+    return mapValuation(
       await this.deps.db.investmentValuation.create({
         data: {
           id: this.deps.idUtil.dbId(DB_PREFIX.VALUATION),
@@ -99,23 +99,6 @@ export class InvestmentValuationService {
         select: VALUATION_SELECT_FULL,
       }),
     );
-  }
-
-  mapValuation(
-    valuation: Prisma.InvestmentValuationGetPayload<{
-      select: typeof VALUATION_SELECT_FULL;
-    }>,
-  ) {
-    return {
-      ...valuation,
-      price: valuation.price.toNumber(),
-      timestamp: valuation.timestamp.toISOString(),
-      fetchedAt: valuation.fetchedAt?.toISOString() ?? null,
-      priceInBaseCurrency: valuation.priceInBaseCurrency?.toNumber() ?? null,
-      exchangeRate: valuation.exchangeRate?.toNumber() ?? null,
-      created: valuation.created.toISOString(),
-      modified: valuation.modified.toISOString(),
-    };
   }
 
   async listValuations(
@@ -153,7 +136,7 @@ export class InvestmentValuationService {
     ]);
 
     return {
-      valuations: valuations.map(this.mapValuation),
+      valuations: valuations.map(mapValuation),
       pagination: {
         page,
         limit,
@@ -175,7 +158,7 @@ export class InvestmentValuationService {
     if (!valuation) {
       return null;
     }
-    return this.mapValuation(valuation);
+    return mapValuation(valuation);
   }
 
   async deleteManyValuations(

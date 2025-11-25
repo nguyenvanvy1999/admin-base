@@ -1,50 +1,24 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type {
   EventOrderByWithRelationInput,
   EventWhereInput,
-  Prisma,
 } from '@server/generated';
-import {
-  DB_PREFIX,
-  ErrorCode,
-  type IdUtil,
-  idUtil,
-  throwAppError,
-} from '@server/share';
+import { DB_PREFIX, ErrorCode, idUtil, throwAppError } from '@server/share';
+import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { validateResourceOwnership } from '@server/share/utils/ownership.util';
+import { calculatePagination } from '@server/share/utils/pagination.util';
+import { validateUniqueNameForService } from '@server/share/utils/service.util';
+import dayjs from 'dayjs';
 import type { IListEventsQueryDto, IUpsertEventDto } from '../dto/event.dto';
+import { BaseService } from './base/base.service';
+import type { BaseServiceDependencies } from './base/service-dependencies';
+import { mapEvent } from './mappers';
 
 import { EVENT_SELECT_FULL, EVENT_SELECT_MINIMAL } from './selects';
 
-const mapEvent = (
-  event: Prisma.EventGetPayload<{
-    select: typeof EVENT_SELECT_FULL;
-  }>,
-) => ({
-  ...event,
-  startAt: event.startAt.toISOString(),
-  endAt: event.endAt ? event.endAt.toISOString() : null,
-  created: event.created.toISOString(),
-  modified: event.modified.toISOString(),
-});
-
-export class EventService {
-  constructor(
-    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
-  ) {}
-
-  private async validateEventOwnership(userId: string, eventId: string) {
-    const event = await this.deps.db.event.findFirst({
-      where: {
-        id: eventId,
-        userId,
-      },
-      select: EVENT_SELECT_MINIMAL,
-    });
-    if (!event) {
-      throwAppError(ErrorCode.EVENT_NOT_FOUND, 'Event not found');
-    }
-    return event;
+export class EventService extends BaseService {
+  constructor(deps: BaseServiceDependencies = { db: prisma, idUtil }) {
+    super(deps);
   }
 
   private async validateUniqueName(
@@ -52,20 +26,14 @@ export class EventService {
     name: string,
     excludeId?: string,
   ) {
-    const where: EventWhereInput = {
+    await validateUniqueNameForService({
+      count: (args) => this.db.event.count(args),
+      errorCode: ErrorCode.DUPLICATE_NAME,
+      errorMessage: 'Event name already exists',
       userId,
       name,
-    };
-
-    if (excludeId) {
-      where.id = { not: excludeId };
-    }
-
-    const count = await this.deps.db.event.count({ where });
-
-    if (count > 0) {
-      throwAppError(ErrorCode.DUPLICATE_NAME, 'Event name already exists');
-    }
+      excludeId,
+    });
   }
 
   private validateDateRange(startAt: Date, endAt?: Date | null) {
@@ -79,18 +47,24 @@ export class EventService {
 
   async upsertEvent(userId: string, data: IUpsertEventDto) {
     if (data.id) {
-      await this.validateEventOwnership(userId, data.id);
+      validateResourceOwnership(
+        userId,
+        data.id,
+        this.idUtil,
+        ErrorCode.EVENT_NOT_FOUND,
+        'Event not found',
+      );
     }
 
     await this.validateUniqueName(userId, data.name, data.id);
 
-    const startAt = new Date(data.startAt);
-    const endAt = data.endAt ? new Date(data.endAt) : null;
+    const startAt = dayjs(data.startAt).toDate();
+    const endAt = data.endAt ? dayjs(data.endAt).toDate() : null;
 
     this.validateDateRange(startAt, endAt);
 
     if (data.id) {
-      const event = await this.deps.db.event.update({
+      const event = await this.db.event.update({
         where: { id: data.id },
         data: {
           name: data.name,
@@ -101,9 +75,9 @@ export class EventService {
       });
       return mapEvent(event);
     } else {
-      const event = await this.deps.db.event.create({
+      const event = await this.db.event.create({
         data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.EVENT),
+          id: this.idUtil.dbIdWithUserId(DB_PREFIX.EVENT, userId),
           userId,
           name: data.name,
           startAt,
@@ -116,7 +90,7 @@ export class EventService {
   }
 
   async getEvent(userId: string, eventId: string) {
-    const event = await this.deps.db.event.findFirst({
+    const event = await this.db.event.findFirst({
       where: {
         id: eventId,
         userId,
@@ -158,85 +132,65 @@ export class EventService {
     if (startAtFrom || startAtTo) {
       where.startAt = {};
       if (startAtFrom) {
-        where.startAt.gte = new Date(startAtFrom);
+        where.startAt.gte = dayjs(startAtFrom).toDate();
       }
       if (startAtTo) {
-        where.startAt.lte = new Date(startAtTo);
+        where.startAt.lte = dayjs(startAtTo).toDate();
       }
     }
 
     if (endAtFrom || endAtTo) {
       where.endAt = {};
       if (endAtFrom) {
-        where.endAt.gte = new Date(endAtFrom);
+        where.endAt.gte = dayjs(endAtFrom).toDate();
       }
       if (endAtTo) {
-        where.endAt.lte = new Date(endAtTo);
+        where.endAt.lte = dayjs(endAtTo).toDate();
       }
     }
 
-    const orderBy: EventOrderByWithRelationInput = {};
-    if (sortBy === 'name') {
-      orderBy.name = sortOrder;
-    } else if (sortBy === 'startAt') {
-      orderBy.startAt = sortOrder;
-    } else if (sortBy === 'endAt') {
-      orderBy.endAt = sortOrder;
-    } else if (sortBy === 'created') {
-      orderBy.created = sortOrder;
-    }
+    type EventSortKey = NonNullable<IListEventsQueryDto['sortBy']>;
+    const orderBy = this.buildOrderBy<
+      EventSortKey,
+      EventOrderByWithRelationInput
+    >(sortBy, sortOrder, {
+      name: 'name',
+      startAt: 'startAt',
+      endAt: 'endAt',
+      created: 'created',
+    }) as EventOrderByWithRelationInput | undefined;
 
-    const skip = (page - 1) * limit;
+    const { skip, take } = calculatePagination(page, limit);
 
     const [events, total] = await Promise.all([
-      this.deps.db.event.findMany({
+      this.db.event.findMany({
         where,
         orderBy,
         skip,
-        take: limit,
+        take,
         select: EVENT_SELECT_FULL,
       }),
-      this.deps.db.event.count({ where }),
+      this.db.event.count({ where }),
     ]);
 
     return {
       events: events.map(mapEvent),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: this.buildPaginationResponse(page, limit, total, [])
+        .pagination,
     };
   }
 
-  async deleteManyEvents(userId: string, ids: string[]) {
-    const events = await this.deps.db.event.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: EVENT_SELECT_MINIMAL,
+  deleteManyEvents(userId: string, ids: string[]) {
+    return deleteManyResources({
+      db: this.db,
+      model: 'event',
+      userId,
+      ids,
+      selectMinimal: EVENT_SELECT_MINIMAL,
+      errorCode: ErrorCode.EVENT_NOT_FOUND,
+      errorMessage: 'Some events were not found or do not belong to you',
+      resourceName: 'event',
     });
-
-    if (events.length !== ids.length) {
-      throwAppError(
-        ErrorCode.EVENT_NOT_FOUND,
-        'Some events were not found or do not belong to you',
-      );
-    }
-
-    await this.deps.db.event.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-    });
-
-    return {
-      success: true,
-      message: `${ids.length} event(s) deleted successfully`,
-    };
   }
 }
 

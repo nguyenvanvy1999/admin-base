@@ -40,10 +40,7 @@ export class GracefulShutdownService {
     this.deps.logger.info('Starting graceful shutdown...');
 
     try {
-      // Close Redis
       this.closeRedis();
-
-      // Finally disconnect database
       await this.disconnectDatabase();
 
       this.deps.logger.info('Graceful shutdown completed successfully');
@@ -75,11 +72,9 @@ export class GracefulShutdownService {
       }
     };
 
-    // Handle different shutdown signals
     process.on('SIGTERM', () => shutdown('SIGTERM'));
     process.on('SIGINT', () => shutdown('SIGINT'));
 
-    // Handle uncaught exceptions
     process.on('uncaughtException', async (error) => {
       this.deps.logger.error(`Uncaught Exception: ${error}`);
       this.deps.logger.error(`Uncaught exception details: ${error}`);
@@ -101,7 +96,6 @@ export class GracefulShutdownService {
       }
     });
 
-    // Handle unhandled promise rejections
     process.on('unhandledRejection', async (reason, promise) => {
       this.deps.logger.error(
         `Unhandled Rejection at: ${promise}, reason: ${reason}`,

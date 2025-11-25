@@ -4,6 +4,7 @@ import { PageContainer } from '@client/components/PageContainer';
 import { DebtTransactionTable } from '@client/components/tables/DebtTransactionTable';
 import { useDebtTransactions } from '@client/hooks/queries/useDebtQueries';
 import { Stack, Text, Title } from '@mantine/core';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -15,8 +16,8 @@ interface DateRange {
 const DebtPage = () => {
   const { t } = useTranslation();
   const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date(new Date().setDate(1)),
-    to: new Date(),
+    from: dayjs().startOf('month').toDate(),
+    to: dayjs().toDate(),
   });
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);

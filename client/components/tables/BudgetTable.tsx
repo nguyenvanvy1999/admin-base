@@ -1,15 +1,16 @@
-import { Button, Group } from '@mantine/core';
 import type { BudgetResponse } from '@server/dto/budget.dto';
 import { BudgetPeriod } from '@server/generated';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import {
+  createActionColumn,
   createBooleanColumn,
+  createCurrencyColumn,
   createDateColumn,
+  createLinkableColumn,
   createTypeColumn,
 } from './columnFactories';
-import { renderActionButtons, renderCurrency } from './columnRenderers';
 import { DataTable, type DataTableColumn } from './DataTable';
 import { DeleteManyToolbar } from './deleteManyToolbar';
 
@@ -62,40 +63,23 @@ const BudgetTable = ({
 
   const columns = useMemo(
     (): DataTableColumn<BudgetResponse>[] => [
-      {
+      createLinkableColumn<BudgetResponse, 'name'>({
         accessor: 'name',
         title: 'budgets.name',
-        render: (value, row: BudgetResponse) => (
-          <Button
-            variant="subtle"
-            p={0}
-            h="auto"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/budgets/${row.id}`);
-            }}
-            style={{ fontWeight: 'inherit' }}
-          >
-            {value as string}
-          </Button>
-        ),
-      },
-      {
+        onClick: (row, e) => {
+          e?.stopPropagation();
+          navigate(`/budgets/${row.id}`);
+        },
+      }),
+      createCurrencyColumn<BudgetResponse, 'amount'>({
         accessor: 'amount',
         title: 'budgets.amount',
-        render: (value) => {
-          const amount = typeof value === 'string' ? parseFloat(value) : 0;
-          return renderCurrency({
-            value: amount,
-            symbol: '$',
-            decimalScale: 2,
-          });
-        },
-      },
-      createTypeColumn<BudgetResponse>({
+        getSymbol: () => '$',
+        decimalScale: 2,
+      }),
+      createTypeColumn<BudgetResponse, 'period'>({
         accessor: 'period',
         title: 'budgets.period',
-        getType: (row) => row.period,
         labelMap: {
           [BudgetPeriod.daily]: t('budgets.periodOptions.daily', {
             defaultValue: 'Daily',
@@ -115,44 +99,36 @@ const BudgetTable = ({
         },
         defaultColor: 'blue',
       }),
-      createDateColumn<BudgetResponse>({
+      createDateColumn<BudgetResponse, 'startDate'>({
         accessor: 'startDate',
         title: 'budgets.startDate',
-        getValue: (row) => row.startDate,
+        format: 'YYYY-MM-DD',
       }),
-      createDateColumn<BudgetResponse>({
+      createDateColumn<BudgetResponse, 'endDate'>({
         accessor: 'endDate',
         title: 'budgets.endDate',
-        getValue: (row) => row.endDate,
+        format: 'YYYY-MM-DD',
       }),
-      createBooleanColumn<BudgetResponse>({
+      createBooleanColumn<BudgetResponse, 'carryOver'>({
         accessor: 'carryOver',
         title: 'budgets.carryOver',
-        getValue: (row) => row.carryOver || false,
         trueLabel: t('common.yes', { defaultValue: 'Yes' }),
         falseLabel: t('common.no', { defaultValue: 'No' }),
         trueColor: 'green',
         falseColor: 'gray',
       }),
-      {
+      createActionColumn<BudgetResponse>({
         title: 'budgets.actions',
-        accessor: 'actions',
-        render: (_value, row: BudgetResponse) => (
-          <Group gap="xs">
-            <Button
-              size="xs"
-              variant="light"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/budgets/${row.id}`);
-              }}
-            >
-              {t('budgets.viewPeriods', { defaultValue: 'View Periods' })}
-            </Button>
-            {renderActionButtons({ onEdit, onDelete }, row)}
-          </Group>
-        ),
-      },
+        onEdit,
+        onDelete,
+        custom: [
+          {
+            label: t('budgets.viewPeriods', { defaultValue: 'View Periods' }),
+            onClick: (row) => navigate(`/budgets/${row.id}`),
+            variant: 'light',
+          },
+        ],
+      }),
     ],
     [t, onEdit, onDelete, navigate],
   );

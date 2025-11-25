@@ -12,6 +12,7 @@ import { getCategoryIcon, getCategoryLabel } from '../utils/category';
 import {
   createActionColumn,
   createCurrencyColumn,
+  createTextColumn,
   createTypeColumn,
 } from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
@@ -99,11 +100,10 @@ const TransactionTable = ({
         enableGrouping: enableGrouping,
         GroupedCell: dateGroupingConfig.GroupedCell,
       },
-      createTypeColumn<TransactionDetail>({
+      createTypeColumn<TransactionDetail, 'type'>({
         accessor: 'type',
         title: 'transactions.type',
         enableSorting: false,
-        getType: (row) => row.type,
         labelMap: {
           [TransactionType.income]: t('transactions.income'),
           [TransactionType.expense]: t('transactions.expense'),
@@ -129,17 +129,20 @@ const TransactionTable = ({
           [TransactionType.investment]: 'purple',
         },
       }),
-      {
+      createTextColumn<TransactionDetail, (row: TransactionDetail) => string>({
         accessor: (row) => row.account?.name ?? '',
         title: 'transactions.account',
         enableSorting: false,
-      },
+      }),
       {
         enableSorting: false,
-        accessor: (row) => row.category?.name,
+        accessor: (row: TransactionDetail) => row.category,
         title: 'transactions.category',
-        render: (_, row: TransactionDetail) => {
-          const category = row.category;
+        render: ({
+          value: category,
+        }: {
+          value: TransactionDetail['category'];
+        }) => {
           if (!category) {
             return (
               <Text size="sm" c="dimmed">
@@ -179,12 +182,14 @@ const TransactionTable = ({
           );
         },
       },
-      createCurrencyColumn<TransactionDetail>({
+      createCurrencyColumn<
+        TransactionDetail,
+        (row: TransactionDetail) => number
+      >({
         id: 'amount',
         accessor: (row) => {
           const amount = parseFloat(String(row.amount));
-          const isExpense = row.type === TransactionType.expense;
-          return isExpense ? -amount : amount;
+          return row.type === TransactionType.expense ? -amount : amount;
         },
         title: 'transactions.amount',
         enableGrouping: enableGrouping,
@@ -220,44 +225,40 @@ const TransactionTable = ({
               );
             }
           : undefined,
-        getValue: (row) => {
-          const amount = parseFloat(String(row.amount));
-          const isExpense = row.type === TransactionType.expense;
-          return isExpense ? -amount : amount;
-        },
         getSymbol: (row) => row.account?.currency?.symbol,
         decimalScale: 2,
         allowNegative: true,
         showPlus: true,
-        getColor: (row) => {
-          const isExpense = row.type === TransactionType.expense;
-          const isIncome = row.type === TransactionType.income;
-          return isExpense ? 'red' : isIncome ? 'green' : undefined;
+        getColor: (value, row) => {
+          if (row.type === TransactionType.expense) return 'red';
+          if (row.type === TransactionType.income) return 'green';
+          return undefined;
         },
       }),
-      {
+      createTextColumn<
+        TransactionDetail,
+        (row: TransactionDetail) => string | undefined
+      >({
         enableSorting: false,
         accessor: (row) => row.event?.name,
         title: 'transactions.event',
-        render: (_, row: TransactionDetail) => {
-          const event = row.event;
-          if (!event) {
+        transform: (value) => {
+          if (!value) {
             return (
               <Text size="sm" c="dimmed">
                 -
               </Text>
             );
           }
-
-          return <Text size="sm">{event.name}</Text>;
+          return <Text size="sm">{value}</Text>;
         },
-      },
-      {
+      }),
+      createTextColumn<TransactionDetail, 'note'>({
         accessor: 'note',
         title: 'transactions.description',
         ellipsis: true,
         enableSorting: false,
-      },
+      }),
       createActionColumn<TransactionDetail>({
         title: 'transactions.actions',
         onEdit,

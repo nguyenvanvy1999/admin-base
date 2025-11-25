@@ -1,23 +1,41 @@
-import type { DataTableColumn } from './types';
+import type React from 'react';
+import type { DataTableColumn, SortingState } from './types';
 
 export type BaseTableProps<_T extends { id: string }> = {
   isLoading?: boolean;
+  loading?: boolean;
   showIndexColumn?: boolean;
+  enableRowNumbers?: boolean;
   recordsPerPage?: number;
+  pageSize?: number;
   recordsPerPageOptions?: number[];
+  pageSizeOptions?: number[];
   onRecordsPerPageChange?: (size: number) => void;
+  onPageSizeChange?: (size: number) => void;
   page?: number;
   onPageChange?: (page: number) => void;
   totalRecords?: number;
-  sorting?: { id: string; desc: boolean }[];
+  rowCount?: number;
+  sorting?: SortingState;
   onSortingChange?: (
-    updater:
-      | { id: string; desc: boolean }[]
-      | ((prev: { id: string; desc: boolean }[]) => {
-          id: string;
-          desc: boolean;
-        }[]),
+    updater: SortingState | ((prev: SortingState) => SortingState),
   ) => void;
+  columnFilters?: { id: string; value: unknown }[];
+  onColumnFiltersChange?: (updater: { id: string; value: unknown }[]) => void;
+  pinLastColumn?: boolean;
+  height?: string | number;
+  storeColumnsKey?: string;
+  idAccessor?: keyof _T & string;
+  renderTopToolbarCustomActions?: (props: {
+    table: unknown;
+  }) => React.ReactNode;
+  enableGrouping?: boolean;
+  grouping?: string[];
+  onGroupingChange?: (
+    updater: string[] | ((prev: string[]) => string[]),
+  ) => void;
+  initialGrouping?: string[];
+  autoFormatDisabled?: boolean;
 };
 
 export type ActionTableProps<T extends { id: string }> = BaseTableProps<T> & {
@@ -36,7 +54,7 @@ export type SelectableTableProps<T extends { id: string }> =
 export type ActionSelectableTableProps<T extends { id: string }> =
   ActionTableProps<T> & SelectableTableProps<T>;
 
-export type ColumnFactoryOptions<T> = {
+export type ColumnFactoryOptions<T extends { id: string }> = {
   id?: string;
   title?: DataTableColumn<T>['title'];
   accessor?: DataTableColumn<T>['accessor'];
@@ -47,4 +65,6 @@ export type ColumnFactoryOptions<T> = {
   ellipsis?: boolean;
   aggregationFn?: DataTableColumn<T>['aggregationFn'];
   AggregatedCell?: DataTableColumn<T>['AggregatedCell'];
+  onClick?: DataTableColumn<T>['onClick'];
+  cellsStyle?: DataTableColumn<T>['cellsStyle'];
 };

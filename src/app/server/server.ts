@@ -19,6 +19,7 @@ import currencyController from '@server/controllers/currency.controller';
 import entityController from '@server/controllers/entity.controller';
 import eventController from '@server/controllers/event.controller';
 import exchangeRateController from '@server/controllers/exchange-rate.controller';
+import goalController from '@server/controllers/goal.controller';
 import investmentController from '@server/controllers/investment.controller';
 import reportController from '@server/controllers/report.controller';
 import tagController from '@server/controllers/tag.controller';
@@ -83,6 +84,7 @@ export async function createServer() {
           adminController,
           accountController,
           budgetController,
+          goalController,
           categoryController,
           currencyController,
           entityController,

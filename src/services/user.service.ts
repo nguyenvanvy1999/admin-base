@@ -15,6 +15,7 @@ import {
   SUPER_ADMIN_ID,
   throwAppError,
 } from '@server/share';
+import dayjs from 'dayjs';
 import type {
   IListUsersQueryDto,
   IUpsertUserDto,
@@ -77,6 +78,13 @@ export class UserService {
       throwAppError(ErrorCode.USER_ALREADY_EXISTS, 'User already exists');
     }
 
+    const currencyExists = await this.deps.db.currency.count({
+      where: { id: data.baseCurrencyId },
+    });
+    if (currencyExists === 0) {
+      throwAppError(ErrorCode.CURRENCY_NOT_FOUND, 'Currency not found');
+    }
+
     const password = await this.deps.passwordService.createPassword(
       data.password,
     );
@@ -87,7 +95,7 @@ export class UserService {
           id: this.deps.idUtil.dbId(DB_PREFIX.USER),
           username: data.username,
           name: data.name,
-          baseCurrencyId: CURRENCY_IDS.VND,
+          baseCurrencyId: data.baseCurrencyId,
           ...password,
           roles: {
             create: {
@@ -246,22 +254,10 @@ export class UserService {
       throwAppError(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
 
-    if (data.baseCurrencyId) {
-      const count = await this.deps.db.currency.count({
-        where: { id: data.baseCurrencyId },
-      });
-      if (count === 0) {
-        throwAppError(ErrorCode.CURRENCY_NOT_FOUND, 'Currency not found');
-      }
-    }
-
     const modifieda: UserUncheckedUpdateInput = {};
 
     if (data.name?.length) {
       modifieda.name = data.name;
-    }
-    if (data.baseCurrencyId) {
-      modifieda.baseCurrencyId = data.baseCurrencyId;
     }
 
     const updatedUser = await this.deps.db.user.update({
@@ -437,14 +433,12 @@ export class UserService {
   ): Promise<UserStatisticsResponse> {
     const { dateFrom, dateTo, groupBy = 'month' } = query;
 
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
+    const now = dayjs().toDate();
+    const startOfMonth = dayjs().startOf('month').toDate();
+    const startOfWeek = dayjs().startOf('week').toDate();
 
-    const dateFromDate = dateFrom ? new Date(dateFrom) : undefined;
-    const dateToDate = dateTo ? new Date(dateTo) : undefined;
+    const dateFromDate = dateFrom ? dayjs(dateFrom).toDate() : undefined;
+    const dateToDate = dateTo ? dayjs(dateTo).toDate() : undefined;
 
     const baseWhere: Prisma.UserWhereInput = {};
 
@@ -522,47 +516,43 @@ export class UserService {
     let cumulativeCount = 0;
     const filterStartDate = dateFromDate || allUsers[0]?.created;
     if (filterStartDate) {
-      const startDate = new Date(filterStartDate);
+      let startDate: dayjs.Dayjs;
       if (groupBy === 'day') {
-        startDate.setHours(0, 0, 0, 0);
+        startDate = dayjs(filterStartDate).startOf('day');
       } else if (groupBy === 'week') {
-        startDate.setDate(startDate.getDate() - startDate.getDay());
-        startDate.setHours(0, 0, 0, 0);
+        startDate = dayjs(filterStartDate).startOf('week');
       } else {
-        startDate.setDate(1);
-        startDate.setHours(0, 0, 0, 0);
+        startDate = dayjs(filterStartDate).startOf('month');
       }
 
       const endDate = dateToDate || now;
-      const currentDate = new Date(startDate);
+      let currentDate = startDate;
 
-      while (currentDate <= endDate) {
+      while (currentDate.toDate() <= endDate) {
         let dateKey: string;
         if (groupBy === 'day') {
-          dateKey = currentDate.toISOString().split('T')[0];
-          currentDate.setDate(currentDate.getDate() + 1);
+          dateKey = currentDate.format('YYYY-MM-DD');
+          currentDate = currentDate.add(1, 'day');
         } else if (groupBy === 'week') {
-          dateKey = currentDate.toISOString().split('T')[0];
-          currentDate.setDate(currentDate.getDate() + 7);
+          dateKey = currentDate.format('YYYY-MM-DD');
+          currentDate = currentDate.add(1, 'week');
         } else {
-          dateKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-          currentDate.setMonth(currentDate.getMonth() + 1);
+          dateKey = currentDate.format('YYYY-MM');
+          currentDate = currentDate.add(1, 'month');
         }
         statsMap.set(dateKey, { count: cumulativeCount, newUsers: 0 });
       }
     }
 
     for (const user of allUsers) {
-      const date = new Date(user.created);
+      const date = dayjs(user.created);
       let dateKey: string;
       if (groupBy === 'day') {
-        dateKey = date.toISOString().split('T')[0];
+        dateKey = date.format('YYYY-MM-DD');
       } else if (groupBy === 'week') {
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
-        dateKey = weekStart.toISOString().split('T')[0];
+        dateKey = date.startOf('week').format('YYYY-MM-DD');
       } else {
-        dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        dateKey = date.format('YYYY-MM');
       }
 
       if (!statsMap.has(dateKey)) {

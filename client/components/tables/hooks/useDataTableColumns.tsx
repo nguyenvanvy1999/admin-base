@@ -26,7 +26,7 @@ export function useDataTableColumns<T extends { id: string }>({
   autoFormatDisabled,
   themeSpacingXs,
 }: {
-  columns: DataTableColumn<T, any>[];
+  columns: DataTableColumn<T>[];
   autoFormatDisabled?: boolean;
   themeSpacingXs: string;
 }) {
@@ -128,13 +128,33 @@ export function useDataTableColumns<T extends { id: string }>({
         cell: { getValue: () => unknown };
       }) => {
         const record = row.original;
-        const value = cell.getValue();
+        const hasAccessor = col.accessor !== undefined;
         let content: React.ReactNode;
+
+        // Priority: render function always takes precedence over autoFormat
         if (col.render) {
-          content = col.render(value as any, record, row.index);
+          if (hasAccessor) {
+            const value = cell.getValue();
+            content = (
+              col.render as (props: {
+                value: unknown;
+                row: T;
+                rowIndex: number;
+              }) => React.ReactNode
+            )({ value, row: record, rowIndex: row.index });
+          } else {
+            content = (
+              col.render as (props: {
+                row: T;
+                rowIndex: number;
+              }) => React.ReactNode
+            )({ row: record, rowIndex: row.index });
+          }
         } else if (!autoFormatDisabled) {
+          const value = cell.getValue();
           content = autoFormat(value);
         } else {
+          const value = cell.getValue();
           content = value as React.ReactNode;
         }
         const style: React.CSSProperties = {
@@ -166,7 +186,9 @@ export function useDataTableColumns<T extends { id: string }>({
               width: '100%',
               ...style,
             }}
-            onClick={col.onClick ? () => col.onClick?.(record) : undefined}
+            onClick={
+              col.onClick ? (event) => col.onClick?.(record, event) : undefined
+            }
           >
             {content}
           </span>

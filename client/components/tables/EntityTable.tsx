@@ -2,8 +2,11 @@ import type { EntityResponse } from '@server/dto/entity.dto';
 import { EntityType } from '@server/generated';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createActionColumn } from '../DataTable/utils';
-import { createTypeColumn } from './columnFactories';
+import {
+  createActionColumn,
+  createTextColumn,
+  createTypeColumn,
+} from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
 import { DeleteManyToolbar } from './deleteManyToolbar';
 import type { SortingState } from './types';
@@ -51,40 +54,39 @@ const EntityTable = ({
 
   const columns = useMemo(
     (): DataTableColumn<EntityResponse>[] => [
-      {
+      createTextColumn<EntityResponse, 'name'>({
         accessor: 'name',
         title: 'entities.name',
-      },
-      createTypeColumn<EntityResponse>({
+      }),
+      createTypeColumn<EntityResponse, 'type'>({
         accessor: 'type',
         title: 'entities.type',
-        getType: (row) => row.type || '',
         labelMap: {
           [EntityType.individual]: t('entities.individual'),
           [EntityType.organization]: t('entities.organization'),
         },
         defaultColor: 'blue',
       }),
-      {
+      createTextColumn<EntityResponse, 'phone'>({
         accessor: 'phone',
         title: 'entities.phone',
         ellipsis: true,
-      },
-      {
+      }),
+      createTextColumn<EntityResponse, 'email'>({
         accessor: 'email',
         title: 'entities.email',
         ellipsis: true,
-      },
-      {
+      }),
+      createTextColumn<EntityResponse, 'address'>({
         accessor: 'address',
         title: 'entities.address',
         ellipsis: true,
-      },
-      {
+      }),
+      createTextColumn<EntityResponse, 'note'>({
         accessor: 'note',
         title: 'entities.note',
         ellipsis: true,
-      },
+      }),
       createActionColumn<EntityResponse>({
         title: 'entities.actions',
         onEdit,

@@ -95,18 +95,18 @@ export class CurrencyConversionService {
     return { amountInAccountCurrency, feeInAccountCurrency };
   }
 
-  async convertToToAccountCurrency(
+  convertToToAccountCurrency(
     amount: Decimal | number,
     currencyId: string,
     toAccountCurrencyId?: string,
   ): Promise<Decimal> {
     if (!toAccountCurrencyId || currencyId === toAccountCurrencyId) {
-      return new Decimal(amount);
+      return Promise.resolve(new Decimal(amount));
     }
-    return await this.convertCurrency(amount, currencyId, toAccountCurrencyId);
+    return this.convertCurrency(amount, currencyId, toAccountCurrencyId);
   }
 
-  async convertToBaseCurrency(
+  convertToBaseCurrency(
     amount: Decimal | number,
     currencyId: string,
     baseCurrencyId: string,
@@ -115,9 +115,9 @@ export class CurrencyConversionService {
       throwAppError(ErrorCode.VALIDATION_ERROR, 'Base currency ID is required');
     }
     if (currencyId === baseCurrencyId) {
-      return new Decimal(amount);
+      return Promise.resolve(new Decimal(amount));
     }
-    return await this.convertCurrency(amount, currencyId, baseCurrencyId);
+    return this.convertCurrency(amount, currencyId, baseCurrencyId);
   }
 }
 

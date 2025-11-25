@@ -1,4 +1,3 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type { CategoryType, CategoryWhereInput } from '@server/generated';
 import {
@@ -9,17 +8,21 @@ import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   INVESTMENT_CATEGORY,
+  idUtil,
   LOAN_CATEGORIES,
   TRANSFER_CATEGORY,
   throwAppError,
 } from '@server/share';
+import { deleteManyResources } from '@server/share/utils/delete-many.util';
 import type {
   CategoryListResponse,
   CategoryResponse,
-  CategoryTreeResponse,
   IListCategoriesQueryDto,
   IUpsertCategoryDto,
 } from '../dto/category.dto';
+import { BaseService } from './base/base.service';
+import type { BaseServiceDependencies } from './base/service-dependencies';
+import { mapCategory, mapCategoryTree } from './mappers';
 import { CATEGORY_SELECT_MINIMAL } from './selects';
 
 type CategoryWithChildren = {
@@ -34,41 +37,10 @@ type CategoryWithChildren = {
   children?: CategoryWithChildren[];
 };
 
-const formatCategory = (
-  category: Pick<
-    CategoryWithChildren,
-    | 'id'
-    | 'userId'
-    | 'type'
-    | 'name'
-    | 'parentId'
-    | 'icon'
-    | 'color'
-    | 'isLocked'
-  >,
-): CategoryResponse => ({
-  ...category,
-  parentId: category.parentId ?? null,
-  icon: category.icon ?? null,
-  color: category.color ?? null,
-});
-
-const formatCategoryTree = (
-  category: CategoryWithChildren,
-): CategoryTreeResponse => {
-  const children =
-    category.children && category.children.length > 0
-      ? category.children.map(formatCategoryTree)
-      : undefined;
-
-  return {
-    ...formatCategory(category),
-    children,
-  } as CategoryTreeResponse;
-};
-
-export class CategoryService {
-  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+export class CategoryService extends BaseService {
+  constructor(deps: BaseServiceDependencies = { db: prisma, idUtil }) {
+    super(deps);
+  }
 
   getCategoryId(userId: string, code: string, type?: string): string {
     if (type) {
@@ -168,7 +140,7 @@ export class CategoryService {
   }
 
   private async validateCategoryOwnership(userId: string, categoryId: string) {
-    const category = await this.deps.db.category.findUnique({
+    const category = await this.db.category.findUnique({
       where: {
         id: categoryId,
       },
@@ -223,7 +195,7 @@ export class CategoryService {
       where.type = { in: type };
     }
 
-    const categories = await this.deps.db.category.findMany({
+    const categories = await this.db.category.findMany({
       where,
       select: {
         id: true,
@@ -242,14 +214,14 @@ export class CategoryService {
 
     const tree = this.buildCategoryTree(categories as CategoryWithChildren[]);
 
-    return { categories: tree.map(formatCategoryTree) } as CategoryListResponse;
+    return { categories: tree.map(mapCategoryTree) } as CategoryListResponse;
   }
 
   async getCategoryById(
     userId: string,
     categoryId: string,
   ): Promise<CategoryResponse> {
-    const category = await this.deps.db.category.findFirst({
+    const category = await this.db.category.findFirst({
       where: {
         id: categoryId,
         userId,
@@ -270,7 +242,7 @@ export class CategoryService {
       throwAppError(ErrorCode.CATEGORY_NOT_FOUND, 'Category not found');
     }
 
-    return formatCategory(category);
+    return mapCategory(category);
   }
 
   async getOrCreateBalanceAdjustmentCategory(
@@ -281,7 +253,7 @@ export class CategoryService {
     const categoryName = CATEGORY_NAME.BALANCE_ADJUSTMENT;
     const categoryId = this.getCategoryId(userId, categoryName, categoryType);
 
-    const existingCategory = await this.deps.db.category.findUnique({
+    const existingCategory = await this.db.category.findUnique({
       where: {
         id: categoryId,
       },
@@ -292,7 +264,7 @@ export class CategoryService {
       return existingCategory.id;
     }
 
-    const newCategory = await this.deps.db.category.create({
+    const newCategory = await this.db.category.create({
       data: {
         id: categoryId,
         userId,
@@ -340,7 +312,7 @@ export class CategoryService {
     }
 
     const categoryId = this.getCategoryId(userId, data.name);
-    const category = await this.deps.db.category.create({
+    const category = await this.db.category.create({
       data: {
         id: categoryId,
         userId,
@@ -362,7 +334,7 @@ export class CategoryService {
       },
     });
 
-    return formatCategory(category);
+    return mapCategory(category);
   }
 
   async updateCategory(
@@ -427,7 +399,7 @@ export class CategoryService {
       }
     }
 
-    const updatedCategory = await this.deps.db.category.update({
+    const updatedCategory = await this.db.category.update({
       where: { id: categoryId },
       data: {
         name: data.name,
@@ -448,7 +420,7 @@ export class CategoryService {
       },
     });
 
-    return formatCategory(updatedCategory);
+    return mapCategory(updatedCategory);
   }
 
   private async checkCircularReference(
@@ -467,7 +439,7 @@ export class CategoryService {
       }
       visited.add(currentId);
 
-      const category = await this.deps.db.category.findUnique({
+      const category = await this.db.category.findUnique({
         where: { id: currentId },
         select: { parentId: true },
       });
@@ -482,7 +454,7 @@ export class CategoryService {
   }
 
   async deleteManyCategories(userId: string, ids: string[]) {
-    const categories = await this.deps.db.category.findMany({
+    const categories = await this.db.category.findMany({
       where: {
         id: { in: ids },
         userId,
@@ -505,7 +477,7 @@ export class CategoryService {
         );
       }
 
-      const childrenCount = await this.deps.db.category.count({
+      const childrenCount = await this.db.category.count({
         where: {
           parentId: category.id,
         },
@@ -519,17 +491,16 @@ export class CategoryService {
       }
     }
 
-    await this.deps.db.category.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
+    return deleteManyResources({
+      db: this.db,
+      model: 'category',
+      userId,
+      ids,
+      selectMinimal: CATEGORY_SELECT_MINIMAL,
+      errorCode: ErrorCode.CATEGORY_NOT_FOUND,
+      errorMessage: 'Some categories were not found or do not belong to you',
+      resourceName: 'category',
     });
-
-    return {
-      success: true,
-      message: `${ids.length} category(ies) deleted successfully`,
-    };
   }
 }
 

@@ -1,10 +1,14 @@
-import { usePermission } from '@client/hooks/usePermission';
-import { ActionIcon, Badge } from '@mantine/core';
 import type { RoleResponse } from '@server/dto/admin/role.dto';
-import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  createBooleanColumn,
+  createCountColumn,
+  createDateColumn,
+  createTextColumn,
+} from './columnFactories';
 import { DataTable, type DataTableColumn } from './DataTable';
+import { useCreatePermissionActionColumn } from './hooks/usePermissionActionColumn';
 
 const FROZEN_ROLE_IDS = ['role_user_default', 'role_admin_default'];
 
@@ -56,99 +60,57 @@ const RoleTable = ({
   onSelectedRecordsChange,
 }: RoleTableProps) => {
   const { t } = useTranslation();
-  const { hasPermission } = usePermission();
 
-  const canUpdate = hasPermission('ROLE.UPDATE');
-  const canDelete = hasPermission('ROLE.DELETE');
+  const actionColumn = useCreatePermissionActionColumn<RoleResponse>({
+    title: 'roles.actions',
+    onEdit: (row) => {
+      if (!isFrozenRole(row.id)) {
+        onEdit(row);
+      }
+    },
+    onDelete: (row) => {
+      if (!isFrozenRole(row.id)) {
+        onDelete(row);
+      }
+    },
+    editPermission: 'ROLE.UPDATE',
+    deletePermission: 'ROLE.DELETE',
+  });
 
   const columns = useMemo(
     (): DataTableColumn<RoleResponse>[] => [
-      {
+      createTextColumn<RoleResponse, 'title'>({
         accessor: 'title',
         title: 'roles.roleTitle',
-      },
-      {
+      }),
+      createTextColumn<RoleResponse, 'description'>({
         accessor: 'description',
         title: 'roles.description',
         ellipsis: true,
-        render: (value) => {
-          if (!value) return <span className="text-gray-400">-</span>;
-          return <span>{String(value)}</span>;
-        },
-      },
-      {
+      }),
+      createBooleanColumn<RoleResponse, 'enabled'>({
         accessor: 'enabled',
         title: 'roles.enabled',
-        render: (value) => {
-          const enabled = value as boolean;
-          return (
-            <Badge color={enabled ? 'green' : 'red'} variant="light">
-              {enabled ? t('common.enabled') : t('common.disabled')}
-            </Badge>
-          );
-        },
-      },
-      {
+        trueLabel: t('common.enabled'),
+        falseLabel: t('common.disabled'),
+        trueColor: 'green',
+        falseColor: 'red',
+      }),
+      createCountColumn<RoleResponse, 'permissionIds'>({
         accessor: 'permissionIds',
         title: 'roles.permissions',
-        render: (value) => {
-          const permissionIds = value as string[];
-          return <span>{permissionIds.length}</span>;
-        },
-      },
-      {
+      }),
+      createCountColumn<RoleResponse, 'playerIds'>({
         accessor: 'playerIds',
         title: 'roles.players',
-        render: (value) => {
-          const playerIds = value as string[];
-          return <span>{playerIds.length}</span>;
-        },
-      },
-      {
+      }),
+      createDateColumn<RoleResponse, 'created'>({
         accessor: 'created',
         title: 'roles.created',
-      },
-      {
-        title: 'roles.actions',
-        textAlign: 'center',
-        width: '8rem',
-        render: (value, row: RoleResponse) => {
-          const frozen = isFrozenRole(row.id);
-          const canEdit = canUpdate && !frozen;
-          const canDeleteRole = canDelete && !frozen;
-
-          return (
-            <div className="flex items-center justify-center gap-2">
-              {canEdit && (
-                <ActionIcon
-                  variant="subtle"
-                  color="blue"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(row);
-                  }}
-                >
-                  <IconEdit size={16} />
-                </ActionIcon>
-              )}
-              {canDeleteRole && (
-                <ActionIcon
-                  variant="subtle"
-                  color="red"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(row);
-                  }}
-                >
-                  <IconTrash size={16} />
-                </ActionIcon>
-              )}
-            </div>
-          );
-        },
-      },
+      }),
+      actionColumn,
     ],
-    [t, onEdit, onDelete, canUpdate, canDelete],
+    [t, actionColumn],
   );
 
   return (

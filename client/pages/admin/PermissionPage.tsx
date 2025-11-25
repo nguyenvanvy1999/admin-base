@@ -6,6 +6,7 @@ import { PageContainer } from '@client/components/PageContainer';
 import PermissionTable from '@client/components/tables/PermissionTable';
 import { ZodFormController } from '@client/components/ZodFormController';
 import { usePermissionsQuery } from '@client/hooks/queries/usePermissionQueries';
+import { useUserQuery } from '@client/hooks/queries/useUserQuery';
 import { usePermission } from '@client/hooks/usePermission';
 import { useZodForm } from '@client/hooks/useZodForm';
 import NotFoundPage from '@client/pages/NotFoundPage';
@@ -35,18 +36,9 @@ const PermissionPage = () => {
   const navigate = useNavigate();
   const formRef = useRef<FormComponentRef>(null);
   const { hasPermission } = usePermission();
+  const { isPending: isUserLoading } = useUserQuery();
 
   const canView = hasPermission('ROLE.VIEW');
-
-  useEffect(() => {
-    if (!canView) {
-      navigate('/404');
-    }
-  }, [canView, navigate]);
-
-  if (!canView) {
-    return <NotFoundPage />;
-  }
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -58,7 +50,7 @@ const PermissionPage = () => {
   });
 
   const { data: allPermissions = [], isLoading } = usePermissionsQuery({
-    enabled: canView,
+    enabled: !isUserLoading && canView,
     retry: false,
   });
 
@@ -129,6 +121,20 @@ const PermissionPage = () => {
     startIndex,
     endIndex,
   );
+
+  useEffect(() => {
+    if (!isUserLoading && !canView) {
+      navigate('/404');
+    }
+  }, [canView, isUserLoading, navigate]);
+
+  if (isUserLoading) {
+    return null;
+  }
+
+  if (!canView) {
+    return <NotFoundPage />;
+  }
 
   const handleSearch = () => {
     setPage(1);

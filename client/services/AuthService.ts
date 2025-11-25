@@ -16,6 +16,7 @@ export class AuthService extends ServiceBase {
     username: string;
     password: string;
     name?: string;
+    baseCurrencyId: string;
   }): Promise<RegisterRes> {
     return this.post<RegisterRes>(data, {
       endpoint: 'register',

@@ -1,51 +1,26 @@
-import type { IDb } from '@server/configs/db';
 import { prisma } from '@server/configs/db';
 import type {
   EntityOrderByWithRelationInput,
   EntityWhereInput,
-  Prisma,
 } from '@server/generated';
-import {
-  DB_PREFIX,
-  ErrorCode,
-  type IdUtil,
-  idUtil,
-  throwAppError,
-} from '@server/share';
+import { DB_PREFIX, ErrorCode, idUtil, throwAppError } from '@server/share';
+import { deleteManyResources } from '@server/share/utils/delete-many.util';
+import { validateResourceOwnership } from '@server/share/utils/ownership.util';
+import { calculatePagination } from '@server/share/utils/pagination.util';
+import { validateUniqueNameForService } from '@server/share/utils/service.util';
 import type {
   IListEntitiesQueryDto,
   IUpsertEntityDto,
 } from '../dto/entity.dto';
+import { BaseService } from './base/base.service';
+import type { BaseServiceDependencies } from './base/service-dependencies';
+import { mapEntity } from './mappers';
 
 import { ENTITY_SELECT_FULL, ENTITY_SELECT_MINIMAL } from './selects';
 
-const mapEntity = (
-  entity: Prisma.EntityGetPayload<{
-    select: typeof ENTITY_SELECT_FULL;
-  }>,
-) => ({
-  ...entity,
-  created: entity.created.toISOString(),
-  modified: entity.modified.toISOString(),
-});
-
-export class EntityService {
-  constructor(
-    private readonly deps: { db: IDb; idUtil: IdUtil } = { db: prisma, idUtil },
-  ) {}
-
-  private async validateEntityOwnership(userId: string, entityId: string) {
-    const entity = await this.deps.db.entity.findFirst({
-      where: {
-        id: entityId,
-        userId,
-      },
-      select: ENTITY_SELECT_MINIMAL,
-    });
-    if (!entity) {
-      throwAppError(ErrorCode.ENTITY_NOT_FOUND, 'Entity not found');
-    }
-    return entity;
+export class EntityService extends BaseService {
+  constructor(deps: BaseServiceDependencies = { db: prisma, idUtil }) {
+    super(deps);
   }
 
   private async validateUniqueName(
@@ -53,31 +28,31 @@ export class EntityService {
     name: string,
     excludeId?: string,
   ) {
-    const where: EntityWhereInput = {
+    await validateUniqueNameForService({
+      count: (args) => this.db.entity.count(args),
+      errorCode: ErrorCode.DUPLICATE_NAME,
+      errorMessage: 'Entity name already exists',
       userId,
       name,
-    };
-
-    if (excludeId) {
-      where.id = { not: excludeId };
-    }
-
-    const count = await this.deps.db.entity.count({ where });
-
-    if (count > 0) {
-      throwAppError(ErrorCode.DUPLICATE_NAME, 'Entity name already exists');
-    }
+      excludeId,
+    });
   }
 
   async upsertEntity(userId: string, data: IUpsertEntityDto) {
     if (data.id) {
-      await this.validateEntityOwnership(userId, data.id);
+      validateResourceOwnership(
+        userId,
+        data.id,
+        this.idUtil,
+        ErrorCode.ENTITY_NOT_FOUND,
+        'Entity not found',
+      );
     }
 
     await this.validateUniqueName(userId, data.name, data.id);
 
     if (data.id) {
-      const entity = await this.deps.db.entity.update({
+      const entity = await this.db.entity.update({
         where: { id: data.id },
         data: {
           name: data.name,
@@ -91,9 +66,9 @@ export class EntityService {
       });
       return mapEntity(entity);
     } else {
-      const entity = await this.deps.db.entity.create({
+      const entity = await this.db.entity.create({
         data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.ENTITY),
+          id: this.idUtil.dbIdWithUserId(DB_PREFIX.ENTITY, userId),
           userId,
           name: data.name,
           type: data.type,
@@ -109,7 +84,7 @@ export class EntityService {
   }
 
   async getEntity(userId: string, entityId: string) {
-    const entity = await this.deps.db.entity.findFirst({
+    const entity = await this.db.entity.findFirst({
       where: {
         id: entityId,
         userId,
@@ -142,66 +117,47 @@ export class EntityService {
       };
     }
 
-    const orderBy: EntityOrderByWithRelationInput = {};
-    if (sortBy === 'name') {
-      orderBy.name = sortOrder;
-    } else if (sortBy === 'type') {
-      orderBy.type = sortOrder;
-    } else if (sortBy === 'created') {
-      orderBy.created = sortOrder;
-    }
+    type EntitySortKey = NonNullable<IListEntitiesQueryDto['sortBy']>;
+    const orderBy = this.buildOrderBy<
+      EntitySortKey,
+      EntityOrderByWithRelationInput
+    >(sortBy, sortOrder, {
+      name: 'name',
+      type: 'type',
+      created: 'created',
+    }) as EntityOrderByWithRelationInput | undefined;
 
-    const skip = (page - 1) * limit;
+    const { skip, take } = calculatePagination(page, limit);
 
     const [entities, total] = await Promise.all([
-      this.deps.db.entity.findMany({
+      this.db.entity.findMany({
         where,
         orderBy,
         skip,
-        take: limit,
+        take,
         select: ENTITY_SELECT_FULL,
       }),
-      this.deps.db.entity.count({ where }),
+      this.db.entity.count({ where }),
     ]);
 
     return {
       entities: entities.map(mapEntity),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: this.buildPaginationResponse(page, limit, total, [])
+        .pagination,
     };
   }
 
-  async deleteManyEntities(userId: string, ids: string[]) {
-    const entities = await this.deps.db.entity.findMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-      select: ENTITY_SELECT_MINIMAL,
+  deleteManyEntities(userId: string, ids: string[]) {
+    return deleteManyResources({
+      db: this.db,
+      model: 'entity',
+      userId,
+      ids,
+      selectMinimal: ENTITY_SELECT_MINIMAL,
+      errorCode: ErrorCode.ENTITY_NOT_FOUND,
+      errorMessage: 'Some entities were not found or do not belong to you',
+      resourceName: 'entity',
     });
-
-    if (entities.length !== ids.length) {
-      throwAppError(
-        ErrorCode.ENTITY_NOT_FOUND,
-        'Some entities were not found or do not belong to you',
-      );
-    }
-
-    await this.deps.db.entity.deleteMany({
-      where: {
-        id: { in: ids },
-        userId,
-      },
-    });
-
-    return {
-      success: true,
-      message: `${ids.length} entity(ies) deleted successfully`,
-    };
   }
 }
 

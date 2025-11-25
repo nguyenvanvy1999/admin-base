@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import {
   createActionColumn,
   createCurrencyColumn,
+  createDateColumn,
+  createTextColumn,
   createTypeColumn,
 } from './columnFactories';
 import { renderCurrency } from './columnRenderers';
@@ -48,16 +50,15 @@ const AccountTable = ({
 
   const columns = useMemo(
     (): DataTableColumn<AccountResponse>[] => [
-      {
+      createTextColumn<AccountResponse, 'name'>({
         accessor: 'name',
         title: 'accounts.name',
         enableSorting: true,
-      },
-      createTypeColumn<AccountResponse>({
+      }),
+      createTypeColumn<AccountResponse, 'type'>({
         accessor: 'type',
         title: 'accounts.type',
         enableSorting: false,
-        getType: (row) => row.type,
         labelMap: {
           [AccountType.cash]: t('accounts.cash'),
           [AccountType.bank]: t('accounts.bank'),
@@ -72,41 +73,41 @@ const AccountTable = ({
         },
       }),
       {
-        accessor: (row) => row.currency?.code ?? '',
+        accessor: (row: AccountResponse) => row.currency?.code ?? '',
         title: 'accounts.currency',
         enableSorting: false,
       },
-      createCurrencyColumn<AccountResponse>({
+      createCurrencyColumn<AccountResponse, 'balance'>({
         accessor: 'balance',
         title: 'accounts.balance',
         enableSorting: true,
-        getValue: (row) => parseFloat(String(row.balance)),
-        getSymbol: (row) => row.currency?.symbol,
+        getSymbol: (row: AccountResponse) => row.currency?.symbol,
         decimalScale: 2,
         allowNegative: true,
-        getColor: (row) => {
-          const balance = parseFloat(String(row.balance));
-          return balance < 0 ? 'red' : 'green';
+        getColor: (balance, row) => {
+          const numBalance = parseFloat(String(balance));
+          return numBalance < 0 ? 'red' : 'green';
         },
       }),
       {
         accessor: 'creditLimit',
         title: 'accounts.creditLimit',
         enableSorting: false,
-        render: (value, row: AccountResponse) => {
-          if (!row.creditLimit) return null;
+        render: ({ value, row }) => {
+          if (!value) return null;
           return renderCurrency({
-            value: parseFloat(String(row.creditLimit)),
+            value: parseFloat(String(value)),
             symbol: row.currency?.symbol || undefined,
             decimalScale: 2,
           });
         },
       },
-      {
+      createDateColumn<AccountResponse, 'created'>({
         accessor: 'created',
         title: 'common.created',
         enableSorting: true,
-      },
+        format: 'YYYY-MM-DD HH:mm',
+      }),
       createActionColumn<AccountResponse>({
         title: 'accounts.actions',
         onEdit,

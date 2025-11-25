@@ -80,7 +80,7 @@ export const DebtTransactionTable = ({
             </Box>
           );
         },
-        render: (_, row: DebtTransaction) => (
+        render: ({ row }) => (
           <Text size="sm">{row.entity?.name || t('debts.unknown')}</Text>
         ),
         enableSorting: false,
@@ -88,7 +88,6 @@ export const DebtTransactionTable = ({
       {
         accessor: 'date',
         title: 'debts.date',
-        format: 'date',
         enableSorting: false,
       },
       {
@@ -96,18 +95,15 @@ export const DebtTransactionTable = ({
         title: 'debts.description',
         ellipsis: true,
         enableSorting: false,
-        render: (_, row: DebtTransaction) => (
-          <Text size="sm">{row.note || t('debts.noDescription')}</Text>
+        render: ({ value }) => (
+          <Text size="sm">{value || t('debts.noDescription')}</Text>
         ),
       },
       {
         id: 'amount',
         accessor: (row: DebtTransaction) => parseFloat(String(row.amount)),
         title: 'debts.amount',
-        format: 'currency',
-        currency: (row: DebtTransaction) =>
-          row.currency?.code || row.account?.currency?.code || 'VND',
-        render: (_, row: DebtTransaction) => {
+        render: ({ row }: { row: DebtTransaction }) => {
           const amount = parseFloat(String(row.amount));
           const currency =
             row.currency?.code || row.account?.currency?.code || 'VND';
@@ -128,9 +124,7 @@ export const DebtTransactionTable = ({
         id: 'remainingAmount',
         accessor: (row: DebtTransaction) => row.remainingAmount || 0,
         title: 'debts.remainingAmount',
-        format: 'currency',
-        currency: (row: DebtTransaction) =>
-          row.currency?.code || row.account?.currency?.code || 'VND',
+
         aggregationFn: 'sum',
         AggregatedCell: ({ row, cell }: any) => {
           const aggregatedValue = cell.getValue() as number;
@@ -153,7 +147,7 @@ export const DebtTransactionTable = ({
         title: 'debts.actions',
         textAlign: 'center',
         width: '10rem',
-        render: (_, row: DebtTransaction) => (
+        render: ({ row }) => (
           <Group gap="xs" justify="center">
             {row.type === 'loan_given' ? (
               <Button

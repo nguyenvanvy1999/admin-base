@@ -1,7 +1,6 @@
 import type { IDb } from '@server/configs/db';
 import { type PrismaTx, prisma } from '@server/configs/db';
 import type {
-  Prisma,
   TransactionOrderByWithRelationInput,
   TransactionUncheckedCreateInput,
   TransactionWhereInput,
@@ -10,15 +9,12 @@ import { TransactionType } from '@server/generated';
 import {
   CATEGORY_NAME,
   DB_PREFIX,
-  dateToIsoString,
-  dateToNullableIsoString,
-  decimalToNullableString,
-  decimalToString,
   ErrorCode,
   type IdUtil,
   idUtil,
   throwAppError,
 } from '@server/share';
+import dayjs from 'dayjs';
 import Decimal from 'decimal.js';
 import type {
   BatchTransactionsResponse,
@@ -42,113 +38,17 @@ import {
   currencyConversionService,
 } from './currency-conversion.service';
 import {
+  type MinimalCurrency,
+  mapCurrencyRecord,
+  mapTransaction,
+  type TransactionRecord,
+} from './mappers';
+import {
   CURRENCY_SELECT_BASIC,
   TRANSACTION_SELECT_FOR_BALANCE,
   TRANSACTION_SELECT_FULL,
   TRANSACTION_SELECT_MINIMAL,
 } from './selects';
-
-type TransactionRecord = Prisma.TransactionGetPayload<{
-  select: typeof TRANSACTION_SELECT_FULL;
-}>;
-type MinimalCurrency = {
-  id: string;
-  code: string;
-  name: string;
-  symbol: string | null;
-};
-
-const formatCurrencyRecord = (currency: MinimalCurrency | null | undefined) => {
-  if (!currency) {
-    return null;
-  }
-  return {
-    ...currency,
-    symbol: currency.symbol ?? null,
-  };
-};
-
-const formatAccountRecord = (
-  account: NonNullable<TransactionRecord['account']>,
-) => ({
-  ...account,
-  currency: formatCurrencyRecord(account.currency)!,
-});
-
-const formatOptionalAccountRecord = (
-  account: TransactionRecord['toAccount'],
-) => {
-  if (!account) {
-    return null;
-  }
-  return {
-    ...account,
-    currency: formatCurrencyRecord(account.currency)!,
-  };
-};
-
-const formatCategoryRecord = (category: TransactionRecord['category']) => {
-  if (!category) {
-    return null;
-  }
-  return {
-    ...category,
-    icon: category.icon ?? null,
-    color: category.color ?? null,
-  };
-};
-
-const formatEntityRecord = (entity: TransactionRecord['entity']) => {
-  if (!entity) {
-    return null;
-  }
-  return { ...entity };
-};
-
-const formatEventRecord = (
-  event: TransactionRecord['event'],
-): TransactionDetail['event'] => {
-  if (!event) {
-    return null;
-  }
-  return {
-    id: event.id,
-    name: event.name,
-    startAt: event.startAt.toISOString(),
-    endAt: event.endAt ? event.endAt.toISOString() : null,
-  };
-};
-
-const formatTransactionRecord = (
-  transaction: TransactionRecord,
-): TransactionDetail => ({
-  ...transaction,
-  toAccountId: transaction.toAccountId ?? null,
-  transferGroupId: transaction.transferGroupId ?? null,
-  categoryId: transaction.categoryId,
-  entityId: transaction.entityId ?? null,
-  investmentId: transaction.investmentId ?? null,
-  eventId: transaction.eventId ?? null,
-  amount: decimalToString(transaction.amount),
-  price: decimalToNullableString(transaction.price),
-  priceInBaseCurrency: decimalToNullableString(transaction.priceInBaseCurrency),
-  quantity: decimalToNullableString(transaction.quantity),
-  fee: decimalToString(transaction.fee),
-  feeInBaseCurrency: decimalToNullableString(transaction.feeInBaseCurrency),
-  date: dateToIsoString(transaction.date),
-  dueDate: dateToNullableIsoString(transaction.dueDate),
-  note: transaction.note ?? null,
-  receiptUrl: transaction.receiptUrl ?? null,
-  metadata: transaction.metadata ?? null,
-  created: dateToIsoString(transaction.created),
-  modified: dateToIsoString(transaction.modified),
-  account: formatAccountRecord(transaction.account!),
-  toAccount: formatOptionalAccountRecord(transaction.toAccount),
-  category: formatCategoryRecord(transaction.category),
-  entity: formatEntityRecord(transaction.entity),
-  event: formatEventRecord(transaction.event),
-  currency: formatCurrencyRecord(transaction.currency),
-});
 
 class TransactionHandlerFactory {
   constructor(
@@ -156,11 +56,17 @@ class TransactionHandlerFactory {
       db: IDb;
       balanceService: AccountBalanceService;
       currencyConverter: CurrencyConversionService;
+      categoryService: CategoryService;
       idUtil: IdUtil;
     },
   ) {}
 
   private async validateAccountOwnership(userId: string, accountId: string) {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(accountId);
+    if (!extractedUserId || extractedUserId !== userId) {
+      throwAppError(ErrorCode.ACCOUNT_NOT_FOUND, 'Account not found');
+    }
+
     const account = await this.deps.db.account.findFirst({
       where: {
         id: accountId,
@@ -174,47 +80,29 @@ class TransactionHandlerFactory {
     return account;
   }
 
-  private async validateCategoryOwnership(userId: string, categoryId: string) {
-    const category = await this.deps.db.category.findFirst({
-      where: {
-        id: categoryId,
-        userId,
-      },
-      select: { id: true, userId: true },
-    });
-    if (!category) {
+  private validateCategoryOwnership(userId: string, categoryId: string): void {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(categoryId);
+    if (!extractedUserId || extractedUserId !== userId) {
       throwAppError(ErrorCode.NOT_FOUND, 'Category not found');
     }
   }
 
-  private async validateEntityOwnership(userId: string, entityId: string) {
-    const entity = await this.deps.db.entity.findFirst({
-      where: {
-        id: entityId,
-        userId,
-      },
-      select: { id: true, userId: true },
-    });
-    if (!entity) {
+  private validateEntityOwnership(userId: string, entityId: string): void {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(entityId);
+    if (!extractedUserId || extractedUserId !== userId) {
       throwAppError(ErrorCode.ENTITY_NOT_FOUND, 'Entity not found');
     }
   }
 
-  private async validateEventOwnership(
+  private validateEventOwnership(
     userId: string,
     eventId: string | undefined,
-  ) {
+  ): void {
     if (!eventId) {
       return;
     }
-    const event = await this.deps.db.event.findFirst({
-      where: {
-        id: eventId,
-        userId,
-      },
-      select: { id: true, userId: true },
-    });
-    if (!event) {
+    const extractedUserId = this.deps.idUtil.extractUserIdFromId(eventId);
+    if (!extractedUserId || extractedUserId !== userId) {
       throwAppError(ErrorCode.NOT_FOUND, 'Event not found');
     }
   }
@@ -237,7 +125,7 @@ class TransactionHandlerFactory {
     const feeDecimal = new Decimal(data.fee ?? 0);
 
     if (data.eventId) {
-      await this.validateEventOwnership(userId, data.eventId);
+      this.validateEventOwnership(userId, data.eventId);
     }
 
     let feeInBaseCurrency: Decimal | null = data.feeInBaseCurrency
@@ -265,8 +153,8 @@ class TransactionHandlerFactory {
       currencyId,
       fee: feeDecimal.toNumber(),
       feeInBaseCurrency: feeInBaseCurrency?.toNumber() ?? null,
-      date: new Date(data.date),
-      dueDate: data.dueDate ? new Date(data.dueDate) : null,
+      date: dayjs(data.date).toDate(),
+      dueDate: data.dueDate ? dayjs(data.dueDate).toDate() : null,
       note: data.note ?? null,
       receiptUrl: data.receiptUrl ?? null,
       metadata: (data.metadata ?? null) as any,
@@ -290,8 +178,7 @@ class TransactionHandlerFactory {
 
       case TransactionType.transfer: {
         const transferData = data as ITransferTransaction;
-        const categoryService = new CategoryService();
-        const transferCategoryId = categoryService.getCategoryId(
+        const transferCategoryId = this.deps.categoryService.getCategoryId(
           userId,
           CATEGORY_NAME.TRANSFER,
         );
@@ -460,7 +347,6 @@ class TransactionHandlerFactory {
         toAmountDecimal,
       );
 
-      // Create primary transaction (from -> to)
       const primary = await tx.transaction.create({
         data: {
           id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
@@ -492,7 +378,6 @@ class TransactionHandlerFactory {
             toAccount.currencyId,
           );
 
-      // Create mirror transaction (to -> from)
       await tx.transaction.create({
         data: {
           id: this.deps.idUtil.dbId(DB_PREFIX.TRANSACTION),
@@ -524,7 +409,6 @@ class TransactionHandlerFactory {
     data: ITransferTransaction & { id: string },
     fromAccount: Awaited<ReturnType<typeof this.validateAccountOwnership>>,
   ) {
-    // Load existing primary
     const existing = await this.deps.db.transaction.findUnique({
       where: { id: data.id },
       select: TRANSACTION_SELECT_FOR_BALANCE,
@@ -558,7 +442,6 @@ class TransactionHandlerFactory {
       CATEGORY_NAME.TRANSFER,
     );
 
-    // Get existing mirror to get original toAmount for revert
     const existingMirrorForRevert = existing.transferGroupId
       ? await this.deps.db.transaction.findFirst({
           where: {
@@ -571,8 +454,6 @@ class TransactionHandlerFactory {
       : null;
 
     return this.deps.db.$transaction(async (tx: PrismaTx) => {
-      // Revert balances from old primary only
-      // Use existing mirror amount if available for accurate revert
       const existingToAmount = existingMirrorForRevert
         ? new Decimal(existingMirrorForRevert.amount)
         : undefined;
@@ -603,7 +484,6 @@ class TransactionHandlerFactory {
         toAmountDecimal,
       );
 
-      // Update primary
       const updatedPrimary = await tx.transaction.update({
         where: { id: data.id },
         data: {
@@ -634,7 +514,6 @@ class TransactionHandlerFactory {
             toAccount.currencyId,
           );
 
-      // Upsert mirror using groupId
       const existingMirror = existing.transferGroupId
         ? await tx.transaction.findFirst({
             where: {
@@ -757,7 +636,10 @@ class TransactionHandlerFactory {
       data,
       account,
       userBaseCurrencyId,
-      () => this.validateCategoryOwnership(userId, data.categoryId),
+      () =>
+        Promise.resolve(
+          this.validateCategoryOwnership(userId, data.categoryId),
+        ),
       () => Promise.resolve(null),
     );
   }
@@ -788,7 +670,8 @@ class TransactionHandlerFactory {
       data,
       account,
       userBaseCurrencyId,
-      () => this.validateEntityOwnership(userId, data.entityId),
+      () =>
+        Promise.resolve(this.validateEntityOwnership(userId, data.entityId)),
       () => Promise.resolve(null),
     );
   }
@@ -816,6 +699,7 @@ export class TransactionService {
       db: this.deps.db,
       balanceService: this.deps.accountBalanceService,
       currencyConverter: this.deps.currencyConversionService,
+      categoryService: this.deps.categoryService,
       idUtil: this.deps.idUtil,
     });
   }
@@ -882,7 +766,7 @@ export class TransactionService {
       }
     }
 
-    return formatTransactionRecord(transaction);
+    return mapTransaction(transaction);
   }
 
   async getTransaction(
@@ -901,7 +785,7 @@ export class TransactionService {
       throwAppError(ErrorCode.NOT_FOUND, 'Transaction not found');
     }
 
-    return formatTransactionRecord(transaction);
+    return mapTransaction(transaction);
   }
 
   async listTransactions(
@@ -940,10 +824,10 @@ export class TransactionService {
     if (dateFrom || dateTo) {
       where.date = {};
       if (dateFrom) {
-        where.date.gte = new Date(dateFrom);
+        where.date.gte = dayjs(dateFrom).toDate();
       }
       if (dateTo) {
-        where.date.lte = new Date(dateTo);
+        where.date.lte = dayjs(dateTo).toDate();
       }
     }
 
@@ -1021,13 +905,13 @@ export class TransactionService {
     }
 
     const summary = Array.from(summaryByCurrency.values()).map((item) => ({
-      currency: formatCurrencyRecord(item.currency)!,
+      currency: mapCurrencyRecord(item.currency)!,
       totalIncome: item.totalIncome.toNumber(),
       totalExpense: item.totalExpense.toNumber(),
     }));
 
     return {
-      transactions: transactions.map(formatTransactionRecord),
+      transactions: transactions.map(mapTransaction),
       pagination: {
         page,
         limit,
@@ -1064,9 +948,7 @@ export class TransactionService {
       throwAppError(ErrorCode.FORBIDDEN, 'Transaction not owned by user');
     }
 
-    // For transfers, delete both sides, but revert balance once using the primary
     if (transaction.type === TransactionType.transfer) {
-      // Determine primary row
       const isPrimary = !transaction.isTransferMirror;
       const primary = isPrimary
         ? transaction
@@ -1090,7 +972,6 @@ export class TransactionService {
             },
           });
 
-      // Get mirror transaction amount for accurate revert
       const mirrorForRevert = primary?.transferGroupId
         ? await this.deps.db.transaction.findFirst({
             where: {
@@ -1121,7 +1002,6 @@ export class TransactionService {
           );
         }
 
-        // Hard delete both sides if group present, else only this one
         if (transaction.transferGroupId) {
           await tx.transaction.deleteMany({
             where: {
@@ -1280,7 +1160,7 @@ export class TransactionService {
           if (result) {
             results.push({
               success: true,
-              data: formatTransactionRecord(result),
+              data: mapTransaction(result),
             });
           }
         } catch (error) {
@@ -1388,7 +1268,7 @@ export class TransactionService {
       user.baseCurrencyId,
     );
 
-    return formatTransactionRecord(transaction);
+    return mapTransaction(transaction);
   }
 
   async getUnpaidDebts(
@@ -1398,8 +1278,8 @@ export class TransactionService {
       to?: string;
     },
   ): Promise<Array<TransactionDetail & { remainingAmount: number }>> {
-    const dateFrom = query?.from ? new Date(query.from) : undefined;
-    const dateTo = query?.to ? new Date(query.to) : undefined;
+    const dateFrom = query?.from ? dayjs(query.from).toDate() : undefined;
+    const dateTo = query?.to ? dayjs(query.to).toDate() : undefined;
 
     const whereClause: TransactionWhereInput = {
       userId,
@@ -1514,7 +1394,7 @@ export class TransactionService {
         }
 
         if (remainingAmount > 0) {
-          const formatted = formatTransactionRecord(loan.transaction);
+          const formatted = mapTransaction(loan.transaction);
           debtTransactions.push({
             ...formatted,
             remainingAmount,

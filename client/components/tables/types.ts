@@ -35,7 +35,7 @@ type PathImpl2<T> = PathImpl<T, keyof T> | keyof T;
 
 export type Path<T> = PathImpl2<T> extends string | keyof T
   ? PathImpl2<T>
-  : string;
+  : keyof T;
 
 export type PathValue<
   T,
@@ -50,7 +50,15 @@ export type PathValue<
     ? T[P]
     : never;
 
-export type TypedAccessor<T, V = unknown> = Path<T> | string | AccessorFn<T, V>;
+export type TypedAccessor<T, V = unknown> = Path<T> | AccessorFn<T, V>;
+
+export type InferAccessorValue<T, TAccessor> = TAccessor extends keyof T
+  ? T[TAccessor]
+  : TAccessor extends Path<T>
+    ? PathValue<T, TAccessor>
+    : TAccessor extends AccessorFn<T, infer V>
+      ? V
+      : unknown;
 
 export type GroupedCellProps<T> = {
   row: Row<T>;
@@ -64,21 +72,37 @@ export type AggregatedCellProps<T> = {
 
 export type DataTableAggregationFn<T> = AggregationFn<T> | string;
 
-export interface DataTableColumn<T, V = unknown> {
+interface BaseColumnProps<TData extends { id: string }> {
   id?: string;
   title?: ParseKeys;
-  accessor?: TypedAccessor<T, V>;
-  render?: (value: V | unknown, row: T, rowIndex: number) => React.ReactNode;
   width?: `${number}rem`;
   minWidth?: `${number}rem`;
   textAlign?: 'left' | 'center' | 'right';
-  onClick?: (row: T) => void;
+  onClick?: (row: TData, e?: React.MouseEvent) => void;
   ellipsis?: boolean;
-  cellsStyle?: (row: T) => React.CSSProperties;
+  cellsStyle?: (row: TData) => React.CSSProperties;
   filterVariant?: FilterVariant;
   filterOptions?: { label: string; value: string | number | boolean }[];
+  autoFormatDisabled?: boolean;
+  enableSorting?: boolean;
+  enableGrouping?: boolean;
+  aggregationFn?: DataTableAggregationFn<TData>;
+  GroupedCell?: (props: GroupedCellProps<TData>) => React.ReactNode;
+  AggregatedCell?: (props: AggregatedCellProps<TData>) => React.ReactNode;
+}
+
+interface DataTableColumnWithAccessor<
+  TData extends { id: string },
+  TAccessor extends TypedAccessor<TData, any>,
+> extends BaseColumnProps<TData> {
+  accessor: TAccessor;
+  render?: (props: {
+    value: InferAccessorValue<TData, TAccessor>;
+    row: TData;
+    rowIndex: number;
+  }) => React.ReactNode;
   format?: 'date' | 'number' | 'currency' | 'boolean' | 'array' | 'auto';
-  currency?: string | ((row: T) => string | null | undefined);
+  currency?: string | ((row: TData) => string | null | undefined);
   dateFormat?: string;
   numberFormat?: {
     decimalScale?: number;
@@ -86,13 +110,17 @@ export interface DataTableColumn<T, V = unknown> {
     prefix?: string;
     suffix?: string;
   };
-  autoFormatDisabled?: boolean;
-  enableSorting?: boolean;
-  enableGrouping?: boolean;
-  aggregationFn?: DataTableAggregationFn<T>;
-  GroupedCell?: (props: GroupedCellProps<T>) => React.ReactNode;
-  AggregatedCell?: (props: AggregatedCellProps<T>) => React.ReactNode;
 }
+
+interface DataTableColumnWithoutAccessor<TData extends { id: string }>
+  extends BaseColumnProps<TData> {
+  accessor?: never;
+  render: (props: { row: TData; rowIndex: number }) => React.ReactNode;
+}
+
+export type DataTableColumn<TData extends { id: string }> =
+  | DataTableColumnWithAccessor<TData, TypedAccessor<TData, any>>
+  | DataTableColumnWithoutAccessor<TData>;
 
 export interface DataTableProps<T extends { id: string } = { id: string }> {
   columns: DataTableColumn<T>[];

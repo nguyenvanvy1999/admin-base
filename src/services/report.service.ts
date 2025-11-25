@@ -3,6 +3,7 @@ import { prisma } from '@server/configs/db';
 import { type ILogger, logger } from '@server/configs/logger';
 import { TransactionType } from '@server/generated';
 import { ErrorCode, throwAppError } from '@server/share';
+import dayjs from 'dayjs';
 import type {
   DebtStatisticsResponse,
   IDebtStatisticsQueryDto,
@@ -63,8 +64,10 @@ export class ReportService {
   ): Promise<ReportSummaryResponse> {
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
 
-    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
-    const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
+    const dateFrom = query.dateFrom
+      ? dayjs(query.dateFrom).toDate()
+      : undefined;
+    const dateTo = query.dateTo ? dayjs(query.dateTo).toDate() : undefined;
 
     const [accounts, transactions, investments, holdings] = await Promise.all([
       this.deps.db.account.findMany({
@@ -262,8 +265,10 @@ export class ReportService {
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
     const groupBy = query.groupBy || 'month';
 
-    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
-    const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
+    const dateFrom = query.dateFrom
+      ? dayjs(query.dateFrom).toDate()
+      : undefined;
+    const dateTo = query.dateTo ? dayjs(query.dateTo).toDate() : undefined;
 
     const transactions = await this.deps.db.transaction.findMany({
       where: {
@@ -355,16 +360,14 @@ export class ReportService {
         }
       }
 
-      const date = new Date(transaction.date);
+      const date = dayjs(transaction.date);
       let dateKey: string;
       if (groupBy === 'day') {
-        dateKey = date.toISOString().split('T')[0];
+        dateKey = date.format('YYYY-MM-DD');
       } else if (groupBy === 'week') {
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
-        dateKey = weekStart.toISOString().split('T')[0];
+        dateKey = date.startOf('week').format('YYYY-MM-DD');
       } else {
-        dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        dateKey = date.format('YYYY-MM');
       }
 
       if (!statsMap.has(dateKey)) {
@@ -412,8 +415,10 @@ export class ReportService {
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
     const groupBy = query.groupBy || 'month';
 
-    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
-    const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
+    const dateFrom = query.dateFrom
+      ? dayjs(query.dateFrom).toDate()
+      : undefined;
+    const dateTo = query.dateTo ? dayjs(query.dateTo).toDate() : undefined;
 
     const transactions = await this.deps.db.transaction.findMany({
       where: {
@@ -571,18 +576,16 @@ export class ReportService {
 
       totalFee += feeToUse;
 
-      const date = new Date(transaction.date);
+      const date = dayjs(transaction.date);
       let dateKey: string;
       if (groupBy === 'day') {
-        dateKey = date.toISOString().split('T')[0];
+        dateKey = date.format('YYYY-MM-DD');
       } else if (groupBy === 'week') {
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
-        dateKey = weekStart.toISOString().split('T')[0];
+        dateKey = date.startOf('week').format('YYYY-MM-DD');
       } else if (groupBy === 'year') {
-        dateKey = String(date.getFullYear());
+        dateKey = date.format('YYYY');
       } else {
-        dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        dateKey = date.format('YYYY-MM');
       }
 
       if (!timeStatsMap.has(dateKey)) {
@@ -716,9 +719,7 @@ export class ReportService {
 
     const daysDiff =
       dateFrom && dateTo
-        ? Math.ceil(
-            (dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24),
-          )
+        ? Math.ceil(dayjs(dateTo).diff(dayjs(dateFrom), 'day', true))
         : 30;
     const monthsDiff = daysDiff / 30;
 
@@ -965,8 +966,10 @@ export class ReportService {
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
     const groupBy = query.groupBy || 'month';
 
-    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
-    const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
+    const dateFrom = query.dateFrom
+      ? dayjs(query.dateFrom).toDate()
+      : undefined;
+    const dateTo = query.dateTo ? dayjs(query.dateTo).toDate() : undefined;
 
     const investments = await this.deps.db.investment.findMany({
       where: {
@@ -1069,18 +1072,16 @@ export class ReportService {
         }
       }
 
-      const date = new Date(trade.timestamp);
+      const date = dayjs(trade.timestamp);
       let dateKey: string;
       if (groupBy === 'day') {
-        dateKey = date.toISOString().split('T')[0];
+        dateKey = date.format('YYYY-MM-DD');
       } else if (groupBy === 'week') {
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
-        dateKey = weekStart.toISOString().split('T')[0];
+        dateKey = date.startOf('week').format('YYYY-MM-DD');
       } else if (groupBy === 'year') {
-        dateKey = String(date.getFullYear());
+        dateKey = date.format('YYYY');
       } else {
-        dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        dateKey = date.format('YYYY-MM');
       }
 
       if (!timeSeriesMap.has(dateKey)) {
@@ -1190,8 +1191,10 @@ export class ReportService {
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
     const groupBy = query.groupBy || 'month';
 
-    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
-    const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
+    const dateFrom = query.dateFrom
+      ? dayjs(query.dateFrom).toDate()
+      : undefined;
+    const dateTo = query.dateTo ? dayjs(query.dateTo).toDate() : undefined;
 
     const trades = await this.deps.db.investmentTrade.findMany({
       where: {
@@ -1267,18 +1270,16 @@ export class ReportService {
         }
       }
 
-      const date = new Date(trade.timestamp);
+      const date = dayjs(trade.timestamp);
       let dateKey: string;
       if (groupBy === 'day') {
-        dateKey = date.toISOString().split('T')[0];
+        dateKey = date.format('YYYY-MM-DD');
       } else if (groupBy === 'week') {
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
-        dateKey = weekStart.toISOString().split('T')[0];
+        dateKey = date.startOf('week').format('YYYY-MM-DD');
       } else if (groupBy === 'year') {
-        dateKey = String(date.getFullYear());
+        dateKey = date.format('YYYY');
       } else {
-        dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        dateKey = date.format('YYYY-MM');
       }
 
       if (!statsMap.has(dateKey)) {
@@ -1351,8 +1352,10 @@ export class ReportService {
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
     const groupBy = query.groupBy || 'month';
 
-    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
-    const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
+    const dateFrom = query.dateFrom
+      ? dayjs(query.dateFrom).toDate()
+      : undefined;
+    const dateTo = query.dateTo ? dayjs(query.dateTo).toDate() : undefined;
 
     const trades = await this.deps.db.investmentTrade.findMany({
       where: {
@@ -1426,18 +1429,16 @@ export class ReportService {
 
       totalFee += feeToUse;
 
-      const date = new Date(trade.timestamp);
+      const date = dayjs(trade.timestamp);
       let dateKey: string;
       if (groupBy === 'day') {
-        dateKey = date.toISOString().split('T')[0];
+        dateKey = date.format('YYYY-MM-DD');
       } else if (groupBy === 'week') {
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
-        dateKey = weekStart.toISOString().split('T')[0];
+        dateKey = date.startOf('week').format('YYYY-MM-DD');
       } else if (groupBy === 'year') {
-        dateKey = String(date.getFullYear());
+        dateKey = date.format('YYYY');
       } else {
-        dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        dateKey = date.format('YYYY-MM');
       }
 
       if (!timeStatsMap.has(dateKey)) {
@@ -1517,8 +1518,10 @@ export class ReportService {
     const baseCurrencyId = await this.getUserBaseCurrencyId(userId);
     const groupBy = query.groupBy || 'month';
 
-    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
-    const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
+    const dateFrom = query.dateFrom
+      ? dayjs(query.dateFrom).toDate()
+      : undefined;
+    const dateTo = query.dateTo ? dayjs(query.dateTo).toDate() : undefined;
 
     const contributions = await this.deps.db.investmentContribution.findMany({
       where: {
@@ -1583,18 +1586,16 @@ export class ReportService {
         }
       }
 
-      const date = new Date(contribution.timestamp);
+      const date = dayjs(contribution.timestamp);
       let dateKey: string;
       if (groupBy === 'day') {
-        dateKey = date.toISOString().split('T')[0];
+        dateKey = date.format('YYYY-MM-DD');
       } else if (groupBy === 'week') {
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
-        dateKey = weekStart.toISOString().split('T')[0];
+        dateKey = date.startOf('week').format('YYYY-MM-DD');
       } else if (groupBy === 'year') {
-        dateKey = String(date.getFullYear());
+        dateKey = date.format('YYYY');
       } else {
-        dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        dateKey = date.format('YYYY-MM');
       }
 
       if (!statsMap.has(dateKey)) {
@@ -1641,8 +1642,10 @@ export class ReportService {
   ): Promise<DebtStatisticsResponse> {
     const groupBy = query.groupBy || 'month';
 
-    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
-    const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
+    const dateFrom = query.dateFrom
+      ? dayjs(query.dateFrom).toDate()
+      : undefined;
+    const dateTo = query.dateTo ? dayjs(query.dateTo).toDate() : undefined;
 
     const transactions = await this.deps.db.transaction.findMany({
       where: {
@@ -1764,18 +1767,16 @@ export class ReportService {
         }
       }
 
-      const date = new Date(transaction.date);
+      const date = dayjs(transaction.date);
       let dateKey: string;
       if (groupBy === 'day') {
-        dateKey = date.toISOString().split('T')[0];
+        dateKey = date.format('YYYY-MM-DD');
       } else if (groupBy === 'week') {
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
-        dateKey = weekStart.toISOString().split('T')[0];
+        dateKey = date.startOf('week').format('YYYY-MM-DD');
       } else if (groupBy === 'year') {
-        dateKey = String(date.getFullYear());
+        dateKey = date.format('YYYY');
       } else {
-        dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        dateKey = date.format('YYYY-MM');
       }
 
       if (!timeSeriesMap.has(dateKey)) {
@@ -1859,17 +1860,14 @@ export class ReportService {
     };
   }
 
-  private async getExchangeRate(
-    fromCode: string,
-    toCode: string,
-  ): Promise<number> {
-    if (fromCode === toCode) return 1;
+  private getExchangeRate(fromCode: string, toCode: string): Promise<number> {
+    if (fromCode === toCode) return Promise.resolve(1);
 
     try {
-      return await this.deps.exchangeRateService.getRate(fromCode, toCode);
+      return this.deps.exchangeRateService.getRate(fromCode, toCode);
     } catch (error) {
       this.deps.logger.error('Failed to get exchange rate', { error });
-      return 1;
+      return Promise.resolve(1);
     }
   }
 }

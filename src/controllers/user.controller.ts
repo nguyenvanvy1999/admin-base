@@ -104,7 +104,11 @@ const userController = new Elysia().group(
             },
           });
 
-          if (!session || session.revoked || new Date() > session.expired) {
+          if (
+            !session ||
+            session.revoked ||
+            dayjs().isAfter(dayjs(session.expired))
+          ) {
             throwAppError(ErrorCode.EXPIRED_TOKEN, 'Token expired');
           }
 
