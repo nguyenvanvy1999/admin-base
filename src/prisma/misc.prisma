@@ -8,7 +8,7 @@ model Tag {
   created  DateTime @default(now())
   modified DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   journalEntries JournalEntryTag[]
 
   @@unique([userId, name], name: "tag_userId_name_unique")
@@ -28,7 +28,7 @@ model Event {
   created  DateTime @default(now())
   modified DateTime @updatedAt
 
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   journalEntries JournalEntry[]
 
   @@unique([userId, name], name: "event_userId_name_unique")
@@ -49,21 +49,17 @@ model Currency {
   created  DateTime @default(now())
   modified DateTime @updatedAt
 
-  users                               User[]
-  ledgerAccounts                      LedgerAccount[]
-  investments                         Investment[]             @relation("InvestmentCurrency")
-  investmentsBaseCurrency             Investment[]             @relation("InvestmentBaseCurrency")
-  postings                            Posting[]
-  investmentTrades                    InvestmentTrade[]
-  investmentTradesBaseCurrency        InvestmentTrade[]        @relation("TradeBaseCurrency")
-  investmentContributions             InvestmentContribution[]
-  investmentContributionsBaseCurrency InvestmentContribution[] @relation("ContributionBaseCurrency")
-  investmentValuations                InvestmentValuation[]
-  investmentValuationsBaseCurrency    InvestmentValuation[]    @relation("ValuationBaseCurrency")
-  goals                               Goal[]
-  ledgerRecurringTemplates            LedgerRecurringTemplate[]
-  ledgerLots                          LedgerLot[]
-  ledgerBalanceSnapshots              LedgerBalanceSnapshot[]
+  users                             User[]
+  ledgerAccounts                    LedgerAccount[]
+  postings                          Posting[]
+  goals                             Goal[]
+  ledgerRecurringTemplates          LedgerRecurringTemplate[]
+  ledgerLots                        LedgerLot[]               @relation("LotBasisCurrency")
+  ledgerBalanceSnapshots            LedgerBalanceSnapshot[]
+  ledgerCommodities                 LedgerCommodity[]         @relation("CommodityCurrency")
+  ledgerCommoditiesBaseCurrency     LedgerCommodity[]         @relation("CommodityBaseCurrency")
+  ledgerCommodityPrices             LedgerCommodityPrice[]    @relation("CommodityPriceCurrency")
+  ledgerCommodityPricesBaseCurrency LedgerCommodityPrice[]    @relation("CommodityPriceBaseCurrency")
 
   @@index([code], name: "currency_code_idx")
   @@map("currencies")
@@ -82,7 +78,7 @@ model Entity {
   created  DateTime   @default(now())
   modified DateTime   @updatedAt
 
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   journalEntries JournalEntry[]
 
   @@unique([userId, name], name: "entity_userId_name_unique")

@@ -1,84 +1,94 @@
 model LedgerCommodity {
-  id         String               @id
-  code       String               @unique
-  name       String
-  type       LedgerCommodityType
-  precision  Int                  @default(4)
-  currencyId String?              @map("currency_id")
-  metadata   Json?
-  created    DateTime             @default(now())
-  modified   DateTime             @updatedAt
+  id             String              @id
+  userId         String?             @map("user_id")
+  code           String
+  name           String
+  type           LedgerCommodityType
+  precision      Int                 @default(4)
+  currencyId     String?             @map("currency_id")
+  baseCurrencyId String?             @map("base_currency_id")
+  mode           String? // "priced" or "manual" - can be in metadata if prefer
+  metadata       Json?
+  created        DateTime            @default(now())
+  modified       DateTime            @updatedAt
 
-  currency Currency?      @relation(fields: [currencyId], references: [id], onDelete: SetNull)
-  accounts LedgerAccount[]
-  prices   LedgerCommodityPrice[]
+  user         User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currency     Currency?              @relation("CommodityCurrency", fields: [currencyId], references: [id], onDelete: SetNull)
+  baseCurrency Currency?              @relation("CommodityBaseCurrency", fields: [baseCurrencyId], references: [id], onDelete: SetNull)
+  accounts     LedgerAccount[]
+  prices       LedgerCommodityPrice[]
+  postings     Posting[]
+  lots         LedgerLot[]
 
+  @@unique([userId, code], name: "ledger_commodity_user_code_unique")
   @@index([type], name: "ledger_commodity_type_idx")
+  @@index([userId], name: "ledger_commodity_userId_idx")
   @@map("ledger_commodities")
 }
 
 model LedgerCommodityPrice {
-  id           String   @id
-  commodityId  String   @map("commodity_id")
-  currencyId   String   @map("currency_id")
-  price        Decimal  @db.Decimal(30, 10)
-  quotedAt     DateTime @map("quoted_at")
-  source       String?
-  fetchedAt    DateTime? @map("fetched_at")
-  metadata     Json?
-  created      DateTime @default(now())
-  modified     DateTime @updatedAt
+  id                  String    @id
+  commodityId         String    @map("commodity_id")
+  currencyId          String    @map("currency_id")
+  price               Decimal   @db.Decimal(30, 10)
+  priceInBaseCurrency Decimal?  @map("price_in_base_currency") @db.Decimal(30, 10)
+  exchangeRate        Decimal?  @map("exchange_rate") @db.Decimal(30, 10)
+  baseCurrencyId      String?   @map("base_currency_id")
+  quotedAt            DateTime  @map("quoted_at")
+  source              String?
+  fetchedAt           DateTime? @map("fetched_at")
+  metadata            Json?
+  created             DateTime  @default(now())
+  modified            DateTime  @updatedAt
 
-  commodity LedgerCommodity @relation(fields: [commodityId], references: [id], onDelete: Cascade)
-  currency  Currency        @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  commodity    LedgerCommodity @relation(fields: [commodityId], references: [id], onDelete: Cascade)
+  currency     Currency        @relation("CommodityPriceCurrency", fields: [currencyId], references: [id], onDelete: Restrict)
+  baseCurrency Currency?       @relation("CommodityPriceBaseCurrency", fields: [baseCurrencyId], references: [id], onDelete: SetNull)
 
   @@index([commodityId, quotedAt], name: "ledger_price_time_idx")
+  @@index([baseCurrencyId], name: "ledger_price_baseCurrency_idx")
   @@map("ledger_commodity_prices")
 }
 
 model LedgerAccount {
-  id             String            @id
-  userId         String            @map("user_id")
-  code           String?
-  name           String
-  kind           LedgerAccountKind
-  normalSide     LedgerAccountSide @map("normal_side")
-  parentId       String?           @map("parent_id")
-  commodityId    String?           @map("commodity_id")
-  currencyId     String?           @map("currency_id")
-  depth          Int               @default(0)
-  path           String?
-  allowsPosting  Boolean           @default(true) @map("allows_posting")
-  isSystem       Boolean           @default(false) @map("is_system")
-  isActive       Boolean           @default(true) @map("is_active")
-  metadata       Json?
-  created        DateTime          @default(now())
-  modified       DateTime          @updatedAt
+  id            String            @id
+  userId        String            @map("user_id")
+  code          String?
+  name          String
+  kind          LedgerAccountKind
+  normalSide    LedgerAccountSide @map("normal_side")
+  parentId      String?           @map("parent_id")
+  commodityId   String?           @map("commodity_id")
+  currencyId    String?           @map("currency_id")
+  depth         Int               @default(0)
+  path          String?
+  allowsPosting Boolean           @default(true) @map("allows_posting")
+  isSystem      Boolean           @default(false) @map("is_system")
+  isActive      Boolean           @default(true) @map("is_active")
+  metadata      Json?
+  created       DateTime          @default(now())
+  modified      DateTime          @updatedAt
 
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent    LedgerAccount? @relation("LedgerAccountHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children  LedgerAccount[]        @relation("LedgerAccountHierarchy")
-  commodity LedgerCommodity?       @relation(fields: [commodityId], references: [id], onDelete: SetNull)
-  currency  Currency?              @relation(fields: [currencyId], references: [id], onDelete: SetNull)
-  postings  Posting[]
-  relatedPostings Posting[] @relation("PostingRelatedAccount")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent          LedgerAccount?   @relation("LedgerAccountHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children        LedgerAccount[]  @relation("LedgerAccountHierarchy")
+  commodity       LedgerCommodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  currency        Currency?        @relation(fields: [currencyId], references: [id], onDelete: SetNull)
+  postings        Posting[]
+  relatedPostings Posting[]        @relation("PostingRelatedAccount")
 
-  relationsPrimary    AccountRelation[]          @relation("PrimaryAccount")
-  relationsLinked     AccountRelation[]          @relation("RelatedAccount")
-  recurringSources    LedgerRecurringTemplate[]  @relation("TemplateSourceAccount")
-  recurringTargets    LedgerRecurringTemplate[]  @relation("TemplateTargetAccount")
+  relationsPrimary       AccountRelation[]             @relation("PrimaryAccount")
+  relationsLinked        AccountRelation[]             @relation("RelatedAccount")
+  recurringSources       LedgerRecurringTemplate[]     @relation("TemplateSourceAccount")
+  recurringTargets       LedgerRecurringTemplate[]     @relation("TemplateTargetAccount")
   recurringTemplateLines LedgerRecurringTemplateLine[]
-  cashflowAccounts    CashflowGroupAccount[]
-  lots                LedgerLot[]
-  balanceSnapshots    LedgerBalanceSnapshot[]
-  budgetLedgerScopes  BudgetLedgerScope[]
-  budgetFundingScopes BudgetFundingScope[]
-  goalLedgerAccounts  GoalLedgerAccount[]
-  investments         Investment[]
-  investmentTradeAssets      InvestmentTrade[] @relation("TradeAssetAccount")
-  investmentTradeSettlements InvestmentTrade[] @relation("TradeSettlementAccount")
-  investmentContributions    InvestmentContribution[]
-  holdings                   Holding[]
+  cashflowAccounts       CashflowGroupAccount[]
+  lots                   LedgerLot[]
+  balanceSnapshots       LedgerBalanceSnapshot[]
+  budgetLedgerScopes     BudgetLedgerScope[]
+  budgetFundingScopes    BudgetFundingScope[]
+  anchorBudgets          Budget[]
+  goalLedgerAccounts     GoalLedgerAccount[]
 
   @@unique([userId, code], name: "ledger_account_user_code_unique")
   @@index([userId, kind], name: "ledger_account_kind_idx")
@@ -87,32 +97,34 @@ model LedgerAccount {
 }
 
 model JournalEntry {
-  id           String             @id
-  userId       String             @map("user_id")
-  entryType    JournalEntryType   @map("entry_type")
-  status       JournalEntryStatus @default(posted)
-  journalDate  DateTime           @map("journal_date")
-  postedAt     DateTime?          @map("posted_at")
-  number       String?
-  description  String?
-  reference    String?
-  entityId     String?            @map("entity_id")
-  eventId      String?            @map("event_id")
-  source       String?
-  lockVersion  Int                @default(0) @map("lock_version")
-  metadata     Json?
-  created      DateTime           @default(now())
-  modified     DateTime           @updatedAt
+  id          String             @id
+  userId      String             @map("user_id")
+  entryType   JournalEntryType   @map("entry_type")
+  status      JournalEntryStatus @default(posted)
+  journalDate DateTime           @map("journal_date")
+  postedAt    DateTime?          @map("posted_at")
+  number      String?
+  description String?
+  reference   String?
+  externalId  String?            @map("external_id")
+  entityId    String?            @map("entity_id")
+  eventId     String?            @map("event_id")
+  source      String?
+  lockVersion Int                @default(0) @map("lock_version")
+  metadata    Json?
+  created     DateTime           @default(now())
+  modified    DateTime           @updatedAt
 
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  entity  Entity? @relation(fields: [entityId], references: [id], onDelete: SetNull)
-  event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entity Entity? @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  event  Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
 
   postings Posting[]
   tags     JournalEntryTag[]
 
   @@index([userId, journalDate], name: "journal_entry_date_idx")
   @@index([status], name: "journal_entry_status_idx")
+  @@index([externalId], name: "journal_entry_externalId_idx")
   @@map("journal_entries")
 }
 
@@ -129,23 +141,27 @@ model Posting {
   amount           Decimal          @db.Decimal(30, 10)
   quantity         Decimal?         @db.Decimal(30, 10)
   unitPrice        Decimal?         @map("unit_price") @db.Decimal(30, 10)
+  fee              Decimal?         @default(0) @db.Decimal(30, 10)
+  externalId       String?          @map("external_id")
   memo             String?
   metadata         Json?
   created          DateTime         @default(now())
   modified         DateTime         @updatedAt
 
-  journalEntry  JournalEntry   @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
-  ledgerAccount LedgerAccount  @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)
-  currency      Currency       @relation(fields: [currencyId], references: [id], onDelete: Restrict)
-  commodity     LedgerCommodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
-  lot           LedgerLot?     @relation(fields: [lotId], references: [id], onDelete: SetNull)
-  relatedAccount LedgerAccount? @relation("PostingRelatedAccount", fields: [relatedAccountId], references: [id], onDelete: SetNull)
+  journalEntry   JournalEntry     @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  ledgerAccount  LedgerAccount    @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)
+  currency       Currency         @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  commodity      LedgerCommodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  lot            LedgerLot?       @relation(fields: [lotId], references: [id], onDelete: SetNull)
+  relatedAccount LedgerAccount?   @relation("PostingRelatedAccount", fields: [relatedAccountId], references: [id], onDelete: SetNull)
   cashflowGroup  CashflowGroup?   @relation(fields: [cashflowGroupId], references: [id], onDelete: SetNull)
 
   @@index([journalEntryId], name: "posting_entry_idx")
   @@index([ledgerAccountId], name: "posting_account_idx")
   @@index([currencyId], name: "posting_currency_idx")
   @@index([cashflowGroupId], name: "posting_cashflow_idx")
+  @@index([externalId], name: "posting_externalId_idx")
+  @@index([commodityId], name: "posting_commodity_idx")
   @@map("postings")
 }
 
@@ -163,10 +179,10 @@ model LedgerLot {
   created         DateTime  @default(now())
   modified        DateTime  @updatedAt
 
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ledgerAccount LedgerAccount   @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ledgerAccount LedgerAccount    @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)
   commodity     LedgerCommodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
-  basisCurrency Currency        @relation(fields: [basisCurrencyId], references: [id], onDelete: Restrict)
+  basisCurrency Currency         @relation("LotBasisCurrency", fields: [basisCurrencyId], references: [id], onDelete: Restrict)
   postings      Posting[]
 
   @@index([ledgerAccountId], name: "ledger_lot_account_idx")
@@ -175,15 +191,15 @@ model LedgerLot {
 }
 
 model AccountRelation {
-  id               String               @id
-  userId           String               @map("user_id")
-  primaryAccountId String               @map("primary_account_id")
-  relatedAccountId String               @map("related_account_id")
-  relationType     AccountRelationType  @map("relation_type")
+  id               String              @id
+  userId           String              @map("user_id")
+  primaryAccountId String              @map("primary_account_id")
+  relatedAccountId String              @map("related_account_id")
+  relationType     AccountRelationType @map("relation_type")
   description      String?
   metadata         Json?
-  created          DateTime             @default(now())
-  modified         DateTime             @updatedAt
+  created          DateTime            @default(now())
+  modified         DateTime            @updatedAt
 
   user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   primaryAccount LedgerAccount @relation("PrimaryAccount", fields: [primaryAccountId], references: [id], onDelete: Cascade)
@@ -194,27 +210,27 @@ model AccountRelation {
 }
 
 model CashflowGroup {
-  id          String    @id
-  userId      String    @map("user_id")
+  id          String   @id
+  userId      String   @map("user_id")
   name        String
   description String?
   metadata    Json?
-  created     DateTime  @default(now())
-  modified    DateTime  @updatedAt
+  created     DateTime @default(now())
+  modified    DateTime @updatedAt
 
-  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  postings    Posting[]
-  accounts    CashflowGroupAccount[]
+  user     User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postings Posting[]
+  accounts CashflowGroupAccount[]
 
   @@unique([userId, name], name: "cashflow_group_user_name_unique")
   @@map("cashflow_groups")
 }
 
 model CashflowGroupAccount {
-  id               String        @id @default(uuid(7))
-  cashflowGroupId  String        @map("cashflow_group_id")
-  ledgerAccountId  String        @map("ledger_account_id")
-  created          DateTime      @default(now())
+  id              String   @id @default(uuid(7))
+  cashflowGroupId String   @map("cashflow_group_id")
+  ledgerAccountId String   @map("ledger_account_id")
+  created         DateTime @default(now())
 
   cashflowGroup CashflowGroup @relation(fields: [cashflowGroupId], references: [id], onDelete: Cascade)
   ledgerAccount LedgerAccount @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)
@@ -239,26 +255,26 @@ model LedgerBalanceSnapshot {
 }
 
 model LedgerRecurringTemplate {
-  id             String                    @id
-  userId         String                    @map("user_id")
-  name           String
-  description    String?
-  frequency      RecurringTemplateFrequency
-  status         RecurringTemplateStatus   @default(active)
-  nextRunDate    DateTime                  @map("next_run_date")
-  endDate        DateTime?                 @map("end_date")
-  sourceAccountId String?                  @map("source_account_id")
-  targetAccountId String?                  @map("target_account_id")
-  amount         Decimal?                  @db.Decimal(30, 10)
-  currencyId     String?                   @map("currency_id")
-  metadata       Json?
-  created        DateTime                  @default(now())
-  modified       DateTime                  @updatedAt
+  id              String                     @id
+  userId          String                     @map("user_id")
+  name            String
+  description     String?
+  frequency       RecurringTemplateFrequency
+  status          RecurringTemplateStatus    @default(active)
+  nextRunDate     DateTime                   @map("next_run_date")
+  endDate         DateTime?                  @map("end_date")
+  sourceAccountId String?                    @map("source_account_id")
+  targetAccountId String?                    @map("target_account_id")
+  amount          Decimal?                   @db.Decimal(30, 10)
+  currencyId      String?                    @map("currency_id")
+  metadata        Json?
+  created         DateTime                   @default(now())
+  modified        DateTime                   @updatedAt
 
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sourceAccount LedgerAccount? @relation("TemplateSourceAccount", fields: [sourceAccountId], references: [id], onDelete: SetNull)
-  targetAccount LedgerAccount? @relation("TemplateTargetAccount", fields: [targetAccountId], references: [id], onDelete: SetNull)
-  currency      Currency?      @relation(fields: [currencyId], references: [id], onDelete: SetNull)
+  user          User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceAccount LedgerAccount?                @relation("TemplateSourceAccount", fields: [sourceAccountId], references: [id], onDelete: SetNull)
+  targetAccount LedgerAccount?                @relation("TemplateTargetAccount", fields: [targetAccountId], references: [id], onDelete: SetNull)
+  currency      Currency?                     @relation(fields: [currencyId], references: [id], onDelete: SetNull)
   lines         LedgerRecurringTemplateLine[]
 
   @@index([userId], name: "ledger_recurring_template_user_idx")
@@ -266,14 +282,14 @@ model LedgerRecurringTemplate {
 }
 
 model LedgerRecurringTemplateLine {
-  id             String           @id @default(uuid(7))
-  templateId     String           @map("template_id")
-  ledgerAccountId String          @map("ledger_account_id")
-  direction      PostingDirection
-  amount         Decimal?         @db.Decimal(30, 10)
-  quantity       Decimal?         @db.Decimal(30, 10)
-  memo           String?
-  created        DateTime         @default(now())
+  id              String           @id @default(uuid(7))
+  templateId      String           @map("template_id")
+  ledgerAccountId String           @map("ledger_account_id")
+  direction       PostingDirection
+  amount          Decimal?         @db.Decimal(30, 10)
+  quantity        Decimal?         @db.Decimal(30, 10)
+  memo            String?
+  created         DateTime         @default(now())
 
   template      LedgerRecurringTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
   ledgerAccount LedgerAccount           @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)

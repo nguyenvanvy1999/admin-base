@@ -12,8 +12,8 @@ model Budget {
   created         DateTime     @default(now())
   modified        DateTime     @updatedAt
 
-  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  anchorAccount LedgerAccount?    @relation(fields: [anchorAccountId], references: [id], onDelete: SetNull)
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  anchorAccount LedgerAccount?       @relation(fields: [anchorAccountId], references: [id], onDelete: SetNull)
   ledgerScopes  BudgetLedgerScope[]
   fundingScopes BudgetFundingScope[]
   periods       BudgetPeriodRecord[]
@@ -23,11 +23,11 @@ model Budget {
 }
 
 model BudgetLedgerScope {
-  id              String        @id @default(uuid(7))
-  budgetId        String        @map("budget_id")
-  ledgerAccountId String        @map("ledger_account_id")
-  weight          Decimal?      @db.Decimal(10, 5)
-  created         DateTime      @default(now())
+  id              String   @id @default(uuid(7))
+  budgetId        String   @map("budget_id")
+  ledgerAccountId String   @map("ledger_account_id")
+  weight          Decimal? @db.Decimal(10, 5)
+  created         DateTime @default(now())
 
   budget        Budget        @relation(fields: [budgetId], references: [id], onDelete: Cascade)
   ledgerAccount LedgerAccount @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)
@@ -38,11 +38,11 @@ model BudgetLedgerScope {
 }
 
 model BudgetFundingScope {
-  id              String        @id @default(uuid(7))
-  budgetId        String        @map("budget_id")
-  ledgerAccountId String        @map("ledger_account_id")
-  allocation      Decimal?      @db.Decimal(30, 10)
-  created         DateTime      @default(now())
+  id              String   @id @default(uuid(7))
+  budgetId        String   @map("budget_id")
+  ledgerAccountId String   @map("ledger_account_id")
+  allocation      Decimal? @db.Decimal(30, 10)
+  created         DateTime @default(now())
 
   budget        Budget        @relation(fields: [budgetId], references: [id], onDelete: Cascade)
   ledgerAccount LedgerAccount @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)

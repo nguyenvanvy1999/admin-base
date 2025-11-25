@@ -27,18 +27,9 @@ enum TransactionType {
   investment
 }
 
-// Types of investment assets
-enum InvestmentAssetType {
-  coin
-  ccq
-  custom
-}
-
-// Investment tracking modes: priced (auto price fetching) or manual entry
-enum InvestmentMode {
-  priced
-  manual
-}
+// InvestmentAssetType and InvestmentMode enums removed
+// Investment metadata is now stored in LedgerCommodity with mode as String field
+// Asset type can be stored in LedgerCommodity.type (LedgerCommodityType) or metadata
 
 // Entity types for tracking individuals or organizations
 enum EntityType {
