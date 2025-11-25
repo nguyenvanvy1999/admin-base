@@ -1,143 +1,296 @@
-// User financial accounts (cash, bank, credit card, investment)
-model Account {
-  id               String      @id
-  userId           String      @map("user_id")
-  type             AccountType
-  name             String
-  currencyId       String      @map("currency_id")
-  balance          Decimal     @default(0) @db.Decimal(30, 10)
-  creditLimit      Decimal?    @map("credit_limit") @db.Decimal(30, 10)
-  notifyOnDueDate  Boolean?    @map("notify_on_due_date")
-  paymentDay       Int?        @map("payment_day")
-  notifyDaysBefore Int?        @map("notify_days_before")
-  meta             Json?
-  created          DateTime    @default(now())
-  modified         DateTime    @updatedAt
+model LedgerCommodity {
+  id         String               @id
+  code       String               @unique
+  name       String
+  type       LedgerCommodityType
+  precision  Int                  @default(4)
+  currencyId String?              @map("currency_id")
+  metadata   Json?
+  created    DateTime             @default(now())
+  modified   DateTime             @updatedAt
 
-  currency                Currency                 @relation(fields: [currencyId], references: [id], onDelete: Restrict)
-  user                    User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions            Transaction[]            @relation("AccountTransactions")
-  toTransactions          Transaction[]            @relation("ToAccountTransactions")
-  recurringTransactions   RecurringTransaction[]
-  investmentTrades        InvestmentTrade[]
-  investmentContributions InvestmentContribution[]
-  budgetAccounts          BudgetAccount[]
-  goalAccounts            GoalAccount[]
+  currency Currency?      @relation(fields: [currencyId], references: [id], onDelete: SetNull)
+  accounts LedgerAccount[]
+  prices   LedgerCommodityPrice[]
 
-  @@index([userId], name: "account_userId_idx")
-  @@index([type], name: "account_type_idx")
-  @@index([currencyId], name: "account_currencyId_idx")
-  @@map("accounts")
+  @@index([type], name: "ledger_commodity_type_idx")
+  @@map("ledger_commodities")
 }
 
-// Hierarchical categories for organizing transactions
-model Category {
-  id       String       @id
-  userId   String       @map("user_id")
-  type     CategoryType
-  name     String
-  parentId String?      @map("parent_id")
-  icon     String?
-  color    String?
-  isLocked Boolean      @default(false) @map("is_locked")
+model LedgerCommodityPrice {
+  id           String   @id
+  commodityId  String   @map("commodity_id")
+  currencyId   String   @map("currency_id")
+  price        Decimal  @db.Decimal(30, 10)
+  quotedAt     DateTime @map("quoted_at")
+  source       String?
+  fetchedAt    DateTime? @map("fetched_at")
+  metadata     Json?
+  created      DateTime @default(now())
+  modified     DateTime @updatedAt
 
-  created  DateTime @default(now())
-  modified DateTime @updatedAt
+  commodity LedgerCommodity @relation(fields: [commodityId], references: [id], onDelete: Cascade)
+  currency  Currency        @relation(fields: [currencyId], references: [id], onDelete: Restrict)
 
-  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent                Category?              @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children              Category[]             @relation("CategoryHierarchy")
-  transactions          Transaction[]
-  budgets               Budget[]
-  budgetCategories      BudgetCategory[]
-  recurringTransactions RecurringTransaction[]
-
-  @@unique([userId, name, type], name: "category_userId_name_type_unique")
-  @@index([userId], name: "category_userId_idx")
-  @@index([type], name: "category_type_idx")
-  @@index([parentId], name: "category_parentId_idx")
-  @@map("categories")
+  @@index([commodityId, quotedAt], name: "ledger_price_time_idx")
+  @@map("ledger_commodity_prices")
 }
 
-// Core financial transaction records
-model Transaction {
-  id                  String          @id
-  userId              String          @map("user_id")
-  accountId           String          @map("account_id")
-  toAccountId         String?         @map("to_account_id")
-  transferGroupId     String?         @map("transfer_group_id")
-  isTransferMirror    Boolean         @default(false) @map("is_transfer_mirror")
-  type                TransactionType
-  categoryId          String          @map("category_id")
-  investmentId        String?         @map("investment_id")
-  entityId            String?         @map("entity_id")
-  eventId             String?         @map("event_id")
-  amount              Decimal         @db.Decimal(30, 10)
-  currencyId          String          @map("currency_id")
-  price               Decimal?        @db.Decimal(30, 10)
-  priceInBaseCurrency Decimal?        @map("price_in_base_currency") @db.Decimal(30, 10)
-  quantity            Decimal?        @db.Decimal(30, 10)
-  fee                 Decimal         @default(0) @db.Decimal(30, 10)
-  feeInBaseCurrency   Decimal?        @map("fee_in_base_currency") @db.Decimal(30, 10)
-  date                DateTime
-  dueDate             DateTime?       @map("due_date")
-  note                String?
-  receiptUrl          String?         @map("receipt_url")
-  metadata            Json?
-  created             DateTime        @default(now())
-  modified            DateTime        @updatedAt
+model LedgerAccount {
+  id             String            @id
+  userId         String            @map("user_id")
+  code           String?
+  name           String
+  kind           LedgerAccountKind
+  normalSide     LedgerAccountSide @map("normal_side")
+  parentId       String?           @map("parent_id")
+  commodityId    String?           @map("commodity_id")
+  currencyId     String?           @map("currency_id")
+  depth          Int               @default(0)
+  path           String?
+  allowsPosting  Boolean           @default(true) @map("allows_posting")
+  isSystem       Boolean           @default(false) @map("is_system")
+  isActive       Boolean           @default(true) @map("is_active")
+  metadata       Json?
+  created        DateTime          @default(now())
+  modified       DateTime          @updatedAt
 
-  currency   Currency         @relation(fields: [currencyId], references: [id], onDelete: Restrict)
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account    Account          @relation("AccountTransactions", fields: [accountId], references: [id], onDelete: Cascade)
-  toAccount  Account?         @relation("ToAccountTransactions", fields: [toAccountId], references: [id], onDelete: SetNull)
-  category   Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  investment Investment?      @relation(fields: [investmentId], references: [id], onDelete: SetNull)
-  entity     Entity?          @relation(fields: [entityId], references: [id], onDelete: SetNull)
-  event      Event?           @relation(fields: [eventId], references: [id], onDelete: SetNull)
-  trade      InvestmentTrade? @relation("TransactionTrade")
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    LedgerAccount? @relation("LedgerAccountHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children  LedgerAccount[]        @relation("LedgerAccountHierarchy")
+  commodity LedgerCommodity?       @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  currency  Currency?              @relation(fields: [currencyId], references: [id], onDelete: SetNull)
+  postings  Posting[]
+  relatedPostings Posting[] @relation("PostingRelatedAccount")
 
-  @@index([userId], name: "transaction_userId_idx")
-  @@index([accountId], name: "transaction_accountId_idx")
-  @@index([toAccountId], name: "transaction_toAccountId_idx")
-  @@index([categoryId], name: "transaction_categoryId_idx")
-  @@index([investmentId], name: "transaction_investmentId_idx")
-  @@index([entityId], name: "transaction_entityId_idx")
-  @@index([eventId], name: "transaction_eventId_idx")
-  @@index([currencyId], name: "transaction_currencyId_idx")
-  @@index([date], name: "transaction_date_idx")
-  @@index([dueDate], name: "transaction_dueDate_idx")
-  @@index([type], name: "transaction_type_idx")
-  @@index([userId, date], name: "transaction_user_date_idx")
-  @@index([userId, accountId, date], name: "transaction_user_account_date_idx")
-  @@index([userId, investmentId, date], name: "transaction_user_investment_date_idx")
-  @@index([transferGroupId], name: "transaction_transferGroupId_idx")
-  @@map("transactions")
+  relationsPrimary    AccountRelation[]          @relation("PrimaryAccount")
+  relationsLinked     AccountRelation[]          @relation("RelatedAccount")
+  recurringSources    LedgerRecurringTemplate[]  @relation("TemplateSourceAccount")
+  recurringTargets    LedgerRecurringTemplate[]  @relation("TemplateTargetAccount")
+  recurringTemplateLines LedgerRecurringTemplateLine[]
+  cashflowAccounts    CashflowGroupAccount[]
+  lots                LedgerLot[]
+  balanceSnapshots    LedgerBalanceSnapshot[]
+  budgetLedgerScopes  BudgetLedgerScope[]
+  budgetFundingScopes BudgetFundingScope[]
+  goalLedgerAccounts  GoalLedgerAccount[]
+  investments         Investment[]
+  investmentTradeAssets      InvestmentTrade[] @relation("TradeAssetAccount")
+  investmentTradeSettlements InvestmentTrade[] @relation("TradeSettlementAccount")
+  investmentContributions    InvestmentContribution[]
+  holdings                   Holding[]
+
+  @@unique([userId, code], name: "ledger_account_user_code_unique")
+  @@index([userId, kind], name: "ledger_account_kind_idx")
+  @@index([userId, parentId], name: "ledger_account_parent_idx")
+  @@map("ledger_accounts")
 }
 
-// Scheduled recurring transactions (subscriptions, salaries, etc.)
-model RecurringTransaction {
-  id         String             @id
-  userId     String             @map("user_id")
-  accountId  String             @map("account_id")
-  categoryId String?            @map("category_id")
-  type       TransactionType
-  amount     Decimal            @db.Decimal(30, 10)
-  currencyId String             @map("currency_id")
-  frequency  RecurringFrequency
-  nextDate   DateTime           @map("next_date")
-  endDate    DateTime?          @map("end_date")
-  note       String?
-  created    DateTime           @default(now())
-  modified   DateTime           @updatedAt
+model JournalEntry {
+  id           String             @id
+  userId       String             @map("user_id")
+  entryType    JournalEntryType   @map("entry_type")
+  status       JournalEntryStatus @default(posted)
+  journalDate  DateTime           @map("journal_date")
+  postedAt     DateTime?          @map("posted_at")
+  number       String?
+  description  String?
+  reference    String?
+  entityId     String?            @map("entity_id")
+  eventId      String?            @map("event_id")
+  source       String?
+  lockVersion  Int                @default(0) @map("lock_version")
+  metadata     Json?
+  created      DateTime           @default(now())
+  modified     DateTime           @updatedAt
 
-  currency Currency  @relation(fields: [currencyId], references: [id], onDelete: Restrict)
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account  Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entity  Entity? @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
 
-  @@index([userId], name: "recurringTransaction_userId_idx")
-  @@index([currencyId], name: "recurringTransaction_currencyId_idx")
-  @@index([nextDate], name: "recurringTransaction_nextDate_idx")
-  @@map("recurring_transactions")
+  postings Posting[]
+  tags     JournalEntryTag[]
+
+  @@index([userId, journalDate], name: "journal_entry_date_idx")
+  @@index([status], name: "journal_entry_status_idx")
+  @@map("journal_entries")
+}
+
+model Posting {
+  id               String           @id
+  journalEntryId   String           @map("journal_entry_id")
+  ledgerAccountId  String           @map("ledger_account_id")
+  currencyId       String           @map("currency_id")
+  commodityId      String?          @map("commodity_id")
+  lotId            String?          @map("lot_id")
+  relatedAccountId String?          @map("related_account_id")
+  cashflowGroupId  String?          @map("cashflow_group_id")
+  direction        PostingDirection
+  amount           Decimal          @db.Decimal(30, 10)
+  quantity         Decimal?         @db.Decimal(30, 10)
+  unitPrice        Decimal?         @map("unit_price") @db.Decimal(30, 10)
+  memo             String?
+  metadata         Json?
+  created          DateTime         @default(now())
+  modified         DateTime         @updatedAt
+
+  journalEntry  JournalEntry   @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  ledgerAccount LedgerAccount  @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)
+  currency      Currency       @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  commodity     LedgerCommodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  lot           LedgerLot?     @relation(fields: [lotId], references: [id], onDelete: SetNull)
+  relatedAccount LedgerAccount? @relation("PostingRelatedAccount", fields: [relatedAccountId], references: [id], onDelete: SetNull)
+  cashflowGroup  CashflowGroup?   @relation(fields: [cashflowGroupId], references: [id], onDelete: SetNull)
+
+  @@index([journalEntryId], name: "posting_entry_idx")
+  @@index([ledgerAccountId], name: "posting_account_idx")
+  @@index([currencyId], name: "posting_currency_idx")
+  @@index([cashflowGroupId], name: "posting_cashflow_idx")
+  @@map("postings")
+}
+
+model LedgerLot {
+  id              String    @id
+  userId          String    @map("user_id")
+  ledgerAccountId String    @map("ledger_account_id")
+  commodityId     String?   @map("commodity_id")
+  basisCurrencyId String    @map("basis_currency_id")
+  openedAt        DateTime  @map("opened_at")
+  closedAt        DateTime? @map("closed_at")
+  quantity        Decimal   @db.Decimal(30, 10)
+  basisAmount     Decimal   @map("basis_amount") @db.Decimal(30, 10)
+  metadata        Json?
+  created         DateTime  @default(now())
+  modified        DateTime  @updatedAt
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ledgerAccount LedgerAccount   @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)
+  commodity     LedgerCommodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  basisCurrency Currency        @relation(fields: [basisCurrencyId], references: [id], onDelete: Restrict)
+  postings      Posting[]
+
+  @@index([ledgerAccountId], name: "ledger_lot_account_idx")
+  @@index([commodityId], name: "ledger_lot_commodity_idx")
+  @@map("ledger_lots")
+}
+
+model AccountRelation {
+  id               String               @id
+  userId           String               @map("user_id")
+  primaryAccountId String               @map("primary_account_id")
+  relatedAccountId String               @map("related_account_id")
+  relationType     AccountRelationType  @map("relation_type")
+  description      String?
+  metadata         Json?
+  created          DateTime             @default(now())
+  modified         DateTime             @updatedAt
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  primaryAccount LedgerAccount @relation("PrimaryAccount", fields: [primaryAccountId], references: [id], onDelete: Cascade)
+  relatedAccount LedgerAccount @relation("RelatedAccount", fields: [relatedAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, primaryAccountId, relatedAccountId, relationType], name: "account_relation_unique")
+  @@map("account_relations")
+}
+
+model CashflowGroup {
+  id          String    @id
+  userId      String    @map("user_id")
+  name        String
+  description String?
+  metadata    Json?
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postings    Posting[]
+  accounts    CashflowGroupAccount[]
+
+  @@unique([userId, name], name: "cashflow_group_user_name_unique")
+  @@map("cashflow_groups")
+}
+
+model CashflowGroupAccount {
+  id               String        @id @default(uuid(7))
+  cashflowGroupId  String        @map("cashflow_group_id")
+  ledgerAccountId  String        @map("ledger_account_id")
+  created          DateTime      @default(now())
+
+  cashflowGroup CashflowGroup @relation(fields: [cashflowGroupId], references: [id], onDelete: Cascade)
+  ledgerAccount LedgerAccount @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([cashflowGroupId, ledgerAccountId], name: "cashflow_group_account_unique")
+  @@map("cashflow_group_accounts")
+}
+
+model LedgerBalanceSnapshot {
+  id              String   @id
+  ledgerAccountId String   @map("ledger_account_id")
+  currencyId      String   @map("currency_id")
+  asOfDate        DateTime @map("as_of_date")
+  balance         Decimal  @db.Decimal(30, 10)
+  created         DateTime @default(now())
+
+  ledgerAccount LedgerAccount @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)
+  currency      Currency      @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+
+  @@unique([ledgerAccountId, asOfDate], name: "ledger_balance_snapshot_unique")
+  @@map("ledger_balance_snapshots")
+}
+
+model LedgerRecurringTemplate {
+  id             String                    @id
+  userId         String                    @map("user_id")
+  name           String
+  description    String?
+  frequency      RecurringTemplateFrequency
+  status         RecurringTemplateStatus   @default(active)
+  nextRunDate    DateTime                  @map("next_run_date")
+  endDate        DateTime?                 @map("end_date")
+  sourceAccountId String?                  @map("source_account_id")
+  targetAccountId String?                  @map("target_account_id")
+  amount         Decimal?                  @db.Decimal(30, 10)
+  currencyId     String?                   @map("currency_id")
+  metadata       Json?
+  created        DateTime                  @default(now())
+  modified       DateTime                  @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceAccount LedgerAccount? @relation("TemplateSourceAccount", fields: [sourceAccountId], references: [id], onDelete: SetNull)
+  targetAccount LedgerAccount? @relation("TemplateTargetAccount", fields: [targetAccountId], references: [id], onDelete: SetNull)
+  currency      Currency?      @relation(fields: [currencyId], references: [id], onDelete: SetNull)
+  lines         LedgerRecurringTemplateLine[]
+
+  @@index([userId], name: "ledger_recurring_template_user_idx")
+  @@map("ledger_recurring_templates")
+}
+
+model LedgerRecurringTemplateLine {
+  id             String           @id @default(uuid(7))
+  templateId     String           @map("template_id")
+  ledgerAccountId String          @map("ledger_account_id")
+  direction      PostingDirection
+  amount         Decimal?         @db.Decimal(30, 10)
+  quantity       Decimal?         @db.Decimal(30, 10)
+  memo           String?
+  created        DateTime         @default(now())
+
+  template      LedgerRecurringTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  ledgerAccount LedgerAccount           @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)
+
+  @@index([templateId], name: "ledger_recurring_line_template_idx")
+  @@map("ledger_recurring_template_lines")
+}
+
+model JournalEntryTag {
+  id             String   @id @default(uuid(7))
+  journalEntryId String   @map("journal_entry_id")
+  tagId          String   @map("tag_id")
+  created        DateTime @default(now())
+
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  tag          Tag          @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([journalEntryId, tagId], name: "journal_entry_tag_unique")
+  @@map("journal_entry_tags")
 }

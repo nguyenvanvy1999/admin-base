@@ -62,6 +62,70 @@ enum RecurringFrequency {
   monthly
 }
 
+enum LedgerCommodityType {
+  currency
+  security
+  property
+  liability
+  custom
+}
+
+enum LedgerAccountKind {
+  asset
+  liability
+  equity
+  income
+  expense
+  memo
+}
+
+enum LedgerAccountSide {
+  debit
+  credit
+}
+
+enum JournalEntryType {
+  operational
+  valuation
+  adjustment
+  opening
+  closing
+}
+
+enum JournalEntryStatus {
+  draft
+  posted
+  voided
+  locked
+}
+
+enum PostingDirection {
+  debit
+  credit
+}
+
+enum AccountRelationType {
+  cashflow
+  valuation
+  payoff
+  adjustment
+}
+
+enum RecurringTemplateFrequency {
+  daily
+  weekly
+  monthly
+  quarterly
+  yearly
+  custom
+}
+
+enum RecurringTemplateStatus {
+  active
+  paused
+  archived
+}
+
 // Trade side for investment transactions
 enum TradeSide {
   buy

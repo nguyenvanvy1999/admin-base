@@ -1,4 +1,3 @@
-// Savings goals with target amounts and timeframes
 model Goal {
   id         String   @id
   userId     String   @map("user_id")
@@ -10,9 +9,9 @@ model Goal {
   created    DateTime @default(now())
   modified   DateTime @updatedAt
 
-  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  currency   Currency     @relation(fields: [currencyId], references: [id], onDelete: Restrict)
-  goalAccounts GoalAccount[]
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currency   Currency          @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  accounts   GoalLedgerAccount[]
 
   @@index([userId], name: "goal_userId_idx")
   @@index([startDate], name: "goal_startDate_idx")
@@ -20,19 +19,18 @@ model Goal {
   @@map("goals")
 }
 
-// Junction table for many-to-many relationship between Goal and Account
-model GoalAccount {
-  id        String   @id @default(uuid(7))
-  goalId    String   @map("goal_id")
-  accountId String   @map("account_id")
-  created   DateTime @default(now())
+model GoalLedgerAccount {
+  id              String        @id @default(uuid(7))
+  goalId          String        @map("goal_id")
+  ledgerAccountId String        @map("ledger_account_id")
+  created         DateTime      @default(now())
 
-  goal    Goal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  goal          Goal          @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  ledgerAccount LedgerAccount @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)
 
-  @@unique([goalId, accountId], name: "goal_account_unique")
-  @@index([goalId], name: "goal_account_goalId_idx")
-  @@index([accountId], name: "goal_account_accountId_idx")
-  @@map("goal_accounts")
+  @@unique([goalId, ledgerAccountId], name: "goal_ledger_account_unique")
+  @@index([goalId], name: "goal_ledger_goalId_idx")
+  @@index([ledgerAccountId], name: "goal_ledger_account_idx")
+  @@map("goal_ledger_accounts")
 }
 

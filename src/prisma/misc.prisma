@@ -9,6 +9,7 @@ model Tag {
   modified DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journalEntries JournalEntryTag[]
 
   @@unique([userId, name], name: "tag_userId_name_unique")
   @@index([userId], name: "tag_userId_idx")
@@ -27,8 +28,8 @@ model Event {
   created  DateTime @default(now())
   modified DateTime @updatedAt
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journalEntries JournalEntry[]
 
   @@unique([userId, name], name: "event_userId_name_unique")
   @@index([userId], name: "event_userId_idx")
@@ -49,18 +50,20 @@ model Currency {
   modified DateTime @updatedAt
 
   users                               User[]
-  accounts                            Account[]
+  ledgerAccounts                      LedgerAccount[]
   investments                         Investment[]             @relation("InvestmentCurrency")
   investmentsBaseCurrency             Investment[]             @relation("InvestmentBaseCurrency")
-  transactions                        Transaction[]
-  recurringTransactions               RecurringTransaction[]
+  postings                            Posting[]
   investmentTrades                    InvestmentTrade[]
   investmentTradesBaseCurrency        InvestmentTrade[]        @relation("TradeBaseCurrency")
   investmentContributions             InvestmentContribution[]
   investmentContributionsBaseCurrency InvestmentContribution[] @relation("ContributionBaseCurrency")
   investmentValuations                InvestmentValuation[]
   investmentValuationsBaseCurrency    InvestmentValuation[]    @relation("ValuationBaseCurrency")
-  goals                                Goal[]
+  goals                               Goal[]
+  ledgerRecurringTemplates            LedgerRecurringTemplate[]
+  ledgerLots                          LedgerLot[]
+  ledgerBalanceSnapshots              LedgerBalanceSnapshot[]
 
   @@index([code], name: "currency_code_idx")
   @@map("currencies")
@@ -79,8 +82,8 @@ model Entity {
   created  DateTime   @default(now())
   modified DateTime   @updatedAt
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journalEntries JournalEntry[]
 
   @@unique([userId, name], name: "entity_userId_name_unique")
   @@index([userId], name: "entity_userId_idx")

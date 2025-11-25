@@ -138,26 +138,27 @@ model User {
   totpSecret     String? @map("totp_secret")
   backupCodes    String? @map("backup_codes")
 
-  baseCurrency            Currency                 @relation(fields: [baseCurrencyId], references: [id], onDelete: Restrict)
-  accounts                Account[]
-  categories              Category[]
-  investments             Investment[]
-  transactions            Transaction[]
-  investmentContributions InvestmentContribution[]
-  investmentValuations    InvestmentValuation[]
-  budgets                 Budget[]
-  entities                Entity[]
-  recurringTransactions   RecurringTransaction[]
-  investmentTrades        InvestmentTrade[]
-  holdings                Holding[]
-  tags                    Tag[]
-  events                  Event[]
+  baseCurrency             Currency                 @relation(fields: [baseCurrencyId], references: [id], onDelete: Restrict)
+  ledgerAccounts           LedgerAccount[]
+  investments              Investment[]
+  investmentContributions  InvestmentContribution[]
+  investmentValuations     InvestmentValuation[]
+  budgets                  Budget[]
+  entities                 Entity[]
+  investmentTrades         InvestmentTrade[]
+  holdings                 Holding[]
+  tags                     Tag[]
+  events                   Event[]
+  ledgerRecurringTemplates LedgerRecurringTemplate[]
+  journalEntries           JournalEntry[]
+  ledgerLots               LedgerLot[]
+  cashflowGroups           CashflowGroup[]
   roles                   RolePlayer[]
   sessions                Session[]
   referralMade            Referral?                @relation("UserReferrer")
   referralsGot            Referral[]               @relation("UserReferred")
   authProviders           UserAuthProvider[]
-  goals                   Goal[]
+  goals                    Goal[]
 
   pendingRef Int @default(0) @map("pending_ref")
   activeRef  Int @default(0) @map("active_ref")

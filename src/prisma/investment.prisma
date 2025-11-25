@@ -1,42 +1,47 @@
 // Buy/sell trades for investment assets
 model InvestmentTrade {
-  id                   String    @id
-  userId               String    @map("user_id")
-  investmentId         String    @map("investment_id")
-  accountId            String    @map("account_id")
-  side                 TradeSide
-  timestamp            DateTime
-  price                Decimal   @db.Decimal(30, 10)
-  quantity             Decimal   @db.Decimal(30, 10)
-  amount               Decimal   @db.Decimal(30, 10)
-  fee                  Decimal   @default(0) @db.Decimal(30, 10)
-  currencyId           String    @map("currency_id")
-  priceCurrency        String?   @map("price_currency")
-  priceInBaseCurrency  Decimal?  @map("price_in_base_currency") @db.Decimal(30, 10)
-  amountInBaseCurrency Decimal?  @map("amount_in_base_currency") @db.Decimal(30, 10)
-  exchangeRate         Decimal?  @map("exchange_rate") @db.Decimal(30, 10)
-  baseCurrencyId       String?   @map("base_currency_id")
-  priceSource          String?   @map("price_source")
-  priceFetchedAt       DateTime? @map("price_fetched_at")
-  externalId           String?   @map("external_id")
-  transactionId        String?   @unique @map("transaction_id")
-  meta                 Json?
+  id                    String    @id
+  userId                String    @map("user_id")
+  investmentId          String    @map("investment_id")
+  assetAccountId        String?   @map("asset_account_id")
+  settlementAccountId   String?   @map("settlement_account_id")
+  journalEntryId        String?   @map("journal_entry_id")
+  side                  TradeSide
+  timestamp             DateTime
+  price                 Decimal   @db.Decimal(30, 10)
+  quantity              Decimal   @db.Decimal(30, 10)
+  amount                Decimal   @db.Decimal(30, 10)
+  fee                   Decimal   @default(0) @db.Decimal(30, 10)
+  currencyId            String    @map("currency_id")
+  priceCurrency         String?   @map("price_currency")
+  priceInBaseCurrency   Decimal?  @map("price_in_base_currency") @db.Decimal(30, 10)
+  amountInBaseCurrency  Decimal?  @map("amount_in_base_currency") @db.Decimal(30, 10)
+  exchangeRate          Decimal?  @map("exchange_rate") @db.Decimal(30, 10)
+  baseCurrencyId        String?   @map("base_currency_id")
+  priceSource           String?   @map("price_source")
+  priceFetchedAt        DateTime? @map("price_fetched_at")
+  externalId            String?   @map("external_id")
+  meta                  Json?
 
   created  DateTime @default(now())
   modified DateTime @updatedAt
 
-  currency     Currency     @relation(fields: [currencyId], references: [id], onDelete: Restrict)
-  baseCurrency Currency?    @relation("TradeBaseCurrency", fields: [baseCurrencyId], references: [id], onDelete: Restrict)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  investment   Investment   @relation(fields: [investmentId], references: [id], onDelete: Cascade)
-  account      Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  transaction  Transaction? @relation("TransactionTrade", fields: [transactionId], references: [id], onDelete: SetNull)
+  currency          Currency       @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  baseCurrency      Currency?      @relation("TradeBaseCurrency", fields: [baseCurrencyId], references: [id], onDelete: Restrict)
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investment        Investment     @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  assetAccount      LedgerAccount? @relation("TradeAssetAccount", fields: [assetAccountId], references: [id], onDelete: SetNull)
+  settlementAccount LedgerAccount? @relation("TradeSettlementAccount", fields: [settlementAccountId], references: [id], onDelete: SetNull)
+  journalEntry      JournalEntry?  @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
 
   @@index([userId, investmentId], name: "trade_user_investment_idx")
   @@index([investmentId, timestamp], name: "trade_investment_time_idx")
   @@index([currencyId], name: "trade_currencyId_idx")
   @@index([externalId], name: "trade_externalId_idx")
   @@index([baseCurrencyId], name: "trade_baseCurrencyId_idx")
+  @@index([journalEntryId], name: "trade_journal_entry_idx")
+  @@index([assetAccountId], name: "trade_asset_account_idx")
+  @@index([settlementAccountId], name: "trade_settlement_account_idx")
   @@map("investment_trades")
 }
 
@@ -50,24 +55,26 @@ model Investment {
   mode           InvestmentMode      @default(priced)
   currencyId     String              @map("currency_id")
   baseCurrencyId String?             @map("base_currency_id")
+  ledgerAccountId String?            @map("ledger_account_id")
   extra          Json?
   created        DateTime            @default(now())
   modified       DateTime            @updatedAt
 
-  currency      Currency                 @relation("InvestmentCurrency", fields: [currencyId], references: [id], onDelete: Restrict)
-  baseCurrency  Currency?                @relation("InvestmentBaseCurrency", fields: [baseCurrencyId], references: [id], onDelete: Restrict)
-  user          User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions  Transaction[]
-  trades        InvestmentTrade[]
-  holdings      Holding[]
-  contributions InvestmentContribution[]
-  valuations    InvestmentValuation[]
+  currency       Currency       @relation("InvestmentCurrency", fields: [currencyId], references: [id], onDelete: Restrict)
+  baseCurrency   Currency?      @relation("InvestmentBaseCurrency", fields: [baseCurrencyId], references: [id], onDelete: Restrict)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ledgerAccount  LedgerAccount? @relation(fields: [ledgerAccountId], references: [id], onDelete: SetNull)
+  trades         InvestmentTrade[]
+  holdings       Holding[]
+  contributions  InvestmentContribution[]
+  valuations     InvestmentValuation[]
 
   @@index([userId], name: "investment_userId_idx")
   @@index([assetType], name: "investment_assetType_idx")
   @@index([symbol], name: "investment_symbol_idx")
   @@index([currencyId], name: "investment_currencyId_idx")
   @@index([baseCurrencyId], name: "investment_baseCurrencyId_idx")
+  @@index([ledgerAccountId], name: "investment_ledgerAccount_idx")
   @@map("investments")
 }
 
@@ -76,7 +83,8 @@ model InvestmentContribution {
   id                   String           @id
   userId               String           @map("user_id")
   investmentId         String           @map("investment_id")
-  accountId            String?          @map("account_id")
+  ledgerAccountId      String?          @map("ledger_account_id")
+  journalEntryId       String?          @map("journal_entry_id")
   amount               Decimal          @db.Decimal(30, 10)
   currencyId           String           @map("currency_id")
   type                 ContributionType @default(deposit)
@@ -88,17 +96,19 @@ model InvestmentContribution {
   created              DateTime         @default(now())
   modified             DateTime         @updatedAt
 
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  investment   Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
-  account      Account?   @relation(fields: [accountId], references: [id], onDelete: SetNull)
-  currency     Currency   @relation(fields: [currencyId], references: [id], onDelete: Restrict)
-  baseCurrency Currency?  @relation("ContributionBaseCurrency", fields: [baseCurrencyId], references: [id], onDelete: Restrict)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investment    Investment     @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  ledgerAccount LedgerAccount? @relation(fields: [ledgerAccountId], references: [id], onDelete: SetNull)
+  journalEntry  JournalEntry?  @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+  currency      Currency       @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  baseCurrency  Currency?      @relation("ContributionBaseCurrency", fields: [baseCurrencyId], references: [id], onDelete: Restrict)
 
   @@index([userId], name: "investmentContribution_userId_idx")
   @@index([investmentId], name: "investmentContribution_investmentId_idx")
-  @@index([accountId], name: "investmentContribution_accountId_idx")
+  @@index([ledgerAccountId], name: "investmentContribution_accountId_idx")
   @@index([currencyId], name: "investmentContribution_currencyId_idx")
   @@index([baseCurrencyId], name: "investmentContribution_baseCurrencyId_idx")
+  @@index([journalEntryId], name: "investmentContribution_journal_entry_idx")
   @@map("investment_contributions")
 }
 
@@ -137,6 +147,7 @@ model Holding {
   id                    String    @id
   userId                String    @map("user_id")
   investmentId          String    @map("investment_id")
+  ledgerAccountId       String?   @map("ledger_account_id")
   quantity              Decimal   @db.Decimal(30, 10)
   avgCost               Decimal   @map("avg_cost") @db.Decimal(30, 10)
   unrealizedPnl         Decimal?  @map("unrealized_pnl") @db.Decimal(30, 10)
@@ -146,9 +157,11 @@ model Holding {
   created               DateTime  @default(now())
   modified              DateTime  @updatedAt
 
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  investment Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investment    Investment     @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  ledgerAccount LedgerAccount? @relation(fields: [ledgerAccountId], references: [id], onDelete: SetNull)
 
   @@index([userId, investmentId], name: "holding_user_investment_idx")
+  @@index([ledgerAccountId], name: "holding_ledger_account_idx")
   @@map("holdings")
 }
