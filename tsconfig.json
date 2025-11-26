@@ -23,7 +23,7 @@
         "./src/*"
       ],
       "@client/*": [
-        "./client/*"
+        "./client/src/*"
       ]
     }
   }

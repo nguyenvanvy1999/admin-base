@@ -15,7 +15,7 @@ export const resources = {
   },
 } as const;
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = import.meta.env.PROD;
 
 i18n
   .use(LanguageDetector)
