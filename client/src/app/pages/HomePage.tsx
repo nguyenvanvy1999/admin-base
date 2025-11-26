@@ -91,9 +91,7 @@ export default function HomePage() {
         extra={
           <Button
             type="primary"
-            onClick={() =>
-              notify.success(t('dashboard.notificationMessage'))
-            }
+            onClick={() => notify.success(t('dashboard.notificationMessage'))}
           >
             {t('dashboard.sendSampleNotification')}
           </Button>
@@ -135,7 +133,9 @@ export default function HomePage() {
         </Typography.Title>
         <Typography.Paragraph type="secondary">
           {t('dashboard.apiHealthcheckLabel')}{' '}
-          {isLoading ? t('dashboard.checking') : data?.status ?? t('dashboard.unknown')}
+          {isLoading
+            ? t('dashboard.checking')
+            : (data?.status ?? t('dashboard.unknown'))}
         </Typography.Paragraph>
       </Card>
 

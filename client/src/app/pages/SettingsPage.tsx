@@ -1,6 +1,14 @@
 import { AppForm, AppFormItem } from '@client/components/common/AppForm';
 import { PageHeader } from '@client/components/common/PageHeader';
-import { Button, Card, Flex, InputNumber, Switch, Typography } from 'antd';
+import {
+  Button,
+  Card,
+  Flex,
+  InputNumber,
+  Select,
+  Switch,
+  Typography,
+} from 'antd';
 import { useTranslation } from 'react-i18next';
 
 type SettingForm = {
@@ -34,15 +42,23 @@ export default function SettingsPage() {
             name="timezone"
             rules={[{ required: true }]}
           >
-            <select className="w-full rounded-md border border-slate-300 px-3 py-2">
-              <option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh (GMT+7)</option>
-              <option value="UTC">UTC</option>
-              <option value="America/New_York">America/New_York</option>
-            </select>
+            <Select
+              options={[
+                {
+                  value: 'Asia/Ho_Chi_Minh',
+                  label: 'Asia/Ho_Chi_Minh (GMT+7)',
+                },
+                { value: 'UTC', label: 'UTC' },
+                { value: 'America/New_York', label: 'America/New_York' },
+              ]}
+            />
           </AppFormItem>
 
-          <AppFormItem label={t('settingsPage.riskLimitLabel')} name="riskLimit">
-            <InputNumber min={1} max={20} className="w-full" />
+          <AppFormItem
+            label={t('settingsPage.riskLimitLabel')}
+            name="riskLimit"
+          >
+            <InputNumber min={1} max={20} style={{ width: '100%' }} />
           </AppFormItem>
 
           <AppFormItem

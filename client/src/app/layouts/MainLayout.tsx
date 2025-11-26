@@ -1,15 +1,18 @@
 import {
   GithubOutlined,
   HomeOutlined,
+  MoonOutlined,
   SettingOutlined,
+  SunOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
 import type { ProLayoutProps } from '@ant-design/pro-components';
 import { PageContainer, ProLayout } from '@ant-design/pro-components';
-import { Button, Dropdown, Flex, Segmented } from 'antd';
+import { Button, Dropdown, Flex, Segmented, Switch, Tooltip } from 'antd';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Outlet, useLocation,  } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { useThemeMode } from '../themeModeContext';
 
 const menuRoutes: ProLayoutProps['route'] = {
   routes: [
@@ -22,6 +25,7 @@ const menuRoutes: ProLayoutProps['route'] = {
 export default function MainLayout() {
   const location = useLocation();
   const { t, i18n } = useTranslation();
+  const { mode, setMode } = useThemeMode();
 
   const locationProps = useMemo(
     () => ({
@@ -46,6 +50,17 @@ export default function MainLayout() {
       route={menuRoutes}
       location={locationProps}
       actionsRender={() => [
+        <Tooltip
+          key="theme"
+          title={mode === 'dark' ? t('common.enabled') : t('common.disabled')}
+        >
+          <Switch
+            checked={mode === 'dark'}
+            onChange={(checked) => setMode(checked ? 'dark' : 'light')}
+            checkedChildren={<MoonOutlined />}
+            unCheckedChildren={<SunOutlined />}
+          />
+        </Tooltip>,
         <Segmented
           key="lang"
           size="small"
