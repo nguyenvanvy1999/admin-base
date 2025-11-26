@@ -8,12 +8,7 @@ export interface PrismaMockClient {
   $disconnect: Fn;
   $on: Fn;
   $queryRaw: Fn;
-  user: any;
-  role: any;
-  permission: any;
-  rolePermission: any;
-  rolePlayer: any;
-  session: any;
+  // Dynamic models; index signature for ease in tests
   [model: string]: any;
 }
 
@@ -46,11 +41,21 @@ export function createPrismaMock(): PrismaMockClient {
     $on: mock(() => undefined),
     $queryRaw: mock(async () => ({ rows: [] })),
     user: createModel(),
+    account: createModel(),
+    accountSnapshot: createModel(),
+    transaction: createModel(),
+    ledgerJournal: createModel(),
+    order: createModel(),
+    dispute: createModel(),
+    currency: createModel(),
+    network: createModel(),
     role: createModel(),
     permission: createModel(),
     rolePermission: createModel(),
-    rolePlayer: createModel(),
-    session: createModel(),
+    referral: createModel(),
+    setting: createModel(),
+    authProvider: createModel(),
+    telegramBot: createModel(),
   };
 
   return models;

@@ -1,119 +1,43 @@
-import { prisma } from '@server/configs/db';
-import { ErrorCode, throwAppError } from '@server/share/constants/error';
+import { Decimal } from 'decimal.js';
+import { BadReqErr, ErrCode } from 'src/share';
 
-export interface OwnershipValidationOptions {
-  userId: string;
-  entityId: string;
-  model: string;
-  select?: Record<string, boolean>;
-  errorCode?: (typeof ErrorCode)[keyof typeof ErrorCode];
-  errorMessage?: string;
-}
+export class AmountValidator {
+  static validatePositive(
+    amount: number | Decimal,
+    errorMessage = 'Amount must be positive',
+  ): Decimal {
+    const decimalAmount = new Decimal(amount);
 
-export async function validateOwnership<T = { id: string }>(
-  options: OwnershipValidationOptions,
-): Promise<T> {
-  const {
-    userId,
-    entityId,
-    model,
-    select = { id: true },
-    errorCode = ErrorCode.NOT_FOUND,
-    errorMessage = 'Resource not found',
-  } = options;
+    if (decimalAmount.isNegative() || decimalAmount.isZero()) {
+      throw new BadReqErr(ErrCode.InvalidAmount, {
+        errors: errorMessage,
+      });
+    }
 
-  const entity = await (prisma as any)[model].findFirst({
-    where: {
-      id: entityId,
-      userId,
-    },
-    select,
-  });
-
-  if (!entity) {
-    throwAppError(errorCode, errorMessage);
+    return decimalAmount;
   }
 
-  return entity as T;
-}
-
-export interface ExistenceValidationOptions {
-  id: string;
-  model: string;
-  select?: Record<string, boolean>;
-  errorCode?: (typeof ErrorCode)[keyof typeof ErrorCode];
-  errorMessage?: string;
-}
-
-export async function ensureExists<T = { id: string }>(
-  options: ExistenceValidationOptions,
-): Promise<T> {
-  const {
-    id,
-    model,
-    select = { id: true },
-    errorCode = ErrorCode.NOT_FOUND,
-    errorMessage = 'Resource not found',
-  } = options;
-
-  const entity = await (prisma as any)[model].findUnique({
-    where: { id },
-    select,
-  });
-
-  if (!entity) {
-    throwAppError(errorCode, errorMessage);
+  static validateSufficientBalance(
+    balance: Decimal,
+    required: Decimal,
+    errorMessage = 'Insufficient funds',
+  ): void {
+    if (balance.lessThan(required)) {
+      throw new BadReqErr(ErrCode.InvalidAmount, {
+        errors: errorMessage,
+      });
+    }
   }
 
-  return entity as T;
-}
-
-export interface UniqueNameValidationOptions {
-  userId: string;
-  name: string;
-  model: string;
-  nameField?: string;
-  excludeId?: string;
-  errorCode?: (typeof ErrorCode)[keyof typeof ErrorCode];
-  errorMessage?: string;
-}
-
-export async function validateUniqueName(
-  options: UniqueNameValidationOptions,
-): Promise<void> {
-  const {
-    userId,
-    name,
-    model,
-    nameField = 'name',
-    excludeId,
-    errorCode = ErrorCode.DUPLICATE_NAME,
-    errorMessage = 'Name already exists',
-  } = options;
-
-  const lowerName = name.toLowerCase().trim();
-  const where: any = {
-    userId,
-    [nameField]: lowerName,
-  };
-
-  if (excludeId) {
-    where.id = { not: excludeId };
-  }
-
-  const count = await (prisma as any)[model].count({ where });
-
-  if (count > 0) {
-    throwAppError(errorCode, errorMessage);
-  }
-}
-
-export async function validateCurrency(currencyId: string): Promise<void> {
-  const count = await prisma.currency.count({
-    where: { id: currencyId },
-  });
-
-  if (count === 0) {
-    throwAppError(ErrorCode.CURRENCY_NOT_FOUND, 'Currency not found');
+  static validateNotSameAccount(
+    accountId1: string,
+    accountId2: string,
+    errorMessage = 'From and To accounts cannot be the same',
+  ): void {
+    if (accountId1 === accountId2) {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: errorMessage,
+      });
+    }
   }
 }

@@ -1,0 +1,262 @@
+import { createHash, createHmac } from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
+import { db, type IDb } from 'src/config/db';
+import { UserStatus } from 'src/generated';
+import type { ILoginRes } from 'src/modules/auth/dtos';
+import {
+  type UserUtilService,
+  userUtilService,
+} from 'src/service/auth/auth-util.service';
+import {
+  type AuditLogService,
+  auditLogService,
+} from 'src/service/misc/audit-log.service';
+import {
+  ACTIVITY_TYPE,
+  type AuditLogEntry,
+  CoreErr,
+  DB_PREFIX,
+  defaultRoles,
+  ErrCode,
+  IdUtil,
+  OAUTH,
+  type PrismaTx,
+  UnAuthErr,
+} from 'src/share';
+
+type GoogleLoginParams = {
+  idToken: string;
+  clientIp?: string;
+  userAgent?: string;
+};
+
+type LinkTelegramParams = {
+  userId: string;
+  telegramData: {
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    username?: string;
+    photo_url?: string;
+    auth_date: string;
+    hash: string;
+  };
+};
+
+export class OAuthService {
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      oauth2ClientFactory: (clientId: string) => OAuth2Client;
+      userUtilService: UserUtilService;
+      auditLogService: AuditLogService;
+      idUtil: typeof IdUtil;
+      crypto: {
+        createHash: typeof createHash;
+        createHmac: typeof createHmac;
+      };
+    } = {
+      db,
+      oauth2ClientFactory: (clientId: string) => new OAuth2Client(clientId),
+      userUtilService,
+      auditLogService,
+      idUtil: IdUtil,
+      crypto: { createHash, createHmac },
+    },
+  ) {}
+
+  async googleLogin(params: GoogleLoginParams): Promise<ILoginRes> {
+    const { idToken, clientIp, userAgent } = params;
+
+    const provider = await this.deps.db.authProvider.findUnique({
+      where: { code: OAUTH.GOOGLE },
+    });
+
+    const { clientId } = (provider?.config as { clientId?: string }) || {};
+    if (!provider || !provider.enabled || !clientId) {
+      throw new CoreErr(ErrCode.OAuthProviderNotFound);
+    }
+
+    const googleClient = this.deps.oauth2ClientFactory(clientId);
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: clientId,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) {
+      throw new UnAuthErr(ErrCode.InvalidGoogleAccount);
+    }
+
+    const email = payload.email?.toLowerCase();
+    const googleId = payload.sub;
+
+    if (!email) {
+      throw new UnAuthErr(ErrCode.GoogleAccountNotFound);
+    }
+
+    let user = await this.deps.db.user.findUnique({
+      where: { email },
+      include: { roles: true },
+    });
+
+    const auditEntries: AuditLogEntry[] = [];
+
+    if (user) {
+      const authExists = await this.deps.db.userAuthProvider.findFirst({
+        where: { providerCode: OAUTH.GOOGLE, providerId: googleId },
+      });
+
+      if (!authExists) {
+        await this.deps.db.userAuthProvider.create({
+          data: {
+            providerCode: OAUTH.GOOGLE,
+            providerId: googleId,
+            id: this.deps.idUtil.dbId(DB_PREFIX.USER_AUTH_PROVIDER),
+            authUserId: user.id,
+          },
+          select: { id: true },
+        });
+
+        auditEntries.push({
+          type: ACTIVITY_TYPE.LINK_OAUTH,
+          payload: { provider: OAUTH.GOOGLE, providerId: googleId },
+          userId: user.id,
+        });
+      }
+    } else {
+      user = await this.deps.db.$transaction(async (tx: PrismaTx) => {
+        const userId = this.deps.idUtil.dbId(DB_PREFIX.USER);
+        const createdUser = await tx.user.create({
+          data: {
+            id: userId,
+            email,
+            status: UserStatus.ACTIVE,
+            roles: {
+              create: {
+                id: this.deps.idUtil.dbId(),
+                roleId: defaultRoles.user.id,
+              },
+            },
+            refCode: this.deps.idUtil.token8().toUpperCase(),
+          },
+          include: { roles: true },
+        });
+
+        await tx.userAuthProvider.create({
+          data: {
+            providerCode: OAUTH.GOOGLE,
+            providerId: googleId,
+            id: this.deps.idUtil.dbId(DB_PREFIX.USER_AUTH_PROVIDER),
+            authUserId: userId,
+          },
+          select: { id: true },
+        });
+
+        await this.deps.userUtilService.createProfile(tx, userId);
+
+        return createdUser;
+      });
+
+      auditEntries.push({
+        type: ACTIVITY_TYPE.REGISTER,
+        payload: { method: OAUTH.GOOGLE },
+        userId: user.id,
+      });
+    }
+
+    const loginRes = await this.deps.userUtilService.completeLogin(
+      user,
+      clientIp || '',
+      userAgent || '',
+    );
+
+    auditEntries.push({
+      type: ACTIVITY_TYPE.LOGIN,
+      payload: { method: OAUTH.GOOGLE },
+      userId: user.id,
+      ip: clientIp,
+      userAgent,
+    });
+
+    await this.deps.auditLogService.pushBatch(auditEntries);
+
+    return loginRes;
+  }
+
+  async linkTelegram(params: LinkTelegramParams) {
+    const { userId, telegramData } = params;
+
+    const provider = await this.deps.db.authProvider.findUnique({
+      where: { code: OAUTH.TELEGRAM },
+    });
+
+    const { botToken } = (provider?.config as { botToken?: string }) || {};
+    if (!provider || !provider.enabled || !botToken) {
+      throw new CoreErr(ErrCode.OAuthProviderNotFound);
+    }
+
+    const isValid = this.verifyTelegramLogin(telegramData, botToken);
+
+    if (!isValid) {
+      throw new UnAuthErr(ErrCode.InvalidTelegramAccount);
+    }
+
+    const authExists = await this.deps.db.userAuthProvider.findFirst({
+      where: {
+        OR: [
+          { authUserId: userId, providerCode: OAUTH.TELEGRAM },
+          { providerCode: OAUTH.TELEGRAM, providerId: telegramData.id },
+        ],
+      },
+    });
+
+    if (authExists) {
+      throw new CoreErr(ErrCode.TelegramAccountWasLinked);
+    }
+
+    await this.deps.db.userAuthProvider.create({
+      data: {
+        providerCode: OAUTH.TELEGRAM,
+        providerId: telegramData.id,
+        authUserId: userId,
+        id: this.deps.idUtil.dbId(DB_PREFIX.USER_AUTH_PROVIDER),
+      },
+      select: { id: true },
+    });
+
+    await this.deps.auditLogService.push({
+      type: ACTIVITY_TYPE.LINK_OAUTH,
+      payload: { provider: OAUTH.TELEGRAM, providerId: telegramData.id },
+      userId,
+    });
+
+    return null;
+  }
+
+  private verifyTelegramLogin(
+    data: LinkTelegramParams['telegramData'],
+    botToken: string,
+  ): boolean {
+    const { hash, ...rest } = data;
+
+    const sortedKeys = Object.keys(rest).sort();
+    const checkString = sortedKeys
+      .map((key) => `${key}=${rest[key as keyof typeof rest]}`)
+      .join('\n');
+
+    const secretKey = this.deps.crypto
+      .createHash('sha256')
+      .update(botToken)
+      .digest();
+    const hmac = this.deps.crypto
+      .createHmac('sha256', secretKey)
+      .update(checkString)
+      .digest('hex');
+
+    return hmac === hash;
+  }
+}
+
+export const oauthService = new OAuthService();

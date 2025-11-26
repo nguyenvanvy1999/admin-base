@@ -32,6 +32,7 @@
     "@prisma/adapter-pg": "^7.0.1",
     "@prisma/client": "^7.0.1",
     "@sapphire/snowflake": "^3.5.5",
+    "@sinclair/typebox": "^0.34.41",
     "dayjs": "^1.11.19",
     "decimal.js": "^10.6.0",
     "elysia": "1.4.16",

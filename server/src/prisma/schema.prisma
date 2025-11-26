@@ -128,14 +128,22 @@ enum SettingDataType {
   json
 }
 
+enum UserStatus {
+  inactive
+  active
+  suspendded
+  banned
+}
+
 // ============================================
 // System/Auth Models
 // ============================================
 
 // Core user account with authentication and profile data
 model User {
-  id       String @id
-  username String @unique
+  id     String     @id
+  email  String     @unique
+  status UserStatus @default(inactive)
 
   password             String
   passwordExpired      DateTime? @default(now()) @map("password_expired")
@@ -178,7 +186,7 @@ model User {
   pendingRef Int @default(0) @map("pending_ref")
   activeRef  Int @default(0) @map("active_ref")
 
-  @@index([username], name: "user_username_idx")
+  @@index([email], name: "user_email_idx")
   @@index([baseCurrencyId], name: "user_baseCurrencyId_idx")
   @@map("users")
 }
@@ -282,20 +290,18 @@ model RolePlayer {
 
 // User authentication sessions
 model Session {
-  id       String   @id
-  userId   String   @map("user_id")
-  token    String   @unique
-  device   String?
-  ip       String?
-  expired  DateTime
-  revoked  Boolean  @default(false)
-  created  DateTime @default(now())
-  modified DateTime @updatedAt
+  id          String   @id
+  device      String
+  ip          String
+  token       String   @unique()
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById String   @map("created_by_id")
+  expired     DateTime
+  revoked     Boolean  @default(false)
+  modified    DateTime @updatedAt()
+  created     DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId], name: "session_userId_idx")
-  @@index([token], name: "session_token_idx")
+  @@index([createdById])
   @@map("sessions")
 }
 

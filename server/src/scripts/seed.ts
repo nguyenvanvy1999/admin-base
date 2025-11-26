@@ -1,16 +1,17 @@
-import { prisma } from '@server/configs/db';
-import { logger } from '@server/configs/logger';
-import { seedService } from '@server/services/misc';
+import { logger } from 'src/config/logger';
+import { seedService } from 'src/service/misc/seed.service';
 
 async function main() {
   try {
+    logger.info('Starting seed process...');
+
     await seedService.seedAll();
-  } catch (error) {
-    logger.error('Error seeding', { error });
-    process.exit(1);
-  } finally {
-    await prisma.$disconnect();
+
+    logger.info('Seed process completed successfully!');
     process.exit(0);
+  } catch (error) {
+    logger.error(`Seed process failed: ${error}`);
+    process.exit(1);
   }
 }
 
