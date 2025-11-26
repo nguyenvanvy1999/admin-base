@@ -1,15 +1,11 @@
 import { t } from 'elysia';
 
-export const CurrencyDto = t.NoValidate(
-  t.Object({
-    id: t.String(),
-    name: t.String(),
-    code: t.String(),
-    symbol: t.Nullable(t.String()),
-  }),
-);
+export const CurrencyResDto = t.Object({
+  id: t.String(),
+  code: t.String(),
+  name: t.String(),
+  symbol: t.Nullable(t.String()),
+  isActive: t.Boolean(),
+});
 
-export const CurrencyListResponseDto = t.NoValidate(t.Array(CurrencyDto));
-
-export type Currency = typeof CurrencyDto.static;
-export type CurrencyListResponse = typeof CurrencyListResponseDto.static;
+export type Currency = typeof CurrencyResDto.static;

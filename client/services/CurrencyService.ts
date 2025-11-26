@@ -1,13 +1,13 @@
 import { ServiceBase } from '@client/libs/ServiceBase';
-import type { CurrencyListResponse } from '@server/dto/currency.dto';
+import type { Currency } from '@server/dto/currency.dto';
 
 export class CurrencyService extends ServiceBase {
   constructor() {
     super('/api/currencies');
   }
 
-  listCurrencies(): Promise<CurrencyListResponse> {
-    return this.get<CurrencyListResponse>();
+  listCurrencies(): Promise<Currency[]> {
+    return this.get<Currency[]>();
   }
 }
 

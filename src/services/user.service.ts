@@ -32,7 +32,6 @@ import type {
   IUpdateProfileDto,
   LoginRes,
 } from '../dto/user.dto';
-import { CategoryService } from './category.service';
 import {
   USER_SELECT_FOR_INFO,
   USER_SELECT_FOR_LOGIN,
@@ -59,12 +58,10 @@ export class UserService {
   constructor(
     private readonly deps: {
       db: IDb;
-      categoryService: CategoryService;
       passwordService: PasswordService;
       idUtil: IdUtil;
     } = {
       db: prisma,
-      categoryService: new CategoryService(),
       passwordService,
       idUtil,
     },
@@ -89,26 +86,20 @@ export class UserService {
       data.password,
     );
 
-    const user = await this.deps.db.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: {
-          id: this.deps.idUtil.dbId(DB_PREFIX.USER),
-          username: data.username,
-          name: data.name,
-          baseCurrencyId: data.baseCurrencyId,
-          ...password,
-          roles: {
-            create: {
-              roleId: defaultRoles.user.id,
-            },
+    const user = await this.deps.db.user.create({
+      data: {
+        id: this.deps.idUtil.dbId(DB_PREFIX.USER),
+        username: data.username,
+        name: data.name,
+        baseCurrencyId: data.baseCurrencyId,
+        ...password,
+        roles: {
+          create: {
+            roleId: defaultRoles.user.id,
           },
         },
-        select: { id: true },
-      });
-
-      await this.deps.categoryService.seedDefaultCategories(tx, newUser.id);
-
-      return newUser;
+      },
+      select: { id: true },
     });
 
     const userWithRoles = await this.deps.db.user.findUnique({

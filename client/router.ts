@@ -1,34 +1,15 @@
 import { createHashRouter } from 'react-router';
 
 import ProtectedPageLayout from './layouts';
-import AccountPage from './pages/AccountPage';
 import PermissionPage from './pages/admin/PermissionPage';
 import RolePage from './pages/admin/RolePage';
 import AdminSessionPage from './pages/admin/SessionPage';
 import UserPage from './pages/admin/UserPage';
-import BudgetDetailPage from './pages/BudgetDetailPage';
-import BudgetPage from './pages/BudgetPage';
-import BudgetPeriodDetailPage from './pages/BudgetPeriodDetailPage';
-import BulkTransactionPage from './pages/BulkTransactionPage';
-import CategoryPage from './pages/CategoryPage';
-import DebtPage from './pages/DebtPage';
-import DebtStatisticsPage from './pages/DebtStatisticsPage';
-import EntityPage from './pages/EntityPage';
-import EventPage from './pages/EventPage';
-import GoalDetailPage from './pages/GoalDetailPage';
-import GoalPage from './pages/GoalPage';
-import HomePage from './pages/HomePage';
-import IncomeExpenseStatisticsPage from './pages/IncomeExpenseStatisticsPage';
-import InvestmentDetailPage from './pages/InvestmentDetailPage';
-import InvestmentPage from './pages/InvestmentPage';
-import InvestmentStatisticsPage from './pages/InvestmentStatisticsPage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
 import SessionPage from './pages/SessionPage';
-import TagPage from './pages/TagPage';
-import TransactionPage from './pages/TransactionPage';
 
 const router = createHashRouter([
   {
@@ -36,7 +17,7 @@ const router = createHashRouter([
     children: [
       {
         path: '/',
-        Component: HomePage,
+        Component: UserPage,
       },
       {
         path: '/profile',
@@ -45,86 +26,6 @@ const router = createHashRouter([
       {
         path: '/sessions',
         Component: SessionPage,
-      },
-      {
-        path: '/debts',
-        Component: DebtPage,
-      },
-      {
-        path: '/transactions/bulk',
-        Component: BulkTransactionPage,
-      },
-      {
-        path: '/transactions',
-        Component: TransactionPage,
-      },
-      {
-        path: '/budgets',
-        Component: BudgetPage,
-      },
-      {
-        path: '/budgets/:budgetId/periods/:periodId',
-        Component: BudgetPeriodDetailPage,
-      },
-      {
-        path: '/budgets/:budgetId',
-        Component: BudgetDetailPage,
-      },
-      {
-        path: '/goals',
-        Component: GoalPage,
-      },
-      {
-        path: '/goals/:goalId',
-        Component: GoalDetailPage,
-      },
-      {
-        path: '/accounts',
-        Component: AccountPage,
-      },
-      {
-        path: '/investments',
-        Component: InvestmentPage,
-      },
-      {
-        path: '/investments/:investmentId',
-        Component: InvestmentDetailPage,
-      },
-      {
-        path: '/categories',
-        Component: CategoryPage,
-      },
-      {
-        path: '/entities',
-        Component: EntityPage,
-      },
-      {
-        path: '/events',
-        Component: EventPage,
-      },
-      {
-        path: '/tags',
-        Component: TagPage,
-      },
-      {
-        path: '/rules',
-        Component: NotFoundPage,
-      },
-      {
-        path: '/statistics/income-expense',
-        Component: IncomeExpenseStatisticsPage,
-      },
-      {
-        path: '/statistics/investments',
-        Component: InvestmentStatisticsPage,
-      },
-      {
-        path: '/statistics/debts',
-        Component: DebtStatisticsPage,
-      },
-      {
-        path: '/statistics',
-        Component: IncomeExpenseStatisticsPage,
       },
       {
         path: '/404',

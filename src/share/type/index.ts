@@ -1,4 +1,3 @@
-export * from './activity.type';
 export * from './auth.type';
 export * from './dto';
 

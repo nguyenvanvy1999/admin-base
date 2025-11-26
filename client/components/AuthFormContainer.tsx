@@ -1,6 +1,5 @@
-import { Stack, Text, Title } from '@mantine/core';
+import { Card, Stack, Text, Title } from '@mantine/core';
 import type { ReactNode } from 'react';
-import { Surface } from './layout';
 
 interface AuthFormContainerProps {
   children: ReactNode;
@@ -14,9 +13,11 @@ export const AuthFormContainer = ({
   description,
 }: AuthFormContainerProps) => {
   return (
-    <Surface
+    <Card
+      shadow="md"
+      radius="md"
       p="xl"
-      feel="elevated"
+      withBorder
       style={{
         width: '100%',
         maxWidth: '500px',
@@ -37,6 +38,6 @@ export const AuthFormContainer = ({
         </Stack>
       )}
       {children}
-    </Surface>
+    </Card>
   );
 };

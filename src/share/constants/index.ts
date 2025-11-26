@@ -1,5 +1,3 @@
-export * from './activity';
-export * from './category';
 export * from './error';
 export * from './setting';
 

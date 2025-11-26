@@ -1,18 +1,22 @@
-import type { IDb } from '@server/configs/db';
-import { prisma } from '@server/configs/db';
+import { type IDb, prisma } from '@server/configs/db';
+import type { Currency } from '@server/generated';
 
 export class CurrencyService {
-  constructor(private readonly deps: { db: IDb } = { db: prisma }) {}
+  constructor(private readonly db: IDb = prisma) {}
 
-  getAllCurrencies() {
-    return this.deps.db.currency.findMany({
-      where: {
+  async listActive(): Promise<
+    Pick<Currency, 'id' | 'code' | 'name' | 'symbol' | 'isActive'>[]
+  > {
+    return this.db.currency.findMany({
+      where: { isActive: true },
+      orderBy: { code: 'asc' },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        symbol: true,
         isActive: true,
       },
-      orderBy: {
-        code: 'asc',
-      },
-      select: { id: true, name: true, code: true, symbol: true },
     });
   }
 }
