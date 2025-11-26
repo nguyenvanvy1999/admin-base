@@ -4,7 +4,7 @@ import type { Currency } from '@server/generated';
 export class CurrencyService {
   constructor(private readonly db: IDb = prisma) {}
 
-  async listActive(): Promise<
+  listActive(): Promise<
     Pick<Currency, 'id' | 'code' | 'name' | 'symbol' | 'isActive'>[]
   > {
     return this.db.currency.findMany({
