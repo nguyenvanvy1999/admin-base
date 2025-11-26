@@ -1,48 +1,15 @@
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@client/global.css';
-import { queryClient } from '@client/libs/queryClient';
-import { ColorSchemeScript } from '@mantine/core';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { RouterProvider } from 'react-router';
-import { useUserQuery } from './hooks/queries/useUserQuery';
-import MantineProvider from './providers/MantineProvider';
-import router from './router';
+import 'antd/dist/reset.css';
+import '@ant-design/pro-components/dist/assets/style.css';
 import './i18n';
-import { ACCESS_TOKEN_KEY } from '@client/constants';
-import {
-  accessTokenRefreshSubject,
-  configSubject,
-} from '@client/utils/subjects';
-
-configSubject.next({
-  apiUrl: window.location.origin,
-  authApiUrl: window.location.origin,
-  isDev: Boolean(import.meta.env.DEV),
-});
-
-const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-if (token) {
-  accessTokenRefreshSubject.next(token);
-}
-
-function AppContent() {
-  useUserQuery();
-
-  return <RouterProvider router={router} />;
-}
-
-function App() {
-  return (
-    <>
-      <ColorSchemeScript defaultColorScheme="light" />
-      <MantineProvider>
-        <QueryClientProvider client={queryClient}>
-          <AppContent />
-        </QueryClientProvider>
-      </MantineProvider>
-    </>
-  );
-}
+import { AppProvider } from './app/AppProvider';
 
 const root = createRoot(document.getElementById('root')!);
-root.render(<App />);
+
+root.render(
+  <StrictMode>
+    <AppProvider />
+  </StrictMode>,
+);

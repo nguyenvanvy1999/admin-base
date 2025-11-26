@@ -62,8 +62,10 @@ Navigate to `http://localhost:3000` to see your application!
 
 - **Runtime**: Bun
 - **Backend**: Elysia.js + PostgreSQL + Prisma
-- **Frontend**: React 19 + Mantine UI + Tailwind CSS
-- **State**: Zustand + TanStack Query
+- **Frontend**: React 19 + Ant Design 5 + Tailwind CSS + Ant Design Pro Layout
+- **State**: React useState + TanStack Query (server state)
+- **Routing**: React Router (HashRouter) + Bun dev server
+- **HTTP**: Axios + interceptors
 - **Type Safety**: Eden Treaty (end-to-end types)
 
 ## Development Commands
@@ -102,10 +104,35 @@ bun start
 fin-track/
 ├── docs/                # Documentation (tiếng Việt)
 ├── src/                 # Backend (Elysia.js)
-├── client/              # Frontend (React)
+├── client/              # Frontend (React + Ant Design)
 ├── prisma/              # Prisma schema and migrations
 └── package.json
 ```
+
+### Frontend (client/) layout
+
+```
+client/
+├── app/                 # Router, layouts, page shells
+├── components/          # Reusable AntD wrappers (Form, Table, Modal, Drawer…)
+├── config/              # Theme tokens, provider config
+├── hooks/               # Custom hooks (notifications, modal helper, etc.)
+├── lib/                 # Axios instance, React Query client
+├── services/            # API service modules + query hooks
+├── app/pages/           # Feature-less placeholder pages (Home, Workspace, Settings)
+└── global.css           # Tailwind layer + AntD resets/tokens
+```
+
+#### Nguyên tắc mở rộng client
+
+- **Provider gốc**: `client/app/AppProvider.tsx` gom `ConfigProvider`, `AntdApp`, `QueryClientProvider` và `RouterProvider` (HashRouter).
+- **Layout**: `client/app/layouts/MainLayout.tsx` sử dụng Ant Design Pro Layout (mix layout) với sidebar cố định.
+- **Dữ liệu**: Toàn bộ request đi qua `client/lib/http.ts` (Axios + interceptor). React Query dùng `client/lib/queryClient.ts`.
+- **Components tái sử dụng**: `client/components/common` chứa wrapper cho Form, ProTable, Modal, Drawer, PageHeader, Loader… giữ style đồng nhất.
+- **Services**: tạo file mới ở `client/services/*`, expose hàm fetch + hook `useXxxQuery`.
+- **State**: dùng `useState` cho local UI, dữ liệu server đi qua React Query (không sử dụng Redux/Zustand).
+- **Styling**: Ưu tiên AntD token + Tailwind utility trong `global.css`. Token chung nằm ở `client/styles/tokens.css`.
+- **Alias import**: sử dụng `@client/app`, `@client/components`, `@client/lib`, `@client/services`… đã cấu hình trong `tsconfig.json`.
 
 ## Features
 
