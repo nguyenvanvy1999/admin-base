@@ -1,6 +1,7 @@
 import { AppForm, AppFormItem } from '@client/components/common/AppForm';
 import { PageHeader } from '@client/components/common/PageHeader';
 import { Button, Card, Flex, InputNumber, Switch, Typography } from 'antd';
+import { useTranslation } from 'react-i18next';
 
 type SettingForm = {
   timezone: string;
@@ -9,11 +10,13 @@ type SettingForm = {
 };
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
+
   return (
     <Flex vertical gap={24}>
       <PageHeader
-        title="Cấu hình"
-        subtitle="Trang ví dụ cho Form của Ant Design"
+        title={t('settingsPage.title')}
+        subtitle={t('settingsPage.subtitle')}
       />
       <Card>
         <AppForm<SettingForm>
@@ -27,7 +30,7 @@ export default function SettingsPage() {
           }}
         >
           <AppFormItem
-            label="Múi giờ"
+            label={t('settingsPage.timezoneLabel')}
             name="timezone"
             rules={[{ required: true }]}
           >
@@ -38,12 +41,12 @@ export default function SettingsPage() {
             </select>
           </AppFormItem>
 
-          <AppFormItem label="Giới hạn rủi ro (%)" name="riskLimit">
+          <AppFormItem label={t('settingsPage.riskLimitLabel')} name="riskLimit">
             <InputNumber min={1} max={20} className="w-full" />
           </AppFormItem>
 
           <AppFormItem
-            label="Gửi email digest hằng ngày"
+            label={t('settingsPage.emailDigestLabel')}
             name="emailDigest"
             valuePropName="checked"
           >
@@ -51,11 +54,11 @@ export default function SettingsPage() {
           </AppFormItem>
 
           <Typography.Paragraph type="secondary">
-            Dữ liệu chỉ là placeholder để minh họa cách tổ chức form base.
+            {t('settingsPage.description')}
           </Typography.Paragraph>
 
           <Button type="primary" htmlType="submit">
-            Lưu thiết lập
+            {t('settingsPage.submit')}
           </Button>
         </AppForm>
       </Card>

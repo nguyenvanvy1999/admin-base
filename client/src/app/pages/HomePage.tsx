@@ -4,6 +4,7 @@ import { PageHeader } from '@client/components/common/PageHeader';
 import { useNotify } from '@client/hooks/useNotify';
 import { useHealthcheckQuery } from '@client/services/healthcheck';
 import { Button, Card, Col, Flex, Row, Statistic, Tag, Typography } from 'antd';
+import { useTranslation } from 'react-i18next';
 
 type PortfolioRow = {
   id: string;
@@ -40,26 +41,26 @@ const mockData: PortfolioRow[] = [
 
 const columns: ProColumns<PortfolioRow>[] = [
   {
-    title: 'Tài sản',
+    title: 'dashboard.columns.asset',
     dataIndex: 'asset',
   },
   {
-    title: 'Phân bổ (%)',
+    title: 'dashboard.columns.allocation',
     dataIndex: 'allocation',
     valueType: 'percent',
   },
   {
-    title: 'Hiệu suất YTD (%)',
+    title: 'dashboard.columns.performance',
     dataIndex: 'performance',
     valueType: 'percent',
   },
   {
-    title: 'Rủi ro',
+    title: 'dashboard.columns.risk',
     dataIndex: 'risk',
     valueEnum: {
-      Low: { text: 'Thấp', status: 'Success' },
-      Medium: { text: 'Trung bình', status: 'Processing' },
-      High: { text: 'Cao', status: 'Error' },
+      Low: { text: 'dashboard.columns.riskLow', status: 'Success' },
+      Medium: { text: 'dashboard.columns.riskMedium', status: 'Processing' },
+      High: { text: 'dashboard.columns.riskHigh', status: 'Error' },
     },
     render: (_, record) => (
       <Tag
@@ -80,20 +81,21 @@ const columns: ProColumns<PortfolioRow>[] = [
 export default function HomePage() {
   const { data, isLoading } = useHealthcheckQuery();
   const notify = useNotify();
+  const { t } = useTranslation();
 
   return (
     <Flex vertical gap={24}>
       <PageHeader
-        title="Bảng điều khiển"
-        subtitle="Kiến trúc base với Ant Design, React Query, Hash Router"
+        title={t('dashboard.title')}
+        subtitle={t('dashboard.subtitle')}
         extra={
           <Button
             type="primary"
             onClick={() =>
-              notify.success('Thông báo mẫu đã được kích hoạt thành công.')
+              notify.success(t('dashboard.notificationMessage'))
             }
           >
-            Gửi thông báo mẫu
+            {t('dashboard.sendSampleNotification')}
           </Button>
         }
       />
@@ -102,7 +104,7 @@ export default function HomePage() {
         <Col span={8}>
           <Card>
             <Statistic
-              title="Tài sản quản lý (AUM)"
+              title={t('dashboard.aumTitle')}
               prefix="$"
               precision={2}
               value={128.6}
@@ -113,7 +115,7 @@ export default function HomePage() {
         <Col span={8}>
           <Card>
             <Statistic
-              title="Lợi nhuận YTD"
+              title={t('dashboard.ytdReturnTitle')}
               value={9.42}
               precision={2}
               suffix="%"
@@ -122,16 +124,18 @@ export default function HomePage() {
         </Col>
         <Col span={8}>
           <Card>
-            <Statistic title="Số lượng danh mục" value={24} />
+            <Statistic title={t('dashboard.portfolioCountTitle')} value={24} />
           </Card>
         </Col>
       </Row>
 
       <Card>
-        <Typography.Title level={4}>Trạng thái hệ thống</Typography.Title>
+        <Typography.Title level={4}>
+          {t('dashboard.systemStatusTitle')}
+        </Typography.Title>
         <Typography.Paragraph type="secondary">
-          API healthcheck:{' '}
-          {isLoading ? 'Đang kiểm tra...' : (data?.status ?? 'Chưa xác định')}
+          {t('dashboard.apiHealthcheckLabel')}{' '}
+          {isLoading ? t('dashboard.checking') : data?.status ?? t('dashboard.unknown')}
         </Typography.Paragraph>
       </Card>
 
@@ -139,7 +143,7 @@ export default function HomePage() {
         <AppTable<PortfolioRow>
           dataSource={mockData}
           columns={columns}
-          headerTitle="Phân bổ danh mục mẫu"
+          headerTitle={t('dashboard.tableTitle')}
           pagination={false}
           search={false}
         />

@@ -125,6 +125,8 @@
   },
   "sidebar": {
     "dashboard": "Bảng điều khiển",
+    "workspaces": "Workspaces",
+    "settings": "Cấu hình",
     "transactions": "Giao dịch",
     "budgets": "Ngân sách",
     "goals": "Mục tiêu",
@@ -880,5 +882,37 @@
       "accountRequired": "Vui lòng chọn tài khoản",
       "defaultDescription": "Thanh toán cho khoản vay #{{id}}"
     }
+  },
+  "dashboard": {
+    "title": "Bảng điều khiển",
+    "subtitle": "Kiến trúc base với Ant Design, React Query, Hash Router",
+    "sendSampleNotification": "Gửi thông báo mẫu",
+    "notificationMessage": "Thông báo mẫu đã được kích hoạt thành công.",
+    "aumTitle": "Tài sản quản lý (AUM)",
+    "ytdReturnTitle": "Lợi nhuận YTD",
+    "portfolioCountTitle": "Số lượng danh mục",
+    "systemStatusTitle": "Trạng thái hệ thống",
+    "apiHealthcheckLabel": "API healthcheck:",
+    "checking": "Đang kiểm tra...",
+    "unknown": "Chưa xác định",
+    "tableTitle": "Phân bổ danh mục mẫu",
+    "columns": {
+      "asset": "Tài sản",
+      "allocation": "Phân bổ (%)",
+      "performance": "Hiệu suất YTD (%)",
+      "risk": "Rủi ro",
+      "riskLow": "Thấp",
+      "riskMedium": "Trung bình",
+      "riskHigh": "Cao"
+    }
+  },
+  "settingsPage": {
+    "title": "Cấu hình",
+    "subtitle": "Trang ví dụ cho Form của Ant Design",
+    "timezoneLabel": "Múi giờ",
+    "riskLimitLabel": "Giới hạn rủi ro (%)",
+    "emailDigestLabel": "Gửi email digest hằng ngày",
+    "description": "Dữ liệu chỉ là placeholder để minh họa cách tổ chức form base.",
+    "submit": "Lưu thiết lập"
   }
 }

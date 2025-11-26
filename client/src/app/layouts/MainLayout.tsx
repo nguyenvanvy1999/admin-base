@@ -6,21 +6,22 @@ import {
 } from '@ant-design/icons';
 import type { ProLayoutProps } from '@ant-design/pro-components';
 import { PageContainer, ProLayout } from '@ant-design/pro-components';
-import { Button, Dropdown, Flex } from 'antd';
+import { Button, Dropdown, Flex, Segmented } from 'antd';
 import { useMemo } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Outlet, useLocation,  } from 'react-router-dom';
 
 const menuRoutes: ProLayoutProps['route'] = {
   routes: [
-    { path: '/', name: 'Bảng điều khiển', icon: <HomeOutlined /> },
-    { path: '/workspace', name: 'Workspaces', icon: <TeamOutlined /> },
-    { path: '/settings', name: 'Cấu hình', icon: <SettingOutlined /> },
+    { path: '/', name: 'sidebar.dashboard', icon: <HomeOutlined /> },
+    { path: '/workspace', name: 'sidebar.workspaces', icon: <TeamOutlined /> },
+    { path: '/settings', name: 'sidebar.settings', icon: <SettingOutlined /> },
   ],
 };
 
 export default function MainLayout() {
   const location = useLocation();
-  const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   const locationProps = useMemo(
     () => ({
@@ -31,7 +32,7 @@ export default function MainLayout() {
 
   return (
     <ProLayout
-      title="Investment Console"
+      title={t('header.appName')}
       layout="mix"
       fixedHeader
       token={{
@@ -44,17 +45,17 @@ export default function MainLayout() {
       }}
       route={menuRoutes}
       location={locationProps}
-      menuItemRender={(item, dom) => (
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => item.path && navigate(item.path)}
-          onKeyDown={() => item.path && navigate(item.path)}
-        >
-          {dom}
-        </div>
-      )}
       actionsRender={() => [
+        <Segmented
+          key="lang"
+          size="small"
+          options={[
+            { label: 'EN', value: 'en' },
+            { label: 'VI', value: 'vi' },
+          ]}
+          value={i18n.language === 'en' ? 'en' : 'vi'}
+          onChange={(val) => i18n.changeLanguage(val as 'en' | 'vi')}
+        />,
         <Button
           key="github"
           type="text"
@@ -69,8 +70,8 @@ export default function MainLayout() {
             key="avatar"
             menu={{
               items: [
-                { key: 'profile', label: 'Hồ sơ' },
-                { key: 'logout', danger: true, label: 'Đăng xuất' },
+                { key: 'profile', label: t('header.profile') },
+                { key: 'logout', danger: true, label: t('header.logout') },
               ],
             }}
           >

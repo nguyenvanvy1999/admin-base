@@ -125,6 +125,8 @@
   },
   "sidebar": {
     "dashboard": "Dashboard",
+    "workspaces": "Workspaces",
+    "settings": "Settings",
     "transactions": "Transactions",
     "budgets": "Budgets",
     "goals": "Goals",
@@ -880,5 +882,37 @@
       "accountRequired": "Please select an account",
       "defaultDescription": "Payment for loan #{{id}}"
     }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Base architecture with Ant Design, React Query, Hash Router",
+    "sendSampleNotification": "Send sample notification",
+    "notificationMessage": "Sample notification was triggered successfully.",
+    "aumTitle": "Assets under management (AUM)",
+    "ytdReturnTitle": "YTD Return",
+    "portfolioCountTitle": "Portfolio count",
+    "systemStatusTitle": "System status",
+    "apiHealthcheckLabel": "API healthcheck:",
+    "checking": "Checking...",
+    "unknown": "Unknown",
+    "tableTitle": "Sample portfolio allocation",
+    "columns": {
+      "asset": "Asset",
+      "allocation": "Allocation (%)",
+      "performance": "YTD performance (%)",
+      "risk": "Risk",
+      "riskLow": "Low",
+      "riskMedium": "Medium",
+      "riskHigh": "High"
+    }
+  },
+  "settingsPage": {
+    "title": "Settings",
+    "subtitle": "Example page for Ant Design Form",
+    "timezoneLabel": "Timezone",
+    "riskLimitLabel": "Risk limit (%)",
+    "emailDigestLabel": "Daily email digest",
+    "description": "Data is just a placeholder to demonstrate base form organization.",
+    "submit": "Save settings"
   }
 }
