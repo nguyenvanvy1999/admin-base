@@ -39,14 +39,6 @@ export default function MainLayout() {
       title={t('header.appName')}
       layout="mix"
       fixedHeader
-      token={{
-        header: {
-          colorBgHeader: '#ffffff',
-        },
-        sider: {
-          colorMenuBackground: '#ffffff',
-        },
-      }}
       route={menuRoutes}
       location={locationProps}
       actionsRender={() => [
