@@ -21,9 +21,6 @@
       ],
       "@server/*": [
         "./src/*"
-      ],
-      "@client/*": [
-        "./client/src/*"
       ]
     }
   }

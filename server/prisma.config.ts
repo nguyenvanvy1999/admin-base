@@ -15,7 +15,8 @@ const loadEnv = (file = '.env') => {
   }
 };
 
-loadEnv();
+loadEnv('../.env');
+loadEnv('.env');
 
 export default defineConfig({
   schema: path.join('./src', 'prisma'),
