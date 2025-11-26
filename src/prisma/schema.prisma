@@ -17,38 +17,6 @@ datasource db {
 // Enums
 // ============================================
 
-// Account types for categorizing user financial accounts
-// NOTE: Deprecated - replaced by LedgerAccountKind. Kept for backward compatibility.
-enum AccountType {
-  cash
-  bank
-  credit_card
-  investment
-}
-
-// Category types for organizing transactions
-// NOTE: Deprecated - replaced by LedgerAccountKind. Kept for backward compatibility.
-enum CategoryType {
-  expense
-  income
-  transfer
-  investment
-  loan
-}
-
-// Transaction types representing different financial operations
-// NOTE: Deprecated - replaced by JournalEntryType. Kept for backward compatibility.
-enum TransactionType {
-  income
-  expense
-  transfer
-  loan_given
-  loan_received
-  repay_debt
-  collect_debt
-  investment
-}
-
 // Entity types for tracking individuals or organizations
 enum EntityType {
   individual
@@ -62,14 +30,6 @@ enum BudgetPeriod {
   quarterly
   yearly
   none
-}
-
-// Frequencies for recurring transactions
-// NOTE: Deprecated - replaced by RecurringTemplateFrequency. Kept for backward compatibility.
-enum RecurringFrequency {
-  daily
-  weekly
-  monthly
 }
 
 // Ledger commodity types (currency, security, property, etc.)
@@ -143,20 +103,6 @@ enum RecurringTemplateStatus {
   active
   paused
   archived
-}
-
-// Trade side for investment transactions
-// NOTE: Deprecated - can use PostingDirection instead. Kept for backward compatibility.
-enum TradeSide {
-  buy
-  sell
-}
-
-// Investment contribution types
-// NOTE: Deprecated - can use PostingDirection instead. Kept for backward compatibility.
-enum ContributionType {
-  deposit
-  withdrawal
 }
 
 // Referral program status
