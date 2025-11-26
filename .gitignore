@@ -48,3 +48,4 @@ package-lock.json
 app_server
 server/src/generated/prisma
 server/app_server
+server/node_modules
