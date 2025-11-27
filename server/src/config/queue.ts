@@ -26,13 +26,6 @@ export const emailQueue = new Queue<SendMailMap, void, EmailType>(
 );
 export type IEmailQueue = typeof emailQueue;
 
-export const p2pQueue = new Queue<{
-  orderId: string;
-}>(QueueName.P2P, {
-  connection: queueConnection,
-  defaultJobOptions: queueJobOptions,
-});
-
 export const auditLogQueue = new Queue<AuditLogEntry>(QueueName.AuditLog, {
   connection: queueConnection,
   defaultJobOptions: {

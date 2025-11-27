@@ -154,15 +154,9 @@ export const PERMISSIONS = {
 };
 
 export enum QueueName {
-  Telegram = 'Telegram',
   Email = 'Email',
-  P2P = 'P2P',
   AuditLog = 'AuditLog',
   BatchAuditLog = 'BatchAuditLog',
-}
-
-export enum P2PJobName {
-  ExpireOrder = 'ExpireOrder',
 }
 
 export enum SETTING {
@@ -193,29 +187,15 @@ export enum CACHE_NS {
   REGISTER_RATE_LIMIT = 'register-rate-limit',
   LOGIN_RATE_LIMIT = 'login-rate-limit',
   CURRENCY = 'currency',
-  NETWORK = 'network',
 }
 
 export enum DB_PREFIX {
   SESSION = 'session',
   USER = 'user',
-  USER_PROFILE = 'profile',
   SETTING = 'setting',
   PERMISSION = 'perm',
   USER_AUTH_PROVIDER = 'user_oauth',
   AUTH_PROVIDER = 'auth_prov',
-  TRANSACTION = 'txn',
-  LEDGER_ENTRY = 'lgr_ent',
-  ACCOUNT = 'acc',
-  ACCOUNT_SNAPSHOT = 'acc_snp',
-  CURRENCY = 'cur',
-  NETWORK = 'net',
-  P2P_USER_PROFILE = 'p2p_prof',
-  P2P_AD = 'p2p_ad',
-  P2P_USER_PAYMENT_ACCOUNT = 'p2p_pay_acc',
-  P2P_ORDER = 'p2p_order',
-  P2P_DISPUTE = 'p2p_dispute',
-  P2P_REVIEW = 'p2p_review',
   REFERRAL = 'ref',
 }
 
@@ -233,9 +213,7 @@ export enum PurposeVerify {
 }
 
 export const SYS_USER_ID = 'user_xs6ua3wp0rtm';
-export const SYS_EMAIL = 'system@notbitco.in';
 export const ADMIN_USER_ID = 'user_a8bpd742rslg';
-export const ADMIN_EMAIL = 'admin@notbitco.in';
 
 export enum OAUTH {
   GOOGLE = 'google',
@@ -243,9 +221,3 @@ export enum OAUTH {
 }
 
 export const IDEMPOTENCY_TTL = 300;
-
-export enum PaymentProviderType {
-  BANK_TRANSFER = 'BANK_TRANSFER',
-  E_WALLET = 'E_WALLET',
-  CRYPTO = 'CRYPTO',
-}

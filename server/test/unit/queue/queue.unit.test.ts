@@ -5,12 +5,10 @@ describe('src/config/queue.ts', () => {
   it('should create all queues with correct options when module is imported', async () => {
     const mod = await import('src/config/queue');
     expect(mod.emailQueue).toBeDefined();
-    expect(mod.p2pQueue).toBeDefined();
     expect(mod.auditLogQueue).toBeDefined();
     expect(mod.batchLogQueue).toBeDefined();
 
     expect(mod.emailQueue.name).toBe('Email');
-    expect(mod.p2pQueue.name).toBe('P2P');
     expect(mod.auditLogQueue.name).toBe('AuditLog');
     expect(mod.batchLogQueue.name).toBe('BatchAuditLog');
 
@@ -22,11 +20,6 @@ describe('src/config/queue.ts', () => {
     expect(mod.emailQueue?.opts?.connection).toBeDefined();
     expect(
       mod.emailQueue?.opts?.defaultJobOptions?.removeOnComplete,
-    ).toMatchObject(jobOptions);
-
-    expect(mod.p2pQueue?.opts?.connection).toBeDefined();
-    expect(
-      mod.p2pQueue?.opts?.defaultJobOptions?.removeOnComplete,
     ).toMatchObject(jobOptions);
   });
 

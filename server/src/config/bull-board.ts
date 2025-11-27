@@ -4,12 +4,7 @@ import { ElysiaAdapter } from '@bull-board/elysia';
 import type { Elysia } from 'elysia';
 import { env } from 'src/config/env';
 import { logger } from 'src/config/logger';
-import {
-  auditLogQueue,
-  batchLogQueue,
-  emailQueue,
-  p2pQueue,
-} from 'src/config/queue';
+import { auditLogQueue, batchLogQueue, emailQueue } from 'src/config/queue';
 
 export const bullBoardConfig = () => (app: Elysia) => {
   if (env.ENB_BULL_BOARD) {
@@ -18,7 +13,6 @@ export const bullBoardConfig = () => (app: Elysia) => {
     createBullBoard({
       queues: [
         new BullMQAdapter(emailQueue),
-        new BullMQAdapter(p2pQueue),
         new BullMQAdapter(auditLogQueue),
         new BullMQAdapter(batchLogQueue),
       ],
