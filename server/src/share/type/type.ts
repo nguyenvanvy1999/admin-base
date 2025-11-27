@@ -1,5 +1,5 @@
 import type { JWTPayload } from 'jose';
-import type { PrismaClient, User } from 'src/generated';
+import type { PrismaClient, User, UserStatus } from 'src/generated';
 import type { Paths } from 'type-fest';
 import {
   ACTIVITY_TYPE,
@@ -51,7 +51,13 @@ export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
   [ACTIVITY_TYPE.REVOKE_SESSION]: {
     sessionId: string;
   };
-  [ACTIVITY_TYPE.RESET_MFA]: Record<string, never>;
+  [ACTIVITY_TYPE.RESET_MFA]: {
+    method?: string;
+    reason?: string;
+    actorId?: string;
+    targetUserId?: string;
+    previouslyEnabled?: boolean;
+  };
   [ACTIVITY_TYPE.CREATE_IP_WHITELIST]: {
     ip: string;
     note?: string;
@@ -75,6 +81,11 @@ export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
     enabled?: boolean;
     roleIds?: string[];
     username?: string;
+    status?: UserStatus;
+    previousStatus?: UserStatus;
+    reason?: string;
+    actorId?: string;
+    action?: string;
   };
   [ACTIVITY_TYPE.INTERNAL_ERROR]: Record<string, any>;
   [ACTIVITY_TYPE.P2P_ORDER_EXPIRED]: {

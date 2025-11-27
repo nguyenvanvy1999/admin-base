@@ -24,6 +24,7 @@ export enum DOC_TAG {
   ADMIN_ROLE = 'Admin Role',
   ADMIN_PERMISSION = 'Admin Permission',
   ADMIN_SETTING = 'Admin Setting',
+  ADMIN_USER = 'Admin User',
   ADMIN_SESSION = 'Admin Session',
   ADMIN_TELEGRAM = 'Admin Telegram',
 }
@@ -120,6 +121,10 @@ export const DOC_OPTIONS = {
     adminSetting: {
       name: DOC_TAG.ADMIN_SETTING,
       description: 'Admin setting endpoints',
+    },
+    adminUser: {
+      name: DOC_TAG.ADMIN_USER,
+      description: 'Admin user management endpoints',
     },
     adminTelegram: {
       name: DOC_TAG.ADMIN_TELEGRAM,

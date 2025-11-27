@@ -48,8 +48,7 @@ khi bắt đầu task.
 7. **Comment**: chỉ khi cần thiết, tiếng Anh, ngắn gọn giải thích intent.
 8. **Error handling**: backend throw Error để middleware chuẩn hóa; frontend luôn kiểm tra `response.error`.
 9. **Security**: password dùng `Bun.password.hash` (bcrypt). JWT qua header `Authorization: Bearer`.
-10. **Tests**: services phải có unit test trong `server/test/unit`. Business logic quan trọng cần integration test.
-    Không merge code chưa test nếu ảnh hưởng core flow (transactions, P&L).
+
 
 ### 5. Workflow chuẩn khi tạo feature backend
 
@@ -58,7 +57,7 @@ khi bắt đầu task.
 3. Tạo controller group (`modules/<domain>/controllers`), apply macro auth, schema.
 4. Đăng ký module trong `modules/index.ts` hoặc entrypoint tương ứng.
 5. Cập nhật Swagger tags nếu cần (config swagger).
-6. Viết test (unit + fixtures nếu cần).
+6. Viết test (unit + fixtures khi user yêu cầu rõ ràng).
 
 ### 6. Workflow chuẩn khi tạo feature frontend
 
