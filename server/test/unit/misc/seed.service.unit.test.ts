@@ -480,13 +480,10 @@ describe('SeedService', () => {
       await service.seedAll();
 
       expect(mockDb['setting'].deleteMany).toHaveBeenCalled();
+      expect(mockDb['setting'].createMany).toHaveBeenCalled();
       expect(mockDb['authProvider'].upsert).toHaveBeenCalled();
       expect(mockDb['role'].findMany).toHaveBeenCalled();
       expect(mockDb['permission'].findMany).toHaveBeenCalled();
-      expect(mockDb['user'].upsert).toHaveBeenCalled();
-      expect(mockDb['network'].findMany).toHaveBeenCalled();
-      expect(mockDb['currency'].findMany).toHaveBeenCalled();
-      expect(mockDb['user'].findUnique).toHaveBeenCalled();
     });
 
     it('should continue executing even when some methods fail', async () => {

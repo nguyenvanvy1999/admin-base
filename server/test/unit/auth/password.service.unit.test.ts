@@ -13,7 +13,7 @@ describe('PasswordService', () => {
   beforeEach(() => {
     envMock = {
       PASSWORD_PEPPER: '_SECRETPEPPER_',
-      PASSWORD_EXPIRED: 600, // 10 minutes
+      PASSWORD_EXPIRED: '10 minutes', // 10 minutes
     };
     dbMock = {
       user: {

@@ -3,6 +3,7 @@ import { opentelemetry } from '@elysiajs/opentelemetry';
 import { serverTiming } from '@elysiajs/server-timing';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-node';
+import { bullBoardConfig } from '@server/config/bull-board';
 import type { RedisClient } from 'bun';
 import { Elysia } from 'elysia';
 import { rateLimit } from 'elysia-rate-limit';
@@ -29,8 +30,6 @@ import { adminAuthMiddleware } from 'src/service/auth/auth.middleware';
 import { gracefulShutdownService } from 'src/service/misc/graceful-shutdown.service';
 import { httpLoggerMiddleware } from 'src/service/misc/http-logger.middleware';
 import { APP_ENV } from 'src/share';
-import adminPage from 'src/share/ui/admin.html';
-import adminLoginPage from 'src/share/ui/admin-login.html';
 
 export class BackendServerService {
   constructor(
@@ -55,7 +54,6 @@ export class BackendServerService {
     const app = new Elysia({
       aot: true,
       serve: {
-        routes: { '/': adminLoginPage, '/admin': adminPage },
         maxRequestBodySize: 1024 * 1024 * this.deps.env.REQ_BODY_MAX_SIZE_MB,
         idleTimeout: this.deps.env.REQ_TIMEOUT_SECOND,
       },
@@ -69,7 +67,7 @@ export class BackendServerService {
       .use(httpError())
       .use(rateLimit({ max: 300 }))
       .onBeforeHandle(adminAuthMiddleware)
-      // .use(bullBoardConfig()) // TODO: Install @bull-board packages or remove
+      .use(bullBoardConfig())
       .use(swaggerConfig())
       .group(this.deps.env.API_PREFIX, (app) =>
         app
