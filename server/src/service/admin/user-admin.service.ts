@@ -1,9 +1,9 @@
+import { db, type IDb } from 'src/config/db';
+import { UserStatus, type UserUncheckedUpdateInput } from 'src/generated';
 import type {
   AdminUserActionResDto,
   AdminUserUpdateDto,
-} from '@server/modules/admin/dtos';
-import { db, type IDb } from 'src/config/db';
-import { UserStatus } from 'src/generated';
+} from 'src/modules/admin/dtos';
 import {
   type SessionService,
   sessionService,
@@ -201,20 +201,12 @@ export class AdminUserService {
       }
     }
 
-    let latestUser = existingUser;
     if (hasScalarUpdate) {
-      latestUser = await this.deps.db.user.update({
+      await this.deps.db.user.update({
         where: { id: targetUserId },
-        data: updateData as Parameters<IDb['user']['update']>[0]['data'],
-        select: updateUserSelect,
+        data: updateData as UserUncheckedUpdateInput,
+        select: { id: true },
       });
-    }
-
-    if (normalizedRoleIds !== undefined) {
-      latestUser = {
-        ...latestUser,
-        roles: normalizedRoleIds.map((roleId) => ({ roleId })),
-      };
     }
 
     const shouldRevokeSessions =

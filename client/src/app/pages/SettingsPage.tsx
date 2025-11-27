@@ -1,5 +1,3 @@
-import { AppForm, AppFormItem } from '@client/components/common/AppForm';
-import { PageHeader } from '@client/components/common/PageHeader';
 import {
   Button,
   Card,
@@ -10,6 +8,8 @@ import {
   Typography,
 } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { AppForm, AppFormItem } from 'src/components/common/AppForm';
+import { PageHeader } from 'src/components/common/PageHeader';
 
 type SettingForm = {
   timezone: string;

@@ -1,4 +1,4 @@
-import { useAuth as useAuthContext } from '@client/app/providers/AuthProvider';
+import { useAuth as useAuthContext } from 'src/app/providers/AuthProvider';
 
 export { useAuthContext as useAuth };
 

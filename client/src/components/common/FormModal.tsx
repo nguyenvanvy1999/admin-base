@@ -1,8 +1,8 @@
-import { AppForm } from '@client/components/common/AppForm';
-import { AppModal } from '@client/components/common/AppModal';
 import type { FormProps } from 'antd';
 import { Button, Form, Space } from 'antd';
 import type { ReactNode } from 'react';
+import { AppForm } from 'src/components/common/AppForm';
+import { AppModal } from 'src/components/common/AppModal';
 
 export interface FormModalProps<
   T extends Record<string, unknown> = Record<string, unknown>,

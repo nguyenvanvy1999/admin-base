@@ -1,8 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import {
   healthcheckKeys,
   healthcheckService,
-} from '@client/services/api/healthcheck.service';
-import { useQuery } from '@tanstack/react-query';
+} from 'src/services/api/healthcheck.service';
 
 export function useHealthcheck() {
   return useQuery({

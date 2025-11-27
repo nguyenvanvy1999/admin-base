@@ -95,7 +95,7 @@ export const authService = {
 
 ### 2.4 Swagger & Eden Treaty
 
-`config/swagger.ts` đăng ký schemas/tags; `DOC_TAG` trong `share/constant` dùng để gom endpoints (AUTH, MFA, ADMIN_ROLE, MISC,...). Eden Treaty trên frontend tiêu thụ trực tiếp schema của app (qua `@server` alias).
+`config/swagger.ts` đăng ký schemas/tags; `DOC_TAG` trong `share/constant` dùng để gom endpoints (AUTH, MFA, ADMIN_ROLE, MISC,...). Eden Treaty trên frontend tiêu thụ trực tiếp schema của app (qua `src` alias).
 
 ### 2.5 Background / infra services
 

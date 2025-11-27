@@ -1,10 +1,10 @@
-import { handleApiError } from '@client/lib/api/errorHandler';
 import type {
   UseMutationOptions,
   UseMutationResult,
 } from '@tanstack/react-query';
 import { useMutation as useReactMutation } from '@tanstack/react-query';
 import { message } from 'antd';
+import { handleApiError } from 'src/lib/api/errorHandler';
 
 export function useAppMutation<
   TData = unknown,

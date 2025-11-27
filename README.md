@@ -151,7 +151,7 @@ client/src/
 - **Services**: tạo file mới ở `client/src/services/*`, expose hàm fetch + hook `useXxxQuery`.
 - **State**: dùng `useState` cho local UI, dữ liệu server đi qua React Query (không sử dụng Redux/Zustand).
 - **Styling**: Ưu tiên AntD token + Tailwind utility trong `global.css`. Token chung nằm ở `client/styles/tokens.css`.
-- **Alias import**: sử dụng `@client/app`, `@client/components`, `@client/lib`, `@client/services`… đã cấu hình trong `tsconfig.json`.
+- **Alias import**: sử dụng `src/app`, `src/components`, `src/lib`, `src/services`… đã cấu hình trong `tsconfig.json`.
 
 ## Features
 

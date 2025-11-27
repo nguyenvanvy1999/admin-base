@@ -258,7 +258,7 @@ bun run db:generate
 ### Types Not Syncing
 
 1. Restart dev server
-2. Kiểm tra `@server` path alias trong `tsconfig.json`
+2. Kiểm tra `src` path alias trong `tsconfig.json`
 3. Verify Eden Treaty configuration
 
 ### Bun Not Found

@@ -1,6 +1,6 @@
-import { useAuth } from '@client/hooks/auth/useAuth';
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
+import { useAuth } from 'src/hooks/auth/useAuth';
 import { FullScreenLoader } from './FullScreenLoader';
 
 interface ProtectedRouteProps {

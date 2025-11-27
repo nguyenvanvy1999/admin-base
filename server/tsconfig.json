@@ -15,13 +15,5 @@
     "strictNullChecks": true,
     "skipLibCheck": true,
     "baseUrl": ".",
-    "paths": {
-      "@server": [
-        "./src/index.ts"
-      ],
-      "@server/*": [
-        "./src/*"
-      ]
-    }
   }
 }

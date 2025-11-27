@@ -1,7 +1,7 @@
-import { AppDrawer } from '@client/components/common/AppDrawer';
-import { PageHeader } from '@client/components/common/PageHeader';
 import { Button, Card, Flex, List, Space, Tag, Typography } from 'antd';
 import { useState } from 'react';
+import { AppDrawer } from 'src/components/common/AppDrawer';
+import { PageHeader } from 'src/components/common/PageHeader';
 
 const workstreams = [
   {

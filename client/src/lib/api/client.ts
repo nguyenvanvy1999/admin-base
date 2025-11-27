@@ -1,11 +1,11 @@
-import { ACCESS_TOKEN_KEY } from '@client/constants';
-import { parseApiError } from '@client/lib/api/errorHandler';
-import type { ApiResponse } from '@client/types/api';
 import axios, {
   AxiosHeaders,
   type AxiosInstance,
   type AxiosRequestConfig,
 } from 'axios';
+import { ACCESS_TOKEN_KEY } from 'src/constants';
+import { parseApiError } from 'src/lib/api/errorHandler';
+import type { ApiResponse } from 'src/types/api';
 
 class ApiClient {
   private instance: AxiosInstance;

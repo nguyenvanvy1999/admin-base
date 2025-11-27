@@ -1,5 +1,5 @@
-import { apiClient } from '@client/lib/api/client';
-import { createQueryKeys } from '@client/services/api/base.service';
+import { apiClient } from 'src/lib/api/client';
+import { createQueryKeys } from 'src/services/api/base.service';
 
 export interface HealthcheckResponse {
   status: string;

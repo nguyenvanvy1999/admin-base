@@ -1,6 +1,6 @@
-import type { SortOrder } from '@client/types/common';
 import type { PaginationProps } from 'antd';
 import { useCallback, useMemo, useState } from 'react';
+import type { SortOrder } from 'src/types/common';
 
 export interface UseTableOptions {
   defaultPageSize?: number;

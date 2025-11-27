@@ -1,6 +1,6 @@
-import type { ApiErrorResponse } from '@client/types/api';
 import { message } from 'antd';
 import type { AxiosError } from 'axios';
+import type { ApiErrorResponse } from 'src/types/api';
 
 export interface ApiError extends Error {
   statusCode?: number;

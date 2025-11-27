@@ -1,10 +1,10 @@
 import type { ProColumns } from '@ant-design/pro-components';
-import { AppTable } from '@client/components/common/AppTable';
-import { PageHeader } from '@client/components/common/PageHeader';
-import { useHealthcheck } from '@client/hooks/api/useHealthcheck';
-import { useNotify } from '@client/hooks/useNotify';
 import { Button, Card, Col, Flex, Row, Statistic, Tag, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { AppTable } from 'src/components/common/AppTable';
+import { PageHeader } from 'src/components/common/PageHeader';
+import { useHealthcheck } from 'src/hooks/api/useHealthcheck';
+import { useNotify } from 'src/hooks/useNotify';
 
 type PortfolioRow = {
   id: string;

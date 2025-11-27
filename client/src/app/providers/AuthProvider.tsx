@@ -1,8 +1,8 @@
-import { apiClient } from '@client/lib/api/client';
-import { authService, type User } from '@client/services/api/auth.service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
+import { apiClient } from 'src/lib/api/client';
+import { authService, type User } from 'src/services/api/auth.service';
 
 interface AuthContextValue {
   user: User | null;

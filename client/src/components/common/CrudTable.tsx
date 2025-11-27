@@ -1,9 +1,9 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
-import { confirmModal } from '@client/components/common/AppModal';
-import { AppTable } from '@client/components/common/AppTable';
 import { Button, Space } from 'antd';
 import { useState } from 'react';
+import { confirmModal } from 'src/components/common/AppModal';
+import { AppTable } from 'src/components/common/AppTable';
 
 export interface CrudTableProps<T extends Record<string, unknown>> {
   dataSource?: T[];

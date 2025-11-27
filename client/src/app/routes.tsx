@@ -1,6 +1,6 @@
-import { ProtectedRoute } from '@client/components/common/ProtectedRoute';
 import { lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { ProtectedRoute } from 'src/components/common/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
 
 const HomePage = lazy(() => import('./pages/HomePage'));

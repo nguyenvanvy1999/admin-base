@@ -1,4 +1,3 @@
-import type { ThemeMode } from '@client/config/theme';
 import {
   createContext,
   type Dispatch,
@@ -8,6 +7,7 @@ import {
   useEffect,
   useState,
 } from 'react';
+import type { ThemeMode } from 'src/config/theme';
 
 type ThemeModeContextValue = {
   mode: ThemeMode;

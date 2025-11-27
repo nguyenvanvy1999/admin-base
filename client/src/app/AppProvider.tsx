@@ -1,12 +1,3 @@
-import { AuthProvider } from '@client/app/providers/AuthProvider';
-import {
-  ThemeModeProvider,
-  useThemeMode,
-} from '@client/app/providers/ThemeModeProvider';
-import { ErrorBoundary } from '@client/components/common/ErrorBoundary';
-import { FullScreenLoader } from '@client/components/common/FullScreenLoader';
-import { getThemeConfig } from '@client/config/theme';
-import { queryClient } from '@client/lib/queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { App as AntdApp, ConfigProvider } from 'antd';
@@ -15,6 +6,15 @@ import viVN from 'antd/locale/vi_VN';
 import { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from 'src/app/providers/AuthProvider';
+import {
+  ThemeModeProvider,
+  useThemeMode,
+} from 'src/app/providers/ThemeModeProvider';
+import { ErrorBoundary } from 'src/components/common/ErrorBoundary';
+import { FullScreenLoader } from 'src/components/common/FullScreenLoader';
+import { getThemeConfig } from 'src/config/theme';
+import { queryClient } from 'src/lib/queryClient';
 import { AppRoutes } from './routes';
 
 function AppContent() {

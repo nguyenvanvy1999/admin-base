@@ -1,5 +1,5 @@
-import { apiClient } from '@client/lib/api/client';
-import type { PaginatedResponse, PaginationParams } from '@client/types/api';
+import { apiClient } from 'src/lib/api/client';
+import type { PaginatedResponse, PaginationParams } from 'src/types/api';
 
 export abstract class BaseService<
   T,

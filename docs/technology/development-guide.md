@@ -99,7 +99,7 @@ export type MyEntityFormData = {
 ```typescript
 // client/hooks/queries/useMyEntityQueries.ts
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@client/libs/api";
+import { api } from "src/libs/api";
 
 export const useMyEntitiesQuery = (query = {}) => {
     return useQuery({
@@ -120,9 +120,9 @@ export const useMyEntitiesQuery = (query = {}) => {
 ```typescript
 // client/hooks/mutations/useMyEntityMutations.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import useToast from "@client/hooks/useToast";
-import { api } from "@client/libs/api";
-import type { MyEntityFormData } from "@client/types/myentity";
+import useToast from "src/hooks/useToast";
+import { api } from "src/libs/api";
+import type { MyEntityFormData } from "src/types/myentity";
 
 export const useCreateMyEntityMutation = () => {
     const { showError, showSuccess } = useToast();
@@ -151,8 +151,8 @@ export const useCreateMyEntityMutation = () => {
 
 ```typescript
 // client/pages/MyEntityPage.tsx
-import { useMyEntitiesQuery } from "@client/hooks/queries/useMyEntityQueries";
-import { useCreateMyEntityMutation } from "@client/hooks/mutations/useMyEntityMutations";
+import { useMyEntitiesQuery } from "src/hooks/queries/useMyEntityQueries";
+import { useCreateMyEntityMutation } from "src/hooks/mutations/useMyEntityMutations";
 
 const MyEntityPage = () => {
     const { data, isLoading } = useMyEntitiesQuery();
@@ -218,7 +218,7 @@ const router = createHashRouter([
 ### Bước 2: Tạo Page Component (`client/pages/NewPage.tsx`)
 
 ```typescript
-import useUserStore from "@client/store/user";
+import useUserStore from "src/store/user";
 
 const NewPage = () => {
     const { user } = useUserStore(); // Access user
@@ -267,7 +267,7 @@ async ({ user }) => {
 ### 4. Types không sync giữa frontend/backend
 
 - Restart dev server để regenerate types
-- Kiểm tra `@server` path alias trong tsconfig.json
+- Kiểm tra `src` path alias trong tsconfig.json
 - Verify Eden Treaty được cấu hình đúng
 
 ### 5. Query không refetch sau mutation

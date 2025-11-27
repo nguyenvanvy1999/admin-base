@@ -1,6 +1,6 @@
-import { useAppMutation } from '@client/hooks/api/useMutation';
 import type { FormInstance } from 'antd';
 import { useCallback } from 'react';
+import { useAppMutation } from 'src/hooks/api/useMutation';
 
 interface UseFormSubmitOptions<TData, TVariables> {
   mutationFn: (variables: TVariables) => Promise<TData>;
