@@ -109,6 +109,11 @@ export const registerRateLimitCache = new RedisCache<number>({
 });
 export type IRegisterRateLimitCache = typeof registerRateLimitCache;
 
+export const loginRateLimitCache = new RedisCache<number>({
+  namespace: CACHE_NS.LOGIN_RATE_LIMIT,
+});
+export type ILoginRateLimitCache = typeof loginRateLimitCache;
+
 export const captchaCache = new RedisCache<string>({
   namespace: 'captcha',
   ttl: FIVE_MINUTES,

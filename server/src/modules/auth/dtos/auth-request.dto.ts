@@ -30,6 +30,12 @@ export const RefreshTokenRequestDto = t.Object({
   token: t.String({ minLength: 1 }),
 });
 
+export const ConfirmMfaLoginRequestDto = t.Object({
+  mfaToken: t.String({ minLength: 1 }),
+  loginToken: t.String({ minLength: 1 }),
+  otp: t.String({ minLength: 6, maxLength: 6 }),
+});
+
 export const ReferralRequestDto = t.Object({
   refCode: t.String({ minLength: 1 }),
 });

@@ -1,9 +1,10 @@
 import { Elysia, t } from 'elysia';
-import { registerRateLimitCache } from 'src/config/cache';
+import { loginRateLimitCache, registerRateLimitCache } from 'src/config/cache';
 import { env } from 'src/config/env';
 import { reqMeta } from 'src/config/request';
 import {
   ChangePasswordRequestDto,
+  ConfirmMfaLoginRequestDto,
   ForgotPasswordRequestDto,
   LoginRequestDto,
   LoginResDto,
@@ -35,6 +36,23 @@ export const authBaseController = new Elysia({
   .post(
     '/login',
     async ({ body: { email, password }, clientIp, userAgent }) => {
+      const normalizedEmail = normalizeEmail(email);
+      const rateLimitKey = `login:${clientIp}:${normalizedEmail}`;
+      const currentAttempts =
+        (await loginRateLimitCache.get(rateLimitKey)) ?? 0;
+
+      if (currentAttempts >= env.LOGIN_RATE_LIMIT_MAX) {
+        throw new BadReqErr(ErrCode.BadRequest, {
+          errors: 'Too many login attempts. Please try again later.',
+        });
+      }
+
+      await loginRateLimitCache.set(
+        rateLimitKey,
+        currentAttempts + 1,
+        env.LOGIN_RATE_LIMIT_WINDOW_SECONDS,
+      );
+
       const result = await authService.login({
         email,
         password,
@@ -51,6 +69,32 @@ export const authBaseController = new Elysia({
       },
       response: {
         200: ResWrapper(LoginResponseDto),
+        400: ErrorResDto,
+        404: ErrorResDto,
+        500: ErrorResDto,
+      },
+    },
+  )
+  .post(
+    '/login/mfa/confirm',
+    async ({ body: { mfaToken, loginToken, otp }, clientIp, userAgent }) => {
+      const result = await authService.confirmMfaLogin({
+        mfaToken,
+        loginToken,
+        otp,
+        clientIp,
+        userAgent,
+      });
+      return castToRes(result);
+    },
+    {
+      body: ConfirmMfaLoginRequestDto,
+      detail: {
+        description: 'Confirm MFA login with OTP',
+        summary: 'Confirm MFA login',
+      },
+      response: {
+        200: ResWrapper(LoginResDto),
         400: ErrorResDto,
         404: ErrorResDto,
         500: ErrorResDto,

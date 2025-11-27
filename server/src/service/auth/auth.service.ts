@@ -1,4 +1,10 @@
 import dayjs from 'dayjs';
+import { authenticator } from 'otplib';
+import {
+  type ILoginRateLimitCache,
+  loginRateLimitCache,
+  mfaCache,
+} from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import { UserStatus } from 'src/generated';
@@ -90,6 +96,14 @@ type LogoutParams = {
   userAgent: string;
 };
 
+type ConfirmMfaLoginParams = {
+  mfaToken: string;
+  loginToken: string;
+  otp: string;
+  clientIp: string;
+  userAgent: string;
+};
+
 export class AuthService {
   constructor(
     private readonly deps: {
@@ -105,6 +119,9 @@ export class AuthService {
       auditLogService: AuditLogService;
       referralService: ReferralService;
       userUtilService: UserUtilService;
+      loginRateLimitCache: ILoginRateLimitCache;
+      mfaCache: typeof mfaCache;
+      authenticator: typeof authenticator;
     } = {
       db,
       env,
@@ -118,36 +135,137 @@ export class AuthService {
       auditLogService,
       referralService,
       userUtilService,
+      loginRateLimitCache,
+      mfaCache,
+      authenticator,
     },
   ) {}
 
   async login(params: LoginParams): Promise<ILoginResponse> {
     const { email, password, clientIp, userAgent } = params;
 
-    const user = await this.findUserByEmail(email);
-    this.validateUserForLogin(user);
+    this.validateLoginInput(email, password);
+
+    await this.checkRateLimit(email, clientIp);
+
+    const user = await this.findAndValidateUser(email);
 
     const { enbAttempt, enbExpired } =
       await this.deps.settingService.password();
+
     this.validatePasswordAttempts(user, enbAttempt);
 
-    await this.validatePassword(password, user);
+    const passwordValid = await this.validatePasswordAndAttempts(
+      password,
+      user,
+    );
+    if (!passwordValid) {
+      await this.logFailedLoginAttempt(email, clientIp, userAgent, {
+        reason: 'password_mismatch',
+        userId: user.id,
+      });
+      throw new BadReqErr(ErrCode.PasswordNotMatch);
+    }
 
     if (user.status !== UserStatus.active) {
+      await this.logFailedLoginAttempt(email, clientIp, userAgent, {
+        reason: 'user_not_active',
+        userId: user.id,
+      });
       throw new BadReqErr(ErrCode.UserNotActive);
     }
 
     this.validatePasswordExpiration(user, enbExpired);
 
     if (user.mfaTotpEnabled) {
-      return this.handleMfaLogin(user);
+      return this.handleMfaLogin(user, clientIp, userAgent);
     }
 
+    return this.handleSuccessfulLogin(user, clientIp, userAgent);
+  }
+
+  private validateLoginInput(email: string, password: string): void {
+    if (!email || !email.trim()) {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'Email is required',
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'Invalid email format',
+      });
+    }
+
+    if (!password || !password.trim()) {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'Password is required',
+      });
+    }
+  }
+
+  private async checkRateLimit(email: string, clientIp: string): Promise<void> {
+    const normalizedEmail = normalizeEmail(email);
+    const rateLimitKey = `login:${clientIp}:${normalizedEmail}`;
+    const currentAttempts =
+      (await this.deps.loginRateLimitCache.get(rateLimitKey)) ?? 0;
+
+    if (currentAttempts >= this.deps.env.LOGIN_RATE_LIMIT_MAX) {
+      throw new BadReqErr(ErrCode.BadRequest, {
+        errors: 'Too many login attempts. Please try again later.',
+      });
+    }
+
+    await this.deps.loginRateLimitCache.set(
+      rateLimitKey,
+      currentAttempts + 1,
+      this.deps.env.LOGIN_RATE_LIMIT_WINDOW_SECONDS,
+    );
+  }
+
+  private async findAndValidateUser(email: string) {
+    const normalizedEmail = normalizeEmail(email);
+    const user = await this.deps.db.user.findUnique({
+      where: { email: normalizedEmail },
+      include: { roles: true },
+    });
+
+    if (!user || !user.password) {
+      throw new NotFoundErr(ErrCode.UserNotFound);
+    }
+
+    return user;
+  }
+
+  private async validatePasswordAndAttempts(
+    password: string,
+    user: { id: string; password: string },
+  ): Promise<boolean> {
+    const match = await this.deps.passwordService.comparePassword(
+      password,
+      user.password,
+    );
+
+    if (!match) {
+      await this.deps.passwordService.increasePasswordAttempt(user.id);
+      return false;
+    }
+
+    return true;
+  }
+
+  private async handleSuccessfulLogin(
+    user: Parameters<typeof this.deps.userUtilService.completeLogin>[0],
+    clientIp: string,
+    userAgent: string,
+  ): Promise<ILoginResponse> {
     const loginRes = await this.deps.userUtilService.completeLogin(
       user,
       clientIp,
       userAgent,
     );
+
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.LOGIN,
       payload: { method: 'email' },
@@ -155,27 +273,60 @@ export class AuthService {
       ip: clientIp,
       userAgent,
     });
+
     return loginRes;
   }
 
-  private async findUserByEmail(email: string) {
-    const user = await this.deps.db.user.findUnique({
-      where: { email },
-      include: { roles: true },
+  private async logFailedLoginAttempt(
+    email: string,
+    clientIp: string,
+    userAgent: string,
+    metadata: { reason: string; userId?: string },
+  ): Promise<void> {
+    await this.deps.auditLogService.push({
+      type: ACTIVITY_TYPE.LOGIN,
+      payload: {
+        method: 'email',
+        error: metadata.reason,
+      } as any,
+      userId: metadata.userId ?? null,
+      ip: clientIp,
+      userAgent,
     });
-    if (!user) {
-      throw new NotFoundErr(ErrCode.UserNotFound);
-    }
-    if (!user.password) {
-      throw new NotFoundErr(ErrCode.PasswordNotSet);
-    }
-    return user;
   }
 
-  private validateUserForLogin(user: { password: string | null }): void {
-    if (!user.password) {
-      throw new NotFoundErr(ErrCode.PasswordNotSet);
-    }
+  private async handleMfaLogin(
+    user: {
+      id: string;
+      mfaTotpEnabled: boolean;
+      totpSecret: string | null;
+    },
+    clientIp: string,
+    userAgent: string,
+  ): Promise<ILoginResponse> {
+    const loginToken = IdUtil.token16();
+    const mfaToken = await this.deps.mfaUtilService.createSession({
+      loginToken,
+      user: {
+        id: user.id,
+        mfaTotpEnabled: user.mfaTotpEnabled,
+        totpSecret: user.totpSecret,
+      },
+    });
+
+    await this.deps.auditLogService.push({
+      type: ACTIVITY_TYPE.LOGIN,
+      payload: { method: 'email' },
+      userId: user.id,
+      ip: clientIp,
+      userAgent,
+    });
+
+    return {
+      type: LoginResType.MFA_CONFIRM,
+      loginToken,
+      mfaToken,
+    } as typeof LoginMFAResDto.static;
   }
 
   private validatePasswordAttempts(
@@ -190,23 +341,6 @@ export class AuthService {
     }
   }
 
-  private async validatePassword(
-    password: string,
-    user: { id: string; password: string | null },
-  ): Promise<void> {
-    if (!user.password) {
-      throw new NotFoundErr(ErrCode.PasswordNotSet);
-    }
-    const match = await this.deps.passwordService.comparePassword(
-      password,
-      user.password,
-    );
-    if (!match) {
-      await this.deps.passwordService.increasePasswordAttempt(user.id);
-      throw new BadReqErr(ErrCode.PasswordNotMatch);
-    }
-  }
-
   private validatePasswordExpiration(
     user: { passwordExpired: Date | null },
     enbExpired: boolean,
@@ -218,27 +352,6 @@ export class AuthService {
     ) {
       throw new BadReqErr(ErrCode.PasswordExpired);
     }
-  }
-
-  private async handleMfaLogin(user: {
-    id: string;
-    mfaTotpEnabled: boolean;
-    totpSecret: string | null;
-  }) {
-    const loginToken = IdUtil.token16();
-    const mfaToken = await this.deps.mfaUtilService.createSession({
-      loginToken,
-      user: {
-        id: user.id,
-        mfaTotpEnabled: user.mfaTotpEnabled,
-        totpSecret: user.totpSecret,
-      },
-    });
-    return {
-      type: LoginResType.MFA_CONFIRM,
-      loginToken,
-      mfaToken,
-    } as typeof LoginMFAResDto.static;
   }
 
   async register(params: RegisterParams): Promise<{ otpToken: string } | null> {
@@ -557,6 +670,78 @@ export class AuthService {
     });
 
     await this.deps.sessionService.revoke(userId);
+  }
+
+  async confirmMfaLogin(params: ConfirmMfaLoginParams): Promise<ILoginRes> {
+    const { mfaToken, loginToken, otp, clientIp, userAgent } = params;
+
+    if (!mfaToken || !loginToken || !otp) {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'mfaToken, loginToken, and otp are required',
+      });
+    }
+
+    const cacheKey = this.deps.mfaUtilService.getKey(mfaToken, loginToken);
+    const cachedData = await this.deps.mfaCache.get(cacheKey);
+
+    if (!cachedData) {
+      await this.logFailedLoginAttempt('', clientIp, userAgent, {
+        reason: 'mfa_session_expired',
+      });
+      throw new BadReqErr(ErrCode.SessionExpired);
+    }
+
+    const user = await this.deps.db.user.findUnique({
+      where: { id: cachedData.userId },
+      include: { roles: true },
+    });
+
+    if (!user || !user.totpSecret) {
+      await this.logFailedLoginAttempt('', clientIp, userAgent, {
+        reason: 'mfa_user_not_found',
+        userId: cachedData.userId,
+      });
+      throw new NotFoundErr(ErrCode.UserNotFound);
+    }
+
+    const isValidOtp = this.deps.authenticator.verify({
+      secret: user.totpSecret,
+      token: otp,
+    });
+
+    if (!isValidOtp) {
+      await this.logFailedLoginAttempt(user.email, clientIp, userAgent, {
+        reason: 'mfa_invalid_otp',
+        userId: user.id,
+      });
+      throw new BadReqErr(ErrCode.InvalidOtp);
+    }
+
+    if (user.status !== UserStatus.active) {
+      await this.logFailedLoginAttempt(user.email, clientIp, userAgent, {
+        reason: 'user_not_active',
+        userId: user.id,
+      });
+      throw new BadReqErr(ErrCode.UserNotActive);
+    }
+
+    await this.deps.mfaCache.del(cacheKey);
+
+    const loginRes = await this.deps.userUtilService.completeLogin(
+      user,
+      clientIp,
+      userAgent,
+    );
+
+    await this.deps.auditLogService.push({
+      type: ACTIVITY_TYPE.LOGIN,
+      payload: { method: 'email' },
+      userId: user.id,
+      ip: clientIp,
+      userAgent,
+    });
+
+    return loginRes;
   }
 
   async getProfile(userId: string) {
