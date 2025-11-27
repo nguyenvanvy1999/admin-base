@@ -15,6 +15,7 @@ export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
   [ACTIVITY_TYPE.LOGIN]: {
     method: LoginMethod;
     error?: string;
+    action?: string;
   };
   [ACTIVITY_TYPE.REGISTER]: {
     method: LoginMethod;

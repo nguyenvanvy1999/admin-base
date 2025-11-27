@@ -15,6 +15,7 @@ import type {
   ILoginRes,
   ILoginResponse,
   LoginMFAResDto,
+  LoginMFASetupResDto,
   LoginRequestDto,
   RefreshTokenRequestDto,
   RegisterRequestDto,
@@ -56,6 +57,7 @@ import {
   type UserUtilService,
   userUtilService,
 } from './auth-util.service';
+import { mfaSetupService } from './mfa-setup.service';
 import { type MfaUtilService, mfaUtilService } from './mfa-util.service';
 import { type OtpService, otpService } from './otp.service';
 import { type PasswordService, passwordService } from './password.service';
@@ -212,7 +214,12 @@ export class AuthService {
       throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
     }
 
-    if (user.mfaTotpEnabled) {
+    if (!user.mfaTotpEnabled) {
+      const mfaRequired = await this.deps.settingService.enbMfaRequired();
+      if (mfaRequired) {
+        return this.handleMfaSetupRequired(user, clientIp, userAgent);
+      }
+    } else {
       return this.handleMfaLogin(user, clientIp, userAgent, securityResult);
     }
 
@@ -335,6 +342,31 @@ export class AuthService {
       loginToken,
       mfaToken,
     } as typeof LoginMFAResDto.static;
+  }
+
+  private async handleMfaSetupRequired(
+    user: { id: string },
+    clientIp: string,
+    userAgent: string,
+  ): Promise<ILoginResponse> {
+    const { mfaToken, totpSecret } = await mfaSetupService.setupMfaRequest({
+      userId: user.id,
+      sessionId: '',
+    });
+
+    await this.deps.auditLogService.push({
+      type: ACTIVITY_TYPE.LOGIN,
+      payload: { method: 'email', action: 'mfa_setup_required' },
+      userId: user.id,
+      ip: clientIp,
+      userAgent,
+    });
+
+    return {
+      type: LoginResType.MFA_SETUP,
+      mfaToken,
+      totpSecret,
+    } as typeof LoginMFASetupResDto.static;
   }
 
   private validatePasswordAttempts(

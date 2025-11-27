@@ -201,6 +201,10 @@ export class SettingService {
     return this.getSetting<boolean>(SETTING.ENB_ONLY_ONE_SESSION);
   }
 
+  enbMfaRequired(): Promise<boolean> {
+    return this.getSetting<boolean>(SETTING.ENB_MFA_REQUIRED);
+  }
+
   async registerRateLimit(): Promise<{
     otpLimit: number;
     max: number;
