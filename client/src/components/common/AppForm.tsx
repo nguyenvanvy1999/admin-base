@@ -7,9 +7,6 @@ export interface AppFormProps<T extends object = Record<string, unknown>>
   loading?: boolean;
 }
 
-/**
- * Enhanced AppForm component with standardized defaults
- */
 export function AppForm<T extends object = Record<string, unknown>>({
   layout = 'vertical',
   size = 'large',

@@ -13,9 +13,6 @@ interface State {
   error: Error | null;
 }
 
-/**
- * Error Boundary component to catch React errors
- */
 export class ErrorBoundary extends ReactComponent<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -27,12 +24,10 @@ export class ErrorBoundary extends ReactComponent<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // Log error to console in development
     if (import.meta.env.DEV) {
       console.error('ErrorBoundary caught an error:', error, errorInfo);
     }
 
-    // Call custom error handler if provided
     this.props.onError?.(error, errorInfo);
   }
 

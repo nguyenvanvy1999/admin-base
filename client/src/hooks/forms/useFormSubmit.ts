@@ -11,9 +11,6 @@ interface UseFormSubmitOptions<TData, TVariables> {
   resetFormOnSuccess?: boolean;
 }
 
-/**
- * Hook for standardized form submission with React Query mutations
- */
 export function useFormSubmit<TData = unknown, TVariables = unknown>(
   form: FormInstance,
   options: UseFormSubmitOptions<TData, TVariables>,
@@ -44,8 +41,8 @@ export function useFormSubmit<TData = unknown, TVariables = unknown>(
     async (values: TVariables) => {
       try {
         await mutation.mutateAsync(values);
-      } catch (_error) {
-        // Error is already handled by useAppMutation
+      } catch (error) {
+        console.error(error);
       }
     },
     [mutation],

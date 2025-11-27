@@ -21,9 +21,6 @@ export interface CrudTableProps<T extends Record<string, unknown>> {
   [key: string]: unknown;
 }
 
-/**
- * CRUD Table component with create, edit, delete actions
- */
 export function CrudTable<T extends Record<string, unknown>>({
   dataSource,
   columns,

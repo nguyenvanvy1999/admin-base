@@ -27,9 +27,6 @@ export interface UseTableReturn {
   pagination: PaginationProps;
 }
 
-/**
- * Hook for table state management (pagination, filters, sorting)
- */
 export function useTable(options: UseTableOptions = {}): UseTableReturn {
   const {
     defaultPageSize = 10,

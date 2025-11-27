@@ -7,9 +7,6 @@ export interface AppCardProps extends CardProps {
   emptyText?: ReactNode;
 }
 
-/**
- * Standardized Card component with common patterns
- */
 export function AppCard({
   loading,
   empty,

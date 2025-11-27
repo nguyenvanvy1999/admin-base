@@ -11,9 +11,6 @@ export interface AppPageProps extends Omit<FlexProps, 'children' | 'title'> {
   children: ReactNode;
 }
 
-/**
- * Page wrapper component with common layout patterns
- */
 export function AppPage({
   title,
   subtitle,

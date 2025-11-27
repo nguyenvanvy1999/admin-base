@@ -13,9 +13,6 @@ export interface AppTableProps<
   emptyText?: ReactNode;
 }
 
-/**
- * Enhanced AppTable component with standardized defaults
- */
 export function AppTable<
   T extends Record<string, any>,
   U extends Record<string, any> = Record<string, any>,

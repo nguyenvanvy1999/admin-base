@@ -7,9 +7,6 @@ export interface AppSkeletonProps
   title?: boolean | SkeletonProps['title'];
 }
 
-/**
- * Standardized Skeleton component
- */
 export function AppSkeleton({
   rows = 3,
   avatar = false,
@@ -28,9 +25,6 @@ export function AppSkeleton({
   );
 }
 
-/**
- * Table skeleton
- */
 export function AppTableSkeleton({
   rows = 5,
   ...props
@@ -45,9 +39,6 @@ export function AppTableSkeleton({
   );
 }
 
-/**
- * Card skeleton
- */
 export function AppCardSkeleton(props?: SkeletonProps) {
   return <AppSkeleton rows={4} avatar={false} title={true} {...props} />;
 }

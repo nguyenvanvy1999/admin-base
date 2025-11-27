@@ -19,14 +19,10 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-/**
- * Auth Provider - Manages authentication state
- */
 export function AuthProvider({ children }: AuthProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const queryClient = useQueryClient();
 
-  // Get current user
   const {
     data: user,
     isLoading: isLoadingUser,
@@ -38,7 +34,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     retry: false,
   });
 
-  // Login mutation
   const loginMutation = useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) =>
       authService.login({ email, password }),
@@ -49,7 +44,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     },
   });
 
-  // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: () => authService.logout(),
     onSuccess: () => {
@@ -59,7 +53,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     },
   });
 
-  // Check if user is authenticated on mount
   useEffect(() => {
     const token = apiClient.getAuthToken();
     if (token) {
@@ -92,9 +85,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/**
- * Hook to access auth context
- */
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
   if (!context) {

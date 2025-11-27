@@ -6,9 +6,6 @@ export interface AppEmptyProps extends EmptyProps {
   action?: ReactNode;
 }
 
-/**
- * Standardized Empty state component
- */
 export function AppEmpty({
   description = 'Không có dữ liệu',
   action,

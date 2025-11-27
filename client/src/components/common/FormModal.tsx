@@ -21,9 +21,6 @@ export interface FormModalProps<
   width?: number;
 }
 
-/**
- * Modal with form pattern - supports create/edit modes
- */
 export function FormModal<
   T extends Record<string, unknown> = Record<string, unknown>,
 >({
@@ -48,8 +45,8 @@ export function FormModal<
       await onSubmit(values);
       form.resetFields();
       onClose();
-    } catch (_error) {
-      // Form validation errors are handled by Ant Design
+    } catch (error) {
+      console.error(error);
     }
   };
 

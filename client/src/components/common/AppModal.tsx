@@ -6,9 +6,6 @@ export interface AppModalProps extends ModalProps {
   confirmLoading?: boolean;
 }
 
-/**
- * Enhanced AppModal component with standardized defaults
- */
 export function AppModal({
   centered = true,
   destroyOnClose = true,
@@ -30,9 +27,6 @@ export function AppModal({
   );
 }
 
-/**
- * Confirm modal helper
- */
 export function confirmModal(options: {
   title?: ReactNode;
   content?: ReactNode;

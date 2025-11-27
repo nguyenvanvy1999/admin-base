@@ -8,9 +8,6 @@ interface ProtectedRouteProps {
   redirectTo?: string;
 }
 
-/**
- * Protected Route - Requires authentication
- */
 export function ProtectedRoute({
   children,
   redirectTo = '/login',

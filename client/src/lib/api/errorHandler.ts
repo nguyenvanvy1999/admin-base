@@ -7,11 +7,6 @@ export interface ApiError extends Error {
   response?: ApiErrorResponse;
 }
 
-/**
- * Handle API errors and show notifications
- * Note: This function should be called from within React components or hooks
- * to ensure Ant Design message API is available
- */
 export function handleApiError(error: unknown): ApiError {
   if (typeof error === 'object' && error !== null) {
     const axiosError = error as AxiosError<ApiErrorResponse>;
@@ -21,7 +16,6 @@ export function handleApiError(error: unknown): ApiError {
       const errorMessage =
         data?.message || axiosError.message || 'Có lỗi xảy ra';
 
-      // Show error notification
       message.error({
         content: errorMessage,
         duration: 5,
@@ -63,9 +57,6 @@ export function handleApiError(error: unknown): ApiError {
   } as ApiError;
 }
 
-/**
- * Handle API errors without showing notifications (for custom handling)
- */
 export function parseApiError(error: unknown): ApiError {
   if (typeof error === 'object' && error !== null) {
     const axiosError = error as AxiosError<ApiErrorResponse>;

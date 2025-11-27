@@ -2,9 +2,6 @@ import { type ThemeConfig, theme } from 'antd';
 
 export type ThemeMode = 'light' | 'dark';
 
-/**
- * Design tokens
- */
 const tokens = {
   colorPrimary: '#1677ff',
   borderRadius: 8,
@@ -36,9 +33,6 @@ const tokens = {
   },
 };
 
-/**
- * Get theme configuration with design tokens and component overrides
- */
 export function getThemeConfig(mode: ThemeMode): ThemeConfig {
   const isDark = mode === 'dark';
   const colors = isDark ? tokens.colors.dark : tokens.colors.light;
@@ -50,7 +44,6 @@ export function getThemeConfig(mode: ThemeMode): ThemeConfig {
       fontFamily: tokens.fontFamily,
       colorBgLayout: colors.bg,
       borderRadius: tokens.borderRadius,
-      // Spacing tokens
       padding: tokens.spacing.md,
       paddingLG: tokens.spacing.lg,
       paddingXL: tokens.spacing.xl,

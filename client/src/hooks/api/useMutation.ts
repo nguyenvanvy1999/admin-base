@@ -6,9 +6,6 @@ import type {
 import { useMutation as useReactMutation } from '@tanstack/react-query';
 import { message } from 'antd';
 
-/**
- * Enhanced useMutation hook with standardized error handling and success notifications
- */
 export function useAppMutation<
   TData = unknown,
   TError = unknown,
