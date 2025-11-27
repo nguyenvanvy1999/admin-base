@@ -1,13 +1,21 @@
 import crypto from 'node:crypto';
+import { authenticator } from 'otplib';
+import { mfaSetupCache } from 'src/config/cache';
+import { db } from 'src/config/db';
+import { otpService } from 'src/service/auth/otp.service';
+import { sessionService } from 'src/service/auth/session.service';
+import { auditLogService } from 'src/service/misc/audit-log.service';
 import {
   ACTIVITY_TYPE,
+  BadReqErr,
+  ErrCode,
   type IDisableMfaParams,
+  IdUtil,
   type IMfaStatus,
   type IMfaUser,
+  NotFoundErr,
   PurposeVerify,
 } from 'src/share';
-import { BaseMfaService } from './base-mfa.service';
-import { MfaErrorHandler } from './mfa-error-handler';
 
 type SetupMfaRequestParams = {
   userId: string;
@@ -26,27 +34,27 @@ type ResetMfaParams = {
   otp: string;
 };
 
-export class MfaSetupService extends BaseMfaService {
+export class MfaSetupService {
   async setupMfaRequest(params: SetupMfaRequestParams) {
     const { userId, sessionId } = params;
 
-    await this.validateMfaNotEnabled(userId);
+    await this.ensureMfaNotEnabled(userId);
 
     const mfaToken = this.generateToken();
     const totpSecret = this.generateTotpSecret();
 
-    await this.deps.mfaSetupCache.set(mfaToken, {
+    await mfaSetupCache.set(mfaToken, {
       totpSecret,
       userId,
       sessionId,
     });
 
-    await this.logActivity(
-      ACTIVITY_TYPE.SETUP_MFA,
-      { method: 'totp', stage: 'request' },
+    await auditLogService.push({
+      type: ACTIVITY_TYPE.SETUP_MFA,
+      payload: { method: 'totp', stage: 'request' },
       userId,
       sessionId,
-    );
+    });
 
     return {
       mfaToken,
@@ -57,16 +65,21 @@ export class MfaSetupService extends BaseMfaService {
   async setupMfa(params: SetupMfaParams) {
     const { mfaToken, otp, clientIp, userAgent } = params;
 
-    const cachedData = await this.deps.mfaSetupCache.get(mfaToken);
+    const cachedData = await mfaSetupCache.get(mfaToken);
     if (!cachedData) {
-      MfaErrorHandler.handleSessionExpired();
+      throw new BadReqErr(ErrCode.SessionExpired);
     }
 
-    if (!this.verifyTotp(cachedData.totpSecret, otp)) {
-      MfaErrorHandler.handleInvalidOtp();
+    const totpVerified = authenticator.verify({
+      secret: cachedData.totpSecret,
+      token: otp,
+    });
+
+    if (!totpVerified) {
+      throw new BadReqErr(ErrCode.InvalidOtp);
     }
 
-    await this.deps.db.user.update({
+    await db.user.update({
       where: { id: cachedData.userId },
       data: {
         totpSecret: cachedData.totpSecret,
@@ -75,19 +88,17 @@ export class MfaSetupService extends BaseMfaService {
       select: { id: true },
     });
 
-    await this.logActivity(
-      ACTIVITY_TYPE.SETUP_MFA,
-      { method: 'totp', stage: 'confirm' },
-      cachedData.userId,
-      cachedData.sessionId,
-      clientIp,
+    await auditLogService.push({
+      type: ACTIVITY_TYPE.SETUP_MFA,
+      payload: { method: 'totp', stage: 'confirm' },
+      userId: cachedData.userId,
+      sessionId: cachedData.sessionId,
+      ip: clientIp,
       userAgent,
-    );
+    });
 
     if (cachedData.sessionId) {
-      await this.deps.sessionService.revoke(cachedData.userId, [
-        cachedData.sessionId,
-      ]);
+      await sessionService.revoke(cachedData.userId, [cachedData.sessionId]);
     }
 
     return null;
@@ -96,26 +107,31 @@ export class MfaSetupService extends BaseMfaService {
   async disableMfa(params: IDisableMfaParams) {
     const { userId, sessionId, otp, backupCode, clientIp, userAgent } = params;
 
-    await this.validateMfaEnabled(userId);
     const mfaUser = await this.findMfaUserById(userId);
+    if (!mfaUser.mfaTotpEnabled) {
+      throw new BadReqErr(ErrCode.MFANotEnabled);
+    }
 
     let isValid = false;
 
     if (otp && mfaUser.totpSecret) {
-      isValid = this.verifyTotp(mfaUser.totpSecret, otp);
+      isValid = authenticator.verify({
+        secret: mfaUser.totpSecret,
+        token: otp,
+      });
     } else if (backupCode && mfaUser.backupCodes) {
-      isValid = await this.validateBackupCode(mfaUser, backupCode);
+      isValid = this.validateBackupCode(mfaUser, backupCode);
     }
 
     if (!isValid) {
       if (otp) {
-        MfaErrorHandler.handleInvalidOtp();
+        throw new BadReqErr(ErrCode.InvalidOtp);
       } else {
-        MfaErrorHandler.handleInvalidBackupCode();
+        throw new BadReqErr(ErrCode.InvalidBackupCode);
       }
     }
 
-    await this.deps.db.user.update({
+    await db.user.update({
       where: { id: userId },
       data: {
         totpSecret: null,
@@ -126,16 +142,16 @@ export class MfaSetupService extends BaseMfaService {
       select: { id: true },
     });
 
-    await this.deps.sessionService.revoke(userId);
+    await sessionService.revoke(userId);
 
-    await this.logActivity(
-      ACTIVITY_TYPE.RESET_MFA,
-      { method: 'disable' },
+    await auditLogService.push({
+      type: ACTIVITY_TYPE.RESET_MFA,
+      payload: { method: 'disable' },
       userId,
       sessionId,
-      clientIp,
+      ip: clientIp,
       userAgent,
-    );
+    });
 
     return null;
   }
@@ -143,17 +159,17 @@ export class MfaSetupService extends BaseMfaService {
   async resetMfa(params: ResetMfaParams) {
     const { otpToken, otp } = params;
 
-    const userId = await this.deps.otpService.verifyOtp(
+    const userId = await otpService.verifyOtp(
       otpToken,
       PurposeVerify.RESET_MFA,
       otp,
     );
 
     if (!userId) {
-      MfaErrorHandler.handleInvalidOtp();
+      throw new BadReqErr(ErrCode.InvalidOtp);
     }
 
-    await this.deps.db.user.update({
+    await db.user.update({
       where: { id: userId },
       data: {
         totpSecret: null,
@@ -164,12 +180,12 @@ export class MfaSetupService extends BaseMfaService {
       select: { id: true },
     });
 
-    await this.deps.sessionService.revoke(userId);
-    await this.logActivity(
-      ACTIVITY_TYPE.RESET_MFA,
-      { method: 'reset' },
+    await sessionService.revoke(userId);
+    await auditLogService.push({
+      type: ACTIVITY_TYPE.RESET_MFA,
+      payload: { method: 'reset' },
       userId,
-    );
+    });
 
     return null;
   }
@@ -207,7 +223,7 @@ export class MfaSetupService extends BaseMfaService {
     const hashedCode = this.hashBackupCode(backupCode);
 
     if (usedCodes.includes(hashedCode)) {
-      MfaErrorHandler.handleBackupCodeAlreadyUsed();
+      throw new BadReqErr(ErrCode.BackupCodeAlreadyUsed);
     }
 
     return backupCodes.includes(hashedCode);
@@ -215,6 +231,48 @@ export class MfaSetupService extends BaseMfaService {
 
   private hashBackupCode(code: string): string {
     return crypto.createHash('sha256').update(code).digest('hex');
+  }
+
+  private async findMfaUserById(userId: string): Promise<IMfaUser> {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        mfaTotpEnabled: true,
+        totpSecret: true,
+        backupCodes: true,
+        backupCodesUsed: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundErr(ErrCode.UserNotFound);
+    }
+
+    return user;
+  }
+
+  private async ensureMfaNotEnabled(userId: string) {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, mfaTotpEnabled: true },
+    });
+
+    if (!user) {
+      throw new NotFoundErr(ErrCode.UserNotFound);
+    }
+
+    if (user.mfaTotpEnabled) {
+      throw new BadReqErr(ErrCode.MFAHasBeenSetup);
+    }
+  }
+
+  private generateToken(): string {
+    return IdUtil.token16();
+  }
+
+  private generateTotpSecret(): string {
+    return authenticator.generateSecret().toUpperCase();
   }
 }
 
