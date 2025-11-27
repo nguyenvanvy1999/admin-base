@@ -1,5 +1,6 @@
 export {
   authBaseController,
+  backupController,
   mfaController,
   oauthController,
   otpController,

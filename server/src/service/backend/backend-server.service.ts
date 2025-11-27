@@ -18,6 +18,7 @@ import { subscribeInbox } from 'src/config/ws-pubsub';
 import {
   adminController,
   authBaseController,
+  backupController,
   fileController,
   mfaController,
   miscController,
@@ -98,6 +99,7 @@ export class BackendServerService {
           .use(fileController)
           .use(oauthController)
           .use(mfaController)
+          .use(backupController)
           .use(adminController),
       );
 

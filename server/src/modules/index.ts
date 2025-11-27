@@ -1,6 +1,7 @@
 export { adminController } from './admin';
 export {
   authBaseController,
+  backupController,
   mfaController,
   oauthController,
   otpController,

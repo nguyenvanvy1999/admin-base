@@ -42,6 +42,7 @@ export class SeedFixtures {
       mfaTotpEnabled: false,
       totpSecret: null,
       backupCodes: null,
+      backupCodesUsed: null,
       lastLoginAt: null,
       refCode: null,
       emailVerified: false,

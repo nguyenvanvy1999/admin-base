@@ -1,7 +1,11 @@
 import { Elysia, t } from 'elysia';
 import { reqMeta } from 'src/config/request';
+import {
+  DisableMfaRequestDto,
+  MfaStatusResponseDto,
+} from 'src/modules/auth/dtos';
 import { authCheck } from 'src/service/auth/auth.middleware';
-import { mfaService } from 'src/service/auth/mfa.service';
+import { mfaSetupService } from 'src/service/auth/mfa-setup.service';
 import {
   ACCESS_AUTH,
   castToRes,
@@ -19,7 +23,7 @@ export const mfaController = new Elysia({
   .post(
     'setup/request',
     async ({ currentUser: { id, sessionId } }) => {
-      const result = await mfaService.setupMfaRequest({
+      const result = await mfaSetupService.setupMfaRequest({
         userId: id,
         sessionId,
       });
@@ -42,7 +46,7 @@ export const mfaController = new Elysia({
   .post(
     'setup/confirm',
     async ({ body: { mfaToken, otp }, clientIp, userAgent }) => {
-      const result = await mfaService.setupMfa({
+      const result = await mfaSetupService.setupMfa({
         mfaToken,
         otp,
         clientIp,
@@ -66,7 +70,7 @@ export const mfaController = new Elysia({
   .post(
     'reset',
     async ({ body: { otpToken, otp } }) => {
-      const result = await mfaService.resetMfa({
+      const result = await mfaSetupService.resetMfa({
         otpToken,
         otp,
       });
@@ -82,6 +86,57 @@ export const mfaController = new Elysia({
         200: ResWrapper(t.Null()),
         400: ErrorResDto,
         500: ErrorResDto,
+      },
+    },
+  )
+  .post(
+    'disable',
+    async ({
+      body: { otp, backupCode },
+      currentUser: { id, sessionId },
+      clientIp,
+      userAgent,
+    }) => {
+      const result = await mfaSetupService.disableMfa({
+        userId: id,
+        sessionId,
+        otp,
+        backupCode,
+        clientIp,
+        userAgent,
+      });
+      return castToRes(result);
+    },
+    {
+      body: DisableMfaRequestDto,
+      detail: {
+        description: 'Disable MFA using OTP or backup code',
+        summary: 'Disable MFA',
+        security: ACCESS_AUTH,
+      },
+      response: {
+        200: ResWrapper(t.Null()),
+        400: ErrorResDto,
+        404: ErrorResDto,
+      },
+    },
+  )
+  .get(
+    'status',
+    async ({ currentUser: { id } }) => {
+      const result = await mfaSetupService.getMfaStatus(id);
+      return castToRes(result);
+    },
+    {
+      detail: {
+        description: 'Get MFA status for current user',
+        summary: 'Get MFA status',
+        security: ACCESS_AUTH,
+      },
+      response: {
+        200: ResWrapper(MfaStatusResponseDto),
+        400: ErrorResDto,
+        404: ErrorResDto,
       },
     },
   );

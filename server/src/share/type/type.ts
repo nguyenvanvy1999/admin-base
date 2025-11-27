@@ -178,6 +178,7 @@ export interface ICurrentUser
     | 'passwordExpired'
     | 'totpSecret'
     | 'backupCodes'
+    | 'backupCodesUsed'
     | 'password'
     | 'passwordCreated'
     | 'passwordAttempt'
