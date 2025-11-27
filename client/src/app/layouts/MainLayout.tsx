@@ -8,10 +8,11 @@ import {
 } from '@ant-design/icons';
 import type { ProLayoutProps } from '@ant-design/pro-components';
 import { PageContainer, ProLayout } from '@ant-design/pro-components';
-import { Button, Dropdown, Flex, Segmented, Switch, Tooltip } from 'antd';
+import { Button, Dropdown, Flex, Switch, Tooltip } from 'antd';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation } from 'react-router-dom';
+import { LanguageSwitcher } from 'src/components/LanguageSwitcher';
 import { useAuth } from 'src/hooks/auth/useAuth';
 import { useThemeMode } from '../providers/ThemeModeProvider';
 
@@ -25,7 +26,7 @@ const menuRoutes: ProLayoutProps['route'] = {
 
 export default function MainLayout() {
   const location = useLocation();
-  const { t, i18n } = useTranslation();
+  const { t, i18n: _ } = useTranslation();
   const { mode, setMode } = useThemeMode();
   const { user, logout } = useAuth();
 
@@ -55,16 +56,7 @@ export default function MainLayout() {
             unCheckedChildren={<SunOutlined />}
           />
         </Tooltip>,
-        <Segmented
-          key="lang"
-          size="small"
-          options={[
-            { label: 'EN', value: 'en' },
-            { label: 'VI', value: 'vi' },
-          ]}
-          value={i18n.language === 'en' ? 'en' : 'vi'}
-          onChange={(val) => i18n.changeLanguage(val as 'en' | 'vi')}
-        />,
+        <LanguageSwitcher key="lang" size="small" />,
         <Button
           key="github"
           type="text"

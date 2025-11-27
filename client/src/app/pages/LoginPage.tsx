@@ -2,6 +2,7 @@ import { Card, Col, Flex, Row, Typography } from 'antd';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate } from 'react-router-dom';
+import { LanguageSwitcher } from 'src/components/LanguageSwitcher';
 import { BackupCodeStep } from 'src/features/auth/BackupCodeStep';
 import { useAuthFlow } from 'src/features/auth/hooks/useAuthFlow';
 import { LoginForm } from 'src/features/auth/LoginForm';
@@ -77,6 +78,9 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
+      <Flex justify="flex-end" style={{ padding: '16px 24px 0' }}>
+        <LanguageSwitcher size="small" />
+      </Flex>
       <Row className="login-page__wrapper" gutter={0}>
         <Col xs={0} md={12} className="login-page__hero">
           <Flex vertical gap={24}>
