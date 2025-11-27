@@ -25,6 +25,7 @@ import {
   type PrismaTx,
   type UPermission,
 } from 'src/share';
+import { timeStringToSeconds } from 'src/share/utils/time.util';
 
 export class TokenService {
   constructor(private readonly e: IEnv = env) {}
@@ -54,7 +55,9 @@ export class TokenService {
   }
 
   createRefreshToken(): { refreshToken: string; expirationTime: Date } {
-    const expiredAt = dayjs().add(this.e.JWT_REFRESH_TOKEN_EXPIRED).toDate();
+    const expiredAt = dayjs()
+      .add(timeStringToSeconds(this.e.JWT_REFRESH_TOKEN_EXPIRED), 's')
+      .toDate();
     return {
       refreshToken: IdUtil.token32(),
       expirationTime: expiredAt,
@@ -68,7 +71,9 @@ export class TokenService {
     const accessToken = await this.signJwt({ data });
     return {
       accessToken,
-      expirationTime: dayjs().add(this.e.JWT_ACCESS_TOKEN_EXPIRED).toDate(),
+      expirationTime: dayjs()
+        .add(timeStringToSeconds(this.e.JWT_ACCESS_TOKEN_EXPIRED), 's')
+        .toDate(),
     };
   }
 

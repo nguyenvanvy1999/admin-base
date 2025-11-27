@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { db } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
+import { timeStringToSeconds } from 'src/share/utils/time.util';
 
 export class BunPasswordHasher {
   hash(password: string): Promise<string> {
@@ -34,7 +35,9 @@ export class PasswordService {
   }> {
     const passwordWithPepper = password + this.env.PASSWORD_PEPPER;
     const passwordHash = await this.passwordHasher.hash(passwordWithPepper);
-    const passwordExpired = dayjs().add(this.env.PASSWORD_EXPIRED).toDate();
+    const passwordExpired = dayjs()
+      .add(timeStringToSeconds(this.env.PASSWORD_EXPIRED), 's')
+      .toDate();
     const passwordCreated = new Date();
     return {
       password: passwordHash,

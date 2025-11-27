@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { Decimal } from 'decimal.js';
-import { AmountUtil, ArrayUtil, IdUtil, TimeUtil, ValueUtil } from 'src/share';
+import { AmountUtil, ArrayUtil, IdUtil, isExpired, ValueUtil } from 'src/share';
 
 describe('Functions Utils', () => {
   describe('Token Generation', () => {
@@ -157,19 +157,19 @@ describe('Functions Utils', () => {
     describe('isExpired', () => {
       it('should return true for past dates', () => {
         const pastDate = new Date(Date.now() - 86400000); // 1 day ago
-        expect(TimeUtil.isExpired(pastDate)).toBe(true);
+        expect(isExpired(pastDate)).toBe(true);
       });
       it('should return true for past timestamps', () => {
         const pastTimestamp = Date.now() - 86400000; // 1 day ago
-        expect(TimeUtil.isExpired(pastTimestamp)).toBe(true);
+        expect(isExpired(pastTimestamp)).toBe(true);
       });
       it('should return false for future dates', () => {
         const futureDate = new Date(Date.now() + 86400000); // 1 day from now
-        expect(TimeUtil.isExpired(futureDate)).toBe(false);
+        expect(isExpired(futureDate)).toBe(false);
       });
       it('should return false for future timestamps', () => {
         const futureTimestamp = Date.now() + 86400000; // 1 day from now
-        expect(TimeUtil.isExpired(futureTimestamp)).toBe(false);
+        expect(isExpired(futureTimestamp)).toBe(false);
       });
     });
   });

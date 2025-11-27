@@ -33,10 +33,10 @@ import {
   ErrCode,
   IdUtil,
   type ITokenPayload,
+  isExpired,
   LoginResType,
   NotFoundErr,
   PurposeVerify,
-  TimeUtil,
   UnAuthErr,
   userResSelect,
 } from 'src/share';
@@ -433,7 +433,7 @@ export class AuthService {
     if (
       !session ||
       session.revoked ||
-      TimeUtil.isExpired(session.expired) ||
+      isExpired(session.expired) ||
       !session.createdBy ||
       session.createdBy.status !== 'active'
     ) {
