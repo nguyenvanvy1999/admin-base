@@ -44,7 +44,7 @@ export function useFormSubmit<TData = unknown, TVariables = unknown>(
     async (values: TVariables) => {
       try {
         await mutation.mutateAsync(values);
-      } catch (error) {
+      } catch (_error) {
         // Error is already handled by useAppMutation
       }
     },

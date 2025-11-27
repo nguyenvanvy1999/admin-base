@@ -1,4 +1,4 @@
-import { env, type IEnv } from 'src/config/env';
+import type { IEnv } from 'src/config/env';
 import { BadReqErr, ErrCode } from 'src/share';
 
 export interface PasswordValidationRules {

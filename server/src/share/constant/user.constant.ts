@@ -18,4 +18,12 @@ export const userResSelect = {
   name: true,
   baseCurrencyId: true,
   settings: true,
+  emailVerified: true,
+  emailVerificationToken: true,
+  lockoutUntil: true,
+  lockoutReason: true,
+  passwordResetToken: true,
+  passwordResetTokenExpiresAt: true,
+  lastFailedLoginAt: true,
+  suspiciousActivityCount: true,
 } satisfies UserSelect;

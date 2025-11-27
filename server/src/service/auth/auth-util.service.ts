@@ -183,7 +183,9 @@ export class UserUtilService {
     };
   }
 
-  async createProfile(tx: PrismaTx, userId: string): Promise<void> {}
+  async createProfile(_tx: PrismaTx, _userId: string): Promise<void> {
+    // TODO: Implement profile creation logic
+  }
 }
 
 export const userUtilService = new UserUtilService();

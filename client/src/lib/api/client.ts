@@ -51,7 +51,7 @@ class ApiClient {
     // Response interceptor - Handle errors
     this.instance.interceptors.response.use(
       (response) => response,
-      async (error) => {
+      (error) => {
         // Handle 401 Unauthorized - Clear token and redirect to login
         if (error.response?.status === 401) {
           localStorage.removeItem(ACCESS_TOKEN_KEY);

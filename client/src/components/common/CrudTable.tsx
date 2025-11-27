@@ -1,9 +1,8 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
-import { AppModal, confirmModal } from '@client/components/common/AppModal';
+import { confirmModal } from '@client/components/common/AppModal';
 import { AppTable } from '@client/components/common/AppTable';
 import { Button, Space } from 'antd';
-import type { ReactNode } from 'react';
 import { useState } from 'react';
 
 export interface CrudTableProps<T extends Record<string, unknown>> {
@@ -42,8 +41,11 @@ export function CrudTable<T extends Record<string, unknown>>({
 }: CrudTableProps<T>) {
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
 
-  const handleDelete = async (record: T) => {
-    const id = typeof rowKey === 'function' ? rowKey(record) : record[rowKey];
+  const handleDelete = (record: T) => {
+    const id =
+      typeof rowKey === 'function'
+        ? rowKey(record)
+        : (record[rowKey] as string | number);
 
     confirmModal({
       title: deleteConfirmTitle,
@@ -71,7 +73,10 @@ export function CrudTable<T extends Record<string, unknown>>({
     fixed: 'right',
     width: 120,
     render: (_: unknown, record: T) => {
-      const id = typeof rowKey === 'function' ? rowKey(record) : record[rowKey];
+      const id =
+        typeof rowKey === 'function'
+          ? rowKey(record)
+          : (record[rowKey] as string | number);
       const isDeleting = deletingId === id;
 
       return (

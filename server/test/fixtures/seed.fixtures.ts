@@ -44,6 +44,14 @@ export class SeedFixtures {
       backupCodes: null,
       lastLoginAt: null,
       refCode: null,
+      emailVerified: false,
+      emailVerificationToken: null,
+      lockoutUntil: null,
+      lockoutReason: null,
+      passwordResetToken: null,
+      passwordResetTokenExpiresAt: null,
+      lastFailedLoginAt: null,
+      suspiciousActivityCount: 0,
       ...overrides,
     };
   }
@@ -71,6 +79,7 @@ export class SeedFixtures {
       enabled: true,
       created: new Date(),
       modified: new Date(),
+      parentRoleId: null,
       ...overrides,
     };
   }

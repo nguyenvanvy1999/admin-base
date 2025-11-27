@@ -1,4 +1,4 @@
-import { AppForm, AppFormItem } from '@client/components/common/AppForm';
+import { AppForm } from '@client/components/common/AppForm';
 import { AppModal } from '@client/components/common/AppModal';
 import type { FormProps } from 'antd';
 import { Button, Form, Space } from 'antd';
@@ -48,7 +48,7 @@ export function FormModal<
       await onSubmit(values);
       form.resetFields();
       onClose();
-    } catch (error) {
+    } catch (_error) {
       // Form validation errors are handled by Ant Design
     }
   };

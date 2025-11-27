@@ -1,12 +1,13 @@
 import { PageHeader } from '@client/components/common/PageHeader';
+import type { BreadcrumbProps } from 'antd';
 import { Flex, type FlexProps } from 'antd';
 import type { ReactNode } from 'react';
 
-export interface AppPageProps extends Omit<FlexProps, 'children'> {
+export interface AppPageProps extends Omit<FlexProps, 'children' | 'title'> {
   title?: ReactNode;
   subtitle?: ReactNode;
   extra?: ReactNode;
-  breadcrumb?: ReactNode;
+  breadcrumb?: BreadcrumbProps['items'];
   children: ReactNode;
 }
 

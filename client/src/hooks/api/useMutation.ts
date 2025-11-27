@@ -30,19 +30,19 @@ export function useAppMutation<
 
   const mutation = useReactMutation<TData, TError, TVariables, TContext>({
     ...mutationOptions,
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, context, mutation) => {
       if (successMessage) {
         message.success(successMessage);
       }
-      onSuccess?.(data, variables, context);
+      onSuccess?.(data, variables, context, mutation);
     },
-    onError: (error, variables, context) => {
+    onError: (error, variables, context, mutation) => {
       if (errorMessage) {
         message.error(errorMessage);
       } else {
         handleApiError(error);
       }
-      onError?.(error, variables, context);
+      onError?.(error, variables, context, mutation);
     },
   });
 

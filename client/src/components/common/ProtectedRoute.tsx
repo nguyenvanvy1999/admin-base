@@ -1,5 +1,4 @@
 import { useAuth } from '@client/hooks/auth/useAuth';
-import { Button, Result } from 'antd';
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { FullScreenLoader } from './FullScreenLoader';

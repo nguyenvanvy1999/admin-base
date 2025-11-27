@@ -1,9 +1,10 @@
 import { Skeleton, type SkeletonProps } from 'antd';
 
-export interface AppSkeletonProps extends SkeletonProps {
+export interface AppSkeletonProps
+  extends Omit<SkeletonProps, 'avatar' | 'title'> {
   rows?: number;
-  avatar?: boolean;
-  title?: boolean;
+  avatar?: boolean | SkeletonProps['avatar'];
+  title?: boolean | SkeletonProps['title'];
 }
 
 /**

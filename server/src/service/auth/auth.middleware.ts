@@ -53,6 +53,14 @@ export const authCheck = (app: Elysia) =>
         name: user.name,
         baseCurrencyId: user.baseCurrencyId,
         settings: user.settings,
+        emailVerified: user.emailVerified,
+        emailVerificationToken: user.emailVerificationToken,
+        lockoutUntil: user.lockoutUntil,
+        lockoutReason: user.lockoutReason,
+        passwordResetToken: user.passwordResetToken,
+        passwordResetTokenExpiresAt: user.passwordResetTokenExpiresAt,
+        lastFailedLoginAt: user.lastFailedLoginAt,
+        suspiciousActivityCount: user.suspiciousActivityCount,
       };
 
       await currentUserCache.set(data.sessionId, currentUser);
