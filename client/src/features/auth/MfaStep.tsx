@@ -76,7 +76,7 @@ export function MfaStep({
       }}
       onFinish={(values) => {
         onSubmit(values.code, Boolean(values.rememberDevice));
-        return true;
+        return Promise.resolve(true);
       }}
     >
       <Typography.Title level={4} style={{ marginBottom: 4 }}>

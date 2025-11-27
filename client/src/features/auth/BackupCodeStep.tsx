@@ -46,7 +46,7 @@ export function BackupCodeStep({
       }}
       onFinish={(values) => {
         onSubmit(values.code);
-        return true;
+        return Promise.resolve(true);
       }}
     >
       <Typography.Title level={4} style={{ marginBottom: 4 }}>
