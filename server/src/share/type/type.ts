@@ -11,7 +11,7 @@ import {
 } from '../constant';
 
 export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
-  [ACTIVITY_TYPE.LOGIN]: { method: OAUTH.GOOGLE | 'email' };
+  [ACTIVITY_TYPE.LOGIN]: { method: OAUTH.GOOGLE | 'email'; error?: string };
   [ACTIVITY_TYPE.REGISTER]: {
     method: OAUTH.GOOGLE | 'email';
     error?: string;

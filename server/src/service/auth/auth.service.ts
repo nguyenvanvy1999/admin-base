@@ -161,7 +161,7 @@ export class AuthService {
       user,
     );
     if (!passwordValid) {
-      await this.logFailedLoginAttempt(email, clientIp, userAgent, {
+      await this.logFailedLoginAttempt(clientIp, userAgent, {
         reason: 'password_mismatch',
         userId: user.id,
       });
@@ -169,7 +169,7 @@ export class AuthService {
     }
 
     if (user.status !== UserStatus.active) {
-      await this.logFailedLoginAttempt(email, clientIp, userAgent, {
+      await this.logFailedLoginAttempt(clientIp, userAgent, {
         reason: 'user_not_active',
         userId: user.id,
       });
@@ -282,7 +282,6 @@ export class AuthService {
   }
 
   private async logFailedLoginAttempt(
-    email: string,
     clientIp: string,
     userAgent: string,
     metadata: { reason: string; userId?: string },
@@ -292,7 +291,7 @@ export class AuthService {
       payload: {
         method: 'email',
         error: metadata.reason,
-      } as any,
+      },
       userId: metadata.userId ?? null,
       ip: clientIp,
       userAgent,
@@ -361,94 +360,70 @@ export class AuthService {
   async register(params: RegisterParams): Promise<{ otpToken: string } | null> {
     const { email, password, clientIp, userAgent } = params;
 
-    try {
-      this.deps.passwordValidationService.validatePasswordOrThrow(password);
+    this.deps.passwordValidationService.validatePasswordOrThrow(password);
 
-      const normalizedEmail = normalizeEmail(email);
+    const normalizedEmail = normalizeEmail(email);
 
-      const existingUser = await this.deps.db.user.findUnique({
-        where: { email: normalizedEmail },
-        select: { id: true, status: true },
-      });
+    const existingUser = await this.deps.db.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true, status: true },
+    });
 
-      if (existingUser) {
-        await this.deps.auditLogService.push({
-          type: ACTIVITY_TYPE.REGISTER,
-          payload: { method: 'email', error: 'User already exists' },
-          userId: null,
-          ip: clientIp,
-          userAgent,
-        });
-        throw new BadReqErr(ErrCode.UserExisted);
-      }
-
-      const createdUserId = await this.deps.db.$transaction(async (tx) => {
-        const defaultCurrency = await this.findDefaultCurrency(tx);
-        if (!defaultCurrency) {
-          throw new BadReqErr(ErrCode.InternalError);
-        }
-
-        const userId = await this.createUserWithDefaults(
-          tx,
-          normalizedEmail,
-          password,
-          defaultCurrency.id,
-        );
-
-        await this.deps.userUtilService.createProfile(tx, userId);
-
-        return userId;
-      });
-
-      const otpToken = await this.deps.otpService.sendOtp(
-        createdUserId,
-        normalizedEmail,
-        PurposeVerify.REGISTER,
-      );
-
+    if (existingUser) {
       await this.deps.auditLogService.push({
         type: ACTIVITY_TYPE.REGISTER,
-        payload: { method: 'email' },
-        userId: createdUserId,
+        payload: { method: 'email', error: 'User already exists' },
+        userId: null,
         ip: clientIp,
         userAgent,
       });
-
-      if (otpToken) {
-        return { otpToken };
-      }
-      return null;
-    } catch (error) {
-      if (!(error instanceof BadReqErr && error.code === ErrCode.UserExisted)) {
-        await this.deps.auditLogService.push({
-          type: ACTIVITY_TYPE.REGISTER,
-          payload: {
-            method: 'email',
-            error: error instanceof Error ? error.message : 'Unknown error',
-          },
-          userId: null,
-          ip: clientIp,
-          userAgent,
-        });
-      }
-      throw error;
+      throw new BadReqErr(ErrCode.UserExisted);
     }
+
+    const createdUserId = await this.deps.db.$transaction(async (tx) => {
+      const defaultCurrency = await this.findDefaultCurrency(tx);
+      if (!defaultCurrency) {
+        throw new BadReqErr(ErrCode.InternalError);
+      }
+
+      const userId = await this.createUserWithDefaults(
+        tx,
+        normalizedEmail,
+        password,
+        defaultCurrency.id,
+      );
+
+      await this.deps.userUtilService.createProfile(tx, userId);
+
+      return userId;
+    });
+
+    const otpToken = await this.deps.otpService.sendOtp(
+      createdUserId,
+      normalizedEmail,
+      PurposeVerify.REGISTER,
+    );
+
+    await this.deps.auditLogService.push({
+      type: ACTIVITY_TYPE.REGISTER,
+      payload: { method: 'email' },
+      userId: createdUserId,
+      ip: clientIp,
+      userAgent,
+    });
+
+    if (otpToken) {
+      return { otpToken };
+    }
+    return null;
   }
 
-  private async findDefaultCurrency(
-    tx: PrismaTx,
-  ): Promise<{ id: string } | null> {
-    return (
-      (await tx.currency.findFirst({
-        where: { isActive: true },
-        orderBy: { code: 'asc' },
-        select: { id: true },
-      })) ||
-      (await tx.currency.findFirst({
-        orderBy: { code: 'asc' },
-        select: { id: true },
-      }))
-    );
+  private findDefaultCurrency(tx: PrismaTx): Promise<{ id: string } | null> {
+    return tx.currency.findFirst({
+      where: { isActive: true },
+      orderBy: { code: 'asc' },
+      select: { id: true },
+    });
   }
 
   private async createUserWithDefaults(
@@ -689,7 +664,7 @@ export class AuthService {
     const cachedData = await this.deps.mfaCache.get(cacheKey);
 
     if (!cachedData) {
-      await this.logFailedLoginAttempt('', clientIp, userAgent, {
+      await this.logFailedLoginAttempt(clientIp, userAgent, {
         reason: 'mfa_session_expired',
       });
       throw new BadReqErr(ErrCode.SessionExpired);
@@ -701,7 +676,7 @@ export class AuthService {
     });
 
     if (!user || !user.totpSecret) {
-      await this.logFailedLoginAttempt('', clientIp, userAgent, {
+      await this.logFailedLoginAttempt(clientIp, userAgent, {
         reason: 'mfa_user_not_found',
         userId: cachedData.userId,
       });
@@ -714,7 +689,7 @@ export class AuthService {
     });
 
     if (!isValidOtp) {
-      await this.logFailedLoginAttempt(user.email, clientIp, userAgent, {
+      await this.logFailedLoginAttempt(clientIp, userAgent, {
         reason: 'mfa_invalid_otp',
         userId: user.id,
       });
@@ -722,7 +697,7 @@ export class AuthService {
     }
 
     if (user.status !== UserStatus.active) {
-      await this.logFailedLoginAttempt(user.email, clientIp, userAgent, {
+      await this.logFailedLoginAttempt(clientIp, userAgent, {
         reason: 'user_not_active',
         userId: user.id,
       });
