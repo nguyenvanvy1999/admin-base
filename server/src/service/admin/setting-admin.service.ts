@@ -54,7 +54,7 @@ export class SettingAdminService {
     });
     await settingCache.set(
       updated.key,
-      await this.deps.settingService.getValue(updated),
+      this.deps.settingService.getValue(updated),
     );
   }
 }
