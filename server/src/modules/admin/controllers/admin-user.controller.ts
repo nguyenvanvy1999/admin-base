@@ -3,7 +3,6 @@ import {
   AdminUserActionResDto,
   AdminUserMfaActionDto,
   AdminUserUpdateDto,
-  AdminUserUpdateResDto,
 } from 'src/modules/admin/dtos';
 import { adminUserService } from 'src/service/admin/user-admin.service';
 import { authorize, has } from 'src/service/auth/authorization';
@@ -78,7 +77,7 @@ export const adminUserController = new Elysia<'', AppAuthMeta>({
         params: IdDto,
         body: AdminUserUpdateDto,
         response: {
-          200: ResWrapper(AdminUserUpdateResDto),
+          200: ResWrapper(AdminUserActionResDto),
           400: ErrorResDto,
           ...authErrors,
         },

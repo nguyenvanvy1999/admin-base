@@ -563,7 +563,12 @@ export class AuthService {
 
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.UPDATE_USER,
-      payload: { id: userId, enabled: true },
+      payload: {
+        id: userId,
+        changes: {
+          status: { previous: UserStatus.inactive, next: UserStatus.active },
+        },
+      },
       userId,
       ip: clientIp,
       userAgent,
