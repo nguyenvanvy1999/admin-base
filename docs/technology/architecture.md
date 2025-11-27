@@ -58,7 +58,7 @@ export const authBaseController = new Elysia({ prefix: '/auth', tags: ['auth'] }
       userAgent,
     });
     return castToRes(null);
-  });
+});
 ```
 
 ### 2.2 Service layer & dependency injection
@@ -80,7 +80,7 @@ export const authService = {
   async logout({ userId, sessionId, clientIp, userAgent }) {
     await sessionService.revoke(userId, [sessionId]);
     await auditLogService.append({ ... });
-  },
+        },
 };
 ```
 

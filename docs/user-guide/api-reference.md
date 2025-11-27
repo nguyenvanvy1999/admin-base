@@ -60,7 +60,7 @@ Response:
   "data": {
     "accessToken": "jwt",
     "refreshToken": "jwt",
-    "user": {
+  "user": {
       "id": "uuid",
       "email": "user@example.com",
       "name": null,
