@@ -49,6 +49,7 @@ import {
   UnAuthErr,
   userResSelect,
 } from 'src/share';
+import { type CurrencyService, currencyService } from '../currency.service';
 import {
   type TokenService,
   tokenService,
@@ -129,6 +130,7 @@ export class AuthService {
       mfaCache: IMFACache;
       authenticator: typeof authenticator;
       securityMonitorService: SecurityMonitorService;
+      currencyService: CurrencyService;
     } = {
       db,
       env,
@@ -146,6 +148,7 @@ export class AuthService {
       mfaCache,
       authenticator,
       securityMonitorService,
+      currencyService,
     },
   ) {}
 
@@ -414,7 +417,8 @@ export class AuthService {
     }
 
     const createdUserId = await this.deps.db.$transaction(async (tx) => {
-      const defaultCurrency = await this.findDefaultCurrency(tx);
+      const defaultCurrency =
+        await this.deps.currencyService.findDefaultCurrency(tx);
       if (!defaultCurrency) {
         throw new BadReqErr(ErrCode.InternalError);
       }
@@ -449,14 +453,6 @@ export class AuthService {
       return { otpToken };
     }
     return null;
-  }
-
-  private findDefaultCurrency(tx: PrismaTx): Promise<{ id: string } | null> {
-    return tx.currency.findFirst({
-      where: { isActive: true },
-      orderBy: { code: 'asc' },
-      select: { id: true },
-    });
   }
 
   private async createUserWithDefaults(
