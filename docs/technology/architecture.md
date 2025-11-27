@@ -1,516 +1,208 @@
 # Kiến Trúc Hệ Thống
 
-Tài liệu này mô tả kiến trúc và các patterns được sử dụng trong dự án FinTrack.
+Tài liệu mô tả kiến trúc thực tế của monorepo `investment` sau khi tinh gọn các tài liệu cũ. Nội dung tập trung vào những gì đang chạy trong codebase (auth, admin tooling, misc utilities, frontend demo).
 
-## Tổng Quan Kiến Trúc
-
-FinTrack sử dụng kiến trúc layered với separation of concerns rõ ràng:
-
-- **Controller Layer**: Xử lý HTTP requests/responses
-- **Service Layer**: Business logic và data processing
-- **Database Layer**: Prisma ORM với PostgreSQL
-- **Middleware**: Error handling, authentication, validation
-
-## Cấu Trúc Thư Mục
+## 1. Tổng Quan Monorepo
 
 ```
-fin-track/
-├── src/                      # Backend (Elysia.js)
-│   ├── controllers/          # API endpoint handlers
-│   ├── services/             # Business logic layer
-│   ├── middlewares/          # Request/response processors
-│   ├── macros/               # Elysia macros (auth, etc.)
-│   ├── dto/                  # Data Transfer Objects (validation schemas)
-│   ├── constants/            # Backend constants
-│   ├── libs/                 # Utilities (db, logger, env)
-│   ├── generated/            # Generated Prisma client
-│   ├── scripts/              # Utility scripts (seed, etc.)
-│   └── index.ts              # Server entry point
-│
-├── client/                   # Frontend (React)
-│   ├── components/           # Reusable UI components
-│   ├── pages/                # Page components
-│   ├── layouts/              # Layout wrappers
-│   ├── store/                # Zustand stores (global state)
-│   ├── hooks/                # Custom React hooks
-│   ├── libs/                 # Utilities & API client
-│   ├── types/                # TypeScript type definitions
-│   ├── providers/            # React context providers
-│   └── styles/               # Global styles & theme
+investment/
+├── server/                  # Bun + Elysia backend
+│   ├── src/
+│   │   ├── app/backend      # Entry points (HTTP + worker)
+│   │   ├── config           # env, db, logger, cache, swagger...
+│   │   ├── modules          # API modules (auth, admin, misc)
+│   │   ├── service          # Business logic (auth, admin, misc, mail,...)
+│   │   ├── share            # constants, errors, utils, types
+│   │   ├── generated        # Prisma client (auto-gen, đừng sửa tay)
+│   │   └── prisma           # schema & migrations
+│   └── package.json         # Scripts riêng cho backend
+├── client/                  # React + Vite frontend demo
+│   ├── src/
+│   │   ├── app              # Providers, layouts, pages, routes
+│   │   ├── components       # Ant Design/Mantine wrappers
+│   │   ├── hooks            # API hooks, utils hooks
+│   │   ├── services         # API client wrappers
+│   │   ├── styles           # Tokens, global CSS
+│   │   └── types            # Frontend-only types
+│   └── package.json
+├── docs/                    # Tài liệu (file này nằm đây)
+└── README.md
 ```
 
-## Backend Architecture
+## 2. Backend Architecture (Bun + Elysia)
 
-### Controller Pattern
+### 2.1 Module-first instead of controller-flat
 
-Controllers xử lý HTTP requests và responses, delegate business logic cho services.
+Các endpoint được nhóm theo domain trong `server/src/modules/**`:
+
+- `auth`: đăng nhập, MFA (TOTP + backup code), OAuth, OTP email
+- `admin`: i18n keys, role/permission, session revocation, setting admin
+- `misc`: health check, system info, time/version, captcha, file upload/down
+
+Mỗi module xuất ra 1 hoặc nhiều Elysia plugin và được ghép trong `server/src/modules/index.ts`.
 
 ```typescript
-// src/controllers/account.controller.ts
-import { Elysia, t } from "elysia";
-import { UpsertAccountDto, ListAccountsQueryDto } from "../dto/account.dto";
-import authMacro from "../macros/auth";
-import accountService from "../services/account.service";
-
-const accountController = new Elysia()
-    .group("/accounts", {
-        detail: {
-            tags: ["Account"],
-            description: "Account management endpoints",
-        },
-    }, (group) =>
-        group
-            .use(accountService)
-            .use(authMacro)
-            .post("/", async ({ user, body, accountService }) => {
-                return accountService.upsertAccount(user.id, body);
-            }, {
-                checkAuth: ["user"],
-                body: UpsertAccountDto,
-                detail: {
-                    tags: ["Account"],
-                    security: [{ JwtAuth: [] }],
-                    summary: "Create or update account",
-                },
-            })
-            .get("/", async ({ user, query, accountService }) => {
-                return accountService.listAccounts(user.id, query);
-            }, {
-                checkAuth: ["user"],
-                query: ListAccountsQueryDto,
-                detail: {
-                    tags: ["Account"],
-                    security: [{ JwtAuth: [] }],
-                    summary: "List all accounts",
-                },
-            })
-    );
-
-export default accountController;
+// server/src/modules/auth/controllers/auth.controller.ts (trích)
+export const authBaseController = new Elysia({ prefix: '/auth', tags: ['auth'] })
+  .use(reqMeta)
+  .post('/login', async ({ body, clientIp, userAgent }) => {
+    const result = await authService.login({ ...body, clientIp, userAgent });
+    return castToRes(result);
+  }, { body: LoginRequestDto, response: { 200: ResWrapper(LoginResponseDto) } })
+  .use(authCheck)
+  .post('/logout', async ({ currentUser, clientIp, userAgent }) => {
+    await authService.logout({
+      userId: currentUser.id,
+      sessionId: currentUser.sessionId,
+      clientIp,
+      userAgent,
+    });
+    return castToRes(null);
+  });
 ```
 
-### Service Pattern
+### 2.2 Service layer & dependency injection
 
-Services chứa business logic và data processing, được export như Elysia plugin để dependency injection.
+Logic nằm trong `server/src/service/**`. Services là singleton, export trực tiếp thay vì thông qua macro tự động.
+
+- Ví dụ: `authService` (đăng nhập, refresh token, session), `mfaSetupService`, `mfaBackupService`
+- Admin: `roleService`, `permissionService`, `settingAdminService`
+- Misc: `miscService` check health, `fileService` (S3/local), `captchaService`
+
+Services DI bằng `.use(serviceInstance)` hoặc import trực tiếp khi service không cần request context.
 
 ```typescript
-// src/services/AccountService.ts
-import { Elysia } from "elysia";
-import { prisma } from "../libs/db";
-import type { IUpsertAccountDto } from "../dto/account.dto";
+// server/src/service/auth/auth.service.ts (trích)
+export const authService = {
+  async login({ email, password, clientIp, userAgent }) {
+    // Validate credential, tạo session, phát access/refresh token
+  },
+  async logout({ userId, sessionId, clientIp, userAgent }) {
+    await sessionService.revoke(userId, [sessionId]);
+    await auditLogService.append({ ... });
+  },
+};
+```
 
-export class AccountService {
-    async upsertAccount(userId: string, data: IUpsertAccountDto) {
-        if (data.id) {
-            return prisma.account.update({
-                where: { id: data.id, userId },
-                data: {
-                    name: data.name,
-                    type: data.type,
-                    currencyId: data.currencyId,
-                    // ... other fields
-                },
-            });
-        }
-        return prisma.account.create({
-            data: {
-                userId,
-                name: data.name,
-                type: data.type,
-                currencyId: data.currencyId,
-                // ... other fields
-            },
-        });
-    }
+### 2.3 Config & cross-cutting
 
-    async listAccounts(userId: string, query: any) {
-        // Business logic here
-        const accounts = await prisma.account.findMany({
-            where: { userId },
-            // ... query logic
-        });
-        return { accounts, pagination: {} };
-    }
+- `config/db.ts`: Prisma client (PostgreSQL)
+- `config/cache.ts`: Redis-based caches (login/register rate limit)
+- `config/request.ts`: request metadata decorator (clientIp, userAgent)
+- `service/auth/authorization`: policy-based guard (`authorize`, `has`, `allOf`, `isSelf`)
+- `share/error`: custom error classes + DTO `ErrorResDto`
+- `share/type`: reusable DTO builders `ResWrapper`, `IdDto`, etc.
+
+### 2.4 Swagger & Eden Treaty
+
+`config/swagger.ts` đăng ký schemas/tags; `DOC_TAG` trong `share/constant` dùng để gom endpoints (AUTH, MFA, ADMIN_ROLE, MISC,...). Eden Treaty trên frontend tiêu thụ trực tiếp schema của app (qua `@server` alias).
+
+### 2.5 Background / infra services
+
+- `service/backend/*`: cluster run, graceful shutdown, worker service.
+- `service/misc/graceful-shutdown.service.ts`: hooks `SIGTERM`.
+- Queue/pubsub config đã sẵn `config/queue.ts`, `config/pubsub.ts` nhưng chưa sử dụng rộng rãi.
+
+## 3. Frontend Architecture (React + Ant Design + Mantine helpers)
+
+### 3.1 Cấu trúc chính
+
+- `src/app/pages`: `HomePage`, `WorkspacePage`, `SettingsPage`, `ErrorPage`
+- `src/app/providers`: `AuthProvider`, `ThemeModeProvider`, `AppProvider`
+- `src/app/routes.tsx`: định nghĩa `createHashRouter` (bắt buộc Hash Router)
+- `src/components/common`: wrappers chung (`AppTable`, `AppForm`, `PageHeader`, `AppDrawer`, `AppModal`)
+- `src/hooks/api`: hooks gọi API thực tế (ví dụ `useHealthcheck` -> `/misc/health`)
+- `src/hooks/useNotify`: wrapper Ant Design notification
+
+### 3.2 API client
+
+Hiện frontend chưa dùng Eden Treaty; thay vào đó các service thủ công tại `client/src/services/api/*.ts`.
+
+```typescript
+// client/src/services/api/healthcheck.service.ts
+export async function getHealthcheck() {
+  const res = await fetch(`${API_BASE_URL}/misc/health`);
+  if (!res.ok) throw new Error('Healthcheck failed');
+  return res.json();
 }
-
-// Export as Elysia plugin for dependency injection
-export default new Elysia().decorate("accountService", new AccountService());
 ```
 
-### DTO Pattern
-
-DTOs định nghĩa validation schemas sử dụng TypeBox (Elysia `t`), và extract TypeScript types.
+Hooks tiêu thụ service:
 
 ```typescript
-// src/dto/account.dto.ts
-import { t } from "elysia";
-import { AccountType } from "../generated/prisma/enums";
-
-export const UpsertAccountDto = t.Object({
-    id: t.Optional(t.String()),
-    type: t.Enum(AccountType),
-    name: t.String(),
-    currencyId: t.String(),
-    initialBalance: t.Optional(t.Number()),
-});
-
-export type IUpsertAccountDto = typeof UpsertAccountDto.static;
+// client/src/hooks/api/useHealthcheck.ts
+export function useHealthcheck() {
+  return useQuery({
+    queryKey: ['healthcheck'],
+    queryFn: getHealthcheck,
+  });
+}
 ```
 
-### Auth Macro Pattern
-
-Macro system của Elysia cho phép tạo custom functionality như authentication checking.
-
-```typescript
-// src/macros/auth.ts
-import { Elysia } from "elysia";
-import jwt from "jsonwebtoken";
-import { UserRole } from "../generated/prisma/enums";
-
-const authMacro = new Elysia()
-    .macro({
-        checkAuth(roles: string[]) {
-            return {
-                resolve({ headers }) {
-                    const token = headers.authorization?.split(" ")[1];
-                    if (!token) {
-                        throw new Error("Token not found");
-                    }
-                    const decoded = jwt.verify(token, appEnv.JWT_SECRET!) as any;
-                    if (!roles.includes(decoded.role)) {
-                        throw new Error("Permission denied");
-                    }
-                    return { user: decoded };
-                },
-            };
-        },
-    });
-
-export default authMacro;
-```
-
-## Frontend Architecture
-
-### API Client Pattern (Eden Treaty)
-
-Eden Treaty cung cấp type-safe API client với auto-generated types từ backend.
-
-```typescript
-// client/libs/api.ts
-import { treaty } from "@elysiajs/eden";
-import type { app } from "@server";
-import { ACCESS_TOKEN_KEY } from "@client/constants";
-
-export const api = treaty<typeof app>(window.location.origin, {
-    onRequest() {
-        const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-        if (accessToken) {
-            return {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            };
-        }
-    },
-});
-```
-
-### Query Hooks Pattern (TanStack Query)
-
-Query hooks sử dụng TanStack Query để fetch và cache server state.
-
-```typescript
-// client/hooks/queries/useAccountQueries.ts
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@client/libs/api";
-import type { AccountFull } from "@client/types/account";
-
-type ListAccountsQuery = {
-    type?: AccountType[];
-    currencyId?: string[];
-    search?: string;
-    page?: number;
-    limit?: number;
-};
-
-export const useAccountsQuery = (query: ListAccountsQuery = {}) => {
-    return useQuery({
-        queryKey: ["accounts", query],
-        queryFn: async () => {
-            const response = await api.api.accounts.get({ query });
-
-            if (response.error) {
-                throw new Error(
-                    response.error.value?.message ?? "Failed to fetch accounts"
-                );
-            }
-
-            return {
-                accounts: response.data.accounts.map((account) => ({
-                    ...account,
-                    balance: account.balance.toString(),
-                })) satisfies AccountFull[],
-                pagination: response.data.pagination,
-            };
-        },
-    });
-};
-```
-
-### Mutation Hooks Pattern (TanStack Query)
-
-Mutation hooks xử lý data mutations với automatic query invalidation.
-
-```typescript
-// client/hooks/mutations/useAccountMutations.ts
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import useToast from "@client/hooks/useToast";
-import { api } from "@client/libs/api";
-import type { AccountFormData } from "@client/types/account";
-
-export const useCreateAccountMutation = () => {
-    const { showError, showSuccess } = useToast();
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (data: Omit<AccountFormData, "id">) => {
-            const response = await api.api.accounts.post(data);
-            if (response.error) {
-                throw new Error(
-                    response.error.value?.message ?? "An unknown error occurred"
-                );
-            }
-            return response.data;
-        },
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["accounts"] });
-            showSuccess("Account created successfully");
-        },
-        onError: (error: Error) => {
-            showError(error.message);
-        },
-    });
-};
-```
-
-### Store Pattern (Zustand)
-
-Zustand stores quản lý global state như user info và theme preferences.
-
-```typescript
-// client/store/user.ts
-import { create } from "zustand";
-
-export type UserStore = {
-    user: User;
-    setUser: (user: User) => void;
-    clearUser: () => void;
-};
-
-const useUserStore = create<UserStore>((set) => ({
-    user: defaultUser,
-    setUser: (user: User) => set({ user }),
-    clearUser: () => set({ user: defaultUser }),
-}));
-
-export default useUserStore;
-```
-
-### DataTable Component Pattern
-
-DataTable component tái sử dụng với sorting, filtering, pagination.
-
-```typescript
-// client/components/AccountTable.tsx
-import DataTable from "./DataTable";
-import { createColumnHelper } from "@tanstack/react-table";
-import type { AccountFull } from "@client/types/account";
-
-const columnHelper = createColumnHelper<AccountFull>();
-
-const AccountTable = ({ accounts, onEdit, onDelete }) => {
-    const columns = useMemo(
-        () => [
-            columnHelper.accessor("name", {
-                header: t("accounts.name"),
-                enableSorting: true,
-            }),
-            columnHelper.accessor("balance", {
-                header: t("accounts.balance"),
-                cell: (info) => formatCurrency(info.getValue(), account.currency.symbol),
-            }),
-            // ... more columns
-        ],
-        []
-    );
-
-    return (
-        <DataTable
-            data={accounts}
-            columns={columns}
-            pagination={pagination}
-            search={{ onSearch: handleSearch }}
-            filters={{ slots: filterSlots, onReset: handleResetFilters }}
-            actions={{ onEdit, onDelete }}
-        />
-    );
-};
-```
-
-### Toast Notifications Pattern
-
-Toast notifications sử dụng Mantine Notifications với custom hook.
-
-```typescript
-// client/hooks/useToast.tsx
-import { notifications } from "@mantine/notifications";
-import { Check, Close } from "@mui/icons-material";
-
-const useToast = () => {
-    return {
-        showSuccess: (message: string, duration?: number) =>
-            notifications.show({
-                message,
-                color: "teal",
-                icon: <Check />,
-                autoClose: duration ?? 5000,
-            }),
-        showError: (message: string, duration?: number) =>
-            notifications.show({
-                message,
-                color: "red",
-                icon: <Close />,
-                autoClose: duration ?? 5000,
-            }),
-    };
-};
-```
-
-### i18n Pattern
-
-Internationalization sử dụng i18next với react-i18next.
-
-```typescript
-// client/i18n.ts
-import i18n from "i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
-import { initReactI18next } from "react-i18next";
-
-i18n.use(LanguageDetector)
-    .use(initReactI18next)
-    .init({
-        lng: "vi",
-        fallbackLng: "vi",
-        resources: {
-            en: { translation: enTranslations },
-            vi: { translation: viTranslations },
-        },
-    });
-
-// Usage in component
-import { useTranslation } from "react-i18next";
-
-const AccountPage = () => {
-    const { t } = useTranslation();
-    return <h1>{t("accounts.title")}</h1>;
-};
-```
-
-### Protected Route Pattern
-
-Protected routes kiểm tra authentication và redirect nếu cần.
-
-```typescript
-// client/layouts/index.tsx
-const ProtectedPageLayout = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
-
-    useEffect(() => {
-        const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-        if (!token) {
-            navigate("/login");
-        }
-    }, [location.pathname]);
-
-    return (
-        <div>
-            <Header />
-            <Outlet />
-            <Footer />
-        </div>
-    );
-};
-```
-
-### Router Pattern (CRITICAL)
-
-**QUAN TRỌNG**: Phải sử dụng Hash Router để tránh conflict với server routes.
-
-```typescript
-// client/router.ts
-import { createHashRouter } from "react-router"; // ✅ Hash Router
-
-// ❌ NEVER use createBrowserRouter - conflicts with static serving
-const router = createHashRouter([
-    {
-        Component: ProtectedPageLayout,
-        children: [
-            { path: "/", Component: HomePage },
-            { path: "/accounts", Component: AccountPage },
-            // ... more routes
-        ],
-    },
-    { path: "/login", Component: LoginPage },
-    { path: "/register", Component: RegisterPage },
-]);
-```
-
-## State Management Patterns
-
-### Global State (Zustand)
-
-Chỉ sử dụng cho state cần share giữa nhiều components:
-
-- User information
-- Theme preferences
-- UI state (sidebar open/close)
-
-### Server State (TanStack Query)
-
-Luôn sử dụng cho API data:
-
-- Accounts, Transactions, Investments
-- Automatic caching và synchronization
-- Background refetching
-
-### Local State (useState)
-
-Sử dụng cho component-specific state:
-
-- Form inputs
-- Dialog open/close
-- Selected items
-
-## Type Safety Patterns
-
-### Eden Treaty (End-to-End Types)
-
-Types tự động generate từ backend, không cần định nghĩa lại.
-
-### Prisma Generated Types
-
-Sử dụng types từ Prisma generated client cho database models.
-
-### Frontend Type Definitions
-
-Định nghĩa types riêng cho frontend trong `client/types/` khi cần transform data.
-
-## Best Practices
-
-1. **Separation of Concerns**: Controllers chỉ xử lý HTTP, Services chứa business logic
-2. **Dependency Injection**: Sử dụng Elysia plugins để inject dependencies
-3. **Type Safety**: Luôn sử dụng types từ backend, tránh định nghĩa lại
-4. **Query Invalidation**: Luôn invalidate queries sau mutations
-5. **Error Handling**: Centralized error handling trong middleware và hooks
+### 3.3 UI patterns
+
+- `AppTable`: bọc `antd` bảng + search, align với `PageHeader`
+- `AppForm`: bọc `Form` + `Form.Item` với generic type
+- `AppDrawer` + `AppModal`: unify prop naming, handing footer actions
+- `HomePage`: demo Dashboard (mock data + healthcheck status)
+- `WorkspacePage`: minh hoạ Drawer workflow
+- `SettingsPage`: form pattern (InputNumber, Select, Switch)
+
+### 3.4 State & i18n
+
+- Global store chưa cần nên chỉ dùng hook + React state
+- i18n config trong `client/src/i18n.ts` (vi/en) dùng `react-i18next`
+- Notify pattern `useNotify()` -> `notification.success`/`error`
+
+### 3.5 Routing & auth guard
+
+`createHashRouter` trong `src/app/routes.tsx`, layout `MainLayout` đảm nhiệm header, skeleton. Auth logic đang ở mức demo: `AuthProvider` cung cấp context, khi kết nối backend thực tế có thể cắm token logic tại đây.
+
+## 4. Luồng API hiện tại
+
+1. Frontend `useHealthcheck` -> GET `/misc/health`
+2. Auth flows:
+   - `POST /auth/login` (rate limit theo IP + email)
+   - `POST /auth/login/mfa/confirm`
+   - `POST /auth/refresh-token`
+   - `POST /auth/logout`, `/auth/logout/all`
+   - `POST /auth/user/register` + `/auth/user/verify-account`
+   - OTP service `/auth/otp`
+3. MFA:
+   - `/auth/mfa/setup/request`, `/setup/confirm`, `/disable`, `/status`
+   - `/auth/mfa/backup-codes/generate|verify|remaining`
+4. Admin:
+   - `/admin/i18n`, `/admin/roles`, `/admin/settings`, `/admin/sessions`
+   - Authorization dựa trên policy `authorize(has('ROLE.VIEW'))`...
+5. Misc:
+   - `/misc/system-info`, `/misc/time`, `/misc/version`
+   - `/misc/captcha/generate|verify`
+   - `/misc/file/upload`, `/misc/file/download/:filename`, `/misc/file/storage`
+
+## 5. Nguyên tắc thiết kế
+
+1. **Domain module hóa**: mọi endpoint phải nằm trong module tương ứng, tránh tạo controller rời rạc.
+2. **Service đơn nhiệm**: service chỉ giải quyết một domain (auth, mfa, session, file, misc...). Không trộn logic admin + auth chung 1 file.
+3. **Policy-based authorization**: thay vì hardcode role, dùng `authorize(has('PERMISSION'))` để dễ mở rộng.
+4. **DTO & type reuse**: schema định nghĩa trong `modules/*/dtos`, tận dụng `ResWrapper` để đảm bảo swagger + Eden Treaty đồng bộ.
+5. **Frontend Hash Router**: do backend serve static tại `/`, Browser Router sẽ đè path -> cấm.
+6. **Mock-first UI**: các trang demo (Dashboard, Workspace) dùng mock data để minh hoạ layout; khi có API mới chỉ cần thay data source.
+
+## 6. Checklist khi thêm module mới
+
+1. Backend
+   - Tạo DTO trong `modules/<domain>/dtos`
+   - Viết service mới trong `service/<domain>`
+   - Tạo controller group và thêm vào `modules/index.ts`
+   - Cập nhật `DOC_TAG` + swagger detail nếu cần
+   - Viết unit test (đặt tại `server/test/unit/<domain>`)
+2. Frontend
+   - Khai báo service/hook gọi API mới
+   - Tạo component/page nằm trong `app/pages` hoặc `features/<domain>`
+   - Sử dụng `AppForm`, `AppTable`, `PageHeader` để giữ UI đồng nhất
+3. Document
+   - Update `docs/technology/architecture.md` nếu cấu trúc thay đổi
+   - Bổ sung endpoint vào `docs/user-guide/api-reference.md`
+
+Tài liệu này sẽ được cập nhật khi có module/tính năng mới được merge vào codebase. Nếu kiến trúc thay đổi đáng kể (ví dụ thêm module tài chính), hãy mô tả chi tiết thay đổi và liên kết tới PR tương ứng.
 

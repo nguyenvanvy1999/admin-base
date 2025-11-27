@@ -6,14 +6,11 @@ import {
   type I18nPaginationDto,
   type I18nUpsertDto,
 } from 'src/modules/admin/dtos';
-import { BadReqErr, ErrCode, type IdsDto } from 'src/share';
+import { BadReqErr, ErrCode, type IIdsDto } from 'src/share';
 import XLSX from 'xlsx';
 
 type ListParams = typeof I18nPaginationDto.static;
 type UpsertParams = typeof I18nUpsertDto.static;
-type DeleteParams = typeof IdsDto.static;
-type ImportParams = { file: File };
-type ExportResult = Response;
 
 export class I18nService {
   constructor(
@@ -67,13 +64,13 @@ export class I18nService {
     }
   }
 
-  async delete(params: DeleteParams): Promise<void> {
+  async delete(params: IIdsDto): Promise<void> {
     await this.deps.db.i18n.deleteMany({
       where: { id: { in: params.ids } },
     });
   }
 
-  async import(params: ImportParams): Promise<void> {
+  async import(params: { file: File }): Promise<void> {
     const workbook = XLSX.read(await params.file.arrayBuffer(), {
       type: 'buffer',
     });
@@ -132,7 +129,7 @@ export class I18nService {
     ]);
   }
 
-  async export(): Promise<ExportResult> {
+  async export(): Promise<Response> {
     const translations = await this.deps.db.i18n.findMany();
     const keys = ['KEY', 'EN', 'ZH', 'KR', 'VI'];
     const data = translations.map((translation) => [

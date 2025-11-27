@@ -5,8 +5,7 @@ export const IdDto = t.Object({ id: t.String({ minLength: 1 }) });
 export const IdsDto = t.Object({
   ids: t.Array(t.String({ minLength: 1 }), { minItems: 1 }),
 });
-
-export const UserIdDto = t.Object({ userId: t.String({ minLength: 1 }) });
+export type IIdsDto = typeof IdsDto.static;
 
 export const SuccessResDto = t.Object({ success: t.Boolean() });
 

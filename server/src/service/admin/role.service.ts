@@ -1,11 +1,10 @@
 import { db, type IDb } from 'src/config/db';
 import type { RoleWhereInput } from 'src/generated';
 import type { RolePaginationDto, UpsertRoleDto } from 'src/modules/admin/dtos';
-import { ErrCode, type IdsDto } from 'src/share';
+import { ErrCode, type IIdsDto } from 'src/share';
 
 type ListParams = typeof RolePaginationDto.static;
 type UpsertParams = typeof UpsertRoleDto.static;
-type DeleteParams = typeof IdsDto.static;
 
 export class RoleService {
   constructor(
@@ -116,7 +115,7 @@ export class RoleService {
     }
   }
 
-  async delete(params: DeleteParams): Promise<void> {
+  async delete(params: IIdsDto): Promise<void> {
     const { ids } = params;
     const existUserRole = await this.deps.db.rolePlayer.findFirst({
       where: { roleId: { in: ids } },

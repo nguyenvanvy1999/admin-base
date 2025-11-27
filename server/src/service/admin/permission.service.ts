@@ -1,8 +1,6 @@
 import { db, type IDb } from 'src/config/db';
 import type { PermissionWhereInput } from 'src/generated';
 
-type ListParams = { roleId?: string };
-
 export class PermissionService {
   constructor(
     private readonly deps: {
@@ -12,7 +10,7 @@ export class PermissionService {
     },
   ) {}
 
-  list(params: ListParams) {
+  list(params: { roleId?: string }) {
     const { roleId } = params;
     const where: PermissionWhereInput = roleId
       ? { roles: { some: { roleId } } }

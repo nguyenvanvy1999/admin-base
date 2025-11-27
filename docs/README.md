@@ -9,33 +9,20 @@ cho frontend, với end-to-end type safety thông qua Eden Treaty.
 
 ## Cấu Trúc Tài Liệu
 
-Tài liệu được tổ chức thành 3 phần chính:
+Các tài liệu cũ mô tả modules quản lý tài chính (accounts, budgets, investments, …) đã bị gỡ bỏ vì không còn khớp với codebase hiện tại. Tài liệu mới được tổ chức thành 2 nhóm:
 
 ### 📚 [Tài Liệu Công Nghệ](./technology/)
 
-Tài liệu về công nghệ, kiến trúc và quy tắc phát triển:
-
-- [**Tech Stack**](./technology/tech-stack.md) - Danh sách công nghệ và công cụ sử dụng
-- [**Kiến Trúc Hệ Thống**](./technology/architecture.md) - Patterns và kiến trúc backend/frontend
-- [**Quy Tắc Code**](./technology/coding-rules.md) - Conventions và quy tắc bắt buộc
-- [**Hướng Dẫn Phát Triển**](./technology/development-guide.md) - Common tasks và troubleshooting
-
-### 🎯 [Tài Liệu Dự Án](./project/)
-
-Tài liệu về ý tưởng, thiết kế và kế hoạch dự án:
-
-- [**Tổng Quan Dự Án**](./project/overview.md) - Giới thiệu dự án, tính năng và yêu cầu
-- [**Database Schema**](./project/database-schema.md) - Thiết kế database và models
-- [**Đánh Giá Đầu Tư**](./project/investment-evaluation.md) - Đánh giá schema cho tính năng đầu tư
-- [**Roadmap**](./project/roadmap.md) - Kế hoạch triển khai và trạng thái implementation
+- [**Tech Stack**](./technology/tech-stack.md): tổng quan công nghệ
+- [**Kiến Trúc Hệ Thống**](./technology/architecture.md): cấu trúc monorepo và patterns đang dùng
+- [**Quy Tắc Code**](./technology/coding-rules.md): conventions và rule bắt buộc
+- [**Hướng Dẫn Phát Triển**](./technology/development-guide.md): checklist thao tác và troubleshooting
 
 ### 👤 [Hướng Dẫn Sử Dụng](./user-guide/)
 
-Tài liệu hướng dẫn cho người dùng và developer:
-
-- [**Bắt Đầu Sử Dụng**](./user-guide/getting-started.md) - Cài đặt và cấu hình
-- [**Tính Năng**](./user-guide/features.md) - Hướng dẫn sử dụng các tính năng chính
-- [**API Reference**](./user-guide/api-reference.md) - Tham chiếu API endpoints
+- [**Bắt Đầu Sử Dụng**](./user-guide/getting-started.md): setup backend/frontend
+- [**Tính Năng**](./user-guide/features.md): mô tả Dashboard demo, Workspace, Settings
+- [**API Reference**](./user-guide/api-reference.md): endpoints thực tế (Auth, MFA, Admin, Misc)
 
 ## Quick Start
 
@@ -45,31 +32,36 @@ Tài liệu hướng dẫn cho người dùng và developer:
 
 - [Bun](https://bun.sh) runtime
 - PostgreSQL database
-- Node.js 18+ (nếu không dùng Bun)
+- Node.js 18+ (tùy chọn cho công cụ CLI)
 
 ### Cài Đặt Nhanh
 
 ```bash
 # Clone repository
 git clone <repository-url>
-cd fin-track
+cd investment
 
-# Cài đặt dependencies
+# Cài đặt dependencies (mono-repo)
 bun install
 
-# Cấu hình environment variables
-cp .env.example .env
-# Chỉnh sửa .env với thông tin database của bạn
+# Cấu hình environment variables cho backend
+cp server/.env.example server/.env
 
 # Chạy migrations
+cd server
 bun run db:migrate
 bun run db:generate
 
-# Khởi động development server
+# Khởi động backend
+bun run dev
+
+# Mở một terminal khác để chạy frontend
+cd ../client
 bun run dev
 ```
 
-Truy cập ứng dụng tại `http://localhost:3000`
+- Backend: `http://localhost:3000`
+- Frontend: `http://localhost:5173`
 
 ## Tài Liệu Tham Khảo
 
