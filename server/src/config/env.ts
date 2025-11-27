@@ -93,21 +93,6 @@ export const envSchema = t.Object({
 
   BACKEND_URL: t.String({ default: '' }),
 
-  REGISTER_OTP_LIMIT: t.Number({ minimum: 1, maximum: 100, default: 5 }),
-  REGISTER_RATE_LIMIT_MAX: t.Number({ minimum: 1, maximum: 100, default: 5 }),
-  REGISTER_RATE_LIMIT_WINDOW_SECONDS: t.Number({
-    minimum: 60,
-    maximum: 3600,
-    default: 900,
-  }),
-
-  LOGIN_RATE_LIMIT_MAX: t.Number({ minimum: 1, maximum: 100, default: 10 }),
-  LOGIN_RATE_LIMIT_WINDOW_SECONDS: t.Number({
-    minimum: 60,
-    maximum: 3600,
-    default: 900,
-  }),
-
   AUDIT_LOG_FLUSH_INTERVAL_MS: t.Number({ minimum: 1000, default: 10_000 }),
 });
 

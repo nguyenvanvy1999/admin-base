@@ -1,10 +1,10 @@
 import { Elysia, t } from 'elysia';
 import { registerOtpLimitCache } from 'src/config/cache';
 import { db } from 'src/config/db';
-import { env } from 'src/config/env';
 import { UserStatus } from 'src/generated';
 import { OtpResDto } from 'src/modules/auth/dtos';
 import { otpService } from 'src/service/auth/otp.service';
+import { settingService } from 'src/service/misc/setting.service';
 import {
   castToRes,
   DOC_TAG,
@@ -25,7 +25,8 @@ async function checkOtpConditions(
   switch (purpose) {
     case PurposeVerify.REGISTER: {
       const limit = await registerOtpLimitCache.get(user.id);
-      if (limit && limit >= env.REGISTER_OTP_LIMIT) {
+      const { otpLimit } = await settingService.registerRateLimit();
+      if (limit && limit >= otpLimit) {
         await db.user.update({
           where: { id: user.id },
           data: { status: UserStatus.suspendded },

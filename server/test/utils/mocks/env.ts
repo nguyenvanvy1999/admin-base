@@ -58,7 +58,6 @@ export const DEFAULT_TEST_ENV: Partial<IEnv> = {
   MAIL_PASSWORD: 'test-password',
   MAIL_FROM: 'noreply@test.com',
   BACKEND_URL: '',
-  REGISTER_OTP_LIMIT: 5,
   AUDIT_LOG_FLUSH_INTERVAL_MS: 10000,
 };
 

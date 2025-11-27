@@ -200,6 +200,37 @@ export class SettingService {
   enbOnlyOneSession(): Promise<boolean> {
     return this.getSetting<boolean>(SETTING.ENB_ONLY_ONE_SESSION);
   }
+
+  async registerRateLimit(): Promise<{
+    otpLimit: number;
+    max: number;
+    windowSeconds: number;
+  }> {
+    const [otpLimit, max, windowSeconds] = await Promise.all([
+      this.getSetting<number>(SETTING.REGISTER_OTP_LIMIT),
+      this.getSetting<number>(SETTING.REGISTER_RATE_LIMIT_MAX),
+      this.getSetting<number>(SETTING.REGISTER_RATE_LIMIT_WINDOW_SECONDS),
+    ]);
+    return {
+      otpLimit,
+      max,
+      windowSeconds,
+    };
+  }
+
+  async loginRateLimit(): Promise<{
+    max: number;
+    windowSeconds: number;
+  }> {
+    const [max, windowSeconds] = await Promise.all([
+      this.getSetting<number>(SETTING.LOGIN_RATE_LIMIT_MAX),
+      this.getSetting<number>(SETTING.LOGIN_RATE_LIMIT_WINDOW_SECONDS),
+    ]);
+    return {
+      max,
+      windowSeconds,
+    };
+  }
 }
 
 export const settingService = new SettingService();

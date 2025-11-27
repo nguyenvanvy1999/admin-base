@@ -162,4 +162,24 @@ export const defaultSettings = {
     type: SettingDataType.boolean,
     value: 'false',
   },
+  [SETTING.REGISTER_OTP_LIMIT]: {
+    type: SettingDataType.number,
+    value: '5',
+  },
+  [SETTING.REGISTER_RATE_LIMIT_MAX]: {
+    type: SettingDataType.number,
+    value: '5',
+  },
+  [SETTING.REGISTER_RATE_LIMIT_WINDOW_SECONDS]: {
+    type: SettingDataType.number,
+    value: '900',
+  },
+  [SETTING.LOGIN_RATE_LIMIT_MAX]: {
+    type: SettingDataType.number,
+    value: '10',
+  },
+  [SETTING.LOGIN_RATE_LIMIT_WINDOW_SECONDS]: {
+    type: SettingDataType.number,
+    value: '900',
+  },
 } satisfies Record<SETTING, { value: string; type: SettingDataType }>;

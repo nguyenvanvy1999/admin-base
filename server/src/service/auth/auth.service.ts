@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import { authenticator } from 'otplib';
 import {
   type ILoginRateLimitCache,
+  type IMFACache,
   loginRateLimitCache,
   mfaCache,
 } from 'src/config/cache';
@@ -120,7 +121,7 @@ export class AuthService {
       referralService: ReferralService;
       userUtilService: UserUtilService;
       loginRateLimitCache: ILoginRateLimitCache;
-      mfaCache: typeof mfaCache;
+      mfaCache: IMFACache;
       authenticator: typeof authenticator;
     } = {
       db,
@@ -211,7 +212,10 @@ export class AuthService {
     const currentAttempts =
       (await this.deps.loginRateLimitCache.get(rateLimitKey)) ?? 0;
 
-    if (currentAttempts >= this.deps.env.LOGIN_RATE_LIMIT_MAX) {
+    const { max, windowSeconds } =
+      await this.deps.settingService.loginRateLimit();
+
+    if (currentAttempts >= max) {
       throw new BadReqErr(ErrCode.BadRequest, {
         errors: 'Too many login attempts. Please try again later.',
       });
@@ -220,7 +224,7 @@ export class AuthService {
     await this.deps.loginRateLimitCache.set(
       rateLimitKey,
       currentAttempts + 1,
-      this.deps.env.LOGIN_RATE_LIMIT_WINDOW_SECONDS,
+      windowSeconds,
     );
   }
 

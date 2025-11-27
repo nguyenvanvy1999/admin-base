@@ -1,6 +1,5 @@
 import { Elysia, t } from 'elysia';
 import { loginRateLimitCache, registerRateLimitCache } from 'src/config/cache';
-import { env } from 'src/config/env';
 import { reqMeta } from 'src/config/request';
 import {
   ChangePasswordRequestDto,
@@ -17,6 +16,7 @@ import {
 } from 'src/modules/auth/dtos';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authService } from 'src/service/auth/auth.service';
+import { settingService } from 'src/service/misc/setting.service';
 import {
   ACCESS_AUTH,
   authErrors,
@@ -41,7 +41,9 @@ export const authBaseController = new Elysia({
       const currentAttempts =
         (await loginRateLimitCache.get(rateLimitKey)) ?? 0;
 
-      if (currentAttempts >= env.LOGIN_RATE_LIMIT_MAX) {
+      const { max, windowSeconds } = await settingService.loginRateLimit();
+
+      if (currentAttempts >= max) {
         throw new BadReqErr(ErrCode.BadRequest, {
           errors: 'Too many login attempts. Please try again later.',
         });
@@ -50,7 +52,7 @@ export const authBaseController = new Elysia({
       await loginRateLimitCache.set(
         rateLimitKey,
         currentAttempts + 1,
-        env.LOGIN_RATE_LIMIT_WINDOW_SECONDS,
+        windowSeconds,
       );
 
       const result = await authService.login({
@@ -252,7 +254,9 @@ export const userAuthController = new Elysia({
       const currentAttempts =
         (await registerRateLimitCache.get(rateLimitKey)) ?? 0;
 
-      if (currentAttempts >= env.REGISTER_RATE_LIMIT_MAX) {
+      const { max, windowSeconds } = await settingService.registerRateLimit();
+
+      if (currentAttempts >= max) {
         throw new BadReqErr(ErrCode.BadRequest, {
           errors: 'Too many registration attempts. Please try again later.',
         });
@@ -261,7 +265,7 @@ export const userAuthController = new Elysia({
       await registerRateLimitCache.set(
         rateLimitKey,
         currentAttempts + 1,
-        env.REGISTER_RATE_LIMIT_WINDOW_SECONDS,
+        windowSeconds,
       );
 
       const result = await authService.register({

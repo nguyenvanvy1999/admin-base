@@ -112,7 +112,6 @@ describe('Environment Validation (src/config/env.ts)', () => {
     expect(env.LICENSE_NAME).toBe('Apache 2.0');
     expect(env.LICENSE_URL).toBe('https://www.apache.org/licenses/LICENSE-2.0');
     expect(env.BACKEND_URL).toBe('');
-    expect(env.REGISTER_OTP_LIMIT).toBe(5);
     expect(env.AUDIT_LOG_FLUSH_INTERVAL_MS).toBe(10_000);
     expect(env.ENB_CLUSTER).toBe(false);
   });
@@ -131,7 +130,6 @@ describe('Environment Validation (src/config/env.ts)', () => {
         SALT_LENGTH: '12',
         PASSWORD_MAX_ATTEMPT: '10',
         MAIL_PORT: '587',
-        REGISTER_OTP_LIMIT: '10',
         AUDIT_LOG_FLUSH_INTERVAL_MS: '10000',
         ENB_CLUSTER: 'true',
       }),
@@ -149,7 +147,6 @@ describe('Environment Validation (src/config/env.ts)', () => {
     expect(env.SALT_LENGTH).toBe(12);
     expect(env.PASSWORD_MAX_ATTEMPT).toBe(10);
     expect(env.MAIL_PORT).toBe(587);
-    expect(env.REGISTER_OTP_LIMIT).toBe(10);
     expect(env.AUDIT_LOG_FLUSH_INTERVAL_MS).toBe(10000);
     expect(env.ENB_CLUSTER).toBe(true);
   });
@@ -342,11 +339,6 @@ describe('Environment Validation (src/config/env.ts)', () => {
 
   it('should fail when REQ_TIMEOUT_SECOND is negative', () => {
     expectValidationFail({ REQ_TIMEOUT_SECOND: '-1' });
-  });
-
-  it('should fail when REGISTER_OTP_LIMIT is out of range', () => {
-    expectValidationFail({ REGISTER_OTP_LIMIT: '0' });
-    expectValidationFail({ REGISTER_OTP_LIMIT: '101' });
   });
 
   it('should fail when AUDIT_LOG_FLUSH_INTERVAL_MS is below minimum', () => {
