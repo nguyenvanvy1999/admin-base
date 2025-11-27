@@ -106,9 +106,9 @@ export default function LoginPage() {
         <Col xs={24} md={12} className="login-page__form">
           <Flex justify="center" align="center" style={{ minHeight: '100vh' }}>
             <Card
-              style={{ width: '100%', maxWidth: 420 }}
+              style={{ width: '100%', maxWidth: 420, overflow: 'hidden' }}
               bordered={false}
-              bodyStyle={{ padding: 32 }}
+              bodyStyle={{ padding: 32, overflow: 'hidden' }}
             >
               {renderCardContent()}
             </Card>

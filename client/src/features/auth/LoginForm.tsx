@@ -31,12 +31,14 @@ export function LoginForm({ loading, serverError, onSubmit }: LoginFormProps) {
 
   return (
     <AntdLoginForm
+      style={{ width: '100%' }}
       title={t('auth.login.title', 'Đăng nhập admin')}
       subTitle={t(
         'auth.login.subtitle',
         'Nhập thông tin xác thực để truy cập bảng điều khiển.',
       )}
       initialValues={{ rememberDevice: true }}
+      contentStyle={{ margin: 0, paddingBlock: 0 }}
       submitter={{
         searchConfig: { submitText: t('auth.login.cta', 'Tiếp tục') },
         submitButtonProps: {
