@@ -155,8 +155,6 @@ export class AuthService {
   async login(params: LoginParams): Promise<ILoginResponse> {
     const { email, password, clientIp, userAgent } = params;
 
-    this.validateLoginInput(email, password);
-
     await this.checkRateLimit(email, clientIp);
 
     const user = await this.findAndValidateUser(email);
@@ -171,17 +169,23 @@ export class AuthService {
       user,
     );
     if (!passwordValid) {
-      await this.logFailedLoginAttempt(clientIp, userAgent, {
-        reason: 'password_mismatch',
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: 'email', error: 'password_mismatch' },
         userId: user.id,
+        ip: clientIp,
+        userAgent,
       });
       throw new BadReqErr(ErrCode.PasswordNotMatch);
     }
 
     if (user.status !== UserStatus.active) {
-      await this.logFailedLoginAttempt(clientIp, userAgent, {
-        reason: 'user_not_active',
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: 'email', error: 'user_not_active' },
         userId: user.id,
+        ip: clientIp,
+        userAgent,
       });
       throw new BadReqErr(ErrCode.UserNotActive);
     }
@@ -198,9 +202,12 @@ export class AuthService {
     );
 
     if (securityResult.action === 'block') {
-      await this.logFailedLoginAttempt(clientIp, userAgent, {
-        reason: 'security_blocked',
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: 'email', error: 'security_blocked' },
         userId: user.id,
+        ip: clientIp,
+        userAgent,
       });
       throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
     }
@@ -215,27 +222,6 @@ export class AuthService {
       userAgent,
       securityResult,
     );
-  }
-
-  private validateLoginInput(email: string, password: string): void {
-    if (!email || !email.trim()) {
-      throw new BadReqErr(ErrCode.ValidationError, {
-        errors: 'Email is required',
-      });
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      throw new BadReqErr(ErrCode.ValidationError, {
-        errors: 'Invalid email format',
-      });
-    }
-
-    if (!password || !password.trim()) {
-      throw new BadReqErr(ErrCode.ValidationError, {
-        errors: 'Password is required',
-      });
-    }
   }
 
   private async checkRateLimit(email: string, clientIp: string): Promise<void> {
@@ -313,23 +299,6 @@ export class AuthService {
     });
 
     return loginRes;
-  }
-
-  private async logFailedLoginAttempt(
-    clientIp: string,
-    userAgent: string,
-    metadata: { reason: string; userId?: string },
-  ): Promise<void> {
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.LOGIN,
-      payload: {
-        method: 'email',
-        error: metadata.reason,
-      },
-      userId: metadata.userId ?? null,
-      ip: clientIp,
-      userAgent,
-    });
   }
 
   private async handleMfaLogin(
@@ -698,8 +667,12 @@ export class AuthService {
     const cachedData = await this.deps.mfaCache.get(cacheKey);
 
     if (!cachedData) {
-      await this.logFailedLoginAttempt(clientIp, userAgent, {
-        reason: 'mfa_session_expired',
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: 'email', error: 'mfa_session_expired' },
+        userId: null,
+        ip: clientIp,
+        userAgent,
       });
       throw new BadReqErr(ErrCode.SessionExpired);
     }
@@ -710,9 +683,12 @@ export class AuthService {
     });
 
     if (!user || !user.totpSecret) {
-      await this.logFailedLoginAttempt(clientIp, userAgent, {
-        reason: 'mfa_user_not_found',
-        userId: cachedData.userId,
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: 'email', error: 'mfa_user_not_found' },
+        userId: cachedData.userId ?? null,
+        ip: clientIp,
+        userAgent,
       });
       throw new NotFoundErr(ErrCode.UserNotFound);
     }
@@ -723,17 +699,23 @@ export class AuthService {
     });
 
     if (!isValidOtp) {
-      await this.logFailedLoginAttempt(clientIp, userAgent, {
-        reason: 'mfa_invalid_otp',
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: 'email', error: 'mfa_invalid_otp' },
         userId: user.id,
+        ip: clientIp,
+        userAgent,
       });
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
 
     if (user.status !== UserStatus.active) {
-      await this.logFailedLoginAttempt(clientIp, userAgent, {
-        reason: 'user_not_active',
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: 'email', error: 'user_not_active' },
         userId: user.id,
+        ip: clientIp,
+        userAgent,
       });
       throw new BadReqErr(ErrCode.UserNotActive);
     }
@@ -752,9 +734,12 @@ export class AuthService {
         });
 
       if (securityResult.action === 'block') {
-        await this.logFailedLoginAttempt(clientIp, userAgent, {
-          reason: 'security_blocked',
+        await this.deps.auditLogService.push({
+          type: ACTIVITY_TYPE.LOGIN,
+          payload: { method: 'email', error: 'security_blocked' },
           userId: user.id,
+          ip: clientIp,
+          userAgent,
         });
         throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
       }
