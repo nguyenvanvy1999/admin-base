@@ -1,5 +1,5 @@
 import type { JWTPayload } from 'jose';
-import type { PrismaClient, User, UserStatus } from 'src/generated';
+import type { PrismaClient, User } from 'src/generated';
 import type { Paths } from 'type-fest';
 import {
   ACTIVITY_TYPE,
@@ -78,14 +78,10 @@ export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
   };
   [ACTIVITY_TYPE.UPDATE_USER]: {
     id: string;
-    enabled?: boolean;
-    roleIds?: string[];
-    username?: string;
-    status?: UserStatus;
-    previousStatus?: UserStatus;
     reason?: string;
     actorId?: string;
     action?: string;
+    changes?: Record<string, { previous: unknown; next: unknown }>;
   };
   [ACTIVITY_TYPE.INTERNAL_ERROR]: Record<string, any>;
   [ACTIVITY_TYPE.P2P_ORDER_EXPIRED]: {

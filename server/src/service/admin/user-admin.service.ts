@@ -1,3 +1,7 @@
+import type {
+  AdminUserActionResDto,
+  AdminUserUpdateDto,
+} from '@server/modules/admin/dtos';
 import { db, type IDb } from 'src/config/db';
 import { UserStatus } from 'src/generated';
 import {
@@ -16,18 +20,21 @@ type BaseUserActionParams = {
   reason?: string;
 };
 
-type UpdateStatusParams = BaseUserActionParams & {
-  status: UserStatus;
-};
+type UserActionResult = typeof AdminUserActionResDto.static;
 
-type UserActionResult = {
-  userId: string;
-  auditLogId: string;
-};
+type UpdateUserParams = BaseUserActionParams & typeof AdminUserUpdateDto.static;
 
-type UserStatusResult = UserActionResult & {
-  status: UserStatus;
-};
+const updateUserSelect = {
+  id: true,
+  status: true,
+  name: true,
+  lockoutUntil: true,
+  lockoutReason: true,
+  emailVerified: true,
+  passwordAttempt: true,
+  passwordExpired: true,
+  roles: { select: { roleId: true } },
+} as const;
 
 export class AdminUserService {
   constructor(
@@ -88,36 +95,134 @@ export class AdminUserService {
     return { userId: targetUserId, auditLogId };
   }
 
-  async updateUserStatus(
-    params: UpdateStatusParams,
-  ): Promise<UserStatusResult> {
-    const { targetUserId, actorId, status, reason } = params;
+  async updateUser(
+    params: UpdateUserParams,
+  ): Promise<typeof AdminUserActionResDto.static> {
+    const {
+      targetUserId,
+      actorId,
+      status,
+      name,
+      roleIds,
+      lockoutUntil,
+      lockoutReason,
+      emailVerified,
+      passwordAttempt,
+      passwordExpired,
+      reason,
+    } = params;
     const normalizedReason = this.normalizeReason(reason);
-    const user = await this.ensureUserExists(targetUserId);
 
-    if (user.status === status) {
-      const auditLogId = await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.UPDATE_USER,
-        payload: {
-          id: targetUserId,
-          status,
-          previousStatus: user.status,
-          reason: normalizedReason,
-          actorId,
-          action: 'status-update',
-        },
-        userId: actorId,
-      });
-      return { userId: targetUserId, status, auditLogId };
+    const existingUser = await this.deps.db.user.findUnique({
+      where: { id: targetUserId },
+      select: updateUserSelect,
+    });
+    if (!existingUser) {
+      throw new NotFoundErr(ErrCode.UserNotFound);
     }
 
-    await this.deps.db.user.update({
-      where: { id: targetUserId },
-      data: { status },
-      select: { id: true },
-    });
+    type UserSnapshot = typeof existingUser;
+    type AssignableField = Exclude<
+      keyof UserSnapshot,
+      'id' | 'roles' | 'status'
+    >;
 
-    if (status !== UserStatus.active) {
+    const updateData: Record<string, unknown> = {};
+    let hasScalarUpdate = false;
+    const auditChanges: Record<string, { previous: unknown; next: unknown }> =
+      {};
+
+    if (status !== undefined) {
+      auditChanges.status = {
+        previous: existingUser.status,
+        next: status,
+      };
+      if (status !== existingUser.status) {
+        updateData.status = status;
+        hasScalarUpdate = true;
+      }
+    }
+
+    const assignIfProvided = <K extends AssignableField>(
+      field: K,
+      nextValue: UserSnapshot[K] | null | undefined,
+    ) => {
+      if (nextValue === undefined) {
+        return;
+      }
+      auditChanges[field as string] = {
+        previous: existingUser[field],
+        next: nextValue,
+      };
+      if (nextValue !== existingUser[field]) {
+        updateData[field as string] = nextValue as never;
+        hasScalarUpdate = true;
+      }
+    };
+
+    assignIfProvided('name', name);
+    assignIfProvided('lockoutUntil', lockoutUntil);
+    assignIfProvided('lockoutReason', lockoutReason);
+    assignIfProvided('emailVerified', emailVerified);
+    assignIfProvided('passwordAttempt', passwordAttempt);
+    assignIfProvided('passwordExpired', passwordExpired);
+
+    let normalizedRoleIds: string[] | undefined;
+    if (roleIds !== undefined) {
+      normalizedRoleIds = Array.from(new Set(roleIds));
+      const previousRoleIds = existingUser.roles.map((role) => role.roleId);
+      auditChanges.roleIds = {
+        previous: previousRoleIds,
+        next: normalizedRoleIds,
+      };
+      const rolesToRemove = previousRoleIds.filter(
+        (roleId) => !normalizedRoleIds?.includes(roleId),
+      );
+      if (rolesToRemove.length > 0) {
+        await this.deps.db.rolePlayer.deleteMany({
+          where: {
+            playerId: targetUserId,
+            roleId: { in: rolesToRemove },
+          },
+        });
+      }
+      const rolesToAdd = normalizedRoleIds.filter(
+        (roleId) => !previousRoleIds.includes(roleId),
+      );
+      if (rolesToAdd.length > 0) {
+        await this.deps.db.rolePlayer.createMany({
+          data: rolesToAdd.map((roleId) => ({
+            id: crypto.randomUUID(),
+            roleId,
+            playerId: targetUserId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+    }
+
+    let latestUser = existingUser;
+    if (hasScalarUpdate) {
+      latestUser = await this.deps.db.user.update({
+        where: { id: targetUserId },
+        data: updateData as Parameters<IDb['user']['update']>[0]['data'],
+        select: updateUserSelect,
+      });
+    }
+
+    if (normalizedRoleIds !== undefined) {
+      latestUser = {
+        ...latestUser,
+        roles: normalizedRoleIds.map((roleId) => ({ roleId })),
+      };
+    }
+
+    const shouldRevokeSessions =
+      status !== undefined &&
+      status !== existingUser.status &&
+      status !== UserStatus.active;
+
+    if (shouldRevokeSessions) {
       await this.deps.sessionService.revoke(targetUserId);
     }
 
@@ -125,16 +230,18 @@ export class AdminUserService {
       type: ACTIVITY_TYPE.UPDATE_USER,
       payload: {
         id: targetUserId,
-        status,
-        previousStatus: user.status,
         reason: normalizedReason,
         actorId,
-        action: 'status-update',
+        action: 'user-update',
+        changes: auditChanges,
       },
       userId: actorId,
     });
 
-    return { userId: targetUserId, status, auditLogId };
+    return {
+      userId: targetUserId,
+      auditLogId,
+    };
   }
 
   private async ensureUserExists(userId: string): Promise<{

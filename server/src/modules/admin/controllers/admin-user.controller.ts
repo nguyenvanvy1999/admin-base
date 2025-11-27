@@ -2,8 +2,8 @@ import { Elysia } from 'elysia';
 import {
   AdminUserActionResDto,
   AdminUserMfaActionDto,
-  AdminUserStatusResDto,
-  AdminUserStatusUpdateDto,
+  AdminUserUpdateDto,
+  AdminUserUpdateResDto,
 } from 'src/modules/admin/dtos';
 import { adminUserService } from 'src/service/admin/user-admin.service';
 import { authorize, has } from 'src/service/auth/authorization';
@@ -64,21 +64,21 @@ export const adminUserController = new Elysia<'', AppAuthMeta>({
     )
     .use(authorize(has('USER.UPDATE')))
     .patch(
-      '/:id/status',
+      '/:id',
       async ({ params: { id }, currentUser, body }) => {
-        const result = await adminUserService.updateUserStatus({
+        const result = await adminUserService.updateUser({
           targetUserId: id,
           actorId: currentUser.id,
           status: body.status,
-          reason: body.reason,
+          ...body,
         });
         return castToRes(result);
       },
       {
         params: IdDto,
-        body: AdminUserStatusUpdateDto,
+        body: AdminUserUpdateDto,
         response: {
-          200: ResWrapper(AdminUserStatusResDto),
+          200: ResWrapper(AdminUserUpdateResDto),
           400: ErrorResDto,
           ...authErrors,
         },
