@@ -1,22 +1,11 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, Button, Checkbox, Flex, Form, Input, Typography } from 'antd';
-import { Controller, useForm } from 'react-hook-form';
+import {
+  LoginForm as AntdLoginForm,
+  ProFormCheckbox,
+  ProFormText,
+} from '@ant-design/pro-components';
+import { Alert } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { CredentialsFormValues } from 'src/features/auth/hooks/useAuthFlow';
-import { z } from 'zod';
-
-const loginSchema = z.object({
-  email: z
-    .string({ required_error: 'Email is required' })
-    .email('Email is invalid')
-    .trim(),
-  password: z
-    .string({ required_error: 'Password is required' })
-    .min(6, 'Password must be at least 6 characters'),
-  rememberDevice: z.boolean().default(true),
-});
-
-export type LoginFormValues = z.infer<typeof loginSchema>;
 
 interface LoginFormProps {
   loading?: boolean;
@@ -27,110 +16,88 @@ interface LoginFormProps {
 export function LoginForm({ loading, serverError, onSubmit }: LoginFormProps) {
   const { t } = useTranslation();
 
-  const { control, handleSubmit } = useForm<LoginFormValues>({
-    defaultValues: {
-      email: '',
-      password: '',
-      rememberDevice: true,
-    },
-    resolver: zodResolver(loginSchema),
-    mode: 'onChange',
-  });
-
-  const submitHandler = handleSubmit((values) => {
-    onSubmit(values);
-  });
+  const handleFinish = async (
+    values: CredentialsFormValues,
+  ): Promise<boolean> => {
+    await Promise.resolve(
+      onSubmit({
+        email: values.email,
+        password: values.password,
+        rememberDevice: Boolean(values.rememberDevice),
+      }),
+    );
+    return true;
+  };
 
   return (
-    <form onSubmit={submitHandler} style={{ width: '100%' }}>
-      <Form layout="vertical" component="div" requiredMark={false}>
-        <Flex vertical gap={16}>
-          <div>
-            <Typography.Title level={3} style={{ marginBottom: 4 }}>
-              {t('auth.login.title', 'Đăng nhập admin')}
-            </Typography.Title>
-            <Typography.Text type="secondary">
-              {t(
-                'auth.login.subtitle',
-                'Nhập thông tin xác thực để truy cập bảng điều khiển.',
-              )}
-            </Typography.Text>
-          </div>
+    <AntdLoginForm
+      title={t('auth.login.title', 'Đăng nhập admin')}
+      subTitle={t(
+        'auth.login.subtitle',
+        'Nhập thông tin xác thực để truy cập bảng điều khiển.',
+      )}
+      initialValues={{ rememberDevice: true }}
+      submitter={{
+        searchConfig: { submitText: t('auth.login.cta', 'Tiếp tục') },
+        submitButtonProps: {
+          block: true,
+          size: 'large',
+          loading,
+        },
+      }}
+      onFinish={handleFinish}
+    >
+      {serverError && (
+        <Alert
+          type="error"
+          showIcon
+          message={serverError}
+          closable
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
-          {serverError && (
-            <Alert type="error" showIcon message={serverError} closable />
-          )}
+      <ProFormText
+        name="email"
+        label={t('auth.login.email', 'Email công việc')}
+        placeholder={t('auth.login.emailPlaceholder', 'admin@company.com')}
+        fieldProps={{
+          size: 'large',
+          autoComplete: 'email',
+          inputMode: 'email',
+        }}
+        rules={[
+          {
+            required: true,
+            message: t('auth.login.emailRequired', 'Vui lòng nhập email'),
+          },
+          {
+            type: 'email',
+            message: t('auth.login.emailInvalid', 'Email không hợp lệ'),
+          },
+        ]}
+      />
 
-          <Controller
-            name="email"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Form.Item
-                label={t('auth.login.email', 'Email công việc')}
-                validateStatus={fieldState.error ? 'error' : undefined}
-                help={fieldState.error?.message}
-              >
-                <Input
-                  {...field}
-                  size="large"
-                  placeholder={t(
-                    'auth.login.emailPlaceholder',
-                    'admin@company.com',
-                  )}
-                  autoComplete="email"
-                  inputMode="email"
-                />
-              </Form.Item>
-            )}
-          />
+      <ProFormText.Password
+        name="password"
+        label={t('auth.login.password', 'Mật khẩu')}
+        placeholder={t('auth.login.passwordPlaceholder', 'Nhập mật khẩu')}
+        fieldProps={{ size: 'large', autoComplete: 'current-password' }}
+        rules={[
+          {
+            required: true,
+            message: t('auth.login.passwordRequired', 'Vui lòng nhập mật khẩu'),
+          },
+          {
+            min: 6,
+            message: t('auth.login.passwordMin', 'Mật khẩu tối thiểu 6 ký tự'),
+          },
+        ]}
+      />
 
-          <Controller
-            name="password"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Form.Item
-                label={t('auth.login.password', 'Mật khẩu')}
-                validateStatus={fieldState.error ? 'error' : undefined}
-                help={fieldState.error?.message}
-              >
-                <Input.Password
-                  {...field}
-                  size="large"
-                  placeholder={t(
-                    'auth.login.passwordPlaceholder',
-                    'Nhập mật khẩu',
-                  )}
-                  autoComplete="current-password"
-                />
-              </Form.Item>
-            )}
-          />
-
-          <Controller
-            name="rememberDevice"
-            control={control}
-            render={({ field }) => (
-              <Checkbox
-                {...field}
-                checked={field.value}
-                style={{ marginBottom: 12 }}
-              >
-                {t('auth.login.rememberDevice', 'Tin tưởng thiết bị này')}
-              </Checkbox>
-            )}
-          />
-
-          <Button
-            type="primary"
-            htmlType="submit"
-            size="large"
-            block
-            loading={loading}
-          >
-            {t('auth.login.cta', 'Tiếp tục')}
-          </Button>
-        </Flex>
-      </Form>
-    </form>
+      <ProFormCheckbox name="rememberDevice">
+        {t('auth.login.rememberDevice', 'Tin tưởng thiết bị này')}
+      </ProFormCheckbox>
+    </AntdLoginForm>
   );
 }

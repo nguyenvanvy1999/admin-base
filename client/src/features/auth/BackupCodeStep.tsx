@@ -1,18 +1,12 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, Button, Flex, Form, Input, Typography } from 'antd';
+import { ProForm, ProFormText } from '@ant-design/pro-components';
+import { Alert, Button, Form, Typography } from 'antd';
 import { useEffect } from 'react';
-import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { MfaChallenge } from 'src/types/auth';
-import { z } from 'zod';
 
-const backupSchema = z.object({
-  code: z
-    .string({ required_error: 'Backup code is required' })
-    .min(8, 'Backup code must have at least 8 characters'),
-});
-
-type BackupFormValues = z.infer<typeof backupSchema>;
+interface BackupFormValues {
+  code: string;
+}
 
 interface BackupCodeStepProps {
   challenge: MfaChallenge | null;
@@ -30,85 +24,77 @@ export function BackupCodeStep({
   onBackToOtp,
 }: BackupCodeStepProps) {
   const { t } = useTranslation();
-  const { control, handleSubmit, reset } = useForm<BackupFormValues>({
-    defaultValues: { code: '' },
-    resolver: zodResolver(backupSchema),
-  });
+  const [form] = Form.useForm<BackupFormValues>();
 
   useEffect(() => {
-    reset({ code: '' });
-  }, [challenge?.challengeId, reset]);
-
-  const submitHandler = handleSubmit((values) => {
-    onSubmit(values.code);
-  });
+    form.setFieldsValue({ code: '' });
+  }, [challenge?.challengeId, form]);
 
   const remaining = challenge?.backupCodesRemaining;
 
   return (
-    <form onSubmit={submitHandler}>
-      <Form layout="vertical" component="div" requiredMark={false}>
-        <Flex vertical gap={16}>
-          <div>
-            <Typography.Title level={4} style={{ marginBottom: 4 }}>
-              {t('auth.backup.title', 'Dùng mã dự phòng')}
-            </Typography.Title>
-            <Typography.Text type="secondary">
-              {t(
-                'auth.backup.subtitle',
-                'Nhập một mã dự phòng chưa dùng để tiếp tục.',
-              )}
-            </Typography.Text>
-          </div>
+    <ProForm<BackupFormValues>
+      form={form}
+      layout="vertical"
+      submitter={{
+        searchConfig: { submitText: t('auth.backup.cta', 'Xác nhận') },
+        submitButtonProps: {
+          block: true,
+          size: 'large',
+          loading,
+        },
+      }}
+      onFinish={(values) => {
+        onSubmit(values.code);
+        return true;
+      }}
+    >
+      <Typography.Title level={4} style={{ marginBottom: 4 }}>
+        {t('auth.backup.title', 'Dùng mã dự phòng')}
+      </Typography.Title>
+      <Typography.Text type="secondary">
+        {t(
+          'auth.backup.subtitle',
+          'Nhập một mã dự phòng chưa dùng để tiếp tục.',
+        )}
+      </Typography.Text>
 
-          {typeof remaining === 'number' && (
-            <Typography.Text type="secondary">
-              {t('auth.backup.remaining', {
-                count: remaining,
-              })}
-            </Typography.Text>
-          )}
+      {typeof remaining === 'number' && (
+        <Typography.Text type="secondary">
+          {t('auth.backup.remaining', { count: remaining })}
+        </Typography.Text>
+      )}
 
-          {serverError && (
-            <Alert type="error" message={serverError} showIcon closable />
-          )}
+      {serverError && (
+        <Alert
+          type="error"
+          message={serverError}
+          showIcon
+          closable
+          style={{ marginTop: 16 }}
+        />
+      )}
 
-          <Controller
-            name="code"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Form.Item
-                label={t('auth.backup.codeLabel', 'Mã dự phòng')}
-                validateStatus={fieldState.error ? 'error' : undefined}
-                help={fieldState.error?.message}
-              >
-                <Input
-                  {...field}
-                  size="large"
-                  placeholder={t('auth.backup.placeholder', 'Nhập mã dự phòng')}
-                  autoFocus
-                />
-              </Form.Item>
-            )}
-          />
+      <ProFormText
+        name="code"
+        label={t('auth.backup.codeLabel', 'Mã dự phòng')}
+        placeholder={t('auth.backup.placeholder', 'Nhập mã dự phòng')}
+        fieldProps={{ size: 'large', autoFocus: true }}
+        rules={[
+          {
+            required: true,
+            message: t('auth.backup.codeRequired', 'Vui lòng nhập mã dự phòng'),
+          },
+          {
+            min: 8,
+            message: t('auth.backup.codeInvalid', 'Tối thiểu 8 ký tự'),
+          },
+        ]}
+      />
 
-          <Flex gap={8}>
-            <Button
-              type="primary"
-              htmlType="submit"
-              size="large"
-              block
-              loading={loading}
-            >
-              {t('auth.backup.cta', 'Xác nhận')}
-            </Button>
-          </Flex>
-
-          <Button type="link" onClick={() => onBackToOtp?.()}>
-            {t('auth.backup.useOtp', 'Quay lại OTP')}
-          </Button>
-        </Flex>
-      </Form>
-    </form>
+      <Button type="link" onClick={() => onBackToOtp?.()}>
+        {t('auth.backup.useOtp', 'Quay lại OTP')}
+      </Button>
+    </ProForm>
   );
 }
