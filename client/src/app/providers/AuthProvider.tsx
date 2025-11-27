@@ -1,14 +1,17 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { createContext, useContext, useEffect, useState } from 'react';
-import { apiClient } from 'src/lib/api/client';
-import { authService, type User } from 'src/services/api/auth.service';
+import { createContext, useContext, useEffect } from 'react';
+import { authService } from 'src/services/auth';
+import { authStore, useAuthStore } from 'src/store/authStore';
+import type { AuthUser, LoginSuccessResponse, TokenSet } from 'src/types/auth';
 
 interface AuthContextValue {
-  user: User | null;
+  user: AuthUser | null;
+  tokens: TokenSet | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  isBootstrapping: boolean;
+  isLoadingProfile: boolean;
+  completeSignIn: (session: LoginSuccessResponse) => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -19,65 +22,69 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const AUTH_ME_QUERY_KEY = ['auth', 'me'] as const;
+
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const queryClient = useQueryClient();
+  const user = useAuthStore((state) => state.user);
+  const tokens = useAuthStore((state) => state.tokens);
+  const bootstrapped = useAuthStore((state) => state.bootstrapped);
+
+  useEffect(() => {
+    authStore.hydrate();
+  }, []);
 
   const {
-    data: user,
-    isLoading: isLoadingUser,
-    refetch: refetchUser,
-  } = useQuery({
-    queryKey: ['auth', 'me'],
+    data: profile,
+    error: profileError,
+    isFetching: isFetchingProfile,
+    refetch: refetchProfile,
+  } = useQuery<AuthUser>({
+    queryKey: AUTH_ME_QUERY_KEY,
     queryFn: () => authService.getCurrentUser(),
-    enabled: isAuthenticated,
+    enabled: !!tokens?.accessToken,
     retry: false,
   });
 
-  const loginMutation = useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) =>
-      authService.login({ email, password }),
-    onSuccess: (data) => {
-      apiClient.setAuthToken(data.accessToken);
-      setIsAuthenticated(true);
-      queryClient.setQueryData(['auth', 'me'], data.user);
-    },
-  });
-
-  const logoutMutation = useMutation({
-    mutationFn: () => authService.logout(),
-    onSuccess: () => {
-      apiClient.setAuthToken(null);
-      setIsAuthenticated(false);
-      queryClient.clear();
-    },
-  });
+  useEffect(() => {
+    if (profile) {
+      authStore.setUser(profile);
+    }
+  }, [profile]);
 
   useEffect(() => {
-    const token = apiClient.getAuthToken();
-    if (token) {
-      setIsAuthenticated(true);
+    if (profileError) {
+      authStore.clear();
     }
-  }, []);
+  }, [profileError]);
 
-  const login = async (email: string, password: string): Promise<void> => {
-    await loginMutation.mutateAsync({ email, password });
+  const completeSignIn = (session: LoginSuccessResponse): void => {
+    authStore.setTokens(session.tokens);
+    authStore.setUser(session.user);
+    queryClient.setQueryData(AUTH_ME_QUERY_KEY, session.user);
   };
 
   const logout = async (): Promise<void> => {
-    await logoutMutation.mutateAsync();
+    try {
+      await authService.logout();
+    } finally {
+      authStore.clear();
+      queryClient.removeQueries({ queryKey: AUTH_ME_QUERY_KEY });
+    }
   };
 
   const refreshUser = async (): Promise<void> => {
-    await refetchUser();
+    await refetchProfile();
   };
 
   const value: AuthContextValue = {
-    user: user ?? null,
-    isAuthenticated: isAuthenticated && !!user,
-    isLoading:
-      isLoadingUser || loginMutation.isPending || logoutMutation.isPending,
-    login,
+    user,
+    tokens,
+    isAuthenticated: Boolean(tokens?.accessToken && user),
+    isBootstrapping:
+      !bootstrapped || (Boolean(tokens?.accessToken) && isFetchingProfile),
+    isLoadingProfile: isFetchingProfile,
+    completeSignIn,
     logout,
     refreshUser,
   };

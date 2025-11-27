@@ -6,12 +6,14 @@ import MainLayout from './layouts/MainLayout';
 const HomePage = lazy(() => import('./pages/HomePage'));
 const WorkspacePage = lazy(() => import('./pages/WorkspacePage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const ErrorPage = lazy(() => import('./pages/ErrorPage'));
 
 export function AppRoutes() {
   return (
     <Routes>
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/" element={<MainLayout />}>
         <Route
           index

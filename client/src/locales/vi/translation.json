@@ -72,6 +72,48 @@
     "baseCurrency": "Tiền tệ cơ sở",
     "baseCurrencyPlaceholder": "Chọn tiền tệ cơ sở"
   },
+  "auth": {
+    "hero": {
+      "title": "Investment Admin Portal",
+      "subtitle": "Kiến trúc bảo mật đa lớp cho đội ngũ vận hành.",
+      "items": {
+        "security": "Chuẩn bảo mật OWASP & SOC2",
+        "audit": "Giám sát mọi phiên đặc quyền theo thời gian thực",
+        "mfa": "MFA & backup code sẵn sàng"
+      }
+    },
+    "login": {
+      "title": "Đăng nhập an toàn",
+      "subtitle": "Dùng thông tin nội bộ để truy cập bảng điều khiển.",
+      "email": "Email công việc",
+      "emailPlaceholder": "admin@company.com",
+      "password": "Mật khẩu",
+      "passwordPlaceholder": "Nhập mật khẩu",
+      "rememberDevice": "Tin tưởng thiết bị này",
+      "cta": "Tiếp tục",
+      "successTitle": "Đăng nhập thành công",
+      "successSubtitle": "Đang chuyển hướng..."
+    },
+    "mfa": {
+      "title": "Xác thực đa yếu tố",
+      "subtitle": "Nhập mã OTP từ ứng dụng xác thực hoặc SMS.",
+      "codeLabel": "Mã xác thực",
+      "rememberDevice": "Tin tưởng thiết bị này",
+      "cta": "Xác nhận",
+      "resend": "Gửi lại mã",
+      "resendCountdown": "Gửi lại sau {{seconds}}s",
+      "useBackup": "Dùng mã dự phòng"
+    },
+    "backup": {
+      "title": "Sử dụng mã dự phòng",
+      "subtitle": "Nhập mã dự phòng chưa dùng để tiếp tục.",
+      "remaining": "Còn {{count}} mã dự phòng",
+      "codeLabel": "Mã dự phòng",
+      "placeholder": "Nhập mã dự phòng",
+      "cta": "Xác nhận",
+      "useOtp": "Quay lại OTP"
+    }
+  },
   "home": {
     "welcomeBack": "Chào mừng trở lại, {{username}}!",
     "successfullyLogged": "Bạn đã đăng nhập thành công",

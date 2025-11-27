@@ -69,6 +69,7 @@ khi bắt đầu task.
 5. Route mới: cập nhật `app/routes.tsx` (hash router) + bảo vệ bằng layout Protected nếu yêu cầu auth.
 6. UI dùng Ant Design (kết hợp `AppTable`, `AppForm`, `AppDrawer`, `PageHeader`...). Không tự bọc thêm component rỗng
    nếu không có logic.
+7. Nên dùng Pro Component của AntD để code ngắn gọn và đơn giản nhất có thể
 
 ### 7. Naming & conventions
 

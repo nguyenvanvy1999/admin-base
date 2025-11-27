@@ -12,9 +12,9 @@ export function ProtectedRoute({
   children,
   redirectTo = '/login',
 }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isBootstrapping, isLoadingProfile } = useAuth();
 
-  if (isLoading) {
+  if (isBootstrapping || isLoadingProfile) {
     return <FullScreenLoader />;
   }
 

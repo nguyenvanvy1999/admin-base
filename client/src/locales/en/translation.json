@@ -72,6 +72,48 @@
     "baseCurrency": "Base Currency",
     "baseCurrencyPlaceholder": "Select base currency"
   },
+  "auth": {
+    "hero": {
+      "title": "Investment Admin Portal",
+      "subtitle": "Multi-layer security for your operations team.",
+      "items": {
+        "security": "OWASP & SOC2 grade security baseline",
+        "audit": "Live auditing for every privileged session",
+        "mfa": "MFA and backup codes ready out of the box"
+      }
+    },
+    "login": {
+      "title": "Secure sign in",
+      "subtitle": "Use your workplace credentials to access the admin console.",
+      "email": "Work email",
+      "emailPlaceholder": "admin@company.com",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "rememberDevice": "Trust this device",
+      "cta": "Continue",
+      "successTitle": "Signed in successfully",
+      "successSubtitle": "Redirecting you to the dashboard..."
+    },
+    "mfa": {
+      "title": "Two-factor verification",
+      "subtitle": "Enter the OTP from your authenticator app or SMS.",
+      "codeLabel": "Verification code",
+      "rememberDevice": "Trust this device",
+      "cta": "Verify",
+      "resend": "Resend code",
+      "resendCountdown": "Resend in {{seconds}}s",
+      "useBackup": "Use backup code"
+    },
+    "backup": {
+      "title": "Use a backup code",
+      "subtitle": "Enter an unused backup code to continue.",
+      "remaining": "{{count}} backup codes remaining",
+      "codeLabel": "Backup code",
+      "placeholder": "Enter backup code",
+      "cta": "Verify",
+      "useOtp": "Back to OTP"
+    }
+  },
   "home": {
     "welcomeBack": "Welcome back, {{username}}!",
     "successfullyLogged": "You're successfully logged",

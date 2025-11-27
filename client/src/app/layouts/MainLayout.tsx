@@ -12,6 +12,7 @@ import { Button, Dropdown, Flex, Segmented, Switch, Tooltip } from 'antd';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from 'src/hooks/auth/useAuth';
 import { useThemeMode } from '../providers/ThemeModeProvider';
 
 const menuRoutes: ProLayoutProps['route'] = {
@@ -26,6 +27,7 @@ export default function MainLayout() {
   const location = useLocation();
   const { t, i18n } = useTranslation();
   const { mode, setMode } = useThemeMode();
+  const { user, logout } = useAuth();
 
   const locationProps = useMemo(
     () => ({
@@ -80,12 +82,17 @@ export default function MainLayout() {
                 { key: 'profile', label: t('header.profile') },
                 { key: 'logout', danger: true, label: t('header.logout') },
               ],
+              onClick: async ({ key }) => {
+                if (key === 'logout') {
+                  await logout();
+                }
+              },
             }}
           >
             {dom}
           </Dropdown>
         ),
-        title: 'Admin',
+        title: user?.name ?? user?.email ?? 'Admin',
         size: 'small',
       }}
     >
