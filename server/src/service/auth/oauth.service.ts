@@ -14,6 +14,7 @@ import {
 import {
   ACTIVITY_TYPE,
   type AuditLogEntry,
+  BadReqErr,
   CoreErr,
   DB_PREFIX,
   defaultRoles,
@@ -128,11 +129,29 @@ export class OAuthService {
     } else {
       user = await this.deps.db.$transaction(async (tx: PrismaTx) => {
         const userId = this.deps.idUtil.dbId(DB_PREFIX.USER);
+        // Get default currency (first active currency or first currency)
+        const defaultCurrency =
+          (await tx.currency.findFirst({
+            where: { isActive: true },
+            orderBy: { code: 'asc' },
+            select: { id: true },
+          })) ||
+          (await tx.currency.findFirst({
+            orderBy: { code: 'asc' },
+            select: { id: true },
+          }));
+
+        if (!defaultCurrency) {
+          throw new BadReqErr(ErrCode.InternalError);
+        }
+
         const createdUser = await tx.user.create({
           data: {
             id: userId,
             email,
-            status: UserStatus.ACTIVE,
+            status: UserStatus.active,
+            baseCurrencyId: defaultCurrency.id,
+            password: '',
             roles: {
               create: {
                 id: this.deps.idUtil.dbId(),

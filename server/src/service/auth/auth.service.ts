@@ -245,11 +245,28 @@ export class AuthService {
 
     const createdUserId = await this.deps.db.$transaction(async (tx) => {
       const userId = IdUtil.dbId(DB_PREFIX.USER);
+      // Get default currency (first active currency or first currency)
+      const defaultCurrency =
+        (await tx.currency.findFirst({
+          where: { isActive: true },
+          orderBy: { code: 'asc' },
+          select: { id: true },
+        })) ||
+        (await tx.currency.findFirst({
+          orderBy: { code: 'asc' },
+          select: { id: true },
+        }));
+
+      if (!defaultCurrency) {
+        throw new BadReqErr(ErrCode.InternalError);
+      }
+
       await tx.user.create({
         data: {
           id: userId,
           email: normalizedEmail,
           status: UserStatus.inactive,
+          baseCurrencyId: defaultCurrency.id,
           ...(await this.deps.passwordService.createPassword(password)),
           roles: {
             create: {
@@ -418,7 +435,7 @@ export class AuthService {
       session.revoked ||
       TimeUtil.isExpired(session.expired) ||
       !session.createdBy ||
-      session.createdBy.status !== 'ACTIVE'
+      session.createdBy.status !== 'active'
     ) {
       throw new UnAuthErr(ErrCode.ExpiredToken);
     }

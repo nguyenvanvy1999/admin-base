@@ -15,5 +15,7 @@ export const userResSelect = {
   totpSecret: true,
   status: true,
   email: true,
-  type: true,
+  name: true,
+  baseCurrencyId: true,
+  settings: true,
 } satisfies UserSelect;

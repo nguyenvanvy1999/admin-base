@@ -215,6 +215,7 @@ export enum DB_PREFIX {
   P2P_ORDER = 'p2p_order',
   P2P_DISPUTE = 'p2p_dispute',
   P2P_REVIEW = 'p2p_review',
+  REFERRAL = 'ref',
 }
 
 export enum EmailType {

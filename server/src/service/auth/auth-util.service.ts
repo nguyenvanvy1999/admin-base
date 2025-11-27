@@ -1,9 +1,8 @@
 import dayjs from 'dayjs';
-import { seconds } from 'itty-time';
 import { type JWTPayload, jwtVerify, SignJWT } from 'jose';
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
-import { AccountType, type User } from 'src/generated';
+import type { User } from 'src/generated';
 import type { ILoginRes } from 'src/modules/auth/dtos';
 import { EncryptService } from 'src/service/auth/encrypt.service';
 import {
@@ -55,9 +54,7 @@ export class TokenService {
   }
 
   createRefreshToken(): { refreshToken: string; expirationTime: Date } {
-    const expiredAt = dayjs()
-      .add(seconds(this.e.JWT_REFRESH_TOKEN_EXPIRED), 's')
-      .toDate();
+    const expiredAt = dayjs().add(this.e.JWT_REFRESH_TOKEN_EXPIRED).toDate();
     return {
       refreshToken: IdUtil.token32(),
       expirationTime: expiredAt,
@@ -71,9 +68,7 @@ export class TokenService {
     const accessToken = await this.signJwt({ data });
     return {
       accessToken,
-      expirationTime: dayjs()
-        .add(seconds(this.e.JWT_ACCESS_TOKEN_EXPIRED), 's')
-        .toDate(),
+      expirationTime: dayjs().add(this.e.JWT_ACCESS_TOKEN_EXPIRED).toDate(),
     };
   }
 
@@ -184,33 +179,7 @@ export class UserUtilService {
   }
 
   async createProfile(tx: PrismaTx, userId: string): Promise<void> {
-    await tx.userProfile.create({
-      data: {
-        userId,
-        id: IdUtil.dbId(DB_PREFIX.USER_PROFILE),
-        firstName: '',
-        lastName: '',
-      },
-      select: { id: true },
-    });
-
-    await tx.account.create({
-      data: {
-        id: IdUtil.dbId(DB_PREFIX.ACCOUNT),
-        userId,
-        type: AccountType.FUNDING,
-      },
-      select: { id: true },
-    });
-
-    await tx.p2PUserProfile.create({
-      data: {
-        id: IdUtil.dbId(DB_PREFIX.P2P_USER_PROFILE),
-        userId,
-        username: IdUtil.generateP2PUsername(),
-      },
-      select: { id: true },
-    });
+    // Profile creation removed - models no longer exist in schema
   }
 }
 

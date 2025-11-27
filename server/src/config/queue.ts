@@ -3,7 +3,6 @@ import { env } from 'src/config/env';
 import {
   type AuditLogEntry,
   type EmailType,
-  type ITelegramMessage,
   MAX_JOB_KEEP_COUNT,
   MAX_JOB_KEEP_SECONDS,
   QueueName,
@@ -17,11 +16,6 @@ const queueJobOptions: DefaultJobOptions = {
   removeOnComplete: { age: MAX_JOB_KEEP_SECONDS, count: MAX_JOB_KEEP_COUNT },
   removeOnFail: { age: MAX_JOB_KEEP_SECONDS, count: MAX_JOB_KEEP_COUNT },
 };
-
-export const teleQueue = new Queue<ITelegramMessage>(QueueName.Telegram, {
-  connection: queueConnection,
-  defaultJobOptions: queueJobOptions,
-});
 
 export const emailQueue = new Queue<SendMailMap, void, EmailType>(
   QueueName.Email,

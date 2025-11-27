@@ -29,14 +29,14 @@ async function checkOtpConditions(
       if (limit && limit >= env.REGISTER_OTP_LIMIT) {
         await db.user.update({
           where: { id: user.id },
-          data: { status: UserStatus.SUSPENDED },
+          data: { status: UserStatus.suspendded },
           select: { id: true },
         });
         return false;
       }
 
       // Only send email if the user is INACTIVE
-      return user.status === UserStatus.INACTIVE;
+      return user.status === UserStatus.inactive;
     }
 
     case PurposeVerify.FORGOT_PASSWORD: {

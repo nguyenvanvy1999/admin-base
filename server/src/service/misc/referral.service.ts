@@ -1,5 +1,5 @@
 import { ReferralStatus } from 'src/generated';
-import type { PrismaTx } from 'src/share';
+import { DB_PREFIX, IdUtil, type PrismaTx } from 'src/share';
 
 export class ReferralService {
   async createReferral(
@@ -16,9 +16,10 @@ export class ReferralService {
     if (referred) {
       await tx.referral.create({
         data: {
+          id: IdUtil.dbId(DB_PREFIX.REFERRAL),
           referrerId,
           referredId: referred.id,
-          status: ReferralStatus.INACTIVE,
+          status: ReferralStatus.inactive,
         },
         select: { id: true },
       });
@@ -34,10 +35,10 @@ export class ReferralService {
 
   async activeReferral(tx: PrismaTx, referrerId: string): Promise<boolean> {
     const referral = await tx.referral.findUnique({ where: { referrerId } });
-    if (referral && referral.status === ReferralStatus.INACTIVE) {
+    if (referral && referral.status === ReferralStatus.inactive) {
       await tx.referral.update({
         where: { id: referral.id },
-        data: { status: ReferralStatus.ACTIVE },
+        data: { status: ReferralStatus.active },
         select: { id: true },
       });
       await tx.user.update({

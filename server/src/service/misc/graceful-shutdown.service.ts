@@ -1,10 +1,8 @@
 import type { RedisClient } from 'bun';
 import { db, type IDb } from 'src/config/db';
 import { type ILogger, logger } from 'src/config/logger';
-import { emailQueue, type IEmailQueue, teleQueue } from 'src/config/queue';
+import { emailQueue, type IEmailQueue } from 'src/config/queue';
 import { redis } from 'src/config/redis';
-
-type ITeleQueue = typeof teleQueue;
 
 export class GracefulShutdownService {
   constructor(
@@ -13,13 +11,11 @@ export class GracefulShutdownService {
       logger: ILogger;
       redis: RedisClient;
       emailQueue: IEmailQueue;
-      teleQueue: ITeleQueue;
     } = {
       db,
       logger,
       redis,
       emailQueue,
-      teleQueue,
     },
   ) {}
 
@@ -50,10 +46,7 @@ export class GracefulShutdownService {
   async closeQueues(): Promise<void> {
     try {
       this.deps.logger.info('🔄 Closing message queues...');
-      await Promise.allSettled([
-        this.deps.teleQueue.close(),
-        this.deps.emailQueue.close(),
-      ]);
+      await Promise.allSettled([this.deps.emailQueue.close()]);
       this.deps.logger.info('✅ All queues closed successfully');
     } catch (error) {
       this.deps.logger.error(`❌ Queue close failed: ${error}`);

@@ -8,7 +8,7 @@ import { Elysia } from 'elysia';
 import { rateLimit } from 'elysia-rate-limit';
 import { elysiaXSS } from 'elysia-xss';
 import { elysiaHelmet } from 'elysiajs-helmet';
-import { bullBoardConfig } from 'src/config/bull-board';
+// import { bullBoardConfig } from 'src/config/bull-board'; // TODO: Install @bull-board packages or remove
 import { env, type IEnv } from 'src/config/env';
 import { httpError } from 'src/config/error';
 import { type ILogger, logger } from 'src/config/logger';
@@ -16,21 +16,14 @@ import { redis } from 'src/config/redis';
 import { swaggerConfig } from 'src/config/swagger';
 import { subscribeInbox } from 'src/config/ws-pubsub';
 import {
-  accountController,
   adminController,
   authBaseController,
-  balanceController,
-  chatController,
-  currencyController,
   fileController,
   mfaController,
   miscController,
-  networkController,
   oauthController,
   otpController,
-  p2pController,
   userAuthController,
-  userController,
 } from 'src/modules';
 import { adminAuthMiddleware } from 'src/service/auth/auth.middleware';
 import { gracefulShutdownService } from 'src/service/misc/graceful-shutdown.service';
@@ -76,7 +69,7 @@ export class BackendServerService {
       .use(httpError())
       .use(rateLimit({ max: 300 }))
       .onBeforeHandle(adminAuthMiddleware)
-      .use(bullBoardConfig())
+      // .use(bullBoardConfig()) // TODO: Install @bull-board packages or remove
       .use(swaggerConfig())
       .group(this.deps.env.API_PREFIX, (app) =>
         app
@@ -104,17 +97,10 @@ export class BackendServerService {
           .use(authBaseController)
           .use(userAuthController)
           .use(otpController)
-          .use(accountController)
-          .use(balanceController)
-          .use(currencyController)
-          .use(networkController)
           .use(miscController)
           .use(fileController)
           .use(oauthController)
           .use(mfaController)
-          .use(userController)
-          .use(p2pController)
-          .use(chatController)
           .use(adminController),
       );
 

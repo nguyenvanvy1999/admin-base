@@ -1,4 +1,10 @@
-import type { Currency, Permission, Role, User } from 'src/generated';
+import type {
+  Currency,
+  Permission,
+  Role,
+  User,
+  UserStatus,
+} from 'src/generated';
 import { ADMIN_USER_ID, SYS_USER_ID } from 'src/share';
 
 export class SeedFixtures {
@@ -18,9 +24,11 @@ export class SeedFixtures {
   static createUser(overrides: Partial<User> = {}): User {
     return {
       id: 'user_1',
+      email: 'test@example.com',
+      status: 'inactive' as UserStatus,
       password: 'hashed_password',
       name: 'Name',
-      username: 'username',
+      // username: 'username', // Removed - not in User model
       baseCurrencyId: 'baseCurrencyId',
       settings: {},
       passwordExpired: new Date(),

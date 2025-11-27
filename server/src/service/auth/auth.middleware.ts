@@ -36,7 +36,7 @@ export const authCheck = (app: Elysia) =>
         throw new NotFoundErr(ErrCode.UserNotFound);
       }
 
-      if (user.status !== UserStatus.ACTIVE) {
+      if (user.status !== UserStatus.active) {
         throw new UnAuthErr(ErrCode.UserNotActive);
       }
 
@@ -49,8 +49,10 @@ export const authCheck = (app: Elysia) =>
         permissions: await userUtilService.getPermissions(user),
         email: user.email,
         status: user.status,
-        type: user.type,
         roleIds: user.roles.map((x) => x.roleId),
+        name: user.name,
+        baseCurrencyId: user.baseCurrencyId,
+        settings: user.settings,
       };
 
       await currentUserCache.set(data.sessionId, currentUser);

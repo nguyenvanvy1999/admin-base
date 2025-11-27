@@ -1,11 +1,6 @@
 import { redis } from 'src/config/redis';
-import type { Network } from 'src/generated';
-import {
-  CACHE_NS,
-  type CurrencyWithNetwork,
-  type ICurrentUser,
-  type PurposeVerify,
-} from 'src/share';
+import type { Currency } from 'src/generated';
+import { CACHE_NS, type ICurrentUser, type PurposeVerify } from 'src/share';
 import superjson from 'superjson';
 
 export class RedisCache<T> {
@@ -117,26 +112,14 @@ export type ICaptchaCache = typeof captchaCache;
 
 const ONE_DAY = 86400;
 
-export const currencyByIdCache = new RedisCache<CurrencyWithNetwork>({
+export const currencyByIdCache = new RedisCache<Currency>({
   namespace: CACHE_NS.CURRENCY,
   ttl: ONE_DAY,
 });
 export type ICurrencyByIdCache = typeof currencyByIdCache;
 
-export const networkByIdCache = new RedisCache<Network>({
-  namespace: CACHE_NS.NETWORK,
-  ttl: ONE_DAY,
-});
-export type INetworkByIdCache = typeof networkByIdCache;
-
-export const allCurrenciesCache = new RedisCache<CurrencyWithNetwork[]>({
+export const allCurrenciesCache = new RedisCache<Currency[]>({
   namespace: `${CACHE_NS.CURRENCY}:all`,
   ttl: ONE_DAY,
 });
 export type IAllCurrenciesCache = typeof allCurrenciesCache;
-
-export const allNetworksCache = new RedisCache<Network[]>({
-  namespace: `${CACHE_NS.NETWORK}:all`,
-  ttl: ONE_DAY,
-});
-export type IAllNetworksCache = typeof allNetworksCache;

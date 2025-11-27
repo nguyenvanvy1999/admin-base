@@ -35,7 +35,7 @@ describe('MfaUtilService', () => {
       totpSecret: defaultTotpSecret,
     };
 
-    if (Object.hasOwn(overrides, 'totpSecret')) {
+    if ('totpSecret' in overrides) {
       (
         baseUser as unknown as { totpSecret: string | null | undefined }
       ).totpSecret = (

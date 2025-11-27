@@ -1,5 +1,4 @@
 import dayjs from 'dayjs';
-import { seconds } from 'itty-time';
 import { db } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 
@@ -35,9 +34,7 @@ export class PasswordService {
   }> {
     const passwordWithPepper = password + this.env.PASSWORD_PEPPER;
     const passwordHash = await this.passwordHasher.hash(passwordWithPepper);
-    const passwordExpired = dayjs()
-      .add(seconds(this.env.PASSWORD_EXPIRED), 's')
-      .toDate();
+    const passwordExpired = dayjs().add(this.env.PASSWORD_EXPIRED).toDate();
     const passwordCreated = new Date();
     return {
       password: passwordHash,

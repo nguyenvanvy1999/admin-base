@@ -9,7 +9,6 @@ import {
   batchLogQueue,
   emailQueue,
   p2pQueue,
-  teleQueue,
 } from 'src/config/queue';
 
 export const bullBoardConfig = () => (app: Elysia) => {
@@ -18,7 +17,6 @@ export const bullBoardConfig = () => (app: Elysia) => {
     const serverAdapter = new ElysiaAdapter(`/queues`);
     createBullBoard({
       queues: [
-        new BullMQAdapter(teleQueue),
         new BullMQAdapter(emailQueue),
         new BullMQAdapter(p2pQueue),
         new BullMQAdapter(auditLogQueue),

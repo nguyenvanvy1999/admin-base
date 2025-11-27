@@ -1,4 +1,3 @@
-export * from './currency.fixtures';
 export * from './decimal.fixtures';
 export * from './encryption.fixtures';
 export * from './seed.fixtures';
