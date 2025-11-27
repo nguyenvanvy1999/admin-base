@@ -8,25 +8,24 @@ import {
 } from 'src/share';
 
 export const headersToCheck: IPHeaders[] = [
-  'x-real-ip', // Nginx proxy/FastCGI
-  'x-client-ip', // Apache https://httpd.apache.org/docs/2.4/mod/mod_remoteip.html#page-header
-  'cf-connecting-ip', // Cloudflare
-  'fastly-client-ip', // Fastly
-  'x-cluster-client-ip', // GCP
-  'x-forwarded', // General Forwarded
-  'forwarded-for', // RFC 7239
-  'forwarded', // RFC 7239
-  'appengine-user-ip', // GCP
-  'true-client-ip', // Akamai and Cloudflare
-  'cf-pseudo-ipv4', // Cloudflare
-  'fly-client-ip', // Fly.io
+  'x-real-ip',
+  'x-client-ip',
+  'cf-connecting-ip',
+  'fastly-client-ip',
+  'x-cluster-client-ip',
+  'x-forwarded',
+  'forwarded-for',
+  'forwarded',
+  'appengine-user-ip',
+  'true-client-ip',
+  'cf-pseudo-ipv4',
+  'fly-client-ip',
 ];
 
 export const getIP = (
   headers: Headers,
   checkHeaders: IPHeaders[] = headersToCheck,
 ): string | null => {
-  // check for x-forwaded-for only when the user did not provide headers
   const xForwardedFor = headers.get('x-forwarded-for');
   if (xForwardedFor && checkHeaders === headersToCheck) {
     return xForwardedFor.split(',')[0]?.trim() ?? null;
@@ -80,7 +79,6 @@ export const nocache = (app: Elysia) => {
     set.headers['Surrogate-Control'] = 'no-store';
     set.headers['Cache-Control'] =
       'no-store, no-cache, must-revalidate, proxy-revalidate';
-    // Deprecated though https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Pragma
     set.headers['Pragma'] = 'no-cache';
     set.headers['Expires'] = '0';
   });

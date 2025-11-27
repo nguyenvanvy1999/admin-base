@@ -48,6 +48,11 @@ export const envSchema = t.Object({
   PASSWORD_MAX_ATTEMPT: t.Integer({ minimum: 1, maximum: 100, default: 5 }),
   PASSWORD_PEPPER: t.String(),
   PASSWORD_EXPIRED: t.RegExp(REGEX_TIME, { default: '180 days' }),
+  PASSWORD_MIN_LENGTH: t.Integer({ minimum: 4, maximum: 128, default: 8 }),
+  PASSWORD_REQUIRE_UPPERCASE: t.Boolean({ default: true }),
+  PASSWORD_REQUIRE_LOWERCASE: t.Boolean({ default: true }),
+  PASSWORD_REQUIRE_NUMBER: t.Boolean({ default: true }),
+  PASSWORD_REQUIRE_SPECIAL_CHAR: t.Boolean({ default: true }),
 
   ENCRYPT_KEY: t.String(),
   ENCRYPT_IV: t.String(),
@@ -89,6 +94,12 @@ export const envSchema = t.Object({
   BACKEND_URL: t.String({ default: '' }),
 
   REGISTER_OTP_LIMIT: t.Number({ minimum: 1, maximum: 100, default: 5 }),
+  REGISTER_RATE_LIMIT_MAX: t.Number({ minimum: 1, maximum: 100, default: 5 }),
+  REGISTER_RATE_LIMIT_WINDOW_SECONDS: t.Number({
+    minimum: 60,
+    maximum: 3600,
+    default: 900,
+  }),
 
   AUDIT_LOG_FLUSH_INTERVAL_MS: t.Number({ minimum: 1000, default: 10_000 }),
 });

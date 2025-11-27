@@ -10,18 +10,15 @@ export class IdempotencyService {
     ttl: number = IDEMPOTENCY_TTL,
   ): Promise<boolean> {
     try {
-      // Use Lua script for atomic check-and-set operation
       const luaScript = `
         local key = KEYS[1]
         local ttl = tonumber(ARGV[1])
         local value = ARGV[2]
 
-        -- Check if key exists
         if redis.call('EXISTS', key) == 1 then
-          return 0  -- Key already exists
+          return 0
         end
 
-        -- Set key with expiration
         redis.call('SET', key, value, 'EX', ttl)
         return 1  -- Key was set successfully
       `;

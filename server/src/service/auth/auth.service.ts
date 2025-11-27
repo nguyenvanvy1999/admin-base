@@ -36,6 +36,8 @@ import {
   isExpired,
   LoginResType,
   NotFoundErr,
+  normalizeEmail,
+  type PrismaTx,
   PurposeVerify,
   UnAuthErr,
   userResSelect,
@@ -49,6 +51,10 @@ import {
 import { type MfaUtilService, mfaUtilService } from './mfa-util.service';
 import { type OtpService, otpService } from './otp.service';
 import { type PasswordService, passwordService } from './password.service';
+import {
+  type PasswordValidationService,
+  passwordValidationService,
+} from './password-validation.service';
 import { type SessionService, sessionService } from './session.service';
 
 type LoginParams = typeof LoginRequestDto.static & {
@@ -56,7 +62,10 @@ type LoginParams = typeof LoginRequestDto.static & {
   userAgent: string;
 };
 
-type RegisterParams = typeof RegisterRequestDto.static;
+type RegisterParams = typeof RegisterRequestDto.static & {
+  clientIp?: string;
+  userAgent?: string;
+};
 
 type ChangePasswordParams = {
   userId: string;
@@ -87,6 +96,7 @@ export class AuthService {
       db: IDb;
       env: IEnv;
       passwordService: PasswordService;
+      passwordValidationService: PasswordValidationService;
       tokenService: TokenService;
       mfaUtilService: MfaUtilService;
       otpService: OtpService;
@@ -99,6 +109,7 @@ export class AuthService {
       db,
       env,
       passwordService,
+      passwordValidationService,
       tokenService,
       mfaUtilService,
       otpService,
@@ -231,75 +242,125 @@ export class AuthService {
   }
 
   async register(params: RegisterParams): Promise<{ otpToken: string } | null> {
-    const { email, password } = params;
-    const normalizedEmail = email.toLowerCase();
+    const { email, password, clientIp, userAgent } = params;
 
-    const existingUser = await this.deps.db.user.findUnique({
-      where: { email: normalizedEmail },
-      select: { id: true, status: true },
-    });
+    try {
+      this.deps.passwordValidationService.validatePasswordOrThrow(password);
 
-    if (existingUser) {
-      throw new BadReqErr(ErrCode.UserExisted);
-    }
+      const normalizedEmail = normalizeEmail(email);
 
-    const createdUserId = await this.deps.db.$transaction(async (tx) => {
-      const userId = IdUtil.dbId(DB_PREFIX.USER);
-      // Get default currency (first active currency or first currency)
-      const defaultCurrency =
-        (await tx.currency.findFirst({
-          where: { isActive: true },
-          orderBy: { code: 'asc' },
-          select: { id: true },
-        })) ||
-        (await tx.currency.findFirst({
-          orderBy: { code: 'asc' },
-          select: { id: true },
-        }));
-
-      if (!defaultCurrency) {
-        throw new BadReqErr(ErrCode.InternalError);
-      }
-
-      await tx.user.create({
-        data: {
-          id: userId,
-          email: normalizedEmail,
-          status: UserStatus.inactive,
-          baseCurrencyId: defaultCurrency.id,
-          ...(await this.deps.passwordService.createPassword(password)),
-          roles: {
-            create: {
-              id: IdUtil.dbId(),
-              roleId: defaultRoles.user.id,
-            },
-          },
-          refCode: IdUtil.token8().toUpperCase(),
-        },
-        select: { id: true },
+      const existingUser = await this.deps.db.user.findUnique({
+        where: { email: normalizedEmail },
+        select: { id: true, status: true },
       });
 
-      await this.deps.userUtilService.createProfile(tx, userId);
+      if (existingUser) {
+        await this.deps.auditLogService.push({
+          type: ACTIVITY_TYPE.REGISTER,
+          payload: { method: 'email', error: 'User already exists' },
+          userId: null,
+          ip: clientIp,
+          userAgent,
+        });
+        throw new BadReqErr(ErrCode.UserExisted);
+      }
 
-      return userId;
-    });
+      const createdUserId = await this.deps.db.$transaction(async (tx) => {
+        const defaultCurrency = await this.findDefaultCurrency(tx);
+        if (!defaultCurrency) {
+          throw new BadReqErr(ErrCode.InternalError);
+        }
 
-    const otpToken = await this.deps.otpService.sendOtp(
-      createdUserId,
-      normalizedEmail,
-      PurposeVerify.REGISTER,
-    );
+        const userId = await this.createUserWithDefaults(
+          tx,
+          normalizedEmail,
+          password,
+          defaultCurrency.id,
+        );
 
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.REGISTER,
-      payload: { method: 'email' },
-      userId: createdUserId,
-    });
+        await this.deps.userUtilService.createProfile(tx, userId);
 
-    if (otpToken) {
-      return { otpToken };
+        return userId;
+      });
+
+      const otpToken = await this.deps.otpService.sendOtp(
+        createdUserId,
+        normalizedEmail,
+        PurposeVerify.REGISTER,
+      );
+
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.REGISTER,
+        payload: { method: 'email' },
+        userId: createdUserId,
+        ip: clientIp,
+        userAgent,
+      });
+
+      if (otpToken) {
+        return { otpToken };
+      }
+      return null;
+    } catch (error) {
+      if (!(error instanceof BadReqErr && error.code === ErrCode.UserExisted)) {
+        await this.deps.auditLogService.push({
+          type: ACTIVITY_TYPE.REGISTER,
+          payload: {
+            method: 'email',
+            error: error instanceof Error ? error.message : 'Unknown error',
+          },
+          userId: null,
+          ip: clientIp,
+          userAgent,
+        });
+      }
+      throw error;
     }
-    return null;
+  }
+
+  private async findDefaultCurrency(
+    tx: PrismaTx,
+  ): Promise<{ id: string } | null> {
+    return (
+      (await tx.currency.findFirst({
+        where: { isActive: true },
+        orderBy: { code: 'asc' },
+        select: { id: true },
+      })) ||
+      (await tx.currency.findFirst({
+        orderBy: { code: 'asc' },
+        select: { id: true },
+      }))
+    );
+  }
+
+  private async createUserWithDefaults(
+    tx: PrismaTx,
+    email: string,
+    password: string,
+    baseCurrencyId: string,
+  ): Promise<string> {
+    const userId = IdUtil.dbId(DB_PREFIX.USER);
+
+    await tx.user.create({
+      data: {
+        id: userId,
+        email,
+        status: UserStatus.inactive,
+        baseCurrencyId,
+        ...(await this.deps.passwordService.createPassword(password)),
+        roles: {
+          create: {
+            id: IdUtil.dbId(),
+            roleId: defaultRoles.user.id,
+          },
+        },
+        refCode: IdUtil.token8().toUpperCase(),
+      },
+      select: { id: true },
+    });
+
+    return userId;
   }
 
   async changePassword(params: ChangePasswordParams): Promise<void> {

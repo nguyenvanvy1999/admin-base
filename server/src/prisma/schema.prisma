@@ -135,6 +135,24 @@ enum UserStatus {
   banned
 }
 
+// Security event types for tracking authentication and security events
+enum SecurityEventType {
+  login_failed
+  password_changed
+  mfa_enabled
+  mfa_disabled
+  account_locked
+  suspicious_activity
+}
+
+// Account lockout reasons
+enum LockoutReason {
+  brute_force
+  suspicious_activity
+  admin_action
+  policy_violation
+}
+
 // ============================================
 // System/Auth Models
 // ============================================
@@ -164,6 +182,22 @@ model User {
   totpSecret     String? @map("totp_secret")
   backupCodes    String? @map("backup_codes")
 
+  // Email verification
+  emailVerified          Boolean @default(false) @map("email_verified")
+  emailVerificationToken String? @unique @map("email_verification_token")
+
+  // Account lockout
+  lockoutUntil  DateTime?      @map("lockout_until")
+  lockoutReason LockoutReason? @map("lockout_reason")
+
+  // Password reset
+  passwordResetToken          String?   @unique @map("password_reset_token")
+  passwordResetTokenExpiresAt DateTime? @map("password_reset_token_expires_at")
+
+  // Security tracking
+  lastFailedLoginAt       DateTime? @map("last_failed_login_at")
+  suspiciousActivityCount Int       @default(0) @map("suspicious_activity_count")
+
   baseCurrency             Currency                  @relation(fields: [baseCurrencyId], references: [id], onDelete: Restrict)
   ledgerAccounts           LedgerAccount[]
   ledgerCommodities        LedgerCommodity[]
@@ -182,6 +216,8 @@ model User {
   referralsGot             Referral[]                @relation("UserReferred")
   authProviders            UserAuthProvider[]
   goals                    Goal[]
+  securityEvents           SecurityEvent[]
+  ipWhitelist              UserIpWhitelist[]
 
   pendingRef Int @default(0) @map("pending_ref")
   activeRef  Int @default(0) @map("active_ref")
@@ -250,6 +286,12 @@ model Role {
   created     DateTime         @default(now())
   modified    DateTime         @updatedAt
 
+  // Hierarchical roles
+  parentRoleId String? @map("parent_role_id")
+  parent       Role?   @relation("RoleHierarchy", fields: [parentRoleId], references: [id], onDelete: SetNull)
+  children     Role[]  @relation("RoleHierarchy")
+
+  @@index([parentRoleId], name: "role_parentRoleId_idx")
   @@map("roles")
 }
 
@@ -279,12 +321,16 @@ model RolePlayer {
   created     DateTime @default(now())
   modified    DateTime @updatedAt
 
+  // Role expiration
+  expiresAt DateTime? @map("expires_at")
+
   player User @relation(fields: [playerId], references: [id], onDelete: Cascade)
   role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, playerId], name: "role_player_unique")
   @@index([playerId], name: "role_player_playerId_idx")
   @@index([roleId], name: "role_player_roleId_idx")
+  @@index([expiresAt], name: "role_player_expiresAt_idx")
   @@map("role_players")
 }
 
@@ -301,7 +347,12 @@ model Session {
   modified    DateTime @updatedAt()
   created     DateTime @default(now())
 
+  // Activity and device tracking
+  lastActivityAt    DateTime? @map("last_activity_at")
+  deviceFingerprint String?   @map("device_fingerprint")
+
   @@index([createdById])
+  @@index([lastActivityAt], name: "session_lastActivityAt_idx")
   @@map("sessions")
 }
 
@@ -914,6 +965,38 @@ model Proxy {
 
   @@unique([host, port, protocol, username, password])
   @@map("proxies")
+}
+
+// Security event tracking for authentication and security operations
+model SecurityEvent {
+  id        String            @id
+  userId    String?           @map("user_id")
+  eventType SecurityEventType @map("event_type")
+  ip        String?
+  metadata  Json?
+  created   DateTime          @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId], name: "security_event_userId_idx")
+  @@index([eventType], name: "security_event_eventType_idx")
+  @@index([created], name: "security_event_created_idx")
+  @@map("security_events")
+}
+
+// Per-user IP whitelist for additional security
+model UserIpWhitelist {
+  id      String   @id
+  userId  String   @map("user_id")
+  ip      String
+  created DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ip], name: "user_ip_whitelist_unique")
+  @@index([userId], name: "user_ip_whitelist_userId_idx")
+  @@index([ip], name: "user_ip_whitelist_ip_idx")
+  @@map("user_ip_whitelist")
 }
 
 // Audit log

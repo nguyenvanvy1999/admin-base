@@ -104,6 +104,11 @@ export const registerOtpLimitCache = new RedisCache<number>({
   namespace: CACHE_NS.REGISTER_OTP_LIMIT,
 });
 
+export const registerRateLimitCache = new RedisCache<number>({
+  namespace: CACHE_NS.REGISTER_RATE_LIMIT,
+});
+export type IRegisterRateLimitCache = typeof registerRateLimitCache;
+
 export const captchaCache = new RedisCache<string>({
   namespace: 'captcha',
   ttl: FIVE_MINUTES,

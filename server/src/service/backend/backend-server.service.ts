@@ -9,7 +9,6 @@ import { Elysia } from 'elysia';
 import { rateLimit } from 'elysia-rate-limit';
 import { elysiaXSS } from 'elysia-xss';
 import { elysiaHelmet } from 'elysiajs-helmet';
-// import { bullBoardConfig } from 'src/config/bull-board'; // TODO: Install @bull-board packages or remove
 import { env, type IEnv } from 'src/config/env';
 import { httpError } from 'src/config/error';
 import { type ILogger, logger } from 'src/config/logger';

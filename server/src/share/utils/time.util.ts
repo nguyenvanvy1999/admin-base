@@ -1,12 +1,3 @@
-/**
- * Converts time string (e.g., "15 days", "30 minutes") to seconds
- * @param timeString - Time string in format: "number unit" (e.g., "15 days", "30 minutes")
- * @returns Number of seconds
- * @example
- * timeStringToSeconds("15 days") // 1296000
- * timeStringToSeconds("30 minutes") // 1800
- * timeStringToSeconds("1 hour") // 3600
- */
 export function timeStringToSeconds(timeString: string): number {
   const match = timeString
     .trim()
@@ -32,9 +23,9 @@ export function timeStringToSeconds(timeString: string): number {
     days: 86400,
     week: 604800,
     weeks: 604800,
-    month: 2592000, // 30 days
+    month: 2592000,
     months: 2592000,
-    year: 31536000, // 365 days
+    year: 31536000,
     years: 31536000,
   };
 

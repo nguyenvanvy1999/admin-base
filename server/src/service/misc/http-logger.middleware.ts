@@ -22,7 +22,6 @@ export const httpLoggerMiddleware =
       .onAfterResponse((ctx) => {
         const path = new URL(ctx.request.url).pathname;
 
-        // Skip logging for swagger and bull board paths
         if (
           path.includes('swagger') ||
           path.includes('queues') ||
@@ -34,7 +33,6 @@ export const httpLoggerMiddleware =
         const responseTime = performance.now() - (ctx.store.startTime ?? 0);
 
         if (responseTime > 1000) {
-          // Format the log message in a single line
           const statusCode = Number(ctx.set.status) || 200;
 
           type MaybeReqMeta = { userAgent?: string; clientIp?: string };

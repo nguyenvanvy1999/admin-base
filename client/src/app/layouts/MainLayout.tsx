@@ -12,7 +12,7 @@ import { Button, Dropdown, Flex, Segmented, Switch, Tooltip } from 'antd';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation } from 'react-router-dom';
-import { useThemeMode } from '../themeModeContext';
+import { useThemeMode } from '../providers/ThemeModeProvider';
 
 const menuRoutes: ProLayoutProps['route'] = {
   routes: [

@@ -1,17 +1,30 @@
 import { Form, type FormProps } from 'antd';
 import type { ReactNode } from 'react';
 
-type AppFormProps<T extends object> = Omit<FormProps<T>, 'children'> & {
+export interface AppFormProps<T extends object = Record<string, unknown>>
+  extends Omit<FormProps<T>, 'children'> {
   children?: ReactNode;
-};
+  loading?: boolean;
+}
 
+/**
+ * Enhanced AppForm component with standardized defaults
+ */
 export function AppForm<T extends object = Record<string, unknown>>({
   layout = 'vertical',
+  size = 'large',
   children,
+  loading,
   ...rest
 }: AppFormProps<T>) {
   return (
-    <Form layout={layout} size="large" scrollToFirstError {...rest}>
+    <Form<T>
+      layout={layout}
+      size={size}
+      scrollToFirstError
+      disabled={loading}
+      {...rest}
+    >
       {children}
     </Form>
   );
@@ -19,3 +32,4 @@ export function AppForm<T extends object = Record<string, unknown>>({
 
 export const AppFormItem = Form.Item;
 export const AppFormList = Form.List;
+export const AppFormProvider = Form.Provider;

@@ -24,7 +24,6 @@ async function checkOtpConditions(
 ): Promise<boolean> {
   switch (purpose) {
     case PurposeVerify.REGISTER: {
-      // Limit check
       const limit = await registerOtpLimitCache.get(user.id);
       if (limit && limit >= env.REGISTER_OTP_LIMIT) {
         await db.user.update({
@@ -35,17 +34,14 @@ async function checkOtpConditions(
         return false;
       }
 
-      // Only send email if the user is INACTIVE
       return user.status === UserStatus.inactive;
     }
 
     case PurposeVerify.FORGOT_PASSWORD: {
-      // Only send it if user has password
       return Boolean(user.password);
     }
 
     case PurposeVerify.RESET_MFA: {
-      // Only send it if MFA is enabled
       return user.mfaTotpEnabled;
     }
 
@@ -76,15 +72,12 @@ export const otpController = new Elysia({
 
     if (!user) return castToRes(null);
 
-    // Check business rules
     const allowed = await checkOtpConditions(user, purpose);
     if (!allowed) return castToRes(null);
 
-    // Send OTP
     const otpToken = await otpService.sendOtp(user.id, email, purpose);
     if (!otpToken) return castToRes(null);
 
-    // Update register OTP limit
     if (purpose === PurposeVerify.REGISTER) {
       await updateRegisterOtpLimit(user.id);
     }

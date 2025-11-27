@@ -12,7 +12,10 @@ import {
 
 export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
   [ACTIVITY_TYPE.LOGIN]: { method: OAUTH.GOOGLE | 'email' };
-  [ACTIVITY_TYPE.REGISTER]: { method: OAUTH.GOOGLE | 'email' };
+  [ACTIVITY_TYPE.REGISTER]: {
+    method: OAUTH.GOOGLE | 'email';
+    error?: string;
+  };
   [ACTIVITY_TYPE.LOGOUT]: Record<string, never>;
   [ACTIVITY_TYPE.CHANGE_PASSWORD]: Record<string, never>;
   [ACTIVITY_TYPE.SETUP_MFA]: {

@@ -19,7 +19,6 @@ export const db = new PrismaClient({
   errorFormat: 'minimal',
 });
 
-// Configure event listeners to prevent memory leaks
 db.$on('error', (e) => {
   logger.error(`Database error at ${e.timestamp} : ${e.message}`);
 });

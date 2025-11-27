@@ -22,7 +22,6 @@ export class MfaUtilService {
   }): Promise<string> {
     const mfaToken = this.generateToken();
     if (user.mfaTotpEnabled && user.totpSecret) {
-      // we're using mix key with sessionId and refToken, for check that this MFA verify is only from one login session
       await this.cache.set(this.getKey(mfaToken, loginToken), {
         userId: user.id,
       });

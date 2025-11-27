@@ -1,0 +1,41 @@
+/**
+ * API Response Types
+ */
+
+export interface ApiResponse<T = unknown> {
+  data: T;
+  message?: string;
+  statusCode?: number;
+}
+
+export interface ApiErrorResponse {
+  message: string;
+  statusCode: number;
+  error?: string;
+  details?: Record<string, unknown>;
+}
+
+export interface PaginationParams {
+  page?: number;
+  pageSize?: number;
+  total?: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface ApiListResponse<T> extends ApiResponse<T[]> {
+  pagination?: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}

@@ -27,9 +27,6 @@ export class LockingService {
     return result === 'OK' ? lockValue : null;
   }
 
-  /**
-   * Release lock safely (verify lockValue with a Lua script)
-   */
   async release(key: string, lockValue: string): Promise<boolean> {
     const lockKey = `lock:${key}`;
     try {
@@ -45,9 +42,6 @@ export class LockingService {
     }
   }
 
-  /**
-   * Acquire with retry logic
-   */
   async acquireWithRetry(
     key: string,
     ttl: number = 10,
@@ -70,9 +64,6 @@ export class LockingService {
     );
   }
 
-  /**
-   * Execute an action with a distributed lock
-   */
   async lock<T>(
     key: string,
     action: () => Promise<T>,

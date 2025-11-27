@@ -1,8 +1,8 @@
 import type { ProColumns } from '@ant-design/pro-components';
 import { AppTable } from '@client/components/common/AppTable';
 import { PageHeader } from '@client/components/common/PageHeader';
+import { useHealthcheck } from '@client/hooks/api/useHealthcheck';
 import { useNotify } from '@client/hooks/useNotify';
-import { useHealthcheckQuery } from '@client/services/healthcheck';
 import { Button, Card, Col, Flex, Row, Statistic, Tag, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 
@@ -79,7 +79,7 @@ const columns: ProColumns<PortfolioRow>[] = [
 ];
 
 export default function HomePage() {
-  const { data, isLoading } = useHealthcheckQuery();
+  const { data, isLoading } = useHealthcheck();
   const notify = useNotify();
   const { t } = useTranslation();
 

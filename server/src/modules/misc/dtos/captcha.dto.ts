@@ -9,7 +9,6 @@ export const generateCaptchaDto = t.Object({
   color: t.Optional(t.Boolean()),
   background: t.Optional(t.String()),
   fontSize: t.Optional(t.Number({ minimum: 20, maximum: 50 })),
-  // Math captcha specific options
   mathMin: t.Optional(t.Number({ minimum: 1, maximum: 20 })),
   mathMax: t.Optional(t.Number({ minimum: 1, maximum: 20 })),
   mathOperator: t.Optional(

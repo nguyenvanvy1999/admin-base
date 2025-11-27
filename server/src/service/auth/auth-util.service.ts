@@ -183,9 +183,7 @@ export class UserUtilService {
     };
   }
 
-  async createProfile(tx: PrismaTx, userId: string): Promise<void> {
-    // Profile creation removed - models no longer exist in schema
-  }
+  async createProfile(tx: PrismaTx, userId: string): Promise<void> {}
 }
 
 export const userUtilService = new UserUtilService();

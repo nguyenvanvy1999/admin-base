@@ -1,4 +1,6 @@
 import { Elysia, t } from 'elysia';
+import { registerRateLimitCache } from 'src/config/cache';
+import { env } from 'src/config/env';
 import { reqMeta } from 'src/config/request';
 import {
   ChangePasswordRequestDto,
@@ -17,8 +19,11 @@ import { authService } from 'src/service/auth/auth.service';
 import {
   ACCESS_AUTH,
   authErrors,
+  BadReqErr,
   castToRes,
+  ErrCode,
   ErrorResDto,
+  normalizeEmail,
   ResWrapper,
 } from 'src/share';
 
@@ -197,8 +202,30 @@ export const userAuthController = new Elysia({
   .use(reqMeta)
   .post(
     '/register',
-    async ({ body: { email, password } }) => {
-      const result = await authService.register({ email, password });
+    async ({ body: { email, password }, clientIp, userAgent }) => {
+      const normalizedEmail = normalizeEmail(email);
+      const rateLimitKey = `register:${clientIp}:${normalizedEmail}`;
+      const currentAttempts =
+        (await registerRateLimitCache.get(rateLimitKey)) ?? 0;
+
+      if (currentAttempts >= env.REGISTER_RATE_LIMIT_MAX) {
+        throw new BadReqErr(ErrCode.BadRequest, {
+          errors: 'Too many registration attempts. Please try again later.',
+        });
+      }
+
+      await registerRateLimitCache.set(
+        rateLimitKey,
+        currentAttempts + 1,
+        env.REGISTER_RATE_LIMIT_WINDOW_SECONDS,
+      );
+
+      const result = await authService.register({
+        email,
+        password,
+        clientIp,
+        userAgent,
+      });
       return castToRes(result);
     },
     {

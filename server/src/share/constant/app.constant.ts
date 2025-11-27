@@ -1,4 +1,3 @@
-// region app
 export enum LANG {
   VI = 'vi',
   EN = 'en',
@@ -20,11 +19,9 @@ export enum LOG_LEVEL {
   TRACE = 'trace',
 }
 
-// region regex
 export const REGEX_TIME =
   /^\d+\s*(seconds?|minutes?|hours?|days?|weeks?|months?|years?)$/i;
 
-// region request
 export enum HTTP_METHOD {
   GET = 'GET',
   POST = 'POST',
@@ -43,7 +40,6 @@ export enum HTTP_STATUS {
   HTTP_500_INTERNAL_SERVER_ERROR = 500,
 }
 
-// region activity
 export enum ACTIVITY_TYPE {
   LOGIN = 'login',
   REGISTER = 'register',
@@ -68,7 +64,6 @@ export enum ACTIVITY_TYPE {
   UPDATE_SETTING = 'update-setting',
 
   INTERNAL_ERROR = 'internal-error',
-  // P2P
   P2P_ORDER_EXPIRED = 'p2p-order-expired',
   P2P_ORDER_EXPIRE_FAILED = 'p2p-order-expire-failed',
 }
@@ -158,7 +153,6 @@ export const PERMISSIONS = {
   },
 };
 
-// region queue
 export enum QueueName {
   Telegram = 'Telegram',
   Email = 'Email',
@@ -180,7 +174,6 @@ export enum SETTING {
   ENB_ONLY_ONE_SESSION = 'ENB_ONLY_ONE_SESSION',
 }
 
-// region cache
 export enum CACHE_NS {
   SETTING = 'setting',
   MFA_SETUP = 'mfa-setup',
@@ -189,6 +182,7 @@ export enum CACHE_NS {
   OTP = 'otp',
   OTP_RATE_LIMIT = 'otp-rate-limit',
   REGISTER_OTP_LIMIT = 'register-otp-limit',
+  REGISTER_RATE_LIMIT = 'register-rate-limit',
   CURRENCY = 'currency',
   NETWORK = 'network',
 }
@@ -201,14 +195,12 @@ export enum DB_PREFIX {
   PERMISSION = 'perm',
   USER_AUTH_PROVIDER = 'user_oauth',
   AUTH_PROVIDER = 'auth_prov',
-  // Core finance primitives
   TRANSACTION = 'txn',
   LEDGER_ENTRY = 'lgr_ent',
   ACCOUNT = 'acc',
   ACCOUNT_SNAPSHOT = 'acc_snp',
   CURRENCY = 'cur',
   NETWORK = 'net',
-  // P2P related
   P2P_USER_PROFILE = 'p2p_prof',
   P2P_AD = 'p2p_ad',
   P2P_USER_PAYMENT_ACCOUNT = 'p2p_pay_acc',

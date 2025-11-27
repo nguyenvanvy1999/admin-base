@@ -7,7 +7,7 @@ export const LoginRequestDto = t.Object({
 
 export const RegisterRequestDto = t.Object({
   email: t.String({ minLength: 1, format: 'email' }),
-  password: t.String({ minLength: 1 }),
+  password: t.String({ minLength: 8, maxLength: 128 }),
 });
 
 export const ChangePasswordRequestDto = t.Object({
