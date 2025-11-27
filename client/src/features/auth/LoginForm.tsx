@@ -32,15 +32,12 @@ export function LoginForm({ loading, serverError, onSubmit }: LoginFormProps) {
   return (
     <AntdLoginForm
       style={{ width: '100%' }}
-      title={t('auth.login.title', 'Đăng nhập admin')}
-      subTitle={t(
-        'auth.login.subtitle',
-        'Nhập thông tin xác thực để truy cập bảng điều khiển.',
-      )}
+      title={t('auth.login.title')}
+      subTitle={t('auth.login.subtitle')}
       initialValues={{ rememberDevice: true }}
       contentStyle={{ margin: 0, paddingBlock: 0 }}
       submitter={{
-        searchConfig: { submitText: t('auth.login.cta', 'Tiếp tục') },
+        searchConfig: { submitText: t('auth.login.cta') },
         submitButtonProps: {
           block: true,
           size: 'large',
@@ -61,8 +58,8 @@ export function LoginForm({ loading, serverError, onSubmit }: LoginFormProps) {
 
       <ProFormText
         name="email"
-        label={t('auth.login.email', 'Email công việc')}
-        placeholder={t('auth.login.emailPlaceholder', 'admin@company.com')}
+        label={t('auth.login.email')}
+        placeholder={t('auth.login.emailPlaceholder')}
         fieldProps={{
           size: 'large',
           autoComplete: 'email',
@@ -71,34 +68,34 @@ export function LoginForm({ loading, serverError, onSubmit }: LoginFormProps) {
         rules={[
           {
             required: true,
-            message: t('auth.login.emailRequired', 'Vui lòng nhập email'),
+            message: t('auth.login.emailRequired'),
           },
           {
             type: 'email',
-            message: t('auth.login.emailInvalid', 'Email không hợp lệ'),
+            message: t('auth.login.emailInvalid'),
           },
         ]}
       />
 
       <ProFormText.Password
         name="password"
-        label={t('auth.login.password', 'Mật khẩu')}
-        placeholder={t('auth.login.passwordPlaceholder', 'Nhập mật khẩu')}
+        label={t('auth.login.password')}
+        placeholder={t('auth.login.passwordPlaceholder')}
         fieldProps={{ size: 'large', autoComplete: 'current-password' }}
         rules={[
           {
             required: true,
-            message: t('auth.login.passwordRequired', 'Vui lòng nhập mật khẩu'),
+            message: t('auth.login.passwordRequired'),
           },
           {
             min: 6,
-            message: t('auth.login.passwordMin', 'Mật khẩu tối thiểu 6 ký tự'),
+            message: t('auth.login.passwordMin'),
           },
         ]}
       />
 
       <ProFormCheckbox name="rememberDevice">
-        {t('auth.login.rememberDevice', 'Tin tưởng thiết bị này')}
+        {t('auth.login.rememberDevice')}
       </ProFormCheckbox>
     </AntdLoginForm>
   );

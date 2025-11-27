@@ -67,7 +67,7 @@ export function MfaStep({
       layout="vertical"
       initialValues={{ rememberDevice: true }}
       submitter={{
-        searchConfig: { submitText: t('auth.mfa.cta', 'Xác nhận') },
+        searchConfig: { submitText: t('auth.mfa.cta') },
         submitButtonProps: {
           block: true,
           size: 'large',
@@ -80,10 +80,10 @@ export function MfaStep({
       }}
     >
       <Typography.Title level={4} style={{ marginBottom: 4 }}>
-        {t('auth.mfa.title', 'Xác thực đa yếu tố')}
+        {t('auth.mfa.title')}
       </Typography.Title>
       <Typography.Text type="secondary">
-        {t('auth.mfa.subtitle', 'Nhập mã OTP từ ứng dụng xác thực hoặc SMS.')}
+        {t('auth.mfa.subtitle')}
       </Typography.Text>
 
       {challengeMetadata}
@@ -100,15 +100,15 @@ export function MfaStep({
 
       <ProForm.Item
         name="code"
-        label={t('auth.mfa.codeLabel', 'Mã xác thực')}
+        label={t('auth.mfa.codeLabel')}
         rules={[
           {
             required: true,
-            message: t('auth.mfa.codeRequired', 'Vui lòng nhập mã OTP'),
+            message: t('auth.mfa.codeRequired'),
           },
           {
             len: AUTH_MFA_CONFIG.otpLength,
-            message: t('auth.mfa.codeInvalid', 'Mã OTP không hợp lệ'),
+            message: t('auth.mfa.codeInvalid'),
           },
         ]}
       >
@@ -121,7 +121,7 @@ export function MfaStep({
       </ProForm.Item>
 
       <ProFormCheckbox name="rememberDevice">
-        {t('auth.mfa.rememberDevice', 'Tin tưởng thiết bị này')}
+        {t('auth.mfa.rememberDevice')}
       </ProFormCheckbox>
 
       <Space
@@ -136,11 +136,11 @@ export function MfaStep({
         >
           {cooldown > 0
             ? t('auth.mfa.resendCountdown', { seconds: cooldown })
-            : t('auth.mfa.resend', 'Gửi lại mã')}
+            : t('auth.mfa.resend')}
         </Button>
         {challenge.allowBackupCode && (
           <Button type="link" onClick={() => onUseBackup?.()}>
-            {t('auth.mfa.useBackup', 'Dùng mã dự phòng')}
+            {t('auth.mfa.useBackup')}
           </Button>
         )}
       </Space>

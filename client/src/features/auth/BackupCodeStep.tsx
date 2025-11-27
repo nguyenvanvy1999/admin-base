@@ -37,7 +37,7 @@ export function BackupCodeStep({
       form={form}
       layout="vertical"
       submitter={{
-        searchConfig: { submitText: t('auth.backup.cta', 'Xác nhận') },
+        searchConfig: { submitText: t('auth.backup.cta') },
         submitButtonProps: {
           block: true,
           size: 'large',
@@ -50,13 +50,10 @@ export function BackupCodeStep({
       }}
     >
       <Typography.Title level={4} style={{ marginBottom: 4 }}>
-        {t('auth.backup.title', 'Dùng mã dự phòng')}
+        {t('auth.backup.title')}
       </Typography.Title>
       <Typography.Text type="secondary">
-        {t(
-          'auth.backup.subtitle',
-          'Nhập một mã dự phòng chưa dùng để tiếp tục.',
-        )}
+        {t('auth.backup.subtitle')}
       </Typography.Text>
 
       {typeof remaining === 'number' && (
@@ -77,23 +74,23 @@ export function BackupCodeStep({
 
       <ProFormText
         name="code"
-        label={t('auth.backup.codeLabel', 'Mã dự phòng')}
-        placeholder={t('auth.backup.placeholder', 'Nhập mã dự phòng')}
+        label={t('auth.backup.codeLabel')}
+        placeholder={t('auth.backup.placeholder')}
         fieldProps={{ size: 'large', autoFocus: true }}
         rules={[
           {
             required: true,
-            message: t('auth.backup.codeRequired', 'Vui lòng nhập mã dự phòng'),
+            message: t('auth.backup.codeRequired'),
           },
           {
             min: 8,
-            message: t('auth.backup.codeInvalid', 'Tối thiểu 8 ký tự'),
+            message: t('auth.backup.codeInvalid'),
           },
         ]}
       />
 
       <Button type="link" onClick={() => onBackToOtp?.()}>
-        {t('auth.backup.useOtp', 'Quay lại OTP')}
+        {t('auth.backup.useOtp')}
       </Button>
     </ProForm>
   );

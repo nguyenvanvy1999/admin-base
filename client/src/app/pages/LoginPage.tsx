@@ -15,9 +15,9 @@ export default function LoginPage() {
 
   const heroItems = useMemo(
     () => [
-      t('auth.hero.items.security', 'Chuẩn bảo mật chuẩn OWASP & SOC2'),
-      t('auth.hero.items.audit', 'Theo dõi phiên dang nhập real-time'),
-      t('auth.hero.items.mfa', 'MFA & mã dự phòng sẵn sàng'),
+      t('auth.hero.items.security'),
+      t('auth.hero.items.audit'),
+      t('auth.hero.items.mfa'),
     ],
     [t],
   );
@@ -57,10 +57,10 @@ export default function LoginPage() {
       return (
         <Flex vertical gap={12}>
           <Typography.Title level={4} style={{ marginBottom: 0 }}>
-            {t('auth.login.successTitle', 'Đăng nhập thành công')}
+            {t('auth.login.successTitle')}
           </Typography.Title>
           <Typography.Text type="secondary">
-            {t('auth.login.successSubtitle', 'Đang chuyển hướng...')}
+            {t('auth.login.successSubtitle')}
           </Typography.Text>
         </Flex>
       );
@@ -82,13 +82,10 @@ export default function LoginPage() {
           <Flex vertical gap={24}>
             <div>
               <Typography.Title level={2} style={{ color: 'white' }}>
-                {t('auth.hero.title', 'Investment Admin Portal')}
+                {t('auth.hero.title')}
               </Typography.Title>
               <Typography.Paragraph style={{ color: 'rgba(255,255,255,0.85)' }}>
-                {t(
-                  'auth.hero.subtitle',
-                  'Kiến trúc bảo mật đa lớp cho đội ngũ vận hành.',
-                )}
+                {t('auth.hero.subtitle')}
               </Typography.Paragraph>
             </div>
             <Flex vertical gap={12}>
