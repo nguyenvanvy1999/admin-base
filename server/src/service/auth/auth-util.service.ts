@@ -23,6 +23,7 @@ import {
   type ITokenPayload,
   LoginResType,
   type PrismaTx,
+  type SecurityDeviceInsight,
   type UPermission,
 } from 'src/share';
 import { timeStringToSeconds } from 'src/share/utils/time.util';
@@ -122,6 +123,7 @@ export class UserUtilService {
     user: User & { roles: { roleId: string }[] },
     clientIp: string,
     userAgent: string,
+    security?: SecurityDeviceInsight,
   ): Promise<ILoginRes> {
     if (await this.deps.settingService.enbOnlyOneSession()) {
       await this.deps.sessionService.revoke(user.id);
@@ -152,6 +154,7 @@ export class UserUtilService {
           createdById: user.id,
           expired: refreshTokenExpirationTime,
           token: refreshToken,
+          deviceFingerprint: security?.deviceFingerprint ?? null,
         },
         select: { id: true },
       });

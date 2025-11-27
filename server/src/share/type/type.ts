@@ -209,3 +209,8 @@ export type PrismaTx = Omit<
 >;
 
 export type IUserMFA = Pick<User, 'id' | 'mfaTotpEnabled' | 'totpSecret'>;
+
+export type SecurityDeviceInsight = {
+  deviceFingerprint?: string | null;
+  isNewDevice: boolean;
+};

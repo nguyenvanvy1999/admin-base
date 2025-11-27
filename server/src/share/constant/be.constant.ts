@@ -187,4 +187,16 @@ export const defaultSettings = {
     type: SettingDataType.number,
     value: '900',
   },
+  [SETTING.ENB_SECURITY_DEVICE_RECOGNITION]: {
+    type: SettingDataType.boolean,
+    value: 'false',
+  },
+  [SETTING.ENB_SECURITY_BLOCK_UNKNOWN_DEVICE]: {
+    type: SettingDataType.boolean,
+    value: 'false',
+  },
+  [SETTING.ENB_SECURITY_AUDIT_WARNING]: {
+    type: SettingDataType.boolean,
+    value: 'true',
+  },
 } satisfies Record<SETTING, { value: string; type: SettingDataType }>;

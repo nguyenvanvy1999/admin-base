@@ -35,4 +35,5 @@ export enum ErrCode {
   P2POrderInProgress = 'p2p-order-in-progress',
   P2PTradingBanned = 'p2p-trading-banned',
   ActionNotAllowed = 'action-not-allowed',
+  SuspiciousLoginBlocked = 'suspicious-login-blocked',
 }

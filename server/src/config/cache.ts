@@ -1,6 +1,11 @@
 import { redis } from 'src/config/redis';
 import type { Currency } from 'src/generated';
-import { CACHE_NS, type ICurrentUser, type PurposeVerify } from 'src/share';
+import {
+  CACHE_NS,
+  type ICurrentUser,
+  type PurposeVerify,
+  type SecurityDeviceInsight,
+} from 'src/share';
 import superjson from 'superjson';
 
 export class RedisCache<T> {
@@ -79,7 +84,10 @@ export const otpCache = new RedisCache<{
 });
 export type IOTPCache = typeof otpCache;
 
-export const mfaCache = new RedisCache<{ userId: string }>({
+export const mfaCache = new RedisCache<{
+  userId: string;
+  security?: SecurityDeviceInsight;
+}>({
   namespace: CACHE_NS.MFA,
   ttl: FIVE_MINUTES,
 });

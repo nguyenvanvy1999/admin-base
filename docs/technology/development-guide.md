@@ -2,6 +2,22 @@
 
 Tài liệu này hướng dẫn các tác vụ phát triển phổ biến trong dự án FinTrack.
 
+## Advanced Login Security
+
+- `ENB_SECURITY_DEVICE_RECOGNITION`: bật so khớp fingerprint dựa trên `userAgent` + `clientIp`. Khi tắt, luồng login hoạt động như trước.
+- `ENB_SECURITY_AUDIT_WARNING`: ghi `security_events` + audit log ở mức WARNING khi phát hiện thiết bị lạ.
+- `ENB_SECURITY_BLOCK_UNKNOWN_DEVICE`: từ chối đăng nhập nếu thiết bị chưa từng thấy (sau khi đã ghi cảnh báo).
+
+### Luồng xử lý
+
+1. `AuthService` gọi `SecurityMonitorService.evaluateLogin` ngay sau khi xác thực mật khẩu (và trong bước xác nhận MFA/OAuth).
+2. Hệ thống tìm `session` cùng `deviceFingerprint` trước đó. Nếu có, đăng nhập tiếp tục bình thường.
+3. Nếu thiết bị lạ:
+   - Khi `ENB_SECURITY_AUDIT_WARNING=true`, tạo bản ghi `security_events` + audit log với `error=unknown_device`.
+   - Khi `ENB_SECURITY_BLOCK_UNKNOWN_DEVICE=true`, trả lỗi `ErrCode.SuspiciousLoginBlocked`.
+   - Nếu không chặn, fingerprint mới được lưu vào session vừa tạo để các lần sau được nhận diện.
+4. Bối cảnh bảo mật (fingerprint, trạng thái thiết bị) được truyền qua bước MFA thông qua `mfaCache`, bảo đảm phiên cuối cùng luôn có fingerprint chính xác.
+
 ## Thêm API Endpoint Mới
 
 ### Bước 1: Tạo DTO (`src/dto/`)

@@ -62,6 +62,11 @@ import {
   type PasswordValidationService,
   passwordValidationService,
 } from './password-validation.service';
+import {
+  type SecurityCheckResult,
+  type SecurityMonitorService,
+  securityMonitorService,
+} from './security-monitor.service';
 import { type SessionService, sessionService } from './session.service';
 
 type LoginParams = typeof LoginRequestDto.static & {
@@ -123,6 +128,7 @@ export class AuthService {
       loginRateLimitCache: ILoginRateLimitCache;
       mfaCache: IMFACache;
       authenticator: typeof authenticator;
+      securityMonitorService: SecurityMonitorService;
     } = {
       db,
       env,
@@ -139,6 +145,7 @@ export class AuthService {
       loginRateLimitCache,
       mfaCache,
       authenticator,
+      securityMonitorService,
     },
   ) {}
 
@@ -178,11 +185,33 @@ export class AuthService {
 
     this.validatePasswordExpiration(user, enbExpired);
 
-    if (user.mfaTotpEnabled) {
-      return this.handleMfaLogin(user, clientIp, userAgent);
+    const securityResult = await this.deps.securityMonitorService.evaluateLogin(
+      {
+        userId: user.id,
+        clientIp,
+        userAgent,
+        method: 'email',
+      },
+    );
+
+    if (securityResult.action === 'block') {
+      await this.logFailedLoginAttempt(clientIp, userAgent, {
+        reason: 'security_blocked',
+        userId: user.id,
+      });
+      throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
     }
 
-    return this.handleSuccessfulLogin(user, clientIp, userAgent);
+    if (user.mfaTotpEnabled) {
+      return this.handleMfaLogin(user, clientIp, userAgent, securityResult);
+    }
+
+    return this.handleSuccessfulLogin(
+      user,
+      clientIp,
+      userAgent,
+      securityResult,
+    );
   }
 
   private validateLoginInput(email: string, password: string): void {
@@ -263,11 +292,13 @@ export class AuthService {
     user: Parameters<typeof this.deps.userUtilService.completeLogin>[0],
     clientIp: string,
     userAgent: string,
+    security?: SecurityCheckResult,
   ): Promise<ILoginResponse> {
     const loginRes = await this.deps.userUtilService.completeLogin(
       user,
       clientIp,
       userAgent,
+      security,
     );
 
     await this.deps.auditLogService.push({
@@ -306,6 +337,7 @@ export class AuthService {
     },
     clientIp: string,
     userAgent: string,
+    security?: SecurityCheckResult,
   ): Promise<ILoginResponse> {
     const loginToken = IdUtil.token16();
     const mfaToken = await this.deps.mfaUtilService.createSession({
@@ -315,6 +347,7 @@ export class AuthService {
         mfaTotpEnabled: user.mfaTotpEnabled,
         totpSecret: user.totpSecret,
       },
+      security,
     });
 
     await this.deps.auditLogService.push({
@@ -711,10 +744,33 @@ export class AuthService {
 
     await this.deps.mfaCache.del(cacheKey);
 
+    let securityContext = cachedData.security;
+
+    if (!securityContext) {
+      const securityResult =
+        await this.deps.securityMonitorService.evaluateLogin({
+          userId: user.id,
+          clientIp,
+          userAgent,
+          method: 'email',
+        });
+
+      if (securityResult.action === 'block') {
+        await this.logFailedLoginAttempt(clientIp, userAgent, {
+          reason: 'security_blocked',
+          userId: user.id,
+        });
+        throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
+      }
+
+      securityContext = securityResult;
+    }
+
     const loginRes = await this.deps.userUtilService.completeLogin(
       user,
       clientIp,
       userAgent,
+      securityContext,
     );
 
     await this.deps.auditLogService.push({

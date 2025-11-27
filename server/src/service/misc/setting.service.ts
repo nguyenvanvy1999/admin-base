@@ -231,6 +231,25 @@ export class SettingService {
       windowSeconds,
     };
   }
+
+  async loginSecurity(): Promise<{
+    deviceRecognition: boolean;
+    blockUnknownDevice: boolean;
+    auditWarning: boolean;
+  }> {
+    const [deviceRecognition, blockUnknownDevice, auditWarning] =
+      await Promise.all([
+        this.getSetting<boolean>(SETTING.ENB_SECURITY_DEVICE_RECOGNITION),
+        this.getSetting<boolean>(SETTING.ENB_SECURITY_BLOCK_UNKNOWN_DEVICE),
+        this.getSetting<boolean>(SETTING.ENB_SECURITY_AUDIT_WARNING),
+      ]);
+
+    return {
+      deviceRecognition,
+      blockUnknownDevice,
+      auditWarning,
+    };
+  }
 }
 
 export const settingService = new SettingService();

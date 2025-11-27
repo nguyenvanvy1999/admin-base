@@ -1,5 +1,11 @@
 import { type IMFACache, mfaCache } from 'src/config/cache';
-import { CoreErr, ErrCode, IdUtil, type IUserMFA } from 'src/share';
+import {
+  CoreErr,
+  ErrCode,
+  IdUtil,
+  type IUserMFA,
+  type SecurityDeviceInsight,
+} from 'src/share';
 
 type TokenGenerator = () => string;
 
@@ -16,14 +22,17 @@ export class MfaUtilService {
   async createSession({
     loginToken,
     user,
+    security,
   }: {
     loginToken: string;
     user: IUserMFA;
+    security?: SecurityDeviceInsight;
   }): Promise<string> {
     const mfaToken = this.generateToken();
     if (user.mfaTotpEnabled && user.totpSecret) {
       await this.cache.set(this.getKey(mfaToken, loginToken), {
         userId: user.id,
+        security,
       });
       return mfaToken;
     }

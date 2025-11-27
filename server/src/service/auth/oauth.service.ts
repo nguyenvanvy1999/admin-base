@@ -8,6 +8,10 @@ import {
   userUtilService,
 } from 'src/service/auth/auth-util.service';
 import {
+  type SecurityMonitorService,
+  securityMonitorService,
+} from 'src/service/auth/security-monitor.service';
+import {
   type AuditLogService,
   auditLogService,
 } from 'src/service/misc/audit-log.service';
@@ -51,6 +55,7 @@ export class OAuthService {
       oauth2ClientFactory: (clientId: string) => OAuth2Client;
       userUtilService: UserUtilService;
       auditLogService: AuditLogService;
+      securityMonitorService: SecurityMonitorService;
       idUtil: typeof IdUtil;
       crypto: {
         createHash: typeof createHash;
@@ -61,6 +66,7 @@ export class OAuthService {
       oauth2ClientFactory: (clientId: string) => new OAuth2Client(clientId),
       userUtilService,
       auditLogService,
+      securityMonitorService,
       idUtil: IdUtil,
       crypto: { createHash, createHmac },
     },
@@ -185,10 +191,24 @@ export class OAuthService {
       });
     }
 
+    const securityResult = await this.deps.securityMonitorService.evaluateLogin(
+      {
+        userId: user.id,
+        clientIp: clientIp || '',
+        userAgent: userAgent || '',
+        method: OAUTH.GOOGLE,
+      },
+    );
+
+    if (securityResult.action === 'block') {
+      throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
+    }
+
     const loginRes = await this.deps.userUtilService.completeLogin(
       user,
       clientIp || '',
       userAgent || '',
+      securityResult,
     );
 
     auditEntries.push({
