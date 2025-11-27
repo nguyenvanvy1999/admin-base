@@ -1,4 +1,5 @@
 import type { UserSelect } from 'src/generated';
+import type { OAUTH } from './app.constant';
 
 export enum LoginResType {
   COMPLETED = 'completed',
@@ -27,3 +28,5 @@ export const userResSelect = {
   lastFailedLoginAt: true,
   suspiciousActivityCount: true,
 } satisfies UserSelect;
+
+export type LoginMethod = OAUTH.GOOGLE | 'email' | 'backup-code';

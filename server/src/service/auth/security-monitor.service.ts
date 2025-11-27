@@ -13,7 +13,7 @@ import {
   ACTIVITY_TYPE,
   IdUtil,
   LOG_LEVEL,
-  type OAUTH,
+  type LoginMethod,
   type PrismaTx,
   type SecurityDeviceInsight,
 } from 'src/share';
@@ -22,8 +22,6 @@ export type SecurityCheckResult = SecurityDeviceInsight & {
   action: 'allow' | 'block';
   reason?: 'unknown_device';
 };
-
-type LoginMethod = OAUTH.GOOGLE | 'email' | 'backup-code';
 
 type EvaluateParams = {
   userId: string;

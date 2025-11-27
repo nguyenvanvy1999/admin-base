@@ -187,9 +187,9 @@ export class SettingService {
     enbAttempt: boolean;
     enbExpired: boolean;
   }> {
-    const [enbAttempt, enbExpired] = await Promise.all([
-      this.getSetting<boolean>(SETTING.ENB_PASSWORD_ATTEMPT),
-      this.getSetting<boolean>(SETTING.ENB_PASSWORD_EXPIRED),
+    const [enbAttempt, enbExpired] = await this.getManySettings([
+      SETTING.ENB_PASSWORD_ATTEMPT,
+      SETTING.ENB_PASSWORD_EXPIRED,
     ]);
     return {
       enbAttempt,
@@ -206,10 +206,10 @@ export class SettingService {
     max: number;
     windowSeconds: number;
   }> {
-    const [otpLimit, max, windowSeconds] = await Promise.all([
-      this.getSetting<number>(SETTING.REGISTER_OTP_LIMIT),
-      this.getSetting<number>(SETTING.REGISTER_RATE_LIMIT_MAX),
-      this.getSetting<number>(SETTING.REGISTER_RATE_LIMIT_WINDOW_SECONDS),
+    const [otpLimit, max, windowSeconds] = await this.getManySettings([
+      SETTING.REGISTER_OTP_LIMIT,
+      SETTING.REGISTER_RATE_LIMIT_MAX,
+      SETTING.REGISTER_RATE_LIMIT_WINDOW_SECONDS,
     ]);
     return {
       otpLimit,
@@ -222,9 +222,9 @@ export class SettingService {
     max: number;
     windowSeconds: number;
   }> {
-    const [max, windowSeconds] = await Promise.all([
-      this.getSetting<number>(SETTING.LOGIN_RATE_LIMIT_MAX),
-      this.getSetting<number>(SETTING.LOGIN_RATE_LIMIT_WINDOW_SECONDS),
+    const [max, windowSeconds] = await this.getManySettings([
+      SETTING.LOGIN_RATE_LIMIT_MAX,
+      SETTING.LOGIN_RATE_LIMIT_WINDOW_SECONDS,
     ]);
     return {
       max,
@@ -238,10 +238,10 @@ export class SettingService {
     auditWarning: boolean;
   }> {
     const [deviceRecognition, blockUnknownDevice, auditWarning] =
-      await Promise.all([
-        this.getSetting<boolean>(SETTING.ENB_SECURITY_DEVICE_RECOGNITION),
-        this.getSetting<boolean>(SETTING.ENB_SECURITY_BLOCK_UNKNOWN_DEVICE),
-        this.getSetting<boolean>(SETTING.ENB_SECURITY_AUDIT_WARNING),
+      await this.getManySettings([
+        SETTING.ENB_SECURITY_DEVICE_RECOGNITION,
+        SETTING.ENB_SECURITY_BLOCK_UNKNOWN_DEVICE,
+        SETTING.ENB_SECURITY_AUDIT_WARNING,
       ]);
 
     return {

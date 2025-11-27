@@ -5,6 +5,7 @@ import {
   ACTIVITY_TYPE,
   EmailType,
   type LOG_LEVEL,
+  type LoginMethod,
   type OAUTH,
   type PERMISSIONS,
   type PurposeVerify,
@@ -12,11 +13,11 @@ import {
 
 export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
   [ACTIVITY_TYPE.LOGIN]: {
-    method: OAUTH.GOOGLE | 'email' | 'backup-code';
+    method: LoginMethod;
     error?: string;
   };
   [ACTIVITY_TYPE.REGISTER]: {
-    method: OAUTH.GOOGLE | 'email';
+    method: LoginMethod;
     error?: string;
   };
   [ACTIVITY_TYPE.LOGOUT]: Record<string, never>;
