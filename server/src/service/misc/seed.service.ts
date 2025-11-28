@@ -9,6 +9,8 @@ import {
 import {
   ADMIN_USER_ID,
   DB_PREFIX,
+  DEFAULT_BASE_CURRENCY_ID,
+  DEFAULT_CURRENCIES,
   defaultRoles,
   defaultSettings,
   IdUtil,
@@ -22,19 +24,6 @@ const SYSTEM_USER_EMAIL = 'system@investment.local';
 const ADMIN_USER_EMAIL = 'admin@investment.local';
 const SYSTEM_USER_NAME = 'System User';
 const ADMIN_USER_NAME = 'Administrator';
-
-const DEFAULT_CURRENCIES: Array<{
-  code: string;
-  name: string;
-  symbol?: string;
-}> = [
-  { code: 'USD', name: 'United States Dollar', symbol: '$' },
-  { code: 'EUR', name: 'Euro' },
-  { code: 'VND', name: 'Vietnamese Dong' },
-  { code: 'JPY', name: 'Japanese Yen' },
-  { code: 'GBP', name: 'Pound Sterling' },
-  { code: 'SGD', name: 'Singapore Dollar' },
-];
 
 type SeedUserParams = {
   id: string;
@@ -268,7 +257,7 @@ export class SeedService {
         if (newCurrencies.length > 0) {
           await tx.currency.createMany({
             data: newCurrencies.map((currency) => ({
-              id: IdUtil.dbId(),
+              id: currency.id,
               code: currency.code,
               name: currency.name,
               symbol: currency.symbol,
@@ -298,24 +287,7 @@ export class SeedService {
 
   async seedUsers(): Promise<void> {
     try {
-      let defaultCurrency = await this.deps.db.currency.findFirst({
-        where: { isActive: true },
-        orderBy: { code: 'asc' },
-        select: { id: true },
-      });
-
-      if (!defaultCurrency) {
-        await this.seedCurrencies();
-        defaultCurrency = await this.deps.db.currency.findFirst({
-          where: { isActive: true },
-          orderBy: { code: 'asc' },
-          select: { id: true },
-        });
-      }
-
-      if (!defaultCurrency) {
-        throw new Error('Default currency not found');
-      }
+      const defaultCurrencyId = DEFAULT_BASE_CURRENCY_ID;
 
       await this.seedUser({
         id: SYS_USER_ID,
@@ -323,7 +295,7 @@ export class SeedService {
         name: SYSTEM_USER_NAME,
         password: this.deps.env.SYSTEM_PASSWORD,
         roleId: defaultRoles.system.id,
-        baseCurrencyId: defaultCurrency.id,
+        baseCurrencyId: defaultCurrencyId,
       });
 
       await this.seedUser({
@@ -332,7 +304,7 @@ export class SeedService {
         name: ADMIN_USER_NAME,
         password: this.deps.env.ADMIN_PASSWORD,
         roleId: defaultRoles.administrator.id,
-        baseCurrencyId: defaultCurrency.id,
+        baseCurrencyId: defaultCurrencyId,
       });
 
       this.deps.logger.warning('Seed critical users successfully.');

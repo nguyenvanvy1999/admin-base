@@ -43,6 +43,7 @@ import {
   ACTIVITY_TYPE,
   BadReqErr,
   DB_PREFIX,
+  DEFAULT_BASE_CURRENCY_ID,
   defaultRoles,
   ErrCode,
   getIpAndUa,
@@ -57,7 +58,6 @@ import {
   UnAuthErr,
   userResSelect,
 } from 'src/share';
-import { type CurrencyService, currencyService } from '../currency.service';
 import {
   type TokenService,
   tokenService,
@@ -114,7 +114,6 @@ export class AuthService {
       mfaCache: IMFACache;
       authenticator: typeof authenticator;
       securityMonitorService: SecurityMonitorService;
-      currencyService: CurrencyService;
       mfaVerificationService: MfaVerificationService;
     } = {
       db,
@@ -134,7 +133,6 @@ export class AuthService {
       mfaCache,
       authenticator,
       securityMonitorService,
-      currencyService,
       mfaVerificationService,
     },
   ) {}
@@ -420,17 +418,11 @@ export class AuthService {
     }
 
     const createdUserId = await this.deps.db.$transaction(async (tx) => {
-      const defaultCurrency =
-        await this.deps.currencyService.findDefaultCurrency(tx);
-      if (!defaultCurrency) {
-        throw new BadReqErr(ErrCode.InternalError);
-      }
-
       const userId = await this.createUserWithDefaults(
         tx,
         normalizedEmail,
         password,
-        defaultCurrency.id,
+        DEFAULT_BASE_CURRENCY_ID,
       );
 
       await this.deps.userUtilService.createProfile(tx, userId);

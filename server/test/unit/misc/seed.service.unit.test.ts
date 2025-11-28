@@ -450,20 +450,14 @@ describe('SeedService', () => {
   describe('seedUsers', () => {
     it('should create system and admin users when they do not exist', async () => {
       const { service } = buildSeedService();
-      const currency = SeedFixtures.createCurrency({ id: 'currency_usd' });
 
-      mockDb['currency'].findFirst.mockResolvedValueOnce(currency);
       mockDb['user'].findUnique
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null);
 
       await service.seedUsers();
 
-      expect(mockDb['currency'].findFirst).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ isActive: true }),
-        }),
-      );
+      expect(mockDb['currency'].findUnique).not.toHaveBeenCalled();
       expect(mockPasswordService.createPassword).toHaveBeenNthCalledWith(
         1,
         mockEnv.SYSTEM_PASSWORD,
@@ -507,31 +501,17 @@ describe('SeedService', () => {
 
     it('should skip password creation when user already exists', async () => {
       const { service } = buildSeedService();
-      const currency = SeedFixtures.createCurrency({ id: 'currency_usd' });
       const existingUser = SeedFixtures.createUser();
 
-      mockDb['currency'].findFirst.mockResolvedValueOnce(currency);
       mockDb['user'].findUnique
         .mockResolvedValueOnce(existingUser)
         .mockResolvedValueOnce(existingUser);
 
       await service.seedUsers();
 
+      expect(mockDb['currency'].findUnique).not.toHaveBeenCalled();
       expect(mockPasswordService.createPassword).not.toHaveBeenCalled();
       expect(mockDb['user'].upsert).toHaveBeenCalledTimes(2);
-    });
-
-    it('should log error when default currency is missing', async () => {
-      const { service } = buildSeedService();
-
-      mockDb['currency'].findFirst.mockResolvedValueOnce(null);
-
-      await service.seedUsers();
-
-      expect(mockDb['user'].upsert).not.toHaveBeenCalled();
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Seed critical users failed'),
-      );
     });
   });
 
@@ -549,7 +529,6 @@ describe('SeedService', () => {
         passwordCreated: new Date(),
         passwordExpired: new Date(),
       });
-      mockDb['currency'].findFirst.mockResolvedValue({ id: 'currency_usd' });
       mockDb['user'].findUnique.mockResolvedValue(null);
       mockDb['user'].upsert.mockResolvedValue({ id: 'user_1' });
       mockDb['network'].findMany.mockResolvedValue([]);

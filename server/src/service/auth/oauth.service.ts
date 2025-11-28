@@ -25,6 +25,7 @@ import {
   BadReqErr,
   CoreErr,
   DB_PREFIX,
+  DEFAULT_BASE_CURRENCY_ID,
   defaultRoles,
   ErrCode,
   getIpAndUa,
@@ -33,7 +34,6 @@ import {
   type PrismaTx,
   UnAuthErr,
 } from 'src/share';
-import { type CurrencyService, currencyService } from '../currency.service';
 
 type GoogleLoginParams = typeof GoogleLoginRequestDto.static;
 type LinkTelegramParams = {
@@ -54,7 +54,6 @@ export class OAuthService {
         createHash: typeof createHash;
         createHmac: typeof createHmac;
       };
-      currencyService: CurrencyService;
     } = {
       db,
       oauth2ClientFactory: (clientId: string) => new OAuth2Client(clientId),
@@ -63,7 +62,6 @@ export class OAuthService {
       securityMonitorService,
       idUtil: IdUtil,
       crypto: { createHash, createHmac },
-      currencyService,
     },
   ) {}
 
@@ -143,18 +141,12 @@ export class OAuthService {
     } else {
       user = await this.deps.db.$transaction(async (tx: PrismaTx) => {
         const userId = this.deps.idUtil.dbId(DB_PREFIX.USER);
-        // Get default currency (first active currency or first currency)
-        const defaultCurrency =
-          await this.deps.currencyService.findDefaultCurrency(tx);
-        if (!defaultCurrency) {
-          throw new BadReqErr(ErrCode.InternalError);
-        }
         const createdUser = await tx.user.create({
           data: {
             id: userId,
             email,
             status: UserStatus.active,
-            baseCurrencyId: defaultCurrency.id,
+            baseCurrencyId: DEFAULT_BASE_CURRENCY_ID,
             password: '',
             roles: {
               create: {
