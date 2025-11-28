@@ -1,10 +1,15 @@
 import { type IMFACache, mfaCache } from 'src/config/cache';
+import { db } from 'src/config/db';
+import type { User } from 'src/generated';
 import {
+  BadReqErr,
   CoreErr,
   ErrCode,
   IdUtil,
   type IUserMFA,
+  NotFoundErr,
   type SecurityDeviceInsight,
+  UserStatus,
 } from 'src/share';
 
 type TokenGenerator = () => string;
@@ -35,6 +40,33 @@ export class MfaUtilService {
       return mfaToken;
     }
     throw new CoreErr(ErrCode.MfaBroken);
+  }
+
+  async getMfaContext(mfaToken: string): Promise<{
+    cachedData: {
+      userId: string;
+      security?: SecurityDeviceInsight;
+      loginToken: string;
+      createdAt: number;
+    };
+    user: User & { roles: { roleId: string }[] };
+    isValid: boolean;
+  }> {
+    const cachedData = await this.cache.get(mfaToken);
+    if (!cachedData) {
+      throw new BadReqErr(ErrCode.SessionExpired);
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: cachedData.userId },
+      include: { roles: true },
+    });
+
+    if (!user || user.status !== UserStatus.active) {
+      throw new NotFoundErr(ErrCode.UserNotActive);
+    }
+
+    return { cachedData, user, isValid: true };
   }
 }
 

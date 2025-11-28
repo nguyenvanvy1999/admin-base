@@ -1,9 +1,10 @@
-import { Elysia, t } from 'elysia';
+import { Elysia } from 'elysia';
 import { reqMeta } from 'src/config/request';
 import {
   BackupCodesRemainingResponseDto,
   BackupCodesResponseDto,
   GenerateBackupCodesRequestDto,
+  LoginResDto,
   VerifyBackupCodeRequestDto,
 } from 'src/modules/auth/dtos';
 import { authCheck } from 'src/service/auth/auth.middleware';
@@ -61,14 +62,14 @@ export const backupController = new Elysia({
   .post(
     'verify',
     async ({ body: { backupCode, mfaToken }, clientIp, userAgent }) => {
-      const userId = await mfaBackupService.verifyBackupCode({
+      const loginRes = await mfaBackupService.verifyBackupCode({
         mfaToken,
         backupCode,
         clientIp,
         userAgent,
       });
 
-      return castToRes({ userId });
+      return castToRes(loginRes);
     },
     {
       body: VerifyBackupCodeRequestDto,
@@ -77,7 +78,7 @@ export const backupController = new Elysia({
         summary: 'Verify backup code',
       },
       response: {
-        200: ResWrapper(t.Object({ userId: t.String() })),
+        200: ResWrapper(LoginResDto),
         400: ErrorResDto,
         404: ErrorResDto,
       },

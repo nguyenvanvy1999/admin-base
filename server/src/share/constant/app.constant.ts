@@ -187,6 +187,7 @@ export enum CACHE_NS {
   REGISTER_OTP_LIMIT = 'register-otp-limit',
   REGISTER_RATE_LIMIT = 'register-rate-limit',
   LOGIN_RATE_LIMIT = 'login-rate-limit',
+  MFA_ATTEMPT = 'mfa-attempt',
   CURRENCY = 'currency',
 }
 

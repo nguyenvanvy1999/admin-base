@@ -1,7 +1,8 @@
 import crypto from 'node:crypto';
 import { authenticator } from 'otplib';
-import { mfaCache } from 'src/config/cache';
 import { db } from 'src/config/db';
+import type { ILoginRes } from 'src/modules/auth/dtos';
+import { mfaVerificationService } from 'src/service/auth/mfa-verification.service';
 import { auditLogService } from 'src/service/misc/audit-log.service';
 import {
   ACTIVITY_TYPE,
@@ -69,42 +70,19 @@ export class MfaBackupService {
     };
   }
 
-  async verifyBackupCode(params: IVerifyBackupCodeParams): Promise<string> {
+  verifyBackupCode(params: IVerifyBackupCodeParams): Promise<ILoginRes> {
     const { mfaToken, backupCode, clientIp, userAgent } = params;
 
     if (!backupCode || backupCode.length !== 8) {
       throw new BadReqErr(ErrCode.InvalidBackupCode);
     }
 
-    const cachedData = await mfaCache.get(mfaToken);
-
-    if (!cachedData) {
-      throw new BadReqErr(ErrCode.SessionExpired);
-    }
-
-    const mfaUser = await this.findMfaUserById(cachedData.userId);
-
-    if (!mfaUser.mfaTotpEnabled || !mfaUser.backupCodes) {
-      throw new BadReqErr(ErrCode.MFANotEnabled);
-    }
-
-    const isValid = this.validateBackupCode(mfaUser, backupCode);
-    if (!isValid) {
-      throw new BadReqErr(ErrCode.InvalidBackupCode);
-    }
-
-    await this.markBackupCodeAsUsed(mfaUser.id, backupCode);
-
-    await auditLogService.push({
-      type: ACTIVITY_TYPE.LOGIN,
-      payload: { method: 'backup-code' },
-      userId: mfaUser.id,
-      sessionId: undefined,
-      ip: clientIp,
+    return mfaVerificationService.verifyAndCompleteLogin({
+      mfaToken,
+      backupCode,
+      clientIp,
       userAgent,
     });
-
-    return cachedData.userId;
   }
 
   async getBackupCodesRemaining(
@@ -150,45 +128,6 @@ export class MfaBackupService {
 
   private hashBackupCode(code: string): string {
     return crypto.createHash('sha256').update(code).digest('hex');
-  }
-
-  private validateBackupCode(user: IMfaUser, backupCode: string): boolean {
-    if (!user.backupCodes) {
-      return false;
-    }
-
-    const backupCodes = JSON.parse(user.backupCodes) as string[];
-    const usedCodes = user.backupCodesUsed
-      ? (JSON.parse(user.backupCodesUsed) as string[])
-      : [];
-    const hashedCode = this.hashBackupCode(backupCode);
-
-    if (usedCodes.includes(hashedCode)) {
-      throw new BadReqErr(ErrCode.BackupCodeAlreadyUsed);
-    }
-
-    return backupCodes.includes(hashedCode);
-  }
-
-  private async markBackupCodeAsUsed(
-    userId: string,
-    backupCode: string,
-  ): Promise<void> {
-    const mfaUser = await this.findMfaUserById(userId);
-    const hashedCode = this.hashBackupCode(backupCode);
-    const usedCodes = mfaUser.backupCodesUsed
-      ? (JSON.parse(mfaUser.backupCodesUsed) as string[])
-      : [];
-
-    usedCodes.push(hashedCode);
-
-    await db.user.update({
-      where: { id: userId },
-      data: {
-        backupCodesUsed: JSON.stringify(usedCodes),
-      },
-      select: { id: true },
-    });
   }
 
   private async findMfaUserById(userId: string): Promise<IMfaUser> {

@@ -1,6 +1,11 @@
 import crypto from 'node:crypto';
 import { authenticator } from 'otplib';
-import { mfaCache, mfaSetupCache, mfaSetupTokenCache } from 'src/config/cache';
+import {
+  mfaCache,
+  mfaSetupCache,
+  mfaSetupTokenByUserCache,
+  mfaSetupTokenCache,
+} from 'src/config/cache';
 import { db } from 'src/config/db';
 import { otpService } from 'src/service/auth/otp.service';
 import { sessionService } from 'src/service/auth/session.service';
@@ -16,6 +21,7 @@ import {
   isExpired,
   NotFoundErr,
   PurposeVerify,
+  type SecurityDeviceInsight,
 } from 'src/share';
 
 type SetupMfaRequestParams = {
@@ -37,53 +43,82 @@ type ResetMfaParams = {
 };
 
 export class MfaSetupService {
-  async setupMfaRequest(params: SetupMfaRequestParams) {
+  setupMfaRequest(params: SetupMfaRequestParams) {
     const { userId, sessionId, setupToken } = params;
 
-    let resolvedUserId: string;
-    let resolvedSessionId: string | undefined;
-
     if (userId) {
-      resolvedUserId = userId;
-      resolvedSessionId = sessionId;
-
-      if (sessionId) {
-        await this.validateSessionActive(sessionId, userId);
-      }
-    } else if (setupToken) {
-      const tokenData = await mfaSetupTokenCache.get(setupToken);
-      if (!tokenData) {
-        throw new BadReqErr(ErrCode.SessionExpired);
-      }
-
-      resolvedUserId = tokenData.userId;
-      resolvedSessionId = undefined;
-
-      await mfaSetupTokenCache.del(setupToken);
-    } else {
-      throw new BadReqErr(ErrCode.ValidationError, {
-        errors: 'Either userId or setupToken is required',
-      });
+      return this.setupMfaRequestForAuthenticatedUser(userId, sessionId);
     }
 
-    await this.ensureMfaNotEnabled(resolvedUserId);
+    if (setupToken) {
+      return this.setupMfaRequestForUnauthenticatedUser(setupToken);
+    }
+
+    throw new BadReqErr(ErrCode.ValidationError, {
+      errors: 'Either userId or setupToken is required',
+    });
+  }
+
+  private async setupMfaRequestForAuthenticatedUser(
+    userId: string,
+    sessionId: string | undefined,
+  ) {
+    if (sessionId) {
+      await this.validateSessionActive(sessionId, userId);
+    }
+
+    await this.ensureMfaNotEnabled(userId);
 
     const mfaToken = this.generateToken();
     const totpSecret = this.generateTotpSecret();
 
     await mfaSetupCache.set(mfaToken, {
       totpSecret,
-      userId: resolvedUserId,
-      sessionId: resolvedSessionId || '',
-      setupToken: setupToken || undefined,
+      userId,
+      sessionId: sessionId || '',
+      setupToken: undefined,
       createdAt: Date.now(),
     });
 
     await auditLogService.push({
       type: ACTIVITY_TYPE.SETUP_MFA,
       payload: { method: 'totp', stage: 'request' },
-      userId: resolvedUserId,
-      sessionId: resolvedSessionId,
+      userId,
+      sessionId,
+    });
+
+    return {
+      mfaToken,
+      totpSecret,
+    };
+  }
+
+  private async setupMfaRequestForUnauthenticatedUser(setupToken: string) {
+    const tokenData = await mfaSetupTokenCache.get(setupToken);
+    if (!tokenData) {
+      throw new BadReqErr(ErrCode.SessionExpired);
+    }
+
+    await this.ensureMfaNotEnabled(tokenData.userId);
+
+    const mfaToken = this.generateToken();
+    const totpSecret = this.generateTotpSecret();
+
+    await mfaSetupCache.set(mfaToken, {
+      totpSecret,
+      userId: tokenData.userId,
+      sessionId: '',
+      setupToken,
+      createdAt: Date.now(),
+    });
+
+    await mfaSetupTokenCache.del(setupToken);
+
+    await auditLogService.push({
+      type: ACTIVITY_TYPE.SETUP_MFA,
+      payload: { method: 'totp', stage: 'request' },
+      userId: tokenData.userId,
+      sessionId: undefined,
     });
 
     return {
@@ -100,11 +135,14 @@ export class MfaSetupService {
       throw new BadReqErr(ErrCode.SessionExpired);
     }
 
+    let securityContext: SecurityDeviceInsight | undefined;
+
     if (cachedData.setupToken) {
       const tokenData = await mfaSetupTokenCache.get(cachedData.setupToken);
       if (!tokenData) {
         throw new BadReqErr(ErrCode.SessionExpired);
       }
+      securityContext = tokenData.security;
     }
 
     if (cachedData.sessionId) {
@@ -135,6 +173,7 @@ export class MfaSetupService {
       userId: cachedData.userId,
       loginToken,
       createdAt: Date.now(),
+      security: securityContext,
     });
 
     await auditLogService.push({
@@ -152,6 +191,7 @@ export class MfaSetupService {
 
     if (cachedData.setupToken) {
       await mfaSetupTokenCache.del(cachedData.setupToken);
+      await mfaSetupTokenByUserCache.del(cachedData.userId);
     }
 
     await mfaSetupCache.del(mfaToken);
