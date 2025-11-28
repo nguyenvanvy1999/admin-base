@@ -90,7 +90,7 @@ type ChangePasswordParams = {
 type ForgotPasswordParams = typeof ForgotPasswordRequestDto.static;
 type VerifyAccountParams = typeof VerifyAccountRequestDto.static;
 type RefreshTokenParams = typeof RefreshTokenRequestDto.static;
-type LogoutParams = { userId: string; sessionId: string };
+type LogoutParams = { id: string; sessionId: string };
 type ConfirmMfaLoginParams = typeof ConfirmMfaLoginRequestDto.static;
 type LoginWithMfaParams = typeof MfaLoginRequestDto.static;
 
@@ -672,25 +672,25 @@ export class AuthService {
   }
 
   async logout(params: LogoutParams): Promise<void> {
-    const { userId, sessionId } = params;
+    const { id, sessionId } = params;
 
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.LOGOUT,
       payload: {},
     });
 
-    await this.deps.sessionService.revoke(userId, [sessionId]);
+    await this.deps.sessionService.revoke(id, [sessionId]);
   }
 
   async logoutAll(params: LogoutParams): Promise<void> {
-    const { userId, sessionId } = params;
+    const { id, sessionId } = params;
 
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.REVOKE_SESSION,
       payload: { sessionId },
     });
 
-    await this.deps.sessionService.revoke(userId);
+    await this.deps.sessionService.revoke(id);
   }
 
   async confirmMfaLogin(params: ConfirmMfaLoginParams): Promise<ILoginRes> {

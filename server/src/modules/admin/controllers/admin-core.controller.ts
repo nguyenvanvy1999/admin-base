@@ -33,10 +33,6 @@ import {
   ResWrapper,
 } from 'src/share';
 
-const loadSessionById = ({ params }: { params: Record<string, string> }) => {
-  return sessionService.loadSessionById(params['id']);
-};
-
 export const adminCoreController = new Elysia<'admin-core', AppAuthMeta>({
   tags: [
     DOC_TAG.ADMIN_I18N,
@@ -49,19 +45,12 @@ export const adminCoreController = new Elysia<'admin-core', AppAuthMeta>({
   .group('/i18n', (app) =>
     app
       .use(authorize(has('I18N.VIEW')))
-      .get(
-        '/',
-        async ({ query }) => {
-          const result = await i18nService.list(query);
-          return castToRes(result);
+      .get('/', async ({ query }) => castToRes(await i18nService.list(query)), {
+        query: I18nPaginationDto,
+        response: {
+          200: ResWrapper(PaginateI18nResDto),
         },
-        {
-          query: I18nPaginationDto,
-          response: {
-            200: ResWrapper(PaginateI18nResDto),
-          },
-        },
-      )
+      })
       .use(authorize(has('I18N.UPDATE')))
       .post(
         '/',
@@ -79,8 +68,8 @@ export const adminCoreController = new Elysia<'admin-core', AppAuthMeta>({
       )
       .post(
         '/del',
-        async ({ body: { ids } }) => {
-          await i18nService.delete({ ids });
+        async ({ body }) => {
+          await i18nService.delete(body);
           return castToRes(null);
         },
         {
@@ -93,8 +82,8 @@ export const adminCoreController = new Elysia<'admin-core', AppAuthMeta>({
       )
       .post(
         '/import',
-        async ({ body: { file } }) => {
-          await i18nService.import({ file });
+        async ({ body }) => {
+          await i18nService.import(body);
           return castToRes(null);
         },
         {
@@ -122,19 +111,12 @@ export const adminCoreController = new Elysia<'admin-core', AppAuthMeta>({
   .group('/roles', (app) =>
     app
       .use(authorize(has('ROLE.VIEW')))
-      .get(
-        '/',
-        async ({ query }) => {
-          const result = await roleService.list(query);
-          return castToRes(result);
+      .get('/', async ({ query }) => castToRes(await roleService.list(query)), {
+        query: RolePaginationDto,
+        response: {
+          200: ResWrapper(PaginateRoleResDto),
         },
-        {
-          query: RolePaginationDto,
-          response: {
-            200: ResWrapper(PaginateRoleResDto),
-          },
-        },
-      )
+      })
       .use(authorize(has('ROLE.UPDATE')))
       .post(
         '/',
@@ -153,8 +135,8 @@ export const adminCoreController = new Elysia<'admin-core', AppAuthMeta>({
       .use(authorize(allOf(has('ROLE.UPDATE'), has('ROLE.DELETE'))))
       .post(
         '/del',
-        async ({ body: { ids } }) => {
-          await roleService.delete({ ids });
+        async ({ body }) => {
+          await roleService.delete(body);
           return castToRes(null);
         },
         {
@@ -167,27 +149,26 @@ export const adminCoreController = new Elysia<'admin-core', AppAuthMeta>({
       ),
   )
   .group('/permissions', (app) =>
-    app.use(authorize(has('ROLE.VIEW'))).get(
-      '/',
-      async ({ query: { roleId } }) => {
-        const result = await permissionService.list({ roleId });
-        return castToRes(result);
-      },
-      {
-        query: t.Object({ roleId: t.Optional(t.String()) }),
-        response: {
-          200: ResWrapper(
-            t.Array(
-              t.Object({
-                id: t.String(),
-                description: t.Nullable(t.String()),
-                title: t.String(),
-              }),
+    app
+      .use(authorize(has('ROLE.VIEW')))
+      .get(
+        '/',
+        async ({ query }) => castToRes(await permissionService.list(query)),
+        {
+          query: t.Object({ roleId: t.Optional(t.String()) }),
+          response: {
+            200: ResWrapper(
+              t.Array(
+                t.Object({
+                  id: t.String(),
+                  description: t.Nullable(t.String()),
+                  title: t.String(),
+                }),
+              ),
             ),
-          ),
+          },
         },
-      },
-    ),
+      ),
   )
   .group('/settings', (app) =>
     app
@@ -257,7 +238,12 @@ export const adminCoreController = new Elysia<'admin-core', AppAuthMeta>({
               ),
             ),
           ),
-          { load: { resource: loadSessionById } },
+          {
+            load: {
+              resource: ({ params }: { params: Record<string, string> }) =>
+                sessionService.loadSessionById(params['id']),
+            },
+          },
         ),
       )
       .post(

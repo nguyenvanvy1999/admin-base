@@ -31,13 +31,7 @@ export const authBaseController = new Elysia({
   .use(reqMeta)
   .post(
     '/login',
-    async ({ body: { email, password } }) => {
-      const result = await authService.login({
-        email,
-        password,
-      });
-      return castToRes(result);
-    },
+    async ({ body }) => castToRes(await authService.login(body)),
     {
       body: LoginRequestDto,
       detail: {
@@ -54,14 +48,7 @@ export const authBaseController = new Elysia({
   )
   .post(
     '/login/mfa/confirm',
-    async ({ body: { mfaToken, loginToken, otp } }) => {
-      const result = await authService.confirmMfaLogin({
-        mfaToken,
-        loginToken,
-        otp,
-      });
-      return castToRes(result);
-    },
+    async ({ body }) => castToRes(await authService.confirmMfaLogin(body)),
     {
       body: ConfirmMfaLoginRequestDto,
       detail: {
@@ -78,13 +65,7 @@ export const authBaseController = new Elysia({
   )
   .post(
     '/login/mfa',
-    async ({ body: { mfaToken, otp } }) => {
-      const result = await authService.loginWithMfa({
-        mfaToken,
-        otp,
-      });
-      return castToRes(result);
-    },
+    async ({ body }) => castToRes(await authService.loginWithMfa(body)),
     {
       body: MfaLoginRequestDto,
       detail: {
@@ -101,12 +82,7 @@ export const authBaseController = new Elysia({
   )
   .post(
     '/refresh-token',
-    async ({ body: { token } }) => {
-      const result = await authService.refreshToken({
-        token,
-      });
-      return castToRes(result);
-    },
+    async ({ body }) => castToRes(await authService.refreshToken(body)),
     {
       body: RefreshTokenRequestDto,
       response: {
@@ -124,10 +100,7 @@ export const authBaseController = new Elysia({
   .post(
     '/logout',
     async ({ currentUser }) => {
-      await authService.logout({
-        userId: currentUser.id,
-        sessionId: currentUser.sessionId,
-      });
+      await authService.logout(currentUser);
       return castToRes(null);
     },
     {
@@ -145,10 +118,7 @@ export const authBaseController = new Elysia({
   .post(
     '/logout/all',
     async ({ currentUser }) => {
-      await authService.logoutAll({
-        userId: currentUser.id,
-        sessionId: currentUser.sessionId,
-      });
+      await authService.logoutAll(currentUser);
       return castToRes(null);
     },
     {
@@ -186,12 +156,8 @@ export const authBaseController = new Elysia({
   )
   .post(
     '/change-password',
-    async ({ body: { newPassword, oldPassword }, currentUser: { id } }) => {
-      await authService.changePassword({
-        userId: id,
-        oldPassword,
-        newPassword,
-      });
+    async ({ body, currentUser: { id } }) => {
+      await authService.changePassword({ userId: id, ...body });
       return castToRes(null);
     },
     {
@@ -209,12 +175,8 @@ export const authBaseController = new Elysia({
   )
   .post(
     '/forgot-password',
-    async ({ body: { newPassword, otp, otpToken } }) => {
-      await authService.forgotPassword({
-        otpToken,
-        otp,
-        newPassword,
-      });
+    async ({ body }) => {
+      await authService.forgotPassword(body);
       return castToRes(null);
     },
     {
@@ -238,13 +200,7 @@ export const userAuthController = new Elysia({
   .use(reqMeta)
   .post(
     '/register',
-    async ({ body: { email, password } }) => {
-      const result = await authService.register({
-        email,
-        password,
-      });
-      return castToRes(result);
-    },
+    async ({ body }) => castToRes(await authService.register(body)),
     {
       body: RegisterRequestDto,
       detail: {
@@ -260,11 +216,8 @@ export const userAuthController = new Elysia({
   )
   .post(
     '/verify-account',
-    async ({ body: { otp, otpToken } }) => {
-      await authService.verifyAccount({
-        otpToken,
-        otp,
-      });
+    async ({ body }) => {
+      await authService.verifyAccount(body);
       return castToRes(null);
     },
     {

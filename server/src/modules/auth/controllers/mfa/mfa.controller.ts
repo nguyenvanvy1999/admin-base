@@ -24,12 +24,7 @@ export const mfaController = new Elysia({
   .use(reqMeta)
   .post(
     'setup/request',
-    async ({ body: { setupToken } }) => {
-      const result = await mfaSetupService.setupMfaRequest({
-        setupToken,
-      });
-      return castToRes(result);
-    },
+    async ({ body }) => castToRes(await mfaSetupService.setupMfaRequest(body)),
     {
       body: SetupMfaRequestDto,
       detail: {
@@ -47,13 +42,7 @@ export const mfaController = new Elysia({
   )
   .post(
     'setup/confirm',
-    async ({ body: { mfaToken, otp } }) => {
-      const result = await mfaSetupService.setupMfa({
-        mfaToken,
-        otp,
-      });
-      return castToRes(result);
-    },
+    async ({ body }) => castToRes(await mfaSetupService.setupMfa(body)),
     {
       body: SetupMfaConfirmDto,
       detail: {
@@ -72,13 +61,7 @@ export const mfaController = new Elysia({
   .use(authCheck)
   .post(
     'reset',
-    async ({ body: { otpToken, otp } }) => {
-      const result = await mfaSetupService.resetMfa({
-        otpToken,
-        otp,
-      });
-      return castToRes(result);
-    },
+    async ({ body }) => castToRes(await mfaSetupService.resetMfa(body)),
     {
       body: ResetMfaRequestDto,
       detail: {
@@ -94,14 +77,8 @@ export const mfaController = new Elysia({
   )
   .post(
     'disable',
-    async ({ body: { otp, backupCode }, currentUser: { id, sessionId } }) => {
-      const result = await mfaSetupService.disableMfa({
-        userId: id,
-        otp,
-        backupCode,
-      });
-      return castToRes(result);
-    },
+    async ({ body, currentUser: { id } }) =>
+      castToRes(await mfaSetupService.disableMfa({ userId: id, ...body })),
     {
       body: DisableMfaRequestDto,
       detail: {

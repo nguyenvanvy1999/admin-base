@@ -23,14 +23,14 @@ export const adminUserController = new Elysia<'', AppAuthMeta>({
     .use(authorize(has('USER.RESET_MFA')))
     .post(
       '/:id/mfa/reset',
-      async ({ params: { id }, currentUser, body }) => {
-        const result = await adminUserService.resetUserMfa({
-          targetUserId: id,
-          actorId: currentUser.id,
-          reason: body.reason,
-        });
-        return castToRes(result);
-      },
+      async ({ params: { id }, currentUser, body }) =>
+        castToRes(
+          await adminUserService.resetUserMfa({
+            targetUserId: id,
+            actorId: currentUser.id,
+            ...body,
+          }),
+        ),
       {
         params: IdDto,
         body: AdminUserMfaActionDto,
@@ -43,14 +43,14 @@ export const adminUserController = new Elysia<'', AppAuthMeta>({
     )
     .post(
       '/:id/mfa/disable',
-      async ({ params: { id }, currentUser, body }) => {
-        const result = await adminUserService.disableUserMfa({
-          targetUserId: id,
-          actorId: currentUser.id,
-          reason: body.reason,
-        });
-        return castToRes(result);
-      },
+      async ({ params: { id }, currentUser, body }) =>
+        castToRes(
+          await adminUserService.disableUserMfa({
+            targetUserId: id,
+            actorId: currentUser.id,
+            ...body,
+          }),
+        ),
       {
         params: IdDto,
         body: AdminUserMfaActionDto,
@@ -64,15 +64,14 @@ export const adminUserController = new Elysia<'', AppAuthMeta>({
     .use(authorize(has('USER.UPDATE')))
     .patch(
       '/:id',
-      async ({ params: { id }, currentUser, body }) => {
-        const result = await adminUserService.updateUser({
-          targetUserId: id,
-          actorId: currentUser.id,
-          status: body.status,
-          ...body,
-        });
-        return castToRes(result);
-      },
+      async ({ params: { id }, currentUser, body }) =>
+        castToRes(
+          await adminUserService.updateUser({
+            targetUserId: id,
+            actorId: currentUser.id,
+            ...body,
+          }),
+        ),
       {
         params: IdDto,
         body: AdminUserUpdateDto,
