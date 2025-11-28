@@ -1,7 +1,6 @@
-import type { FormProps } from 'antd';
+import { ProForm, type ProFormProps } from '@ant-design/pro-components';
 import { Button, Form, Space } from 'antd';
 import type { ReactNode } from 'react';
-import { AppForm } from 'src/components/common/AppForm';
 import { AppModal } from 'src/components/common/AppModal';
 
 export interface FormModalProps<
@@ -11,7 +10,7 @@ export interface FormModalProps<
   onClose: () => void;
   onSubmit: (values: T) => Promise<void> | void;
   title?: ReactNode;
-  formProps?: Omit<FormProps<T>, 'form' | 'onFinish'>;
+  formProps?: Omit<ProFormProps<T>, 'form' | 'onFinish' | 'submitter'>;
   initialValues?: Partial<T>;
   mode?: 'create' | 'edit';
   loading?: boolean;
@@ -73,9 +72,15 @@ export function FormModal<
         </Space>
       }
     >
-      <AppForm<T> form={form} initialValues={initialValues} {...formProps}>
+      <ProForm<T>
+        form={form}
+        initialValues={initialValues}
+        disabled={loading}
+        submitter={false}
+        {...formProps}
+      >
         {children}
-      </AppForm>
+      </ProForm>
     </AppModal>
   );
 }

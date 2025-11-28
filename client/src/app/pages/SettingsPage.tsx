@@ -1,14 +1,11 @@
 import {
-  Button,
-  Card,
-  Flex,
-  InputNumber,
-  Select,
-  Switch,
-  Typography,
-} from 'antd';
+  ProForm,
+  ProFormDigit,
+  ProFormSelect,
+  ProFormSwitch,
+} from '@ant-design/pro-components';
+import { Card, Flex, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { AppForm, AppFormItem } from 'src/components/common/AppForm';
 import { PageHeader } from 'src/components/common/PageHeader';
 
 type SettingForm = {
@@ -27,7 +24,8 @@ export default function SettingsPage() {
         subtitle={t('settingsPage.subtitle')}
       />
       <Card>
-        <AppForm<SettingForm>
+        <ProForm<SettingForm>
+          layout="vertical"
           initialValues={{
             timezone: 'Asia/Ho_Chi_Minh',
             riskLimit: 5,
@@ -35,48 +33,45 @@ export default function SettingsPage() {
           }}
           onFinish={(values) => {
             console.log('settings', values);
+            return Promise.resolve(true);
+          }}
+          submitter={{
+            searchConfig: { submitText: t('settingsPage.submit') },
+            submitButtonProps: {
+              type: 'primary',
+            },
+            resetButtonProps: false,
           }}
         >
-          <AppFormItem
+          <ProFormSelect
             label={t('settingsPage.timezoneLabel')}
             name="timezone"
             rules={[{ required: true }]}
-          >
-            <Select
-              options={[
-                {
-                  value: 'Asia/Ho_Chi_Minh',
-                  label: 'Asia/Ho_Chi_Minh (GMT+7)',
-                },
-                { value: 'UTC', label: 'UTC' },
-                { value: 'America/New_York', label: 'America/New_York' },
-              ]}
-            />
-          </AppFormItem>
+            options={[
+              {
+                value: 'Asia/Ho_Chi_Minh',
+                label: 'Asia/Ho_Chi_Minh (GMT+7)',
+              },
+              { value: 'UTC', label: 'UTC' },
+              { value: 'America/New_York', label: 'America/New_York' },
+            ]}
+          />
 
-          <AppFormItem
+          <ProFormDigit
             label={t('settingsPage.riskLimitLabel')}
             name="riskLimit"
-          >
-            <InputNumber min={1} max={20} style={{ width: '100%' }} />
-          </AppFormItem>
+            fieldProps={{ min: 1, max: 20, style: { width: '100%' } }}
+          />
 
-          <AppFormItem
+          <ProFormSwitch
             label={t('settingsPage.emailDigestLabel')}
             name="emailDigest"
-            valuePropName="checked"
-          >
-            <Switch />
-          </AppFormItem>
+          />
 
           <Typography.Paragraph type="secondary">
             {t('settingsPage.description')}
           </Typography.Paragraph>
-
-          <Button type="primary" htmlType="submit">
-            {t('settingsPage.submit')}
-          </Button>
-        </AppForm>
+        </ProForm>
       </Card>
     </Flex>
   );
