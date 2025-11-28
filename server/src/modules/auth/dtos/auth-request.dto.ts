@@ -44,3 +44,17 @@ export const MfaLoginRequestDto = t.Object({
 export const ReferralRequestDto = t.Object({
   refCode: t.String({ minLength: 1 }),
 });
+
+export const GoogleLoginRequestDto = t.Object({
+  idToken: t.String({ minLength: 1 }),
+});
+
+export const LinkTelegramRequestDto = t.Object({
+  id: t.String(),
+  first_name: t.Optional(t.String()),
+  last_name: t.Optional(t.String()),
+  username: t.Optional(t.String()),
+  photo_url: t.Optional(t.String()),
+  auth_date: t.String(),
+  hash: t.String(),
+});

@@ -1,6 +1,10 @@
 import { Elysia, t } from 'elysia';
 import { reqMeta } from 'src/config/request';
-import { LoginResponseDto } from 'src/modules/auth/dtos';
+import {
+  GoogleLoginRequestDto,
+  LinkTelegramRequestDto,
+  LoginResponseDto,
+} from 'src/modules/auth/dtos';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { oauthService } from 'src/service/auth/oauth.service';
 import {
@@ -18,16 +22,12 @@ export const oauthController = new Elysia({
   .use(reqMeta)
   .post(
     'google',
-    async ({ body: { idToken } }) => {
-      const result = await oauthService.googleLogin({
-        idToken,
-      });
+    async ({ body }) => {
+      const result = await oauthService.googleLogin(body);
       return castToRes(result);
     },
     {
-      body: t.Object({
-        idToken: t.String({ minLength: 1 }),
-      }),
+      body: GoogleLoginRequestDto,
       detail: {
         description: 'Login with Google OAuth',
         summary: 'Login with Google OAuth',
@@ -46,28 +46,12 @@ export const oauthController = new Elysia({
     async ({ body, currentUser: { id } }) => {
       const result = await oauthService.linkTelegram({
         userId: id,
-        telegramData: {
-          id: body.id,
-          first_name: body.first_name,
-          last_name: body.last_name,
-          username: body.username,
-          photo_url: body.photo_url,
-          auth_date: body.auth_date,
-          hash: body.hash,
-        },
+        telegramData: body,
       });
       return castToRes(result);
     },
     {
-      body: t.Object({
-        id: t.String(),
-        first_name: t.Optional(t.String()),
-        last_name: t.Optional(t.String()),
-        username: t.Optional(t.String()),
-        photo_url: t.Optional(t.String()),
-        auth_date: t.String(),
-        hash: t.String(),
-      }),
+      body: LinkTelegramRequestDto,
       detail: {
         description: 'Link account with Telegram',
         summary: 'Link account with Telegram',

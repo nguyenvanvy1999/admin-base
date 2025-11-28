@@ -7,7 +7,11 @@ import {
 } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import { UserStatus } from 'src/generated';
-import type { ILoginRes } from 'src/modules/auth/dtos';
+import type {
+  ILoginRes,
+  MfaLoginRequestDto,
+  VerifyBackupCodeRequestDto,
+} from 'src/modules/auth/dtos';
 import {
   type AuditLogService,
   auditLogService,
@@ -30,12 +34,9 @@ import {
   securityMonitorService,
 } from './security-monitor.service';
 
-type VerifyAndCompleteLoginParams = {
-  mfaToken: string;
-  otp?: string;
-  backupCode?: string;
-};
-
+type VerifyAndCompleteLoginParams =
+  | typeof MfaLoginRequestDto.static
+  | typeof VerifyBackupCodeRequestDto.static;
 export class MfaVerificationService {
   private readonly MAX_MFA_ATTEMPTS = 5;
   private readonly MFA_ATTEMPT_TTL = 300;
@@ -63,9 +64,10 @@ export class MfaVerificationService {
   async verifyAndCompleteLogin(
     params: VerifyAndCompleteLoginParams,
   ): Promise<ILoginRes> {
-    const { mfaToken, otp, backupCode } = params;
+    const { mfaToken } = params;
     const { clientIp, userAgent } = getIpAndUa();
-
+    const otp = 'otp' in params ? params.otp : undefined;
+    const backupCode = 'backupCode' in params ? params.backupCode : undefined;
     if (!otp && !backupCode) {
       throw new BadReqErr(ErrCode.ValidationError, {
         errors: 'Either otp or backupCode is required',

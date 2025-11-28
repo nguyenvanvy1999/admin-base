@@ -1,7 +1,10 @@
 import crypto from 'node:crypto';
 import { authenticator } from 'otplib';
 import { db } from 'src/config/db';
-import type { ILoginRes } from 'src/modules/auth/dtos';
+import type {
+  ILoginRes,
+  VerifyBackupCodeRequestDto,
+} from 'src/modules/auth/dtos';
 import { mfaVerificationService } from 'src/service/auth/mfa-verification.service';
 import { auditLogService } from 'src/service/misc/audit-log.service';
 import {
@@ -13,7 +16,6 @@ import {
   type IBackupCodesRemaining,
   type IGenerateBackupCodesParams,
   type IMfaUser,
-  type IVerifyBackupCodeParams,
   NotFoundErr,
   UnAuthErr,
 } from 'src/share';
@@ -74,17 +76,10 @@ export class MfaBackupService {
     };
   }
 
-  verifyBackupCode(params: IVerifyBackupCodeParams): Promise<ILoginRes> {
-    const { mfaToken, backupCode } = params;
-
-    if (!backupCode || backupCode.length !== 8) {
-      throw new BadReqErr(ErrCode.InvalidBackupCode);
-    }
-
-    return mfaVerificationService.verifyAndCompleteLogin({
-      mfaToken,
-      backupCode,
-    });
+  verifyBackupCode(
+    params: typeof VerifyBackupCodeRequestDto.static,
+  ): Promise<ILoginRes> {
+    return mfaVerificationService.verifyAndCompleteLogin(params);
   }
 
   async getBackupCodesRemaining(

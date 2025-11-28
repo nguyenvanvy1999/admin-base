@@ -2,7 +2,11 @@ import { createHash, createHmac } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { db, type IDb } from 'src/config/db';
 import { UserStatus } from 'src/generated';
-import type { ILoginRes } from 'src/modules/auth/dtos';
+import type {
+  GoogleLoginRequestDto,
+  ILoginRes,
+  LinkTelegramRequestDto,
+} from 'src/modules/auth/dtos';
 import {
   type UserUtilService,
   userUtilService,
@@ -31,21 +35,10 @@ import {
 } from 'src/share';
 import { type CurrencyService, currencyService } from '../currency.service';
 
-type GoogleLoginParams = {
-  idToken: string;
-};
-
+type GoogleLoginParams = typeof GoogleLoginRequestDto.static;
 type LinkTelegramParams = {
   userId: string;
-  telegramData: {
-    id: string;
-    first_name?: string;
-    last_name?: string;
-    username?: string;
-    photo_url?: string;
-    auth_date: string;
-    hash: string;
-  };
+  telegramData: typeof LinkTelegramRequestDto.static;
 };
 
 export class OAuthService {

@@ -3,6 +3,8 @@ import { reqMeta } from 'src/config/request';
 import {
   DisableMfaRequestDto,
   MfaStatusResponseDto,
+  ResetMfaRequestDto,
+  SetupMfaConfirmDto,
   SetupMfaRequestDto,
 } from 'src/modules/auth/dtos';
 import { authCheck } from 'src/service/auth/auth.middleware';
@@ -53,7 +55,7 @@ export const mfaController = new Elysia({
       return castToRes(result);
     },
     {
-      body: t.Object({ mfaToken: t.String(), otp: t.String() }),
+      body: SetupMfaConfirmDto,
       detail: {
         description: 'Confirm setup MFA',
         summary: 'Confirm setup MFA',
@@ -78,7 +80,7 @@ export const mfaController = new Elysia({
       return castToRes(result);
     },
     {
-      body: t.Object({ otpToken: t.String(), otp: t.String() }),
+      body: ResetMfaRequestDto,
       detail: {
         description: 'Reset MFA',
         summary: 'Reset MFA',

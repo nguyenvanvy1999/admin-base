@@ -15,12 +15,14 @@ import { env, type IEnv } from 'src/config/env';
 import { UserStatus } from 'src/generated';
 import type {
   ChangePasswordRequestDto,
+  ConfirmMfaLoginRequestDto,
   ForgotPasswordRequestDto,
   ILoginRes,
   ILoginResponse,
   LoginMFAResDto,
   LoginMFASetupResDto,
   LoginRequestDto,
+  MfaLoginRequestDto,
   RefreshTokenRequestDto,
   RegisterRequestDto,
   VerifyAccountRequestDto,
@@ -81,29 +83,16 @@ import {
 import { type SessionService, sessionService } from './session.service';
 
 type LoginParams = typeof LoginRequestDto.static;
-
 type RegisterParams = typeof RegisterRequestDto.static;
-
 type ChangePasswordParams = {
   userId: string;
 } & typeof ChangePasswordRequestDto.static;
-
 type ForgotPasswordParams = typeof ForgotPasswordRequestDto.static;
-
 type VerifyAccountParams = typeof VerifyAccountRequestDto.static;
-
 type RefreshTokenParams = typeof RefreshTokenRequestDto.static;
-
-type LogoutParams = {
-  userId: string;
-  sessionId: string;
-};
-
-type ConfirmMfaLoginParams = {
-  mfaToken: string;
-  loginToken: string;
-  otp: string;
-};
+type LogoutParams = { userId: string; sessionId: string };
+type ConfirmMfaLoginParams = typeof ConfirmMfaLoginRequestDto.static;
+type LoginWithMfaParams = typeof MfaLoginRequestDto.static;
 
 export class AuthService {
   constructor(
@@ -722,13 +711,8 @@ export class AuthService {
     });
   }
 
-  loginWithMfa(params: { mfaToken: string; otp: string }): Promise<ILoginRes> {
-    const { mfaToken, otp } = params;
-
-    return this.deps.mfaVerificationService.verifyAndCompleteLogin({
-      mfaToken,
-      otp,
-    });
+  loginWithMfa(params: LoginWithMfaParams): Promise<ILoginRes> {
+    return this.deps.mfaVerificationService.verifyAndCompleteLogin(params);
   }
 
   async getProfile(userId: string) {

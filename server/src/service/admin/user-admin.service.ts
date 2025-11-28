@@ -2,6 +2,7 @@ import { db, type IDb } from 'src/config/db';
 import { UserStatus, type UserUncheckedUpdateInput } from 'src/generated';
 import type {
   AdminUserActionResDto,
+  AdminUserMfaActionDto,
   AdminUserUpdateDto,
 } from 'src/modules/admin/dtos';
 import {
@@ -14,14 +15,11 @@ import {
 } from 'src/service/misc/audit-log.service';
 import { ACTIVITY_TYPE, ErrCode, NotFoundErr } from 'src/share';
 
+type UserActionResult = typeof AdminUserActionResDto.static;
 type BaseUserActionParams = {
   targetUserId: string;
   actorId: string;
-  reason?: string;
-};
-
-type UserActionResult = typeof AdminUserActionResDto.static;
-
+} & typeof AdminUserMfaActionDto.static;
 type UpdateUserParams = BaseUserActionParams & typeof AdminUserUpdateDto.static;
 
 const updateUserSelect = {

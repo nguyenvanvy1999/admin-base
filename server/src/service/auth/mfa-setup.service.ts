@@ -7,6 +7,11 @@ import {
   mfaSetupTokenCache,
 } from 'src/config/cache';
 import { db } from 'src/config/db';
+import type {
+  ResetMfaRequestDto,
+  SetupMfaConfirmDto,
+  SetupMfaRequestDto,
+} from 'src/modules/auth/dtos';
 import { otpService } from 'src/service/auth/otp.service';
 import { sessionService } from 'src/service/auth/session.service';
 import { auditLogService } from 'src/service/misc/audit-log.service';
@@ -25,19 +30,9 @@ import {
   type SecurityDeviceInsight,
 } from 'src/share';
 
-type SetupMfaRequestParams = {
-  setupToken?: string;
-};
-
-type SetupMfaParams = {
-  mfaToken: string;
-  otp: string;
-};
-
-type ResetMfaParams = {
-  otpToken: string;
-  otp: string;
-};
+type SetupMfaRequestParams = typeof SetupMfaRequestDto.static;
+type SetupMfaParams = typeof SetupMfaConfirmDto.static;
+type ResetMfaParams = typeof ResetMfaRequestDto.static;
 
 export class MfaSetupService {
   setupMfaRequest(params: SetupMfaRequestParams) {
