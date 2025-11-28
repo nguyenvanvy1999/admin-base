@@ -29,33 +29,44 @@
       "passwordPlaceholder": "Enter your password",
       "passwordRequired": "Please enter your password",
       "passwordMin": "Password must be at least 6 characters",
-      "rememberDevice": "Trust this device",
       "cta": "Continue",
       "successTitle": "Signed in successfully",
       "successSubtitle": "Redirecting you to the dashboard..."
     },
     "mfa": {
       "title": "Two-factor verification",
-      "subtitle": "Enter the OTP from your authenticator app or SMS.",
+      "subtitle": "Enter the OTP from your authenticator app.",
       "codeLabel": "Verification code",
       "codeRequired": "Please enter the OTP",
       "codeInvalid": "Invalid OTP",
-      "rememberDevice": "Trust this device",
       "cta": "Verify",
-      "resend": "Resend code",
-      "resendCountdown": "Resend in {{seconds}}s",
-      "useBackup": "Use backup code"
+      "useBackup": "Use backup code",
+      "locked": "Too many attempts. Please wait or restart the login flow."
     },
     "backup": {
       "title": "Use a backup code",
-      "subtitle": "Enter an unused backup code to continue.",
-      "remaining": "{{count}} backup codes remaining",
+      "subtitle": "Enter one of your backup codes to continue.",
       "codeLabel": "Backup code",
       "placeholder": "Enter backup code",
       "codeRequired": "Please enter the backup code",
-      "codeInvalid": "Must be at least 8 characters",
+      "codeInvalid": "Backup code must be 8 characters",
       "cta": "Verify",
-      "useOtp": "Back to OTP"
+      "useOtp": "Back to OTP",
+      "locked": "Too many attempts. Switch back to OTP or restart login."
+    },
+    "setup": {
+      "title": "Multi-factor protection required",
+      "subtitle": "We need to set up an authenticator app before granting access.",
+      "requestCta": "Generate QR secret",
+      "requestHint": "If you reloaded the page, request a new secret to continue.",
+      "scanTitle": "Scan the QR code",
+      "scanSubtitle": "Add it to Google Authenticator, 1Password, Authy, or any TOTP app.",
+      "copyHint": "Can't scan the code? Copy the secret above and paste it into your app.",
+      "otpLabel": "Enter OTP from your authenticator",
+      "otpRequired": "Please enter the OTP",
+      "otpInvalid": "OTP must be 6 digits",
+      "confirmCta": "Confirm & continue",
+      "backupHint": "After confirming, you'll verify one more OTP (or a backup code) to finish login."
     }
   },
   "dashboard": {

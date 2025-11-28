@@ -1,75 +1,77 @@
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
-import { AUTH_STORAGE_KEYS } from 'src/config/auth';
 import { useAuth } from 'src/hooks/auth/useAuth';
 import { parseApiError } from 'src/lib/api/errorHandler';
 import { authService } from 'src/services/auth';
 import type {
   AuthFlowStep,
+  BackupCodeVerifyPayload,
   LoginPayload,
   LoginResponse,
   LoginSuccessResponse,
-  MfaChallenge,
-  VerifyBackupPayload,
-  VerifyMfaPayload,
 } from 'src/types/auth';
 
-export type CredentialsFormValues = Omit<LoginPayload, 'deviceId'>;
+export type CredentialsFormValues = LoginPayload;
 
 interface FlowErrors {
   credentials?: string;
+  setup?: string;
   mfa?: string;
   backup?: string;
 }
 
+interface SetupState {
+  setupToken: string;
+  mfaToken?: string;
+  totpSecret?: string;
+}
+
+interface ChallengeState {
+  mfaToken: string;
+  loginToken?: string;
+}
+
 interface UseAuthFlowResult {
   step: AuthFlowStep;
-  challenge: MfaChallenge | null;
   errors: FlowErrors;
+  setupState: SetupState | null;
+  challengeState: ChallengeState | null;
+  accountEmail: string;
+  canUseBackup: boolean;
   isSubmittingCredentials: boolean;
+  isRequestingSetupSecret: boolean;
+  isConfirmingSetup: boolean;
   isSubmittingMfa: boolean;
   isSubmittingBackup: boolean;
-  isResendingChallenge: boolean;
+  isChallengeLocked: boolean;
+  isBackupLocked: boolean;
   submitCredentials: (values: CredentialsFormValues) => void;
-  submitOtp: (code: string, rememberDevice?: boolean) => void;
+  requestSetupSecret: () => void;
+  confirmSetupOtp: (otp: string) => void;
+  submitOtp: (otp: string) => void;
   submitBackupCode: (code: string) => void;
-  resendChallenge: () => void;
   switchToBackup: () => void;
   switchToOtp: () => void;
 }
 
-function getDeviceId(): string {
-  if (typeof window === 'undefined') {
-    return '';
+function isTooManyAttempts(message?: string): boolean {
+  if (!message) {
+    return false;
   }
-
-  const existing = localStorage.getItem(AUTH_STORAGE_KEYS.deviceId);
-  if (existing) {
-    return existing;
-  }
-
-  const fallback = Math.random().toString(36).slice(2);
-  const newId =
-    typeof crypto !== 'undefined' && crypto.randomUUID
-      ? crypto.randomUUID()
-      : fallback;
-  localStorage.setItem(AUTH_STORAGE_KEYS.deviceId, newId);
-  return newId;
-}
-
-function isSuccessResponse(
-  response: LoginResponse | LoginSuccessResponse,
-): response is LoginSuccessResponse {
-  return response.status === 'authenticated';
+  return message.toLowerCase().includes('too many attempts');
 }
 
 export function useAuthFlow(): UseAuthFlowResult {
   const { completeSignIn } = useAuth();
   const [step, setStep] = useState<AuthFlowStep>('credentials');
-  const [challenge, setChallenge] = useState<MfaChallenge | null>(null);
+  const [setupState, setSetupState] = useState<SetupState | null>(null);
+  const [challengeState, setChallengeState] = useState<ChallengeState | null>(
+    null,
+  );
+  const [accountEmail, setAccountEmail] = useState('');
   const [errors, setErrors] = useState<FlowErrors>({});
-
-  const deviceId = useMemo(() => getDeviceId(), []);
+  const [isChallengeLocked, setChallengeLocked] = useState(false);
+  const [isBackupLocked, setBackupLocked] = useState(false);
 
   const resetError = useCallback((key: keyof FlowErrors) => {
     setErrors((prev) => ({ ...prev, [key]: undefined }));
@@ -79,30 +81,35 @@ export function useAuthFlow(): UseAuthFlowResult {
     (session: LoginSuccessResponse) => {
       completeSignIn(session);
       setStep('success');
+      setSetupState(null);
+      setChallengeState(null);
     },
     [completeSignIn],
   );
 
-  const handleChallengeResponse = useCallback((response: LoginResponse) => {
-    if (response.status === 'mfa_required') {
-      setChallenge(response.challenge);
-      setStep('mfa');
-      return;
-    }
-    if (response.status === 'backup_required') {
-      setChallenge(response.challenge);
-      setStep('backup');
-    }
-  }, []);
+  const handleLoginResponse = useCallback(
+    (response: LoginResponse) => {
+      if (response.type === 'completed') {
+        handleSession(response);
+        return;
+      }
+      if (response.type === 'mfa-confirm') {
+        setChallengeState({ mfaToken: response.mfaToken });
+        setStep('mfa-challenge');
+        setChallengeLocked(false);
+        setBackupLocked(false);
+        return;
+      }
+      setSetupState({ setupToken: response.setupToken });
+      setStep('mfa-setup');
+    },
+    [handleSession],
+  );
 
   const loginMutation = useMutation({
     mutationFn: (payload: LoginPayload) => authService.login(payload),
     onSuccess: (response) => {
-      if (isSuccessResponse(response)) {
-        handleSession(response);
-      } else {
-        handleChallengeResponse(response);
-      }
+      handleLoginResponse(response);
     },
     onError: (error) => {
       const parsed = parseApiError(error);
@@ -110,106 +117,185 @@ export function useAuthFlow(): UseAuthFlowResult {
     },
   });
 
-  const verifyMfaMutation = useMutation({
-    mutationFn: (payload: VerifyMfaPayload) => authService.verifyMfa(payload),
+  const setupRequestMutation = useMutation({
+    mutationFn: (setupToken: string) =>
+      authService.requestMfaSetup({ setupToken }),
+    onSuccess: (data) => {
+      setSetupState((prev) =>
+        prev
+          ? { ...prev, mfaToken: data.mfaToken, totpSecret: data.totpSecret }
+          : prev,
+      );
+    },
+    onError: (error) => {
+      const parsed = parseApiError(error);
+      setErrors((prev) => ({ ...prev, setup: parsed.message }));
+    },
+  });
+
+  const setupConfirmMutation = useMutation({
+    mutationFn: (payload: { mfaToken: string; otp: string }) =>
+      authService.confirmMfaSetup(payload),
+    onSuccess: ({ mfaToken, loginToken }) => {
+      setChallengeState({ mfaToken, loginToken });
+      setSetupState(null);
+      setStep('mfa-challenge');
+      setErrors((prev) => ({ ...prev, setup: undefined }));
+      setChallengeLocked(false);
+      setBackupLocked(false);
+    },
+    onError: (error) => {
+      const parsed = parseApiError(error);
+      setErrors((prev) => ({ ...prev, setup: parsed.message }));
+    },
+  });
+
+  const loginMfaMutation = useMutation({
+    mutationFn: (payload: { mfaToken: string; otp: string }) =>
+      authService.loginWithMfa(payload),
     onSuccess: (session) => {
       handleSession(session);
     },
     onError: (error) => {
       const parsed = parseApiError(error);
       setErrors((prev) => ({ ...prev, mfa: parsed.message }));
+      if (isTooManyAttempts(parsed.message)) {
+        setChallengeLocked(true);
+      }
+    },
+  });
+
+  const confirmMfaMutation = useMutation({
+    mutationFn: (payload: {
+      mfaToken: string;
+      loginToken: string;
+      otp: string;
+    }) => authService.confirmMfaLogin(payload),
+    onSuccess: (session) => {
+      handleSession(session);
+    },
+    onError: (error) => {
+      const parsed = parseApiError(error);
+      setErrors((prev) => ({ ...prev, mfa: parsed.message }));
+      if (isTooManyAttempts(parsed.message)) {
+        setChallengeLocked(true);
+      }
     },
   });
 
   const backupMutation = useMutation({
-    mutationFn: (payload: VerifyBackupPayload) =>
-      authService.verifyBackup(payload),
+    mutationFn: (payload: BackupCodeVerifyPayload) =>
+      authService.verifyBackupCode(payload),
     onSuccess: (session) => {
       handleSession(session);
     },
     onError: (error) => {
       const parsed = parseApiError(error);
       setErrors((prev) => ({ ...prev, backup: parsed.message }));
-    },
-  });
-
-  const resendMutation = useMutation({
-    mutationFn: (challengeId: string) => authService.resendMfa(challengeId),
-    onSuccess: (nextChallenge) => {
-      setChallenge(nextChallenge);
-    },
-    onError: (error) => {
-      const parsed = parseApiError(error);
-      setErrors((prev) => ({ ...prev, mfa: parsed.message }));
+      if (isTooManyAttempts(parsed.message)) {
+        setBackupLocked(true);
+      }
     },
   });
 
   const submitCredentials = (values: CredentialsFormValues): void => {
     resetError('credentials');
-    loginMutation.mutate({
-      ...values,
-      deviceId: deviceId || undefined,
-    });
+    setChallengeState(null);
+    setSetupState(null);
+    setChallengeLocked(false);
+    setBackupLocked(false);
+    setAccountEmail(values.email);
+    loginMutation.mutate(values);
   };
 
-  const submitOtp = (code: string, rememberDevice?: boolean): void => {
-    if (!challenge) {
+  const requestSetupSecret = (): void => {
+    if (!setupState?.setupToken) {
+      return;
+    }
+    resetError('setup');
+    setupRequestMutation.mutate(setupState.setupToken);
+  };
+
+  const confirmSetupOtp = (otp: string): void => {
+    if (!setupState?.mfaToken) {
+      return;
+    }
+    resetError('setup');
+    setupConfirmMutation.mutate({ mfaToken: setupState.mfaToken, otp });
+  };
+
+  const submitOtp = (otp: string): void => {
+    if (!challengeState) {
       return;
     }
     resetError('mfa');
-    verifyMfaMutation.mutate({
-      challengeId: challenge.challengeId,
-      code,
-      rememberDevice,
-      deviceId: deviceId || undefined,
-    });
+    setChallengeLocked(false);
+    if (challengeState.loginToken) {
+      confirmMfaMutation.mutate({
+        mfaToken: challengeState.mfaToken,
+        loginToken: challengeState.loginToken,
+        otp,
+      });
+    } else {
+      loginMfaMutation.mutate({
+        mfaToken: challengeState.mfaToken,
+        otp,
+      });
+    }
   };
 
   const submitBackupCode = (code: string): void => {
-    if (!challenge) {
+    if (!challengeState) {
       return;
     }
     resetError('backup');
+    setBackupLocked(false);
     backupMutation.mutate({
-      challengeId: challenge.challengeId,
+      mfaToken: challengeState.mfaToken,
       backupCode: code,
-      deviceId: deviceId || undefined,
     });
   };
 
-  const resendChallenge = (): void => {
-    if (!challenge) {
+  const switchToBackup = (): void => {
+    if (!challengeState) {
       return;
     }
-    resendMutation.mutate(challenge.challengeId);
-  };
-
-  const switchToBackup = (): void => {
-    if (challenge?.allowBackupCode) {
-      setErrors((prev) => ({ ...prev, backup: undefined }));
-      setStep('backup');
-    }
+    setErrors((prev) => ({ ...prev, backup: undefined }));
+    setStep('backup');
   };
 
   const switchToOtp = (): void => {
-    if (challenge && challenge.method !== 'backup') {
-      setErrors((prev) => ({ ...prev, mfa: undefined }));
-      setStep('mfa');
+    if (!challengeState) {
+      return;
     }
+    setErrors((prev) => ({ ...prev, mfa: undefined }));
+    setStep('mfa-challenge');
   };
+
+  const canUseBackup = useMemo(() => Boolean(challengeState), [challengeState]);
+
+  const isSubmittingMfa =
+    loginMfaMutation.isPending || confirmMfaMutation.isPending;
 
   return {
     step,
-    challenge,
     errors,
+    setupState,
+    challengeState,
+    accountEmail,
+    canUseBackup,
     isSubmittingCredentials: loginMutation.isPending,
-    isSubmittingMfa: verifyMfaMutation.isPending,
+    isRequestingSetupSecret: setupRequestMutation.isPending,
+    isConfirmingSetup: setupConfirmMutation.isPending,
+    isSubmittingMfa,
     isSubmittingBackup: backupMutation.isPending,
-    isResendingChallenge: resendMutation.isPending,
+    isChallengeLocked,
+    isBackupLocked,
     submitCredentials,
+    requestSetupSecret,
+    confirmSetupOtp,
     submitOtp,
     submitBackupCode,
-    resendChallenge,
     switchToBackup,
     switchToOtp,
   };

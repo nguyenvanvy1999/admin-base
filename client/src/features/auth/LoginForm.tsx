@@ -1,6 +1,5 @@
 import {
   LoginForm as AntdLoginForm,
-  ProFormCheckbox,
   ProFormText,
 } from '@ant-design/pro-components';
 import { Alert } from 'antd';
@@ -23,7 +22,6 @@ export function LoginForm({ loading, serverError, onSubmit }: LoginFormProps) {
       onSubmit({
         email: values.email,
         password: values.password,
-        rememberDevice: Boolean(values.rememberDevice),
       }),
     );
     return true;
@@ -34,7 +32,7 @@ export function LoginForm({ loading, serverError, onSubmit }: LoginFormProps) {
       style={{ width: '100%' }}
       title={t('auth.login.title')}
       subTitle={t('auth.login.subtitle')}
-      initialValues={{ rememberDevice: true }}
+      initialValues={{}}
       contentStyle={{ margin: 0, paddingBlock: 0 }}
       submitter={{
         searchConfig: { submitText: t('auth.login.cta') },
@@ -50,7 +48,7 @@ export function LoginForm({ loading, serverError, onSubmit }: LoginFormProps) {
         <Alert
           type="error"
           showIcon
-          message={serverError}
+          title={serverError}
           closable
           style={{ marginBottom: 16 }}
         />
@@ -93,10 +91,6 @@ export function LoginForm({ loading, serverError, onSubmit }: LoginFormProps) {
           },
         ]}
       />
-
-      <ProFormCheckbox name="rememberDevice">
-        {t('auth.login.rememberDevice')}
-      </ProFormCheckbox>
     </AntdLoginForm>
   );
 }

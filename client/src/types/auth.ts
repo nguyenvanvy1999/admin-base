@@ -1,6 +1,13 @@
-export type AuthFlowStep = 'credentials' | 'mfa' | 'backup' | 'success';
+export type AuthFlowStep =
+  | 'credentials'
+  | 'mfa-setup'
+  | 'mfa-challenge'
+  | 'backup'
+  | 'success';
 
-export type MfaMethod = 'totp' | 'sms' | 'email' | 'push' | 'backup';
+export type LoginResponseType = 'completed' | 'mfa-confirm' | 'mfa-setup';
+
+export type UserStatus = 'inactive' | 'active' | 'suspendded' | 'banned';
 
 export interface TokenSet {
   accessToken: string;
@@ -20,73 +27,107 @@ export interface DeviceFingerprint {
 export interface AuthUser {
   id: string;
   email: string;
+  status: UserStatus;
+  permissions: string[];
+  mfaTotpEnabled: boolean;
+  created: string;
+  modified: string;
   name?: string;
   avatar?: string;
   locale?: string;
   roles?: string[];
-  permissions?: string[];
-  mfaEnabled?: boolean;
   lastLoginAt?: string;
 }
 
 export interface LoginPayload {
   email: string;
   password: string;
-  deviceId?: string;
-  rememberDevice?: boolean;
 }
 
-export interface LoginSuccessResponse {
-  status: 'authenticated';
-  tokens: TokenSet;
+export interface LoginCompletedResponse {
+  type: 'completed';
+  accessToken: string;
+  refreshToken: string;
+  exp: number;
+  expired: string;
   user: AuthUser;
 }
 
-export interface MfaChallenge {
-  challengeId: string;
-  method: MfaMethod;
-  expiresAt: string;
-  maskedDestination?: string;
-  retryAfterSeconds?: number;
-  attemptsRemaining?: number;
-  backupCodesRemaining?: number;
-  allowBackupCode?: boolean;
-  metadata?: Record<string, unknown>;
+export interface LoginMfaConfirmResponse {
+  type: 'mfa-confirm';
+  mfaToken: string;
 }
 
-export interface MfaRequiredResponse {
-  status: 'mfa_required';
-  challenge: MfaChallenge;
+export interface LoginMfaSetupResponse {
+  type: 'mfa-setup';
+  setupToken: string;
 }
 
-export interface BackupRequiredResponse {
-  status: 'backup_required';
-  challenge: MfaChallenge;
-}
+export type LoginSuccessResponse = LoginCompletedResponse;
 
 export type LoginResponse =
-  | LoginSuccessResponse
-  | MfaRequiredResponse
-  | BackupRequiredResponse;
+  | LoginCompletedResponse
+  | LoginMfaConfirmResponse
+  | LoginMfaSetupResponse;
 
-export interface VerifyMfaPayload {
-  challengeId: string;
-  code: string;
-  deviceId?: string;
-  rememberDevice?: boolean;
+export interface LoginMfaPayload {
+  mfaToken: string;
+  otp: string;
 }
 
-export interface VerifyBackupPayload {
-  challengeId: string;
+export interface ConfirmMfaLoginPayload {
+  mfaToken: string;
+  loginToken: string;
+  otp: string;
+}
+
+export interface BackupCodeVerifyPayload {
+  mfaToken: string;
   backupCode: string;
-  deviceId?: string;
 }
 
-export interface BackupCodeStatus {
-  remainingCodes: number;
-  lastUsedAt?: string;
-  regeneratedAt?: string;
-  lockedUntil?: string;
+export interface MfaSetupRequestPayload {
+  setupToken?: string;
+}
+
+export interface MfaSetupRequestResponse {
+  mfaToken: string;
+  totpSecret: string;
+}
+
+export interface MfaSetupConfirmPayload {
+  mfaToken: string;
+  otp: string;
+}
+
+export interface MfaSetupConfirmResponse {
+  mfaToken: string;
+  loginToken: string;
+}
+
+export interface BackupCodesGeneratePayload {
+  otp: string;
+}
+
+export interface BackupCodesGenerateResponse {
+  codes: string[];
+  message: string;
+}
+
+export interface BackupCodesRemainingResponse {
+  remaining: number;
+  total: number;
+}
+
+export interface MfaStatusResponse {
+  enabled: boolean;
+  hasBackupCodes: boolean;
+  backupCodesRemaining: number;
+}
+
+export interface DisableMfaPayload {
+  otp?: string;
+  backupCode?: string;
 }
 
 export interface RefreshTokenPayload {

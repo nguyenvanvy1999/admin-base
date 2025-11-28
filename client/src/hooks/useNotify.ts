@@ -8,7 +8,7 @@ export function useNotify() {
     message,
     success: (content: string) =>
       notification.success({
-        message: content,
+        title: content,
       }),
   };
 }

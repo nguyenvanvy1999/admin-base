@@ -10,14 +10,16 @@ guards.
 
 ## API contracts
 
-| Use case           | Method | Endpoint               | Payload                                                                  | Response                                                                   |
-|--------------------|--------|------------------------|--------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| Primary login      | `POST` | `/api/auth/login`      | `LoginPayload` (`email`, `password`, `rememberDevice`, `deviceId`)       | `LoginSuccessResponse` or `MfaRequiredResponse` / `BackupRequiredResponse` |
-| Verify OTP         | `POST` | `/api/auth/mfa/verify` | `VerifyMfaPayload` (`challengeId`, `code`, `rememberDevice`, `deviceId`) | `LoginSuccessResponse`                                                     |
-| Resend OTP         | `POST` | `/api/auth/mfa/resend` | `{ challengeId }`                                                        | `MfaChallenge`                                                             |
-| Verify backup code | `POST` | `/api/auth/mfa/backup` | `VerifyBackupPayload` (`challengeId`, `backupCode`, `deviceId`)          | `LoginSuccessResponse`                                                     |
-| Current user       | `GET`  | `/api/auth/me`         | `-`                                                                      | `AuthUser`                                                                 |
-| Logout             | `POST` | `/api/auth/logout`     | `-`                                                                      | `void`                                                                     |
+| Use case                              | Method | Endpoint                            | Payload                              | Response                   |
+|---------------------------------------|--------|-------------------------------------|--------------------------------------|----------------------------|
+| Primary login                         | `POST` | `/api/auth/login`                   | `LoginPayload` (`email`, `password`) | `LoginResponse` union      |
+| Submit OTP (existing MFA)             | `POST` | `/api/auth/login/mfa`               | `{ mfaToken, otp }`                  | `LoginSuccessResponse`     |
+| Submit OTP after setup confirmation   | `POST` | `/api/auth/login/mfa/confirm`       | `{ mfaToken, loginToken, otp }`      | `LoginSuccessResponse`     |
+| Request TOTP secret (during login)    | `POST` | `/api/auth/mfa/setup/request`       | `{ setupToken }`                     | `{ mfaToken, totpSecret }` |
+| Confirm TOTP secret                   | `POST` | `/api/auth/mfa/setup/confirm`       | `{ mfaToken, otp }`                  | `{ mfaToken, loginToken }` |
+| Verify backup code (any login branch) | `POST` | `/api/auth/mfa/backup-codes/verify` | `{ mfaToken, backupCode }`           | `LoginSuccessResponse`     |
+| Current user                          | `GET`  | `/api/auth/me`                      | `-`                                  | `AuthUser`                 |
+| Logout                                | `POST` | `/api/auth/logout`                  | `-`                                  | `void`                     |
 
 > All request/response DTOs live in `src/types/auth.ts` and are re-used across the hook, store and UI components.
 
@@ -25,11 +27,13 @@ guards.
 
 `useAuthFlow` (see `src/features/auth/hooks/useAuthFlow.ts`) encapsulates a small state machine:
 
-1. `credentials` — renders `LoginForm` to capture email/password and `rememberDevice`.
-2. `mfa` — triggered when the login response signals `mfa_required`. The `MfaStep` component handles OTP entry, resend
-   logic, and the optional fallback to backup codes.
-3. `backup` — triggered via `backup_required` responses or when the user requests the fallback.
-4. `success` — emitted once `authService` returns a `LoginSuccessResponse`. The hook calls `completeSignIn` to persist
+1. `credentials` — renders `LoginForm` to capture email/password.
+2. `mfa-setup` — triggered when the login response signals `mfa-setup`. `MfaSetupWizard` fetches the TOTP secret
+   (`setup/request`), displays the QR/secret, and confirms the first OTP (`setup/confirm`).
+3. `mfa-challenge` — shown when either (a) the user already had MFA enabled or (b) setup just completed and we now have
+   `{ mfaToken, loginToken }`. `MfaStep` handles the OTP submission for `/auth/login/mfa` or `/auth/login/mfa/confirm`.
+4. `backup` — optional fallback that posts to `/auth/mfa/backup-codes/verify`.
+5. `success` — emitted once `authService` returns a `LoginSuccessResponse`. The hook calls `completeSignIn` to persist
    tokens + user, which in turn unlocks every `ProtectedRoute`.
 
 Each transition clears step-specific server errors so the UI always reflects the freshest validation state.
@@ -45,16 +49,19 @@ Each transition clears step-specific server errors so the UI always reflects the
 
 ## MFA & backup code UX
 
-- OTP inputs use `Input.OTP` with a configurable length (`AUTH_MFA_CONFIG`) and display channel metadata (masked
-  destination, retry countdown).
-- Backup codes expose remaining quota hints and allow jumping back to the authenticator-based step.
+- OTP inputs use `Input.OTP` with the global length defined in `AUTH_MFA_CONFIG`.
+- There is no “resend” CTA anymore because we rely on the authenticator app (TOTP). Instead, we surface lock warnings
+  when the backend returns `Too many attempts`.
+- `BackupCodeStep` is always available while a `mfaToken` exists so users can fall back at any time.
+- `MfaSetupWizard` lives entirely client-side: it handles requesting a QR secret, generating an `otpauth://` URL for the
+  QR code (`antd`'s `QRCode`), and then confirming the first OTP before handing control back to the main challenge step.
 - All CTA/labels are localized via `auth.*` namespaces in `src/locales/en|vi/translation.json`.
 
 ## Extensibility tips
 
-- Extend `MfaMethod` in `src/types/auth.ts` when the backend introduces new channels (e.g., WebAuthn), then branch
-  inside `MfaStep` for channel-specific copy.
-- `authService.refreshTokens` is already defined; wire it into a background refresh effect if/when the backend exposes
-  expiring access tokens.
+- If/when the backend introduces additional MFA channels (SMS, WebAuthn, etc.), extend the union types in
+  `src/types/auth.ts` and branch inside `MfaStep` as needed.
+- `authService.refreshTokens` already exists; wire it into a background refresh effect if/when refresh tokens become
+  mandatory.
 - To audit sign-ins, hook into `completeSignIn` and dispatch analytics events once the session is established.
 

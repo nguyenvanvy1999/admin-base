@@ -1,81 +1,52 @@
-import { ProForm, ProFormCheckbox } from '@ant-design/pro-components';
-import { Alert, Button, Form, Input, Space, Tag, Typography } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { ProForm } from '@ant-design/pro-components';
+import { Alert, Button, Form, Input, Space, Typography } from 'antd';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AUTH_MFA_CONFIG } from 'src/config/auth';
-import type { MfaChallenge } from 'src/types/auth';
 
 interface OtpFormValues {
   code: string;
-  rememberDevice: boolean;
 }
 
 interface MfaStepProps {
-  challenge: MfaChallenge;
   loading?: boolean;
-  resendLoading?: boolean;
   serverError?: string;
-  onSubmit: (code: string, rememberDevice: boolean) => void;
-  onResend?: () => void;
+  canUseBackup?: boolean;
+  isLocked?: boolean;
+  onSubmit: (code: string) => void;
   onUseBackup?: () => void;
 }
 
 export function MfaStep({
-  challenge,
   loading,
-  resendLoading,
   serverError,
+  canUseBackup,
+  isLocked,
   onSubmit,
-  onResend,
   onUseBackup,
 }: MfaStepProps) {
   const { t } = useTranslation();
-  const [cooldown, setCooldown] = useState<number>(0);
   const [form] = Form.useForm<OtpFormValues>();
 
   useEffect(() => {
-    form.setFieldsValue({ code: '', rememberDevice: true });
-    setCooldown(
-      challenge.retryAfterSeconds ?? AUTH_MFA_CONFIG.resendCoolDownSeconds,
-    );
-  }, [challenge.challengeId, challenge.retryAfterSeconds, form]);
-
-  useEffect(() => {
-    if (cooldown <= 0) {
-      return;
-    }
-    const timer = window.setInterval(() => {
-      setCooldown((prev) => Math.max(prev - 1, 0));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [cooldown]);
-
-  const challengeMetadata = useMemo(() => {
-    if (!challenge.maskedDestination) {
-      return null;
-    }
-    return (
-      <Tag color="blue" bordered={false}>
-        {challenge.maskedDestination}
-      </Tag>
-    );
-  }, [challenge.maskedDestination]);
+    form.setFieldsValue({ code: '' });
+  }, [form]);
 
   return (
     <ProForm<OtpFormValues>
       form={form}
       layout="vertical"
-      initialValues={{ rememberDevice: true }}
       submitter={{
         searchConfig: { submitText: t('auth.mfa.cta') },
         submitButtonProps: {
           block: true,
           size: 'large',
           loading,
+          disabled: isLocked,
         },
       }}
       onFinish={(values) => {
-        onSubmit(values.code, Boolean(values.rememberDevice));
+        onSubmit(values.code);
         return Promise.resolve(true);
       }}
     >
@@ -86,14 +57,21 @@ export function MfaStep({
         {t('auth.mfa.subtitle')}
       </Typography.Text>
 
-      {challengeMetadata}
-
       {serverError && (
         <Alert
           type="error"
-          message={serverError}
+          title={serverError}
           showIcon
           closable
+          style={{ marginTop: 16 }}
+        />
+      )}
+
+      {isLocked && (
+        <Alert
+          type="warning"
+          title={t('auth.mfa.locked')}
+          showIcon
           style={{ marginTop: 16 }}
         />
       )}
@@ -117,28 +95,15 @@ export function MfaStep({
           length={AUTH_MFA_CONFIG.otpLength}
           autoFocus
           inputMode="numeric"
+          disabled={isLocked}
         />
       </ProForm.Item>
 
-      <ProFormCheckbox name="rememberDevice">
-        {t('auth.mfa.rememberDevice')}
-      </ProFormCheckbox>
-
       <Space
-        style={{ width: '100%', justifyContent: 'space-between', marginTop: 8 }}
+        style={{ width: '100%', justifyContent: 'flex-end', marginTop: 8 }}
         size="small"
       >
-        <Button
-          type="link"
-          onClick={() => onResend?.()}
-          disabled={cooldown > 0 || loading}
-          loading={resendLoading}
-        >
-          {cooldown > 0
-            ? t('auth.mfa.resendCountdown', { seconds: cooldown })
-            : t('auth.mfa.resend')}
-        </Button>
-        {challenge.allowBackupCode && (
+        {canUseBackup && (
           <Button type="link" onClick={() => onUseBackup?.()}>
             {t('auth.mfa.useBackup')}
           </Button>

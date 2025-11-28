@@ -29,33 +29,44 @@
       "passwordPlaceholder": "Nhập mật khẩu",
       "passwordRequired": "Vui lòng nhập mật khẩu",
       "passwordMin": "Mật khẩu tối thiểu 6 ký tự",
-      "rememberDevice": "Tin tưởng thiết bị này",
       "cta": "Tiếp tục",
       "successTitle": "Đăng nhập thành công",
       "successSubtitle": "Đang chuyển hướng..."
     },
     "mfa": {
       "title": "Xác thực đa yếu tố",
-      "subtitle": "Nhập mã OTP từ ứng dụng xác thực hoặc SMS.",
+      "subtitle": "Nhập mã OTP từ ứng dụng xác thực.",
       "codeLabel": "Mã xác thực",
       "codeRequired": "Vui lòng nhập mã OTP",
       "codeInvalid": "Mã OTP không hợp lệ",
-      "rememberDevice": "Tin tưởng thiết bị này",
       "cta": "Xác nhận",
-      "resend": "Gửi lại mã",
-      "resendCountdown": "Gửi lại sau {{seconds}}s",
-      "useBackup": "Dùng mã dự phòng"
+      "useBackup": "Dùng mã dự phòng",
+      "locked": "Bạn đã nhập sai quá nhiều lần. Vui lòng chờ hoặc đăng nhập lại."
     },
     "backup": {
       "title": "Sử dụng mã dự phòng",
-      "subtitle": "Nhập mã dự phòng chưa dùng để tiếp tục.",
-      "remaining": "Còn {{count}} mã dự phòng",
+      "subtitle": "Nhập một mã dự phòng để tiếp tục.",
       "codeLabel": "Mã dự phòng",
       "placeholder": "Nhập mã dự phòng",
       "codeRequired": "Vui lòng nhập mã dự phòng",
-      "codeInvalid": "Tối thiểu 8 ký tự",
+      "codeInvalid": "Mã dự phòng phải có 8 ký tự",
       "cta": "Xác nhận",
-      "useOtp": "Quay lại OTP"
+      "useOtp": "Quay lại OTP",
+      "locked": "Bạn đã dùng sai quá nhiều lần. Hãy quay lại OTP hoặc đăng nhập lại."
+    },
+    "setup": {
+      "title": "Bắt buộc bật bảo vệ MFA",
+      "subtitle": "Cần cấu hình ứng dụng xác thực trước khi vào hệ thống.",
+      "requestCta": "Sinh QR/secret",
+      "requestHint": "Nếu vừa tải lại trang, hãy sinh secret mới để tiếp tục.",
+      "scanTitle": "Quét mã QR",
+      "scanSubtitle": "Thêm vào Google Authenticator, 1Password, Authy hoặc ứng dụng TOTP bất kỳ.",
+      "copyHint": "Không quét được? Sao chép secret trên và nhập thủ công.",
+      "otpLabel": "Nhập OTP từ ứng dụng",
+      "otpRequired": "Vui lòng nhập OTP",
+      "otpInvalid": "OTP phải gồm 6 chữ số",
+      "confirmCta": "Xác nhận & tiếp tục",
+      "backupHint": "Sau khi xác nhận, bạn cần nhập thêm OTP (hoặc mã dự phòng) để hoàn tất đăng nhập."
     }
   },
   "dashboard": {

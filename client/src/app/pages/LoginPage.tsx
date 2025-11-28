@@ -6,6 +6,7 @@ import { LanguageSwitcher } from 'src/components/LanguageSwitcher';
 import { BackupCodeStep } from 'src/features/auth/BackupCodeStep';
 import { useAuthFlow } from 'src/features/auth/hooks/useAuthFlow';
 import { LoginForm } from 'src/features/auth/LoginForm';
+import { MfaSetupWizard } from 'src/features/auth/MfaSetupWizard';
 import { MfaStep } from 'src/features/auth/MfaStep';
 import { useAuth } from 'src/hooks/auth/useAuth';
 
@@ -28,26 +29,39 @@ export default function LoginPage() {
   }
 
   const renderCardContent = () => {
-    if (flow.step === 'mfa' && flow.challenge) {
+    if (flow.step === 'mfa-setup' && flow.setupState) {
+      return (
+        <MfaSetupWizard
+          accountEmail={flow.accountEmail}
+          totpSecret={flow.setupState.totpSecret}
+          loadingSecret={flow.isRequestingSetupSecret}
+          confirmingOtp={flow.isConfirmingSetup}
+          error={flow.errors.setup}
+          onRequestSecret={flow.requestSetupSecret}
+          onConfirmOtp={flow.confirmSetupOtp}
+        />
+      );
+    }
+
+    if (flow.step === 'mfa-challenge' && flow.challengeState) {
       return (
         <MfaStep
-          challenge={flow.challenge}
           loading={flow.isSubmittingMfa}
-          resendLoading={flow.isResendingChallenge}
           serverError={flow.errors.mfa}
+          isLocked={flow.isChallengeLocked}
+          canUseBackup={flow.canUseBackup}
           onSubmit={flow.submitOtp}
-          onResend={flow.resendChallenge}
           onUseBackup={flow.switchToBackup}
         />
       );
     }
 
-    if (flow.step === 'backup' && flow.challenge) {
+    if (flow.step === 'backup' && flow.challengeState) {
       return (
         <BackupCodeStep
-          challenge={flow.challenge}
           loading={flow.isSubmittingBackup}
           serverError={flow.errors.backup}
+          isLocked={flow.isBackupLocked}
           onSubmit={flow.submitBackupCode}
           onBackToOtp={flow.switchToOtp}
         />

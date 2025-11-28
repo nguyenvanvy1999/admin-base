@@ -2,14 +2,21 @@ import { AUTH_ENDPOINTS } from 'src/config/auth';
 import { apiClient } from 'src/lib/api/client';
 import type {
   AuthUser,
-  BackupCodeStatus,
+  BackupCodesGeneratePayload,
+  BackupCodesGenerateResponse,
+  BackupCodesRemainingResponse,
+  BackupCodeVerifyPayload,
+  ConfirmMfaLoginPayload,
+  LoginMfaPayload,
   LoginPayload,
   LoginResponse,
   LoginSuccessResponse,
-  MfaChallenge,
+  MfaSetupConfirmPayload,
+  MfaSetupConfirmResponse,
+  MfaSetupRequestPayload,
+  MfaSetupRequestResponse,
+  MfaStatusResponse,
   TokenSet,
-  VerifyBackupPayload,
-  VerifyMfaPayload,
 } from 'src/types/auth';
 
 export const authService = {
@@ -17,28 +24,66 @@ export const authService = {
     return apiClient.post<LoginResponse>(AUTH_ENDPOINTS.login, payload);
   },
 
-  verifyMfa(payload: VerifyMfaPayload): Promise<LoginSuccessResponse> {
+  loginWithMfa(payload: LoginMfaPayload): Promise<LoginSuccessResponse> {
     return apiClient.post<LoginSuccessResponse>(
-      AUTH_ENDPOINTS.verifyMfa,
+      AUTH_ENDPOINTS.loginMfa,
       payload,
     );
   },
 
-  resendMfa(challengeId: string): Promise<MfaChallenge> {
-    return apiClient.post<MfaChallenge>(AUTH_ENDPOINTS.resendMfa, {
-      challengeId,
-    });
-  },
-
-  verifyBackup(payload: VerifyBackupPayload): Promise<LoginSuccessResponse> {
+  confirmMfaLogin(
+    payload: ConfirmMfaLoginPayload,
+  ): Promise<LoginSuccessResponse> {
     return apiClient.post<LoginSuccessResponse>(
-      AUTH_ENDPOINTS.verifyBackup,
+      AUTH_ENDPOINTS.loginMfaConfirm,
       payload,
     );
   },
 
-  getBackupCodeStatus(): Promise<BackupCodeStatus> {
-    return apiClient.get<BackupCodeStatus>(AUTH_ENDPOINTS.backupStatus);
+  requestMfaSetup(
+    payload?: MfaSetupRequestPayload,
+  ): Promise<MfaSetupRequestResponse> {
+    return apiClient.post<MfaSetupRequestResponse>(
+      AUTH_ENDPOINTS.mfaSetupRequest,
+      payload ?? {},
+    );
+  },
+
+  confirmMfaSetup(
+    payload: MfaSetupConfirmPayload,
+  ): Promise<MfaSetupConfirmResponse> {
+    return apiClient.post<MfaSetupConfirmResponse>(
+      AUTH_ENDPOINTS.mfaSetupConfirm,
+      payload,
+    );
+  },
+
+  verifyBackupCode(
+    payload: BackupCodeVerifyPayload,
+  ): Promise<LoginSuccessResponse> {
+    return apiClient.post<LoginSuccessResponse>(
+      AUTH_ENDPOINTS.backupCodesVerify,
+      payload,
+    );
+  },
+
+  generateBackupCodes(
+    payload: BackupCodesGeneratePayload,
+  ): Promise<BackupCodesGenerateResponse> {
+    return apiClient.post<BackupCodesGenerateResponse>(
+      AUTH_ENDPOINTS.backupCodesGenerate,
+      payload,
+    );
+  },
+
+  getBackupCodesRemaining(): Promise<BackupCodesRemainingResponse> {
+    return apiClient.get<BackupCodesRemainingResponse>(
+      AUTH_ENDPOINTS.backupCodesRemaining,
+    );
+  },
+
+  getMfaStatus(): Promise<MfaStatusResponse> {
+    return apiClient.get<MfaStatusResponse>(AUTH_ENDPOINTS.mfaStatus);
   },
 
   getCurrentUser(): Promise<AuthUser> {
@@ -50,7 +95,7 @@ export const authService = {
   },
 
   refreshTokens(refreshToken: string): Promise<TokenSet> {
-    return apiClient.post<TokenSet>(AUTH_ENDPOINTS.refresh, {
+    return apiClient.post<TokenSet>(AUTH_ENDPOINTS.refreshToken, {
       refreshToken,
     });
   },

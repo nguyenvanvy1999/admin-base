@@ -59,7 +59,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [profileError]);
 
   const completeSignIn = (session: LoginSuccessResponse): void => {
-    authStore.setTokens(session.tokens);
+    const tokens: TokenSet = {
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+      expiresAt: session.expired,
+      expiresInSeconds: session.exp,
+    };
+
+    authStore.setTokens(tokens);
     authStore.setUser(session.user);
     queryClient.setQueryData(AUTH_ME_QUERY_KEY, session.user);
   };
