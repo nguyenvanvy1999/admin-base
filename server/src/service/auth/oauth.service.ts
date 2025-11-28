@@ -84,6 +84,10 @@ export class OAuthService {
 
     const { clientId } = (provider?.config as { clientId?: string }) || {};
     if (!provider || !provider.enabled || !clientId) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: OAUTH.GOOGLE, error: 'provider_not_found' },
+      });
       throw new CoreErr(ErrCode.OAuthProviderNotFound);
     }
 
@@ -96,6 +100,10 @@ export class OAuthService {
 
     const payload = ticket.getPayload();
     if (!payload) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: OAUTH.GOOGLE, error: 'invalid_google_account' },
+      });
       throw new UnAuthErr(ErrCode.InvalidGoogleAccount);
     }
 
@@ -103,6 +111,10 @@ export class OAuthService {
     const googleId = payload.sub;
 
     if (!email) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: OAUTH.GOOGLE, error: 'google_account_not_found' },
+      });
       throw new UnAuthErr(ErrCode.GoogleAccountNotFound);
     }
 
@@ -192,6 +204,11 @@ export class OAuthService {
     );
 
     if (securityResult.action === 'block') {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: OAUTH.GOOGLE, error: 'security_blocked' },
+        userId: user.id,
+      });
       throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
     }
 
@@ -224,12 +241,30 @@ export class OAuthService {
 
     const { botToken } = (provider?.config as { botToken?: string }) || {};
     if (!provider || !provider.enabled || !botToken) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LINK_OAUTH,
+        payload: {
+          provider: OAUTH.TELEGRAM,
+          providerId: telegramData.id,
+          error: 'provider_not_found',
+        },
+        userId,
+      });
       throw new CoreErr(ErrCode.OAuthProviderNotFound);
     }
 
     const isValid = this.verifyTelegramLogin(telegramData, botToken);
 
     if (!isValid) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LINK_OAUTH,
+        payload: {
+          provider: OAUTH.TELEGRAM,
+          providerId: telegramData.id,
+          error: 'invalid_telegram_account',
+        },
+        userId,
+      });
       throw new UnAuthErr(ErrCode.InvalidTelegramAccount);
     }
 
@@ -243,6 +278,15 @@ export class OAuthService {
     });
 
     if (authExists) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LINK_OAUTH,
+        payload: {
+          provider: OAUTH.TELEGRAM,
+          providerId: telegramData.id,
+          error: 'account_already_linked',
+        },
+        userId,
+      });
       throw new CoreErr(ErrCode.TelegramAccountWasLinked);
     }
 

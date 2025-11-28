@@ -271,6 +271,7 @@ export const userAuthController = new Elysia({
       const { max, windowSeconds } = await settingService.registerRateLimit();
 
       if (currentAttempts >= max) {
+        await authService.logRegisterRateLimitViolation(normalizedEmail);
         throw new BadReqErr(ErrCode.BadRequest, {
           errors: 'Too many registration attempts. Please try again later.',
         });

@@ -30,7 +30,7 @@ export class AuditLogService {
   }
 
   async push<T extends ACTIVITY_TYPE>(
-    entry: AuditLogEntry<T>,
+    entry: Omit<AuditLogEntry<T>, 'ip' | 'userAgent' | 'requestId'>,
   ): Promise<string> {
     const { enrichedEntry, logId } = this.mapData(entry);
 
@@ -42,7 +42,7 @@ export class AuditLogService {
   }
 
   async pushBatch<T extends ACTIVITY_TYPE>(
-    entries: AuditLogEntry<T>[],
+    entries: Omit<AuditLogEntry<T>, 'ip' | 'userAgent' | 'requestId'>[],
   ): Promise<string[]> {
     if (entries.length === 0) return [];
 

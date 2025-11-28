@@ -26,10 +26,12 @@ export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
   [ACTIVITY_TYPE.SETUP_MFA]: {
     method: string;
     stage: 'confirm' | 'request' | 'generate';
+    error?: string;
   };
   [ACTIVITY_TYPE.LINK_OAUTH]: {
     provider: OAUTH;
     providerId: string;
+    error?: string;
   };
 
   [ACTIVITY_TYPE.DEL_ROLE]: {
@@ -59,6 +61,7 @@ export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
     actorId?: string;
     targetUserId?: string;
     previouslyEnabled?: boolean;
+    error?: string;
   };
   [ACTIVITY_TYPE.CREATE_IP_WHITELIST]: {
     ip: string;

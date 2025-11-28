@@ -101,6 +101,10 @@ export class MfaService {
 
     const cachedData = await this.deps.mfaSetupCache.get(mfaToken);
     if (!cachedData) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.SETUP_MFA,
+        payload: { method: 'totp', stage: 'confirm', error: 'session_expired' },
+      });
       throw new BadReqErr(ErrCode.SessionExpired);
     }
 
@@ -110,6 +114,11 @@ export class MfaService {
         token: otp,
       })
     ) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.SETUP_MFA,
+        payload: { method: 'totp', stage: 'confirm', error: 'invalid_otp' },
+        userId: cachedData.userId,
+      });
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
 
@@ -141,11 +150,15 @@ export class MfaService {
 
     const userId = await this.deps.otpService.verifyOtp(
       otpToken,
-      PurposeVerify.REGISTER,
+      PurposeVerify.RESET_MFA,
       otp,
     );
 
     if (!userId) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.RESET_MFA,
+        payload: { method: 'reset', error: 'invalid_otp' },
+      });
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
 

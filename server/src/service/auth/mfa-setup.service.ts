@@ -250,6 +250,10 @@ export class MfaSetupService {
     );
 
     if (!userId) {
+      await auditLogService.push({
+        type: ACTIVITY_TYPE.RESET_MFA,
+        payload: { method: 'reset', error: 'invalid_otp' },
+      });
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
 

@@ -223,6 +223,10 @@ export class AuthService {
       await this.deps.settingService.loginRateLimit();
 
     if (currentAttempts >= max) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: 'email', error: 'rate_limit_exceeded' },
+      });
       throw new BadReqErr(ErrCode.BadRequest, {
         errors: 'Too many login attempts. Please try again later.',
       });
@@ -392,7 +396,6 @@ export class AuthService {
       await this.deps.auditLogService.push({
         type: ACTIVITY_TYPE.REGISTER,
         payload: { method: 'email', error: 'User already exists' },
-        userId: null,
       });
       throw new BadReqErr(ErrCode.UserExisted);
     }
@@ -510,11 +513,15 @@ export class AuthService {
 
     const userId = await this.deps.otpService.verifyOtp(
       otpToken,
-      PurposeVerify.REGISTER,
+      PurposeVerify.FORGOT_PASSWORD,
       otp,
     );
 
     if (!userId) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.CHANGE_PASSWORD,
+        payload: {},
+      });
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
 
@@ -552,6 +559,10 @@ export class AuthService {
     );
 
     if (!userId) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.REGISTER,
+        payload: { method: 'email', error: 'invalid_otp' },
+      });
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
 
@@ -598,6 +609,11 @@ export class AuthService {
       !session.createdBy ||
       session.createdBy.status !== 'active'
     ) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: 'email', error: 'refresh_token_invalid' },
+        userId: session?.createdBy?.id ?? null,
+      });
       throw new UnAuthErr(ErrCode.ExpiredToken);
     }
 
@@ -618,6 +634,13 @@ export class AuthService {
         session.createdBy,
       ),
     };
+
+    await this.deps.auditLogService.push({
+      type: ACTIVITY_TYPE.LOGIN,
+      payload: { method: 'email', action: 'refresh_token' },
+      userId: session.createdBy.id,
+      sessionId: session.id,
+    });
 
     return {
       type: LoginResType.COMPLETED,
@@ -659,7 +682,6 @@ export class AuthService {
       await this.deps.auditLogService.push({
         type: ACTIVITY_TYPE.LOGIN,
         payload: { method: 'email', error: 'mfa_session_expired' },
-        userId: null,
       });
       throw new BadReqErr(ErrCode.SessionExpired);
     }
@@ -695,6 +717,13 @@ export class AuthService {
       ...user,
       permissions,
     };
+  }
+
+  async logRegisterRateLimitViolation(email: string): Promise<void> {
+    await this.deps.auditLogService.push({
+      type: ACTIVITY_TYPE.REGISTER,
+      payload: { method: 'email', error: 'rate_limit_exceeded' },
+    });
   }
 }
 
