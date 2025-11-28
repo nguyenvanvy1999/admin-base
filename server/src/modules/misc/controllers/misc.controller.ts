@@ -18,24 +18,8 @@ export const miscController = new Elysia({
   .get(
     'health',
     async () => {
-      try {
-        const [memory, redis, db, disk] = await Promise.all([
-          miscService.checkMemHealth(),
-          miscService.checkRedisHealth(),
-          miscService.checkDbHealth(),
-          miscService.checkDiskHealth(),
-        ]);
-        return castToRes({
-          status: HEALTH_STATE.OK,
-          details: { memory, redis, db, disk },
-        });
-      } catch (error) {
-        return castToRes({
-          status: HEALTH_STATE.ERROR,
-          details: null,
-          error,
-        });
-      }
+      const result = await miscService.getHealthCheck();
+      return castToRes(result);
     },
     {
       detail: {
@@ -57,15 +41,8 @@ export const miscController = new Elysia({
   .get(
     'system-info',
     async () => {
-      try {
-        const result = await miscService.getSystemInfo();
-        return castToRes(result);
-      } catch (error) {
-        return castToRes({
-          status: HEALTH_STATE.ERROR,
-          error: (error as Error).message,
-        });
-      }
+      const result = await miscService.getSystemInfo();
+      return castToRes(result);
     },
     {
       detail: {

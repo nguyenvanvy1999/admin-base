@@ -1,5 +1,4 @@
 import { Elysia, t } from 'elysia';
-import { loginRateLimitCache, registerRateLimitCache } from 'src/config/cache';
 import { reqMeta } from 'src/config/request';
 import {
   ChangePasswordRequestDto,
@@ -17,15 +16,11 @@ import {
 } from 'src/modules/auth/dtos';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authService } from 'src/service/auth/auth.service';
-import { settingService } from 'src/service/misc/setting.service';
 import {
   ACCESS_AUTH,
   authErrors,
-  BadReqErr,
   castToRes,
-  ErrCode,
   ErrorResDto,
-  normalizeEmail,
   ResWrapper,
 } from 'src/share';
 
@@ -36,26 +31,7 @@ export const authBaseController = new Elysia({
   .use(reqMeta)
   .post(
     '/login',
-    async ({ body: { email, password }, clientIp }) => {
-      const normalizedEmail = normalizeEmail(email);
-      const rateLimitKey = `login:${clientIp}:${normalizedEmail}`;
-      const currentAttempts =
-        (await loginRateLimitCache.get(rateLimitKey)) ?? 0;
-
-      const { max, windowSeconds } = await settingService.loginRateLimit();
-
-      if (currentAttempts >= max) {
-        throw new BadReqErr(ErrCode.BadRequest, {
-          errors: 'Too many login attempts. Please try again later.',
-        });
-      }
-
-      await loginRateLimitCache.set(
-        rateLimitKey,
-        currentAttempts + 1,
-        windowSeconds,
-      );
-
+    async ({ body: { email, password } }) => {
       const result = await authService.login({
         email,
         password,
@@ -262,27 +238,7 @@ export const userAuthController = new Elysia({
   .use(reqMeta)
   .post(
     '/register',
-    async ({ body: { email, password }, clientIp, userAgent }) => {
-      const normalizedEmail = normalizeEmail(email);
-      const rateLimitKey = `register:${clientIp}:${normalizedEmail}`;
-      const currentAttempts =
-        (await registerRateLimitCache.get(rateLimitKey)) ?? 0;
-
-      const { max, windowSeconds } = await settingService.registerRateLimit();
-
-      if (currentAttempts >= max) {
-        await authService.logRegisterRateLimitViolation(normalizedEmail);
-        throw new BadReqErr(ErrCode.BadRequest, {
-          errors: 'Too many registration attempts. Please try again later.',
-        });
-      }
-
-      await registerRateLimitCache.set(
-        rateLimitKey,
-        currentAttempts + 1,
-        windowSeconds,
-      );
-
+    async ({ body: { email, password } }) => {
       const result = await authService.register({
         email,
         password,

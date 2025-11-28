@@ -97,6 +97,16 @@ export class CaptchaService {
     await this.deps.cache.del(token);
     return cachedText.toLowerCase() === userInput.toLowerCase();
   }
+
+  generateByType(
+    type: 'text' | 'math',
+    options: CaptchaOptions = {},
+  ): Promise<CaptchaResult> {
+    if (type === 'math') {
+      return this.generateMathCaptcha(options);
+    }
+    return this.generateCaptcha(options);
+  }
 }
 
 export const captchaService = new CaptchaService();

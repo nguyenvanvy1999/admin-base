@@ -12,13 +12,10 @@ export const captchaController = new Elysia({ prefix: '/captcha' })
     '/generate',
     async ({ query }) => {
       const { type = 'text', ...options } = query;
-
-      let result;
-      if (type === 'math') {
-        result = await captchaService.generateMathCaptcha(options);
-      } else {
-        result = await captchaService.generateCaptcha(options);
-      }
+      const result = await captchaService.generateByType(
+        type as 'text' | 'math',
+        options,
+      );
 
       return {
         success: true,

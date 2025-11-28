@@ -16,7 +16,7 @@ import {
   ACTIVITY_TYPE,
   BadReqErr,
   ErrCode,
-  getClientIpAndUserAgent,
+  getIpAndUa,
   MFA_ERROR_PAYLOADS,
   NotFoundErr,
   userResSelect,
@@ -64,7 +64,7 @@ export class MfaVerificationService {
     params: VerifyAndCompleteLoginParams,
   ): Promise<ILoginRes> {
     const { mfaToken, otp, backupCode } = params;
-    const { clientIp, userAgent } = getClientIpAndUserAgent();
+    const { clientIp, userAgent } = getIpAndUa();
 
     if (!otp && !backupCode) {
       throw new BadReqErr(ErrCode.ValidationError, {

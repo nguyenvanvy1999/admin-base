@@ -1,6 +1,7 @@
 import { db, type IDb } from 'src/config/db';
 import type { SessionWhereInput } from 'src/generated';
 import type { SessionPaginateDto } from 'src/modules/admin/dtos';
+import { ErrCode, NotFoundErr } from 'src/share';
 
 type ListParams = typeof SessionPaginateDto.static & {
   currentUserId: string;
@@ -89,6 +90,17 @@ export class SessionService {
       hasNext,
       nextCursor: hasNext ? sessions[sessions.length - 1]?.id : undefined,
     };
+  }
+
+  async loadSessionById(sessionId: string): Promise<{ createdById: string }> {
+    const session = await this.deps.db.session.findUnique({
+      where: { id: sessionId },
+      select: { createdById: true },
+    });
+    if (!session) {
+      throw new NotFoundErr(ErrCode.ItemNotFound);
+    }
+    return session;
   }
 }
 

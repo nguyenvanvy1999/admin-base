@@ -11,17 +11,7 @@ export type ReqContext = {
 
 export const ctxStore = new AsyncLocalStorage<ReqContext>();
 
-export function getClientIp(): string {
-  const { ip } = ctxStore.getStore() ?? {};
-  if (!ip) {
-    throw new BadReqErr(ErrCode.InternalError, {
-      errors: 'Client IP not available',
-    });
-  }
-  return ip;
-}
-
-export function getClientIpAndUserAgent(): {
+export function getIpAndUa(): {
   clientIp: string;
   userAgent: string;
 } {

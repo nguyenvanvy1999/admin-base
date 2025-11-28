@@ -1,5 +1,4 @@
 import { Elysia, t } from 'elysia';
-import { db } from 'src/config/db';
 import {
   I18nPaginationDto,
   I18nUpsertDto,
@@ -29,26 +28,13 @@ import {
   authErrors,
   castToRes,
   DOC_TAG,
-  ErrCode,
   ErrorResDto,
   IdDto,
-  NotFoundErr,
   ResWrapper,
 } from 'src/share';
 
-const loadSessionById = async ({
-  params,
-}: {
-  params: Record<string, string>;
-}) => {
-  const s = await db.session.findUnique({
-    where: { id: params['id'] },
-    select: { createdById: true },
-  });
-  if (!s) {
-    throw new NotFoundErr(ErrCode.ItemNotFound);
-  }
-  return s;
+const loadSessionById = ({ params }: { params: Record<string, string> }) => {
+  return sessionService.loadSessionById(params['id']);
 };
 
 export const adminCoreController = new Elysia<'admin-core', AppAuthMeta>({

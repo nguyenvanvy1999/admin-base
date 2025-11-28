@@ -23,7 +23,7 @@ import {
   DB_PREFIX,
   defaultRoles,
   ErrCode,
-  getClientIpAndUserAgent,
+  getIpAndUa,
   IdUtil,
   OAUTH,
   type PrismaTx,
@@ -76,7 +76,7 @@ export class OAuthService {
 
   async googleLogin(params: GoogleLoginParams): Promise<ILoginRes> {
     const { idToken } = params;
-    const { clientIp, userAgent } = getClientIpAndUserAgent();
+    const { clientIp, userAgent } = getIpAndUa();
 
     const provider = await this.deps.db.authProvider.findUnique({
       where: { code: OAUTH.GOOGLE },

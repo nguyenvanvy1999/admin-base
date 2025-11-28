@@ -3,10 +3,12 @@ import { authenticator } from 'otplib';
 import {
   type ILoginRateLimitCache,
   type IMFACache,
+  type IRegisterRateLimitCache,
   loginRateLimitCache,
   mfaCache,
   mfaSetupTokenByUserCache,
   mfaSetupTokenCache,
+  registerRateLimitCache,
 } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
@@ -41,7 +43,7 @@ import {
   DB_PREFIX,
   defaultRoles,
   ErrCode,
-  getClientIpAndUserAgent,
+  getIpAndUa,
   IdUtil,
   type ITokenPayload,
   isExpired,
@@ -119,6 +121,7 @@ export class AuthService {
       referralService: ReferralService;
       userUtilService: UserUtilService;
       loginRateLimitCache: ILoginRateLimitCache;
+      registerRateLimitCache: IRegisterRateLimitCache;
       mfaCache: IMFACache;
       authenticator: typeof authenticator;
       securityMonitorService: SecurityMonitorService;
@@ -138,6 +141,7 @@ export class AuthService {
       referralService,
       userUtilService,
       loginRateLimitCache,
+      registerRateLimitCache,
       mfaCache,
       authenticator,
       securityMonitorService,
@@ -148,7 +152,7 @@ export class AuthService {
 
   async login(params: LoginParams): Promise<ILoginResponse> {
     const { email, password } = params;
-    const { clientIp, userAgent } = getClientIpAndUserAgent();
+    const { clientIp, userAgent } = getIpAndUa();
 
     await this.checkRateLimit(email, clientIp);
 
@@ -233,6 +237,29 @@ export class AuthService {
     }
 
     await this.deps.loginRateLimitCache.set(
+      rateLimitKey,
+      currentAttempts + 1,
+      windowSeconds,
+    );
+  }
+
+  async checkRegisterRateLimit(email: string, clientIp: string): Promise<void> {
+    const normalizedEmail = normalizeEmail(email);
+    const rateLimitKey = `register:${clientIp}:${normalizedEmail}`;
+    const currentAttempts =
+      (await this.deps.registerRateLimitCache.get(rateLimitKey)) ?? 0;
+
+    const { max, windowSeconds } =
+      await this.deps.settingService.registerRateLimit();
+
+    if (currentAttempts >= max) {
+      await this.logRegisterRateLimitViolation(normalizedEmail);
+      throw new BadReqErr(ErrCode.BadRequest, {
+        errors: 'Too many registration attempts. Please try again later.',
+      });
+    }
+
+    await this.deps.registerRateLimitCache.set(
       rateLimitKey,
       currentAttempts + 1,
       windowSeconds,
@@ -325,7 +352,7 @@ export class AuthService {
     user: { id: string },
     security?: SecurityCheckResult,
   ): Promise<ILoginResponse> {
-    const { clientIp, userAgent } = getClientIpAndUserAgent();
+    const { clientIp, userAgent } = getIpAndUa();
 
     const setupToken = IdUtil.token16();
     const createdAt = Date.now();
@@ -382,6 +409,9 @@ export class AuthService {
 
   async register(params: RegisterParams): Promise<{ otpToken: string } | null> {
     const { email, password } = params;
+
+    const { clientIp } = getIpAndUa();
+    await this.checkRegisterRateLimit(email, clientIp);
 
     this.deps.passwordValidationService.validatePasswordOrThrow(password);
 
@@ -590,7 +620,7 @@ export class AuthService {
 
   async refreshToken(params: RefreshTokenParams): Promise<ILoginRes> {
     const { token } = params;
-    const { clientIp, userAgent } = getClientIpAndUserAgent();
+    const { clientIp, userAgent } = getIpAndUa();
 
     const session = await this.deps.db.session.findFirst({
       where: { token },

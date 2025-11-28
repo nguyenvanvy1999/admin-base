@@ -277,6 +277,27 @@ export class MiscService {
       return { status: HEALTH_STATE.ERROR, error };
     }
   }
+
+  async getHealthCheck() {
+    try {
+      const [memory, redis, db, disk] = await Promise.all([
+        this.checkMemHealth(),
+        this.checkRedisHealth(),
+        this.checkDbHealth(),
+        this.checkDiskHealth(),
+      ]);
+      return {
+        status: HEALTH_STATE.OK,
+        details: { memory, redis, db, disk },
+      };
+    } catch (error) {
+      return {
+        status: HEALTH_STATE.ERROR,
+        details: null,
+        error,
+      };
+    }
+  }
 }
 
 export const miscService = new MiscService();
