@@ -23,6 +23,19 @@ const ADMIN_USER_EMAIL = 'admin@investment.local';
 const SYSTEM_USER_NAME = 'System User';
 const ADMIN_USER_NAME = 'Administrator';
 
+const DEFAULT_CURRENCIES: Array<{
+  code: string;
+  name: string;
+  symbol?: string;
+}> = [
+  { code: 'USD', name: 'United States Dollar', symbol: '$' },
+  { code: 'EUR', name: 'Euro' },
+  { code: 'VND', name: 'Vietnamese Dong' },
+  { code: 'JPY', name: 'Japanese Yen' },
+  { code: 'GBP', name: 'Pound Sterling' },
+  { code: 'SGD', name: 'Singapore Dollar' },
+];
+
 type SeedUserParams = {
   id: string;
   email: string;
@@ -238,13 +251,67 @@ export class SeedService {
     }
   }
 
+  async seedCurrencies(): Promise<void> {
+    try {
+      const codes = DEFAULT_CURRENCIES.map((currency) => currency.code);
+      await this.deps.db.$transaction(async (tx) => {
+        const existing = await tx.currency.findMany({
+          where: { code: { in: codes } },
+          select: { code: true },
+        });
+
+        const existingCodes = new Set(existing.map((item) => item.code));
+        const newCurrencies = DEFAULT_CURRENCIES.filter(
+          (currency) => !existingCodes.has(currency.code),
+        );
+
+        if (newCurrencies.length > 0) {
+          await tx.currency.createMany({
+            data: newCurrencies.map((currency) => ({
+              id: IdUtil.dbId(),
+              code: currency.code,
+              name: currency.name,
+              symbol: currency.symbol,
+              isActive: true,
+            })),
+            skipDuplicates: true,
+          });
+        }
+
+        for (const currency of DEFAULT_CURRENCIES) {
+          await tx.currency.updateMany({
+            where: { code: currency.code },
+            data: {
+              name: currency.name,
+              symbol: currency.symbol,
+              isActive: true,
+            },
+          });
+        }
+      });
+
+      this.deps.logger.warning('Seed currencies successfully.');
+    } catch (e) {
+      this.deps.logger.error(`Seed currencies failed ${e}`);
+    }
+  }
+
   async seedUsers(): Promise<void> {
     try {
-      const defaultCurrency = await this.deps.db.currency.findFirst({
+      let defaultCurrency = await this.deps.db.currency.findFirst({
         where: { isActive: true },
         orderBy: { code: 'asc' },
         select: { id: true },
       });
+
+      if (!defaultCurrency) {
+        await this.seedCurrencies();
+        defaultCurrency = await this.deps.db.currency.findFirst({
+          where: { isActive: true },
+          orderBy: { code: 'asc' },
+          select: { id: true },
+        });
+      }
 
       if (!defaultCurrency) {
         throw new Error('Default currency not found');
@@ -332,6 +399,7 @@ export class SeedService {
     await this.seedAuthProviders();
     await this.seedRoles();
     await this.seedPermissions();
+    await this.seedCurrencies();
     await this.seedUsers();
   }
 }

@@ -1,4 +1,4 @@
-import type { IEnv } from 'src/config/env';
+import { env, type IEnv } from 'src/config/env';
 import { BadReqErr, ErrCode } from 'src/share';
 
 export interface PasswordValidationRules {
@@ -15,15 +15,15 @@ export interface PasswordValidationResult {
 }
 
 export class PasswordValidationService {
-  constructor(private readonly env: IEnv = env) {}
+  constructor(private readonly e: IEnv = env) {}
 
   private getValidationRules(): PasswordValidationRules {
     return {
-      minLength: this.env.PASSWORD_MIN_LENGTH ?? 8,
-      requireUppercase: this.env.PASSWORD_REQUIRE_UPPERCASE ?? true,
-      requireLowercase: this.env.PASSWORD_REQUIRE_LOWERCASE ?? true,
-      requireNumber: this.env.PASSWORD_REQUIRE_NUMBER ?? true,
-      requireSpecialChar: this.env.PASSWORD_REQUIRE_SPECIAL_CHAR ?? true,
+      minLength: this.e.PASSWORD_MIN_LENGTH,
+      requireUppercase: this.e.PASSWORD_REQUIRE_UPPERCASE,
+      requireLowercase: this.e.PASSWORD_REQUIRE_LOWERCASE,
+      requireNumber: this.e.PASSWORD_REQUIRE_NUMBER,
+      requireSpecialChar: this.e.PASSWORD_REQUIRE_SPECIAL_CHAR,
     };
   }
 
