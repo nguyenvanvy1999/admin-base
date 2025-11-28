@@ -44,6 +44,27 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface RegisterPayload {
+  email: string;
+  password: string;
+}
+
+export interface RegisterResponse {
+  otpToken: string;
+}
+
+export type OtpPurpose = 'register';
+
+export interface SendOtpPayload {
+  email: string;
+  purpose: OtpPurpose;
+}
+
+export interface VerifyAccountPayload {
+  otpToken: string;
+  otp: string;
+}
+
 export interface LoginCompletedResponse {
   type: 'completed';
   accessToken: string;

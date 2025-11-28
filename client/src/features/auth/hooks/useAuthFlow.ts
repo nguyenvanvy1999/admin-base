@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
+import { REGISTER_EMAIL_KEY } from 'src/constants';
 import { useAuth } from 'src/hooks/auth/useAuth';
 import { parseApiError } from 'src/lib/api/errorHandler';
 import { authService } from 'src/services/auth';
@@ -80,6 +81,7 @@ export function useAuthFlow(): UseAuthFlowResult {
   const handleSession = useCallback(
     (session: LoginSuccessResponse) => {
       completeSignIn(session);
+      localStorage.removeItem(REGISTER_EMAIL_KEY);
       setStep('success');
       setSetupState(null);
       setChallengeState(null);

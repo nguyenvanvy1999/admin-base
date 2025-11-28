@@ -16,7 +16,11 @@ import type {
   MfaSetupRequestPayload,
   MfaSetupRequestResponse,
   MfaStatusResponse,
+  RegisterPayload,
+  RegisterResponse,
+  SendOtpPayload,
   TokenSet,
+  VerifyAccountPayload,
 } from 'src/types/auth';
 
 export const authService = {
@@ -36,6 +40,24 @@ export const authService = {
   ): Promise<LoginSuccessResponse> {
     return apiClient.post<LoginSuccessResponse>(
       AUTH_ENDPOINTS.loginMfaConfirm,
+      payload,
+    );
+  },
+
+  register(payload: RegisterPayload): Promise<RegisterResponse | null> {
+    return apiClient.post<RegisterResponse | null>(
+      AUTH_ENDPOINTS.register,
+      payload,
+    );
+  },
+
+  verifyAccount(payload: VerifyAccountPayload): Promise<void> {
+    return apiClient.post<void>(AUTH_ENDPOINTS.verifyAccount, payload);
+  },
+
+  sendRegisterOtp(payload: SendOtpPayload): Promise<RegisterResponse | null> {
+    return apiClient.post<RegisterResponse | null>(
+      AUTH_ENDPOINTS.registerOtp,
       payload,
     );
   },

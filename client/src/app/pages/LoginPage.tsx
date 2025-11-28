@@ -1,8 +1,9 @@
 import { Card, Col, Flex, Row, Typography } from 'antd';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { LanguageSwitcher } from 'src/components/LanguageSwitcher';
+import { REGISTER_EMAIL_KEY } from 'src/constants';
 import { BackupCodeStep } from 'src/features/auth/BackupCodeStep';
 import { useAuthFlow } from 'src/features/auth/hooks/useAuthFlow';
 import { LoginForm } from 'src/features/auth/LoginForm';
@@ -14,6 +15,11 @@ export default function LoginPage() {
   const { t } = useTranslation();
   const auth = useAuth();
   const flow = useAuthFlow();
+  const location = useLocation();
+  const registeredEmail =
+    (location.state as { registeredEmail?: string } | null)?.registeredEmail ??
+    localStorage.getItem(REGISTER_EMAIL_KEY) ??
+    undefined;
 
   const heroItems = useMemo(
     () => [
@@ -82,11 +88,19 @@ export default function LoginPage() {
     }
 
     return (
-      <LoginForm
-        loading={flow.isSubmittingCredentials}
-        serverError={flow.errors.credentials}
-        onSubmit={flow.submitCredentials}
-      />
+      <Flex vertical gap={12}>
+        <LoginForm
+          key={registeredEmail ?? 'login-form'}
+          loading={flow.isSubmittingCredentials}
+          serverError={flow.errors.credentials}
+          initialEmail={registeredEmail}
+          onSubmit={flow.submitCredentials}
+        />
+        <Typography.Paragraph style={{ marginBottom: 0 }}>
+          {t('auth.login.needAccount')}{' '}
+          <Link to="/register">{t('auth.login.gotoRegister')}</Link>
+        </Typography.Paragraph>
+      </Flex>
     );
   };
 

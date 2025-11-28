@@ -9,10 +9,16 @@ import type { CredentialsFormValues } from 'src/features/auth/hooks/useAuthFlow'
 interface LoginFormProps {
   loading?: boolean;
   serverError?: string;
+  initialEmail?: string;
   onSubmit: (values: CredentialsFormValues) => void;
 }
 
-export function LoginForm({ loading, serverError, onSubmit }: LoginFormProps) {
+export function LoginForm({
+  loading,
+  serverError,
+  initialEmail,
+  onSubmit,
+}: LoginFormProps) {
   const { t } = useTranslation();
 
   const handleFinish = async (
@@ -32,7 +38,9 @@ export function LoginForm({ loading, serverError, onSubmit }: LoginFormProps) {
       style={{ width: '100%' }}
       title={t('auth.login.title')}
       subTitle={t('auth.login.subtitle')}
-      initialValues={{}}
+      initialValues={{
+        email: initialEmail ?? '',
+      }}
       contentStyle={{ margin: 0, paddingBlock: 0 }}
       submitter={{
         searchConfig: { submitText: t('auth.login.cta') },

@@ -11,7 +11,7 @@ import {
 } from 'src/service/misc/setting.service';
 import {
   ACTIVITY_TYPE,
-  ctxStore,
+  getIpAndUa,
   IdUtil,
   LOG_LEVEL,
   type LoginMethod,
@@ -45,11 +45,8 @@ export class SecurityMonitorService {
     if (!securitySettings.deviceRecognition) {
       return { action: 'allow', deviceFingerprint: null, isNewDevice: false };
     }
-    const { ip, ua } = ctxStore.getStore() ?? {};
-    if (!ua || !ip) {
-      return { action: 'allow', deviceFingerprint: null, isNewDevice: false };
-    }
-    const deviceFingerprint = this.generateFingerprint(ua, ip);
+    const { userAgent, clientIp } = getIpAndUa();
+    const deviceFingerprint = this.generateFingerprint(userAgent, clientIp);
     const knownDevice = await this.deps.db.session.findFirst({
       where: { createdById: userId, deviceFingerprint },
       select: { id: true },
@@ -94,16 +91,16 @@ export class SecurityMonitorService {
     method: LoginMethod;
   }): Promise<void> {
     const { userId, deviceFingerprint, method } = params;
-    const { ip, ua } = ctxStore.getStore() ?? {};
+    const { userAgent, clientIp } = getIpAndUa();
     await this.deps.db.$transaction(async (tx: PrismaTx) => {
       await tx.securityEvent.create({
         data: {
           id: IdUtil.dbId(),
           userId,
           eventType: SecurityEventType.suspicious_activity,
-          ip,
+          ip: clientIp,
           metadata: {
-            userAgent: ua,
+            userAgent,
             deviceFingerprint,
             reason: 'unknown_device',
           },

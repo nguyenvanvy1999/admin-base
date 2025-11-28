@@ -22,9 +22,9 @@ export class AuditLogService {
       timestamp: entry.timestamp ?? new Date(),
       userId: pickValue(entry.userId, ctx?.userId),
       sessionId: pickValue(entry.sessionId, ctx?.sessionId),
-      ip: pickValue(entry.ip, ctx?.ip),
-      userAgent: pickValue(entry.userAgent, ctx?.ua),
-      requestId: pickValue(entry.requestId, ctx?.reqId),
+      ip: pickValue(entry.ip, ctx?.clientIp),
+      userAgent: pickValue(entry.userAgent, ctx?.userAgent),
+      requestId: pickValue(entry.requestId, ctx?.id),
       traceId: entry.traceId,
       correlationId: entry.correlationId,
     };
