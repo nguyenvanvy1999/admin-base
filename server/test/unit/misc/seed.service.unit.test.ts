@@ -4,6 +4,7 @@ import type { ILogger } from 'src/config/logger';
 import type { PasswordService } from 'src/service/auth/password.service';
 import { SeedService } from 'src/service/misc/seed.service';
 import {
+  ADMIN_USER_ID,
   defaultRoles,
   defaultSettings,
   OAUTH,
@@ -446,6 +447,94 @@ describe('SeedService', () => {
     });
   });
 
+  describe('seedUsers', () => {
+    it('should create system and admin users when they do not exist', async () => {
+      const { service } = buildSeedService();
+      const currency = SeedFixtures.createCurrency({ id: 'currency_usd' });
+
+      mockDb['currency'].findFirst.mockResolvedValueOnce(currency);
+      mockDb['user'].findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+
+      await service.seedUsers();
+
+      expect(mockDb['currency'].findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ isActive: true }),
+        }),
+      );
+      expect(mockPasswordService.createPassword).toHaveBeenNthCalledWith(
+        1,
+        mockEnv.SYSTEM_PASSWORD,
+      );
+      expect(mockPasswordService.createPassword).toHaveBeenNthCalledWith(
+        2,
+        mockEnv.ADMIN_PASSWORD,
+      );
+      expect(mockDb['user'].upsert).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          where: { id: SYS_USER_ID },
+          create: expect.objectContaining({
+            email: 'system@investment.local',
+            roles: expect.objectContaining({
+              create: expect.objectContaining({
+                roleId: defaultRoles.system.id,
+              }),
+            }),
+          }),
+        }),
+      );
+      expect(mockDb['user'].upsert).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          where: { id: ADMIN_USER_ID },
+          create: expect.objectContaining({
+            email: 'admin@investment.local',
+            roles: expect.objectContaining({
+              create: expect.objectContaining({
+                roleId: defaultRoles.administrator.id,
+              }),
+            }),
+          }),
+        }),
+      );
+      expect(mockLogger.warning).toHaveBeenCalledWith(
+        'Seed critical users successfully.',
+      );
+    });
+
+    it('should skip password creation when user already exists', async () => {
+      const { service } = buildSeedService();
+      const currency = SeedFixtures.createCurrency({ id: 'currency_usd' });
+      const existingUser = SeedFixtures.createUser();
+
+      mockDb['currency'].findFirst.mockResolvedValueOnce(currency);
+      mockDb['user'].findUnique
+        .mockResolvedValueOnce(existingUser)
+        .mockResolvedValueOnce(existingUser);
+
+      await service.seedUsers();
+
+      expect(mockPasswordService.createPassword).not.toHaveBeenCalled();
+      expect(mockDb['user'].upsert).toHaveBeenCalledTimes(2);
+    });
+
+    it('should log error when default currency is missing', async () => {
+      const { service } = buildSeedService();
+
+      mockDb['currency'].findFirst.mockResolvedValueOnce(null);
+
+      await service.seedUsers();
+
+      expect(mockDb['user'].upsert).not.toHaveBeenCalled();
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Seed critical users failed'),
+      );
+    });
+  });
+
   describe('seedAll', () => {
     const seedAllMock = () => {
       mockDb['setting'].createMany.mockResolvedValue({ count: 0 });
@@ -460,12 +549,13 @@ describe('SeedService', () => {
         passwordCreated: new Date(),
         passwordExpired: new Date(),
       });
+      mockDb['currency'].findFirst.mockResolvedValue({ id: 'currency_usd' });
+      mockDb['user'].findUnique.mockResolvedValue(null);
       mockDb['user'].upsert.mockResolvedValue({ id: 'user_1' });
       mockDb['network'].findMany.mockResolvedValue([]);
       mockDb['network'].createMany.mockResolvedValue({ count: 0 });
       mockDb['currency'].findMany.mockResolvedValue([]);
       mockDb['currency'].createMany.mockResolvedValue({ count: 0 });
-      mockDb['user'].findUnique.mockResolvedValue({ id: SYS_USER_ID });
       mockDb['account'].findMany.mockResolvedValue([]);
       mockDb['accountSnapshot'].findMany.mockResolvedValue([]);
       mockDb['account'].createMany.mockResolvedValue({ count: 0 });

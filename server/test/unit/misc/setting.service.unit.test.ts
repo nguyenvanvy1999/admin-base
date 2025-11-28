@@ -331,9 +331,10 @@ describe('settingService', () => {
 
   describe('password', () => {
     it('should return password settings', async () => {
-      mockCache.get
-        .mockResolvedValueOnce(true) // ENB_PASSWORD_ATTEMPT
-        .mockResolvedValueOnce(false); // ENB_PASSWORD_EXPIRED
+      const cacheMap = new Map<string, unknown>();
+      cacheMap.set(SETTING.ENB_PASSWORD_ATTEMPT, true);
+      cacheMap.set(SETTING.ENB_PASSWORD_EXPIRED, false);
+      mockCache.getMany.mockResolvedValueOnce(cacheMap);
 
       const result = await service.password();
 
@@ -341,24 +342,28 @@ describe('settingService', () => {
         enbAttempt: true,
         enbExpired: false,
       });
+      expect(mockCache.getMany).toHaveBeenCalledWith([
+        SETTING.ENB_PASSWORD_ATTEMPT,
+        SETTING.ENB_PASSWORD_EXPIRED,
+      ]);
     });
 
     it('should handle getSetting calls for password method', async () => {
-      // Mock getSetting method with proper typing
-      const mockGetSetting = mock((key: string) => {
-        if (key === 'ENB_PASSWORD_ATTEMPT') return Promise.resolve(true);
-        if (key === 'ENB_PASSWORD_EXPIRED') return Promise.resolve(false);
-        return Promise.resolve(null);
-      });
+      const mockGetManySettings = mock(() =>
+        Promise.resolve([true, false] as any),
+      );
 
-      const originalGetSetting = service.getSetting.bind(service);
-      (service.getSetting as any) = mockGetSetting;
+      const originalGetManySettings = service.getManySettings.bind(service);
+      (service.getManySettings as any) = mockGetManySettings;
 
       const result = await service.password();
 
-      expect(mockGetSetting).toHaveBeenCalledTimes(2);
+      expect(mockGetManySettings).toHaveBeenCalledWith([
+        SETTING.ENB_PASSWORD_ATTEMPT,
+        SETTING.ENB_PASSWORD_EXPIRED,
+      ]);
 
-      service.getSetting = originalGetSetting;
+      service.getManySettings = originalGetManySettings;
       expect(result).toEqual({
         enbAttempt: true,
         enbExpired: false,

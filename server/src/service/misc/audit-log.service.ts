@@ -9,6 +9,9 @@ export class AuditLogService {
     const logId = IdUtil.snowflakeId().toString();
     const ctx = ctxStore.getStore();
 
+    const pickValue = <T>(value: T | undefined | null, fallback?: T) =>
+      value !== undefined ? value : fallback;
+
     const enrichedEntry: AuditLogEntry & {
       logId: string;
       timestamp: Date;
@@ -17,11 +20,11 @@ export class AuditLogService {
       logId: logId,
       level: entry.level ?? LOG_LEVEL.INFO,
       timestamp: entry.timestamp ?? new Date(),
-      userId: entry.userId ?? ctx?.userId,
-      sessionId: entry.sessionId ?? ctx?.sessionId,
-      ip: entry.ip ?? ctx?.ip,
-      userAgent: entry.userAgent ?? ctx?.ua,
-      requestId: entry.requestId ?? ctx?.reqId,
+      userId: pickValue(entry.userId, ctx?.userId),
+      sessionId: pickValue(entry.sessionId, ctx?.sessionId),
+      ip: pickValue(entry.ip, ctx?.ip),
+      userAgent: pickValue(entry.userAgent, ctx?.ua),
+      requestId: pickValue(entry.requestId, ctx?.reqId),
       traceId: entry.traceId,
       correlationId: entry.correlationId,
     };

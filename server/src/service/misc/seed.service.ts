@@ -1,11 +1,13 @@
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import { type ILogger, logger } from 'src/config/logger';
+import { UserStatus } from 'src/generated';
 import {
   type PasswordService,
   passwordService,
 } from 'src/service/auth/password.service';
 import {
+  ADMIN_USER_ID,
   DB_PREFIX,
   defaultRoles,
   defaultSettings,
@@ -13,7 +15,24 @@ import {
   OAUTH,
   PERMISSIONS,
   SETTING,
+  SYS_USER_ID,
 } from 'src/share';
+
+const SYSTEM_USER_EMAIL = 'system@investment.local';
+const ADMIN_USER_EMAIL = 'admin@investment.local';
+const SYSTEM_USER_NAME = 'System User';
+const ADMIN_USER_NAME = 'Administrator';
+
+type SeedUserParams = {
+  id: string;
+  email: string;
+  name: string;
+  password: string;
+  roleId: string;
+  baseCurrencyId: string;
+};
+
+type PasswordPayload = Awaited<ReturnType<PasswordService['createPassword']>>;
 
 export class SeedService {
   constructor(
@@ -219,11 +238,101 @@ export class SeedService {
     }
   }
 
+  async seedUsers(): Promise<void> {
+    try {
+      const defaultCurrency = await this.deps.db.currency.findFirst({
+        where: { isActive: true },
+        orderBy: { code: 'asc' },
+        select: { id: true },
+      });
+
+      if (!defaultCurrency) {
+        throw new Error('Default currency not found');
+      }
+
+      await this.seedUser({
+        id: SYS_USER_ID,
+        email: SYSTEM_USER_EMAIL,
+        name: SYSTEM_USER_NAME,
+        password: this.deps.env.SYSTEM_PASSWORD,
+        roleId: defaultRoles.system.id,
+        baseCurrencyId: defaultCurrency.id,
+      });
+
+      await this.seedUser({
+        id: ADMIN_USER_ID,
+        email: ADMIN_USER_EMAIL,
+        name: ADMIN_USER_NAME,
+        password: this.deps.env.ADMIN_PASSWORD,
+        roleId: defaultRoles.administrator.id,
+        baseCurrencyId: defaultCurrency.id,
+      });
+
+      this.deps.logger.warning('Seed critical users successfully.');
+    } catch (e) {
+      this.deps.logger.error(`Seed critical users failed ${e}`);
+    }
+  }
+
+  private async seedUser(params: SeedUserParams): Promise<void> {
+    const existingUser = await this.deps.db.user.findUnique({
+      where: { id: params.id },
+      select: { id: true, baseCurrencyId: true },
+    });
+
+    let passwordPayload: PasswordPayload | undefined;
+    if (!existingUser) {
+      passwordPayload = await this.deps.passwordService.createPassword(
+        params.password,
+      );
+    }
+
+    await this.deps.db.user.upsert({
+      where: { id: params.id },
+      create: {
+        id: params.id,
+        email: params.email,
+        name: params.name,
+        status: UserStatus.active,
+        emailVerified: true,
+        baseCurrencyId: params.baseCurrencyId,
+        ...(passwordPayload ?? ({} as PasswordPayload)),
+        roles: {
+          create: {
+            id: IdUtil.dbId(),
+            roleId: params.roleId,
+          },
+        },
+      },
+      update: {
+        status: UserStatus.active,
+        emailVerified: true,
+        baseCurrencyId: existingUser?.baseCurrencyId ?? params.baseCurrencyId,
+        roles: {
+          connectOrCreate: {
+            where: {
+              role_player_unique: {
+                roleId: params.roleId,
+                playerId: params.id,
+              },
+            },
+            create: {
+              id: IdUtil.dbId(),
+              roleId: params.roleId,
+            },
+          },
+        },
+      },
+      select: { id: true },
+    });
+  }
+
   async seedAll(): Promise<void> {
     await this.seedSettings();
     await this.seedAuthProviders();
     await this.seedRoles();
     await this.seedPermissions();
+    await this.seedUsers();
   }
 }
 
