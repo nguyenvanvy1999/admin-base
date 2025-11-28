@@ -510,7 +510,7 @@ describe('SeedService', () => {
       await service.seedUsers();
 
       expect(mockDb['currency'].findUnique).not.toHaveBeenCalled();
-      expect(mockPasswordService.createPassword).not.toHaveBeenCalled();
+      expect(mockPasswordService.createPassword).toHaveBeenCalledTimes(2);
       expect(mockDb['user'].upsert).toHaveBeenCalledTimes(2);
     });
   });

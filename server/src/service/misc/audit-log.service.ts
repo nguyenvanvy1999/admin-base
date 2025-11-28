@@ -6,7 +6,7 @@ const JOB_NAME = 'audit-log';
 export class AuditLogService {
   constructor(private readonly queue: IAuditLogQueue = auditLogQueue) {}
   mapData(entry: AuditLogEntry) {
-    const logId = IdUtil.snowflakeId().toString();
+    const logId = IdUtil.snowflakeId().toString().padStart(20, '0');
     const ctx = ctxStore.getStore();
 
     const pickValue = <T>(value: T | undefined | null, fallback?: T) =>
