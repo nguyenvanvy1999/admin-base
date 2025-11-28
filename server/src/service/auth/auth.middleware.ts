@@ -69,10 +69,8 @@ export const authCheck = (app: Elysia) =>
 
     const current = ctxStore.getStore();
     if (current) {
-      Object.assign(current, {
-        userId: currentUser.id,
-        sessionId: currentUser.sessionId,
-      });
+      current.userId = currentUser.id;
+      current.sessionId = currentUser.sessionId;
     }
 
     return { currentUser };
