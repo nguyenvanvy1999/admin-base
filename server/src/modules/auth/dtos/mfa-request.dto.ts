@@ -4,10 +4,13 @@ export const GenerateBackupCodesRequestDto = t.Object({
   otp: t.String({ minLength: 6, maxLength: 6 }),
 });
 
+export const SetupMfaRequestDto = t.Object({
+  setupToken: t.Optional(t.String({ minLength: 1 })),
+});
+
 export const VerifyBackupCodeRequestDto = t.Object({
   backupCode: t.String({ minLength: 8, maxLength: 8 }),
   mfaToken: t.String({ minLength: 1 }),
-  loginToken: t.String({ minLength: 1 }),
 });
 
 export const DisableMfaRequestDto = t.Object({

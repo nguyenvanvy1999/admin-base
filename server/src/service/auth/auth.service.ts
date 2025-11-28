@@ -5,9 +5,11 @@ import {
   type IMFACache,
   loginRateLimitCache,
   mfaCache,
+  mfaSetupTokenCache,
 } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
+import { redis } from 'src/config/redis';
 import { UserStatus } from 'src/generated';
 import type {
   ChangePasswordRequestDto,
@@ -57,7 +59,6 @@ import {
   type UserUtilService,
   userUtilService,
 } from './auth-util.service';
-import { mfaSetupService } from './mfa-setup.service';
 import { type MfaUtilService, mfaUtilService } from './mfa-util.service';
 import { type OtpService, otpService } from './otp.service';
 import { type PasswordService, passwordService } from './password.service';
@@ -339,7 +340,6 @@ export class AuthService {
 
     return {
       type: LoginResType.MFA_CONFIRM,
-      loginToken,
       mfaToken,
     } as typeof LoginMFAResDto.static;
   }
@@ -349,9 +349,16 @@ export class AuthService {
     clientIp: string,
     userAgent: string,
   ): Promise<ILoginResponse> {
-    const { mfaToken, totpSecret } = await mfaSetupService.setupMfaRequest({
+    const setupToken = IdUtil.token16();
+    const createdAt = Date.now();
+
+    await this.invalidateOldSetupTokens(user.id);
+
+    await mfaSetupTokenCache.set(setupToken, {
       userId: user.id,
-      sessionId: '',
+      clientIp,
+      userAgent,
+      createdAt,
     });
 
     await this.deps.auditLogService.push({
@@ -364,9 +371,37 @@ export class AuthService {
 
     return {
       type: LoginResType.MFA_SETUP,
-      mfaToken,
-      totpSecret,
+      setupToken,
     } as typeof LoginMFASetupResDto.static;
+  }
+
+  private async invalidateOldSetupTokens(userId: string): Promise<void> {
+    const namespace = 'mfa-setup-token';
+    const pattern = `${namespace}:*`;
+    let cursor = '0';
+    const keysToDelete: string[] = [];
+
+    do {
+      const result = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', '100');
+      if (Array.isArray(result)) {
+        cursor = result[0] as string;
+        const keys = result[1] as string[];
+
+        for (const key of keys) {
+          const token = key.replace(`${namespace}:`, '');
+          const data = await mfaSetupTokenCache.get(token);
+          if (data && data.userId === userId) {
+            keysToDelete.push(token);
+          }
+        }
+      } else {
+        break;
+      }
+    } while (cursor !== '0');
+
+    for (const token of keysToDelete) {
+      await mfaSetupTokenCache.del(token);
+    }
   }
 
   private validatePasswordAttempts(
@@ -695,8 +730,122 @@ export class AuthService {
       });
     }
 
-    const cacheKey = this.deps.mfaUtilService.getKey(mfaToken, loginToken);
-    const cachedData = await this.deps.mfaCache.get(cacheKey);
+    const cachedData = await this.deps.mfaCache.get(mfaToken);
+
+    if (!cachedData || cachedData.loginToken !== loginToken) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: 'email', error: 'mfa_session_expired' },
+        userId: null,
+        ip: clientIp,
+        userAgent,
+      });
+      throw new BadReqErr(ErrCode.SessionExpired);
+    }
+
+    const user = await this.deps.db.user.findUnique({
+      where: { id: cachedData.userId },
+      include: { roles: true },
+    });
+
+    if (!user || !user.totpSecret) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: 'email', error: 'mfa_user_not_found' },
+        userId: cachedData.userId ?? null,
+        ip: clientIp,
+        userAgent,
+      });
+      throw new NotFoundErr(ErrCode.UserNotFound);
+    }
+
+    const isValidOtp = this.deps.authenticator.verify({
+      secret: user.totpSecret,
+      token: otp,
+    });
+
+    if (!isValidOtp) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: 'email', error: 'mfa_invalid_otp' },
+        userId: user.id,
+        ip: clientIp,
+        userAgent,
+      });
+      throw new BadReqErr(ErrCode.InvalidOtp);
+    }
+
+    if (user.status !== UserStatus.active) {
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: 'email', error: 'user_not_active' },
+        userId: user.id,
+        ip: clientIp,
+        userAgent,
+      });
+      throw new BadReqErr(ErrCode.UserNotActive);
+    }
+
+    await this.deps.mfaCache.del(mfaToken);
+
+    let securityContext = cachedData.security;
+
+    if (!securityContext) {
+      const securityResult =
+        await this.deps.securityMonitorService.evaluateLogin({
+          userId: user.id,
+          clientIp,
+          userAgent,
+          method: 'email',
+        });
+
+      if (securityResult.action === 'block') {
+        await this.deps.auditLogService.push({
+          type: ACTIVITY_TYPE.LOGIN,
+          payload: { method: 'email', error: 'security_blocked' },
+          userId: user.id,
+          ip: clientIp,
+          userAgent,
+        });
+        throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
+      }
+
+      securityContext = securityResult;
+    }
+
+    const loginRes = await this.deps.userUtilService.completeLogin(
+      user,
+      clientIp,
+      userAgent,
+      securityContext,
+    );
+
+    await this.deps.auditLogService.push({
+      type: ACTIVITY_TYPE.LOGIN,
+      payload: { method: 'email' },
+      userId: user.id,
+      ip: clientIp,
+      userAgent,
+    });
+
+    return loginRes;
+  }
+
+  async loginWithMfa(params: {
+    mfaToken: string;
+    otp: string;
+    clientIp: string;
+    userAgent: string;
+  }): Promise<ILoginRes> {
+    const { mfaToken, otp, clientIp, userAgent } = params;
+
+    if (!mfaToken || !otp) {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'mfaToken and otp are required',
+      });
+    }
+
+    const cachedData = await this.deps.mfaCache.get(mfaToken);
 
     if (!cachedData) {
       await this.deps.auditLogService.push({
@@ -752,7 +901,7 @@ export class AuthService {
       throw new BadReqErr(ErrCode.UserNotActive);
     }
 
-    await this.deps.mfaCache.del(cacheKey);
+    await this.deps.mfaCache.del(mfaToken);
 
     let securityContext = cachedData.security;
 

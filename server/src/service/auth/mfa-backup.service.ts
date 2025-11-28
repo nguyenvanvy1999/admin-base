@@ -14,7 +14,6 @@ import {
   type IVerifyBackupCodeParams,
   NotFoundErr,
 } from 'src/share';
-import { mfaUtilService } from './mfa-util.service';
 
 export class MfaBackupService {
   private readonly BACKUP_CODES_COUNT = 10;
@@ -71,15 +70,13 @@ export class MfaBackupService {
   }
 
   async verifyBackupCode(params: IVerifyBackupCodeParams): Promise<string> {
-    const { mfaToken, loginToken, backupCode, clientIp, userAgent } = params;
+    const { mfaToken, backupCode, clientIp, userAgent } = params;
 
     if (!backupCode || backupCode.length !== 8) {
       throw new BadReqErr(ErrCode.InvalidBackupCode);
     }
 
-    const cachedData = await mfaCache.get(
-      mfaUtilService.getKey(mfaToken, loginToken),
-    );
+    const cachedData = await mfaCache.get(mfaToken);
 
     if (!cachedData) {
       throw new BadReqErr(ErrCode.SessionExpired);

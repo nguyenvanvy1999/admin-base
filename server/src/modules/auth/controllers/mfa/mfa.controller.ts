@@ -3,6 +3,7 @@ import { reqMeta } from 'src/config/request';
 import {
   DisableMfaRequestDto,
   MfaStatusResponseDto,
+  SetupMfaRequestDto,
 } from 'src/modules/auth/dtos';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { mfaSetupService } from 'src/service/auth/mfa-setup.service';
@@ -19,21 +20,22 @@ export const mfaController = new Elysia({
   tags: [DOC_TAG.MFA],
 })
   .use(reqMeta)
-  .use(authCheck)
   .post(
     'setup/request',
-    async ({ currentUser: { id, sessionId } }) => {
+    async ({ body: { setupToken }, currentUser }) => {
       const result = await mfaSetupService.setupMfaRequest({
-        userId: id,
-        sessionId,
+        userId: currentUser?.id,
+        sessionId: currentUser?.sessionId,
+        setupToken,
       });
       return castToRes(result);
     },
     {
+      body: SetupMfaRequestDto,
       detail: {
-        description: 'Request setup MFA',
+        description:
+          'Request setup MFA (supports both authenticated and unauthenticated users)',
         summary: 'Request setup MFA',
-        security: ACCESS_AUTH,
       },
       response: {
         200: ResWrapper(
@@ -61,12 +63,15 @@ export const mfaController = new Elysia({
         summary: 'Confirm setup MFA',
       },
       response: {
-        200: ResWrapper(t.Null()),
+        200: ResWrapper(
+          t.Object({ mfaToken: t.String(), loginToken: t.String() }),
+        ),
         400: ErrorResDto,
         500: ErrorResDto,
       },
     },
   )
+  .use(authCheck)
   .post(
     'reset',
     async ({ body: { otpToken, otp } }) => {

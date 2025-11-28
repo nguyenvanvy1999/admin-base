@@ -60,14 +60,9 @@ export const backupController = new Elysia({
   )
   .post(
     'verify',
-    async ({
-      body: { backupCode, mfaToken, loginToken },
-      clientIp,
-      userAgent,
-    }) => {
+    async ({ body: { backupCode, mfaToken }, clientIp, userAgent }) => {
       const userId = await mfaBackupService.verifyBackupCode({
         mfaToken,
-        loginToken,
         backupCode,
         clientIp,
         userAgent,

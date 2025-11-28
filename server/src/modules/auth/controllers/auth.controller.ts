@@ -8,6 +8,7 @@ import {
   LoginRequestDto,
   LoginResDto,
   LoginResponseDto,
+  MfaLoginRequestDto,
   OtpResDto,
   RefreshTokenRequestDto,
   RegisterRequestDto,
@@ -92,8 +93,33 @@ export const authBaseController = new Elysia({
     {
       body: ConfirmMfaLoginRequestDto,
       detail: {
-        description: 'Confirm MFA login with OTP',
+        description: 'Confirm MFA login with OTP (legacy API)',
         summary: 'Confirm MFA login',
+      },
+      response: {
+        200: ResWrapper(LoginResDto),
+        400: ErrorResDto,
+        404: ErrorResDto,
+        500: ErrorResDto,
+      },
+    },
+  )
+  .post(
+    '/login/mfa',
+    async ({ body: { mfaToken, otp }, clientIp, userAgent }) => {
+      const result = await authService.loginWithMfa({
+        mfaToken,
+        otp,
+        clientIp,
+        userAgent,
+      });
+      return castToRes(result);
+    },
+    {
+      body: MfaLoginRequestDto,
+      detail: {
+        description: 'Login with MFA token and OTP',
+        summary: 'Login with MFA',
       },
       response: {
         200: ResWrapper(LoginResDto),

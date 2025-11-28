@@ -179,6 +179,7 @@ export enum SETTING {
 export enum CACHE_NS {
   SETTING = 'setting',
   MFA_SETUP = 'mfa-setup',
+  MFA_SETUP_TOKEN = 'mfa-setup-token',
   MFA = 'mfa',
   CURRENT_USER = 'currency-user',
   OTP = 'otp',

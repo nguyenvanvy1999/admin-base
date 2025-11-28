@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { authenticator } from 'otplib';
-import { mfaSetupCache } from 'src/config/cache';
+import { mfaCache, mfaSetupCache, mfaSetupTokenCache } from 'src/config/cache';
 import { db } from 'src/config/db';
 import { otpService } from 'src/service/auth/otp.service';
 import { sessionService } from 'src/service/auth/session.service';
@@ -13,13 +13,15 @@ import {
   IdUtil,
   type IMfaStatus,
   type IMfaUser,
+  isExpired,
   NotFoundErr,
   PurposeVerify,
 } from 'src/share';
 
 type SetupMfaRequestParams = {
-  userId: string;
-  sessionId: string;
+  userId?: string;
+  sessionId?: string;
+  setupToken?: string;
 };
 
 type SetupMfaParams = {
@@ -36,24 +38,52 @@ type ResetMfaParams = {
 
 export class MfaSetupService {
   async setupMfaRequest(params: SetupMfaRequestParams) {
-    const { userId, sessionId } = params;
+    const { userId, sessionId, setupToken } = params;
 
-    await this.ensureMfaNotEnabled(userId);
+    let resolvedUserId: string;
+    let resolvedSessionId: string | undefined;
+
+    if (userId) {
+      resolvedUserId = userId;
+      resolvedSessionId = sessionId;
+
+      if (sessionId) {
+        await this.validateSessionActive(sessionId, userId);
+      }
+    } else if (setupToken) {
+      const tokenData = await mfaSetupTokenCache.get(setupToken);
+      if (!tokenData) {
+        throw new BadReqErr(ErrCode.SessionExpired);
+      }
+
+      resolvedUserId = tokenData.userId;
+      resolvedSessionId = undefined;
+
+      await mfaSetupTokenCache.del(setupToken);
+    } else {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'Either userId or setupToken is required',
+      });
+    }
+
+    await this.ensureMfaNotEnabled(resolvedUserId);
 
     const mfaToken = this.generateToken();
     const totpSecret = this.generateTotpSecret();
 
     await mfaSetupCache.set(mfaToken, {
       totpSecret,
-      userId,
-      sessionId,
+      userId: resolvedUserId,
+      sessionId: resolvedSessionId || '',
+      setupToken: setupToken || undefined,
+      createdAt: Date.now(),
     });
 
     await auditLogService.push({
       type: ACTIVITY_TYPE.SETUP_MFA,
       payload: { method: 'totp', stage: 'request' },
-      userId,
-      sessionId,
+      userId: resolvedUserId,
+      sessionId: resolvedSessionId,
     });
 
     return {
@@ -68,6 +98,17 @@ export class MfaSetupService {
     const cachedData = await mfaSetupCache.get(mfaToken);
     if (!cachedData) {
       throw new BadReqErr(ErrCode.SessionExpired);
+    }
+
+    if (cachedData.setupToken) {
+      const tokenData = await mfaSetupTokenCache.get(cachedData.setupToken);
+      if (!tokenData) {
+        throw new BadReqErr(ErrCode.SessionExpired);
+      }
+    }
+
+    if (cachedData.sessionId) {
+      await this.validateSessionActive(cachedData.sessionId, cachedData.userId);
     }
 
     const totpVerified = authenticator.verify({
@@ -88,6 +129,14 @@ export class MfaSetupService {
       select: { id: true },
     });
 
+    const loginToken = IdUtil.token16();
+
+    await mfaCache.set(mfaToken, {
+      userId: cachedData.userId,
+      loginToken,
+      createdAt: Date.now(),
+    });
+
     await auditLogService.push({
       type: ACTIVITY_TYPE.SETUP_MFA,
       payload: { method: 'totp', stage: 'confirm' },
@@ -101,7 +150,16 @@ export class MfaSetupService {
       await sessionService.revoke(cachedData.userId, [cachedData.sessionId]);
     }
 
-    return null;
+    if (cachedData.setupToken) {
+      await mfaSetupTokenCache.del(cachedData.setupToken);
+    }
+
+    await mfaSetupCache.del(mfaToken);
+
+    return {
+      mfaToken,
+      loginToken,
+    };
   }
 
   async disableMfa(params: IDisableMfaParams) {
@@ -273,6 +331,26 @@ export class MfaSetupService {
 
   private generateTotpSecret(): string {
     return authenticator.generateSecret().toUpperCase();
+  }
+
+  private async validateSessionActive(
+    sessionId: string,
+    userId: string,
+  ): Promise<void> {
+    const session = await db.session.findUnique({
+      where: { id: sessionId },
+      select: { revoked: true, expired: true, createdById: true },
+    });
+
+    if (!session || session.revoked || isExpired(session.expired)) {
+      throw new BadReqErr(ErrCode.SessionExpired);
+    }
+
+    if (session.createdById !== userId) {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'Session does not belong to user',
+      });
+    }
   }
 }
 

@@ -25,14 +25,12 @@ export type ILoginRes = typeof LoginResDto.static;
 
 export const LoginMFASetupResDto = t.Object({
   type: t.Literal(LoginResType.MFA_SETUP),
-  mfaToken: t.String(),
-  totpSecret: t.String(),
+  setupToken: t.String(),
 });
 
 export const LoginMFAResDto = t.Object({
   type: t.Literal(LoginResType.MFA_CONFIRM),
   mfaToken: t.String(),
-  loginToken: t.String(),
 });
 
 export const LoginResponseDto = t.Union([

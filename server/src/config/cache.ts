@@ -87,6 +87,8 @@ export type IOTPCache = typeof otpCache;
 export const mfaCache = new RedisCache<{
   userId: string;
   security?: SecurityDeviceInsight;
+  loginToken: string;
+  createdAt: number;
 }>({
   namespace: CACHE_NS.MFA,
   ttl: FIVE_MINUTES,
@@ -103,10 +105,23 @@ export const mfaSetupCache = new RedisCache<{
   totpSecret: string;
   userId: string;
   sessionId: string;
+  setupToken?: string;
+  createdAt: number;
 }>({
   namespace: CACHE_NS.MFA_SETUP,
   ttl: FIVE_MINUTES,
 });
+
+export const mfaSetupTokenCache = new RedisCache<{
+  userId: string;
+  clientIp: string;
+  userAgent: string;
+  createdAt: number;
+}>({
+  namespace: CACHE_NS.MFA_SETUP_TOKEN,
+  ttl: FIVE_MINUTES,
+});
+export type IMfaSetupTokenCache = typeof mfaSetupTokenCache;
 
 export const registerOtpLimitCache = new RedisCache<number>({
   namespace: CACHE_NS.REGISTER_OTP_LIMIT,

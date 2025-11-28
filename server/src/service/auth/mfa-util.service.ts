@@ -15,10 +15,6 @@ export class MfaUtilService {
     private readonly generateToken: TokenGenerator,
   ) {}
 
-  getKey(mfaToken: string, loginToken: string): string {
-    return `${mfaToken}_${loginToken}`;
-  }
-
   async createSession({
     loginToken,
     user,
@@ -30,9 +26,11 @@ export class MfaUtilService {
   }): Promise<string> {
     const mfaToken = this.generateToken();
     if (user.mfaTotpEnabled && user.totpSecret) {
-      await this.cache.set(this.getKey(mfaToken, loginToken), {
+      await this.cache.set(mfaToken, {
         userId: user.id,
         security,
+        loginToken,
+        createdAt: Date.now(),
       });
       return mfaToken;
     }

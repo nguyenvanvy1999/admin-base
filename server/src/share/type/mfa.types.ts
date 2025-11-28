@@ -33,7 +33,6 @@ export interface IGenerateBackupCodesParams {
 
 export interface IVerifyBackupCodeParams {
   mfaToken: string;
-  loginToken: string;
   backupCode: string;
   clientIp?: string;
   userAgent?: string;
