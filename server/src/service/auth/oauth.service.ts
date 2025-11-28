@@ -23,6 +23,7 @@ import {
   DB_PREFIX,
   defaultRoles,
   ErrCode,
+  getClientIpAndUserAgent,
   IdUtil,
   OAUTH,
   type PrismaTx,
@@ -32,8 +33,6 @@ import { type CurrencyService, currencyService } from '../currency.service';
 
 type GoogleLoginParams = {
   idToken: string;
-  clientIp?: string;
-  userAgent?: string;
 };
 
 type LinkTelegramParams = {
@@ -76,7 +75,8 @@ export class OAuthService {
   ) {}
 
   async googleLogin(params: GoogleLoginParams): Promise<ILoginRes> {
-    const { idToken, clientIp, userAgent } = params;
+    const { idToken } = params;
+    const { clientIp, userAgent } = getClientIpAndUserAgent();
 
     const provider = await this.deps.db.authProvider.findUnique({
       where: { code: OAUTH.GOOGLE },
@@ -187,8 +187,6 @@ export class OAuthService {
     const securityResult = await this.deps.securityMonitorService.evaluateLogin(
       {
         userId: user.id,
-        clientIp: clientIp || '',
-        userAgent: userAgent || '',
         method: OAUTH.GOOGLE,
       },
     );
@@ -199,8 +197,8 @@ export class OAuthService {
 
     const loginRes = await this.deps.userUtilService.completeLogin(
       user,
-      clientIp || '',
-      userAgent || '',
+      clientIp ?? '',
+      userAgent ?? '',
       securityResult,
     );
 
@@ -261,7 +259,6 @@ export class OAuthService {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.LINK_OAUTH,
       payload: { provider: OAUTH.TELEGRAM, providerId: telegramData.id },
-      userId,
     });
 
     return null;

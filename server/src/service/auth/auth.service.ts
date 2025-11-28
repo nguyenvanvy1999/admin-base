@@ -41,6 +41,7 @@ import {
   DB_PREFIX,
   defaultRoles,
   ErrCode,
+  getClientIpAndUserAgent,
   IdUtil,
   type ITokenPayload,
   isExpired,
@@ -77,15 +78,9 @@ import {
 } from './security-monitor.service';
 import { type SessionService, sessionService } from './session.service';
 
-type LoginParams = typeof LoginRequestDto.static & {
-  clientIp: string;
-  userAgent: string;
-};
+type LoginParams = typeof LoginRequestDto.static;
 
-type RegisterParams = typeof RegisterRequestDto.static & {
-  clientIp?: string;
-  userAgent?: string;
-};
+type RegisterParams = typeof RegisterRequestDto.static;
 
 type ChangePasswordParams = {
   userId: string;
@@ -93,29 +88,19 @@ type ChangePasswordParams = {
 
 type ForgotPasswordParams = typeof ForgotPasswordRequestDto.static;
 
-type VerifyAccountParams = typeof VerifyAccountRequestDto.static & {
-  clientIp: string;
-  userAgent: string;
-};
+type VerifyAccountParams = typeof VerifyAccountRequestDto.static;
 
-type RefreshTokenParams = typeof RefreshTokenRequestDto.static & {
-  clientIp: string;
-  userAgent: string;
-};
+type RefreshTokenParams = typeof RefreshTokenRequestDto.static;
 
 type LogoutParams = {
   userId: string;
   sessionId: string;
-  clientIp: string;
-  userAgent: string;
 };
 
 type ConfirmMfaLoginParams = {
   mfaToken: string;
   loginToken: string;
   otp: string;
-  clientIp: string;
-  userAgent: string;
 };
 
 export class AuthService {
@@ -162,7 +147,8 @@ export class AuthService {
   ) {}
 
   async login(params: LoginParams): Promise<ILoginResponse> {
-    const { email, password, clientIp, userAgent } = params;
+    const { email, password } = params;
+    const { clientIp, userAgent } = getClientIpAndUserAgent();
 
     await this.checkRateLimit(email, clientIp);
 
@@ -181,9 +167,6 @@ export class AuthService {
       await this.deps.auditLogService.push({
         type: ACTIVITY_TYPE.LOGIN,
         payload: { method: 'email', error: 'password_mismatch' },
-        userId: user.id,
-        ip: clientIp,
-        userAgent,
       });
       throw new BadReqErr(ErrCode.PasswordNotMatch);
     }
@@ -192,9 +175,6 @@ export class AuthService {
       await this.deps.auditLogService.push({
         type: ACTIVITY_TYPE.LOGIN,
         payload: { method: 'email', error: 'user_not_active' },
-        userId: user.id,
-        ip: clientIp,
-        userAgent,
       });
       throw new BadReqErr(ErrCode.UserNotActive);
     }
@@ -204,8 +184,6 @@ export class AuthService {
     const securityResult = await this.deps.securityMonitorService.evaluateLogin(
       {
         userId: user.id,
-        clientIp,
-        userAgent,
         method: 'email',
       },
     );
@@ -214,9 +192,6 @@ export class AuthService {
       await this.deps.auditLogService.push({
         type: ACTIVITY_TYPE.LOGIN,
         payload: { method: 'email', error: 'security_blocked' },
-        userId: user.id,
-        ip: clientIp,
-        userAgent,
       });
       throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
     }
@@ -224,15 +199,10 @@ export class AuthService {
     if (!user.mfaTotpEnabled) {
       const mfaRequired = await this.deps.settingService.enbMfaRequired();
       if (mfaRequired) {
-        return this.handleMfaSetupRequired(
-          user,
-          clientIp,
-          userAgent,
-          securityResult,
-        );
+        return this.handleMfaSetupRequired(user, securityResult);
       }
     } else {
-      return this.handleMfaLogin(user, clientIp, userAgent, securityResult);
+      return this.handleMfaLogin(user, securityResult);
     }
 
     return this.handleSuccessfulLogin(
@@ -312,9 +282,6 @@ export class AuthService {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.LOGIN,
       payload: { method: 'email' },
-      userId: user.id,
-      ip: clientIp,
-      userAgent,
     });
 
     return loginRes;
@@ -326,8 +293,6 @@ export class AuthService {
       mfaTotpEnabled: boolean;
       totpSecret: string | null;
     },
-    clientIp: string,
-    userAgent: string,
     security?: SecurityCheckResult,
   ): Promise<ILoginResponse> {
     const loginToken = IdUtil.token16();
@@ -344,9 +309,6 @@ export class AuthService {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.LOGIN,
       payload: { method: 'email' },
-      userId: user.id,
-      ip: clientIp,
-      userAgent,
     });
 
     return {
@@ -357,10 +319,10 @@ export class AuthService {
 
   private async handleMfaSetupRequired(
     user: { id: string },
-    clientIp: string,
-    userAgent: string,
     security?: SecurityCheckResult,
   ): Promise<ILoginResponse> {
+    const { clientIp, userAgent } = getClientIpAndUserAgent();
+
     const setupToken = IdUtil.token16();
     const createdAt = Date.now();
 
@@ -381,9 +343,6 @@ export class AuthService {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.LOGIN,
       payload: { method: 'email', action: 'mfa_setup_required' },
-      userId: user.id,
-      ip: clientIp,
-      userAgent,
     });
 
     return {
@@ -418,7 +377,7 @@ export class AuthService {
   }
 
   async register(params: RegisterParams): Promise<{ otpToken: string } | null> {
-    const { email, password, clientIp, userAgent } = params;
+    const { email, password } = params;
 
     this.deps.passwordValidationService.validatePasswordOrThrow(password);
 
@@ -434,8 +393,6 @@ export class AuthService {
         type: ACTIVITY_TYPE.REGISTER,
         payload: { method: 'email', error: 'User already exists' },
         userId: null,
-        ip: clientIp,
-        userAgent,
       });
       throw new BadReqErr(ErrCode.UserExisted);
     }
@@ -468,9 +425,6 @@ export class AuthService {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.REGISTER,
       payload: { method: 'email' },
-      userId: createdUserId,
-      ip: clientIp,
-      userAgent,
     });
 
     if (otpToken) {
@@ -548,7 +502,6 @@ export class AuthService {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.CHANGE_PASSWORD,
       payload: {},
-      userId,
     });
   }
 
@@ -586,12 +539,11 @@ export class AuthService {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.CHANGE_PASSWORD,
       payload: {},
-      userId,
     });
   }
 
   async verifyAccount(params: VerifyAccountParams): Promise<void> {
-    const { otpToken, otp, clientIp, userAgent } = params;
+    const { otpToken, otp } = params;
 
     const userId = await this.deps.otpService.verifyOtp(
       otpToken,
@@ -622,14 +574,12 @@ export class AuthService {
           status: { previous: UserStatus.inactive, next: UserStatus.active },
         },
       },
-      userId,
-      ip: clientIp,
-      userAgent,
     });
   }
 
   async refreshToken(params: RefreshTokenParams): Promise<ILoginRes> {
-    const { token, clientIp, userAgent } = params;
+    const { token } = params;
+    const { clientIp, userAgent } = getClientIpAndUserAgent();
 
     const session = await this.deps.db.session.findFirst({
       where: { token },
@@ -680,43 +630,29 @@ export class AuthService {
   }
 
   async logout(params: LogoutParams): Promise<void> {
-    const { userId, sessionId, clientIp, userAgent } = params;
+    const { userId, sessionId } = params;
 
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.LOGOUT,
       payload: {},
-      userId,
-      sessionId,
-      ip: clientIp,
-      userAgent,
     });
 
     await this.deps.sessionService.revoke(userId, [sessionId]);
   }
 
   async logoutAll(params: LogoutParams): Promise<void> {
-    const { userId, sessionId, clientIp, userAgent } = params;
+    const { userId, sessionId } = params;
 
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.REVOKE_SESSION,
       payload: { sessionId },
-      userId,
-      sessionId,
-      ip: clientIp,
-      userAgent,
     });
 
     await this.deps.sessionService.revoke(userId);
   }
 
   async confirmMfaLogin(params: ConfirmMfaLoginParams): Promise<ILoginRes> {
-    const { mfaToken, loginToken, otp, clientIp, userAgent } = params;
-
-    if (!mfaToken || !loginToken || !otp) {
-      throw new BadReqErr(ErrCode.ValidationError, {
-        errors: 'mfaToken, loginToken, and otp are required',
-      });
-    }
+    const { mfaToken, loginToken, otp } = params;
 
     const cachedData = await this.deps.mfaCache.get(mfaToken);
     if (!cachedData || cachedData.loginToken !== loginToken) {
@@ -724,8 +660,6 @@ export class AuthService {
         type: ACTIVITY_TYPE.LOGIN,
         payload: { method: 'email', error: 'mfa_session_expired' },
         userId: null,
-        ip: clientIp,
-        userAgent,
       });
       throw new BadReqErr(ErrCode.SessionExpired);
     }
@@ -733,30 +667,15 @@ export class AuthService {
     return this.deps.mfaVerificationService.verifyAndCompleteLogin({
       mfaToken,
       otp,
-      clientIp,
-      userAgent,
     });
   }
 
-  loginWithMfa(params: {
-    mfaToken: string;
-    otp: string;
-    clientIp: string;
-    userAgent: string;
-  }): Promise<ILoginRes> {
-    const { mfaToken, otp, clientIp, userAgent } = params;
-
-    if (!mfaToken || !otp) {
-      throw new BadReqErr(ErrCode.ValidationError, {
-        errors: 'mfaToken and otp are required',
-      });
-    }
+  loginWithMfa(params: { mfaToken: string; otp: string }): Promise<ILoginRes> {
+    const { mfaToken, otp } = params;
 
     return this.deps.mfaVerificationService.verifyAndCompleteLogin({
       mfaToken,
       otp,
-      clientIp,
-      userAgent,
     });
   }
 

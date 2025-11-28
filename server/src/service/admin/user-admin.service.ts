@@ -65,7 +65,6 @@ export class AdminUserService {
         targetUserId,
         previouslyEnabled: user.mfaTotpEnabled ?? false,
       },
-      userId: actorId,
     });
 
     return { userId: targetUserId, auditLogId };
@@ -89,7 +88,6 @@ export class AdminUserService {
         targetUserId,
         previouslyEnabled: user.mfaTotpEnabled ?? false,
       },
-      userId: actorId,
     });
 
     return { userId: targetUserId, auditLogId };
@@ -227,7 +225,6 @@ export class AdminUserService {
         action: 'user-update',
         changes: auditChanges,
       },
-      userId: actorId,
     });
 
     return {

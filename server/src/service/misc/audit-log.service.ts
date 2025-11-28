@@ -1,12 +1,14 @@
 import { auditLogQueue, type IAuditLogQueue } from 'src/config/queue';
 import type { ACTIVITY_TYPE, AuditLogEntry } from 'src/share';
-import { IdUtil, LOG_LEVEL } from 'src/share';
+import { ctxStore, IdUtil, LOG_LEVEL } from 'src/share';
 
 const JOB_NAME = 'audit-log';
 export class AuditLogService {
   constructor(private readonly queue: IAuditLogQueue = auditLogQueue) {}
   mapData(entry: AuditLogEntry) {
     const logId = IdUtil.snowflakeId().toString();
+    const ctx = ctxStore.getStore();
+
     const enrichedEntry: AuditLogEntry & {
       logId: string;
       timestamp: Date;
@@ -15,11 +17,11 @@ export class AuditLogService {
       logId: logId,
       level: entry.level ?? LOG_LEVEL.INFO,
       timestamp: entry.timestamp ?? new Date(),
-      userId: entry.userId,
-      sessionId: entry.sessionId,
-      ip: entry.ip,
-      userAgent: entry.userAgent,
-      requestId: entry.requestId,
+      userId: entry.userId ?? ctx?.userId ?? null,
+      sessionId: entry.sessionId ?? ctx?.sessionId ?? null,
+      ip: entry.ip ?? ctx?.ip ?? null,
+      userAgent: entry.userAgent ?? ctx?.ua ?? null,
+      requestId: entry.requestId ?? ctx?.reqId ?? null,
       traceId: entry.traceId,
       correlationId: entry.correlationId,
     };

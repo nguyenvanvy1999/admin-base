@@ -7,6 +7,7 @@ import { auditLogService } from 'src/service/misc/audit-log.service';
 import {
   ACTIVITY_TYPE,
   BadReqErr,
+  ctxStore,
   ErrCode,
   type IBackupCodesData,
   type IBackupCodesRemaining,
@@ -14,6 +15,7 @@ import {
   type IMfaUser,
   type IVerifyBackupCodeParams,
   NotFoundErr,
+  UnAuthErr,
 } from 'src/share';
 
 export class MfaBackupService {
@@ -23,7 +25,13 @@ export class MfaBackupService {
   async generateBackupCodes(
     params: IGenerateBackupCodesParams,
   ): Promise<IBackupCodesData> {
-    const { userId, sessionId, otp, clientIp, userAgent } = params;
+    const { otp } = params;
+    const { userId } = ctxStore.getStore() ?? {};
+    if (!userId) {
+      throw new UnAuthErr(ErrCode.InvalidToken, {
+        errors: 'User ID not available',
+      });
+    }
 
     const mfaUser = await this.findMfaUserById(userId);
     if (!mfaUser.mfaTotpEnabled) {
@@ -58,10 +66,6 @@ export class MfaBackupService {
     await auditLogService.push({
       type: ACTIVITY_TYPE.SETUP_MFA,
       payload: { method: 'backup-codes', stage: 'generate' },
-      userId,
-      sessionId,
-      ip: clientIp,
-      userAgent,
     });
 
     return {
@@ -71,7 +75,7 @@ export class MfaBackupService {
   }
 
   verifyBackupCode(params: IVerifyBackupCodeParams): Promise<ILoginRes> {
-    const { mfaToken, backupCode, clientIp, userAgent } = params;
+    const { mfaToken, backupCode } = params;
 
     if (!backupCode || backupCode.length !== 8) {
       throw new BadReqErr(ErrCode.InvalidBackupCode);
@@ -80,8 +84,6 @@ export class MfaBackupService {
     return mfaVerificationService.verifyAndCompleteLogin({
       mfaToken,
       backupCode,
-      clientIp,
-      userAgent,
     });
   }
 

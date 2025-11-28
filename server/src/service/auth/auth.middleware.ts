@@ -3,6 +3,7 @@ import { currentUserCache } from 'src/config/cache';
 import { db } from 'src/config/db';
 import { UserStatus } from 'src/generated';
 import {
+  ctxStore,
   ErrCode,
   type ICurrentUser,
   NotFoundErr,
@@ -65,6 +66,15 @@ export const authCheck = (app: Elysia) =>
 
       await currentUserCache.set(data.sessionId, currentUser);
     }
+
+    const current = ctxStore.getStore();
+    if (current) {
+      Object.assign(current, {
+        userId: currentUser.id,
+        sessionId: currentUser.sessionId,
+      });
+    }
+
     return { currentUser };
   });
 

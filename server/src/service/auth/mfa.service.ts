@@ -82,13 +82,12 @@ export class MfaService {
       totpSecret,
       userId,
       sessionId,
+      createdAt: Date.now(),
     });
 
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.SETUP_MFA,
       payload: { method: 'totp', stage: 'request' },
-      userId,
-      sessionId,
     });
 
     return {
@@ -98,7 +97,7 @@ export class MfaService {
   }
 
   async setupMfa(params: SetupMfaParams) {
-    const { mfaToken, otp, clientIp, userAgent } = params;
+    const { mfaToken, otp } = params;
 
     const cachedData = await this.deps.mfaSetupCache.get(mfaToken);
     if (!cachedData) {
@@ -126,10 +125,6 @@ export class MfaService {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.SETUP_MFA,
       payload: { method: 'totp', stage: 'confirm' },
-      userId: cachedData.userId,
-      sessionId: cachedData.sessionId,
-      ip: clientIp,
-      userAgent,
     });
 
     if (cachedData.sessionId) {
@@ -167,7 +162,6 @@ export class MfaService {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.RESET_MFA,
       payload: {},
-      userId,
     });
 
     return null;

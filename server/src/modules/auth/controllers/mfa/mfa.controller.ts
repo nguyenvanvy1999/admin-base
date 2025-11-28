@@ -22,10 +22,8 @@ export const mfaController = new Elysia({
   .use(reqMeta)
   .post(
     'setup/request',
-    async ({ body: { setupToken }, currentUser }) => {
+    async ({ body: { setupToken } }) => {
       const result = await mfaSetupService.setupMfaRequest({
-        userId: currentUser?.id,
-        sessionId: currentUser?.sessionId,
         setupToken,
       });
       return castToRes(result);
@@ -47,12 +45,10 @@ export const mfaController = new Elysia({
   )
   .post(
     'setup/confirm',
-    async ({ body: { mfaToken, otp }, clientIp, userAgent }) => {
+    async ({ body: { mfaToken, otp } }) => {
       const result = await mfaSetupService.setupMfa({
         mfaToken,
         otp,
-        clientIp,
-        userAgent,
       });
       return castToRes(result);
     },
@@ -96,19 +92,11 @@ export const mfaController = new Elysia({
   )
   .post(
     'disable',
-    async ({
-      body: { otp, backupCode },
-      currentUser: { id, sessionId },
-      clientIp,
-      userAgent,
-    }) => {
+    async ({ body: { otp, backupCode }, currentUser: { id, sessionId } }) => {
       const result = await mfaSetupService.disableMfa({
         userId: id,
-        sessionId,
         otp,
         backupCode,
-        clientIp,
-        userAgent,
       });
       return castToRes(result);
     },

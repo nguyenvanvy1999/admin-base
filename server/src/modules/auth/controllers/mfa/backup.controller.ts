@@ -25,18 +25,9 @@ export const backupController = new Elysia({
   .use(authCheck)
   .post(
     'generate',
-    async ({
-      body: { otp },
-      currentUser: { id, sessionId },
-      clientIp,
-      userAgent,
-    }) => {
+    async ({ body: { otp }, currentUser: { id } }) => {
       const result = await mfaBackupService.generateBackupCodes({
-        userId: id,
-        sessionId,
         otp,
-        clientIp,
-        userAgent,
       });
 
       return castToRes({
@@ -61,12 +52,10 @@ export const backupController = new Elysia({
   )
   .post(
     'verify',
-    async ({ body: { backupCode, mfaToken }, clientIp, userAgent }) => {
+    async ({ body: { backupCode, mfaToken } }) => {
       const loginRes = await mfaBackupService.verifyBackupCode({
         mfaToken,
         backupCode,
-        clientIp,
-        userAgent,
       });
 
       return castToRes(loginRes);

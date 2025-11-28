@@ -120,7 +120,10 @@ export class UserUtilService {
   }
 
   async completeLogin(
-    user: User & { roles: { roleId: string }[] },
+    user: Pick<
+      User,
+      'id' | 'email' | 'status' | 'created' | 'modified' | 'mfaTotpEnabled'
+    > & { roles: { roleId: string }[] },
     clientIp: string,
     userAgent: string,
     security?: SecurityDeviceInsight,

@@ -11,6 +11,7 @@ import {
 } from 'src/service/misc/setting.service';
 import {
   ACTIVITY_TYPE,
+  ctxStore,
   IdUtil,
   LOG_LEVEL,
   type LoginMethod,
@@ -25,8 +26,6 @@ export type SecurityCheckResult = SecurityDeviceInsight & {
 
 type EvaluateParams = {
   userId: string;
-  clientIp: string;
-  userAgent: string;
   method: LoginMethod;
 };
 
@@ -40,14 +39,17 @@ export class SecurityMonitorService {
   ) {}
 
   async evaluateLogin(params: EvaluateParams): Promise<SecurityCheckResult> {
-    const { userId, clientIp, userAgent, method } = params;
+    const { userId, method } = params;
     const securitySettings = await this.deps.settingService.loginSecurity();
 
     if (!securitySettings.deviceRecognition) {
       return { action: 'allow', deviceFingerprint: null, isNewDevice: false };
     }
-
-    const deviceFingerprint = this.generateFingerprint(userAgent, clientIp);
+    const { ip, ua } = ctxStore.getStore() ?? {};
+    if (!ua || !ip) {
+      return { action: 'allow', deviceFingerprint: null, isNewDevice: false };
+    }
+    const deviceFingerprint = this.generateFingerprint(ua, ip);
     const knownDevice = await this.deps.db.session.findFirst({
       where: { createdById: userId, deviceFingerprint },
       select: { id: true },
@@ -57,8 +59,6 @@ export class SecurityMonitorService {
 
     if (isNewDevice && securitySettings.auditWarning) {
       await this.recordUnknownDeviceWarning({
-        clientIp,
-        userAgent,
         userId,
         deviceFingerprint,
         method,
@@ -90,22 +90,20 @@ export class SecurityMonitorService {
 
   private async recordUnknownDeviceWarning(params: {
     userId: string;
-    clientIp: string;
-    userAgent: string;
     deviceFingerprint: string;
     method: LoginMethod;
   }): Promise<void> {
-    const { userId, clientIp, userAgent, deviceFingerprint, method } = params;
-
+    const { userId, deviceFingerprint, method } = params;
+    const { ip, ua } = ctxStore.getStore() ?? {};
     await this.deps.db.$transaction(async (tx: PrismaTx) => {
       await tx.securityEvent.create({
         data: {
           id: IdUtil.dbId(),
           userId,
           eventType: SecurityEventType.suspicious_activity,
-          ip: clientIp,
+          ip,
           metadata: {
-            userAgent,
+            userAgent: ua,
             deviceFingerprint,
             reason: 'unknown_device',
           },
@@ -116,9 +114,6 @@ export class SecurityMonitorService {
       await this.deps.auditLogService.push({
         type: ACTIVITY_TYPE.LOGIN,
         payload: { method, error: 'unknown_device' },
-        userId,
-        ip: clientIp,
-        userAgent,
         level: LOG_LEVEL.WARNING,
       });
     });

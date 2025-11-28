@@ -36,7 +36,7 @@ export const authBaseController = new Elysia({
   .use(reqMeta)
   .post(
     '/login',
-    async ({ body: { email, password }, clientIp, userAgent }) => {
+    async ({ body: { email, password }, clientIp }) => {
       const normalizedEmail = normalizeEmail(email);
       const rateLimitKey = `login:${clientIp}:${normalizedEmail}`;
       const currentAttempts =
@@ -59,8 +59,6 @@ export const authBaseController = new Elysia({
       const result = await authService.login({
         email,
         password,
-        clientIp,
-        userAgent,
       });
       return castToRes(result);
     },
@@ -80,13 +78,11 @@ export const authBaseController = new Elysia({
   )
   .post(
     '/login/mfa/confirm',
-    async ({ body: { mfaToken, loginToken, otp }, clientIp, userAgent }) => {
+    async ({ body: { mfaToken, loginToken, otp } }) => {
       const result = await authService.confirmMfaLogin({
         mfaToken,
         loginToken,
         otp,
-        clientIp,
-        userAgent,
       });
       return castToRes(result);
     },
@@ -106,12 +102,10 @@ export const authBaseController = new Elysia({
   )
   .post(
     '/login/mfa',
-    async ({ body: { mfaToken, otp }, clientIp, userAgent }) => {
+    async ({ body: { mfaToken, otp } }) => {
       const result = await authService.loginWithMfa({
         mfaToken,
         otp,
-        clientIp,
-        userAgent,
       });
       return castToRes(result);
     },
@@ -131,11 +125,9 @@ export const authBaseController = new Elysia({
   )
   .post(
     '/refresh-token',
-    async ({ clientIp, userAgent, body: { token } }) => {
+    async ({ body: { token } }) => {
       const result = await authService.refreshToken({
         token,
-        clientIp,
-        userAgent,
       });
       return castToRes(result);
     },
@@ -155,12 +147,10 @@ export const authBaseController = new Elysia({
   .use(authCheck)
   .post(
     '/logout',
-    async ({ currentUser, clientIp, userAgent }) => {
+    async ({ currentUser }) => {
       await authService.logout({
         userId: currentUser.id,
         sessionId: currentUser.sessionId,
-        clientIp,
-        userAgent,
       });
       return castToRes(null);
     },
@@ -178,12 +168,10 @@ export const authBaseController = new Elysia({
   )
   .post(
     '/logout/all',
-    async ({ currentUser, clientIp, userAgent }) => {
+    async ({ currentUser }) => {
       await authService.logoutAll({
         userId: currentUser.id,
         sessionId: currentUser.sessionId,
-        clientIp,
-        userAgent,
       });
       return castToRes(null);
     },
@@ -297,8 +285,6 @@ export const userAuthController = new Elysia({
       const result = await authService.register({
         email,
         password,
-        clientIp,
-        userAgent,
       });
       return castToRes(result);
     },
@@ -317,12 +303,10 @@ export const userAuthController = new Elysia({
   )
   .post(
     '/verify-account',
-    async ({ body: { otp, otpToken }, clientIp, userAgent }) => {
+    async ({ body: { otp, otpToken } }) => {
       await authService.verifyAccount({
         otpToken,
         otp,
-        clientIp,
-        userAgent,
       });
       return castToRes(null);
     },

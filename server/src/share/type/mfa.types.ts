@@ -24,27 +24,18 @@ export interface IMfaStatus {
 }
 
 export interface IGenerateBackupCodesParams {
-  userId: string;
-  sessionId: string;
   otp: string;
-  clientIp?: string;
-  userAgent?: string;
 }
 
 export interface IVerifyBackupCodeParams {
   mfaToken: string;
   backupCode: string;
-  clientIp?: string;
-  userAgent?: string;
 }
 
 export interface IDisableMfaParams {
   userId: string;
-  sessionId: string;
   otp?: string;
   backupCode?: string;
-  clientIp?: string;
-  userAgent?: string;
 }
 
 export interface IBackupCodesRemaining {

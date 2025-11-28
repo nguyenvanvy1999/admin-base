@@ -13,6 +13,7 @@ import { auditLogService } from 'src/service/misc/audit-log.service';
 import {
   ACTIVITY_TYPE,
   BadReqErr,
+  ctxStore,
   ErrCode,
   type IDisableMfaParams,
   IdUtil,
@@ -25,16 +26,12 @@ import {
 } from 'src/share';
 
 type SetupMfaRequestParams = {
-  userId?: string;
-  sessionId?: string;
   setupToken?: string;
 };
 
 type SetupMfaParams = {
   mfaToken: string;
   otp: string;
-  clientIp?: string;
-  userAgent?: string;
 };
 
 type ResetMfaParams = {
@@ -44,8 +41,9 @@ type ResetMfaParams = {
 
 export class MfaSetupService {
   setupMfaRequest(params: SetupMfaRequestParams) {
-    const { userId, sessionId, setupToken } = params;
+    const { setupToken } = params;
 
+    const { userId, sessionId } = ctxStore.getStore() ?? {};
     if (userId) {
       return this.setupMfaRequestForAuthenticatedUser(userId, sessionId);
     }
@@ -83,8 +81,6 @@ export class MfaSetupService {
     await auditLogService.push({
       type: ACTIVITY_TYPE.SETUP_MFA,
       payload: { method: 'totp', stage: 'request' },
-      userId,
-      sessionId,
     });
 
     return {
@@ -117,8 +113,6 @@ export class MfaSetupService {
     await auditLogService.push({
       type: ACTIVITY_TYPE.SETUP_MFA,
       payload: { method: 'totp', stage: 'request' },
-      userId: tokenData.userId,
-      sessionId: undefined,
     });
 
     return {
@@ -128,7 +122,7 @@ export class MfaSetupService {
   }
 
   async setupMfa(params: SetupMfaParams) {
-    const { mfaToken, otp, clientIp, userAgent } = params;
+    const { mfaToken, otp } = params;
 
     const cachedData = await mfaSetupCache.get(mfaToken);
     if (!cachedData) {
@@ -179,10 +173,6 @@ export class MfaSetupService {
     await auditLogService.push({
       type: ACTIVITY_TYPE.SETUP_MFA,
       payload: { method: 'totp', stage: 'confirm' },
-      userId: cachedData.userId,
-      sessionId: cachedData.sessionId,
-      ip: clientIp,
-      userAgent,
     });
 
     if (cachedData.sessionId) {
@@ -203,7 +193,7 @@ export class MfaSetupService {
   }
 
   async disableMfa(params: IDisableMfaParams) {
-    const { userId, sessionId, otp, backupCode, clientIp, userAgent } = params;
+    const { userId, otp, backupCode } = params;
 
     const mfaUser = await this.findMfaUserById(userId);
     if (!mfaUser.mfaTotpEnabled) {
@@ -245,10 +235,6 @@ export class MfaSetupService {
     await auditLogService.push({
       type: ACTIVITY_TYPE.RESET_MFA,
       payload: { method: 'disable' },
-      userId,
-      sessionId,
-      ip: clientIp,
-      userAgent,
     });
 
     return null;
@@ -282,7 +268,6 @@ export class MfaSetupService {
     await auditLogService.push({
       type: ACTIVITY_TYPE.RESET_MFA,
       payload: { method: 'reset' },
-      userId,
     });
 
     return null;

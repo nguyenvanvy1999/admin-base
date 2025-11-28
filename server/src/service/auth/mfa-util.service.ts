@@ -1,6 +1,6 @@
 import { type IMFACache, mfaCache } from 'src/config/cache';
 import { db } from 'src/config/db';
-import type { User } from 'src/generated';
+import { type User, UserStatus } from 'src/generated';
 import {
   BadReqErr,
   CoreErr,
@@ -9,7 +9,6 @@ import {
   type IUserMFA,
   NotFoundErr,
   type SecurityDeviceInsight,
-  UserStatus,
 } from 'src/share';
 
 type TokenGenerator = () => string;

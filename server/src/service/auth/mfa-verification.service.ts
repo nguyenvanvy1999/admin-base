@@ -6,6 +6,7 @@ import {
   mfaCache,
 } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
+import { UserStatus } from 'src/generated';
 import type { ILoginRes } from 'src/modules/auth/dtos';
 import {
   type AuditLogService,
@@ -15,9 +16,10 @@ import {
   ACTIVITY_TYPE,
   BadReqErr,
   ErrCode,
+  getClientIpAndUserAgent,
   MFA_ERROR_PAYLOADS,
   NotFoundErr,
-  UserStatus,
+  userResSelect,
 } from 'src/share';
 import {
   type UserUtilService as UserUtilServiceType,
@@ -32,8 +34,6 @@ type VerifyAndCompleteLoginParams = {
   mfaToken: string;
   otp?: string;
   backupCode?: string;
-  clientIp: string;
-  userAgent: string;
 };
 
 export class MfaVerificationService {
@@ -63,7 +63,8 @@ export class MfaVerificationService {
   async verifyAndCompleteLogin(
     params: VerifyAndCompleteLoginParams,
   ): Promise<ILoginRes> {
-    const { mfaToken, otp, backupCode, clientIp, userAgent } = params;
+    const { mfaToken, otp, backupCode } = params;
+    const { clientIp, userAgent } = getClientIpAndUserAgent();
 
     if (!otp && !backupCode) {
       throw new BadReqErr(ErrCode.ValidationError, {
@@ -94,20 +95,11 @@ export class MfaVerificationService {
     const user = await this.deps.db.user.findUnique({
       where: { id: cachedData.userId },
       select: {
-        id: true,
-        email: true,
-        status: true,
+        ...userResSelect,
         mfaTotpEnabled: true,
         totpSecret: true,
         backupCodes: true,
         backupCodesUsed: true,
-        created: true,
-        modified: true,
-        roles: {
-          select: {
-            roleId: true,
-          },
-        },
       },
     });
 
@@ -162,8 +154,6 @@ export class MfaVerificationService {
       const securityResult =
         await this.deps.securityMonitorService.evaluateLogin({
           userId: user.id,
-          clientIp,
-          userAgent,
           method: 'email',
         });
 
@@ -193,9 +183,6 @@ export class MfaVerificationService {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.LOGIN,
       payload: { method: otp ? 'email' : 'backup-code' },
-      userId: user.id,
-      ip: clientIp,
-      userAgent,
     });
 
     return loginRes;
@@ -259,9 +246,7 @@ export class MfaVerificationService {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.LOGIN,
       payload: MFA_ERROR_PAYLOADS[errorType],
-      userId,
-      ip: clientIp,
-      userAgent,
+      userId: userId ?? undefined,
     });
   }
 }

@@ -6,6 +6,7 @@ import {
   type IReqMeta,
   LANG,
 } from 'src/share';
+import { ctxStore, type ReqContext } from 'src/share/context/request-context';
 
 export const headersToCheck: IPHeaders[] = [
   'x-real-ip',
@@ -64,14 +65,27 @@ export const reqMeta = (app: Elysia) =>
     if (!headers.has('accept-language'))
       set.headers['accept-language'] = language;
     const ip = getIP(headers);
-    return {
-      id: requestId,
-      timezone,
-      timestamp,
-      language,
-      userAgent: headers.get('user-agent') ?? 'Unknown',
-      clientIp: ip ?? server?.requestIP(request)?.address ?? '',
-    } satisfies IReqMeta;
+    const clientIp = ip ?? server?.requestIP(request)?.address ?? '';
+    const userAgent = headers.get('user-agent') ?? 'Unknown';
+
+    const ctx: ReqContext = {
+      reqId: requestId,
+      ua: userAgent,
+      ip: clientIp,
+    };
+
+    return ctxStore.run(
+      ctx,
+      () =>
+        ({
+          id: requestId,
+          timezone,
+          timestamp,
+          language,
+          userAgent,
+          clientIp,
+        }) satisfies IReqMeta,
+    );
   });
 
 export const nocache = (app: Elysia) => {

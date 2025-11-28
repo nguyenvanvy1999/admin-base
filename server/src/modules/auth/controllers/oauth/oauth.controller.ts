@@ -18,11 +18,9 @@ export const oauthController = new Elysia({
   .use(reqMeta)
   .post(
     'google',
-    async ({ body: { idToken }, clientIp, userAgent }) => {
+    async ({ body: { idToken } }) => {
       const result = await oauthService.googleLogin({
         idToken,
-        clientIp,
-        userAgent,
       });
       return castToRes(result);
     },
