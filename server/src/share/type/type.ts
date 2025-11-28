@@ -11,32 +11,62 @@ import {
   type PurposeVerify,
 } from '../constant';
 
+export type MfaMethod =
+  | 'totp'
+  | 'email'
+  | 'backup-code'
+  | 'backup-codes'
+  | 'admin-reset'
+  | 'admin-disable'
+  | 'disable'
+  | 'reset';
+export type MfaStage = 'confirm' | 'request' | 'generate';
+export type PathType = 'worker' | 'cron';
+export type ActionType =
+  | 'mfa_setup_required'
+  | 'refresh_token'
+  | 'user-update'
+  | `otp_${string}`
+  | `otp_sent_${string}`;
+
+export interface BaseErrorPayload {
+  error?: string;
+}
+
+export interface BaseActorActionPayload {
+  actorId?: string;
+  targetUserId?: string;
+  reason?: string;
+}
+
 export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
   [ACTIVITY_TYPE.LOGIN]: {
     method: LoginMethod;
-    error?: string;
-    action?: string;
-  };
+    action?: ActionType;
+  } & BaseErrorPayload;
+
   [ACTIVITY_TYPE.REGISTER]: {
     method: LoginMethod;
-    error?: string;
-  };
+  } & BaseErrorPayload;
+
   [ACTIVITY_TYPE.LOGOUT]: Record<string, never>;
-  [ACTIVITY_TYPE.CHANGE_PASSWORD]: Record<string, never>;
+
+  [ACTIVITY_TYPE.CHANGE_PASSWORD]: BaseErrorPayload;
+
   [ACTIVITY_TYPE.SETUP_MFA]: {
-    method: string;
-    stage: 'confirm' | 'request' | 'generate';
-    error?: string;
-  };
+    method: MfaMethod;
+    stage: MfaStage;
+  } & BaseErrorPayload;
+
   [ACTIVITY_TYPE.LINK_OAUTH]: {
     provider: OAUTH;
     providerId: string;
-    error?: string;
-  };
+  } & BaseErrorPayload;
 
   [ACTIVITY_TYPE.DEL_ROLE]: {
     roleIds: string[];
   };
+
   [ACTIVITY_TYPE.CREATE_ROLE]: {
     id: string;
     description: string | null;
@@ -44,6 +74,7 @@ export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
     permissionIds: string[];
     playerIds: string[];
   };
+
   [ACTIVITY_TYPE.UPDATE_ROLE]: {
     id: string;
     description: string | null;
@@ -55,21 +86,22 @@ export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
   [ACTIVITY_TYPE.REVOKE_SESSION]: {
     sessionId: string;
   };
+
   [ACTIVITY_TYPE.RESET_MFA]: {
-    method?: string;
-    reason?: string;
-    actorId?: string;
-    targetUserId?: string;
+    method?: MfaMethod;
     previouslyEnabled?: boolean;
-    error?: string;
-  };
+  } & BaseErrorPayload &
+    BaseActorActionPayload;
+
   [ACTIVITY_TYPE.CREATE_IP_WHITELIST]: {
     ip: string;
     note?: string;
   };
+
   [ACTIVITY_TYPE.DEL_IP_WHITELIST]: {
     ips: string[];
   };
+
   [ACTIVITY_TYPE.UPDATE_SETTING]: {
     key: string;
     value: string;
@@ -81,45 +113,39 @@ export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
     roleIds: string[];
     username: string;
   };
+
   [ACTIVITY_TYPE.UPDATE_USER]: {
     id: string;
-    reason?: string;
-    actorId?: string;
-    action?: string;
+    action?: ActionType;
     changes?: Record<string, { previous: unknown; next: unknown }>;
-  };
+  } & BaseActorActionPayload;
+
   [ACTIVITY_TYPE.INTERNAL_ERROR]: Record<string, any>;
+
   [ACTIVITY_TYPE.P2P_ORDER_EXPIRED]: {
     orderId: string;
     sellerId: string;
     buyerId: string;
     expiresAt: string;
     refundTransactionId: string;
-    path: 'worker' | 'cron';
+    path: PathType;
   };
+
   [ACTIVITY_TYPE.P2P_ORDER_EXPIRE_FAILED]: {
     orderId: string;
+    path: PathType;
     error: string;
-    path: 'worker' | 'cron';
   };
 }
 
 export type AuditLogEntry<T extends ACTIVITY_TYPE = ACTIVITY_TYPE> = {
-  /** User ID who performed the action */
   userId?: string | null;
-  /** Session ID of the request */
   sessionId?: string | null;
-  /** IP address of the request */
   ip?: string | null;
-  /** User agent string */
   userAgent?: string | null;
-  /** Activity type */
   type: T;
-  /** Activity-specific payload data */
   payload: ActivityTypeMap[T];
-  /** Log level */
   level?: LOG_LEVEL;
-  /** Timestamp (defaults to now) */
   timestamp?: Date;
   requestId?: string | null;
   traceId?: string | null;

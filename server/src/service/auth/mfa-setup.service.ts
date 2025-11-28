@@ -307,17 +307,16 @@ export class MfaSetupService {
     const usedCodes = user.backupCodesUsed
       ? (JSON.parse(user.backupCodesUsed) as string[])
       : [];
-    const hashedCode = this.hashBackupCode(backupCode);
+    const hashedCode = crypto
+      .createHash('sha256')
+      .update(backupCode)
+      .digest('hex');
 
     if (usedCodes.includes(hashedCode)) {
       throw new BadReqErr(ErrCode.BackupCodeAlreadyUsed);
     }
 
     return backupCodes.includes(hashedCode);
-  }
-
-  private hashBackupCode(code: string): string {
-    return crypto.createHash('sha256').update(code).digest('hex');
   }
 
   private async findMfaUserById(userId: string): Promise<IMfaUser> {

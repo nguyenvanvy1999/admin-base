@@ -76,7 +76,7 @@ export class MfaVerificationService {
     const attempts = (await this.deps.mfaAttemptCache.get(attemptKey)) ?? 0;
 
     if (attempts >= this.MAX_MFA_ATTEMPTS) {
-      await this.logMfaError('TOO_MANY_ATTEMPTS', null, clientIp, userAgent);
+      await this.logMfaError('TOO_MANY_ATTEMPTS');
       throw new BadReqErr(ErrCode.TooManyAttempts);
     }
 
@@ -88,7 +88,7 @@ export class MfaVerificationService {
 
     const cachedData = await this.deps.mfaCache.get(mfaToken);
     if (!cachedData) {
-      await this.logMfaError('SESSION_EXPIRED', null, clientIp, userAgent);
+      await this.logMfaError('SESSION_EXPIRED');
       throw new BadReqErr(ErrCode.SessionExpired);
     }
 
@@ -104,17 +104,12 @@ export class MfaVerificationService {
     });
 
     if (!user) {
-      await this.logMfaError(
-        'USER_NOT_FOUND',
-        cachedData.userId,
-        clientIp,
-        userAgent,
-      );
+      await this.logMfaError('USER_NOT_FOUND', cachedData.userId);
       throw new NotFoundErr(ErrCode.UserNotFound);
     }
 
     if (user.status !== UserStatus.active) {
-      await this.logMfaError('USER_NOT_ACTIVE', user.id, clientIp, userAgent);
+      await this.logMfaError('USER_NOT_ACTIVE', user.id);
       throw new BadReqErr(ErrCode.UserNotActive);
     }
 
@@ -122,7 +117,7 @@ export class MfaVerificationService {
 
     if (otp) {
       if (!user.totpSecret) {
-        await this.logMfaError('USER_NOT_FOUND', user.id, clientIp, userAgent);
+        await this.logMfaError('USER_NOT_FOUND', user.id);
         throw new NotFoundErr(ErrCode.UserNotFound);
       }
 
@@ -132,18 +127,13 @@ export class MfaVerificationService {
       });
 
       if (!isValid) {
-        await this.logMfaError('INVALID_OTP', user.id, clientIp, userAgent);
+        await this.logMfaError('INVALID_OTP', user.id);
         throw new BadReqErr(ErrCode.InvalidOtp);
       }
     } else if (backupCode) {
       isValid = await this.verifyBackupCode(user, backupCode);
       if (!isValid) {
-        await this.logMfaError(
-          'INVALID_BACKUP_CODE',
-          user.id,
-          clientIp,
-          userAgent,
-        );
+        await this.logMfaError('INVALID_BACKUP_CODE', user.id);
         throw new BadReqErr(ErrCode.InvalidBackupCode);
       }
     }
@@ -158,12 +148,7 @@ export class MfaVerificationService {
         });
 
       if (securityResult.action === 'block') {
-        await this.logMfaError(
-          'SECURITY_BLOCKED',
-          user.id,
-          clientIp,
-          userAgent,
-        );
+        await this.logMfaError('SECURITY_BLOCKED', user.id);
         throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
       }
 
@@ -239,14 +224,12 @@ export class MfaVerificationService {
 
   private async logMfaError(
     errorType: keyof typeof MFA_ERROR_PAYLOADS,
-    userId: string | null,
-    clientIp: string,
-    userAgent: string,
+    userId?: string,
   ): Promise<void> {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.LOGIN,
       payload: MFA_ERROR_PAYLOADS[errorType],
-      userId: userId ?? undefined,
+      userId,
     });
   }
 }
