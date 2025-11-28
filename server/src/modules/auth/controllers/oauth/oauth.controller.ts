@@ -1,5 +1,4 @@
 import { Elysia, t } from 'elysia';
-import { reqMeta } from 'src/config/request';
 import {
   GoogleLoginRequestDto,
   LinkTelegramRequestDto,
@@ -19,7 +18,6 @@ export const oauthController = new Elysia({
   prefix: 'auth/oauth',
   tags: [DOC_TAG.OAUTH],
 })
-  .use(reqMeta)
   .post(
     'google',
     async ({ body }) => {

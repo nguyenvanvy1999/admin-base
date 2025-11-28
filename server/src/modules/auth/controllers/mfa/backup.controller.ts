@@ -1,5 +1,4 @@
 import { Elysia } from 'elysia';
-import { reqMeta } from 'src/config/request';
 import {
   BackupCodesRemainingResponseDto,
   BackupCodesResponseDto,
@@ -21,7 +20,6 @@ export const backupController = new Elysia({
   prefix: 'auth/mfa/backup-codes',
   tags: [DOC_TAG.MFA],
 })
-  .use(reqMeta)
   .use(authCheck)
   .post(
     'generate',

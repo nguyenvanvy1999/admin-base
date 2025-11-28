@@ -1,5 +1,4 @@
 import { Elysia, t } from 'elysia';
-import { reqMeta } from 'src/config/request';
 import {
   ChangePasswordRequestDto,
   ConfirmMfaLoginRequestDto,
@@ -28,7 +27,6 @@ export const authBaseController = new Elysia({
   prefix: '/auth',
   tags: ['auth'],
 })
-  .use(reqMeta)
   .post(
     '/login',
     async ({ body }) => castToRes(await authService.login(body)),
@@ -197,7 +195,6 @@ export const userAuthController = new Elysia({
   prefix: '/auth/user',
   tags: ['user-auth'],
 })
-  .use(reqMeta)
   .post(
     '/register',
     async ({ body }) => castToRes(await authService.register(body)),

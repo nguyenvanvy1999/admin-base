@@ -1,5 +1,4 @@
 import { Elysia, t } from 'elysia';
-import { reqMeta } from 'src/config/request';
 import {
   DisableMfaRequestDto,
   MfaStatusResponseDto,
@@ -21,7 +20,6 @@ export const mfaController = new Elysia({
   prefix: 'auth/mfa',
   tags: [DOC_TAG.MFA],
 })
-  .use(reqMeta)
   .post(
     'setup/request',
     async ({ body }) => castToRes(await mfaSetupService.setupMfaRequest(body)),

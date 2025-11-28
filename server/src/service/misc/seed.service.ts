@@ -34,8 +34,6 @@ type SeedUserParams = {
   baseCurrencyId: string;
 };
 
-type PasswordPayload = Awaited<ReturnType<PasswordService['createPassword']>>;
-
 export class SeedService {
   constructor(
     private readonly deps: {
@@ -314,17 +312,9 @@ export class SeedService {
   }
 
   private async seedUser(params: SeedUserParams): Promise<void> {
-    const existingUser = await this.deps.db.user.findUnique({
-      where: { id: params.id },
-      select: { id: true, baseCurrencyId: true },
-    });
-
-    let passwordPayload: PasswordPayload | undefined;
-    if (!existingUser) {
-      passwordPayload = await this.deps.passwordService.createPassword(
-        params.password,
-      );
-    }
+    const passwordPayload = await this.deps.passwordService.createPassword(
+      params.password,
+    );
 
     await this.deps.db.user.upsert({
       where: { id: params.id },
@@ -335,7 +325,7 @@ export class SeedService {
         status: UserStatus.active,
         emailVerified: true,
         baseCurrencyId: params.baseCurrencyId,
-        ...(passwordPayload ?? ({} as PasswordPayload)),
+        ...passwordPayload,
         roles: {
           create: {
             id: IdUtil.dbId(),
@@ -346,7 +336,6 @@ export class SeedService {
       update: {
         status: UserStatus.active,
         emailVerified: true,
-        baseCurrencyId: existingUser?.baseCurrencyId ?? params.baseCurrencyId,
         roles: {
           connectOrCreate: {
             where: {

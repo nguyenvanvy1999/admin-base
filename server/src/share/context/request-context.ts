@@ -1,25 +1,20 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { BadReqErr, ErrCode } from '../error';
+import type { IReqMeta } from '../type';
 
-export type ReqContext = {
-  reqId: string;
-  ua: string;
-  ip: string;
-  userId?: string;
-  sessionId?: string;
-};
-
-export const ctxStore = new AsyncLocalStorage<ReqContext>();
+export const ctxStore = new AsyncLocalStorage<
+  IReqMeta & { userId?: string; sessionId?: string }
+>();
 
 export function getIpAndUa(): {
   clientIp: string;
   userAgent: string;
 } {
-  const { ip, ua } = ctxStore.getStore() ?? {};
-  if (!ip || !ua) {
+  const { clientIp, userAgent } = ctxStore.getStore() ?? {};
+  if (!clientIp || !userAgent) {
     throw new BadReqErr(ErrCode.InternalError, {
       errors: 'Client IP or User Agent not available',
     });
   }
-  return { clientIp: ip, userAgent: ua };
+  return { clientIp, userAgent };
 }

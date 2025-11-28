@@ -30,6 +30,7 @@ import { adminAuthMiddleware } from 'src/service/auth/auth.middleware';
 import { gracefulShutdownService } from 'src/service/misc/graceful-shutdown.service';
 import { httpLoggerMiddleware } from 'src/service/misc/http-logger.middleware';
 import { APP_ENV } from 'src/share';
+import { reqMeta } from '../../config/request';
 
 export class BackendServerService {
   constructor(
@@ -92,6 +93,7 @@ export class BackendServerService {
                 ]
               : []),
           ])
+          .use(reqMeta)
           .use(authBaseController)
           .use(userAuthController)
           .use(otpController)
