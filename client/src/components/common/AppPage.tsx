@@ -1,14 +1,22 @@
-import type { BreadcrumbProps } from 'antd';
-import { Flex, type FlexProps } from 'antd';
-import type { ReactNode } from 'react';
-import { PageHeader } from 'src/components/common/PageHeader';
+import {
+  PageContainer,
+  type PageContainerProps,
+} from '@ant-design/pro-components';
+import { Flex } from 'antd';
+import type { CSSProperties, ReactNode } from 'react';
 
-export interface AppPageProps extends Omit<FlexProps, 'children' | 'title'> {
+type PageHeaderConfig = NonNullable<PageContainerProps['header']>;
+
+export interface AppPageProps
+  extends Omit<PageContainerProps, 'header' | 'breadcrumb'> {
   title?: ReactNode;
   subtitle?: ReactNode;
   extra?: ReactNode;
-  breadcrumb?: BreadcrumbProps['items'];
+  breadcrumb?: PageHeaderConfig['breadcrumb'];
+  gap?: number;
   children: ReactNode;
+  header?: PageHeaderConfig;
+  childrenContentStyle?: CSSProperties;
 }
 
 export function AppPage({
@@ -16,22 +24,42 @@ export function AppPage({
   subtitle,
   extra,
   breadcrumb,
-  children,
-  vertical = true,
   gap = 24,
-  ...flexProps
+  children,
+  header,
+  childrenContentStyle,
+  ...pageProps
 }: AppPageProps) {
+  const computedHeader =
+    header ??
+    (title || subtitle || extra || breadcrumb
+      ? {
+          title,
+          subTitle: subtitle,
+          extra,
+          breadcrumb,
+        }
+      : undefined);
+
   return (
-    <Flex vertical={vertical} gap={gap} {...flexProps}>
-      {(title || subtitle || extra) && (
-        <PageHeader
-          title={title}
-          subtitle={subtitle}
-          extra={extra}
-          breadcrumb={breadcrumb}
-        />
+    <PageContainer
+      ghost
+      header={computedHeader}
+      childrenContentStyle={
+        childrenContentStyle ?? {
+          paddingBlock: 24,
+          paddingInline: 0,
+        }
+      }
+      {...pageProps}
+    >
+      {gap ? (
+        <Flex vertical gap={gap}>
+          {children}
+        </Flex>
+      ) : (
+        children
       )}
-      {children}
-    </Flex>
+    </PageContainer>
   );
 }

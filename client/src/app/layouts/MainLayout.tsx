@@ -7,8 +7,8 @@ import {
   TeamOutlined,
 } from '@ant-design/icons';
 import type { ProLayoutProps } from '@ant-design/pro-components';
-import { PageContainer, ProLayout } from '@ant-design/pro-components';
-import { Button, Dropdown, Flex, Switch, Tooltip } from 'antd';
+import { ProLayout } from '@ant-design/pro-components';
+import { Button, Dropdown, Switch, Tooltip } from 'antd';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation } from 'react-router-dom';
@@ -88,11 +88,7 @@ export default function MainLayout() {
         size: 'small',
       }}
     >
-      <PageContainer>
-        <Flex vertical gap={24} style={{ minHeight: 'calc(100vh - 200px)' }}>
-          <Outlet />
-        </Flex>
-      </PageContainer>
+      <Outlet />
     </ProLayout>
   );
 }

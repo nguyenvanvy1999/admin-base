@@ -1,9 +1,18 @@
-import { Button, Card, Flex, List, Space, Tag, Typography } from 'antd';
+import { ProCard, ProList } from '@ant-design/pro-components';
+import { Button, Space, Tag, Typography } from 'antd';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { AppDrawer } from 'src/components/common/AppDrawer';
-import { PageHeader } from 'src/components/common/PageHeader';
+import { AppPage } from 'src/components/common/AppPage';
 
-const workstreams = [
+type Workstream = {
+  id: string;
+  title: string;
+  owner: string;
+  status: string;
+};
+
+const workstreams: Workstream[] = [
   {
     id: 'ws-1',
     title: 'Chuẩn hoá dữ liệu',
@@ -28,40 +37,44 @@ export default function WorkspacePage() {
   const [open, setOpen] = useState(false);
 
   return (
-    <Flex vertical gap={24}>
-      <PageHeader
-        title="Workspaces"
-        subtitle="Trang ví dụ cho Drawer/Modal của Ant Design"
-        extra={
-          <Space>
-            <Button onClick={() => setOpen(true)} type="primary">
-              Tạo workspace
-            </Button>
-          </Space>
-        }
-      />
-      <Card>
-        <List
+    <AppPage
+      title="Workspaces"
+      subtitle="Trang ví dụ cho Drawer/Modal của Ant Design"
+      extra={
+        <Space>
+          <Button onClick={() => setOpen(true)} type="primary">
+            Tạo workspace
+          </Button>
+        </Space>
+      }
+    >
+      <ProCard>
+        <ProList<Workstream>
+          rowKey="id"
+          split
           dataSource={workstreams}
-          renderItem={(item) => (
-            <List.Item>
-              <Flex
-                align="center"
-                justify="space-between"
-                style={{ width: '100%' }}
-              >
-                <div>
-                  <Typography.Text strong>{item.title}</Typography.Text>
-                  <Typography.Paragraph type="secondary" style={{ margin: 0 }}>
-                    {item.owner}
-                  </Typography.Paragraph>
-                </div>
-                <Tag color="processing">{item.status}</Tag>
-              </Flex>
-            </List.Item>
-          )}
+          metas={{
+            title: {
+              dataIndex: 'title',
+              render: (dom: ReactNode) => (
+                <Typography.Text strong>{dom}</Typography.Text>
+              ),
+            },
+            description: {
+              render: (_, record) => (
+                <Typography.Text type="secondary">
+                  {record.owner}
+                </Typography.Text>
+              ),
+            },
+            extra: {
+              render: (_: ReactNode, record: Workstream) => (
+                <Tag color="processing">{record.status}</Tag>
+              ),
+            },
+          }}
         />
-      </Card>
+      </ProCard>
 
       <AppDrawer
         title="Workspace mới"
@@ -81,6 +94,6 @@ export default function WorkspacePage() {
           có thể nhúng Form ở đây.
         </Typography.Paragraph>
       </AppDrawer>
-    </Flex>
+    </AppPage>
   );
 }

@@ -1,8 +1,9 @@
 import type { ProColumns } from '@ant-design/pro-components';
-import { Button, Card, Col, Flex, Row, Statistic, Tag, Typography } from 'antd';
+import { ProCard, StatisticCard } from '@ant-design/pro-components';
+import { Button, Tag, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
-import { PageHeader } from 'src/components/common/PageHeader';
 import { useHealthcheck } from 'src/hooks/api/useHealthcheck';
 import { useNotify } from 'src/hooks/useNotify';
 
@@ -84,70 +85,64 @@ export default function HomePage() {
   const { t } = useTranslation();
 
   return (
-    <Flex vertical gap={24}>
-      <PageHeader
-        title={t('dashboard.title')}
-        subtitle={t('dashboard.subtitle')}
-        extra={
-          <Button
-            type="primary"
-            onClick={() => notify.success(t('dashboard.notificationMessage'))}
-          >
-            {t('dashboard.sendSampleNotification')}
-          </Button>
-        }
-      />
+    <AppPage
+      title={t('dashboard.title')}
+      subtitle={t('dashboard.subtitle')}
+      extra={
+        <Button
+          type="primary"
+          onClick={() => notify.success(t('dashboard.notificationMessage'))}
+        >
+          {t('dashboard.sendSampleNotification')}
+        </Button>
+      }
+    >
+      <ProCard ghost gutter={16} wrap>
+        <StatisticCard
+          colSpan={{ xs: 24, sm: 12, lg: 8 }}
+          statistic={{
+            title: t('dashboard.aumTitle'),
+            prefix: '$',
+            precision: 2,
+            value: 128.6,
+            suffix: 'M',
+          }}
+        />
+        <StatisticCard
+          colSpan={{ xs: 24, sm: 12, lg: 8 }}
+          statistic={{
+            title: t('dashboard.ytdReturnTitle'),
+            value: 9.42,
+            precision: 2,
+            suffix: '%',
+          }}
+        />
+        <StatisticCard
+          colSpan={{ xs: 24, sm: 12, lg: 8 }}
+          statistic={{
+            title: t('dashboard.portfolioCountTitle'),
+            value: 24,
+          }}
+        />
+      </ProCard>
 
-      <Row gutter={16}>
-        <Col span={8}>
-          <Card>
-            <Statistic
-              title={t('dashboard.aumTitle')}
-              prefix="$"
-              precision={2}
-              value={128.6}
-              suffix="M"
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card>
-            <Statistic
-              title={t('dashboard.ytdReturnTitle')}
-              value={9.42}
-              precision={2}
-              suffix="%"
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card>
-            <Statistic title={t('dashboard.portfolioCountTitle')} value={24} />
-          </Card>
-        </Col>
-      </Row>
-
-      <Card>
-        <Typography.Title level={4}>
-          {t('dashboard.systemStatusTitle')}
-        </Typography.Title>
-        <Typography.Paragraph type="secondary">
+      <ProCard title={t('dashboard.systemStatusTitle')}>
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
           {t('dashboard.apiHealthcheckLabel')}{' '}
           {isLoading
             ? t('dashboard.checking')
             : (data?.status ?? t('dashboard.unknown'))}
         </Typography.Paragraph>
-      </Card>
+      </ProCard>
 
-      <Card>
+      <ProCard title={t('dashboard.tableTitle')} bodyStyle={{ padding: 0 }}>
         <AppTable<PortfolioRow>
           dataSource={mockData}
           columns={columns}
-          headerTitle={t('dashboard.tableTitle')}
           pagination={false}
           search={false}
         />
-      </Card>
-    </Flex>
+      </ProCard>
+    </AppPage>
   );
 }

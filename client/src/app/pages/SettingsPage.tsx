@@ -1,12 +1,13 @@
 import {
+  ProCard,
   ProForm,
   ProFormDigit,
   ProFormSelect,
   ProFormSwitch,
 } from '@ant-design/pro-components';
-import { Card, Flex, Typography } from 'antd';
+import { Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { PageHeader } from 'src/components/common/PageHeader';
+import { AppPage } from 'src/components/common/AppPage';
 
 type SettingForm = {
   timezone: string;
@@ -18,12 +19,11 @@ export default function SettingsPage() {
   const { t } = useTranslation();
 
   return (
-    <Flex vertical gap={24}>
-      <PageHeader
-        title={t('settingsPage.title')}
-        subtitle={t('settingsPage.subtitle')}
-      />
-      <Card>
+    <AppPage
+      title={t('settingsPage.title')}
+      subtitle={t('settingsPage.subtitle')}
+    >
+      <ProCard>
         <ProForm<SettingForm>
           layout="vertical"
           initialValues={{
@@ -72,7 +72,7 @@ export default function SettingsPage() {
             {t('settingsPage.description')}
           </Typography.Paragraph>
         </ProForm>
-      </Card>
-    </Flex>
+      </ProCard>
+    </AppPage>
   );
 }

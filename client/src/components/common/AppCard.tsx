@@ -1,7 +1,7 @@
-import { Card, type CardProps } from 'antd';
+import { ProCard, type ProCardProps } from '@ant-design/pro-components';
 import type { ReactNode } from 'react';
 
-export interface AppCardProps extends CardProps {
+export interface AppCardProps extends ProCardProps {
   loading?: boolean;
   empty?: boolean;
   emptyText?: ReactNode;
@@ -15,7 +15,7 @@ export function AppCard({
   ...props
 }: AppCardProps) {
   return (
-    <Card loading={loading} {...props}>
+    <ProCard loading={loading} {...props}>
       {empty ? (
         <div
           style={{
@@ -29,6 +29,6 @@ export function AppCard({
       ) : (
         children
       )}
-    </Card>
+    </ProCard>
   );
 }

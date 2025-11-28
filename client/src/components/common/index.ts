@@ -9,5 +9,4 @@ export { CrudTable } from './CrudTable';
 export { ErrorBoundary } from './ErrorBoundary';
 export { FormModal } from './FormModal';
 export { FullScreenLoader } from './FullScreenLoader';
-export { PageHeader } from './PageHeader';
 export { ProtectedRoute } from './ProtectedRoute';
