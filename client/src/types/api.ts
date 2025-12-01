@@ -5,10 +5,13 @@ export interface ApiResponse<T = unknown> {
 }
 
 export interface ApiErrorResponse {
-  message: string;
+  message?: string;
+  code?: string;
   statusCode: number;
+  success?: boolean;
   error?: string;
   details?: Record<string, unknown>;
+  timestamp?: string;
 }
 
 export interface PaginationParams {

@@ -55,7 +55,10 @@ interface UseAuthFlowResult {
   switchToOtp: () => void;
 }
 
-function isTooManyAttempts(message?: string): boolean {
+function isTooManyAttempts(code?: string, message?: string): boolean {
+  if (code === 'too-many-attempts') {
+    return true;
+  }
   if (!message) {
     return false;
   }
@@ -115,7 +118,11 @@ export function useAuthFlow(): UseAuthFlowResult {
     },
     onError: (error) => {
       const parsed = parseApiError(error);
+      const code = parsed.code ?? parsed.response?.code;
       setErrors((prev) => ({ ...prev, credentials: parsed.message }));
+      if (isTooManyAttempts(code, parsed.message)) {
+        setChallengeLocked(true);
+      }
     },
   });
 
@@ -161,7 +168,9 @@ export function useAuthFlow(): UseAuthFlowResult {
     onError: (error) => {
       const parsed = parseApiError(error);
       setErrors((prev) => ({ ...prev, mfa: parsed.message }));
-      if (isTooManyAttempts(parsed.message)) {
+      if (
+        isTooManyAttempts(parsed.code ?? parsed.response?.code, parsed.message)
+      ) {
         setChallengeLocked(true);
       }
     },
@@ -179,7 +188,9 @@ export function useAuthFlow(): UseAuthFlowResult {
     onError: (error) => {
       const parsed = parseApiError(error);
       setErrors((prev) => ({ ...prev, mfa: parsed.message }));
-      if (isTooManyAttempts(parsed.message)) {
+      if (
+        isTooManyAttempts(parsed.code ?? parsed.response?.code, parsed.message)
+      ) {
         setChallengeLocked(true);
       }
     },
@@ -194,7 +205,9 @@ export function useAuthFlow(): UseAuthFlowResult {
     onError: (error) => {
       const parsed = parseApiError(error);
       setErrors((prev) => ({ ...prev, backup: parsed.message }));
-      if (isTooManyAttempts(parsed.message)) {
+      if (
+        isTooManyAttempts(parsed.code ?? parsed.response?.code, parsed.message)
+      ) {
         setBackupLocked(true);
       }
     },
