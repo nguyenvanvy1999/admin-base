@@ -1,11 +1,33 @@
 import { t } from 'elysia';
 import { LockoutReason, UserStatus } from 'src/generated';
+import { PaginatedDto, PaginationReqDto } from 'src/share';
 
 const reasonField = t.Optional(
   t.String({
     minLength: 1,
     maxLength: 512,
     description: 'Optional reason that will be recorded in the audit log.',
+  }),
+);
+
+const displayNameField = t.Nullable(
+  t.String({
+    minLength: 1,
+    maxLength: 128,
+    description: 'Display name shown inside the admin tools.',
+  }),
+);
+
+const roleIdsField = t.Array(t.String({ minLength: 1 }), {
+  minItems: 0,
+  description: 'Complete list of role ids that should belong to the user.',
+});
+
+const isoDateField = t.Date({ format: 'date-time' });
+
+const roleListDto = t.Array(
+  t.Object({
+    roleId: t.String(),
   }),
 );
 
@@ -19,21 +41,8 @@ export const AdminUserUpdateDto = t.Object({
       description: 'Target status that will be applied to the user account.',
     }),
   ),
-  name: t.Optional(
-    t.Nullable(
-      t.String({
-        minLength: 1,
-        maxLength: 128,
-        description: 'Display name shown inside the admin tools.',
-      }),
-    ),
-  ),
-  roleIds: t.Optional(
-    t.Array(t.String({ minLength: 1 }), {
-      minItems: 0,
-      description: 'Complete list of role ids that should belong to the user.',
-    }),
-  ),
+  name: t.Optional(displayNameField),
+  roleIds: t.Optional(roleIdsField),
   lockoutUntil: t.Optional(
     t.Nullable(
       t.Date({
@@ -75,4 +84,81 @@ export const AdminUserUpdateDto = t.Object({
 export const AdminUserActionResDto = t.Object({
   userId: t.String(),
   auditLogId: t.String(),
+});
+
+export const AdminUserCreateDto = t.Object({
+  email: t.String({
+    format: 'email',
+    minLength: 5,
+    maxLength: 128,
+    description: 'Unique email used for login.',
+  }),
+  password: t.String({
+    minLength: 8,
+    maxLength: 128,
+    description: 'Initial password that satisfies password policy.',
+  }),
+  name: t.Optional(displayNameField),
+  roleIds: t.Optional(roleIdsField),
+  baseCurrencyId: t.Optional(
+    t.String({
+      minLength: 1,
+      description:
+        'Currency id that will be used as the default base currency.',
+    }),
+  ),
+  status: t.Optional(
+    t.Enum(UserStatus, {
+      description: 'Initial status for the created account.',
+    }),
+  ),
+  emailVerified: t.Optional(
+    t.Boolean({
+      description: 'Overwrite email verification flag.',
+    }),
+  ),
+});
+
+export const AdminUserListQueryDto = t.Intersect([
+  PaginationReqDto,
+  t.Object({
+    email: t.Optional(
+      t.String({
+        minLength: 1,
+        maxLength: 128,
+        description: 'Filter by partial email match.',
+      }),
+    ),
+    status: t.Optional(t.Enum(UserStatus)),
+    roleId: t.Optional(t.String({ minLength: 1 })),
+  }),
+]);
+
+const AdminUserSummaryDto = t.Object({
+  id: t.String(),
+  email: t.String({ format: 'email' }),
+  status: t.Enum(UserStatus),
+  name: displayNameField,
+  created: isoDateField,
+  emailVerified: t.Boolean(),
+  baseCurrencyId: t.String(),
+  roles: roleListDto,
+});
+
+export const AdminUserListResDto = PaginatedDto(AdminUserSummaryDto);
+
+export const AdminUserDetailResDto = t.Object({
+  id: t.String(),
+  email: t.String({ format: 'email' }),
+  status: t.Enum(UserStatus),
+  name: displayNameField,
+  created: isoDateField,
+  modified: isoDateField,
+  emailVerified: t.Boolean(),
+  baseCurrencyId: t.String(),
+  lockoutUntil: t.Nullable(isoDateField),
+  lockoutReason: t.Nullable(t.Enum(LockoutReason)),
+  passwordAttempt: t.Integer(),
+  passwordExpired: t.Nullable(isoDateField),
+  roles: roleListDto,
 });

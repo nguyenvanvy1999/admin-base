@@ -1,10 +1,29 @@
 import { db, type IDb } from 'src/config/db';
-import { UserStatus, type UserUncheckedUpdateInput } from 'src/generated';
+import {
+  type Prisma,
+  UserStatus,
+  type UserUncheckedUpdateInput,
+} from 'src/generated';
 import type {
   AdminUserActionResDto,
+  AdminUserCreateDto,
+  AdminUserDetailResDto,
+  AdminUserListQueryDto,
   AdminUserMfaActionDto,
   AdminUserUpdateDto,
 } from 'src/modules/admin/dtos';
+import {
+  type UserUtilService,
+  userUtilService,
+} from 'src/service/auth/auth-util.service';
+import {
+  type PasswordService,
+  passwordService,
+} from 'src/service/auth/password.service';
+import {
+  type PasswordValidationService,
+  passwordValidationService,
+} from 'src/service/auth/password-validation.service';
 import {
   type SessionService,
   sessionService,
@@ -13,7 +32,18 @@ import {
   type AuditLogService,
   auditLogService,
 } from 'src/service/misc/audit-log.service';
-import { ACTIVITY_TYPE, ErrCode, NotFoundErr } from 'src/share';
+import {
+  ACTIVITY_TYPE,
+  BadReqErr,
+  DB_PREFIX,
+  DEFAULT_BASE_CURRENCY_ID,
+  defaultRoles,
+  ErrCode,
+  IdUtil,
+  NotFoundErr,
+  normalizeEmail,
+  type PrismaTx,
+} from 'src/share';
 
 type UserActionResult = typeof AdminUserActionResDto.static;
 type BaseUserActionParams = {
@@ -21,6 +51,8 @@ type BaseUserActionParams = {
   actorId: string;
 } & typeof AdminUserMfaActionDto.static;
 type UpdateUserParams = BaseUserActionParams & typeof AdminUserUpdateDto.static;
+type CreateUserParams = { actorId: string } & typeof AdminUserCreateDto.static;
+type ListUsersParams = typeof AdminUserListQueryDto.static;
 
 const updateUserSelect = {
   id: true,
@@ -40,12 +72,170 @@ export class AdminUserService {
       db: IDb;
       sessionService: SessionService;
       auditLogService: AuditLogService;
+      passwordService: PasswordService;
+      passwordValidationService: PasswordValidationService;
+      userUtilService: UserUtilService;
     } = {
       db,
       sessionService,
       auditLogService,
+      passwordService,
+      passwordValidationService,
+      userUtilService,
     },
   ) {}
+
+  async createUser(params: CreateUserParams): Promise<UserActionResult> {
+    const {
+      actorId,
+      email,
+      password,
+      name,
+      roleIds,
+      baseCurrencyId,
+      status,
+      emailVerified,
+    } = params;
+
+    this.deps.passwordValidationService.validatePasswordOrThrow(password);
+    const normalizedEmail = normalizeEmail(email);
+
+    const existingUser = await this.deps.db.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true },
+    });
+    if (existingUser) {
+      throw new BadReqErr(ErrCode.UserExisted);
+    }
+
+    const resolvedBaseCurrencyId = baseCurrencyId ?? DEFAULT_BASE_CURRENCY_ID;
+    await this.ensureCurrencyExists(resolvedBaseCurrencyId);
+
+    const resolvedRoleIds = await this.resolveRoleIds(roleIds);
+    const userId = IdUtil.dbId(DB_PREFIX.USER);
+    const trimmedName = name && name.trim().length > 0 ? name.trim() : null;
+    const nextStatus = status ?? UserStatus.active;
+    const shouldVerifyEmail = emailVerified ?? nextStatus === UserStatus.active;
+
+    await this.deps.db.$transaction(async (tx) => {
+      await tx.user.create({
+        data: {
+          id: userId,
+          email: normalizedEmail,
+          name: trimmedName,
+          status: nextStatus,
+          emailVerified: shouldVerifyEmail,
+          baseCurrencyId: resolvedBaseCurrencyId,
+          ...(await this.deps.passwordService.createPassword(password)),
+          roles: {
+            create: resolvedRoleIds.map((roleId) => ({
+              id: IdUtil.dbId(),
+              roleId,
+            })),
+          },
+        },
+        select: { id: true },
+      });
+
+      await this.deps.userUtilService.createProfile(tx as PrismaTx, userId);
+    });
+
+    const auditLogId = await this.deps.auditLogService.push({
+      type: ACTIVITY_TYPE.CREATE_USER,
+      payload: {
+        id: userId,
+        enabled: nextStatus === UserStatus.active,
+        roleIds: resolvedRoleIds,
+        username: normalizedEmail,
+      },
+      userId: actorId,
+    });
+
+    return {
+      userId,
+      auditLogId,
+    };
+  }
+
+  async listUsers(params: ListUsersParams) {
+    const { take = 20, skip = 0, email, status, roleId } = params;
+
+    const whereClauses: Prisma.UserWhereInput[] = [];
+    if (email) {
+      whereClauses.push({
+        email: {
+          contains: email.trim(),
+          mode: 'insensitive',
+        },
+      });
+    }
+
+    if (status) {
+      whereClauses.push({ status });
+    }
+
+    if (roleId) {
+      whereClauses.push({
+        roles: { some: { roleId } },
+      });
+    }
+
+    const where = whereClauses.length > 0 ? { AND: whereClauses } : undefined;
+
+    const [docs, count] = await this.deps.db.$transaction([
+      this.deps.db.user.findMany({
+        where,
+        select: {
+          id: true,
+          email: true,
+          status: true,
+          name: true,
+          created: true,
+          emailVerified: true,
+          baseCurrencyId: true,
+          roles: { select: { roleId: true } },
+        },
+        skip,
+        take,
+        orderBy: { created: 'desc' },
+      }),
+      this.deps.db.user.count({ where }),
+    ]);
+
+    return {
+      docs,
+      count,
+    };
+  }
+
+  async getUserDetail(
+    userId: string,
+  ): Promise<typeof AdminUserDetailResDto.static> {
+    const user = await this.deps.db.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        status: true,
+        name: true,
+        created: true,
+        modified: true,
+        emailVerified: true,
+        baseCurrencyId: true,
+        lockoutUntil: true,
+        lockoutReason: true,
+        passwordAttempt: true,
+        passwordExpired: true,
+        roles: { select: { roleId: true } },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundErr(ErrCode.UserNotFound);
+    }
+
+    return user as typeof AdminUserDetailResDto.static;
+  }
 
   async resetUserMfa(params: BaseUserActionParams): Promise<UserActionResult> {
     const { targetUserId, actorId, reason } = params;
@@ -250,6 +440,35 @@ export class AdminUserService {
     }
 
     return user;
+  }
+
+  private async resolveRoleIds(roleIds?: string[]): Promise<string[]> {
+    if (!roleIds || roleIds.length === 0) {
+      return [defaultRoles.user.id];
+    }
+    const uniqueRoleIds = Array.from(new Set(roleIds));
+    const existing = await this.deps.db.role.findMany({
+      where: { id: { in: uniqueRoleIds } },
+      select: { id: true },
+    });
+    if (existing.length !== uniqueRoleIds.length) {
+      throw new BadReqErr(ErrCode.ItemNotFound, {
+        errors: 'One or more roles were not found',
+      });
+    }
+    return uniqueRoleIds;
+  }
+
+  private async ensureCurrencyExists(currencyId: string): Promise<void> {
+    const currency = await this.deps.db.currency.findUnique({
+      where: { id: currencyId },
+      select: { id: true },
+    });
+    if (!currency) {
+      throw new BadReqErr(ErrCode.ItemNotFound, {
+        errors: 'Currency not found',
+      });
+    }
   }
 
   private async resetMfaState(userId: string): Promise<void> {
