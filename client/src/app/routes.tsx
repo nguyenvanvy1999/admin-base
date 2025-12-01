@@ -10,6 +10,10 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const ErrorPage = lazy(() => import('./pages/ErrorPage'));
+const AccessDeniedPage = lazy(() => import('./pages/AccessDeniedPage'));
+const AdminUsersPage = lazy(
+  () => import('../features/admin/users/pages/AdminUsersPage'),
+);
 
 export function AppRoutes() {
   return (
@@ -27,6 +31,15 @@ export function AppRoutes() {
         <Route index element={<HomePage />} />
         <Route path="workspace" element={<WorkspacePage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route
+          path="admin/users"
+          element={
+            <ProtectedRoute requiredPermissions={['USER.VIEW']}>
+              <AdminUsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="403" element={<AccessDeniedPage />} />
         <Route path="404" element={<NotFoundPage />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Route>

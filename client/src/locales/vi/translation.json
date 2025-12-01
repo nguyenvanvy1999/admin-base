@@ -1,7 +1,15 @@
 {
   "common": {
     "enabled": "Đã kích hoạt",
-    "disabled": "Đã vô hiệu hóa"
+    "disabled": "Đã vô hiệu hóa",
+    "cancel": "Hủy",
+    "save": "Lưu"
+  },
+  "sidebar": {
+    "dashboard": "Tổng quan",
+    "workspaces": "Workspace",
+    "settings": "Cấu hình",
+    "adminUsers": "Quản lý user"
   },
   "header": {
     "appName": "FinTrack",
@@ -163,5 +171,78 @@
     "emailDigestLabel": "Gửi email digest hằng ngày",
     "description": "Dữ liệu chỉ là placeholder để minh họa cách tổ chức form base.",
     "submit": "Lưu thiết lập"
+  },
+  "accessDeniedPage": {
+    "title": "Bạn không có quyền truy cập",
+    "subtitle": "Vui lòng liên hệ quản trị viên để được cấp quyền phù hợp.",
+    "backHome": "Về trang chủ"
+  },
+  "adminUsersPage": {
+    "title": "Quản trị user",
+    "subtitle": "Theo dõi trạng thái tài khoản, cập nhật role và thao tác MFA.",
+    "table": {
+      "email": "Email",
+      "name": "Tên hiển thị",
+      "status": "Trạng thái",
+      "roles": "Roles",
+      "created": "Ngày tạo",
+      "emailVerified": "Xác thực email",
+      "actions": "Thao tác",
+      "filters": {
+        "email": "Tìm email",
+        "status": "Trạng thái",
+        "role": "Role"
+      }
+    },
+    "create": {
+      "button": "Tạo user",
+      "title": "Tạo mới admin user",
+      "success": "Tạo user thành công",
+      "auditLog": "Mã audit: {{auditId}}"
+    },
+    "update": {
+      "title": "Cập nhật user",
+      "success": "Đã cập nhật user thành công",
+      "tabGeneral": "Thông tin",
+      "tabSecurity": "Bảo mật",
+      "tabEdit": "Chỉnh sửa",
+      "mfaResetSuccess": "Đã reset MFA",
+      "mfaDisableSuccess": "Đã vô hiệu hóa MFA"
+    },
+    "detail": {
+      "email": "Email",
+      "status": "Trạng thái",
+      "name": "Tên hiển thị",
+      "baseCurrency": "Tiền tệ gốc",
+      "emailVerified": "Email đã xác thực",
+      "created": "Ngày tạo",
+      "modified": "Cập nhật",
+      "lockoutUntil": "Khóa tới",
+      "lockoutReason": "Lý do khóa",
+      "passwordAttempt": "Số lần sai mật khẩu",
+      "passwordExpired": "Hết hạn mật khẩu"
+    },
+    "form": {
+      "email": "Email",
+      "password": "Mật khẩu",
+      "name": "Tên hiển thị",
+      "roles": "Danh sách role",
+      "baseCurrency": "Tiền tệ gốc",
+      "status": "Trạng thái",
+      "emailVerified": "Đã xác thực email",
+      "lockoutUntil": "Khóa tới thời điểm",
+      "lockoutReason": "Lý do khóa",
+      "passwordAttempt": "Số lần sai mật khẩu",
+      "passwordExpired": "Thời điểm hết hạn mật khẩu",
+      "reason": "Reason ghi log",
+      "mfaReasonPlaceholder": "Nhập lý do để ghi vào audit log"
+    },
+    "actions": {
+      "view": "Chi tiết",
+      "edit": "Chỉnh sửa",
+      "resetMfa": "Reset MFA",
+      "disableMfa": "Disable MFA",
+      "submit": "Lưu thay đổi"
+    }
   }
 }

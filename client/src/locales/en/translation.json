@@ -1,7 +1,15 @@
 {
   "common": {
     "enabled": "Enabled",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "workspaces": "Workspaces",
+    "settings": "Settings",
+    "adminUsers": "Admin users"
   },
   "header": {
     "appName": "FinTrack",
@@ -163,5 +171,78 @@
     "emailDigestLabel": "Daily email digest",
     "description": "Data is just a placeholder to demonstrate base form organization.",
     "submit": "Save settings"
+  },
+  "accessDeniedPage": {
+    "title": "You are not allowed to access this page",
+    "subtitle": "Contact your administrator to request the required permissions.",
+    "backHome": "Back to dashboard"
+  },
+  "adminUsersPage": {
+    "title": "Admin user management",
+    "subtitle": "Monitor account status, roles, and MFA actions.",
+    "table": {
+      "email": "Email",
+      "name": "Display name",
+      "status": "Status",
+      "roles": "Roles",
+      "created": "Created at",
+      "emailVerified": "Email verified",
+      "actions": "Actions",
+      "filters": {
+        "email": "Search email",
+        "status": "Status",
+        "role": "Role"
+      }
+    },
+    "create": {
+      "button": "Create user",
+      "title": "Create admin user",
+      "success": "User created successfully",
+      "auditLog": "Audit log: {{auditId}}"
+    },
+    "update": {
+      "title": "Update user",
+      "success": "User updated successfully",
+      "tabGeneral": "Overview",
+      "tabSecurity": "Security",
+      "tabEdit": "Edit",
+      "mfaResetSuccess": "MFA reset successfully",
+      "mfaDisableSuccess": "MFA disabled successfully"
+    },
+    "detail": {
+      "email": "Email",
+      "status": "Status",
+      "name": "Display name",
+      "baseCurrency": "Base currency",
+      "emailVerified": "Email verified",
+      "created": "Created at",
+      "modified": "Updated at",
+      "lockoutUntil": "Lockout until",
+      "lockoutReason": "Lockout reason",
+      "passwordAttempt": "Password attempts",
+      "passwordExpired": "Password expired at"
+    },
+    "form": {
+      "email": "Email",
+      "password": "Password",
+      "name": "Display name",
+      "roles": "Roles",
+      "baseCurrency": "Base currency",
+      "status": "Status",
+      "emailVerified": "Email verified",
+      "lockoutUntil": "Lockout until",
+      "lockoutReason": "Lockout reason",
+      "passwordAttempt": "Password attempts",
+      "passwordExpired": "Password expires at",
+      "reason": "Audit reason",
+      "mfaReasonPlaceholder": "Provide a reason for the audit log"
+    },
+    "actions": {
+      "view": "Details",
+      "edit": "Edit",
+      "resetMfa": "Reset MFA",
+      "disableMfa": "Disable MFA",
+      "submit": "Save changes"
+    }
   }
 }
