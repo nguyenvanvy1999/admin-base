@@ -104,9 +104,7 @@ describe('MiscService', () => {
     globalThis.clearTimeout = originalClearTimeout;
   });
 
-  function buildService(
-    overrides?: Partial<ConstructorParameters<typeof MiscService>[0]>,
-  ): {
+  function buildService(overrides?: Record<string, unknown>): {
     svc: MiscService;
     deps: Required<ConstructorParameters<typeof MiscService>[0]>;
   } {
@@ -131,21 +129,21 @@ describe('MiscService', () => {
     const bun = {
       spawn: (_args: Array<string>) => makeSpawnSuccessDfH('37%'),
       nanoseconds: () => 120 * 1_000_000_000,
-    } as any;
+    };
     const log = {
       error: mock(() => undefined),
       info: mock(() => undefined),
       warn: mock(() => undefined),
       debug: mock(() => undefined),
-    } as any;
+    };
     const deps = {
-      cache: cache as any,
+      cache: cache,
       db: prisma,
-      osModule: osModule as any,
-      bun: bun as any,
-      log: log as any,
+      osModule: osModule,
+      bun: bun,
+      log: log,
       ...overrides,
-    } as Required<ConstructorParameters<typeof MiscService>[0]>;
+    } as unknown as Required<ConstructorParameters<typeof MiscService>[0]>;
     const svc = new MiscService(deps);
     return { svc, deps };
   }
@@ -156,7 +154,7 @@ describe('MiscService', () => {
         bun: {
           spawn: (_args: Array<string>) => makeSpawnSuccessDfH('37%'),
           nanoseconds: () => 3 * 60 * 1_000_000_000,
-        } as any,
+        },
       });
       const result = await svc.getSystemInfo();
       expect(result.status).toBe(HEALTH_STATE.OK);
@@ -171,7 +169,7 @@ describe('MiscService', () => {
       const bun = {
         spawn: mock(() => proc),
         nanoseconds: () => 1,
-      } as any;
+      };
       const { svc: svc2 } = buildService({ bun });
       await svc2.getSystemInfo();
       expect(proc.killed).toBe(true);
@@ -182,7 +180,7 @@ describe('MiscService', () => {
         bun: {
           spawn: () => makeSpawnNonZero(),
           nanoseconds: () => 1,
-        } as any,
+        },
       });
       const result = await svc.getSystemInfo();
       expect(result.status).toBe(HEALTH_STATE.OK);
@@ -201,7 +199,7 @@ describe('MiscService', () => {
         bun: {
           spawn: () => hangingProc,
           nanoseconds: () => 1,
-        } as any,
+        },
       });
       const result = await svc.getSystemInfo();
       expect(result.status).toBe(HEALTH_STATE.OK);
@@ -243,7 +241,7 @@ describe('MiscService', () => {
           cpus: () => [{}, {}],
           arch: () => 'x64',
           platform: () => 'linux',
-        } as any,
+        },
       });
       const res = svc.checkMemHealth(0.95);
       expect(res.status).toBe(HEALTH_STATE.OK);
@@ -259,7 +257,7 @@ describe('MiscService', () => {
           cpus: () => [{}, {}],
           arch: () => 'x64',
           platform: () => 'linux',
-        } as any,
+        },
       });
       const res = svc.checkMemHealth(0.95);
       expect(res.status).toBe(HEALTH_STATE.ERROR);
@@ -275,7 +273,7 @@ describe('MiscService', () => {
           cpus: () => [{}, {}],
           arch: () => 'x64',
           platform: () => 'linux',
-        } as any,
+        },
       });
       const res = svc.checkMemHealth(0.95);
       expect(res.status).toBe(HEALTH_STATE.ERROR);
@@ -293,7 +291,7 @@ describe('MiscService', () => {
           cpus: () => [{}, {}],
           arch: () => 'x64',
           platform: () => 'linux',
-        } as any,
+        },
       });
       const res = svc.checkMemHealth();
       expect(res.status).toBe(HEALTH_STATE.ERROR);
@@ -307,7 +305,7 @@ describe('MiscService', () => {
         bun: {
           spawn: () => proc,
           nanoseconds: () => 1,
-        } as any,
+        },
       });
       const res = await svc.checkDiskHealth(0.95);
       expect(res.status).toBe(HEALTH_STATE.OK);
@@ -324,7 +322,7 @@ describe('MiscService', () => {
         bun: {
           spawn: () => proc,
           nanoseconds: () => 1,
-        } as any,
+        },
       });
       const res = await svc.checkDiskHealth(0.95);
       expect(res.status).toBe(HEALTH_STATE.ERROR);
@@ -338,7 +336,7 @@ describe('MiscService', () => {
         bun: {
           spawn: () => proc,
           nanoseconds: () => 1,
-        } as any,
+        },
       });
       const res = await svc.checkDiskHealth(0.95);
       expect(res.status).toBe(HEALTH_STATE.ERROR);
@@ -350,7 +348,7 @@ describe('MiscService', () => {
         bun: {
           spawn: () => proc,
           nanoseconds: () => 1n,
-        } as any,
+        },
       });
       const res = await svc.checkDiskHealth();
       expect(res.status).toBe(HEALTH_STATE.ERROR);
@@ -359,7 +357,7 @@ describe('MiscService', () => {
 
   describe('checkRedisHealth', () => {
     it('returns OK when set/get succeeds', async () => {
-      const cache = createRedisMock() as any;
+      const cache = createRedisMock();
       // ensure get resolves truthy
       cache.get = mock(async () => '1');
       const { svc } = buildService({ cache });
@@ -368,7 +366,7 @@ describe('MiscService', () => {
     });
 
     it('returns ERROR when get returns falsy', async () => {
-      const cache = createRedisMock() as any;
+      const cache = createRedisMock();
       // override get to simulate null
       cache.get = mock(async () => null);
       const { svc } = buildService({ cache });
@@ -377,7 +375,7 @@ describe('MiscService', () => {
     });
 
     it('returns ERROR when cache throws', async () => {
-      const cache = createRedisMock() as any;
+      const cache = createRedisMock();
       cache.set = mock(() => {
         throw new Error('redis down');
       });
@@ -395,7 +393,7 @@ describe('MiscService', () => {
     });
 
     it('returns ERROR when query fails', async () => {
-      const prisma = createPrismaMock() as any;
+      const prisma = createPrismaMock();
       prisma.$queryRaw = mock(() => {
         throw new Error('db down');
       });

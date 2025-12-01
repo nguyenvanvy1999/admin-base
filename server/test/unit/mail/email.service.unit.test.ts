@@ -13,7 +13,7 @@ describe('EmailService', () => {
   let service: EmailService;
   let mockLogger: ReturnType<typeof createMockLogger>;
   let mockMailer: ReturnType<typeof createMockMailer>;
-  const env = createMockMailEnv();
+  const env = createMockMailEnv() as any;
 
   // capture the last rendered element to inspect props
   let lastRenderedElement: any = null;
@@ -37,22 +37,22 @@ describe('EmailService', () => {
       renderEmail,
       logger: mockLogger,
       env,
-    } as any);
+    });
   });
 
   describe('sendMail', () => {
     it('sends successfully and logs message id', async () => {
       await service.sendMail(email, subject, html);
-      expect(mockMailer.createTransport as any).toHaveBeenCalledTimes(1);
-      const createOpts = (mockMailer.createTransport as any).lastCreateOptions;
-      expect(createOpts.host).toBe(env.MAIL_HOST);
-      expect(createOpts.port).toBe(env.MAIL_PORT);
-      expect(createOpts.secure).toBe(true);
-      expect(createOpts.auth.user).toBe(env.MAIL_USER);
-      expect(createOpts.auth.pass).toBe(env.MAIL_PASSWORD);
+      expect(mockMailer.createTransport).toHaveBeenCalledTimes(1);
+      const createOpts = mockMailer.createTransport.lastCreateOptions;
+      expect(createOpts?.host).toBe(env.MAIL_HOST);
+      expect(createOpts?.port).toBe(env.MAIL_PORT);
+      expect(createOpts?.secure).toBe(true);
+      expect(createOpts?.auth.user).toBe(env.MAIL_USER);
+      expect(createOpts?.auth.pass).toBe(env.MAIL_PASSWORD);
 
-      expect(mockMailer.transport.sendMail as any).toHaveBeenCalledTimes(1);
-      expect(mockMailer.transport.sendMail as any).toHaveBeenCalledWith({
+      expect(mockMailer.transport.sendMail).toHaveBeenCalledTimes(1);
+      expect(mockMailer.transport.sendMail).toHaveBeenCalledWith({
         from: env.MAIL_FROM,
         to: email,
         subject,
@@ -63,7 +63,7 @@ describe('EmailService', () => {
     });
 
     it('logs error when sendMail rejects and does not throw', async () => {
-      (mockMailer.transport.sendMail as any).setBehavior(
+      mockMailer.transport.sendMail.setBehavior(
         'reject',
         new Error('smtp down'),
       );
@@ -72,26 +72,24 @@ describe('EmailService', () => {
     });
 
     it('logs error when createTransport throws and does not throw', async () => {
-      (mockMailer.createTransport as any).setThrowOnCreate(true);
+      mockMailer.createTransport.setThrowOnCreate(true);
       await service.sendMail(email, subject, html);
       expect(mockLogger.error).toHaveBeenCalledTimes(1);
       // no sendMail attempted
-      expect(mockMailer.transport.sendMail as any).not.toHaveBeenCalled();
+      expect(mockMailer.transport.sendMail).not.toHaveBeenCalled();
     });
 
     it('creates a new transporter each call', async () => {
       await service.sendMail(email, subject, html);
       await service.sendMail(email, subject, html);
-      expect(mockMailer.createTransport as any).toHaveBeenCalledTimes(2);
-      expect(mockMailer.transport.sendMail as any).toHaveBeenCalledTimes(2);
+      expect(mockMailer.createTransport).toHaveBeenCalledTimes(2);
+      expect(mockMailer.transport.sendMail).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('sendEmailOtp', () => {
     it('renders OTP email and sends with correct subject', async () => {
-      const spy = spyOn(service as any, 'sendMail').mockResolvedValue(
-        undefined,
-      );
+      const spy = spyOn(service, 'sendMail').mockResolvedValue(undefined);
       await service.sendEmailOtp(email, otp, PurposeVerify.REGISTER);
       expect(lastRenderedElement).not.toBeNull();
       expect(spy).toHaveBeenCalledWith(
@@ -128,7 +126,7 @@ describe('EmailService', () => {
         renderEmail: failingRender,
         logger: mockLogger,
         env,
-      } as any);
+      });
       const spy = spyOn(service, 'sendMail').mockResolvedValue(undefined);
       expect(
         service.sendEmailOtp(email, otp, PurposeVerify.REGISTER),

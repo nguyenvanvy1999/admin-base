@@ -334,7 +334,7 @@ describe('S3StorageBackend', () => {
         name: 'photo.jpg',
         type: 'image/jpeg',
       });
-      const mockS3Client = mockDeps.s3Client as any;
+      const mockS3Client = mockDeps.s3Client;
       const { extname, token16 } = setupUploadMocks(
         mockDeps,
         '.jpg',
@@ -346,9 +346,11 @@ describe('S3StorageBackend', () => {
       expect(result).toBe('token00000000000001.jpg');
       expect(extname).toHaveBeenCalledWith('photo.jpg');
       expect(token16).toHaveBeenCalledTimes(1);
-      expect(mockS3Client.file).toHaveBeenCalledWith('token00000000000001.jpg');
-      const s3File = mockS3Client.file('token00000000000001.jpg');
-      expect(s3File.write).toHaveBeenCalledWith(file, {
+      expect(mockS3Client?.file).toHaveBeenCalledWith(
+        'token00000000000001.jpg',
+      );
+      const s3File = mockS3Client?.file('token00000000000001.jpg');
+      expect(s3File?.write).toHaveBeenCalledWith(file, {
         type: 'image/jpeg',
       });
     });
@@ -358,13 +360,15 @@ describe('S3StorageBackend', () => {
         name: 'photo',
         type: 'application/octet-stream',
       });
-      const mockS3Client = mockDeps.s3Client as any;
+      const mockS3Client = mockDeps.s3Client;
       setupUploadMocks(mockDeps, '', 'token00000000000001');
 
       const result = await s3StorageBackend.upload(file);
 
       expect(result).toBe('token00000000000001.bin');
-      expect(mockS3Client.file).toHaveBeenCalledWith('token00000000000001.bin');
+      expect(mockS3Client?.file).toHaveBeenCalledWith(
+        'token00000000000001.bin',
+      );
     });
 
     it('should generate unique file names using idGenerator', async () => {
@@ -410,16 +414,16 @@ describe('S3StorageBackend', () => {
         name: 'document.pdf',
         type: 'application/pdf',
       });
-      const mockS3Client = mockDeps.s3Client as any;
+      const mockS3Client = mockDeps.s3Client;
       setupUploadMocks(mockDeps, '.pdf', 'token00000000000001');
 
       await s3StorageBackend.upload(file);
 
-      const s3File = mockS3Client.file('token00000000000001.pdf');
-      expect(s3File.write).toHaveBeenCalledWith(file, {
+      const s3File = mockS3Client?.file('token00000000000001.pdf');
+      expect(s3File?.write).toHaveBeenCalledWith(file, {
         type: 'application/pdf',
       });
-      expect(s3File.write).toHaveBeenCalledTimes(1);
+      expect(s3File?.write).toHaveBeenCalledTimes(1);
     });
 
     it('should handle S3 write errors', () => {
@@ -427,11 +431,13 @@ describe('S3StorageBackend', () => {
         name: 'photo.jpg',
         type: 'image/jpeg',
       });
-      const mockS3Client = mockDeps.s3Client as any;
+      const mockS3Client = mockDeps.s3Client;
       const writeError = new Error('S3 upload failed');
       setupUploadMocks(mockDeps, '.jpg', 'token00000000000001');
-      const s3File = mockS3Client.file('token00000000000001.jpg');
-      s3File.write = mock(() => Promise.reject(writeError));
+      const s3File = mockS3Client?.file('token00000000000001.jpg');
+      if (s3File) {
+        s3File.write = mock(() => Promise.reject(writeError));
+      }
 
       expect(s3StorageBackend.upload(file)).rejects.toThrow('S3 upload failed');
     });
@@ -477,27 +483,27 @@ describe('S3StorageBackend', () => {
         'image/jpeg',
         'jpg',
       );
-      const mockS3Client = mockDeps.s3Client as any;
+      const mockS3Client = mockDeps.s3Client;
 
       const result = await s3StorageBackend.download(uploadedFileName);
 
       expect(result.content).toBeInstanceOf(Blob);
       expect(result.content.type).toBe('image/jpeg');
       expect(result.contentType).toEqual({ mime: 'image/jpeg', ext: 'jpg' });
-      expect(mockS3Client.file).toHaveBeenCalledWith(uploadedFileName);
-      const s3File = mockS3Client.file(uploadedFileName);
-      expect(s3File.exists).toHaveBeenCalledTimes(1);
-      expect(s3File.arrayBuffer).toHaveBeenCalledTimes(1);
+      expect(mockS3Client?.file).toHaveBeenCalledWith(uploadedFileName);
+      const s3File = mockS3Client?.file(uploadedFileName);
+      expect(s3File?.exists).toHaveBeenCalledTimes(1);
+      expect(s3File?.arrayBuffer).toHaveBeenCalledTimes(1);
     });
 
     it('should throw BadReqErr with ErrCode.InvalidFile when file does not exist', () => {
       const fileName = 'nonexistent.jpg';
-      const mockS3Client = mockDeps.s3Client as any;
-      const s3File = mockS3Client.file(fileName);
+      const mockS3Client = mockDeps.s3Client;
+      const s3File = mockS3Client?.file(fileName);
 
       expect(s3StorageBackend.download(fileName)).rejects.toThrow(BadReqErr);
-      expect(s3File.exists).toHaveBeenCalled();
-      expect(s3File.arrayBuffer).not.toHaveBeenCalled();
+      expect(s3File?.exists).toHaveBeenCalled();
+      expect(s3File?.arrayBuffer).not.toHaveBeenCalled();
     });
 
     it('should throw error when S3 client is not initialized', () => {
@@ -635,7 +641,7 @@ describe('S3StorageBackend', () => {
         name: fileName,
         type: 'image/jpeg',
       });
-      const mockS3Client = mockDeps.s3Client as any;
+      const mockS3Client = mockDeps.s3Client;
       const readError = new Error('S3 read failed');
       const token16 = mockDeps.idGenerator.token16 as ReturnType<typeof mock>;
       const extname = mockDeps.pathUtil.extname as ReturnType<typeof mock>;
@@ -645,9 +651,10 @@ describe('S3StorageBackend', () => {
 
       const uploadedFileName = await s3StorageBackend.upload(file);
 
-      const s3File = mockS3Client.file(uploadedFileName);
-      s3File.arrayBuffer = mock(() => Promise.reject(readError));
-
+      const s3File = mockS3Client?.file(uploadedFileName);
+      if (s3File) {
+        s3File.arrayBuffer = mock(() => Promise.reject(readError));
+      }
       expect(s3StorageBackend.download(uploadedFileName)).rejects.toThrow(
         'S3 read failed',
       );
