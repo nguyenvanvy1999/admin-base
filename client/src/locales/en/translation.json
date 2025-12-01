@@ -3,7 +3,8 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "viewDetails": "View details"
   },
   "sidebar": {
     "dashboard": "Dashboard",

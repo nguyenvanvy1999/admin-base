@@ -10,7 +10,7 @@ import type {
   AdminUserUpdatePayload,
 } from 'src/types/admin-users';
 
-const ADMIN_USER_BASE_PATH = '/admin/users';
+const ADMIN_USER_BASE_PATH = '/api/admin/users';
 
 export const adminUserKeys = {
   ...createQueryKeys('admin-users'),
