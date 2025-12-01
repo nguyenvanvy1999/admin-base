@@ -8,6 +8,7 @@ export const adminRoleKeys = createQueryKeys('admin-roles');
 
 export interface AdminRoleListQuery {
   userId?: string;
+  [key: string]: unknown;
 }
 
 export const adminRolesService = {

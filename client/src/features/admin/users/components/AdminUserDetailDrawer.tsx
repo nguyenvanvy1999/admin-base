@@ -93,7 +93,9 @@ export function AdminUserDetailDrawer({
   onActionCompleted,
   initialTab = 'general',
 }: AdminUserDetailDrawerProps) {
-  const formRef = useRef<ProFormInstance<AdminUserUpdateFormValues>>();
+  const formRef = useRef<ProFormInstance<AdminUserUpdateFormValues> | null>(
+    null,
+  );
   const [tabKey, setTabKey] = useState<'general' | 'security' | 'edit'>(
     initialTab,
   );
@@ -105,6 +107,7 @@ export function AdminUserDetailDrawer({
   const updateMutation = useUpdateAdminUser({
     onSuccess: () => {
       notify.notification.success({
+        title: t('adminUsersPage.update.success'),
         message: t('adminUsersPage.update.success'),
       });
       onActionCompleted?.();
@@ -114,6 +117,7 @@ export function AdminUserDetailDrawer({
   const resetMfaMutation = useAdminUserMfaAction('reset', {
     onSuccess: ({ auditLogId }) => {
       notify.notification.success({
+        title: t('adminUsersPage.update.mfaResetSuccess'),
         message: t('adminUsersPage.update.mfaResetSuccess'),
         description: t('adminUsersPage.create.auditLog', {
           auditId: auditLogId,
@@ -126,6 +130,7 @@ export function AdminUserDetailDrawer({
   const disableMfaMutation = useAdminUserMfaAction('disable', {
     onSuccess: ({ auditLogId }) => {
       notify.notification.success({
+        title: t('adminUsersPage.update.mfaDisableSuccess'),
         message: t('adminUsersPage.update.mfaDisableSuccess'),
         description: t('adminUsersPage.create.auditLog', {
           auditId: auditLogId,

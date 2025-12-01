@@ -29,7 +29,7 @@ function formatStatus(status: AdminUserStatus): string {
 
 export default function AdminUsersPage() {
   const { t } = useTranslation();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType | null>(null);
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('USER.UPDATE');
   const canManageMfa = hasPermission('USER.RESET_MFA');

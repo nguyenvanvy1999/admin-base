@@ -32,6 +32,7 @@ export function AdminUserCreateModal({
   const createMutation = useCreateAdminUser({
     onSuccess: ({ auditLogId }) => {
       notify.notification.success({
+        title: t('adminUsersPage.create.success'),
         message: t('adminUsersPage.create.success'),
         description: t('adminUsersPage.create.auditLog', {
           auditId: auditLogId,
@@ -41,19 +42,32 @@ export function AdminUserCreateModal({
     },
   });
 
-  const handleSubmit = async (values: AdminUserCreatePayload) => {
-    await createMutation.mutateAsync({
-      ...values,
-      roleIds: values.roleIds?.filter(Boolean),
-      name: values.name?.trim() ? values.name : undefined,
-      baseCurrencyId: values.baseCurrencyId?.trim()
-        ? values.baseCurrencyId
-        : undefined,
-    });
+  type AdminUserCreateFormValues = AdminUserCreatePayload &
+    Record<string, unknown>;
+
+  const handleSubmit = async (values: AdminUserCreateFormValues) => {
+    const payload: AdminUserCreatePayload = {
+      email: values.email,
+      password: values.password,
+      roleIds: (values.roleIds as string[] | undefined)?.filter(Boolean),
+      name:
+        typeof values.name === 'string' && values.name.trim().length > 0
+          ? values.name
+          : undefined,
+      baseCurrencyId:
+        typeof values.baseCurrencyId === 'string' &&
+        values.baseCurrencyId.trim().length > 0
+          ? values.baseCurrencyId
+          : undefined,
+      status: values.status,
+      emailVerified: values.emailVerified,
+    };
+
+    await createMutation.mutateAsync(payload);
   };
 
   return (
-    <FormModal<AdminUserCreatePayload>
+    <FormModal<AdminUserCreateFormValues>
       open={open}
       onClose={onClose}
       onSubmit={handleSubmit}
