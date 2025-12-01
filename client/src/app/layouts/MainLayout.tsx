@@ -11,13 +11,14 @@ import { ProLayout } from '@ant-design/pro-components';
 import { Button, Dropdown, Switch, Tooltip } from 'antd';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { LanguageSwitcher } from 'src/components/LanguageSwitcher';
 import { useAuth } from 'src/hooks/auth/useAuth';
 import { useThemeMode } from '../providers/ThemeModeProvider';
 
 export default function MainLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { t, i18n: _ } = useTranslation();
   const { mode, setMode } = useThemeMode();
   const { user, logout } = useAuth();
@@ -63,6 +64,25 @@ export default function MainLayout() {
       fixedHeader
       route={menuRoutes}
       location={locationProps}
+      menuItemRender={(item, dom) => {
+        const labelKey = typeof item.name === 'string' ? item.name : '';
+        const label = labelKey ? t(labelKey as any) : dom;
+
+        if (!item.path) {
+          return label;
+        }
+
+        return (
+          <a
+            onClick={(event) => {
+              event.preventDefault();
+              navigate(item.path as string);
+            }}
+          >
+            {label}
+          </a>
+        );
+      }}
       actionsRender={() => [
         <Tooltip
           key="theme"
