@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect } from 'react';
-import { authService } from 'src/services/auth';
+import { authService } from 'src/services/api/auth.service';
 import { authStore, useAuthStore } from 'src/store/authStore';
 import type { AuthUser, LoginSuccessResponse, TokenSet } from 'src/types/auth';
 

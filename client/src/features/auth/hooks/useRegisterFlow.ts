@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AUTH_MFA_CONFIG } from 'src/config/auth';
 import { parseApiError } from 'src/lib/api/errorHandler';
-import { authService } from 'src/services/auth';
+import { authService } from 'src/services/api/auth.service';
 import type { RegisterPayload } from 'src/types/auth';
 
 export type RegisterFormValues = RegisterPayload;

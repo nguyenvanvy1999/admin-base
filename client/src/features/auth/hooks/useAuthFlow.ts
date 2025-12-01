@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { REGISTER_EMAIL_KEY } from 'src/constants';
 import { useAuth } from 'src/hooks/auth/useAuth';
 import { parseApiError } from 'src/lib/api/errorHandler';
-import { authService } from 'src/services/auth';
+import { authService } from 'src/services/api/auth.service';
 import type {
   AuthFlowStep,
   BackupCodeVerifyPayload,
