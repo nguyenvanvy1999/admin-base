@@ -7,7 +7,6 @@ import type { RedisClient } from 'bun';
 import { Elysia } from 'elysia';
 import { rateLimit } from 'elysia-rate-limit';
 import { elysiaXSS } from 'elysia-xss';
-import { elysiaHelmet } from 'elysiajs-helmet';
 import { bullBoardConfig } from 'src/config/bull-board';
 import { env, type IEnv } from 'src/config/env';
 import { httpError } from 'src/config/error';
@@ -72,15 +71,8 @@ export class BackendServerService {
       .use(swaggerConfig())
       .group(this.deps.env.API_PREFIX, (app) =>
         app
+          .use(cors())
           .use(elysiaXSS({ as: 'global' }))
-          .use(elysiaHelmet())
-          .use(
-            cors({
-              methods: this.deps.env.CORS_ALLOW_METHOD ?? '*',
-              origin: this.deps.env.CORS_ALLOW_ORIGIN,
-              allowedHeaders: this.deps.env.CORS_ALLOW_HEADERS,
-            }),
-          )
           .use([
             ...(this.deps.env.APP_ENV === APP_ENV.DEV
               ? [

@@ -17,7 +17,6 @@ class ApiClient {
         import.meta.env.VITE_API_URL ??
         window.location.origin,
       timeout: 30_000,
-      withCredentials: true,
     });
 
     this.setupInterceptors();
