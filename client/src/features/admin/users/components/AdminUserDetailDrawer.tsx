@@ -30,6 +30,7 @@ import {
   useAdminUserMfaAction,
   useUpdateAdminUser,
 } from 'src/features/admin/users/hooks/useAdminUsers';
+import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
 import { useNotify } from 'src/hooks/useNotify';
 import {
   ADMIN_LOCKOUT_REASONS,
@@ -98,6 +99,7 @@ export function AdminUserDetailDrawer({
   );
   const { t } = useTranslation();
   const notify = useNotify();
+  const { data: roles, isLoading: isLoadingRoles } = useAdminRoles();
 
   const { data, isLoading } = useAdminUserDetail(userId ?? undefined, open);
   const updateMutation = useUpdateAdminUser({
@@ -372,8 +374,19 @@ export function AdminUserDetailDrawer({
                         <ProFormSelect
                           name="roleIds"
                           label={t('adminUsersPage.form.roles')}
-                          mode="tags"
+                          mode="multiple"
                           placeholder="admin"
+                          options={
+                            roles?.map((role) => ({
+                              value: role.id,
+                              label: role.title,
+                            })) ?? []
+                          }
+                          fieldProps={{
+                            loading: isLoadingRoles,
+                            showSearch: true,
+                            optionFilterProp: 'label',
+                          }}
                         />
                         <ProFormSwitch
                           name="emailVerified"

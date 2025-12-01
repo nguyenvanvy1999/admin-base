@@ -7,6 +7,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { FormModal } from 'src/components/common/FormModal';
 import { useCreateAdminUser } from 'src/features/admin/users/hooks/useAdminUsers';
+import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
 import { useNotify } from 'src/hooks/useNotify';
 import {
   ADMIN_USER_STATUSES,
@@ -26,6 +27,7 @@ export function AdminUserCreateModal({
 }: AdminUserCreateModalProps) {
   const { t } = useTranslation();
   const notify = useNotify();
+  const { data: roles, isLoading: isLoadingRoles } = useAdminRoles();
 
   const createMutation = useCreateAdminUser({
     onSuccess: ({ auditLogId }) => {
@@ -80,8 +82,19 @@ export function AdminUserCreateModal({
       <ProFormSelect
         name="roleIds"
         label={t('adminUsersPage.form.roles')}
-        mode="tags"
+        mode="multiple"
         placeholder="admin"
+        options={
+          roles?.map((role) => ({
+            value: role.id,
+            label: role.title,
+          })) ?? []
+        }
+        fieldProps={{
+          loading: isLoadingRoles,
+          showSearch: true,
+          optionFilterProp: 'label',
+        }}
       />
       <ProFormText
         name="baseCurrencyId"
