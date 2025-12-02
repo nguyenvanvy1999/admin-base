@@ -174,9 +174,21 @@ export default function MainLayout() {
         title: user?.name ?? user?.email ?? 'Admin',
         size: 'small',
       }}
+      logo={
+        <img
+          src="/logo.svg"
+          alt="Admin Portal"
+          style={{ height: '32px', marginRight: '8px' }}
+        />
+      }
       menuHeaderRender={() => (
-        <Button type="text" onClick={() => navigate('/')}>
-          {t('header.appName')}
+        <Button
+          type="text"
+          onClick={() => navigate('/')}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          <img src="/logo.svg" alt="Admin Portal" style={{ height: '24px' }} />
+          <span>{t('header.appName')}</span>
         </Button>
       )}
       appList={[
