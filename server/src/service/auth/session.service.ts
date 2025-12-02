@@ -15,24 +15,25 @@ export class SessionService {
     const whereCondition: SessionWhereInput = {
       createdById: userId,
       revoked: { not: { equals: true } },
+      ...(sessionIds.length > 0 ? { id: { in: sessionIds } } : {}),
     };
 
-    if (sessionIds.length > 0) {
-      whereCondition.id = { in: sessionIds };
-    }
-
-    const sessions = await this.deps.db.session.findMany({
+    await this.deps.db.session.updateMany({
       where: whereCondition,
-      select: { id: true },
+      data: { revoked: true },
     });
+  }
 
-    if (sessions.length > 0) {
-      const idsToRevoke = sessions.map((session) => session.id);
-      await this.deps.db.session.updateMany({
-        where: { id: { in: idsToRevoke } },
-        data: { revoked: true },
-      });
-    }
+  async revokeMany(sessionIds: string[] = []): Promise<void> {
+    if (sessionIds.length === 0) return;
+
+    await this.deps.db.session.updateMany({
+      where: {
+        id: { in: sessionIds },
+        revoked: { not: { equals: true } },
+      },
+      data: { revoked: true },
+    });
   }
 
   async list(params: ListParams) {

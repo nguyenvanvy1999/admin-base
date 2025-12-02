@@ -16,13 +16,7 @@ import { i18nService } from 'src/service/admin/i18n.service';
 import { permissionService } from 'src/service/admin/permission.service';
 import { roleService } from 'src/service/admin/role.service';
 import { settingAdminService } from 'src/service/admin/setting-admin.service';
-import {
-  allOf,
-  anyOf,
-  authorize,
-  has,
-  isSelf,
-} from 'src/service/auth/authorization';
+import { allOf, anyOf, authorize, has } from 'src/service/auth/authorization';
 import { sessionService } from 'src/service/auth/session.service';
 import {
   type AppAuthMeta,
@@ -242,35 +236,22 @@ export const adminCoreController = new Elysia<'admin-core', AppAuthMeta>({
           },
         },
       )
-      .use(
-        authorize(
-          anyOf(
-            has('SESSION.REVOKE_ALL'),
-            allOf(
-              has('SESSION.REVOKE'),
-              isSelf(
-                (c) =>
-                  (c.resource as { createdById: string } | undefined)
-                    ?.createdById ?? '',
-              ),
-            ),
-          ),
-          {
-            load: {
-              resource: ({ params }: { params: Record<string, string> }) =>
-                sessionService.loadSessionById(params['id']),
-            },
-          },
-        ),
-      )
+      .use(authorize(anyOf(has('SESSION.REVOKE_ALL'), has('SESSION.REVOKE'))))
       .post(
-        '/:id/revoke',
-        async ({ params: { id }, currentUser }) => {
-          await sessionService.revoke(currentUser.id, [id]);
+        '/revoke',
+        async ({ body, currentUser }) => {
+          const ids = (body as typeof IdsDto.static).ids;
+
+          if (currentUser.permissions.includes('SESSION.REVOKE_ALL')) {
+            await sessionService.revokeMany(ids);
+          } else {
+            await sessionService.revoke(currentUser.id, ids);
+          }
+
           return castToRes(null);
         },
         {
-          params: IdDto,
+          body: IdsDto,
           response: {
             200: ResWrapper(t.Null()),
             400: ErrorResDto,
