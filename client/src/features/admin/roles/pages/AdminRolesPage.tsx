@@ -103,6 +103,9 @@ export default function AdminRolesPage() {
       dataIndex: 'userId',
       hideInTable: true,
       valueType: 'text',
+      fieldProps: {
+        placeholder: t('adminRolesPage.table.filters.user'),
+      },
     },
     {
       title: t('adminRolesPage.table.actions'),
@@ -164,6 +167,12 @@ export default function AdminRolesPage() {
             success: true,
             total: response?.length || 0,
           };
+        }}
+        pagination={{
+          pageSize: 20,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total) => t('common.pagination.total', { total }),
         }}
         toolBarRender={() =>
           canUpdate

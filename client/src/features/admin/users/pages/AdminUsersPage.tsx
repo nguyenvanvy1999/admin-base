@@ -169,6 +169,7 @@ export default function AdminUsersPage() {
         search={{
           labelWidth: 'auto',
         }}
+        manualRequest={false}
         request={async (params) => {
           const { current = 1, pageSize = 20, email, status, roleId } = params;
           const take = pageSize;

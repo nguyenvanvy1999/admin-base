@@ -1,5 +1,5 @@
 import { EditOutlined } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ProColumns } from '@ant-design/pro-components';
 import {
   Alert,
   Badge,
@@ -12,7 +12,7 @@ import {
   Tag,
   Tooltip,
 } from 'antd';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
@@ -36,7 +36,6 @@ type AdminSettingTableParams = {
 
 export default function AdminSettingsPage() {
   const { t } = useTranslation();
-  const actionRef = useRef<ActionType | null>(null);
   const { hasPermission } = usePermissions();
   const canView = hasPermission('SETTING.VIEW');
   const canUpdate = hasPermission('SETTING.UPDATE');
@@ -54,7 +53,6 @@ export default function AdminSettingsPage() {
     onSuccess: () => {
       setFormModalOpen(false);
       setEditingSetting(null);
-      actionRef.current?.reload();
     },
   });
 
@@ -251,22 +249,15 @@ export default function AdminSettingsPage() {
         <AppTable<AdminSetting, AdminSettingTableParams>
           rowKey="id"
           columns={columns}
-          actionRef={actionRef}
           loading={isLoading}
           search={false}
+          dataSource={filteredSettings}
           pagination={{
             pageSize: 20,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total) =>
               t('common.pagination.totalSettings', { total }),
-          }}
-          request={() => {
-            return Promise.resolve({
-              data: filteredSettings,
-              success: true,
-              total: filteredSettings.length,
-            });
           }}
           toolBarRender={() => []}
         />
@@ -279,22 +270,15 @@ export default function AdminSettingsPage() {
         <AppTable<AdminSetting, AdminSettingTableParams>
           rowKey="id"
           columns={columns}
-          actionRef={actionRef}
           loading={isLoading}
           search={false}
+          dataSource={groupedSettings.security}
           pagination={{
             pageSize: 20,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total) =>
               t('common.pagination.totalSettings', { total }),
-          }}
-          request={() => {
-            return Promise.resolve({
-              data: groupedSettings.security,
-              success: true,
-              total: groupedSettings.security.length,
-            });
           }}
           toolBarRender={() => []}
         />
@@ -307,22 +291,15 @@ export default function AdminSettingsPage() {
         <AppTable<AdminSetting, AdminSettingTableParams>
           rowKey="id"
           columns={columns}
-          actionRef={actionRef}
           loading={isLoading}
           search={false}
+          dataSource={groupedSettings.rateLimit}
           pagination={{
             pageSize: 20,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total) =>
               t('common.pagination.totalSettings', { total }),
-          }}
-          request={() => {
-            return Promise.resolve({
-              data: groupedSettings.rateLimit,
-              success: true,
-              total: groupedSettings.rateLimit.length,
-            });
           }}
           toolBarRender={() => []}
         />
@@ -335,22 +312,15 @@ export default function AdminSettingsPage() {
         <AppTable<AdminSetting, AdminSettingTableParams>
           rowKey="id"
           columns={columns}
-          actionRef={actionRef}
           loading={isLoading}
           search={false}
+          dataSource={groupedSettings.system}
           pagination={{
             pageSize: 20,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total) =>
               t('common.pagination.totalSettings', { total }),
-          }}
-          request={() => {
-            return Promise.resolve({
-              data: groupedSettings.system,
-              success: true,
-              total: groupedSettings.system.length,
-            });
           }}
           toolBarRender={() => []}
         />
@@ -380,7 +350,6 @@ export default function AdminSettingsPage() {
               style={{ width: 300 }}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              onSearch={() => actionRef.current?.reload()}
             />
             <Select
               placeholder={t('adminSettingsPage.table.filters.category')}
@@ -389,7 +358,6 @@ export default function AdminSettingsPage() {
               value={categoryFilter}
               onChange={(value) => {
                 setCategoryFilter(value);
-                actionRef.current?.reload();
               }}
               options={categories.map((cat) => ({
                 label: t(`adminSettingsPage.categories.${cat}` as any) || cat,

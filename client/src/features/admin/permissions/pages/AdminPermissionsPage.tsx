@@ -1,6 +1,6 @@
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ProColumns } from '@ant-design/pro-components';
 import { Alert, Card, Input, Select, Space, Tag } from 'antd';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
@@ -15,7 +15,6 @@ type AdminPermissionTableParams = {
 
 export default function AdminPermissionsPage() {
   const { t } = useTranslation();
-  const actionRef = useRef<ActionType | null>(null);
   const { hasPermission } = usePermissions();
   const canView = hasPermission('ROLE.VIEW');
 
@@ -149,7 +148,6 @@ export default function AdminPermissionsPage() {
               style={{ width: 300 }}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              onSearch={() => actionRef.current?.reload()}
             />
             <Select
               placeholder={t('adminPermissionsPage.table.filters.category')}
@@ -158,7 +156,6 @@ export default function AdminPermissionsPage() {
               value={categoryFilter}
               onChange={(value) => {
                 setCategoryFilter(value);
-                actionRef.current?.reload();
               }}
               options={categories.map((cat) => ({
                 label:
@@ -173,22 +170,15 @@ export default function AdminPermissionsPage() {
       <AppTable<AdminPermission, AdminPermissionTableParams>
         rowKey="id"
         columns={columns}
-        actionRef={actionRef}
         loading={isLoading}
         search={false}
+        dataSource={filteredPermissions}
         pagination={{
           pageSize: 20,
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total) =>
             t('common.pagination.totalPermissions', { total }),
-        }}
-        request={() => {
-          return Promise.resolve({
-            data: filteredPermissions,
-            success: true,
-            total: filteredPermissions.length,
-          });
         }}
         toolBarRender={() => []}
       />
