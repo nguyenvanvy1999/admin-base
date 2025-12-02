@@ -4,12 +4,29 @@ import {
   adminRoleKeys,
   adminRolesService,
 } from 'src/services/api/admin-roles.service';
-import type { AdminRole, UpsertRoleDto } from 'src/types/admin-roles';
+import type {
+  AdminRole,
+  AdminRoleDetail,
+  UpsertRoleDto,
+} from 'src/types/admin-roles';
 
 export function useAdminRoles(params?: AdminRoleListQuery) {
   return useQuery<AdminRole[]>({
     queryKey: adminRoleKeys.list(params),
     queryFn: () => adminRolesService.list(params),
+  });
+}
+
+export function useAdminRoleDetail(id?: string | null) {
+  return useQuery<AdminRoleDetail>({
+    queryKey: adminRoleKeys.detail(id ?? 'new'),
+    queryFn: () => {
+      if (!id) {
+        throw new Error('Role id is required');
+      }
+      return adminRolesService.detail(id);
+    },
+    enabled: !!id,
   });
 }
 

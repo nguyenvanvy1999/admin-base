@@ -1,6 +1,10 @@
 import { apiClient } from 'src/lib/api/client';
 import { createQueryKeys } from 'src/services/api/base.service';
-import type { AdminRole, UpsertRoleDto } from 'src/types/admin-roles';
+import type {
+  AdminRole,
+  AdminRoleDetail,
+  UpsertRoleDto,
+} from 'src/types/admin-roles';
 
 const ADMIN_ROLE_BASE_PATH = '/api/admin/roles';
 
@@ -22,6 +26,10 @@ export const adminRolesService = {
     return apiClient.get<AdminRole[]>(ADMIN_ROLE_BASE_PATH, {
       params,
     });
+  },
+
+  detail(id: string): Promise<AdminRoleDetail> {
+    return apiClient.get<AdminRoleDetail>(`${ADMIN_ROLE_BASE_PATH}/${id}`);
   },
 
   upsert(data: UpsertRoleDto): Promise<void> {

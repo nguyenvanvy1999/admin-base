@@ -100,14 +100,8 @@ export default function AdminRolesPage() {
       dataIndex: 'players',
       hideInSearch: true,
       render: (_, record) => {
-        const now = Date.now();
-        const totalCount = record.totalPlayers ?? record.players.length;
-        const activeCount =
-          record.activePlayers ??
-          record.players.filter(
-            (player) =>
-              !player.expiresAt || new Date(player.expiresAt).getTime() > now,
-          ).length;
+        const totalCount = record.totalPlayers ?? 0;
+        const activeCount = record.activePlayers ?? 0;
         const expiredCount =
           record.expiredPlayers ?? Math.max(totalCount - activeCount, 0);
 

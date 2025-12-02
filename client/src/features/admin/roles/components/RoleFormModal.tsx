@@ -8,10 +8,11 @@ import {
 } from '@ant-design/pro-components';
 import { Space, Tabs } from 'antd';
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormModal } from 'src/components/common/FormModal';
 import { useAdminPermissions } from 'src/hooks/api/useAdminPermissions';
+import { useAdminRoleDetail } from 'src/hooks/api/useAdminRoles';
 import { adminUsersService } from 'src/services/api/admin-users.service';
 import type { AdminRole, UpsertRoleDto } from 'src/types/admin-roles';
 
@@ -40,10 +41,32 @@ export function RoleFormModal({
   const { t } = useTranslation();
   const { data: permissions, isLoading: isLoadingPermissions } =
     useAdminPermissions();
+  const { data: roleDetail, isLoading: isLoadingRoleDetail } =
+    useAdminRoleDetail(role?.id);
   const [users, setUsers] = useState<Array<{ value: string; label: string }>>(
     [],
   );
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  useEffect(() => {
+    if (!roleDetail?.players) return;
+
+    setUsers((prev) => {
+      const existingIds = new Set(prev.map((u) => u.value));
+      const next = [...prev];
+
+      for (const player of roleDetail.players) {
+        if (!existingIds.has(player.id)) {
+          next.push({
+            value: player.id,
+            label: player.email,
+          });
+        }
+      }
+
+      return next;
+    });
+  }, [roleDetail]);
 
   const handleSearchUsers = async (value: string) => {
     const search = value.trim();
@@ -72,14 +95,15 @@ export function RoleFormModal({
   const initialValues: Partial<RoleFormValues> = role
     ? {
         id: role.id,
-        title: role.title,
-        description: role.description ?? '',
-        enabled: true,
-        permissionIds: role.permissionIds,
-        players: role.players.map((player) => ({
-          playerId: player.playerId,
-          expiresAt: player.expiresAt ? dayjs(player.expiresAt) : null,
-        })),
+        title: roleDetail?.title ?? role.title,
+        description: roleDetail?.description ?? role.description ?? '',
+        enabled: roleDetail?.enabled ?? role.enabled ?? true,
+        permissionIds: roleDetail?.permissionIds ?? role.permissionIds,
+        players:
+          roleDetail?.players.map((player) => ({
+            playerId: player.id,
+            expiresAt: player.expiresAt ? dayjs(player.expiresAt) : null,
+          })) ?? [],
       }
     : {
         enabled: true,
@@ -114,7 +138,7 @@ export function RoleFormModal({
 
   return (
     <FormModal<RoleFormValues>
-      key={role?.id || 'new'}
+      key={role ? `${role.id}-${roleDetail ? 'detail' : 'loading'}` : 'new'}
       open={open}
       onClose={onClose}
       onSubmit={handleSubmit}
@@ -124,7 +148,7 @@ export function RoleFormModal({
           : t('adminRolesPage.create.title')
       }
       okText={role ? t('common.save') : t('adminRolesPage.create.button')}
-      loading={loading}
+      loading={loading || (role != null && isLoadingRoleDetail)}
       mode={role ? 'edit' : 'create'}
       initialValues={initialValues}
       width={800}
