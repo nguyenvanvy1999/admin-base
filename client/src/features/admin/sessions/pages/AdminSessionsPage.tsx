@@ -8,7 +8,6 @@ import {
   Select,
   Space,
   Tag,
-  Typography,
 } from 'antd';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
@@ -205,19 +204,12 @@ export default function AdminSessionsPage() {
   return (
     <AppPage>
       <Card size="small" style={{ marginBottom: 16 }}>
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          <Typography.Title level={4} style={{ margin: 0 }}>
-            {t('adminSessionsPage.title')}
-          </Typography.Title>
-          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            {t('adminSessionsPage.subtitle')}
-          </Typography.Paragraph>
-
+        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
           {enbOnlyOneSession && (
             <Alert
               type="info"
               showIcon
-              message={t('adminSessionsPage.onlyOneSessionNotice')}
+              title={t('adminSessionsPage.onlyOneSessionNotice')}
             />
           )}
 

@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { handleApiError } from 'src/lib/api/errorHandler';
 import { adminSessionsService } from 'src/services/api/admin-sessions.service';
 import type {
@@ -103,9 +103,11 @@ export function useAdminSessions(
     return map;
   }, [sessions]);
 
-  if (autoLoad && sessions.length === 0 && !isInitialLoading && !isLoading) {
-    void reload();
-  }
+  useEffect(() => {
+    if (autoLoad && sessions.length === 0 && !isInitialLoading && !isLoading) {
+      void reload();
+    }
+  }, [autoLoad, sessions.length, isInitialLoading, isLoading, reload]);
 
   return {
     sessions,
