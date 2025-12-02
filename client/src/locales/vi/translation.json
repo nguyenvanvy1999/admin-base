@@ -184,23 +184,8 @@
     }
   },
   "mySessionsPage": {
-    "title": "Phiên đăng nhập của tôi",
-    "subtitle": "Theo dõi và quản lý các phiên đăng nhập gần đây của tài khoản.",
     "notice": "Nếu phát hiện đăng nhập lạ, hãy thu hồi phiên tương ứng hoặc đăng xuất khỏi tất cả thiết bị.",
     "currentDevice": "Thiết bị hiện tại",
-    "status": {
-      "active": "Đang hoạt động",
-      "revoked": "Đã thu hồi",
-      "expired": "Đã hết hạn"
-    },
-    "table": {
-      "created": "Thời gian đăng nhập",
-      "expired": "Hết hạn",
-      "ip": "Địa chỉ IP",
-      "status": "Trạng thái",
-      "current": "Thiết bị hiện tại",
-      "actions": "Thao tác"
-    },
     "actions": {
       "revoke": "Thu hồi",
       "revokeConfirmTitle": "Xác nhận thu hồi phiên",
@@ -506,6 +491,7 @@
     "table": {
       "created": "Thời gian đăng nhập",
       "expired": "Hết hạn",
+      "device": "Thiết bị",
       "userId": "User ID",
       "ip": "Địa chỉ IP",
       "status": "Trạng thái",

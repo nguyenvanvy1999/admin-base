@@ -25,12 +25,18 @@ export const SessionPaginateDto = t.Object({
 export const SessionPagingResDto = t.Object({
   docs: t.Array(
     t.Object({
-      expired: t.Date(),
       id: t.String(),
       created: t.Date({ format: 'date-time' }),
       createdById: t.String(),
+      expired: t.Date(),
       revoked: t.Boolean(),
       ip: t.Nullable(t.String()),
+      device: t.String(),
+      lastActivityAt: t.Nullable(
+        t.Date({
+          format: 'date-time',
+        }),
+      ),
     }),
   ),
   hasNext: t.Boolean(),

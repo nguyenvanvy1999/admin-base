@@ -184,23 +184,8 @@
     }
   },
   "mySessionsPage": {
-    "title": "My sessions",
-    "subtitle": "Review and manage recent sign-in sessions for your account.",
     "notice": "If you notice unfamiliar activity, revoke the suspicious session or sign out from all devices.",
     "currentDevice": "Current device",
-    "status": {
-      "active": "Active",
-      "revoked": "Revoked",
-      "expired": "Expired"
-    },
-    "table": {
-      "created": "Signed in at",
-      "expired": "Expires at",
-      "ip": "IP address",
-      "status": "Status",
-      "current": "Current device",
-      "actions": "Actions"
-    },
     "actions": {
       "revoke": "Revoke",
       "revokeConfirmTitle": "Confirm revoke session",
@@ -506,6 +491,7 @@
     "table": {
       "created": "Signed in at",
       "expired": "Expires at",
+      "device": "Device",
       "userId": "User ID",
       "ip": "IP address",
       "status": "Status",

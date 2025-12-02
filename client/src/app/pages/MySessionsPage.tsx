@@ -21,14 +21,14 @@ type MySessionTableParams = {
 
 function getStatusTag(status: AdminSessionStatus, t: any) {
   if (status === 'revoked') {
-    return <Tag color="default">{t('mySessionsPage.status.revoked')}</Tag>;
+    return <Tag color="default">{t('adminSessionsPage.status.revoked')}</Tag>;
   }
 
   if (status === 'expired') {
-    return <Tag color="default">{t('mySessionsPage.status.expired')}</Tag>;
+    return <Tag color="default">{t('adminSessionsPage.status.expired')}</Tag>;
   }
 
-  return <Tag color="green">{t('mySessionsPage.status.active')}</Tag>;
+  return <Tag color="green">{t('adminSessionsPage.status.active')}</Tag>;
 }
 
 export default function MySessionsPage() {
@@ -115,26 +115,33 @@ export default function MySessionsPage() {
 
   const columns: ProColumns<AdminSession>[] = [
     {
-      title: t('mySessionsPage.table.created'),
+      title: t('adminSessionsPage.table.created'),
       dataIndex: 'created',
       sorter: (a, b) => dayjs(a.created).valueOf() - dayjs(b.created).valueOf(),
       render: (_, record) =>
         dayjs(record.created).format('YYYY-MM-DD HH:mm:ss'),
     },
     {
-      title: t('mySessionsPage.table.expired'),
+      title: t('adminSessionsPage.table.expired'),
       dataIndex: 'expired',
       hideInSearch: true,
       render: (_, record) =>
         dayjs(record.expired).format('YYYY-MM-DD HH:mm:ss'),
     },
     {
-      title: t('mySessionsPage.table.ip'),
+      title: t('adminSessionsPage.table.device'),
+      dataIndex: 'device',
+      hideInSearch: true,
+      ellipsis: true,
+      render: (_, record) => record.device,
+    },
+    {
+      title: t('adminSessionsPage.table.ip'),
       dataIndex: 'ip',
       render: (_, record) => record.ip ?? '-',
     },
     {
-      title: t('mySessionsPage.table.status'),
+      title: t('adminSessionsPage.table.status'),
       dataIndex: 'status',
       hideInSearch: true,
       render: (_, record) => {
@@ -143,7 +150,7 @@ export default function MySessionsPage() {
       },
     },
     {
-      title: t('mySessionsPage.table.current'),
+      title: t('mySessionsPage.currentDevice'),
       dataIndex: 'current',
       hideInSearch: true,
       render: (_, record) =>
@@ -154,7 +161,7 @@ export default function MySessionsPage() {
         ),
     },
     {
-      title: t('mySessionsPage.table.actions'),
+      title: t('adminSessionsPage.table.actions'),
       dataIndex: 'actions',
       hideInSearch: true,
       render: (_, record) => {
@@ -167,7 +174,7 @@ export default function MySessionsPage() {
 
         return (
           <Popconfirm
-            title={t('mySessionsPage.actions.revokeConfirmTitle')}
+            title={t('adminSessionsPage.actions.revokeConfirmTitle')}
             description={t(
               isCurrent
                 ? 'mySessionsPage.actions.revokeCurrentConfirm'
@@ -176,7 +183,7 @@ export default function MySessionsPage() {
             onConfirm={() => handleRevoke(record)}
           >
             <Button size="small" danger type="link">
-              {t('mySessionsPage.actions.revoke')}
+              {t('adminSessionsPage.actions.revoke')}
             </Button>
           </Popconfirm>
         );
@@ -193,10 +200,10 @@ export default function MySessionsPage() {
       <Card size="small">
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Typography.Title level={4} style={{ margin: 0 }}>
-            {t('mySessionsPage.title')}
+            {t('adminSessionsPage.title')}
           </Typography.Title>
           <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            {t('mySessionsPage.subtitle')}
+            {t('adminSessionsPage.subtitle')}
           </Typography.Paragraph>
 
           <Alert type="info" showIcon message={t('mySessionsPage.notice')} />
@@ -246,7 +253,7 @@ export default function MySessionsPage() {
         toolBarRender={() => [
           paging.hasNext && (
             <Button key="load-more" onClick={loadMore}>
-              {t('mySessionsPage.actions.loadMore')}
+              {t('adminSessionsPage.actions.loadMore')}
             </Button>
           ),
         ]}

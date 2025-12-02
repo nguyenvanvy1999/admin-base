@@ -191,6 +191,13 @@ export default function AdminSessionsPage() {
         dayjs(record.expired).format('YYYY-MM-DD HH:mm:ss'),
     },
     {
+      title: t('adminSessionsPage.table.device'),
+      dataIndex: 'device',
+      hideInSearch: true,
+      ellipsis: true,
+      render: (_, record) => record.device,
+    },
+    {
       title: t('adminSessionsPage.table.userId'),
       dataIndex: 'createdById',
       hideInSearch: true,

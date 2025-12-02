@@ -5,6 +5,8 @@ export interface AdminSession {
   createdById: string;
   revoked: boolean;
   ip: string | null;
+  device: string;
+  lastActivityAt: string | null;
 }
 
 export interface AdminSessionListParams {
