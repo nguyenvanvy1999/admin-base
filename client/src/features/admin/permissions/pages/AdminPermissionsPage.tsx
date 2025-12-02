@@ -9,7 +9,7 @@ import { usePermissions } from 'src/hooks/auth/usePermissions';
 import type { AdminPermission } from 'src/types/admin-roles';
 
 type AdminPermissionTableParams = {
-  category?: string;
+  category?: string[];
   search?: string;
 };
 
@@ -18,7 +18,7 @@ export default function AdminPermissionsPage() {
   const { hasPermission } = usePermissions();
   const canView = hasPermission('ROLE.VIEW');
 
-  const [categoryFilter, setCategoryFilter] = useState<string | undefined>();
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [searchText, setSearchText] = useState<string>('');
 
   const { data: permissions = [], isLoading } = useAdminPermissions();
@@ -35,10 +35,10 @@ export default function AdminPermissionsPage() {
   const filteredPermissions = useMemo(() => {
     let filtered = permissions;
 
-    if (categoryFilter) {
+    if (categoryFilter.length > 0) {
       filtered = filtered.filter((perm) => {
         const [category] = perm.title.split('.');
-        return category === categoryFilter;
+        return categoryFilter.includes(category);
       });
     }
 
@@ -150,12 +150,13 @@ export default function AdminPermissionsPage() {
               onChange={(e) => setSearchText(e.target.value)}
             />
             <Select
+              mode="multiple"
               placeholder={t('adminPermissionsPage.table.filters.category')}
               allowClear
               style={{ width: 200 }}
               value={categoryFilter}
               onChange={(value) => {
-                setCategoryFilter(value);
+                setCategoryFilter(value || []);
               }}
               options={categories.map((cat) => ({
                 label:
