@@ -26,6 +26,7 @@ export const userResSelect = {
   passwordResetTokenExpiresAt: true,
   lastFailedLoginAt: true,
   suspiciousActivityCount: true,
+  protected: true,
 } satisfies UserSelect;
 
 export type LoginMethod = OAUTH.GOOGLE | 'email' | 'backup-code';

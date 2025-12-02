@@ -12,7 +12,7 @@ import {
 } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
-import { UserStatus } from 'src/generated';
+import { type User, UserStatus } from 'src/generated';
 import type {
   ChangePasswordRequestDto,
   ConfirmMfaLoginRequestDto,
@@ -305,21 +305,16 @@ export class AuthService {
   }
 
   private async handleMfaLogin(
-    user: {
-      id: string;
-      mfaTotpEnabled: boolean;
-      totpSecret: string | null;
-    },
+    user: Pick<
+      User,
+      'id' | 'mfaTotpEnabled' | 'totpSecret' | 'backupCodes' | 'backupCodesUsed'
+    >,
     security?: SecurityCheckResult,
   ): Promise<ILoginResponse> {
     const loginToken = IdUtil.token16();
     const mfaToken = await this.deps.mfaUtilService.createSession({
       loginToken,
-      user: {
-        id: user.id,
-        mfaTotpEnabled: user.mfaTotpEnabled,
-        totpSecret: user.totpSecret,
-      },
+      user,
       security,
     });
 
