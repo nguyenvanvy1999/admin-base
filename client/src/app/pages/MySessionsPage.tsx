@@ -208,7 +208,7 @@ export default function MySessionsPage() {
             {t('adminSessionsPage.subtitle')}
           </Typography.Paragraph>
 
-          <Alert type="info" showIcon message={t('mySessionsPage.notice')} />
+          <Alert type="info" showIcon title={t('mySessionsPage.notice')} />
 
           <Space wrap>
             <Button onClick={handleLogoutCurrent}>
