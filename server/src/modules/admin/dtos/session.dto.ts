@@ -5,6 +5,13 @@ export const SessionPaginateDto = t.Object({
   cursor: t.Optional(t.String({ example: '123' })),
   revoked: t.Optional(t.Boolean()),
   ip: t.Optional(t.String()),
+  userIds: t.Optional(
+    t.Array(t.String(), {
+      minItems: 1,
+      maxItems: 100,
+      description: 'Filter by any of the provided user ids.',
+    }),
+  ),
   created0: t.Date({
     format: 'date-time',
     example: '2023-10-01T00:00:00.000Z',

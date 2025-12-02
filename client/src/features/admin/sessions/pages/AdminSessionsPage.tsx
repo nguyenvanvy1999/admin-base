@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   DatePicker,
+  Input,
   Popconfirm,
   Select,
   Space,
@@ -18,6 +19,7 @@ import { useAdminSessions } from 'src/hooks/api/useAdminSessions';
 import { useAdminSettings } from 'src/hooks/api/useAdminSettings';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { adminSessionsService } from 'src/services/api/admin-sessions.service';
+import { adminUsersService } from 'src/services/api/admin-users.service';
 import type {
   AdminSession,
   AdminSessionStatus,
@@ -30,6 +32,7 @@ const { RangePicker } = DatePicker;
 type AdminSessionTableParams = {
   ip?: string;
   status?: 'all' | 'active' | 'revoked';
+  userIds?: string[];
 };
 
 function getSessionStatus(
@@ -77,6 +80,10 @@ export default function AdminSessionsPage() {
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'active' | 'revoked'
   >('all');
+  const [ipFilter, setIpFilter] = useState<string | undefined>(undefined);
+  const [userIdsFilter, setUserIdsFilter] = useState<string[] | undefined>(
+    undefined,
+  );
   const created0 = useMemo(
     () => dateRange[0].startOf('day').toISOString(),
     [dateRange],
@@ -91,9 +98,11 @@ export default function AdminSessionsPage() {
       take: 20,
       created0,
       created1,
-      ip: undefined,
+      ip: ipFilter,
+      userIds: canViewAll ? userIdsFilter : undefined,
+      revoked: statusFilter === 'revoked' ? true : undefined,
     }),
-    [created0, created1],
+    [created0, created1, ipFilter, userIdsFilter, statusFilter, canViewAll],
   );
 
   const {
@@ -125,6 +134,41 @@ export default function AdminSessionsPage() {
 
   const { data: settings = [] } = useAdminSettings();
   const enbOnlyOneSession = getSettingValue(settings, 'ENB_ONLY_ONE_SESSION');
+
+  const [userSearch, setUserSearch] = useState('');
+  const [userOptions, setUserOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+
+  useEffect(() => {
+    if (!canViewAll) return;
+    const controller = new AbortController();
+
+    const fetchUsers = async () => {
+      try {
+        const result = await adminUsersService.list({
+          skip: 0,
+          take: 20,
+          search: userSearch || undefined,
+        });
+
+        setUserOptions(
+          result.docs.map((user) => ({
+            label: user.email,
+            value: user.id,
+          })),
+        );
+      } catch {
+        // handled by global error handler in apiClient
+      }
+    };
+
+    void fetchUsers();
+
+    return () => {
+      controller.abort();
+    };
+  }, [canViewAll, userSearch]);
 
   const handleRevoke = async (session: AdminSession) => {
     await adminSessionsService.revoke([session.id]);
@@ -214,6 +258,15 @@ export default function AdminSessionsPage() {
           )}
 
           <Space wrap>
+            <Input
+              placeholder={t('adminSessionsPage.filters.ip')}
+              style={{ width: 200 }}
+              value={ipFilter}
+              allowClear
+              onChange={(e) =>
+                setIpFilter(e.target.value ? e.target.value : undefined)
+              }
+            />
             <RangePicker
               value={dateRange}
               onChange={(range) => {
@@ -222,6 +275,24 @@ export default function AdminSessionsPage() {
               }}
               allowClear={false}
             />
+            {canViewAll && (
+              <Select
+                mode="multiple"
+                allowClear
+                showSearch
+                style={{ minWidth: 240 }}
+                placeholder={t('adminSessionsPage.filters.users')}
+                options={userOptions}
+                value={userIdsFilter}
+                onSearch={(value) => setUserSearch(value)}
+                onChange={(values) =>
+                  setUserIdsFilter(
+                    values && values.length ? (values as string[]) : undefined,
+                  )
+                }
+                filterOption={false}
+              />
+            )}
             <Select
               value={statusFilter}
               onChange={(value) => setStatusFilter(value)}

@@ -496,6 +496,8 @@
     }
   },
   "adminSessionsPage": {
+    "title": "Session management",
+    "subtitle": "Review and revoke sign-in sessions across the system.",
     "status": {
       "active": "Active",
       "revoked": "Revoked",
@@ -510,6 +512,8 @@
       "actions": "Actions"
     },
     "filters": {
+      "ip": "IP address",
+      "users": "Users",
       "status": {
         "all": "All statuses",
         "active": "Only active",

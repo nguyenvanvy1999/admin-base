@@ -41,6 +41,7 @@ export class SessionService {
       created0,
       created1,
       ip,
+      userIds,
       cursor,
       take,
       revoked,
@@ -59,6 +60,10 @@ export class SessionService {
 
     if (!hasViewAllPermission) {
       conditions.push({ createdById: currentUserId });
+    }
+
+    if (userIds && userIds.length > 0) {
+      conditions.push({ createdById: { in: userIds } });
     }
 
     if (ip) {

@@ -14,6 +14,7 @@ export interface AdminSessionListParams {
   created1: string;
   revoked?: boolean;
   ip?: string;
+  userIds?: string[];
 }
 
 export interface AdminSessionPagingResponse {

@@ -512,6 +512,8 @@
       "actions": "Thao tác"
     },
     "filters": {
+      "ip": "Địa chỉ IP",
+      "users": "User",
       "status": {
         "all": "Tất cả trạng thái",
         "active": "Chỉ đang hoạt động",
