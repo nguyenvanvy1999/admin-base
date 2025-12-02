@@ -16,6 +16,7 @@ type AdminRoleTableParams = {
   current?: number;
   pageSize?: number;
   userId?: string;
+  search?: string;
 };
 
 export default function AdminRolesPage() {
@@ -77,11 +78,13 @@ export default function AdminRolesPage() {
       dataIndex: 'title',
       copyable: true,
       ellipsis: true,
+      hideInSearch: true,
     },
     {
       title: t('adminRolesPage.table.description'),
       dataIndex: 'description',
       ellipsis: true,
+      hideInSearch: true,
       render: (_, record) => record.description ?? '-',
     },
     {
@@ -105,6 +108,15 @@ export default function AdminRolesPage() {
       valueType: 'text',
       fieldProps: {
         placeholder: t('adminRolesPage.table.filters.user'),
+      },
+    },
+    {
+      title: t('common.search'),
+      dataIndex: 'search',
+      hideInTable: true,
+      valueType: 'text',
+      fieldProps: {
+        placeholder: t('common.search'),
       },
     },
     {
@@ -158,9 +170,10 @@ export default function AdminRolesPage() {
           labelWidth: 'auto',
         }}
         request={async (params) => {
-          const { userId } = params;
+          const { userId, search } = params;
           const response = await adminRolesService.list({
             userId: userId?.trim() || undefined,
+            search: search?.trim() || undefined,
           });
           return {
             data: response || [],

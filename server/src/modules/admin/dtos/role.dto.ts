@@ -22,4 +22,5 @@ export const PaginateRoleResDto = t.Array(
 
 export const RolePaginationDto = t.Object({
   userId: t.Optional(t.String()),
+  search: t.Optional(t.String()),
 });

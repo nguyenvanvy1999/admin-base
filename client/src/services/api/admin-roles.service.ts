@@ -12,6 +12,7 @@ export const adminRoleKeys = {
 
 export interface AdminRoleListQuery {
   userId?: string;
+  search?: string;
 
   [key: string]: unknown;
 }

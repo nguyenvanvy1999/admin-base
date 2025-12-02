@@ -16,12 +16,36 @@ export class RoleService {
   ) {}
 
   async list(params: ListParams) {
-    const { userId } = params;
+    const { userId, search } = params;
     const where: RoleWhereInput = {};
     if (userId) {
       where.players = {
         some: { player: { id: userId } },
       };
+    }
+
+    if (search) {
+      const trimmedSearch = search.trim();
+      if (trimmedSearch.length > 0) {
+        where.AND = [
+          {
+            OR: [
+              {
+                title: {
+                  contains: trimmedSearch,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                description: {
+                  contains: trimmedSearch,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          },
+        ];
+      }
     }
 
     const roles = await this.deps.db.role.findMany({

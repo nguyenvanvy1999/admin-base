@@ -1,5 +1,6 @@
 {
   "common": {
+    "search": "Search",
     "enabled": "Enabled",
     "disabled": "Disabled",
     "cancel": "Cancel",

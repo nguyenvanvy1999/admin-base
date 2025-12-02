@@ -65,6 +65,7 @@ export function AdminUserCreateModal({
       onSubmit={handleSubmit}
       title={t('adminUsersPage.create.title')}
       okText={t('adminUsersPage.create.button')}
+      cancelText={t('common.cancel')}
       loading={createMutation.isPending}
     >
       <ProFormText
