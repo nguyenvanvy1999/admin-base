@@ -41,11 +41,13 @@ export const authCheck = (app: Elysia) =>
         throw new UnAuthErr(ErrCode.UserNotActive);
       }
 
+      const activeRoleIds = await userUtilService.getActiveRoleIds(user.id);
+
       currentUser = {
         ...user,
         sessionId: data.sessionId,
         permissions: await userUtilService.getPermissions(user),
-        roleIds: user.roles.map((x) => x.roleId),
+        roleIds: activeRoleIds,
       };
 
       await currentUserCache.set(data.sessionId, currentUser);

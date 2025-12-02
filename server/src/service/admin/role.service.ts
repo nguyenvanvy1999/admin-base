@@ -63,18 +63,17 @@ export class RoleService {
         protected: true,
         enabled: true,
         permissions: { select: { permissionId: true } },
-        players: { select: { playerId: true } },
+        players: { select: { playerId: true, expiresAt: true } },
       },
     });
 
     return roles.map((role) => ({
-      id: role.id,
-      title: role.title,
-      description: role.description,
-      enabled: role.enabled,
-      protected: role.protected,
+      ...role,
       permissionIds: role.permissions.map((p) => p.permissionId),
-      playerIds: role.players.map((p) => p.playerId),
+      players: role.players.map((p) => ({
+        playerId: p.playerId,
+        expiresAt: p.expiresAt?.toString() ?? null,
+      })),
     }));
   }
 

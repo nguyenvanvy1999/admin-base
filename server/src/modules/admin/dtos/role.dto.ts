@@ -11,12 +11,17 @@ export const UpsertRoleDto = t.Object({
 
 export const PaginateRoleResDto = t.Array(
   t.Intersect([
-    t.Omit(UpsertRoleDto, ['enabled']),
+    t.Omit(UpsertRoleDto, ['enabled', 'playerIds']),
     t.Object({
       id: t.String(),
       permissionIds: t.Array(t.String()),
-      playerIds: t.Array(t.String()),
       protected: t.Boolean(),
+      players: t.Array(
+        t.Object({
+          playerId: t.String(),
+          expiresAt: t.Nullable(t.String()),
+        }),
+      ),
     }),
   ]),
 );

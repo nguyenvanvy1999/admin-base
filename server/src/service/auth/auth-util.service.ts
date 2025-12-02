@@ -21,7 +21,6 @@ import {
   type IJwtVerified,
   type ITokenPayload,
   LoginResType,
-  type PrismaTx,
   type SecurityDeviceInsight,
   UnAuthErr,
   type UPermission,
@@ -107,11 +106,26 @@ export class UserUtilService {
     },
   ) {}
 
-  async getPermissions(user: {
-    roles: { roleId: string }[];
-  }): Promise<UPermission[]> {
+  async getActiveRoleIds(userId: string): Promise<string[]> {
+    const rolePlayers = await this.deps.db.rolePlayer.findMany({
+      where: {
+        playerId: userId,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      select: { roleId: true },
+    });
+
+    return rolePlayers.map((x) => x.roleId);
+  }
+
+  async getPermissions(user: { id: string }): Promise<UPermission[]> {
+    const activeRoleIds = await this.getActiveRoleIds(user.id);
+    if (activeRoleIds.length === 0) {
+      return [];
+    }
+
     const permissions = await this.deps.db.rolePermission.findMany({
-      where: { roleId: { in: user.roles.map((x) => x.roleId) } },
+      where: { roleId: { in: activeRoleIds } },
       select: { permission: { select: { title: true } } },
     });
     return ArrayUtil.uniq(
@@ -187,10 +201,6 @@ export class UserUtilService {
       expired: dayjs(expirationTime).format(),
       user: userRes,
     };
-  }
-
-  async createProfile(_tx: PrismaTx, _userId: string): Promise<void> {
-    // TODO: Implement profile creation logic
   }
 }
 

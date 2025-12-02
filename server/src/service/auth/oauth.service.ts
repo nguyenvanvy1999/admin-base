@@ -167,8 +167,6 @@ export class OAuthService {
           select: { id: true },
         });
 
-        await this.deps.userUtilService.createProfile(tx, userId);
-
         return createdUser;
       });
 

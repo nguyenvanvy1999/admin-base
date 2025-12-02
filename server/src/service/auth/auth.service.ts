@@ -418,8 +418,6 @@ export class AuthService {
         password,
       );
 
-      await this.deps.userUtilService.createProfile(tx, userId);
-
       return userId;
     });
 

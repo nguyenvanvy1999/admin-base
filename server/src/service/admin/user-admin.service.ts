@@ -42,7 +42,6 @@ import {
   IdUtil,
   NotFoundErr,
   normalizeEmail,
-  type PrismaTx,
 } from 'src/share';
 
 type UserActionResult = typeof AdminUserActionResDto.static;
@@ -134,8 +133,6 @@ export class AdminUserService {
         },
         select: { id: true },
       });
-
-      await this.deps.userUtilService.createProfile(tx as PrismaTx, userId);
     });
 
     const auditLogId = await this.deps.auditLogService.push({
