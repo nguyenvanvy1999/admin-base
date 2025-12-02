@@ -1,5 +1,5 @@
 import type { ProColumns } from '@ant-design/pro-components';
-import { Alert, Card, Input, Select, Space, Tag } from 'antd';
+import { Card, Input, Select, Space, Tag } from 'antd';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
@@ -127,18 +127,7 @@ export default function AdminPermissionsPage() {
   }
 
   return (
-    <AppPage
-      title={t('adminPermissionsPage.title')}
-      subtitle={t('adminPermissionsPage.subtitle')}
-    >
-      <Alert
-        title={t('adminPermissionsPage.info.title')}
-        description={t('adminPermissionsPage.info.description')}
-        type="info"
-        showIcon
-        style={{ marginBottom: 16 }}
-      />
-
+    <AppPage>
       <Card size="small" style={{ marginBottom: 16 }}>
         <Space orientation="vertical" style={{ width: '100%' }} size="middle">
           <Space wrap>

@@ -8,7 +8,7 @@ import {
   UserSwitchOutlined,
 } from '@ant-design/icons';
 import type { MenuDataItem, ProLayoutProps } from '@ant-design/pro-components';
-import { PageContainer, ProLayout } from '@ant-design/pro-components';
+import { ProLayout } from '@ant-design/pro-components';
 import { Button, Dropdown, Switch, Tooltip } from 'antd';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -171,9 +171,7 @@ export default function MainLayout() {
       }
       menuHeaderRender={() => null}
     >
-      <PageContainer>
-        <Outlet />
-      </PageContainer>
+      <Outlet />
     </ProLayout>
   );
 }

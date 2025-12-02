@@ -168,17 +168,8 @@ export default function HomePage() {
           : t('dashboard.health.loading');
 
   return (
-    <AppPage title={t('dashboard.title')} subtitle={t('dashboard.subtitle')}>
+    <AppPage>
       <Space orientation="vertical" size={24} style={{ width: '100%' }}>
-        <Card>
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <Title level={2}>{t('dashboard.welcomeTitle')}</Title>
-            <Paragraph style={{ fontSize: '16px', color: '#666' }}>
-              {t('dashboard.welcomeMessage')}
-            </Paragraph>
-          </div>
-        </Card>
-
         <Card
           title={t('dashboard.health.overviewTitle')}
           extra={

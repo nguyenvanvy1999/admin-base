@@ -251,10 +251,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <AppPage
-      title={t('adminUsersPage.title')}
-      subtitle={t('adminUsersPage.subtitle')}
-    >
+    <AppPage>
       <AppTable<AdminUserSummary, AdminUserTableParams>
         rowKey="id"
         columns={columns}

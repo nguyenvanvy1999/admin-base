@@ -153,10 +153,6 @@
     }
   },
   "dashboard": {
-    "title": "Bảng điều khiển",
-    "subtitle": "Kiến trúc base với Ant Design, React Query, Hash Router",
-    "welcomeTitle": "Chào mừng đến với hệ thống",
-    "welcomeMessage": "Trang chủ đang được phát triển. Các biểu đồ và thống kê sẽ được bổ sung sau.",
     "health": {
       "overviewTitle": "Tình trạng hệ thống",
       "overviewDescription": "Theo dõi trạng thái hạ tầng cốt lõi theo thời gian thực để phản ứng kịp thời.",
@@ -191,8 +187,6 @@
     "backHome": "Về trang chủ"
   },
   "adminUsersPage": {
-    "title": "Quản trị user",
-    "subtitle": "Theo dõi trạng thái tài khoản, cập nhật role và thao tác MFA.",
     "table": {
       "email": "Email",
       "name": "Tên hiển thị",
@@ -281,8 +275,6 @@
     }
   },
   "adminRolesPage": {
-    "title": "Quản trị role",
-    "subtitle": "Quản lý roles, permissions và gán role cho users.",
     "table": {
       "title": "Tên role",
       "description": "Mô tả",
@@ -338,8 +330,6 @@
     }
   },
   "adminPermissionsPage": {
-    "title": "Quản trị permissions",
-    "subtitle": "Xem danh sách permissions có sẵn trong hệ thống và hiểu về các quyền.",
     "table": {
       "title": "Tên permission",
       "description": "Mô tả",
@@ -351,8 +341,6 @@
       }
     },
     "info": {
-      "title": "Thông tin về Permissions",
-      "description": "Permissions là các quyền được định nghĩa trong hệ thống. Mỗi permission có format CATEGORY.ACTION (ví dụ: ROLE.VIEW, USER.UPDATE). Permissions được gán vào roles, và users có quyền thông qua các roles mà họ sở hữu.",
       "note": "Lưu ý: Permissions được tạo tự động từ backend khi seed database. FE không thể tạo/sửa/xóa permissions trực tiếp."
     },
     "categories": {
@@ -428,8 +416,6 @@
     }
   },
   "adminSettingsPage": {
-    "title": "Quản trị settings",
-    "subtitle": "Quản lý cấu hình hệ thống và các thiết lập bảo mật.",
     "secret": "Secret",
     "tabs": {
       "all": "Tất cả"
@@ -460,10 +446,7 @@
         "search": "Tìm kiếm setting"
       }
     },
-    "info": {
-      "title": "Thông tin về Settings",
-      "description": "Settings là các cấu hình hệ thống được định nghĩa sẵn. Mỗi setting có key, type và value. Settings có thể được đánh dấu là secret để bảo vệ thông tin nhạy cảm."
-    },
+    "info": {},
     "update": {
       "title": "Cập nhật setting"
     },

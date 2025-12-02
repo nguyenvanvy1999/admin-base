@@ -30,16 +30,10 @@ export function AppPage({
   childrenContentStyle,
   ...pageProps
 }: AppPageProps) {
-  const computedHeader =
-    header ??
-    (title || subtitle || extra || breadcrumb
-      ? {
-          title,
-          subTitle: subtitle,
-          extra,
-          breadcrumb,
-        }
-      : undefined);
+  const computedHeader: PageContainerProps['header'] = header ?? {
+    title: undefined,
+    breadcrumb: undefined,
+  };
 
   return (
     <PageContainer

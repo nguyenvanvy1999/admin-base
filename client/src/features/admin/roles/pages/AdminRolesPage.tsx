@@ -180,10 +180,7 @@ export default function AdminRolesPage() {
   }
 
   return (
-    <AppPage
-      title={t('adminRolesPage.title')}
-      subtitle={t('adminRolesPage.subtitle')}
-    >
+    <AppPage>
       <AppTable<AdminRole, AdminRoleTableParams>
         rowKey="id"
         columns={columns}

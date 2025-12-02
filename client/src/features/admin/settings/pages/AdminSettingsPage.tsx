@@ -1,7 +1,6 @@
 import { EditOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import {
-  Alert,
   Badge,
   Button,
   Card,
@@ -329,18 +328,7 @@ export default function AdminSettingsPage() {
   ];
 
   return (
-    <AppPage
-      title={t('adminSettingsPage.title')}
-      subtitle={t('adminSettingsPage.subtitle')}
-    >
-      <Alert
-        title={t('adminSettingsPage.info.title')}
-        description={t('adminSettingsPage.info.description')}
-        type="info"
-        showIcon
-        style={{ marginBottom: 16 }}
-      />
-
+    <AppPage>
       <Card size="small" style={{ marginBottom: 16 }}>
         <Space orientation="vertical" style={{ width: '100%' }} size="middle">
           <Space wrap>

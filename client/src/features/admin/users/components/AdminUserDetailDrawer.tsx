@@ -247,10 +247,15 @@ export function AdminUserDetailDrawer({
     }
 
     const payload = {
-      roles: (values.roles ?? []).map((item) => ({
-        roleId: item.roleId,
-        expiresAt: item.expiresAt ? item.expiresAt.toISOString() : null,
-      })),
+      roles: (values.roles ?? []).map((item) => {
+        const expiresAtValue = item.expiresAt;
+        return {
+          roleId: item.roleId,
+          expiresAt: expiresAtValue
+            ? dayjs(expiresAtValue).toISOString()
+            : null,
+        };
+      }),
       reason: values.reason.trim(),
     };
 

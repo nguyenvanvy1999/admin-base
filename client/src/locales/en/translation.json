@@ -153,10 +153,6 @@
     }
   },
   "dashboard": {
-    "title": "Dashboard",
-    "subtitle": "Base architecture with Ant Design, React Query, Hash Router",
-    "welcomeTitle": "Welcome to the system",
-    "welcomeMessage": "Homepage is under development. Charts and statistics will be added later.",
     "health": {
       "overviewTitle": "System health",
       "overviewDescription": "Live status for core infrastructure so you can react quickly when something degrades.",
@@ -191,8 +187,6 @@
     "backHome": "Back to dashboard"
   },
   "adminUsersPage": {
-    "title": "Admin user management",
-    "subtitle": "Monitor account status, roles, and MFA actions.",
     "table": {
       "email": "Email",
       "name": "Display name",
@@ -281,8 +275,6 @@
     }
   },
   "adminRolesPage": {
-    "title": "Admin role management",
-    "subtitle": "Manage roles, permissions and assign roles to users.",
     "table": {
       "title": "Role name",
       "description": "Description",
@@ -338,8 +330,6 @@
     }
   },
   "adminPermissionsPage": {
-    "title": "Admin permission management",
-    "subtitle": "View available permissions in the system and understand the permissions.",
     "table": {
       "title": "Permission name",
       "description": "Description",
@@ -351,8 +341,6 @@
       }
     },
     "info": {
-      "title": "About Permissions",
-      "description": "Permissions are privileges defined in the system. Each permission has the format CATEGORY.ACTION (e.g., ROLE.VIEW, USER.UPDATE). Permissions are assigned to roles, and users have permissions through the roles they own.",
       "note": "Note: Permissions are automatically created from the backend when seeding the database. FE cannot create/update/delete permissions directly."
     },
     "categories": {
@@ -428,8 +416,6 @@
     }
   },
   "adminSettingsPage": {
-    "title": "Admin settings management",
-    "subtitle": "Manage system configuration and security settings.",
     "secret": "Secret",
     "tabs": {
       "all": "All"
@@ -460,10 +446,7 @@
         "search": "Search setting"
       }
     },
-    "info": {
-      "title": "About Settings",
-      "description": "Settings are predefined system configurations. Each setting has a key, type, and value. Settings can be marked as secret to protect sensitive information."
-    },
+    "info": {},
     "update": {
       "title": "Update setting"
     },
