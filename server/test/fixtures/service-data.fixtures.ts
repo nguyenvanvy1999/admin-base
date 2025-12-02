@@ -1,5 +1,5 @@
 import type { Setting, SettingDataType } from 'src/generated';
-import { ACTIVITY_TYPE, LOG_LEVEL, PurposeVerify } from 'src/share';
+import { ACTIVITY_TYPE, LOG_LEVEL } from 'src/share';
 
 export class AuditLogFixtures {
   static createEntry(overrides: Record<string, any> = {}) {
@@ -46,18 +46,6 @@ export class SettingFixtures {
   }
 }
 
-export class OtpFixtures {
-  static createOtpData(overrides: Record<string, any> = {}) {
-    return {
-      otpId: 'test-otp-id',
-      purpose: PurposeVerify.REGISTER,
-      userId: 'user-123',
-      email: 'test@example.com',
-      ...overrides,
-    };
-  }
-}
-
 export class LockFixtures {
   static createLockData(overrides: Record<string, any> = {}) {
     return {
@@ -75,28 +63,6 @@ export class IdempotencyFixtures {
       key: 'test-key',
       ttl: 3600,
       ...overrides,
-    };
-  }
-}
-
-export class CurrencyCacheFixtures {
-  static createTestScenarios() {
-    return {
-      // Common test data
-      currencyId: 'currency-1',
-      networkId: 'network-1',
-      code: 'BTC',
-      type: 'CRYPTO',
-
-      // Test IDs for batch operations
-      batchIds: ['currency-1', 'currency-2', 'currency-3'],
-      partialBatchIds: ['currency-1', 'currency-2'],
-
-      // Filter scenarios
-      filterByType: { type: 'CRYPTO' },
-      filterByNetwork: { networkId: 'network-1' },
-      filterByCode: { code: 'BTC' },
-      multipleFilters: { type: 'CRYPTO', networkId: 'network-1', code: 'BTC' },
     };
   }
 }

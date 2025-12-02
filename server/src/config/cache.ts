@@ -121,13 +121,11 @@ export const mfaSetupTokenCache = new RedisCache<{
   namespace: CACHE_NS.MFA_SETUP_TOKEN,
   ttl: FIVE_MINUTES,
 });
-export type IMfaSetupTokenCache = typeof mfaSetupTokenCache;
 
 export const mfaSetupTokenByUserCache = new RedisCache<string>({
   namespace: `${CACHE_NS.MFA_SETUP_TOKEN}:by-user`,
   ttl: FIVE_MINUTES,
 });
-export type IMfaSetupTokenByUserCache = typeof mfaSetupTokenByUserCache;
 
 export const registerOtpLimitCache = new RedisCache<number>({
   namespace: CACHE_NS.REGISTER_OTP_LIMIT,

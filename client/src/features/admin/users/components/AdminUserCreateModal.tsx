@@ -31,7 +31,6 @@ export function AdminUserCreateModal({
     onSuccess: ({ auditLogId }) => {
       notify.notification.success({
         title: t('adminUsersPage.create.success'),
-        message: t('adminUsersPage.create.success'),
         description: t('adminUsersPage.create.auditLog', {
           auditId: auditLogId,
         }),

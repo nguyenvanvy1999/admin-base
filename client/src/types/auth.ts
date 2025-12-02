@@ -5,8 +5,6 @@ export type AuthFlowStep =
   | 'backup'
   | 'success';
 
-export type LoginResponseType = 'completed' | 'mfa-confirm' | 'mfa-setup';
-
 export type UserStatus = 'inactive' | 'active' | 'suspendded' | 'banned';
 
 export interface TokenSet {
@@ -15,13 +13,6 @@ export interface TokenSet {
   issuedAt?: string;
   expiresAt?: string;
   expiresInSeconds?: number;
-}
-
-export interface DeviceFingerprint {
-  id: string;
-  issuedAt: string;
-  expiresAt?: string;
-  label?: string;
 }
 
 export interface AuthUser {
@@ -144,15 +135,6 @@ export interface MfaStatusResponse {
   enabled: boolean;
   hasBackupCodes: boolean;
   backupCodesRemaining: number;
-}
-
-export interface DisableMfaPayload {
-  otp?: string;
-  backupCode?: string;
-}
-
-export interface RefreshTokenPayload {
-  token: string;
 }
 
 export interface AuthSession {

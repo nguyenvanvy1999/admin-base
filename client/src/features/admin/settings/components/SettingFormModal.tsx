@@ -63,11 +63,10 @@ export function SettingFormModal({
     let valueToFormat = values.valueInput;
 
     if (setting.type === SettingDataType.JSON) {
-      const stringValue =
+      valueToFormat =
         typeof valueToFormat === 'string'
           ? valueToFormat
           : JSON.stringify(valueToFormat);
-      valueToFormat = stringValue;
     }
 
     const formattedValue = formatSettingValue(valueToFormat, setting.type);

@@ -1,4 +1,4 @@
-import type { ActivityTypeMap } from '../type/type';
+import type { ActivityTypeMap } from '../type';
 import type { ACTIVITY_TYPE } from './app.constant';
 
 type LoginErrorPayload = ActivityTypeMap[typeof ACTIVITY_TYPE.LOGIN];

@@ -25,7 +25,7 @@ export function useAppMutation<
     ...mutationOptions
   } = options;
 
-  const mutation = useReactMutation<TData, TError, TVariables, TContext>({
+  return useReactMutation<TData, TError, TVariables, TContext>({
     ...mutationOptions,
     onSuccess: (data, variables, context, mutation) => {
       if (successMessage) {
@@ -42,6 +42,4 @@ export function useAppMutation<
       onError?.(error, variables, context, mutation);
     },
   });
-
-  return mutation;
 }

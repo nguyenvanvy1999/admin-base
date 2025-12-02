@@ -1,9 +1,3 @@
-export interface IBackupCode {
-  code: string;
-  used: boolean;
-  usedAt?: Date;
-}
-
 export interface IMfaUser {
   id: string;
   mfaTotpEnabled: boolean;
@@ -25,11 +19,6 @@ export interface IMfaStatus {
 
 export interface IGenerateBackupCodesParams {
   otp: string;
-}
-
-export interface IVerifyBackupCodeParams {
-  mfaToken: string;
-  backupCode: string;
 }
 
 export interface IDisableMfaParams {

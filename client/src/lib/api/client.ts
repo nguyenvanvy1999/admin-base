@@ -12,7 +12,7 @@ import { authStore } from 'src/store/authStore';
 import type { ApiResponse } from 'src/types/api';
 
 class ApiClient {
-  private instance: AxiosInstance;
+  private readonly instance: AxiosInstance;
   private isRefreshing = false;
   private failedQueue: Array<{
     resolve: (value?: unknown) => void;
@@ -124,10 +124,6 @@ class ApiClient {
     } else {
       localStorage.removeItem(ACCESS_TOKEN_KEY);
     }
-  }
-
-  getAuthToken(): string | null {
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
   }
 
   async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
