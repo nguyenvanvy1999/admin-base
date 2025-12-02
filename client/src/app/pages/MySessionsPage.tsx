@@ -1,14 +1,5 @@
 import type { ProColumns } from '@ant-design/pro-components';
-import {
-  Alert,
-  Button,
-  Card,
-  DatePicker,
-  Popconfirm,
-  Space,
-  Tag,
-  Typography,
-} from 'antd';
+import { Alert, Button, Card, Popconfirm, Space, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,10 +15,8 @@ import type {
   AdminSessionStatus,
 } from 'src/types/admin-sessions';
 
-const { RangePicker } = DatePicker;
-
 type MySessionTableParams = {
-  ip?: string;
+  created?: [dayjs.Dayjs, dayjs.Dayjs];
 };
 
 function getStatusTag(status: AdminSessionStatus, t: any) {
@@ -213,17 +202,6 @@ export default function MySessionsPage() {
           <Alert type="info" showIcon message={t('mySessionsPage.notice')} />
 
           <Space wrap>
-            <RangePicker
-              value={dateRange}
-              onChange={(range) => {
-                if (!range || range.length !== 2) return;
-                setDateRange([range[0]!, range[1]!]);
-              }}
-              allowClear={false}
-            />
-          </Space>
-
-          <Space wrap>
             <Button onClick={handleLogoutCurrent}>
               {t('mySessionsPage.actions.logoutCurrent')}
             </Button>
@@ -242,9 +220,29 @@ export default function MySessionsPage() {
         rowKey="id"
         columns={columns}
         loading={isLoading || isInitialLoading}
-        search={false}
         dataSource={sessions}
         pagination={false}
+        search={{
+          labelWidth: 'auto',
+        }}
+        form={{
+          initialValues: {
+            created: dateRange,
+          },
+        }}
+        onSubmit={(values) => {
+          const range = values.created as
+            | [dayjs.Dayjs, dayjs.Dayjs]
+            | undefined;
+          if (range && range.length === 2) {
+            setDateRange([range[0]!, range[1]!]);
+          }
+        }}
+        onReset={() => {
+          const end = dayjs();
+          const start = end.subtract(7, 'day');
+          setDateRange([start, end]);
+        }}
         toolBarRender={() => [
           paging.hasNext && (
             <Button key="load-more" onClick={loadMore}>

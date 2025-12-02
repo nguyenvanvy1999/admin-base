@@ -1,15 +1,5 @@
 import type { ProColumns } from '@ant-design/pro-components';
-import {
-  Alert,
-  Button,
-  Card,
-  DatePicker,
-  Input,
-  Popconfirm,
-  Select,
-  Space,
-  Tag,
-} from 'antd';
+import { Alert, Button, Popconfirm, Tag } from 'antd';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,12 +17,11 @@ import type {
 import type { AdminSetting } from 'src/types/admin-settings';
 import { SettingDataType } from 'src/types/admin-settings';
 
-const { RangePicker } = DatePicker;
-
 type AdminSessionTableParams = {
   ip?: string;
   status?: 'all' | 'active' | 'revoked';
   userIds?: string[];
+  created?: [dayjs.Dayjs, dayjs.Dayjs];
 };
 
 function getSessionStatus(
@@ -175,6 +164,17 @@ export default function AdminSessionsPage() {
     await reload();
   };
 
+  const handleResetFilters = () => {
+    const end = dayjs();
+    const start = end.subtract(7, 'day');
+
+    setDateRange([start, end]);
+    setStatusFilter('all');
+    setIpFilter(undefined);
+    setUserIdsFilter(undefined);
+    setUserSearch('');
+  };
+
   const columns: ProColumns<AdminSession>[] = [
     {
       title: t('adminSessionsPage.table.created'),
@@ -196,6 +196,26 @@ export default function AdminSessionsPage() {
       hideInSearch: true,
       render: (_, record) => record.createdById,
     },
+    ...(canViewAll
+      ? [
+          {
+            title: t('adminSessionsPage.filters.users'),
+            dataIndex: 'userIds',
+            hideInTable: true,
+            valueType: 'select',
+            fieldProps: {
+              mode: 'multiple',
+              allowClear: true,
+              showSearch: true,
+              style: { minWidth: 240 },
+              placeholder: t('adminSessionsPage.filters.users'),
+              options: userOptions,
+              onSearch: (value: string) => setUserSearch(value),
+              filterOption: false,
+            },
+          } as ProColumns<AdminSession>,
+        ]
+      : []),
     {
       title: t('adminSessionsPage.table.ip'),
       dataIndex: 'ip',
@@ -247,82 +267,56 @@ export default function AdminSessionsPage() {
 
   return (
     <AppPage>
-      <Card size="small" style={{ marginBottom: 16 }}>
-        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-          {enbOnlyOneSession && (
-            <Alert
-              type="info"
-              showIcon
-              title={t('adminSessionsPage.onlyOneSessionNotice')}
-            />
-          )}
-
-          <Space wrap>
-            <Input
-              placeholder={t('adminSessionsPage.filters.ip')}
-              style={{ width: 200 }}
-              value={ipFilter}
-              allowClear
-              onChange={(e) =>
-                setIpFilter(e.target.value ? e.target.value : undefined)
-              }
-            />
-            <RangePicker
-              value={dateRange}
-              onChange={(range) => {
-                if (!range || range.length !== 2) return;
-                setDateRange([range[0]!, range[1]!]);
-              }}
-              allowClear={false}
-            />
-            {canViewAll && (
-              <Select
-                mode="multiple"
-                allowClear
-                showSearch
-                style={{ minWidth: 240 }}
-                placeholder={t('adminSessionsPage.filters.users')}
-                options={userOptions}
-                value={userIdsFilter}
-                onSearch={(value) => setUserSearch(value)}
-                onChange={(values) =>
-                  setUserIdsFilter(
-                    values && values.length ? (values as string[]) : undefined,
-                  )
-                }
-                filterOption={false}
-              />
-            )}
-            <Select
-              value={statusFilter}
-              onChange={(value) => setStatusFilter(value)}
-              style={{ width: 200 }}
-              options={[
-                {
-                  label: t('adminSessionsPage.filters.status.all'),
-                  value: 'all',
-                },
-                {
-                  label: t('adminSessionsPage.filters.status.active'),
-                  value: 'active',
-                },
-                {
-                  label: t('adminSessionsPage.filters.status.revoked'),
-                  value: 'revoked',
-                },
-              ]}
-            />
-          </Space>
-        </Space>
-      </Card>
+      {enbOnlyOneSession && (
+        <Alert
+          type="info"
+          showIcon
+          title={t('adminSessionsPage.onlyOneSessionNotice')}
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
       <AppTable<AdminSession, AdminSessionTableParams>
         rowKey="id"
         columns={columns}
         loading={isLoading || isInitialLoading}
-        search={false}
         dataSource={filteredSessions}
         pagination={false}
+        search={{
+          labelWidth: 'auto',
+        }}
+        form={{
+          initialValues: {
+            ip: ipFilter,
+            status: statusFilter,
+            userIds: userIdsFilter,
+            created: dateRange,
+          },
+        }}
+        onSubmit={(values) => {
+          const range = values.created as
+            | [dayjs.Dayjs, dayjs.Dayjs]
+            | undefined;
+          if (range && range.length === 2) {
+            setDateRange([range[0]!, range[1]!]);
+          }
+
+          const ip = (values.ip as string | undefined)?.trim();
+          setIpFilter(ip || undefined);
+
+          const status =
+            (values.status as 'all' | 'active' | 'revoked' | undefined) ??
+            'all';
+          setStatusFilter(status);
+
+          const valuesUserIds = values.userIds as string[] | undefined;
+          setUserIdsFilter(
+            valuesUserIds && valuesUserIds.length ? valuesUserIds : undefined,
+          );
+        }}
+        onReset={() => {
+          handleResetFilters();
+        }}
         toolBarRender={() => [
           paging.hasNext && (
             <Button key="load-more" onClick={loadMore}>
