@@ -1,3 +1,4 @@
+import { EditOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import {
   Alert,
@@ -9,6 +10,7 @@ import {
   Space,
   Tabs,
   Tag,
+  Tooltip,
 } from 'antd';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -220,17 +222,19 @@ export default function AdminSettingsPage() {
       dataIndex: 'actions',
       valueType: 'option',
       hideInTable: !canUpdate,
-      width: 100,
+      width: 60,
       render: (_, record) => (
-        <Button
-          type="link"
-          onClick={() => {
-            setEditingSetting(record);
-            setFormModalOpen(true);
-          }}
-        >
-          {t('adminSettingsPage.actions.edit')}
-        </Button>
+        <Tooltip title={t('adminSettingsPage.actions.edit')}>
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setEditingSetting(record);
+              setFormModalOpen(true);
+            }}
+          />
+        </Tooltip>
       ),
     },
   ];

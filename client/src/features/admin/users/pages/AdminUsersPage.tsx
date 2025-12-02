@@ -1,5 +1,6 @@
+import { EditOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Space, Tag } from 'antd';
+import { Button, Space, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -112,29 +113,34 @@ export default function AdminUsersPage() {
       title: t('adminUsersPage.table.actions'),
       dataIndex: 'actions',
       valueType: 'option',
+      width: 80,
       render: (_, record) => (
         <Space size="small">
-          <Button
-            type="link"
-            onClick={() => {
-              setDetailUserId(record.id);
-              setDetailTab('general');
-              setDrawerOpen(true);
-            }}
-          >
-            {t('adminUsersPage.actions.view')}
-          </Button>
-          {canUpdate && (
+          <Tooltip title={t('adminUsersPage.actions.view')}>
             <Button
-              type="link"
+              type="text"
+              size="small"
+              icon={<EyeOutlined />}
               onClick={() => {
                 setDetailUserId(record.id);
-                setDetailTab('edit');
+                setDetailTab('general');
                 setDrawerOpen(true);
               }}
-            >
-              {t('adminUsersPage.actions.edit')}
-            </Button>
+            />
+          </Tooltip>
+          {canUpdate && (
+            <Tooltip title={t('adminUsersPage.actions.edit')}>
+              <Button
+                type="text"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setDetailUserId(record.id);
+                  setDetailTab('edit');
+                  setDrawerOpen(true);
+                }}
+              />
+            </Tooltip>
           )}
         </Space>
       ),

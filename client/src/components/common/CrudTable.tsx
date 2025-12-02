@@ -1,6 +1,6 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
-import { Button, Space } from 'antd';
+import { Button, Space, Tooltip } from 'antd';
 import { useState } from 'react';
 import { confirmModal } from 'src/components/common/AppModal';
 import { AppTable } from 'src/components/common/AppTable';
@@ -69,7 +69,7 @@ export function CrudTable<T extends Record<string, unknown>>({
     title: 'Thao tác',
     key: 'action',
     fixed: 'right',
-    width: 120,
+    width: 80,
     render: (_: unknown, record: T) => {
       const id =
         typeof rowKey === 'function'
@@ -78,30 +78,30 @@ export function CrudTable<T extends Record<string, unknown>>({
       const isDeleting = deletingId === id;
 
       return (
-        <Space>
+        <Space size="small">
           {onEdit && (
-            <Button
-              type="link"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => onEdit(record)}
-              disabled={isDeleting}
-            >
-              {editButtonText}
-            </Button>
+            <Tooltip title={editButtonText}>
+              <Button
+                type="text"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => onEdit(record)}
+                disabled={isDeleting}
+              />
+            </Tooltip>
           )}
           {onDelete && (
-            <Button
-              type="link"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => handleDelete(record)}
-              loading={isDeleting}
-              disabled={isDeleting}
-            >
-              {deleteButtonText}
-            </Button>
+            <Tooltip title={deleteButtonText}>
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => handleDelete(record)}
+                loading={isDeleting}
+                disabled={isDeleting}
+              />
+            </Tooltip>
           )}
         </Space>
       );

@@ -1,5 +1,6 @@
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Modal, Space, Tag } from 'antd';
+import { Button, Modal, Space, Tag, Tooltip } from 'antd';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
@@ -108,17 +109,29 @@ export default function AdminRolesPage() {
       dataIndex: 'actions',
       valueType: 'option',
       hideInTable: !canUpdate && !canDelete,
+      width: 80,
       render: (_, record) => (
         <Space size="small">
           {canUpdate && (
-            <Button type="link" onClick={() => handleEdit(record)}>
-              {t('adminRolesPage.actions.edit')}
-            </Button>
+            <Tooltip title={t('adminRolesPage.actions.edit')}>
+              <Button
+                type="text"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => handleEdit(record)}
+              />
+            </Tooltip>
           )}
           {canDelete && (
-            <Button type="link" danger onClick={() => handleDelete(record)}>
-              {t('adminRolesPage.actions.delete')}
-            </Button>
+            <Tooltip title={t('adminRolesPage.actions.delete')}>
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => handleDelete(record)}
+              />
+            </Tooltip>
           )}
         </Space>
       ),
