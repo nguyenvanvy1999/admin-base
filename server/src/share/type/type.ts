@@ -26,6 +26,7 @@ export type ActionType =
   | 'mfa_setup_required'
   | 'refresh_token'
   | 'user-update'
+  | 'user-update-roles'
   | `otp_${string}`
   | `otp_sent_${string}`;
 

@@ -109,7 +109,7 @@ export default function AdminRolesPage() {
 
         return (
           <Tooltip
-            title={t('adminRolesPage.users.tooltip', {
+            title={t('adminRolesPage.users.tooltip' as any, {
               active: activeCount,
               expired: expiredCount,
             })}

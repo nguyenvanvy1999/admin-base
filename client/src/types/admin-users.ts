@@ -68,7 +68,6 @@ export interface AdminUserCreatePayload {
 export interface AdminUserUpdatePayload {
   status?: AdminUserStatus;
   name?: string | null;
-  roleIds?: string[];
   lockoutUntil?: string | null;
   lockoutReason?: AdminLockoutReason | null;
   emailVerified?: boolean;

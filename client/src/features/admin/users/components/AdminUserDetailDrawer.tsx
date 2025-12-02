@@ -8,7 +8,17 @@ import {
   ProFormText,
   ProFormTextArea,
 } from '@ant-design/pro-components';
-import { Alert, Button, Flex, Input, Skeleton, Space, Tabs, Tag } from 'antd';
+import {
+  Alert,
+  Button,
+  Flex,
+  Input,
+  Skeleton,
+  Space,
+  Tabs,
+  Tag,
+  Tooltip,
+} from 'antd';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
@@ -20,7 +30,6 @@ import {
   useAdminUserMfaAction,
   useUpdateAdminUser,
 } from 'src/features/admin/users/hooks/useAdminUsers';
-import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
 import { useModal } from 'src/hooks/useModal';
 import { useNotify } from 'src/hooks/useNotify';
 import { toIsoStringOrNull } from 'src/lib/utils/date.utils';
@@ -44,7 +53,6 @@ interface AdminUserDetailDrawerProps {
 interface AdminUserUpdateFormValues {
   status?: AdminUserStatus;
   name?: string | null;
-  roleIds?: string[];
   lockoutUntil?: Dayjs | null;
   lockoutReason?: AdminLockoutReason | null;
   emailVerified?: boolean;
@@ -63,7 +71,6 @@ function mapDetailToFormValues(
   return {
     status: detail.status,
     name: detail.name,
-    roleIds: detail.roles.map((roleRef) => roleRef.role.id),
     lockoutUntil: detail.lockoutUntil ? dayjs(detail.lockoutUntil) : null,
     lockoutReason: detail.lockoutReason,
     emailVerified: detail.emailVerified,
@@ -134,7 +141,6 @@ export function AdminUserDetailDrawer({
   const { t } = useTranslation();
   const notify = useNotify();
   const modal = useModal();
-  const { data: roles, isLoading: isLoadingRoles } = useAdminRoles();
 
   const { data, isLoading } = useAdminUserDetail(userId ?? undefined, open);
   const updateMutation = useUpdateAdminUser({
@@ -464,23 +470,6 @@ export function AdminUserDetailDrawer({
                           name="name"
                           label={t('adminUsersPage.form.name')}
                           placeholder="Jane Doe"
-                        />
-                        <ProFormSelect
-                          name="roleIds"
-                          label={t('adminUsersPage.form.roles')}
-                          mode="multiple"
-                          placeholder="admin"
-                          options={
-                            roles?.map((role) => ({
-                              value: role.id,
-                              label: role.title,
-                            })) ?? []
-                          }
-                          fieldProps={{
-                            loading: isLoadingRoles,
-                            showSearch: true,
-                            optionFilterProp: 'label',
-                          }}
                         />
                         <ProFormSwitch
                           name="emailVerified"

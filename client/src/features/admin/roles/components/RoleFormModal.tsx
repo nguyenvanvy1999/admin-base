@@ -82,7 +82,9 @@ export function RoleFormModal({
       role?.permissionIds ??
       [];
     const playerIds =
-      (values.playerIds as string[] | undefined) ?? role?.playerIds ?? [];
+      (values.playerIds as string[] | undefined) ??
+      role?.players.map((player) => player.playerId) ??
+      [];
 
     const payload: UpsertRoleDto = {
       ...(role ? { id: role.id } : {}),

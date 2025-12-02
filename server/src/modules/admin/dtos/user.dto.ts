@@ -74,7 +74,6 @@ export const AdminUserUpdateDto = t.Object({
     }),
   ),
   name: t.Optional(displayNameField),
-  roleIds: t.Optional(roleIdsField),
   lockoutUntil: t.Optional(
     t.Nullable(
       t.Date({

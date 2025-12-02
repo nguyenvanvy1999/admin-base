@@ -304,7 +304,6 @@ export class AdminUserService {
       actorId,
       status,
       name,
-      roleIds,
       lockoutUntil,
       lockoutReason,
       emailVerified,
@@ -370,40 +369,6 @@ export class AdminUserService {
     assignIfProvided('emailVerified', emailVerified);
     assignIfProvided('passwordAttempt', passwordAttempt);
     assignIfProvided('passwordExpired', passwordExpired);
-
-    let normalizedRoleIds: string[] | undefined;
-    if (roleIds !== undefined) {
-      normalizedRoleIds = Array.from(new Set(roleIds));
-      const previousRoleIds = existingUser.roles.map((role) => role.roleId);
-      auditChanges.roleIds = {
-        previous: previousRoleIds,
-        next: normalizedRoleIds,
-      };
-      const rolesToRemove = previousRoleIds.filter(
-        (roleId) => !normalizedRoleIds?.includes(roleId),
-      );
-      if (rolesToRemove.length > 0) {
-        await this.deps.db.rolePlayer.deleteMany({
-          where: {
-            playerId: targetUserId,
-            roleId: { in: rolesToRemove },
-          },
-        });
-      }
-      const rolesToAdd = normalizedRoleIds.filter(
-        (roleId) => !previousRoleIds.includes(roleId),
-      );
-      if (rolesToAdd.length > 0) {
-        await this.deps.db.rolePlayer.createMany({
-          data: rolesToAdd.map((roleId) => ({
-            id: crypto.randomUUID(),
-            roleId,
-            playerId: targetUserId,
-          })),
-          skipDuplicates: true,
-        });
-      }
-    }
 
     if (hasScalarUpdate) {
       await this.deps.db.user.update({

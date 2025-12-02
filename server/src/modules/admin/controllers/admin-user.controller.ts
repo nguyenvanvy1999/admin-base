@@ -87,10 +87,10 @@ const adminUserManageRoutes = new Elysia<'', AppAuthMeta>()
         ...authErrors,
       },
     },
-  );
+  )
   .patch(
     '/:id',
-    async ({ { id }, currentUser, body }) =>
+    async ({ params: { id }, currentUser, body }) =>
       castToRes(
         await adminUserService.updateUser({
           targetUserId: id,
