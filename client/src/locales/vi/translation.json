@@ -13,8 +13,6 @@
   },
   "sidebar": {
     "dashboard": "Tổng quan",
-    "workspaces": "Workspace",
-    "settings": "Cấu hình",
     "adminUsers": "Quản lý user",
     "adminRoles": "Quản lý role",
     "adminPermissions": "Quản lý permission",
@@ -163,15 +161,6 @@
     "subtitle": "Kiến trúc base với Ant Design, React Query, Hash Router",
     "welcomeTitle": "Chào mừng đến với hệ thống",
     "welcomeMessage": "Trang chủ đang được phát triển. Các biểu đồ và thống kê sẽ được bổ sung sau."
-  },
-  "settingsPage": {
-    "title": "Cấu hình",
-    "subtitle": "Trang ví dụ cho Form của Ant Design",
-    "timezoneLabel": "Múi giờ",
-    "riskLimitLabel": "Giới hạn rủi ro (%)",
-    "emailDigestLabel": "Gửi email digest hằng ngày",
-    "description": "Dữ liệu chỉ là placeholder để minh họa cách tổ chức form base.",
-    "submit": "Lưu thiết lập"
   },
   "accessDeniedPage": {
     "title": "Bạn không có quyền truy cập",

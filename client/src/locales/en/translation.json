@@ -13,12 +13,10 @@
   },
   "sidebar": {
     "dashboard": "Dashboard",
-    "workspaces": "Workspaces",
-    "settings": "Settings",
-    "adminUsers": "Admin users",
-    "adminRoles": "Admin roles",
-    "adminPermissions": "Admin permissions",
-    "adminSettings": "Admin settings"
+    "adminUsers": "Users",
+    "adminRoles": "Roles",
+    "adminPermissions": "Permissions",
+    "adminSettings": "Settings"
   },
   "header": {
     "appName": "Admin Portal",
@@ -163,15 +161,6 @@
     "subtitle": "Base architecture with Ant Design, React Query, Hash Router",
     "welcomeTitle": "Welcome to the system",
     "welcomeMessage": "Homepage is under development. Charts and statistics will be added later."
-  },
-  "settingsPage": {
-    "title": "Settings",
-    "subtitle": "Example page for Ant Design Form",
-    "timezoneLabel": "Timezone",
-    "riskLimitLabel": "Risk limit (%)",
-    "emailDigestLabel": "Daily email digest",
-    "description": "Data is just a placeholder to demonstrate base form organization.",
-    "submit": "Save settings"
   },
   "accessDeniedPage": {
     "title": "You are not allowed to access this page",

@@ -8,7 +8,7 @@ export interface AppModalProps extends ModalProps {
 
 export function AppModal({
   centered = true,
-  destroyOnClose = true,
+  destroyOnHidden = true,
   maskClosable = false,
   width = 520,
   loading,
@@ -18,7 +18,7 @@ export function AppModal({
   return (
     <Modal
       centered={centered}
-      destroyOnClose={destroyOnClose}
+      destroyOnHidden={destroyOnHidden}
       maskClosable={maskClosable}
       width={width}
       confirmLoading={confirmLoading ?? loading}
