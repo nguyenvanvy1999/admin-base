@@ -1,6 +1,7 @@
 import { db, type IDb } from 'src/config/db';
 import {
   type Prisma,
+  type UserSelect,
   UserStatus,
   type UserUncheckedUpdateInput,
 } from 'src/generated';
@@ -53,18 +54,27 @@ type UpdateUserParams = BaseUserActionParams & typeof AdminUserUpdateDto.static;
 type CreateUserParams = { actorId: string } & typeof AdminUserCreateDto.static;
 type ListUsersParams = typeof AdminUserListQueryDto.static;
 
-const updateUserSelect = {
+const baseUserSelect = {
   id: true,
+  email: true,
   status: true,
   name: true,
+  emailVerified: true,
+  protected: true,
+  created: true,
+  roles: {
+    select: { role: { select: { title: true, id: true } } },
+  },
+} satisfies UserSelect;
+
+const updateUserSelect = {
+  ...baseUserSelect,
   lockoutUntil: true,
   lockoutReason: true,
-  emailVerified: true,
   passwordAttempt: true,
   passwordExpired: true,
-  protected: true,
   roles: { select: { roleId: true } },
-} as const;
+} satisfies UserSelect;
 
 export class AdminUserService {
   constructor(
@@ -198,18 +208,7 @@ export class AdminUserService {
     const [docs, count] = await this.deps.db.$transaction([
       this.deps.db.user.findMany({
         where,
-        select: {
-          id: true,
-          email: true,
-          status: true,
-          name: true,
-          created: true,
-          emailVerified: true,
-          protected: true,
-          roles: {
-            select: { role: { select: { title: true, id: true } } },
-          },
-        },
+        select: baseUserSelect,
         skip,
         take,
         orderBy: { created: 'desc' },
@@ -229,19 +228,12 @@ export class AdminUserService {
     const user = await this.deps.db.user.findUnique({
       where: { id: userId },
       select: {
-        id: true,
-        email: true,
-        status: true,
-        name: true,
-        created: true,
+        ...baseUserSelect,
         modified: true,
-        emailVerified: true,
         lockoutUntil: true,
         lockoutReason: true,
         passwordAttempt: true,
         passwordExpired: true,
-        protected: true,
-        roles: { select: { role: { select: { title: true, id: true } } } },
       },
     });
 

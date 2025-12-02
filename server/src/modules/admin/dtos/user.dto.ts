@@ -162,18 +162,13 @@ const AdminUserSummaryDto = t.Object({
 
 export const AdminUserListResDto = PaginatedDto(AdminUserSummaryDto);
 
-export const AdminUserDetailResDto = t.Object({
-  id: t.String(),
-  email: t.String({ format: 'email' }),
-  status: t.Enum(UserStatus),
-  name: displayNameField,
-  created: isoDateField,
-  modified: isoDateField,
-  emailVerified: t.Boolean(),
-  lockoutUntil: t.Nullable(isoDateField),
-  lockoutReason: t.Nullable(t.Enum(LockoutReason)),
-  passwordAttempt: t.Integer(),
-  passwordExpired: t.Nullable(isoDateField),
-  protected: t.Boolean(),
-  roles: roleListDto,
-});
+export const AdminUserDetailResDto = t.Intersect([
+  AdminUserSummaryDto,
+  t.Object({
+    modified: isoDateField,
+    lockoutUntil: t.Nullable(isoDateField),
+    lockoutReason: t.Nullable(t.Enum(LockoutReason)),
+    passwordAttempt: t.Integer(),
+    passwordExpired: t.Nullable(isoDateField),
+  }),
+]);
