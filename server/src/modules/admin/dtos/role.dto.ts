@@ -21,13 +21,28 @@ export const PaginateRoleResDto = t.Array(
       id: t.String(),
       permissionIds: t.Array(t.String()),
       protected: t.Boolean(),
-      players: t.Array(RolePlayerDto),
       totalPlayers: t.Number(),
       activePlayers: t.Number(),
       expiredPlayers: t.Number(),
     }),
   ]),
 );
+
+export const RoleDetailPlayerDto = t.Object({
+  id: t.String(),
+  email: t.String(),
+  expiresAt: t.Nullable(t.String()),
+});
+
+export const RoleDetailResDto = t.Object({
+  id: t.String(),
+  title: t.String(),
+  description: t.Nullable(t.Optional(t.String())),
+  enabled: t.Boolean(),
+  protected: t.Boolean(),
+  permissionIds: t.Array(t.String()),
+  players: t.Array(RoleDetailPlayerDto),
+});
 
 export const RolePaginationDto = t.Object({
   userId: t.Optional(t.String()),

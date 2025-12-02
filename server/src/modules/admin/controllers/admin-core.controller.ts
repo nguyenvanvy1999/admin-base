@@ -4,6 +4,7 @@ import {
   I18nUpsertDto,
   PaginateI18nResDto,
   PaginateRoleResDto,
+  RoleDetailResDto,
   RolePaginationDto,
   SessionPaginateDto,
   SessionPagingResDto,
@@ -118,6 +119,21 @@ export const adminCoreController = new Elysia<'admin-core', AppAuthMeta>({
           200: ResWrapper(PaginateRoleResDto),
         },
       })
+      .get(
+        '/:id',
+        async ({ params: { id } }) => {
+          const result = await roleService.detail(id);
+          return castToRes(result);
+        },
+        {
+          params: IdDto,
+          response: {
+            200: ResWrapper(RoleDetailResDto),
+            400: ErrorResDto,
+            ...authErrors,
+          },
+        },
+      )
       .use(authorize(has('ROLE.UPDATE')))
       .post(
         '/',

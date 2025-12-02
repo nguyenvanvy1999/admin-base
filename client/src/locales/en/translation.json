@@ -287,6 +287,9 @@
         "user": "Filter by user"
       }
     },
+    "users": {
+      "tooltip": "Users: total {{total}}, active {{active}}, expired {{expired}}"
+    },
     "create": {
       "button": "Create role",
       "title": "Create new role"

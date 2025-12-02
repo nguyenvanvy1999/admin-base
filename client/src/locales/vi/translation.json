@@ -287,6 +287,9 @@
         "user": "Lọc theo user"
       }
     },
+    "users": {
+      "tooltip": "Users: tổng {{total}}, đang hoạt động {{active}}, đã hết hạn {{expired}}"
+    },
     "create": {
       "button": "Tạo role",
       "title": "Tạo mới role"

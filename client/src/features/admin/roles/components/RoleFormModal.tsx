@@ -215,7 +215,7 @@ export function RoleFormModal({
                 {(field) => (
                   <Space align="baseline" style={{ display: 'flex', gap: 16 }}>
                     <ProFormSelect
-                      name={[field.name, 'playerId']}
+                      name="playerId"
                       label={t('adminRolesPage.form.users')}
                       rules={[
                         {
@@ -234,7 +234,7 @@ export function RoleFormModal({
                       }}
                     />
                     <ProFormDateTimePicker
-                      name={[field.name, 'expiresAt']}
+                      name="expiresAt"
                       label={t('adminRolesPage.form.users')}
                       fieldProps={{
                         showTime: true,

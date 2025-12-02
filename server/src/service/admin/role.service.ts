@@ -63,26 +63,47 @@ export class RoleService {
         protected: true,
         enabled: true,
         permissions: { select: { permissionId: true } },
-        players: { select: { playerId: true, expiresAt: true } },
+        _count: {
+          select: {
+            players: true,
+          },
+        },
       },
     });
 
     const now = new Date();
 
+    const roleIds = roles.map((r) => r.id);
+
+    const activePlayersByRole =
+      roleIds.length === 0
+        ? []
+        : await this.deps.db.rolePlayer.groupBy({
+            by: ['roleId'],
+            where: {
+              roleId: { in: roleIds },
+              OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+            },
+            _count: {
+              _all: true,
+            },
+          });
+
+    const activeMap = new Map<string, number>();
+    for (const item of activePlayersByRole) {
+      activeMap.set(item.roleId, item._count._all);
+    }
+
     return roles.map((role) => {
-      const totalPlayers = role.players.length;
-      const activePlayers = role.players.filter(
-        (p) => !p.expiresAt || p.expiresAt > now,
-      ).length;
+      const totalPlayers = role._count.players;
+      const activePlayers = activeMap.get(role.id) ?? 0;
       const expiredPlayers = Math.max(totalPlayers - activePlayers, 0);
 
+      const { permissions, _count, ...rest } = role;
+
       return {
-        ...role,
-        permissionIds: role.permissions.map((p) => p.permissionId),
-        players: role.players.map((p) => ({
-          playerId: p.playerId,
-          expiresAt: p.expiresAt ? p.expiresAt.toISOString() : null,
-        })),
+        ...rest,
+        permissionIds: permissions.map((p) => p.permissionId),
         totalPlayers,
         activePlayers,
         expiredPlayers,
@@ -167,6 +188,49 @@ export class RoleService {
         select: { id: true },
       });
     }
+  }
+
+  async detail(id: string) {
+    const role = await this.deps.db.role.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        protected: true,
+        enabled: true,
+        permissions: { select: { permissionId: true } },
+        players: {
+          select: {
+            expiresAt: true,
+            player: {
+              select: {
+                id: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!role) {
+      throw new NotFoundErr(ErrCode.ItemNotFound);
+    }
+
+    return {
+      id: role.id,
+      title: role.title,
+      description: role.description,
+      protected: role.protected,
+      enabled: role.enabled,
+      permissionIds: role.permissions.map((p) => p.permissionId),
+      players: role.players.map((rp) => ({
+        id: rp.player.id,
+        email: rp.player.email,
+        expiresAt: rp.expiresAt ? rp.expiresAt.toISOString() : null,
+      })),
+    };
   }
 
   async delete(params: IIdsDto): Promise<void> {
