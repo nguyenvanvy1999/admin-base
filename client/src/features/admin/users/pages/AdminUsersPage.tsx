@@ -4,7 +4,8 @@ import { Button, Space, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppAdminUserStatusSelect } from 'src/components/common/AppAdminUserStatusSelect';
+import { ADMIN_USER_STATUS_COLORS } from 'src/components/common/AppAdminUserStatusSelect';
+import { AppEnumMultiSelect } from 'src/components/common/AppEnumMultiSelect';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
 import { AdminUserCreateModal } from 'src/features/admin/users/components/AdminUserCreateModal';
@@ -12,7 +13,11 @@ import { AdminUserDetailDrawer } from 'src/features/admin/users/components/Admin
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { adminUsersService } from 'src/services/api/admin-users.service';
-import type { AdminUserStatus, AdminUserSummary } from 'src/types/admin-users';
+import {
+  ADMIN_USER_STATUSES,
+  type AdminUserStatus,
+  type AdminUserSummary,
+} from 'src/types/admin-users';
 
 type AdminUserTableParams = {
   current?: number;
@@ -79,8 +84,10 @@ export default function AdminUsersPage() {
       dataIndex: 'statuses',
       valueType: 'select',
       renderFormItem: () => (
-        <AppAdminUserStatusSelect
-          mode="multiple"
+        <AppEnumMultiSelect
+          keys={[...ADMIN_USER_STATUSES]}
+          colorMap={ADMIN_USER_STATUS_COLORS}
+          i18nPrefix="adminUsersPage.statuses"
           placeholder={t('adminUsersPage.table.filters.status')}
           style={{ width: '100%' }}
         />

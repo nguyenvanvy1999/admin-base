@@ -2,8 +2,8 @@ import {
   ADMIN_USER_STATUSES,
   type AdminUserStatus,
 } from 'src/types/admin-users';
-import type { AppEnumMultiSelectProps } from './AppEnumMultiSelect';
-import { AppEnumMultiSelect } from './AppEnumMultiSelect';
+import type { AppEnumSelectProps } from './AppEnumSelect';
+import { AppEnumSelect } from './AppEnumSelect';
 
 export const ADMIN_USER_STATUS_COLORS: Record<AdminUserStatus, string> = {
   inactive: 'default',
@@ -13,7 +13,7 @@ export const ADMIN_USER_STATUS_COLORS: Record<AdminUserStatus, string> = {
 };
 
 export type AppAdminUserStatusSelectProps = Omit<
-  AppEnumMultiSelectProps<AdminUserStatus>,
+  AppEnumSelectProps<AdminUserStatus>,
   'keys' | 'i18nPrefix' | 'colorMap'
 > & {
   i18nPrefix?: string;
@@ -24,7 +24,7 @@ export function AppAdminUserStatusSelect({
   ...rest
 }: AppAdminUserStatusSelectProps) {
   return (
-    <AppEnumMultiSelect<AdminUserStatus>
+    <AppEnumSelect<AdminUserStatus>
       keys={[...ADMIN_USER_STATUSES]}
       i18nPrefix={i18nPrefix}
       colorMap={ADMIN_USER_STATUS_COLORS}
