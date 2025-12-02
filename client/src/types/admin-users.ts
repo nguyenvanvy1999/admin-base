@@ -47,7 +47,7 @@ export interface AdminUserListQuery {
   take?: number;
   email?: string;
   search?: string;
-  status?: AdminUserStatus;
+  statuses?: AdminUserStatus[];
   roleIds?: string[];
 }
 

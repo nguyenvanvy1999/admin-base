@@ -145,7 +145,7 @@ export class AdminUserService {
   }
 
   async listUsers(params: ListUsersParams) {
-    const { take = 20, skip = 0, email, search, status, roleIds } = params;
+    const { take = 20, skip = 0, email, search, statuses, roleIds } = params;
 
     const whereClauses: Prisma.UserWhereInput[] = [];
     if (email) {
@@ -179,8 +179,10 @@ export class AdminUserService {
       }
     }
 
-    if (status) {
-      whereClauses.push({ status });
+    if (Array.isArray(statuses) && statuses.length > 0) {
+      whereClauses.push({
+        status: { in: statuses },
+      });
     }
 
     const normalizedRoleIds = this.normalizeRoleFilters(roleIds);

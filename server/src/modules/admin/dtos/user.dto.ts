@@ -129,7 +129,13 @@ export const AdminUserListQueryDto = t.Intersect([
         description: 'Filter by partial email or display name match.',
       }),
     ),
-    status: t.Optional(t.Enum(UserStatus)),
+    statuses: t.Optional(
+      t.Array(t.Enum(UserStatus), {
+        minItems: 1,
+        maxItems: 25,
+        description: 'Filter by any of the provided user statuses.',
+      }),
+    ),
     roleIds: t.Optional(
       t.Array(t.String(), {
         minItems: 1,

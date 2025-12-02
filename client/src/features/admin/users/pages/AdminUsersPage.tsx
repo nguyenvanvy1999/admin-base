@@ -4,7 +4,6 @@ import { Button, Space, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppAdminUserStatusSelect } from 'src/components/common/AppAdminUserStatusSelect';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
 import { AdminUserCreateModal } from 'src/features/admin/users/components/AdminUserCreateModal';
@@ -22,7 +21,7 @@ type AdminUserTableParams = {
   current?: number;
   pageSize?: number;
   search?: string;
-  status?: AdminUserStatus;
+  statuses?: AdminUserStatus[];
   roleIds?: string[];
 };
 
@@ -90,15 +89,14 @@ export default function AdminUsersPage() {
     },
     {
       title: t('adminUsersPage.table.status'),
-      dataIndex: 'status',
+      dataIndex: 'statuses',
       valueType: 'select',
       valueEnum: statusValueEnum,
-      renderFormItem: (_, domProps) => (
-        <AppAdminUserStatusSelect
-          placeholder={t('adminUsersPage.table.filters.status')}
-          {...domProps}
-        />
-      ),
+      fieldProps: {
+        mode: 'multiple',
+        allowClear: true,
+        placeholder: t('adminUsersPage.table.filters.status'),
+      },
       render: (_, record) => (
         <Tag color={record.status === 'active' ? 'green' : 'default'}>
           {formatStatus(record.status)}
@@ -213,7 +211,7 @@ export default function AdminUsersPage() {
           const {
             current = 1,
             pageSize = 20,
-            status,
+            statuses,
             roleIds,
             search: searchParam,
           } = params;
@@ -224,7 +222,7 @@ export default function AdminUsersPage() {
           const response = await adminUsersService.list({
             skip,
             take,
-            status,
+            statuses,
             roleIds:
               normalizedRoleIds.length > 0 ? normalizedRoleIds : undefined,
             search: searchParam?.trim() || undefined,

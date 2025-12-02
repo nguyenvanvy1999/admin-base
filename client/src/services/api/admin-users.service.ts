@@ -22,10 +22,21 @@ export const adminUserKeys = {
 
 export const adminUsersService = {
   list(params?: AdminUserListQuery): Promise<AdminUserListResponse> {
-    const normalizedParams =
-      params && params.roleIds?.length
-        ? { ...params, roleIds: params.roleIds.join(',') }
-        : params;
+    let normalizedParams:
+      | Omit<AdminUserListQuery, 'roleIds' | 'statuses'>
+      | undefined = params;
+
+    if (params) {
+      normalizedParams = {
+        ...params,
+        ...(params.roleIds?.length
+          ? { roleIds: params.roleIds.join(',') }
+          : { roleIds: undefined }),
+        ...(params.statuses?.length
+          ? { statuses: params.statuses.join(',') as unknown as never }
+          : { statuses: undefined }),
+      };
+    }
 
     return apiClient.get<AdminUserListResponse>(ADMIN_USER_BASE_PATH, {
       params: normalizedParams,
