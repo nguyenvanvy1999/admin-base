@@ -4,8 +4,6 @@ import { ProtectedRoute } from 'src/components/common/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
-const WorkspacePage = lazy(() => import('./pages/WorkspacePage'));
-const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
@@ -38,8 +36,6 @@ export function AppRoutes() {
         }
       >
         <Route index element={<HomePage />} />
-        <Route path="workspace" element={<WorkspacePage />} />
-        <Route path="settings" element={<SettingsPage />} />
         <Route
           path="admin/users"
           element={

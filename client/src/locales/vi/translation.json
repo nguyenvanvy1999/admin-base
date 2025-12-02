@@ -156,16 +156,8 @@
   "dashboard": {
     "title": "Bảng điều khiển",
     "subtitle": "Kiến trúc base với Ant Design, React Query, Hash Router",
-    "sendSampleNotification": "Gửi thông báo mẫu",
-    "notificationMessage": "Thông báo mẫu đã được kích hoạt thành công.",
-    "aumTitle": "Tài sản quản lý (AUM)",
-    "ytdReturnTitle": "Lợi nhuận YTD",
-    "portfolioCountTitle": "Số lượng danh mục",
-    "systemStatusTitle": "Trạng thái hệ thống",
-    "apiHealthcheckLabel": "API healthcheck:",
-    "checking": "Đang kiểm tra...",
-    "unknown": "Chưa xác định",
-    "tableTitle": "Phân bổ danh mục mẫu"
+    "welcomeTitle": "Chào mừng đến với hệ thống",
+    "welcomeMessage": "Trang chủ đang được phát triển. Các biểu đồ và thống kê sẽ được bổ sung sau."
   },
   "settingsPage": {
     "title": "Cấu hình",

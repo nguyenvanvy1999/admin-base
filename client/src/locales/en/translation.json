@@ -156,16 +156,8 @@
   "dashboard": {
     "title": "Dashboard",
     "subtitle": "Base architecture with Ant Design, React Query, Hash Router",
-    "sendSampleNotification": "Send sample notification",
-    "notificationMessage": "Sample notification was triggered successfully.",
-    "aumTitle": "Assets under management (AUM)",
-    "ytdReturnTitle": "YTD Return",
-    "portfolioCountTitle": "Portfolio count",
-    "systemStatusTitle": "System status",
-    "apiHealthcheckLabel": "API healthcheck:",
-    "checking": "Checking...",
-    "unknown": "Unknown",
-    "tableTitle": "Sample portfolio allocation"
+    "welcomeTitle": "Welcome to the system",
+    "welcomeMessage": "Homepage is under development. Charts and statistics will be added later."
   },
   "settingsPage": {
     "title": "Settings",

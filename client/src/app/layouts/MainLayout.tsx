@@ -5,7 +5,6 @@ import {
   SafetyOutlined,
   SettingOutlined,
   SunOutlined,
-  TeamOutlined,
   UserSwitchOutlined,
 } from '@ant-design/icons';
 import type { MenuDataItem, ProLayoutProps } from '@ant-design/pro-components';
@@ -22,16 +21,6 @@ type RouteConfig = NonNullable<ProLayoutProps['route']>;
 
 const BASE_ROUTES: MenuDataItem[] = [
   { path: '/', name: 'sidebar.dashboard', icon: <HomeOutlined /> },
-  {
-    path: '/workspace',
-    name: 'sidebar.workspaces',
-    icon: <TeamOutlined />,
-  },
-  {
-    path: '/settings',
-    name: 'sidebar.settings',
-    icon: <SettingOutlined />,
-  },
 ];
 
 const ADMIN_USERS_ROUTE: MenuDataItem = {
