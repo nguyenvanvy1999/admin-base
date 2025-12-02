@@ -104,6 +104,7 @@ export default function AdminSessionsPage() {
     loadMore,
   } = useAdminSessions({
     initialParams: listParams,
+    autoLoad: false,
   });
 
   useEffect(() => {

@@ -6,6 +6,9 @@
     "cancel": "Hủy",
     "save": "Lưu",
     "viewDetails": "Xem chi tiết",
+    "empty": {
+      "noData": "Không có dữ liệu"
+    },
     "pagination": {
       "total": "Tổng {{total}} mục",
       "totalSettings": "Tổng {{total}} settings",

@@ -1,5 +1,6 @@
 import { ProCard, type ProCardProps } from '@ant-design/pro-components';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface AppCardProps extends ProCardProps {
   loading?: boolean;
@@ -10,10 +11,12 @@ export interface AppCardProps extends ProCardProps {
 export function AppCard({
   loading,
   empty,
-  emptyText = 'Không có dữ liệu',
+  emptyText,
   children,
   ...props
 }: AppCardProps) {
+  const { t } = useTranslation();
+
   return (
     <ProCard loading={loading} {...props}>
       {empty ? (
@@ -24,7 +27,7 @@ export function AppCard({
             color: 'rgba(0, 0, 0, 0.45)',
           }}
         >
-          {emptyText}
+          {emptyText ?? t('common.empty.noData')}
         </div>
       ) : (
         children

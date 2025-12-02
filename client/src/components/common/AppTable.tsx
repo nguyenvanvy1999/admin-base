@@ -62,7 +62,7 @@ export function AppTable<
             })
       }
       locale={{
-        emptyText: emptyText ?? 'Không có dữ liệu',
+        emptyText: emptyText ?? t('common.empty.noData'),
       }}
       {...restProps}
     />

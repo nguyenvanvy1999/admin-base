@@ -75,6 +75,7 @@ export default function MySessionsPage() {
     loadMore,
   } = useAdminSessions({
     initialParams: listParams,
+    autoLoad: false,
   });
 
   useEffect(() => {
