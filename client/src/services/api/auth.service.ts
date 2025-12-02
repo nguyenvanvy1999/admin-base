@@ -116,9 +116,9 @@ export const authService = {
     return apiClient.post<void>(AUTH_ENDPOINTS.logout);
   },
 
-  refreshTokens(refreshToken: string): Promise<TokenSet> {
+  refreshTokens(token: string): Promise<TokenSet> {
     return apiClient.post<TokenSet>(AUTH_ENDPOINTS.refreshToken, {
-      refreshToken,
+      token,
     });
   },
 };

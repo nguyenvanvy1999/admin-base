@@ -155,7 +155,34 @@
     "title": "Bảng điều khiển",
     "subtitle": "Kiến trúc base với Ant Design, React Query, Hash Router",
     "welcomeTitle": "Chào mừng đến với hệ thống",
-    "welcomeMessage": "Trang chủ đang được phát triển. Các biểu đồ và thống kê sẽ được bổ sung sau."
+    "welcomeMessage": "Trang chủ đang được phát triển. Các biểu đồ và thống kê sẽ được bổ sung sau.",
+    "health": {
+      "overviewTitle": "Tình trạng hệ thống",
+      "overviewDescription": "Theo dõi trạng thái hạ tầng cốt lõi theo thời gian thực để phản ứng kịp thời.",
+      "statusLabel": "Trạng thái tổng thể",
+      "statusOk": "Hoạt động ổn định",
+      "statusError": "Cần kiểm tra",
+      "refresh": "Làm mới",
+      "loading": "Đang kiểm tra health check...",
+      "error": "Không thể tải trạng thái health. Thử lại sau.",
+      "componentsTitle": "Từng thành phần",
+      "noDetails": "Chưa nhận được số liệu chi tiết.",
+      "componentOk": "Hoạt động bình thường",
+      "componentNoData": "Chưa có số liệu",
+      "componentErrorTitle": "Thành phần gặp lỗi",
+      "components": {
+        "memory": "Bộ nhớ",
+        "redis": "Redis",
+        "db": "CSDL",
+        "disk": "Ổ đĩa"
+      },
+      "componentDescriptions": {
+        "memory": "Dung lượng sử dụng và khả dụng trên máy chủ.",
+        "redis": "Khả năng kết nối và thao tác đọc/ghi.",
+        "db": "Kết nối và độ trễ tới cơ sở dữ liệu chính.",
+        "disk": "Mức sử dụng ổ đĩa của volume chính."
+      }
+    }
   },
   "accessDeniedPage": {
     "title": "Bạn không có quyền truy cập",

@@ -152,7 +152,7 @@ export interface DisableMfaPayload {
 }
 
 export interface RefreshTokenPayload {
-  refreshToken: string;
+  token: string;
 }
 
 export interface AuthSession {

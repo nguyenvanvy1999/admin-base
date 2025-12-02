@@ -155,7 +155,34 @@
     "title": "Dashboard",
     "subtitle": "Base architecture with Ant Design, React Query, Hash Router",
     "welcomeTitle": "Welcome to the system",
-    "welcomeMessage": "Homepage is under development. Charts and statistics will be added later."
+    "welcomeMessage": "Homepage is under development. Charts and statistics will be added later.",
+    "health": {
+      "overviewTitle": "System health",
+      "overviewDescription": "Live status for core infrastructure so you can react quickly when something degrades.",
+      "statusLabel": "Overall status",
+      "statusOk": "All systems operational",
+      "statusError": "Attention required",
+      "refresh": "Refresh",
+      "loading": "Checking system health...",
+      "error": "Unable to load health status. Please try again.",
+      "componentsTitle": "Component status",
+      "noDetails": "No component telemetry reported.",
+      "componentOk": "Operating normally",
+      "componentNoData": "No metrics available",
+      "componentErrorTitle": "Component error",
+      "components": {
+        "memory": "Memory",
+        "redis": "Redis",
+        "db": "Database",
+        "disk": "Disk"
+      },
+      "componentDescriptions": {
+        "memory": "Usage and free capacity from application hosts.",
+        "redis": "Connectivity and read/write operations.",
+        "db": "Primary database connectivity and latency.",
+        "disk": "Disk usage across the main volume."
+      }
+    }
   },
   "accessDeniedPage": {
     "title": "You are not allowed to access this page",
