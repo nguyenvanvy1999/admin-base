@@ -1,10 +1,13 @@
 import {
+  ProFormDateTimePicker,
+  ProFormList,
   ProFormSelect,
   ProFormSwitch,
   ProFormText,
   ProFormTextArea,
 } from '@ant-design/pro-components';
-import { Tabs } from 'antd';
+import { Space, Tabs } from 'antd';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormModal } from 'src/components/common/FormModal';
@@ -20,7 +23,12 @@ interface RoleFormModalProps {
   loading?: boolean;
 }
 
-type RoleFormValues = UpsertRoleDto & Record<string, unknown>;
+type RoleFormValues = Omit<UpsertRoleDto, 'players'> & {
+  players: {
+    playerId: string;
+    expiresAt: dayjs.Dayjs | null;
+  }[];
+} & Record<string, unknown>;
 
 export function RoleFormModal({
   open,
@@ -68,12 +76,15 @@ export function RoleFormModal({
         description: role.description ?? '',
         enabled: true,
         permissionIds: role.permissionIds,
-        playerIds: role.players.map((player) => player.playerId),
+        players: role.players.map((player) => ({
+          playerId: player.playerId,
+          expiresAt: player.expiresAt ? dayjs(player.expiresAt) : null,
+        })),
       }
     : {
         enabled: true,
         permissionIds: [],
-        playerIds: [],
+        players: [],
       };
 
   const handleSubmit = async (values: RoleFormValues) => {
@@ -81,10 +92,7 @@ export function RoleFormModal({
       (values.permissionIds as string[] | undefined) ??
       role?.permissionIds ??
       [];
-    const playerIds =
-      (values.playerIds as string[] | undefined) ??
-      role?.players.map((player) => player.playerId) ??
-      [];
+    const players = values.players ?? [];
 
     const payload: UpsertRoleDto = {
       ...(role ? { id: role.id } : {}),
@@ -96,7 +104,10 @@ export function RoleFormModal({
           : null,
       enabled: values.enabled ?? true,
       permissionIds,
-      playerIds,
+      players: players.map((player) => ({
+        playerId: player.playerId,
+        expiresAt: player.expiresAt ? player.expiresAt.toISOString() : null,
+      })),
     };
     await onSubmit(payload);
   };
@@ -190,20 +201,48 @@ export function RoleFormModal({
             key: 'users',
             label: t('adminRolesPage.form.tabs.users'),
             children: (
-              <ProFormSelect
-                name="playerIds"
+              <ProFormList
+                name="players"
                 label={t('adminRolesPage.form.users')}
-                mode="multiple"
-                fieldProps={{
-                  loading: isLoadingUsers,
-                  showSearch: true,
-                  optionFilterProp: 'label',
-                  filterOption: false,
-                  onSearch: handleSearchUsers,
-                  options: users,
-                  placeholder: t('adminRolesPage.form.usersPlaceholder'),
+                creatorButtonProps={{
+                  position: 'bottom',
                 }}
-              />
+                copyIconProps={false}
+                deleteIconProps={{
+                  tooltipText: t('common.cancel'),
+                }}
+              >
+                {(field) => (
+                  <Space align="baseline" style={{ display: 'flex', gap: 16 }}>
+                    <ProFormSelect
+                      name={[field.name, 'playerId']}
+                      label={t('adminRolesPage.form.users')}
+                      rules={[
+                        {
+                          required: true,
+                          message: t('adminRolesPage.form.titleRequired'),
+                        },
+                      ]}
+                      fieldProps={{
+                        loading: isLoadingUsers,
+                        showSearch: true,
+                        optionFilterProp: 'label',
+                        filterOption: false,
+                        onSearch: handleSearchUsers,
+                        options: users,
+                        placeholder: t('adminRolesPage.form.usersPlaceholder'),
+                      }}
+                    />
+                    <ProFormDateTimePicker
+                      name={[field.name, 'expiresAt']}
+                      label={t('adminRolesPage.form.users')}
+                      fieldProps={{
+                        showTime: true,
+                      }}
+                    />
+                  </Space>
+                )}
+              </ProFormList>
             ),
           },
         ]}

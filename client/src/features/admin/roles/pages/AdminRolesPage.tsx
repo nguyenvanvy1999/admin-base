@@ -101,21 +101,26 @@ export default function AdminRolesPage() {
       hideInSearch: true,
       render: (_, record) => {
         const now = Date.now();
-        const activeCount = record.players.filter(
-          (player) =>
-            !player.expiresAt || new Date(player.expiresAt).getTime() > now,
-        ).length;
-        const expiredCount = record.players.length - activeCount;
+        const totalCount = record.totalPlayers ?? record.players.length;
+        const activeCount =
+          record.activePlayers ??
+          record.players.filter(
+            (player) =>
+              !player.expiresAt || new Date(player.expiresAt).getTime() > now,
+          ).length;
+        const expiredCount =
+          record.expiredPlayers ?? Math.max(totalCount - activeCount, 0);
 
         return (
           <Tooltip
             title={t('adminRolesPage.users.tooltip' as any, {
+              total: totalCount,
               active: activeCount,
               expired: expiredCount,
             })}
           >
             <Tag color="green">
-              {activeCount} / {expiredCount}
+              {totalCount} / {activeCount} / {expiredCount}
             </Tag>
           </Tooltip>
         );

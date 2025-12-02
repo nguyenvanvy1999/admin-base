@@ -67,19 +67,31 @@ export class RoleService {
       },
     });
 
-    return roles.map((role) => ({
-      ...role,
-      permissionIds: role.permissions.map((p) => p.permissionId),
-      players: role.players.map((p) => ({
-        playerId: p.playerId,
-        expiresAt: p.expiresAt?.toString() ?? null,
-      })),
-    }));
+    const now = new Date();
+
+    return roles.map((role) => {
+      const totalPlayers = role.players.length;
+      const activePlayers = role.players.filter(
+        (p) => !p.expiresAt || p.expiresAt > now,
+      ).length;
+      const expiredPlayers = Math.max(totalPlayers - activePlayers, 0);
+
+      return {
+        ...role,
+        permissionIds: role.permissions.map((p) => p.permissionId),
+        players: role.players.map((p) => ({
+          playerId: p.playerId,
+          expiresAt: p.expiresAt ? p.expiresAt.toISOString() : null,
+        })),
+        totalPlayers,
+        activePlayers,
+        expiredPlayers,
+      };
+    });
   }
 
   async upsert(params: UpsertParams): Promise<void> {
-    const { id, title, enabled, description, playerIds, permissionIds } =
-      params;
+    const { id, title, enabled, description, players, permissionIds } = params;
 
     if (id) {
       const targetRole = await this.deps.db.role.findUnique({
@@ -114,13 +126,13 @@ export class RoleService {
           players: {
             deleteMany: {
               roleId: id,
-              playerId: { notIn: playerIds },
             },
             createMany: {
               skipDuplicates: true,
-              data: playerIds.map((playerId) => ({
+              data: players.map((player) => ({
                 id: crypto.randomUUID(),
-                playerId,
+                playerId: player.playerId,
+                expiresAt: player.expiresAt ? new Date(player.expiresAt) : null,
               })),
             },
           },
@@ -144,9 +156,10 @@ export class RoleService {
           },
           players: {
             createMany: {
-              data: playerIds.map((playerId) => ({
+              data: players.map((player) => ({
                 id: crypto.randomUUID(),
-                playerId,
+                playerId: player.playerId,
+                expiresAt: player.expiresAt ? new Date(player.expiresAt) : null,
               })),
             },
           },
