@@ -15,7 +15,7 @@ import {
   type IBackupCodesData,
   type IBackupCodesRemaining,
   type IGenerateBackupCodesParams,
-  type IMfaUser,
+  type IUserMFA,
   NotFoundErr,
   UnAuthErr,
 } from 'src/share';
@@ -127,7 +127,7 @@ export class MfaBackupService {
     return crypto.createHash('sha256').update(code).digest('hex');
   }
 
-  private async findMfaUserById(userId: string): Promise<IMfaUser> {
+  private async findMfaUserById(userId: string): Promise<IUserMFA> {
     const user = await db.user.findUnique({
       where: { id: userId },
       select: {

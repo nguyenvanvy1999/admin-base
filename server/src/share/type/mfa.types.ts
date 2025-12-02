@@ -1,11 +1,3 @@
-export interface IMfaUser {
-  id: string;
-  mfaTotpEnabled: boolean;
-  totpSecret: string | null;
-  backupCodes: string | null;
-  backupCodesUsed: string | null;
-}
-
 export interface IBackupCodesData {
   codes: string[];
   hashedCodes: string[];

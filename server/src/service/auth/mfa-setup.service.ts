@@ -23,7 +23,7 @@ import {
   type IDisableMfaParams,
   IdUtil,
   type IMfaStatus,
-  type IMfaUser,
+  type IUserMFA,
   isExpired,
   NotFoundErr,
   PurposeVerify,
@@ -293,7 +293,7 @@ export class MfaSetupService {
     };
   }
 
-  private validateBackupCode(user: IMfaUser, backupCode: string): boolean {
+  private validateBackupCode(user: IUserMFA, backupCode: string): boolean {
     if (!user.backupCodes) {
       return false;
     }
@@ -314,7 +314,7 @@ export class MfaSetupService {
     return backupCodes.includes(hashedCode);
   }
 
-  private async findMfaUserById(userId: string): Promise<IMfaUser> {
+  private async findMfaUserById(userId: string): Promise<IUserMFA> {
     const user = await db.user.findUnique({
       where: { id: userId },
       select: {

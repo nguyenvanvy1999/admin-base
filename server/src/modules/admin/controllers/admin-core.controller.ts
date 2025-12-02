@@ -30,6 +30,7 @@ import {
   DOC_TAG,
   ErrorResDto,
   IdDto,
+  IdsDto,
   ResWrapper,
 } from 'src/share';
 
@@ -73,7 +74,7 @@ export const adminCoreController = new Elysia<'admin-core', AppAuthMeta>({
           return castToRes(null);
         },
         {
-          body: t.Object({ ids: t.Array(t.String(), { minItems: 1 }) }),
+          body: IdsDto,
           response: {
             200: ResWrapper(t.Null()),
             400: ResWrapper(t.Null()),
@@ -140,7 +141,7 @@ export const adminCoreController = new Elysia<'admin-core', AppAuthMeta>({
           return castToRes(null);
         },
         {
-          body: t.Object({ ids: t.Array(t.String(), { minItems: 1 }) }),
+          body: IdsDto,
           response: {
             200: ResWrapper(t.Null()),
             400: ResWrapper(t.Null()),
