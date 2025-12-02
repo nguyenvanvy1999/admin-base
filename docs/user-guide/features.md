@@ -1,6 +1,7 @@
 # Hướng Dẫn Sử Dụng Tính Năng
 
-> **Lưu ý:** Phiên bản hiện tại tập trung vào nền tảng (authentication, admin tooling, healthcheck). Các mô-đun tài chính (accounts, budgets, investments, …) đang trong giai đoạn thiết kế nên không xuất hiện trong UI hay API.
+> **Lưu ý:** Phiên bản hiện tại tập trung vào nền tảng (authentication, admin tooling, healthcheck). Các mô-đun tài
+> chính (accounts, budgets, investments, …) đang trong giai đoạn thiết kế nên không xuất hiện trong UI hay API.
 
 ## 1. Dashboard (HomePage)
 
@@ -48,14 +49,14 @@
 
 ## 4. Common Components & Hooks
 
-| Component/Hook | Vị trí | Mục đích |
-| -------------- | ------ | -------- |
-| `PageHeader` | `client/src/components/common/PageHeader.tsx` | Tiêu đề trang + breadcrumb + actions |
-| `AppTable` | `client/src/components/common/AppTable.tsx` | Bọc `Table` của AntD với props thống nhất |
-| `AppForm`/`AppFormItem` | `client/src/components/common/AppForm.tsx` | Generic form wrapper với typing |
-| `AppDrawer`/`AppModal` | `client/src/components/common` | Layout chuẩn cho dialog |
-| `useHealthcheck` | `client/src/hooks/api/useHealthcheck.ts` | Gọi API `/misc/health` |
-| `useNotify` | `client/src/hooks/useNotify.ts` | Wrapper thông báo success/error |
+| Component/Hook          | Vị trí                                        | Mục đích                                  |
+|-------------------------|-----------------------------------------------|-------------------------------------------|
+| `PageHeader`            | `client/src/components/common/PageHeader.tsx` | Tiêu đề trang + breadcrumb + actions      |
+| `AppTable`              | `client/src/components/common/AppTable.tsx`   | Bọc `Table` của AntD với props thống nhất |
+| `AppForm`/`AppFormItem` | `client/src/components/common/AppForm.tsx`    | Generic form wrapper với typing           |
+| `AppDrawer`/`AppModal`  | `client/src/components/common`                | Layout chuẩn cho dialog                   |
+| `useHealthcheck`        | `client/src/hooks/api/useHealthcheck.ts`      | Gọi API `/misc/health`                    |
+| `useNotify`             | `client/src/hooks/useNotify.ts`               | Wrapper thông báo success/error           |
 
 Khi triển khai màn hình mới, ưu tiên tái sử dụng các component này để giữ UI/UX đồng nhất.
 
@@ -87,5 +88,6 @@ Khi các mô-đun trên được phát triển, vui lòng bổ sung lại hướ
 
 ---
 
-Nếu phát hiện trang nào còn mô tả tính năng không tồn tại, hãy cập nhật file này ngay sau khi merge PR để tránh thông tin sai lệch.*** End Patch
+Nếu phát hiện trang nào còn mô tả tính năng không tồn tại, hãy cập nhật file này ngay sau khi merge PR để tránh thông
+tin sai lệch.*** End Patch
 

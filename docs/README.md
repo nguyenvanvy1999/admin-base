@@ -9,7 +9,8 @@ cho frontend, với end-to-end type safety thông qua Eden Treaty.
 
 ## Cấu Trúc Tài Liệu
 
-Các tài liệu cũ mô tả modules quản lý tài chính (accounts, budgets, investments, …) đã bị gỡ bỏ vì không còn khớp với codebase hiện tại. Tài liệu mới được tổ chức thành 2 nhóm:
+Các tài liệu cũ mô tả modules quản lý tài chính (accounts, budgets, investments, …) đã bị gỡ bỏ vì không còn khớp với
+codebase hiện tại. Tài liệu mới được tổ chức thành 2 nhóm:
 
 ### 📚 [Tài Liệu Công Nghệ](./technology/)
 

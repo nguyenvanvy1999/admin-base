@@ -245,5 +245,59 @@
       "disableMfa": "Disable MFA",
       "submit": "Save changes"
     }
+  },
+  "adminRolesPage": {
+    "title": "Admin role management",
+    "subtitle": "Manage roles, permissions and assign roles to users.",
+    "table": {
+      "title": "Role name",
+      "description": "Description",
+      "permissions": "Permission count",
+      "users": "User count",
+      "actions": "Actions",
+      "filters": {
+        "user": "Filter by user"
+      }
+    },
+    "create": {
+      "button": "Create role",
+      "title": "Create new role"
+    },
+    "update": {
+      "title": "Update role"
+    },
+    "upsert": {
+      "success": "Role saved successfully"
+    },
+    "delete": {
+      "title": "Confirm delete role",
+      "message": "Are you sure you want to delete this role? The role cannot be deleted if there are still users using it.",
+      "confirm": "Delete",
+      "success": "Role deleted successfully"
+    },
+    "form": {
+      "title": "Role name",
+      "titleRequired": "Please enter role name",
+      "titleMin": "Role name must be at least 3 characters",
+      "titlePlaceholder": "Enter role name",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter description (optional)",
+      "enabled": "Enabled",
+      "permissions": "Permission list",
+      "permissionsRequired": "Please select at least one permission",
+      "permissionsMin": "Must select at least one permission",
+      "permissionsPlaceholder": "Select permissions",
+      "users": "User list",
+      "usersPlaceholder": "Select users (optional)",
+      "tabs": {
+        "general": "General",
+        "permissions": "Permissions",
+        "users": "Users"
+      }
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete"
+    }
   }
 }

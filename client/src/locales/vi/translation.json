@@ -245,5 +245,59 @@
       "disableMfa": "Disable MFA",
       "submit": "Lưu thay đổi"
     }
+  },
+  "adminRolesPage": {
+    "title": "Quản trị role",
+    "subtitle": "Quản lý roles, permissions và gán role cho users.",
+    "table": {
+      "title": "Tên role",
+      "description": "Mô tả",
+      "permissions": "Số permissions",
+      "users": "Số users",
+      "actions": "Thao tác",
+      "filters": {
+        "user": "Lọc theo user"
+      }
+    },
+    "create": {
+      "button": "Tạo role",
+      "title": "Tạo mới role"
+    },
+    "update": {
+      "title": "Chỉnh sửa role"
+    },
+    "upsert": {
+      "success": "Đã lưu role thành công"
+    },
+    "delete": {
+      "title": "Xác nhận xóa role",
+      "message": "Bạn có chắc chắn muốn xóa role này? Role sẽ không thể xóa nếu còn user đang sử dụng.",
+      "confirm": "Xóa",
+      "success": "Đã xóa role thành công"
+    },
+    "form": {
+      "title": "Tên role",
+      "titleRequired": "Vui lòng nhập tên role",
+      "titleMin": "Tên role phải có ít nhất 3 ký tự",
+      "titlePlaceholder": "Nhập tên role",
+      "description": "Mô tả",
+      "descriptionPlaceholder": "Nhập mô tả (tùy chọn)",
+      "enabled": "Kích hoạt",
+      "permissions": "Danh sách permissions",
+      "permissionsRequired": "Vui lòng chọn ít nhất một permission",
+      "permissionsMin": "Phải chọn ít nhất một permission",
+      "permissionsPlaceholder": "Chọn permissions",
+      "users": "Danh sách users",
+      "usersPlaceholder": "Chọn users (tùy chọn)",
+      "tabs": {
+        "general": "Thông tin chung",
+        "permissions": "Permissions",
+        "users": "Users"
+      }
+    },
+    "actions": {
+      "edit": "Chỉnh sửa",
+      "delete": "Xóa"
+    }
   }
 }

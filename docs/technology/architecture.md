@@ -1,6 +1,7 @@
 # Kiến Trúc Hệ Thống
 
-Tài liệu mô tả kiến trúc thực tế của monorepo `investment` sau khi tinh gọn các tài liệu cũ. Nội dung tập trung vào những gì đang chạy trong codebase (auth, admin tooling, misc utilities, frontend demo).
+Tài liệu mô tả kiến trúc thực tế của monorepo `investment` sau khi tinh gọn các tài liệu cũ. Nội dung tập trung vào
+những gì đang chạy trong codebase (auth, admin tooling, misc utilities, frontend demo).
 
 ## 1. Tổng Quan Monorepo
 
@@ -95,7 +96,8 @@ export const authService = {
 
 ### 2.4 Swagger & Eden Treaty
 
-`config/swagger.ts` đăng ký schemas/tags; `DOC_TAG` trong `share/constant` dùng để gom endpoints (AUTH, MFA, ADMIN_ROLE, MISC,...). Eden Treaty trên frontend tiêu thụ trực tiếp schema của app (qua `src` alias).
+`config/swagger.ts` đăng ký schemas/tags; `DOC_TAG` trong `share/constant` dùng để gom endpoints (AUTH, MFA, ADMIN_ROLE,
+MISC,...). Eden Treaty trên frontend tiêu thụ trực tiếp schema của app (qua `src` alias).
 
 ### 2.5 Background / infra services
 
@@ -156,53 +158,58 @@ export function useHealthcheck() {
 
 ### 3.5 Routing & auth guard
 
-`createHashRouter` trong `src/app/routes.tsx`, layout `MainLayout` đảm nhiệm header, skeleton. Auth logic đang ở mức demo: `AuthProvider` cung cấp context, khi kết nối backend thực tế có thể cắm token logic tại đây.
+`createHashRouter` trong `src/app/routes.tsx`, layout `MainLayout` đảm nhiệm header, skeleton. Auth logic đang ở mức
+demo: `AuthProvider` cung cấp context, khi kết nối backend thực tế có thể cắm token logic tại đây.
 
 ## 4. Luồng API hiện tại
 
 1. Frontend `useHealthcheck` -> GET `/misc/health`
 2. Auth flows:
-   - `POST /auth/login` (rate limit theo IP + email)
-   - `POST /auth/login/mfa/confirm`
-   - `POST /auth/refresh-token`
-   - `POST /auth/logout`, `/auth/logout/all`
-   - `POST /auth/user/register` + `/auth/user/verify-account`
-   - OTP service `/auth/otp`
+    - `POST /auth/login` (rate limit theo IP + email)
+    - `POST /auth/login/mfa/confirm`
+    - `POST /auth/refresh-token`
+    - `POST /auth/logout`, `/auth/logout/all`
+    - `POST /auth/user/register` + `/auth/user/verify-account`
+    - OTP service `/auth/otp`
 3. MFA:
-   - `/auth/mfa/setup/request`, `/setup/confirm`, `/disable`, `/status`
-   - `/auth/mfa/backup-codes/generate|verify|remaining`
+    - `/auth/mfa/setup/request`, `/setup/confirm`, `/disable`, `/status`
+    - `/auth/mfa/backup-codes/generate|verify|remaining`
 4. Admin:
-   - `/admin/i18n`, `/admin/roles`, `/admin/settings`, `/admin/sessions`
-   - Authorization dựa trên policy `authorize(has('ROLE.VIEW'))`...
+    - `/admin/i18n`, `/admin/roles`, `/admin/settings`, `/admin/sessions`
+    - Authorization dựa trên policy `authorize(has('ROLE.VIEW'))`...
 5. Misc:
-   - `/misc/system-info`, `/misc/time`, `/misc/version`
-   - `/misc/captcha/generate|verify`
-   - `/misc/file/upload`, `/misc/file/download/:filename`, `/misc/file/storage`
+    - `/misc/system-info`, `/misc/time`, `/misc/version`
+    - `/misc/captcha/generate|verify`
+    - `/misc/file/upload`, `/misc/file/download/:filename`, `/misc/file/storage`
 
 ## 5. Nguyên tắc thiết kế
 
 1. **Domain module hóa**: mọi endpoint phải nằm trong module tương ứng, tránh tạo controller rời rạc.
-2. **Service đơn nhiệm**: service chỉ giải quyết một domain (auth, mfa, session, file, misc...). Không trộn logic admin + auth chung 1 file.
+2. **Service đơn nhiệm**: service chỉ giải quyết một domain (auth, mfa, session, file, misc...). Không trộn logic
+   admin + auth chung 1 file.
 3. **Policy-based authorization**: thay vì hardcode role, dùng `authorize(has('PERMISSION'))` để dễ mở rộng.
-4. **DTO & type reuse**: schema định nghĩa trong `modules/*/dtos`, tận dụng `ResWrapper` để đảm bảo swagger + Eden Treaty đồng bộ.
+4. **DTO & type reuse**: schema định nghĩa trong `modules/*/dtos`, tận dụng `ResWrapper` để đảm bảo swagger + Eden
+   Treaty đồng bộ.
 5. **Frontend Hash Router**: do backend serve static tại `/`, Browser Router sẽ đè path -> cấm.
-6. **Mock-first UI**: các trang demo (Dashboard, Workspace) dùng mock data để minh hoạ layout; khi có API mới chỉ cần thay data source.
+6. **Mock-first UI**: các trang demo (Dashboard, Workspace) dùng mock data để minh hoạ layout; khi có API mới chỉ cần
+   thay data source.
 
 ## 6. Checklist khi thêm module mới
 
 1. Backend
-   - Tạo DTO trong `modules/<domain>/dtos`
-   - Viết service mới trong `service/<domain>`
-   - Tạo controller group và thêm vào `modules/index.ts`
-   - Cập nhật `DOC_TAG` + swagger detail nếu cần
-   - Viết unit test (đặt tại `server/test/unit/<domain>`)
+    - Tạo DTO trong `modules/<domain>/dtos`
+    - Viết service mới trong `service/<domain>`
+    - Tạo controller group và thêm vào `modules/index.ts`
+    - Cập nhật `DOC_TAG` + swagger detail nếu cần
+    - Viết unit test (đặt tại `server/test/unit/<domain>`)
 2. Frontend
-   - Khai báo service/hook gọi API mới
-   - Tạo component/page nằm trong `app/pages` hoặc `features/<domain>`
-   - Sử dụng `AppForm`, `AppTable`, `PageHeader` để giữ UI đồng nhất
+    - Khai báo service/hook gọi API mới
+    - Tạo component/page nằm trong `app/pages` hoặc `features/<domain>`
+    - Sử dụng `AppForm`, `AppTable`, `PageHeader` để giữ UI đồng nhất
 3. Document
-   - Update `docs/technology/architecture.md` nếu cấu trúc thay đổi
-   - Bổ sung endpoint vào `docs/user-guide/api-reference.md`
+    - Update `docs/technology/architecture.md` nếu cấu trúc thay đổi
+    - Bổ sung endpoint vào `docs/user-guide/api-reference.md`
 
-Tài liệu này sẽ được cập nhật khi có module/tính năng mới được merge vào codebase. Nếu kiến trúc thay đổi đáng kể (ví dụ thêm module tài chính), hãy mô tả chi tiết thay đổi và liên kết tới PR tương ứng.
+Tài liệu này sẽ được cập nhật khi có module/tính năng mới được merge vào codebase. Nếu kiến trúc thay đổi đáng kể (ví dụ
+thêm module tài chính), hãy mô tả chi tiết thay đổi và liên kết tới PR tương ứng.
 

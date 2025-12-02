@@ -1,10 +1,14 @@
 import { apiClient } from 'src/lib/api/client';
 import { createQueryKeys } from 'src/services/api/base.service';
-import type { AdminRole } from 'src/types/admin-roles';
+import type { AdminRole, UpsertRoleDto } from 'src/types/admin-roles';
 
 const ADMIN_ROLE_BASE_PATH = '/api/admin/roles';
 
-export const adminRoleKeys = createQueryKeys('admin-roles');
+export const adminRoleKeys = {
+  ...createQueryKeys('admin-roles'),
+  list: (filters?: Partial<AdminRoleListQuery>) =>
+    [...createQueryKeys('admin-roles').lists(), filters] as const,
+};
 
 export interface AdminRoleListQuery {
   userId?: string;
@@ -16,5 +20,13 @@ export const adminRolesService = {
     return apiClient.get<AdminRole[]>(ADMIN_ROLE_BASE_PATH, {
       params,
     });
+  },
+
+  upsert(data: UpsertRoleDto): Promise<void> {
+    return apiClient.post<void>(ADMIN_ROLE_BASE_PATH, data);
+  },
+
+  delete(ids: string[]): Promise<void> {
+    return apiClient.post<void>(`${ADMIN_ROLE_BASE_PATH}/del`, { ids });
   },
 };

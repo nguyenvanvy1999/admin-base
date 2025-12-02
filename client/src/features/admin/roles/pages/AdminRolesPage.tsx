@@ -1,0 +1,202 @@
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { Button, Modal, Space, Tag } from 'antd';
+import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { AppPage } from 'src/components/common/AppPage';
+import { AppTable } from 'src/components/common/AppTable';
+import { RoleFormModal } from 'src/features/admin/roles/components/RoleFormModal';
+import { useDeleteRoles, useUpsertRole } from 'src/hooks/api/useAdminRoles';
+import { usePermissions } from 'src/hooks/auth/usePermissions';
+import { useNotify } from 'src/hooks/useNotify';
+import { adminRolesService } from 'src/services/api/admin-roles.service';
+import type { AdminRole } from 'src/types/admin-roles';
+
+type AdminRoleTableParams = {
+  current?: number;
+  pageSize?: number;
+  userId?: string;
+};
+
+export default function AdminRolesPage() {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const actionRef = useRef<ActionType | null>(null);
+  const { hasPermission } = usePermissions();
+  const canView = hasPermission('ROLE.VIEW');
+  const canUpdate = hasPermission('ROLE.UPDATE');
+  const canDelete = hasPermission('ROLE.DELETE');
+
+  const [formModalOpen, setFormModalOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState<AdminRole | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingRole, setDeletingRole] = useState<AdminRole | null>(null);
+
+  const upsertMutation = useUpsertRole({
+    onSuccess: () => {
+      notify.success(t('adminRolesPage.upsert.success'));
+      setFormModalOpen(false);
+      setEditingRole(null);
+      actionRef.current?.reload();
+    },
+  });
+
+  const deleteMutation = useDeleteRoles({
+    onSuccess: () => {
+      notify.success(t('adminRolesPage.delete.success'));
+      setDeleteModalOpen(false);
+      setDeletingRole(null);
+      actionRef.current?.reload();
+    },
+  });
+
+  const handleEdit = (role: AdminRole) => {
+    setEditingRole(role);
+    setFormModalOpen(true);
+  };
+
+  const handleDelete = (role: AdminRole) => {
+    setDeletingRole(role);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deletingRole) {
+      deleteMutation.mutate([deletingRole.id]);
+    }
+  };
+
+  const handleFormClose = () => {
+    setFormModalOpen(false);
+    setEditingRole(null);
+  };
+
+  const columns: ProColumns<AdminRole>[] = [
+    {
+      title: t('adminRolesPage.table.title'),
+      dataIndex: 'title',
+      copyable: true,
+      ellipsis: true,
+    },
+    {
+      title: t('adminRolesPage.table.description'),
+      dataIndex: 'description',
+      ellipsis: true,
+      render: (_, record) => record.description ?? '-',
+    },
+    {
+      title: t('adminRolesPage.table.permissions'),
+      dataIndex: 'permissionIds',
+      hideInSearch: true,
+      render: (_, record) => (
+        <Tag color="blue">{record.permissionIds.length}</Tag>
+      ),
+    },
+    {
+      title: t('adminRolesPage.table.users'),
+      dataIndex: 'playerIds',
+      hideInSearch: true,
+      render: (_, record) => <Tag color="green">{record.playerIds.length}</Tag>,
+    },
+    {
+      title: t('adminRolesPage.table.filters.user'),
+      dataIndex: 'userId',
+      hideInTable: true,
+      valueType: 'text',
+    },
+    {
+      title: t('adminRolesPage.table.actions'),
+      dataIndex: 'actions',
+      valueType: 'option',
+      hideInTable: !canUpdate && !canDelete,
+      render: (_, record) => (
+        <Space size="small">
+          {canUpdate && (
+            <Button type="link" onClick={() => handleEdit(record)}>
+              {t('adminRolesPage.actions.edit')}
+            </Button>
+          )}
+          {canDelete && (
+            <Button type="link" danger onClick={() => handleDelete(record)}>
+              {t('adminRolesPage.actions.delete')}
+            </Button>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
+  if (!canView) {
+    return null;
+  }
+
+  return (
+    <AppPage
+      title={t('adminRolesPage.title')}
+      subtitle={t('adminRolesPage.subtitle')}
+    >
+      <AppTable<AdminRole, AdminRoleTableParams>
+        rowKey="id"
+        columns={columns}
+        actionRef={actionRef}
+        search={{
+          labelWidth: 'auto',
+        }}
+        request={async (params) => {
+          const { userId } = params;
+          const response = await adminRolesService.list({
+            userId: userId?.trim() || undefined,
+          });
+          return {
+            data: response || [],
+            success: true,
+            total: response?.length || 0,
+          };
+        }}
+        toolBarRender={() =>
+          canUpdate
+            ? [
+                <Button
+                  key="create"
+                  type="primary"
+                  onClick={() => setFormModalOpen(true)}
+                >
+                  {t('adminRolesPage.create.button')}
+                </Button>,
+              ]
+            : []
+        }
+      />
+
+      <RoleFormModal
+        open={formModalOpen}
+        role={editingRole}
+        onClose={handleFormClose}
+        onSubmit={async (data) => {
+          await upsertMutation.mutateAsync(data);
+        }}
+        loading={upsertMutation.isPending}
+      />
+
+      <Modal
+        open={deleteModalOpen}
+        title={t('adminRolesPage.delete.title')}
+        onOk={handleDeleteConfirm}
+        onCancel={() => {
+          setDeleteModalOpen(false);
+          setDeletingRole(null);
+        }}
+        confirmLoading={deleteMutation.isPending}
+        okText={t('adminRolesPage.delete.confirm')}
+        cancelText={t('common.cancel')}
+        okButtonProps={{ danger: true }}
+      >
+        <p>{t('adminRolesPage.delete.message')}</p>
+        {deletingRole && (
+          <p>
+            <strong>{deletingRole.title}</strong>
+          </p>
+        )}
+      </Modal>
+    </AppPage>
+  );
+}
