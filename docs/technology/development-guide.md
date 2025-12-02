@@ -1,6 +1,6 @@
 # Hướng Dẫn Phát Triển
 
-Tài liệu này hướng dẫn các tác vụ phát triển phổ biến trong dự án FinTrack.
+Tài liệu này hướng dẫn các tác vụ phát triển phổ biến trong dự án Admin Base.
 
 ## Advanced Login Security
 

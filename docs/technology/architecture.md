@@ -1,12 +1,12 @@
 # Kiến Trúc Hệ Thống
 
-Tài liệu mô tả kiến trúc thực tế của monorepo `investment` sau khi tinh gọn các tài liệu cũ. Nội dung tập trung vào
+Tài liệu mô tả kiến trúc thực tế của monorepo `admin-base`. Nội dung tập trung vào
 những gì đang chạy trong codebase (auth, admin tooling, misc utilities, frontend demo).
 
 ## 1. Tổng Quan Monorepo
 
 ```
-investment/
+admin-base/
 ├── server/                  # Bun + Elysia backend
 │   ├── src/
 │   │   ├── app/backend      # Entry points (HTTP + worker)

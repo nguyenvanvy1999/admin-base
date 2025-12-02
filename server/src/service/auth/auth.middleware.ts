@@ -52,7 +52,6 @@ export const authCheck = (app: Elysia) =>
         status: user.status,
         roleIds: user.roles.map((x) => x.roleId),
         name: user.name,
-        baseCurrencyId: user.baseCurrencyId,
         settings: user.settings,
         emailVerified: user.emailVerified,
         emailVerificationToken: user.emailVerificationToken,

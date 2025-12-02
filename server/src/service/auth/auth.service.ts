@@ -43,7 +43,6 @@ import {
   ACTIVITY_TYPE,
   BadReqErr,
   DB_PREFIX,
-  DEFAULT_BASE_CURRENCY_ID,
   defaultRoles,
   ErrCode,
   getIpAndUa,
@@ -422,7 +421,6 @@ export class AuthService {
         tx,
         normalizedEmail,
         password,
-        DEFAULT_BASE_CURRENCY_ID,
       );
 
       await this.deps.userUtilService.createProfile(tx, userId);
@@ -451,7 +449,6 @@ export class AuthService {
     tx: PrismaTx,
     email: string,
     password: string,
-    baseCurrencyId: string,
   ): Promise<string> {
     const userId = IdUtil.dbId(DB_PREFIX.USER);
 
@@ -460,7 +457,6 @@ export class AuthService {
         id: userId,
         email,
         status: UserStatus.inactive,
-        baseCurrencyId,
         ...(await this.deps.passwordService.createPassword(password)),
         roles: {
           create: {

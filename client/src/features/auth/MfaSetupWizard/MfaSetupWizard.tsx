@@ -17,7 +17,7 @@ interface ConfirmFormValues {
   otp: string;
 }
 
-const ISSUER = 'FinTrack';
+const ISSUER = 'Admin Portal';
 
 export function MfaSetupWizard({
   accountEmail,

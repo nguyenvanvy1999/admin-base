@@ -40,15 +40,16 @@ khi bắt đầu task.
 3. **Auth guard**: backend routes cần `checkAuth` + `detail.security`. Frontend sử dụng `ProtectedRoute` và token
    injection trong `api/client.ts`.
 4. **State phân định**:
-  - Global UI/preferences: Zustand store.
-  - Server data: TanStack Query (invalidate sau mutation).
-  - Forms: TanStack Form + Zod/TypeBox schema.
+
+- Global UI/preferences: Zustand store.
+- Server data: TanStack Query (invalidate sau mutation).
+- Forms: TanStack Form + Zod/TypeBox schema.
+
 5. **Code style**: chạy `bun run check` trước PR. Biome format/lint duy nhất. Không disable rule trừ khi có lý do rõ.
 6. **Type safety**: tránh `any`. Ưu tiên `satisfies` và types từ Prisma/Eden Treaty. DTO lấy type từ schema `.static`.
 7. **Comment**: chỉ khi cần thiết, tiếng Anh, ngắn gọn giải thích intent.
 8. **Error handling**: backend throw Error để middleware chuẩn hóa; frontend luôn kiểm tra `response.error`.
 9. **Security**: password dùng `Bun.password.hash` (bcrypt). JWT qua header `Authorization: Bearer`.
-
 
 ### 5. Workflow chuẩn khi tạo feature backend
 

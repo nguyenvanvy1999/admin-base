@@ -12,6 +12,7 @@ export const adminPermissionKeys = {
 
 export interface AdminPermissionListQuery {
   roleId?: string;
+
   [key: string]: unknown;
 }
 

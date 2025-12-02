@@ -54,11 +54,6 @@ export function AdminUserCreateModal({
         typeof values.name === 'string' && values.name.trim().length > 0
           ? values.name
           : undefined,
-      baseCurrencyId:
-        typeof values.baseCurrencyId === 'string' &&
-        values.baseCurrencyId.trim().length > 0
-          ? values.baseCurrencyId
-          : undefined,
       status: values.status,
       emailVerified: values.emailVerified,
     };
@@ -109,11 +104,6 @@ export function AdminUserCreateModal({
           showSearch: true,
           optionFilterProp: 'label',
         }}
-      />
-      <ProFormText
-        name="baseCurrencyId"
-        label={t('adminUsersPage.form.baseCurrency')}
-        placeholder="USD"
       />
       <ProFormSelect
         name="status"

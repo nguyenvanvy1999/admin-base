@@ -1,5 +1,4 @@
 import { redis } from 'src/config/redis';
-import type { Currency } from 'src/generated';
 import {
   CACHE_NS,
   type ICurrentUser,
@@ -155,17 +154,3 @@ export const captchaCache = new RedisCache<string>({
   ttl: FIVE_MINUTES,
 });
 export type ICaptchaCache = typeof captchaCache;
-
-const ONE_DAY = 86400;
-
-export const currencyByIdCache = new RedisCache<Currency>({
-  namespace: CACHE_NS.CURRENCY,
-  ttl: ONE_DAY,
-});
-export type ICurrencyByIdCache = typeof currencyByIdCache;
-
-export const allCurrenciesCache = new RedisCache<Currency[]>({
-  namespace: `${CACHE_NS.CURRENCY}:all`,
-  ttl: ONE_DAY,
-});
-export type IAllCurrenciesCache = typeof allCurrenciesCache;

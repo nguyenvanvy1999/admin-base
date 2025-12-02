@@ -158,6 +158,7 @@ export type UPermission = ValidPermissionKey<PermissionKey>;
 
 export interface IStorageBackend {
   upload(file: File): Promise<string>;
+
   download(filename: string): Promise<IDownloadRes>;
 }
 

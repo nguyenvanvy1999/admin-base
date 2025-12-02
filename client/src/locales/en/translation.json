@@ -16,7 +16,7 @@
     "adminSettings": "Admin settings"
   },
   "header": {
-    "appName": "FinTrack",
+    "appName": "Admin Portal",
     "profile": "Profile",
     "logout": "Logout"
   },
@@ -65,7 +65,7 @@
   },
   "auth": {
     "hero": {
-      "title": "Investment Admin Portal",
+      "title": "Admin Portal",
       "subtitle": "Multi-layer security for your operations team.",
       "items": {
         "security": "OWASP & SOC2 grade security baseline",

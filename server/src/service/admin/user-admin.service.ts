@@ -36,7 +36,6 @@ import {
   ACTIVITY_TYPE,
   BadReqErr,
   DB_PREFIX,
-  DEFAULT_BASE_CURRENCY_ID,
   defaultRoles,
   ErrCode,
   IdUtil,
@@ -86,16 +85,8 @@ export class AdminUserService {
   ) {}
 
   async createUser(params: CreateUserParams): Promise<UserActionResult> {
-    const {
-      actorId,
-      email,
-      password,
-      name,
-      roleIds,
-      baseCurrencyId,
-      status,
-      emailVerified,
-    } = params;
+    const { actorId, email, password, name, roleIds, status, emailVerified } =
+      params;
 
     this.deps.passwordValidationService.validatePasswordOrThrow(password);
     const normalizedEmail = normalizeEmail(email);
@@ -107,9 +98,6 @@ export class AdminUserService {
     if (existingUser) {
       throw new BadReqErr(ErrCode.UserExisted);
     }
-
-    const resolvedBaseCurrencyId = baseCurrencyId ?? DEFAULT_BASE_CURRENCY_ID;
-    await this.ensureCurrencyExists(resolvedBaseCurrencyId);
 
     const resolvedRoleIds = await this.resolveRoleIds(roleIds);
     const userId = IdUtil.dbId(DB_PREFIX.USER);
@@ -125,7 +113,6 @@ export class AdminUserService {
           name: trimmedName,
           status: nextStatus,
           emailVerified: shouldVerifyEmail,
-          baseCurrencyId: resolvedBaseCurrencyId,
           ...(await this.deps.passwordService.createPassword(password)),
           roles: {
             create: resolvedRoleIds.map((roleId) => ({
@@ -192,7 +179,6 @@ export class AdminUserService {
           name: true,
           created: true,
           emailVerified: true,
-          baseCurrencyId: true,
           roles: { select: { roleId: true } },
         },
         skip,
@@ -221,7 +207,6 @@ export class AdminUserService {
         created: true,
         modified: true,
         emailVerified: true,
-        baseCurrencyId: true,
         lockoutUntil: true,
         lockoutReason: true,
         passwordAttempt: true,
@@ -457,18 +442,6 @@ export class AdminUserService {
       });
     }
     return uniqueRoleIds;
-  }
-
-  private async ensureCurrencyExists(currencyId: string): Promise<void> {
-    const currency = await this.deps.db.currency.findUnique({
-      where: { id: currencyId },
-      select: { id: true },
-    });
-    if (!currency) {
-      throw new BadReqErr(ErrCode.ItemNotFound, {
-        errors: 'Currency not found',
-      });
-    }
   }
 
   private async resetMfaState(userId: string): Promise<void> {

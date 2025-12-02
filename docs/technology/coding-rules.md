@@ -1,6 +1,6 @@
 # Quy Tắc Code
 
-Tài liệu này mô tả các quy tắc và conventions bắt buộc khi phát triển dự án FinTrack.
+Tài liệu này mô tả các quy tắc và conventions bắt buộc khi phát triển dự án Admin Base.
 
 ## Quy Tắc Bắt Buộc
 

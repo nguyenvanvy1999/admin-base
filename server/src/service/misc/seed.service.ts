@@ -9,8 +9,6 @@ import {
 import {
   ADMIN_USER_ID,
   DB_PREFIX,
-  DEFAULT_BASE_CURRENCY_ID,
-  DEFAULT_CURRENCIES,
   defaultRoles,
   defaultSettings,
   IdUtil,
@@ -20,8 +18,8 @@ import {
   SYS_USER_ID,
 } from 'src/share';
 
-const SYSTEM_USER_EMAIL = 'system@investment.local';
-const ADMIN_USER_EMAIL = 'admin@investment.local';
+const SYSTEM_USER_EMAIL = 'system@admin-base.local';
+const ADMIN_USER_EMAIL = 'admin@admin-base.local';
 const SYSTEM_USER_NAME = 'System User';
 const ADMIN_USER_NAME = 'Administrator';
 
@@ -31,7 +29,6 @@ type SeedUserParams = {
   name: string;
   password: string;
   roleId: string;
-  baseCurrencyId: string;
 };
 
 export class SeedService {
@@ -238,62 +235,14 @@ export class SeedService {
     }
   }
 
-  async seedCurrencies(): Promise<void> {
-    try {
-      const codes = DEFAULT_CURRENCIES.map((currency) => currency.code);
-      await this.deps.db.$transaction(async (tx) => {
-        const existing = await tx.currency.findMany({
-          where: { code: { in: codes } },
-          select: { code: true },
-        });
-
-        const existingCodes = new Set(existing.map((item) => item.code));
-        const newCurrencies = DEFAULT_CURRENCIES.filter(
-          (currency) => !existingCodes.has(currency.code),
-        );
-
-        if (newCurrencies.length > 0) {
-          await tx.currency.createMany({
-            data: newCurrencies.map((currency) => ({
-              id: currency.id,
-              code: currency.code,
-              name: currency.name,
-              symbol: currency.symbol,
-              isActive: true,
-            })),
-            skipDuplicates: true,
-          });
-        }
-
-        for (const currency of DEFAULT_CURRENCIES) {
-          await tx.currency.updateMany({
-            where: { code: currency.code },
-            data: {
-              name: currency.name,
-              symbol: currency.symbol,
-              isActive: true,
-            },
-          });
-        }
-      });
-
-      this.deps.logger.warning('Seed currencies successfully.');
-    } catch (e) {
-      this.deps.logger.error(`Seed currencies failed ${e}`);
-    }
-  }
-
   async seedUsers(): Promise<void> {
     try {
-      const defaultCurrencyId = DEFAULT_BASE_CURRENCY_ID;
-
       await this.seedUser({
         id: SYS_USER_ID,
         email: SYSTEM_USER_EMAIL,
         name: SYSTEM_USER_NAME,
         password: this.deps.env.SYSTEM_PASSWORD,
         roleId: defaultRoles.system.id,
-        baseCurrencyId: defaultCurrencyId,
       });
 
       await this.seedUser({
@@ -302,7 +251,6 @@ export class SeedService {
         name: ADMIN_USER_NAME,
         password: this.deps.env.ADMIN_PASSWORD,
         roleId: defaultRoles.administrator.id,
-        baseCurrencyId: defaultCurrencyId,
       });
 
       this.deps.logger.warning('Seed critical users successfully.');
@@ -324,7 +272,6 @@ export class SeedService {
         name: params.name,
         status: UserStatus.active,
         emailVerified: true,
-        baseCurrencyId: params.baseCurrencyId,
         ...passwordPayload,
         roles: {
           create: {
@@ -360,7 +307,6 @@ export class SeedService {
     await this.seedAuthProviders();
     await this.seedRoles();
     await this.seedPermissions();
-    await this.seedCurrencies();
     await this.seedUsers();
   }
 }

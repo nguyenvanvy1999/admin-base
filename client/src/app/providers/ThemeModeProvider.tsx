@@ -22,7 +22,7 @@ type ThemeModeProviderProps = {
   children: ReactNode;
 };
 
-const STORAGE_KEY = 'fintrack-theme-mode';
+const STORAGE_KEY = 'admin-portal-theme-mode';
 
 export function ThemeModeProvider({ children }: ThemeModeProviderProps) {
   const [mode, setMode] = useState<ThemeMode>(() => {

@@ -25,7 +25,6 @@ import {
   BadReqErr,
   CoreErr,
   DB_PREFIX,
-  DEFAULT_BASE_CURRENCY_ID,
   defaultRoles,
   ErrCode,
   getIpAndUa,
@@ -146,7 +145,6 @@ export class OAuthService {
             id: userId,
             email,
             status: UserStatus.active,
-            baseCurrencyId: DEFAULT_BASE_CURRENCY_ID,
             password: '',
             roles: {
               create: {

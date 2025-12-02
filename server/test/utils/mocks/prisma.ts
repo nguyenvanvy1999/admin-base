@@ -8,6 +8,7 @@ export interface PrismaMockClient {
   $disconnect: Fn;
   $on: Fn;
   $queryRaw: Fn;
+
   // Dynamic models; index signature for ease in tests
   [model: string]: any;
 }

@@ -1,8 +1,11 @@
 {
-  "name": "investment-monorepo",
+  "name": "admin-base-monorepo",
   "private": true,
   "version": "1.0.0",
-  "workspaces": ["server", "client"],
+  "workspaces": [
+    "server",
+    "client"
+  ],
   "packageManager": "bun@1.3.3",
   "scripts": {
     "dev:server": "bun run --cwd server start:server:dev",

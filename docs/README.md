@@ -1,16 +1,15 @@
-# FinTrack - Tài Liệu Dự Án
+# Admin Base - Tài Liệu Dự Án
 
-Chào mừng đến với tài liệu dự án FinTrack - Ứng dụng Quản Lý Tài Chính Cá Nhân & Đầu Tư.
+Chào mừng đến với tài liệu dự án Admin Base - Dự án admin management base để tái sử dụng ở nhiều dự án khác.
 
 ## Tổng Quan
 
-FinTrack là một ứng dụng web fullstack hiện đại được xây dựng bằng TypeScript, sử dụng Elysia.js cho backend và React
+Admin Base là một ứng dụng web fullstack hiện đại được xây dựng bằng TypeScript, sử dụng Elysia.js cho backend và React
 cho frontend, với end-to-end type safety thông qua Eden Treaty.
 
 ## Cấu Trúc Tài Liệu
 
-Các tài liệu cũ mô tả modules quản lý tài chính (accounts, budgets, investments, …) đã bị gỡ bỏ vì không còn khớp với
-codebase hiện tại. Tài liệu mới được tổ chức thành 2 nhóm:
+Tài liệu được tổ chức thành 2 nhóm:
 
 ### 📚 [Tài Liệu Công Nghệ](./technology/)
 
@@ -40,7 +39,7 @@ codebase hiện tại. Tài liệu mới được tổ chức thành 2 nhóm:
 ```bash
 # Clone repository
 git clone <repository-url>
-cd investment
+cd admin-base
 
 # Cài đặt dependencies (mono-repo)
 bun install

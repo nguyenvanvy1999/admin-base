@@ -48,6 +48,7 @@ export interface FileStorageDependencies {
   idGenerator: IIdGenerator;
   imageDir: string;
 }
+
 export type IFileSystem = FileStorageDependencies['fileSystem'];
 
 const fileStorageDeps = {

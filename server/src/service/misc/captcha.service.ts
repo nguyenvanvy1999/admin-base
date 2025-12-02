@@ -21,6 +21,7 @@ export interface CaptchaResult {
 
 export interface SvgCaptchaGenerator {
   create(options: Record<string, unknown>): { data: string; text: string };
+
   createMathExpr(options: Record<string, unknown>): {
     data: string;
     text: string;

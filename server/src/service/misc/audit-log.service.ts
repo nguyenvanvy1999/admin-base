@@ -3,8 +3,10 @@ import type { ACTIVITY_TYPE, AuditLogEntry } from 'src/share';
 import { ctxStore, IdUtil, LOG_LEVEL } from 'src/share';
 
 const JOB_NAME = 'audit-log';
+
 export class AuditLogService {
   constructor(private readonly queue: IAuditLogQueue = auditLogQueue) {}
+
   mapData(entry: AuditLogEntry) {
     const logId = IdUtil.snowflakeId().toString().padStart(20, '0');
     const ctx = ctxStore.getStore();

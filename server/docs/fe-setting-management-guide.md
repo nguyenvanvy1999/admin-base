@@ -1,6 +1,8 @@
 # Hướng dẫn FE triển khai trang quản lý Settings (CRUD)
 
-Tài liệu này mô tả chi tiết cách phía FE tương tác với các API `admin/settings` đã có sẵn để xây dựng trang quản trị settings với các thao tác cơ bản: xem danh sách và cập nhật. Tất cả response đều được bọc trong cấu trúc `ResWrapper` (`{ data: ..., code: string, t: string }`), vì vậy FE cần truy cập payload chính thông qua trường `data`.
+Tài liệu này mô tả chi tiết cách phía FE tương tác với các API `admin/settings` đã có sẵn để xây dựng trang quản trị
+settings với các thao tác cơ bản: xem danh sách và cập nhật. Tất cả response đều được bọc trong cấu trúc `ResWrapper` (
+`{ data: ..., code: string, t: string }`), vì vậy FE cần truy cập payload chính thông qua trường `data`.
 
 ## 1. Điều kiện tiên quyết
 
@@ -17,10 +19,10 @@ Tài liệu này mô tả chi tiết cách phía FE tương tác với các API 
 
 ## 2. Danh sách endpoint
 
-| Hành động              | Method & Path                    | Mô tả nhanh                                                      |
-|------------------------|-----------------------------------|------------------------------------------------------------------|
-| Lấy danh sách settings | `GET /admin/settings`             | Trả về tất cả settings trong hệ thống                           |
-| Cập nhật setting       | `POST /admin/settings/:id`         | Cập nhật value và isSecret của một setting cụ thể               |
+| Hành động              | Method & Path              | Mô tả nhanh                                       |
+|------------------------|----------------------------|---------------------------------------------------|
+| Lấy danh sách settings | `GET /admin/settings`      | Trả về tất cả settings trong hệ thống             |
+| Cập nhật setting       | `POST /admin/settings/:id` | Cập nhật value và isSecret của một setting cụ thể |
 
 Chi tiết từng endpoint được mô tả dưới đây.
 
@@ -108,7 +110,8 @@ Chi tiết từng endpoint được mô tả dưới đây.
         - `string`: text input (nếu `isSecret: true` thì dùng password input).
         - `date`: date-time picker.
         - `json`: textarea với JSON validation (có thể highlight syntax).
-    - Nếu setting hiện tại có `isSecret: true` và value bị mask, khi edit nên hiển thị placeholder hoặc yêu cầu nhập lại giá trị mới (không hiển thị giá trị cũ).
+    - Nếu setting hiện tại có `isSecret: true` và value bị mask, khi edit nên hiển thị placeholder hoặc yêu cầu nhập lại
+      giá trị mới (không hiển thị giá trị cũ).
     - Hiển thị toggle `isSecret` để user có thể đánh dấu setting là secret hoặc không.
 
 ## 3. Danh sách Settings có sẵn trong hệ thống
@@ -117,32 +120,32 @@ Dưới đây là danh sách các setting keys được định nghĩa sẵn tro
 
 ### 3.1 Bảo mật và Xác thực
 
-| Key                                  | Type    | Mô tả                                                      | Default Value |
-|--------------------------------------|---------|------------------------------------------------------------|---------------|
-| `ENB_MFA_REQUIRED`                   | boolean | Bắt buộc MFA cho tất cả user                               | `false`       |
-| `ENB_ONLY_ONE_SESSION`               | boolean | Chỉ cho phép một session đăng nhập tại một thời điểm      | `false`       |
-| `ENB_PASSWORD_ATTEMPT`               | boolean | Bật tính năng theo dõi số lần thử mật khẩu                | `false`       |
-| `ENB_PASSWORD_EXPIRED`               | boolean | Bật tính năng hết hạn mật khẩu                             | `false`       |
-| `ENB_IP_WHITELIST`                   | boolean | Bật tính năng IP whitelist                                 | `true`        |
-| `ENB_SECURITY_DEVICE_RECOGNITION`    | boolean | Bật nhận diện thiết bị                                      | `false`       |
-| `ENB_SECURITY_BLOCK_UNKNOWN_DEVICE`  | boolean | Chặn thiết bị không nhận diện được                         | `false`       |
-| `ENB_SECURITY_AUDIT_WARNING`        | boolean | Cảnh báo audit khi có thiết bị mới                         | `true`        |
+| Key                                 | Type    | Mô tả                                                | Default Value |
+|-------------------------------------|---------|------------------------------------------------------|---------------|
+| `ENB_MFA_REQUIRED`                  | boolean | Bắt buộc MFA cho tất cả user                         | `false`       |
+| `ENB_ONLY_ONE_SESSION`              | boolean | Chỉ cho phép một session đăng nhập tại một thời điểm | `false`       |
+| `ENB_PASSWORD_ATTEMPT`              | boolean | Bật tính năng theo dõi số lần thử mật khẩu           | `false`       |
+| `ENB_PASSWORD_EXPIRED`              | boolean | Bật tính năng hết hạn mật khẩu                       | `false`       |
+| `ENB_IP_WHITELIST`                  | boolean | Bật tính năng IP whitelist                           | `true`        |
+| `ENB_SECURITY_DEVICE_RECOGNITION`   | boolean | Bật nhận diện thiết bị                               | `false`       |
+| `ENB_SECURITY_BLOCK_UNKNOWN_DEVICE` | boolean | Chặn thiết bị không nhận diện được                   | `false`       |
+| `ENB_SECURITY_AUDIT_WARNING`        | boolean | Cảnh báo audit khi có thiết bị mới                   | `true`        |
 
 ### 3.2 Rate Limiting
 
-| Key                                      | Type   | Mô tả                                          | Default Value |
-|------------------------------------------|--------|------------------------------------------------|---------------|
-| `LOGIN_RATE_LIMIT_MAX`                   | number | Số lần đăng nhập tối đa trong một cửa sổ thời gian | `10`          |
-| `LOGIN_RATE_LIMIT_WINDOW_SECONDS`        | number | Thời gian cửa sổ rate limit đăng nhập (giây)   | `900` (15 phút)|
-| `REGISTER_OTP_LIMIT`                     | number | Số lần gửi OTP đăng ký tối đa                  | `5`           |
-| `REGISTER_RATE_LIMIT_MAX`                | number | Số lần đăng ký tối đa trong một cửa sổ thời gian| `5`           |
-| `REGISTER_RATE_LIMIT_WINDOW_SECONDS`     | number | Thời gian cửa sổ rate limit đăng ký (giây)      | `900` (15 phút)|
+| Key                                  | Type   | Mô tả                                              | Default Value   |
+|--------------------------------------|--------|----------------------------------------------------|-----------------|
+| `LOGIN_RATE_LIMIT_MAX`               | number | Số lần đăng nhập tối đa trong một cửa sổ thời gian | `10`            |
+| `LOGIN_RATE_LIMIT_WINDOW_SECONDS`    | number | Thời gian cửa sổ rate limit đăng nhập (giây)       | `900` (15 phút) |
+| `REGISTER_OTP_LIMIT`                 | number | Số lần gửi OTP đăng ký tối đa                      | `5`             |
+| `REGISTER_RATE_LIMIT_MAX`            | number | Số lần đăng ký tối đa trong một cửa sổ thời gian   | `5`             |
+| `REGISTER_RATE_LIMIT_WINDOW_SECONDS` | number | Thời gian cửa sổ rate limit đăng ký (giây)         | `900` (15 phút) |
 
 ### 3.3 Hệ thống
 
-| Key                      | Type   | Mô tả                                    | Default Value           |
-|--------------------------|--------|------------------------------------------|-------------------------|
-| `MAINTENANCE_END_DATE`    | date   | Ngày kết thúc bảo trì hệ thống           | `1970-01-01T00:00:00Z`  |
+| Key                    | Type | Mô tả                          | Default Value          |
+|------------------------|------|--------------------------------|------------------------|
+| `MAINTENANCE_END_DATE` | date | Ngày kết thúc bảo trì hệ thống | `1970-01-01T00:00:00Z` |
 
 **Lưu ý:** Danh sách này có thể mở rộng trong tương lai. FE nên động lấy danh sách từ API thay vì hardcode.
 
@@ -280,7 +283,8 @@ FE có thể dùng các request này để verify kết nối trước khi ghép
 - [ ] Xây dựng hook/service `useAdminSettings` wrap toàn bộ endpoint trên, luôn đọc/ghi `data`.
 - [ ] Xử lý parse `value` theo `type` khi hiển thị trên UI.
 - [ ] Xử lý mask value cho settings có `isSecret: true`.
-- [ ] Render input phù hợp theo `type` (boolean → toggle, number → number input, date → date picker, json → textarea với validation).
+- [ ] Render input phù hợp theo `type` (boolean → toggle, number → number input, date → date picker, json → textarea với
+  validation).
 - [ ] Validate `value` theo `type` trước khi submit (client-side validation).
 - [ ] Xử lý JSON input với syntax highlighting và format button (optional nhưng recommended).
 - [ ] Chuẩn hóa error handler và toast theo `code`.
@@ -488,5 +492,6 @@ export const validateSettingValue = (
 
 ---
 
-**Lưu ý:** Các tính năng trên là đề xuất, chưa được implement trong backend hiện tại. FE có thể đề xuất với backend team nếu cần thiết.
+**Lưu ý:** Các tính năng trên là đề xuất, chưa được implement trong backend hiện tại. FE có thể đề xuất với backend team
+nếu cần thiết.
 

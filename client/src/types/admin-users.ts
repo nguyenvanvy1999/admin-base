@@ -26,7 +26,6 @@ export interface AdminUserSummary {
   name: string | null;
   created: string;
   emailVerified: boolean;
-  baseCurrencyId: string;
   roles: AdminUserRoleRef[];
 }
 
@@ -56,7 +55,6 @@ export interface AdminUserCreatePayload {
   password: string;
   name?: string | null;
   roleIds?: string[];
-  baseCurrencyId?: string;
   status?: AdminUserStatus;
   emailVerified?: boolean;
 }

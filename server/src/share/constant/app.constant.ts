@@ -2,6 +2,7 @@ export enum LANG {
   VI = 'vi',
   EN = 'en',
 }
+
 export const DEFAULT_LANGUAGE = LANG.EN;
 
 export enum APP_ENV {
@@ -31,6 +32,7 @@ export enum HTTP_METHOD {
   OPTIONS = 'OPTIONS',
   HEAD = 'HEAD',
 }
+
 export const REGEX_HTTP_METHOD = `^(${Object.values(HTTP_METHOD).join('|')})(,(${Object.values(HTTP_METHOD).join('|')}))*$`;
 
 export enum HTTP_STATUS {

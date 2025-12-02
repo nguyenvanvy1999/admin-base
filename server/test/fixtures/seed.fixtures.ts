@@ -1,26 +1,7 @@
-import type {
-  Currency,
-  Permission,
-  Role,
-  User,
-  UserStatus,
-} from 'src/generated';
+import type { Permission, Role, User, UserStatus } from 'src/generated';
 import { ADMIN_USER_ID, SYS_USER_ID } from 'src/share';
 
 export class SeedFixtures {
-  static createCurrency(overrides: Partial<Currency> = {}): Currency {
-    return {
-      id: 'currency_1',
-      code: 'USDT',
-      name: 'Tether USD',
-      symbol: '$',
-      created: new Date(),
-      modified: new Date(),
-      isActive: true,
-      ...overrides,
-    };
-  }
-
   static createUser(overrides: Partial<User> = {}): User {
     return {
       id: 'user_1',
@@ -28,8 +9,6 @@ export class SeedFixtures {
       status: 'inactive' as UserStatus,
       password: 'hashed_password',
       name: 'Name',
-      // username: 'username', // Removed - not in User model
-      baseCurrencyId: 'baseCurrencyId',
       settings: {},
       passwordExpired: new Date(),
       passwordCreated: new Date(),
@@ -92,14 +71,5 @@ export class SeedFixtures {
       description: 'Test permission',
       ...overrides,
     };
-  }
-
-  static createCurrencies(count = 3): Currency[] {
-    return Array.from({ length: count }, (_, i) =>
-      this.createCurrency({
-        id: `currency_${i + 1}`,
-        code: ['USDT', 'USDC', 'BTC'][i] || 'USDT',
-      }),
-    );
   }
 }

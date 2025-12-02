@@ -16,7 +16,7 @@
     "adminSettings": "Quản lý settings"
   },
   "header": {
-    "appName": "FinTrack",
+    "appName": "Admin Portal",
     "profile": "Hồ sơ",
     "logout": "Đăng xuất"
   },
@@ -65,7 +65,7 @@
   },
   "auth": {
     "hero": {
-      "title": "Investment Admin Portal",
+      "title": "Admin Portal",
       "subtitle": "Kiến trúc bảo mật đa lớp cho đội ngũ vận hành.",
       "items": {
         "security": "Chuẩn bảo mật OWASP & SOC2",

@@ -18,6 +18,7 @@ export interface CrudTableProps<T extends Record<string, unknown>> {
   deleteConfirmTitle?: string;
   deleteConfirmContent?: string | ((record: T) => string);
   rowKey?: string | ((record: T) => string);
+
   [key: string]: unknown;
 }
 

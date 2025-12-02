@@ -37,6 +37,7 @@ import {
 type VerifyAndCompleteLoginParams =
   | typeof MfaLoginRequestDto.static
   | typeof VerifyBackupCodeRequestDto.static;
+
 export class MfaVerificationService {
   private readonly MAX_MFA_ATTEMPTS = 5;
   private readonly MFA_ATTEMPT_TTL = 300;

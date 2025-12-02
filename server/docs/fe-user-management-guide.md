@@ -52,7 +52,6 @@ Chi tiết từng endpoint được mô tả dưới đây.
         "name": "Jane Doe",
         "created": "2025-11-28T07:35:01.000Z",
         "emailVerified": true,
-        "baseCurrencyId": "USD",
         "roles": [{ "roleId": "admin" }]
       }
     ],
@@ -81,7 +80,7 @@ Chi tiết từng endpoint được mô tả dưới đây.
     "emailVerified": true
   }
   ```
-  Các trường `name`, `roleIds`, `baseCurrencyId`, `status`, `emailVerified` là optional.
+  Các trường `name`, `roleIds`, `status`, `emailVerified` là optional.
 - **Response `data`:** `{ "userId": "...", "auditLogId": "..." }`.
 - **Gợi ý UI:** sau khi tạo thành công có thể điều hướng sang trang detail bằng `userId`. Hiển thị toast chứa
   `auditLogId` để admin dễ đối chiếu.

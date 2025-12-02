@@ -28,6 +28,7 @@ export enum DOC_TAG {
   ADMIN_SESSION = 'Admin Session',
   ADMIN_TELEGRAM = 'Admin Telegram',
 }
+
 export const ACCESS_AUTH = [{ accessToken: [] }];
 export const DOC_OPTIONS = {
   info: {

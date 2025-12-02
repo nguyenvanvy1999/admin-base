@@ -100,13 +100,6 @@ export const AdminUserCreateDto = t.Object({
   }),
   name: t.Optional(displayNameField),
   roleIds: t.Optional(roleIdsField),
-  baseCurrencyId: t.Optional(
-    t.String({
-      minLength: 1,
-      description:
-        'Currency id that will be used as the default base currency.',
-    }),
-  ),
   status: t.Optional(
     t.Enum(UserStatus, {
       description: 'Initial status for the created account.',
@@ -141,7 +134,6 @@ const AdminUserSummaryDto = t.Object({
   name: displayNameField,
   created: isoDateField,
   emailVerified: t.Boolean(),
-  baseCurrencyId: t.String(),
   roles: roleListDto,
 });
 
@@ -155,7 +147,6 @@ export const AdminUserDetailResDto = t.Object({
   created: isoDateField,
   modified: isoDateField,
   emailVerified: t.Boolean(),
-  baseCurrencyId: t.String(),
   lockoutUntil: t.Nullable(isoDateField),
   lockoutReason: t.Nullable(t.Enum(LockoutReason)),
   passwordAttempt: t.Integer(),

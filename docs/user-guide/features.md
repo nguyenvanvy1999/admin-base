@@ -1,7 +1,6 @@
 # Hướng Dẫn Sử Dụng Tính Năng
 
-> **Lưu ý:** Phiên bản hiện tại tập trung vào nền tảng (authentication, admin tooling, healthcheck). Các mô-đun tài
-> chính (accounts, budgets, investments, …) đang trong giai đoạn thiết kế nên không xuất hiện trong UI hay API.
+> **Lưu ý:** Phiên bản hiện tại tập trung vào nền tảng (authentication, admin tooling, healthcheck).
 
 ## 1. Dashboard (HomePage)
 
@@ -72,7 +71,6 @@ Chi tiết payload xem trong `docs/user-guide/api-reference.md`.
 
 Các phần dưới đây từng xuất hiện trong tài liệu cũ nhưng **chưa có trong code hiện tại**:
 
-- CRUD Accounts / Transactions / Budgets / Investments.
 - Entities, Tags, Events, Cashflow reports.
 - Import/Export dữ liệu, recurring transactions.
 

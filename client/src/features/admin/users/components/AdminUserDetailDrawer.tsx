@@ -248,11 +248,6 @@ export function AdminUserDetailDrawer({
                     {data.name ?? '-'}
                   </ProDescriptions.Item>
                   <ProDescriptions.Item
-                    label={t('adminUsersPage.detail.baseCurrency')}
-                  >
-                    {data.baseCurrencyId}
-                  </ProDescriptions.Item>
-                  <ProDescriptions.Item
                     label={t('adminUsersPage.detail.emailVerified')}
                   >
                     {data.emailVerified

@@ -1,6 +1,10 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
-  "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": false
+  },
   "files": {
     "ignoreUnknown": false,
     "includes": [
@@ -132,8 +136,16 @@
     },
     "globals": ["exports"]
   },
-  "html": { "formatter": { "enabled": true } },
-  "json": { "formatter": { "enabled": true } },
+  "html": {
+    "formatter": {
+      "enabled": true
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true
+    }
+  },
   "css": {
     "parser": {
       "tailwindDirectives": true
@@ -144,7 +156,9 @@
       "includes": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
       "linter": {
         "rules": {
-          "complexity": { "noArguments": "error" },
+          "complexity": {
+            "noArguments": "error"
+          },
           "correctness": {
             "noConstAssign": "error",
             "noGlobalObjectCalls": "error",
@@ -155,7 +169,9 @@
             "noUnreachable": "error",
             "noUnreachableSuper": "error"
           },
-          "style": { "useConst": "error" },
+          "style": {
+            "useConst": "error"
+          },
           "suspicious": {
             "noClassAssign": "error",
             "noDuplicateClassMembers": "error",
@@ -175,6 +191,10 @@
   ],
   "assist": {
     "enabled": true,
-    "actions": { "source": { "organizeImports": "on" } }
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
   }
 }

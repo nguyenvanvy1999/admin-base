@@ -17,7 +17,6 @@ export const userResSelect = {
   status: true,
   email: true,
   name: true,
-  baseCurrencyId: true,
   settings: true,
   emailVerified: true,
   emailVerificationToken: true,

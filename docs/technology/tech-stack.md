@@ -1,10 +1,10 @@
 # Tech Stack
 
-Tài liệu này mô tả chi tiết các công nghệ và công cụ được sử dụng trong dự án FinTrack.
+Tài liệu này mô tả chi tiết các công nghệ và công cụ được sử dụng trong dự án Admin Base.
 
 ## Tổng Quan
 
-FinTrack được xây dựng với stack công nghệ hiện đại, tập trung vào performance, type safety và developer experience.
+Admin Base được xây dựng với stack công nghệ hiện đại, tập trung vào performance, type safety và developer experience.
 
 ## Backend
 

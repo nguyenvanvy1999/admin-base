@@ -1,6 +1,7 @@
-# FinTrack - Personal Finance & Investment Management
+# Admin Base - Admin Management Base
 
-Ứng dụng web quản lý tài chính cá nhân và đầu tư được xây dựng với Elysia.js (backend) và React (frontend), sử dụng Bun runtime.
+Dự án admin base để tái sử dụng ở nhiều dự án khác, được xây dựng với Elysia.js (backend) và React (frontend), sử dụng
+Bun runtime.
 
 ## Quick Start
 
@@ -15,7 +16,7 @@
 
 ```bash
 git clone <repository-url>
-cd fin-track
+cd admin-base
 ```
 
 2. **Install dependencies**
@@ -24,7 +25,9 @@ cd fin-track
 bun install
 ```
 
-> ℹ️ Repo sử dụng Bun workspaces để quản lý `server/` và `client/` như hai package độc lập, theo hướng dẫn chính thức của Bun về workspaces. Xem thêm tại [bun.com/docs/guides/install/workspaces](https://bun.com/docs/guides/install/workspaces).
+> ℹ️ Repo sử dụng Bun workspaces để quản lý `server/` và `client/` như hai package độc lập, theo hướng dẫn chính thức
+> của Bun về workspaces. Xem thêm
+> tại [bun.com/docs/guides/install/workspaces](https://bun.com/docs/guides/install/workspaces).
 
 3. **Set up environment variables**
 
@@ -50,7 +53,9 @@ bun run dev
 bun run dev:client
 ```
 
-> Vite chạy hoàn toàn bằng Bun CLI giống như tài liệu [bun.com/docs/guides/ecosystem/vite](https://bun.com/docs/guides/ecosystem/vite) nên bạn có thể dùng `bun run dev:client`, `bun run build:client` hoặc `bun run preview:client` cho vòng đời FE.
+> Vite chạy hoàn toàn bằng Bun CLI giống như tài
+> liệu [bun.com/docs/guides/ecosystem/vite](https://bun.com/docs/guides/ecosystem/vite) nên bạn có thể dùng
+`bun run dev:client`, `bun run build:client` hoặc `bun run preview:client` cho vòng đời FE.
 
 6. **Open your browser**
 
@@ -144,10 +149,13 @@ client/src/
 
 #### Nguyên tắc mở rộng client
 
-- **Provider gốc**: `client/src/app/AppProvider.tsx` gom `ConfigProvider`, `AntdApp`, `QueryClientProvider` và `RouterProvider` (HashRouter).
+- **Provider gốc**: `client/src/app/AppProvider.tsx` gom `ConfigProvider`, `AntdApp`, `QueryClientProvider` và
+  `RouterProvider` (HashRouter).
 - **Layout**: `client/src/app/layouts/MainLayout.tsx` sử dụng Ant Design Pro Layout (mix layout) với sidebar cố định.
-- **Dữ liệu**: Toàn bộ request đi qua `client/src/lib/http.ts` (Axios + interceptor). React Query dùng `client/src/lib/queryClient.ts`.
-- **Components tái sử dụng**: `client/src/components/common` chứa wrapper cho Form, ProTable, Modal, Drawer, PageHeader, Loader… giữ style đồng nhất.
+- **Dữ liệu**: Toàn bộ request đi qua `client/src/lib/http.ts` (Axios + interceptor). React Query dùng
+  `client/src/lib/queryClient.ts`.
+- **Components tái sử dụng**: `client/src/components/common` chứa wrapper cho Form, ProTable, Modal, Drawer, PageHeader,
+  Loader… giữ style đồng nhất.
 - **Services**: tạo file mới ở `client/src/services/*`, expose hàm fetch + hook `useXxxQuery`.
 - **State**: dùng `useState` cho local UI, dữ liệu server đi qua React Query (không sử dụng Redux/Zustand).
 - **Styling**: Ưu tiên AntD token + Tailwind utility trong `global.css`. Token chung nằm ở `client/styles/tokens.css`.
@@ -157,7 +165,6 @@ client/src/
 
 - ✅ Account management
 - ✅ Transaction tracking
-- ✅ Investment management (priced & manual modes)
 - ✅ Category management
 - ✅ Multi-currency support
 - ✅ P&L calculations
