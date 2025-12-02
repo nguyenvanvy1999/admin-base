@@ -4,6 +4,7 @@ export interface AdminRole {
   description?: string | null;
   permissionIds: string[];
   playerIds: string[];
+  protected?: boolean;
 }
 
 export interface UpsertRoleDto {

@@ -16,6 +16,7 @@ export const PaginateRoleResDto = t.Array(
       id: t.String(),
       permissionIds: t.Array(t.String()),
       playerIds: t.Array(t.String()),
+      protected: t.Boolean(),
     }),
   ]),
 );

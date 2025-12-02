@@ -294,6 +294,7 @@ export function AdminUserDetailDrawer({
                         <Space>
                           <Button
                             danger
+                            disabled={Boolean(data.protected)}
                             loading={resetMfaMutation.isPending}
                             onClick={() => promptMfaReason('reset')}
                           >
@@ -301,6 +302,7 @@ export function AdminUserDetailDrawer({
                           </Button>
                           <Button
                             danger
+                            disabled={Boolean(data.protected)}
                             loading={disableMfaMutation.isPending}
                             onClick={() => promptMfaReason('disable')}
                           >
@@ -313,7 +315,7 @@ export function AdminUserDetailDrawer({
                 </Flex>
               ),
             },
-            ...(canUpdate && data
+            ...(canUpdate && data && !data.protected
               ? [
                   {
                     key: 'edit',

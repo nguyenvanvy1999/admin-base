@@ -205,6 +205,7 @@ export class AdminUserService {
           name: true,
           created: true,
           emailVerified: true,
+          protected: true,
           roles: {
             select: { role: { select: { title: true, id: true } } },
           },
@@ -239,6 +240,7 @@ export class AdminUserService {
         lockoutReason: true,
         passwordAttempt: true,
         passwordExpired: true,
+        protected: true,
         roles: { select: { role: { select: { title: true, id: true } } } },
       },
     });

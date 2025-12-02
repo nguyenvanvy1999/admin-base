@@ -157,6 +157,7 @@ const AdminUserSummaryDto = t.Object({
   created: isoDateField,
   emailVerified: t.Boolean(),
   roles: roleListDto,
+  protected: t.Boolean(),
 });
 
 export const AdminUserListResDto = PaginatedDto(AdminUserSummaryDto);
@@ -173,5 +174,6 @@ export const AdminUserDetailResDto = t.Object({
   lockoutReason: t.Nullable(t.Enum(LockoutReason)),
   passwordAttempt: t.Integer(),
   passwordExpired: t.Nullable(isoDateField),
+  protected: t.Boolean(),
   roles: roleListDto,
 });

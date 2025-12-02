@@ -162,7 +162,7 @@ export default function AdminUsersPage() {
               }}
             />
           </Tooltip>
-          {canUpdate && (
+          {canUpdate && !record.protected && (
             <Tooltip title={t('adminUsersPage.actions.edit')}>
               <Button
                 type="text"

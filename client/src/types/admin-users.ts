@@ -30,6 +30,7 @@ export interface AdminUserSummary {
   created: string;
   emailVerified: boolean;
   roles: AdminUserRoleRef[];
+  protected?: boolean;
 }
 
 export interface AdminUserDetail extends AdminUserSummary {

@@ -125,31 +125,34 @@ export default function AdminRolesPage() {
       valueType: 'option',
       hideInTable: !canUpdate && !canDelete,
       width: 80,
-      render: (_, record) => (
-        <Space size="small">
-          {canUpdate && (
-            <Tooltip title={t('adminRolesPage.actions.edit')}>
-              <Button
-                type="text"
-                size="small"
-                icon={<EditOutlined />}
-                onClick={() => handleEdit(record)}
-              />
-            </Tooltip>
-          )}
-          {canDelete && (
-            <Tooltip title={t('adminRolesPage.actions.delete')}>
-              <Button
-                type="text"
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={() => handleDelete(record)}
-              />
-            </Tooltip>
-          )}
-        </Space>
-      ),
+      render: (_, record) => {
+        const isProtected = Boolean(record.protected);
+        return (
+          <Space size="small">
+            {canUpdate && !isProtected && (
+              <Tooltip title={t('adminRolesPage.actions.edit')}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<EditOutlined />}
+                  onClick={() => handleEdit(record)}
+                />
+              </Tooltip>
+            )}
+            {canDelete && !isProtected && (
+              <Tooltip title={t('adminRolesPage.actions.delete')}>
+                <Button
+                  type="text"
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleDelete(record)}
+                />
+              </Tooltip>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
