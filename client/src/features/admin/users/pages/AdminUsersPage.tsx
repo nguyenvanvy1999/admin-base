@@ -109,16 +109,75 @@ export default function AdminUsersPage() {
       ),
     },
     {
-      title: t('adminUsersPage.table.roles'),
+      title: t('adminUsersPage.table.rolesWithExpiry'),
       dataIndex: 'roles',
       hideInSearch: true,
       render: (_, record) => (
         <Space wrap>
-          {record.roles.map((roleRef) => (
-            <Tag key={`${record.id}-${roleRef.role.id}`}>
-              {roleRef.role.title || roleRef.role.id}
-            </Tag>
-          ))}
+          {record.roles.map((roleRef) => {
+            const expiresAt = roleRef.expiresAt;
+            let color: string = 'default';
+            let statusLabel = t('adminUsersPage.roleExpiry.noExpiry');
+            let isExpired = false;
+
+            if (expiresAt) {
+              const expiryDate = dayjs(expiresAt);
+              const now = dayjs();
+              isExpired = expiryDate.isBefore(now);
+              const isSoon = !isExpired && expiryDate.diff(now, 'day') < 7;
+
+              if (isExpired) {
+                color = 'default';
+                statusLabel = t('adminUsersPage.roleExpiry.expiredAt', {
+                  date: expiryDate.format('DD/MM/YYYY'),
+                });
+              } else if (isSoon) {
+                color = 'orange';
+                statusLabel = t('adminUsersPage.roleExpiry.soonExpire', {
+                  date: expiryDate.format('DD/MM/YYYY'),
+                });
+              } else {
+                color = 'green';
+                statusLabel = t('adminUsersPage.roleExpiry.activeUntil', {
+                  date: expiryDate.format('DD/MM/YYYY'),
+                });
+              }
+            }
+
+            const baseLabel = roleRef.role.title || roleRef.role.id;
+
+            return (
+              <Tooltip
+                key={`${record.id}-${roleRef.role.id}`}
+                title={
+                  <>
+                    <div>
+                      {t('adminUsersPage.roleExpiry.tooltipRole')}: {baseLabel}
+                    </div>
+                    <div>
+                      {t('adminUsersPage.roleExpiry.tooltipStatus')}:{' '}
+                      {statusLabel}
+                    </div>
+                    <div>
+                      {t('adminUsersPage.roleExpiry.tooltipExpiry')}:{' '}
+                      {expiresAt
+                        ? dayjs(expiresAt).format('DD/MM/YYYY HH:mm')
+                        : t('adminUsersPage.roleExpiry.noExpiry')}
+                    </div>
+                  </>
+                }
+              >
+                <Tag
+                  color={color}
+                  style={
+                    isExpired ? { textDecoration: 'line-through' } : undefined
+                  }
+                >
+                  {baseLabel}
+                </Tag>
+              </Tooltip>
+            );
+          })}
         </Space>
       ),
     },

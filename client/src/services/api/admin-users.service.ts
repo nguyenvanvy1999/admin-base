@@ -8,6 +8,7 @@ import type {
   AdminUserListResponse,
   AdminUserMfaPayload,
   AdminUserUpdatePayload,
+  AdminUserUpdateRolesPayload,
 } from 'src/types/admin-users';
 
 const ADMIN_USER_BASE_PATH = '/api/admin/users';
@@ -60,6 +61,16 @@ export const adminUsersService = {
   ): Promise<AdminUserActionResponse> {
     return apiClient.patch<AdminUserActionResponse>(
       `${ADMIN_USER_BASE_PATH}/${userId}`,
+      payload,
+    );
+  },
+
+  updateRoles(
+    userId: string,
+    payload: AdminUserUpdateRolesPayload,
+  ): Promise<AdminUserActionResponse> {
+    return apiClient.patch<AdminUserActionResponse>(
+      `${ADMIN_USER_BASE_PATH}/${userId}/roles`,
       payload,
     );
   },

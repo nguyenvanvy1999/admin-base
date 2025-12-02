@@ -68,7 +68,7 @@ export function RoleFormModal({
         description: role.description ?? '',
         enabled: true,
         permissionIds: role.permissionIds,
-        playerIds: role.playerIds,
+        playerIds: role.players.map((player) => player.playerId),
       }
     : {
         enabled: true,

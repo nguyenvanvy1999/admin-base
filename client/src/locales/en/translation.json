@@ -198,6 +198,7 @@
       "name": "Display name",
       "status": "Status",
       "roles": "Roles",
+      "rolesWithExpiry": "Roles & Expiry",
       "created": "Created at",
       "emailVerified": "Email verified",
       "actions": "Actions",
@@ -240,6 +241,15 @@
       "active": "Active",
       "suspendded": "Suspended",
       "banned": "Banned"
+    },
+    "roleExpiry": {
+      "noExpiry": "No expiry",
+      "activeUntil": "Valid until {{date}}",
+      "soonExpire": "Expiring {{date}}",
+      "expiredAt": "Expired {{date}}",
+      "tooltipRole": "Role",
+      "tooltipStatus": "Status",
+      "tooltipExpiry": "Expiry date"
     },
     "form": {
       "email": "Email",

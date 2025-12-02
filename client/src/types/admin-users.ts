@@ -20,6 +20,7 @@ export interface AdminUserRoleRef {
     id: string;
     title: string;
   };
+  expiresAt: string | null;
 }
 
 export interface AdminUserSummary {
@@ -74,6 +75,16 @@ export interface AdminUserUpdatePayload {
   passwordAttempt?: number;
   passwordExpired?: string | null;
   reason?: string;
+}
+
+export interface AdminUserRoleAssignment {
+  roleId: string;
+  expiresAt: string | null;
+}
+
+export interface AdminUserUpdateRolesPayload {
+  roles: AdminUserRoleAssignment[];
+  reason: string;
 }
 
 export interface AdminUserMfaPayload {

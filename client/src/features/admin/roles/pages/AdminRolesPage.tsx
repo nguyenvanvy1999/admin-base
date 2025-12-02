@@ -97,9 +97,29 @@ export default function AdminRolesPage() {
     },
     {
       title: t('adminRolesPage.table.users'),
-      dataIndex: 'playerIds',
+      dataIndex: 'players',
       hideInSearch: true,
-      render: (_, record) => <Tag color="green">{record.playerIds.length}</Tag>,
+      render: (_, record) => {
+        const now = Date.now();
+        const activeCount = record.players.filter(
+          (player) =>
+            !player.expiresAt || new Date(player.expiresAt).getTime() > now,
+        ).length;
+        const expiredCount = record.players.length - activeCount;
+
+        return (
+          <Tooltip
+            title={t('adminRolesPage.users.tooltip', {
+              active: activeCount,
+              expired: expiredCount,
+            })}
+          >
+            <Tag color="green">
+              {activeCount} / {expiredCount}
+            </Tag>
+          </Tooltip>
+        );
+      },
     },
     {
       title: t('adminRolesPage.table.filters.user'),

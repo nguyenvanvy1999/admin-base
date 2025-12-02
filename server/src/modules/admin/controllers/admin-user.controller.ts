@@ -7,6 +7,7 @@ import {
   AdminUserListResDto,
   AdminUserMfaActionDto,
   AdminUserUpdateDto,
+  AdminUserUpdateRolesDto,
 } from 'src/modules/admin/dtos';
 import { adminUserService } from 'src/service/admin/user-admin.service';
 import { authorize, has } from 'src/service/auth/authorization';
@@ -68,8 +69,28 @@ const adminUserManageRoutes = new Elysia<'', AppAuthMeta>()
     },
   )
   .patch(
-    '/:id',
+    '/:id/roles',
     async ({ params: { id }, currentUser, body }) =>
+      castToRes(
+        await adminUserService.updateUserRoles({
+          targetUserId: id,
+          actorId: currentUser.id,
+          ...body,
+        }),
+      ),
+    {
+      params: IdDto,
+      body: AdminUserUpdateRolesDto,
+      response: {
+        200: ResWrapper(AdminUserActionResDto),
+        400: ErrorResDto,
+        ...authErrors,
+      },
+    },
+  );
+  .patch(
+    '/:id',
+    async ({ { id }, currentUser, body }) =>
       castToRes(
         await adminUserService.updateUser({
           targetUserId: id,

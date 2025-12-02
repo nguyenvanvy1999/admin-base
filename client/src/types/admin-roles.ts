@@ -3,7 +3,10 @@ export interface AdminRole {
   title: string;
   description?: string | null;
   permissionIds: string[];
-  playerIds: string[];
+  players: {
+    playerId: string;
+    expiresAt: string | null;
+  }[];
   protected?: boolean;
 }
 

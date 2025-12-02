@@ -9,6 +9,7 @@ import type {
   AdminUserDetail,
   AdminUserMfaPayload,
   AdminUserUpdatePayload,
+  AdminUserUpdateRolesPayload,
 } from 'src/types/admin-users';
 
 export function useAdminUserDetail(userId?: string, enabled = true) {
@@ -52,6 +53,28 @@ export function useUpdateAdminUser(options?: {
       userId: string;
       payload: AdminUserUpdatePayload;
     }) => adminUsersService.update(userId, payload),
+    onSuccess: (response, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: adminUserKeys.detail(variables.userId),
+      });
+      queryClient.invalidateQueries({ queryKey: adminUserKeys.lists() });
+      options?.onSuccess?.(response);
+    },
+  });
+}
+
+export function useUpdateAdminUserRoles(options?: {
+  onSuccess?: (res: AdminUserActionResponse) => void;
+}) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      userId,
+      payload,
+    }: {
+      userId: string;
+      payload: AdminUserUpdateRolesPayload;
+    }) => adminUsersService.updateRoles(userId, payload),
     onSuccess: (response, variables) => {
       queryClient.invalidateQueries({
         queryKey: adminUserKeys.detail(variables.userId),

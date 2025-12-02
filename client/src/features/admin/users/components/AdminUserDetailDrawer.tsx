@@ -75,6 +75,50 @@ function mapDetailToFormValues(
   };
 }
 
+function getRoleExpiryMeta(expiresAt: string | null) {
+  if (!expiresAt) {
+    return {
+      status: 'no-expiry' as const,
+      color: 'default' as const,
+      isExpired: false,
+      isSoon: false,
+      date: null as dayjs.Dayjs | null,
+    };
+  }
+  const expiryDate = dayjs(expiresAt);
+  const now = dayjs();
+  const isExpired = expiryDate.isBefore(now);
+  const isSoon = !isExpired && expiryDate.diff(now, 'day') < 7;
+
+  if (isExpired) {
+    return {
+      status: 'expired' as const,
+      color: 'default' as const,
+      isExpired: true,
+      isSoon: false,
+      date: expiryDate,
+    };
+  }
+
+  if (isSoon) {
+    return {
+      status: 'soon' as const,
+      color: 'orange' as const,
+      isExpired: false,
+      isSoon: true,
+      date: expiryDate,
+    };
+  }
+
+  return {
+    status: 'active' as const,
+    color: 'green' as const,
+    isExpired: false,
+    isSoon: false,
+    date: expiryDate,
+  };
+}
+
 export function AdminUserDetailDrawer({
   userId,
   open,
@@ -244,11 +288,73 @@ export function AdminUserDetailDrawer({
                   </ProDescriptions.Item>
                   <ProDescriptions.Item label={t('adminUsersPage.table.roles')}>
                     <Space wrap>
-                      {data.roles.map((roleRef) => (
-                        <Tag key={roleRef.role.id}>
-                          {roleRef.role.title || roleRef.role.id}
-                        </Tag>
-                      ))}
+                      {data.roles.map((roleRef) => {
+                        const meta = getRoleExpiryMeta(roleRef.expiresAt);
+                        const baseLabel = roleRef.role.title || roleRef.role.id;
+                        let statusLabel = t(
+                          'adminUsersPage.roleExpiry.noExpiry',
+                        );
+
+                        if (meta.status === 'active' && meta.date) {
+                          statusLabel = t(
+                            'adminUsersPage.roleExpiry.activeUntil',
+                            {
+                              date: meta.date.format('DD/MM/YYYY'),
+                            },
+                          );
+                        } else if (meta.status === 'soon' && meta.date) {
+                          statusLabel = t(
+                            'adminUsersPage.roleExpiry.soonExpire',
+                            {
+                              date: meta.date.format('DD/MM/YYYY'),
+                            },
+                          );
+                        } else if (meta.status === 'expired' && meta.date) {
+                          statusLabel = t(
+                            'adminUsersPage.roleExpiry.expiredAt',
+                            {
+                              date: meta.date.format('DD/MM/YYYY'),
+                            },
+                          );
+                        }
+
+                        return (
+                          <Tooltip
+                            key={roleRef.role.id}
+                            title={
+                              <>
+                                <div>
+                                  {t('adminUsersPage.roleExpiry.tooltipRole')}:{' '}
+                                  {baseLabel}
+                                </div>
+                                <div>
+                                  {t('adminUsersPage.roleExpiry.tooltipStatus')}
+                                  : {statusLabel}
+                                </div>
+                                <div>
+                                  {t('adminUsersPage.roleExpiry.tooltipExpiry')}
+                                  :{' '}
+                                  {roleRef.expiresAt
+                                    ? (meta.date?.format('DD/MM/YYYY HH:mm') ??
+                                      '-')
+                                    : t('adminUsersPage.roleExpiry.noExpiry')}
+                                </div>
+                              </>
+                            }
+                          >
+                            <Tag
+                              color={meta.color}
+                              style={
+                                meta.status === 'expired'
+                                  ? { textDecoration: 'line-through' }
+                                  : undefined
+                              }
+                            >
+                              {baseLabel}
+                            </Tag>
+                          </Tooltip>
+                        );
+                      })}
                     </Space>
                   </ProDescriptions.Item>
                 </ProDescriptions>

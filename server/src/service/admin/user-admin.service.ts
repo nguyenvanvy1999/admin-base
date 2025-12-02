@@ -12,6 +12,7 @@ import type {
   AdminUserListQueryDto,
   AdminUserMfaActionDto,
   AdminUserUpdateDto,
+  AdminUserUpdateRolesDto,
 } from 'src/modules/admin/dtos';
 import {
   type UserUtilService,
@@ -52,6 +53,10 @@ type BaseUserActionParams = {
 type UpdateUserParams = BaseUserActionParams & typeof AdminUserUpdateDto.static;
 type CreateUserParams = { actorId: string } & typeof AdminUserCreateDto.static;
 type ListUsersParams = typeof AdminUserListQueryDto.static;
+type UpdateUserRolesParams = {
+  targetUserId: string;
+  actorId: string;
+} & typeof AdminUserUpdateRolesDto.static;
 
 const baseUserSelect = {
   id: true,
@@ -425,6 +430,97 @@ export class AdminUserService {
         actorId,
         action: 'user-update',
         changes: auditChanges,
+      },
+    });
+
+    return {
+      userId: targetUserId,
+      auditLogId,
+    };
+  }
+
+  async updateUserRoles(
+    params: UpdateUserRolesParams,
+  ): Promise<UserActionResult> {
+    const { targetUserId, actorId, roles, reason } = params;
+    const normalizedReason = this.normalizeReason(reason);
+
+    if (!normalizedReason) {
+      throw new BadReqErr(ErrCode.BadRequest, {
+        errors: 'Reason is required when updating user roles',
+      });
+    }
+
+    const targetUser = await this.deps.db.user.findUnique({
+      where: { id: targetUserId },
+      select: { id: true, protected: true },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundErr(ErrCode.UserNotFound);
+    }
+
+    if (targetUser.protected) {
+      throw new BadReqErr(ErrCode.PermissionDenied);
+    }
+
+    const uniqueRoleIds = Array.from(new Set(roles.map((role) => role.roleId)));
+
+    if (uniqueRoleIds.length > 0) {
+      const existingRoles = await this.deps.db.role.findMany({
+        where: { id: { in: uniqueRoleIds } },
+        select: { id: true },
+      });
+
+      if (existingRoles.length !== uniqueRoleIds.length) {
+        throw new BadReqErr(ErrCode.ItemNotFound, {
+          errors: 'One or more roles were not found',
+        });
+      }
+    }
+
+    const previousRoleAssignments = await this.deps.db.rolePlayer.findMany({
+      where: { playerId: targetUserId },
+      select: { roleId: true, expiresAt: true },
+    });
+
+    await this.deps.db.$transaction(async (tx) => {
+      await tx.rolePlayer.deleteMany({
+        where: { playerId: targetUserId },
+      });
+
+      if (roles.length > 0) {
+        await tx.rolePlayer.createMany({
+          data: roles.map((role) => ({
+            id: crypto.randomUUID(),
+            playerId: targetUserId,
+            roleId: role.roleId,
+            expiresAt: role.expiresAt ?? null,
+          })),
+          skipDuplicates: true,
+        });
+      }
+    });
+
+    const auditLogId = await this.deps.auditLogService.push({
+      type: ACTIVITY_TYPE.UPDATE_USER,
+      payload: {
+        id: targetUserId,
+        reason: normalizedReason,
+        actorId,
+        action: 'user-update-roles',
+        changes: {
+          roles: {
+            previous: previousRoleAssignments.map((assignment) => ({
+              roleId: assignment.roleId,
+              expiresAt: assignment.expiresAt,
+            })),
+            next: roles.map((role) => ({
+              roleId: role.roleId,
+              expiresAt: role.expiresAt,
+            })),
+          },
+        },
       },
     });
 

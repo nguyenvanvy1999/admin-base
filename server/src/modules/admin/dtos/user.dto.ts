@@ -35,8 +35,36 @@ const roleListDto = t.Array(
   }),
 );
 
+const userRoleAssignmentDto = t.Object({
+  roleId: t.String({
+    minLength: 1,
+    description: 'Role id that will be assigned to the user.',
+  }),
+  expiresAt: t.Nullable(
+    t.Date({
+      format: 'date-time',
+      description:
+        'Optional expiration timestamp for this role assignment. Null means no expiration.',
+    }),
+  ),
+});
+
 export const AdminUserMfaActionDto = t.Object({
   reason: reasonField,
+});
+
+export const AdminUserUpdateRolesDto = t.Object({
+  roles: t.Array(userRoleAssignmentDto, {
+    minItems: 0,
+    description:
+      'Complete list of roles that should belong to the user, including per-role expiration.',
+  }),
+  reason: t.String({
+    minLength: 1,
+    maxLength: 512,
+    description:
+      'Required reason that will be recorded in the audit log when updating user roles.',
+  }),
 });
 
 export const AdminUserUpdateDto = t.Object({

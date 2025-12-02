@@ -198,6 +198,7 @@
       "name": "Tên hiển thị",
       "status": "Trạng thái",
       "roles": "Roles",
+      "rolesWithExpiry": "Roles & Hạn dùng",
       "created": "Ngày tạo",
       "emailVerified": "Xác thực email",
       "actions": "Thao tác",
@@ -240,6 +241,15 @@
       "active": "Đang hoạt động",
       "suspendded": "Tạm khóa",
       "banned": "Cấm vĩnh viễn"
+    },
+    "roleExpiry": {
+      "noExpiry": "Không hết hạn",
+      "activeUntil": "Còn hạn đến {{date}}",
+      "soonExpire": "Sắp hết hạn {{date}}",
+      "expiredAt": "Đã hết hạn {{date}}",
+      "tooltipRole": "Role",
+      "tooltipStatus": "Trạng thái",
+      "tooltipExpiry": "Ngày hết hạn"
     },
     "form": {
       "email": "Email",
