@@ -8,7 +8,7 @@ import {
 } from '@ant-design/pro-components';
 import { Space, Tabs } from 'antd';
 import dayjs from 'dayjs';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormModal } from 'src/components/common/FormModal';
 import { useAdminPermissions } from 'src/hooks/api/useAdminPermissions';
@@ -47,6 +47,7 @@ export function RoleFormModal({
     [],
   );
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const searchTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!roleDetail?.players) return;
@@ -68,28 +69,43 @@ export function RoleFormModal({
     });
   }, [roleDetail]);
 
-  const handleSearchUsers = async (value: string) => {
+  const handleSearchUsers = (value: string) => {
     const search = value.trim();
+
+    if (searchTimeoutRef.current != null) {
+      window.clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = null;
+    }
+
     if (!search) {
-      setUsers([]);
+      setIsLoadingUsers(false);
       return;
     }
 
     setIsLoadingUsers(true);
-    try {
-      const response = await adminUsersService.list({
-        take: 20,
-        search,
-      });
-      setUsers(
-        response.docs.map((user) => ({
-          value: user.id,
-          label: user.email,
-        })),
-      );
-    } finally {
-      setIsLoadingUsers(false);
-    }
+
+    searchTimeoutRef.current = window.setTimeout(async () => {
+      try {
+        const response = await adminUsersService.list({
+          take: 20,
+          search,
+        });
+        setUsers((prev) => {
+          const map = new Map(prev.map((u) => [u.value, u]));
+
+          for (const user of response.docs) {
+            map.set(user.id, {
+              value: user.id,
+              label: user.email,
+            });
+          }
+
+          return Array.from(map.values());
+        });
+      } finally {
+        setIsLoadingUsers(false);
+      }
+    }, 300);
   };
 
   const initialValues: Partial<RoleFormValues> = role

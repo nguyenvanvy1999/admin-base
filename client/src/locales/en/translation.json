@@ -217,9 +217,11 @@
     "update": {
       "title": "Update user",
       "success": "User updated successfully",
+      "rolesSuccess": "User roles updated successfully",
       "tabGeneral": "Overview",
       "tabSecurity": "Security",
       "tabEdit": "Edit",
+      "tabRoles": "Roles",
       "mfaResetSuccess": "MFA reset successfully",
       "mfaDisableSuccess": "MFA disabled successfully"
     },
@@ -256,6 +258,9 @@
       "password": "Password",
       "name": "Display name",
       "roles": "Roles",
+      "rolesRequired": "Please select at least one role",
+      "rolesPlaceholder": "Select roles",
+      "roleExpiresAt": "Role expiry time (optional)",
       "baseCurrency": "Base currency",
       "status": "Status",
       "emailVerified": "Email verified",
@@ -264,6 +269,7 @@
       "passwordAttempt": "Password attempts",
       "passwordExpired": "Password expires at",
       "reason": "Audit reason",
+      "reasonRequired": "Please provide an audit reason",
       "mfaReasonPlaceholder": "Provide a reason for the audit log"
     },
     "actions": {

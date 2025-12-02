@@ -3,6 +3,7 @@ import {
   ProForm,
   ProFormDateTimePicker,
   ProFormDigit,
+  ProFormList,
   ProFormSelect,
   ProFormSwitch,
   ProFormText,
@@ -29,7 +30,9 @@ import {
   useAdminUserDetail,
   useAdminUserMfaAction,
   useUpdateAdminUser,
+  useUpdateAdminUserRoles,
 } from 'src/features/admin/users/hooks/useAdminUsers';
+import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
 import { useModal } from 'src/hooks/useModal';
 import { useNotify } from 'src/hooks/useNotify';
 import { toIsoStringOrNull } from 'src/lib/utils/date.utils';
@@ -47,7 +50,7 @@ interface AdminUserDetailDrawerProps {
   canUpdate: boolean;
   canManageMfa: boolean;
   onActionCompleted?: () => void;
-  initialTab?: 'general' | 'security' | 'edit';
+  initialTab?: 'general' | 'security' | 'edit' | 'roles';
 }
 
 interface AdminUserUpdateFormValues {
@@ -59,6 +62,14 @@ interface AdminUserUpdateFormValues {
   passwordAttempt?: number;
   passwordExpired?: Dayjs | null;
   reason?: string;
+}
+
+interface AdminUserUpdateRolesFormValues {
+  roles: {
+    roleId: string;
+    expiresAt?: Dayjs | null;
+  }[];
+  reason: string;
 }
 
 function formatStatus(status: AdminUserStatus): string {
@@ -135,9 +146,9 @@ export function AdminUserDetailDrawer({
   onActionCompleted,
   initialTab = 'general',
 }: AdminUserDetailDrawerProps) {
-  const [tabKey, setTabKey] = useState<'general' | 'security' | 'edit'>(
-    initialTab,
-  );
+  const [tabKey, setTabKey] = useState<
+    'general' | 'security' | 'edit' | 'roles'
+  >(initialTab);
   const { t } = useTranslation();
   const notify = useNotify();
   const modal = useModal();
@@ -152,6 +163,18 @@ export function AdminUserDetailDrawer({
       onActionCompleted?.();
     },
   });
+
+  const updateRolesMutation = useUpdateAdminUserRoles({
+    onSuccess: () => {
+      onClose();
+      notify.notification.success({
+        title: t('adminUsersPage.update.rolesSuccess'),
+      });
+      onActionCompleted?.();
+    },
+  });
+
+  const { data: allRoles, isLoading: isLoadingRoles } = useAdminRoles();
 
   const resetMfaMutation = useAdminUserMfaAction('reset', {
     onSuccess: ({ auditLogId }) => {
@@ -184,6 +207,19 @@ export function AdminUserDetailDrawer({
     return mapDetailToFormValues(data);
   }, [data]);
 
+  const initialRoleValues = useMemo(() => {
+    if (!data) {
+      return undefined;
+    }
+    return {
+      roles: data.roles.map((roleRef) => ({
+        roleId: roleRef.role.id,
+        expiresAt: roleRef.expiresAt ? dayjs(roleRef.expiresAt) : null,
+      })),
+      reason: '',
+    } satisfies AdminUserUpdateRolesFormValues;
+  }, [data]);
+
   useEffect(() => {
     if (open) {
       setTabKey(initialTab);
@@ -203,6 +239,22 @@ export function AdminUserDetailDrawer({
       passwordExpired: toIsoStringOrNull(values.passwordExpired),
     };
     await updateMutation.mutateAsync({ userId, payload });
+  };
+
+  const handleUpdateRoles = async (values: AdminUserUpdateRolesFormValues) => {
+    if (!userId) {
+      return;
+    }
+
+    const payload = {
+      roles: (values.roles ?? []).map((item) => ({
+        roleId: item.roleId,
+        expiresAt: item.expiresAt ? item.expiresAt.toISOString() : null,
+      })),
+      reason: values.reason.trim(),
+    };
+
+    await updateRolesMutation.mutateAsync({ userId, payload });
   };
 
   const promptMfaReason = (action: 'reset' | 'disable') => {
@@ -501,6 +553,90 @@ export function AdminUserDetailDrawer({
                           name="reason"
                           label={t('adminUsersPage.form.reason')}
                           placeholder="Audit note"
+                        />
+                      </ProForm>
+                    ),
+                  },
+                  {
+                    key: 'roles',
+                    label: t('adminUsersPage.update.tabRoles'),
+                    children: (
+                      <ProForm<AdminUserUpdateRolesFormValues>
+                        layout="vertical"
+                        initialValues={initialRoleValues}
+                        submitter={{
+                          searchConfig: {
+                            submitText: t('adminUsersPage.actions.submit'),
+                          },
+                          submitButtonProps: {
+                            type: 'primary',
+                            loading: updateRolesMutation.isPending,
+                          },
+                          resetButtonProps: false,
+                        }}
+                        onFinish={async (values) => {
+                          await handleUpdateRoles(values);
+                          return true;
+                        }}
+                      >
+                        <ProFormList
+                          name="roles"
+                          label={t('adminUsersPage.form.roles')}
+                          creatorButtonProps={{
+                            position: 'bottom',
+                          }}
+                          copyIconProps={false}
+                        >
+                          {() => (
+                            <Space
+                              align="baseline"
+                              style={{ display: 'flex', gap: 16 }}
+                            >
+                              <ProFormSelect
+                                name="roleId"
+                                label={t('adminUsersPage.form.roles')}
+                                rules={[
+                                  {
+                                    required: true,
+                                    message: t(
+                                      'adminUsersPage.form.rolesRequired',
+                                    ),
+                                  },
+                                ]}
+                                fieldProps={{
+                                  loading: isLoadingRoles,
+                                  showSearch: true,
+                                  optionFilterProp: 'label',
+                                  options:
+                                    allRoles?.map((role) => ({
+                                      value: role.id,
+                                      label: role.title,
+                                    })) ?? [],
+                                  placeholder: t(
+                                    'adminUsersPage.form.rolesPlaceholder',
+                                  ),
+                                }}
+                              />
+                              <ProFormDateTimePicker
+                                name="expiresAt"
+                                label={t('adminUsersPage.form.roleExpiresAt')}
+                                fieldProps={{
+                                  showTime: true,
+                                }}
+                              />
+                            </Space>
+                          )}
+                        </ProFormList>
+                        <ProFormTextArea
+                          name="reason"
+                          label={t('adminUsersPage.form.reason')}
+                          placeholder="Audit note"
+                          rules={[
+                            {
+                              required: true,
+                              message: t('adminUsersPage.form.reasonRequired'),
+                            },
+                          ]}
                         />
                       </ProForm>
                     ),

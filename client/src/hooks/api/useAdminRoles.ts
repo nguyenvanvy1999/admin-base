@@ -27,6 +27,7 @@ export function useAdminRoleDetail(id?: string | null) {
       return adminRolesService.detail(id);
     },
     enabled: !!id,
+    refetchOnMount: 'always',
   });
 }
 
@@ -36,6 +37,7 @@ export function useUpsertRole(options?: { onSuccess?: () => void }) {
     mutationFn: (data: UpsertRoleDto) => adminRolesService.upsert(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminRoleKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: adminRoleKeys.details() });
       options?.onSuccess?.();
     },
   });

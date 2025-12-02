@@ -217,9 +217,11 @@
     "update": {
       "title": "Cập nhật user",
       "success": "Đã cập nhật user thành công",
+      "rolesSuccess": "Đã cập nhật roles cho user thành công",
       "tabGeneral": "Thông tin",
       "tabSecurity": "Bảo mật",
       "tabEdit": "Chỉnh sửa",
+      "tabRoles": "Roles",
       "mfaResetSuccess": "Đã reset MFA",
       "mfaDisableSuccess": "Đã vô hiệu hóa MFA"
     },
@@ -256,6 +258,9 @@
       "password": "Mật khẩu",
       "name": "Tên hiển thị",
       "roles": "Danh sách role",
+      "rolesRequired": "Vui lòng chọn ít nhất một role",
+      "rolesPlaceholder": "Chọn roles",
+      "roleExpiresAt": "Thời điểm hết hạn role (tùy chọn)",
       "baseCurrency": "Tiền tệ gốc",
       "status": "Trạng thái",
       "emailVerified": "Đã xác thực email",
@@ -264,6 +269,7 @@
       "passwordAttempt": "Số lần sai mật khẩu",
       "passwordExpired": "Thời điểm hết hạn mật khẩu",
       "reason": "Reason ghi log",
+      "reasonRequired": "Vui lòng nhập reason để ghi log",
       "mfaReasonPlaceholder": "Nhập lý do để ghi vào audit log"
     },
     "actions": {
