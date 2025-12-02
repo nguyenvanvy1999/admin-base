@@ -14,7 +14,7 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { buildAdminUserStatusOptions } from 'src/components/common/AppAdminUserStatusSelect';
+import { AppAdminUserStatusSelect } from 'src/components/common/AppAdminUserStatusSelect';
 import { AppDrawer } from 'src/components/common/AppDrawer';
 import {
   useAdminUserDetail,
@@ -349,13 +349,18 @@ export function AdminUserDetailDrawer({
                         <ProFormSelect
                           name="status"
                           label={t('adminUsersPage.form.status')}
-                          options={buildAdminUserStatusOptions(t)}
                           fieldProps={{
                             showSearch: true,
                             optionFilterProp: 'label',
                           }}
+                          options={undefined}
                           rules={[{ required: true }]}
-                        />
+                        >
+                          <AppAdminUserStatusSelect
+                            style={{ width: '100%' }}
+                            placeholder={t('adminUsersPage.form.status')}
+                          />
+                        </ProFormSelect>
                         <ProFormText
                           name="name"
                           label={t('adminUsersPage.form.name')}

@@ -5,7 +5,7 @@ import {
   ProFormTextArea,
 } from '@ant-design/pro-components';
 import { useTranslation } from 'react-i18next';
-import { buildAdminUserStatusOptions } from 'src/components/common/AppAdminUserStatusSelect';
+import { AppAdminUserStatusSelect } from 'src/components/common/AppAdminUserStatusSelect';
 import { FormModal } from 'src/components/common/FormModal';
 import { useCreateAdminUser } from 'src/features/admin/users/hooks/useAdminUsers';
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
@@ -106,12 +106,17 @@ export function AdminUserCreateModal({
       <ProFormSelect
         name="status"
         label={t('adminUsersPage.form.status')}
-        options={buildAdminUserStatusOptions(t)}
         fieldProps={{
           showSearch: true,
           optionFilterProp: 'label',
         }}
-      />
+        options={undefined}
+      >
+        <AppAdminUserStatusSelect
+          style={{ width: '100%' }}
+          placeholder={t('adminUsersPage.form.status')}
+        />
+      </ProFormSelect>
       <ProFormSwitch
         name="emailVerified"
         label={t('adminUsersPage.form.emailVerified')}

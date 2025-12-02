@@ -4,6 +4,7 @@ import { Button, Space, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AppAdminUserStatusSelect } from 'src/components/common/AppAdminUserStatusSelect';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
 import { AdminUserCreateModal } from 'src/features/admin/users/components/AdminUserCreateModal';
@@ -11,11 +12,7 @@ import { AdminUserDetailDrawer } from 'src/features/admin/users/components/Admin
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { adminUsersService } from 'src/services/api/admin-users.service';
-import {
-  ADMIN_USER_STATUSES,
-  type AdminUserStatus,
-  type AdminUserSummary,
-} from 'src/types/admin-users';
+import type { AdminUserStatus, AdminUserSummary } from 'src/types/admin-users';
 
 type AdminUserTableParams = {
   current?: number;
@@ -43,16 +40,6 @@ export default function AdminUsersPage() {
     'general',
   );
   const [drawerOpen, setDrawerOpen] = useState(false);
-
-  const statusValueEnum = useMemo(() => {
-    return ADMIN_USER_STATUSES.reduce(
-      (acc, status) => ({
-        ...acc,
-        [status]: { text: formatStatus(status) },
-      }),
-      {} as Record<string, { text: string }>,
-    );
-  }, []);
 
   const roleOptions = useMemo(
     () =>
@@ -91,12 +78,13 @@ export default function AdminUsersPage() {
       title: t('adminUsersPage.table.status'),
       dataIndex: 'statuses',
       valueType: 'select',
-      valueEnum: statusValueEnum,
-      fieldProps: {
-        mode: 'multiple',
-        allowClear: true,
-        placeholder: t('adminUsersPage.table.filters.status'),
-      },
+      renderFormItem: () => (
+        <AppAdminUserStatusSelect
+          mode="multiple"
+          placeholder={t('adminUsersPage.table.filters.status')}
+          style={{ width: '100%' }}
+        />
+      ),
       render: (_, record) => (
         <Tag color={record.status === 'active' ? 'green' : 'default'}>
           {formatStatus(record.status)}
