@@ -234,6 +234,12 @@
       "passwordAttempt": "Số lần sai mật khẩu",
       "passwordExpired": "Hết hạn mật khẩu"
     },
+    "statuses": {
+      "inactive": "Không hoạt động",
+      "active": "Đang hoạt động",
+      "suspendded": "Tạm khóa",
+      "banned": "Cấm vĩnh viễn"
+    },
     "form": {
       "email": "Email",
       "password": "Mật khẩu",

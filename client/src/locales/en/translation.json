@@ -234,6 +234,12 @@
       "passwordAttempt": "Password attempts",
       "passwordExpired": "Password expired at"
     },
+    "statuses": {
+      "inactive": "Inactive",
+      "active": "Active",
+      "suspendded": "Suspended",
+      "banned": "Banned"
+    },
     "form": {
       "email": "Email",
       "password": "Password",

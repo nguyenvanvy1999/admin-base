@@ -4,6 +4,7 @@ import { Button, Space, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AppAdminUserStatusSelect } from 'src/components/common/AppAdminUserStatusSelect';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
 import { AdminUserCreateModal } from 'src/features/admin/users/components/AdminUserCreateModal';
@@ -92,6 +93,12 @@ export default function AdminUsersPage() {
       dataIndex: 'status',
       valueType: 'select',
       valueEnum: statusValueEnum,
+      renderFormItem: (_, domProps) => (
+        <AppAdminUserStatusSelect
+          placeholder={t('adminUsersPage.table.filters.status')}
+          {...domProps}
+        />
+      ),
       render: (_, record) => (
         <Tag color={record.status === 'active' ? 'green' : 'default'}>
           {formatStatus(record.status)}

@@ -14,6 +14,7 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { buildAdminUserStatusOptions } from 'src/components/common/AppAdminUserStatusSelect';
 import { AppDrawer } from 'src/components/common/AppDrawer';
 import {
   useAdminUserDetail,
@@ -25,7 +26,6 @@ import { useModal } from 'src/hooks/useModal';
 import { useNotify } from 'src/hooks/useNotify';
 import {
   ADMIN_LOCKOUT_REASONS,
-  ADMIN_USER_STATUSES,
   type AdminLockoutReason,
   type AdminUserDetail as AdminUserDetailType,
   type AdminUserStatus,
@@ -349,10 +349,11 @@ export function AdminUserDetailDrawer({
                         <ProFormSelect
                           name="status"
                           label={t('adminUsersPage.form.status')}
-                          options={ADMIN_USER_STATUSES.map((status) => ({
-                            value: status,
-                            label: formatStatus(status),
-                          }))}
+                          options={buildAdminUserStatusOptions(t)}
+                          fieldProps={{
+                            showSearch: true,
+                            optionFilterProp: 'label',
+                          }}
                           rules={[{ required: true }]}
                         />
                         <ProFormText
