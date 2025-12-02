@@ -21,6 +21,10 @@ const AdminPermissionsPage = lazy(
 const AdminSettingsPage = lazy(
   () => import('../features/admin/settings/pages/AdminSettingsPage'),
 );
+const AdminSessionsPage = lazy(
+  () => import('../features/admin/sessions/pages/AdminSessionsPage'),
+);
+const MySessionsPage = lazy(() => import('./pages/MySessionsPage'));
 
 export function AppRoutes() {
   return (
@@ -36,6 +40,17 @@ export function AppRoutes() {
         }
       >
         <Route index element={<HomePage />} />
+        <Route
+          path="me/sessions"
+          element={
+            <ProtectedRoute
+              requiredPermissions={['SESSION.VIEW', 'SESSION.VIEW_ALL']}
+              permissionMode="any"
+            >
+              <MySessionsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="admin/users"
           element={
@@ -65,6 +80,14 @@ export function AppRoutes() {
           element={
             <ProtectedRoute requiredPermissions={['SETTING.VIEW']}>
               <AdminSettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/sessions"
+          element={
+            <ProtectedRoute requiredPermissions={['SESSION.VIEW']}>
+              <AdminSessionsPage />
             </ProtectedRoute>
           }
         />

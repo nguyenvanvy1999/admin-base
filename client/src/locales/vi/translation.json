@@ -14,6 +14,8 @@
   },
   "sidebar": {
     "dashboard": "Tổng quan",
+    "mySessions": "Phiên của tôi",
+    "adminSessions": "Quản lý session",
     "adminUsers": "Quản lý user",
     "adminRoles": "Quản lý role",
     "adminPermissions": "Quản lý permission",
@@ -179,6 +181,36 @@
         "db": "Kết nối và độ trễ tới cơ sở dữ liệu chính.",
         "disk": "Mức sử dụng ổ đĩa của volume chính."
       }
+    }
+  },
+  "mySessionsPage": {
+    "title": "Phiên đăng nhập của tôi",
+    "subtitle": "Theo dõi và quản lý các phiên đăng nhập gần đây của tài khoản.",
+    "notice": "Nếu phát hiện đăng nhập lạ, hãy thu hồi phiên tương ứng hoặc đăng xuất khỏi tất cả thiết bị.",
+    "currentDevice": "Thiết bị hiện tại",
+    "status": {
+      "active": "Đang hoạt động",
+      "revoked": "Đã thu hồi",
+      "expired": "Đã hết hạn"
+    },
+    "table": {
+      "created": "Thời gian đăng nhập",
+      "expired": "Hết hạn",
+      "ip": "Địa chỉ IP",
+      "status": "Trạng thái",
+      "current": "Thiết bị hiện tại",
+      "actions": "Thao tác"
+    },
+    "actions": {
+      "revoke": "Thu hồi",
+      "revokeConfirmTitle": "Xác nhận thu hồi phiên",
+      "revokeCurrentConfirm": "Phiên hiện tại sẽ bị thu hồi và bạn sẽ bị đăng xuất khỏi hệ thống.",
+      "revokeOtherConfirm": "Phiên này sẽ bị thu hồi. Tiếp tục?",
+      "logoutCurrent": "Đăng xuất thiết bị hiện tại",
+      "logoutAll": "Đăng xuất khỏi tất cả thiết bị",
+      "logoutAllConfirmTitle": "Xác nhận đăng xuất khỏi tất cả thiết bị",
+      "logoutAllConfirm": "Bạn sẽ bị đăng xuất khỏi tất cả thiết bị, bao gồm cả thiết bị hiện tại.",
+      "loadMore": "Tải thêm phiên"
     }
   },
   "accessDeniedPage": {
@@ -462,5 +494,36 @@
     "actions": {
       "edit": "Chỉnh sửa"
     }
+  },
+  "adminSessionsPage": {
+    "title": "Quản lý sessions",
+    "subtitle": "Theo dõi và thu hồi các phiên đăng nhập trong hệ thống.",
+    "status": {
+      "active": "Đang hoạt động",
+      "revoked": "Đã thu hồi",
+      "expired": "Đã hết hạn"
+    },
+    "table": {
+      "created": "Thời gian đăng nhập",
+      "expired": "Hết hạn",
+      "userId": "User ID",
+      "ip": "Địa chỉ IP",
+      "status": "Trạng thái",
+      "actions": "Thao tác"
+    },
+    "filters": {
+      "status": {
+        "all": "Tất cả trạng thái",
+        "active": "Chỉ đang hoạt động",
+        "revoked": "Chỉ đã thu hồi"
+      }
+    },
+    "actions": {
+      "revoke": "Thu hồi",
+      "revokeConfirmTitle": "Xác nhận thu hồi session",
+      "revokeConfirm": "Session này sẽ bị thu hồi. Tiếp tục?",
+      "loadMore": "Tải thêm session"
+    },
+    "onlyOneSessionNotice": "Hệ thống đang bật chế độ chỉ cho phép một phiên đăng nhập hoạt động cho mỗi user. Khi user đăng nhập từ thiết bị mới, các phiên cũ sẽ tự động bị đăng xuất."
   }
 }

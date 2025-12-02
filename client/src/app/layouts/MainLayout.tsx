@@ -1,10 +1,12 @@
 import {
   GithubOutlined,
   HomeOutlined,
+  MobileOutlined,
   MoonOutlined,
   SafetyOutlined,
   SettingOutlined,
   SunOutlined,
+  TeamOutlined,
   UserSwitchOutlined,
 } from '@ant-design/icons';
 import type { MenuDataItem, ProLayoutProps } from '@ant-design/pro-components';
@@ -21,6 +23,11 @@ type RouteConfig = NonNullable<ProLayoutProps['route']>;
 
 const BASE_ROUTES: MenuDataItem[] = [
   { path: '/', name: 'sidebar.dashboard', icon: <HomeOutlined /> },
+  {
+    path: '/me/sessions',
+    name: 'sidebar.mySessions',
+    icon: <MobileOutlined />,
+  },
 ];
 
 const ADMIN_USERS_ROUTE: MenuDataItem = {
@@ -41,6 +48,12 @@ const ADMIN_PERMISSIONS_ROUTE: MenuDataItem = {
   icon: <SafetyOutlined />,
 };
 
+const ADMIN_SESSIONS_ROUTE: MenuDataItem = {
+  path: '/admin/sessions',
+  name: 'sidebar.adminSessions',
+  icon: <TeamOutlined />,
+};
+
 const ADMIN_SETTINGS_ROUTE: MenuDataItem = {
   path: '/admin/settings',
   name: 'sidebar.adminSettings',
@@ -55,6 +68,7 @@ export default function MainLayout() {
   const canViewAdminUsers = user?.permissions?.includes('USER.VIEW');
   const canViewRoles = user?.permissions?.includes('ROLE.VIEW');
   const canViewSettings = user?.permissions?.includes('SETTING.VIEW');
+  const canViewSessions = user?.permissions?.includes('SESSION.VIEW');
 
   const menuRoutes = useMemo<RouteConfig>(() => {
     const adminRoutes: MenuDataItem[] = [];
@@ -70,6 +84,10 @@ export default function MainLayout() {
 
     if (canViewSettings) {
       adminRoutes.push(ADMIN_SETTINGS_ROUTE);
+    }
+
+    if (canViewSessions) {
+      adminRoutes.push(ADMIN_SESSIONS_ROUTE);
     }
 
     return {

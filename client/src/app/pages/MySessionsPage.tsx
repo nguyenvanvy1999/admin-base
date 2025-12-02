@@ -1,0 +1,258 @@
+import type { ProColumns } from '@ant-design/pro-components';
+import {
+  Alert,
+  Button,
+  Card,
+  DatePicker,
+  Popconfirm,
+  Space,
+  Tag,
+  Typography,
+} from 'antd';
+import dayjs from 'dayjs';
+import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { AppPage } from 'src/components/common/AppPage';
+import { AppTable } from 'src/components/common/AppTable';
+import { useAdminSessions } from 'src/hooks/api/useAdminSessions';
+import { useAuth } from 'src/hooks/auth/useAuth';
+import { usePermissions } from 'src/hooks/auth/usePermissions';
+import { adminSessionsService } from 'src/services/api/admin-sessions.service';
+import { authService } from 'src/services/api/auth.service';
+import type {
+  AdminSession,
+  AdminSessionStatus,
+} from 'src/types/admin-sessions';
+
+const { RangePicker } = DatePicker;
+
+type MySessionTableParams = {
+  ip?: string;
+};
+
+function getStatusTag(status: AdminSessionStatus, t: any) {
+  if (status === 'revoked') {
+    return <Tag color="default">{t('mySessionsPage.status.revoked')}</Tag>;
+  }
+
+  if (status === 'expired') {
+    return <Tag color="default">{t('mySessionsPage.status.expired')}</Tag>;
+  }
+
+  return <Tag color="green">{t('mySessionsPage.status.active')}</Tag>;
+}
+
+export default function MySessionsPage() {
+  const { t } = useTranslation();
+  const { user, logout } = useAuth();
+  const { hasPermission } = usePermissions();
+  const canView = hasPermission(['SESSION.VIEW', 'SESSION.VIEW_ALL'], 'any');
+  const canRevoke = hasPermission(
+    ['SESSION.REVOKE', 'SESSION.REVOKE_ALL'],
+    'any',
+  );
+
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>(() => {
+    const end = dayjs();
+    const start = end.subtract(7, 'day');
+    return [start, end];
+  });
+  const created0 = useMemo(
+    () => dateRange[0].startOf('day').toISOString(),
+    [dateRange],
+  );
+  const created1 = useMemo(
+    () => dateRange[1].endOf('day').toISOString(),
+    [dateRange],
+  );
+
+  const listParams = useMemo(
+    () => ({
+      take: 20,
+      created0,
+      created1,
+      ip: undefined,
+    }),
+    [created0, created1],
+  );
+
+  const {
+    sessions,
+    statusById,
+    paging,
+    isLoading,
+    isInitialLoading,
+    reload,
+    loadMore,
+  } = useAdminSessions({
+    initialParams: listParams,
+  });
+
+  useEffect(() => {
+    void reload();
+  }, [listParams, reload]);
+
+  const currentSessionId = useMemo(() => {
+    // Backend encodes session id inside tokens; FE does not decode,
+    // so we rely on comparing createdById with current user id.
+    // Current session is approximated by the latest non-revoked, non-expired session of current user.
+    if (!user) return undefined;
+    const currentUserSessions = sessions.filter(
+      (s) => s.createdById === user.id,
+    );
+    const sorted = [...currentUserSessions].sort((a, b) =>
+      dayjs(b.created).diff(dayjs(a.created)),
+    );
+    return sorted[0]?.id;
+  }, [sessions, user]);
+
+  const handleLogoutCurrent = async () => {
+    await logout();
+  };
+
+  const handleLogoutAll = async () => {
+    await authService.logoutAll();
+    await logout();
+  };
+
+  const handleRevoke = async (session: AdminSession) => {
+    await adminSessionsService.revoke([session.id]);
+    await reload();
+
+    if (session.id === currentSessionId) {
+      await logout();
+    }
+  };
+
+  const columns: ProColumns<AdminSession>[] = [
+    {
+      title: t('mySessionsPage.table.created'),
+      dataIndex: 'created',
+      sorter: (a, b) => dayjs(a.created).valueOf() - dayjs(b.created).valueOf(),
+      render: (_, record) =>
+        dayjs(record.created).format('YYYY-MM-DD HH:mm:ss'),
+    },
+    {
+      title: t('mySessionsPage.table.expired'),
+      dataIndex: 'expired',
+      hideInSearch: true,
+      render: (_, record) =>
+        dayjs(record.expired).format('YYYY-MM-DD HH:mm:ss'),
+    },
+    {
+      title: t('mySessionsPage.table.ip'),
+      dataIndex: 'ip',
+      render: (_, record) => record.ip ?? '-',
+    },
+    {
+      title: t('mySessionsPage.table.status'),
+      dataIndex: 'status',
+      hideInSearch: true,
+      render: (_, record) => {
+        const status = statusById[record.id];
+        return getStatusTag(status, t);
+      },
+    },
+    {
+      title: t('mySessionsPage.table.current'),
+      dataIndex: 'current',
+      hideInSearch: true,
+      render: (_, record) =>
+        record.id === currentSessionId ? (
+          <Tag color="blue">{t('mySessionsPage.currentDevice')}</Tag>
+        ) : (
+          '-'
+        ),
+    },
+    {
+      title: t('mySessionsPage.table.actions'),
+      dataIndex: 'actions',
+      hideInSearch: true,
+      render: (_, record) => {
+        const status = statusById[record.id];
+        const isCurrent = record.id === currentSessionId;
+
+        if (!canRevoke || status !== 'active') {
+          return '-';
+        }
+
+        return (
+          <Popconfirm
+            title={t('mySessionsPage.actions.revokeConfirmTitle')}
+            description={t(
+              isCurrent
+                ? 'mySessionsPage.actions.revokeCurrentConfirm'
+                : 'mySessionsPage.actions.revokeOtherConfirm',
+            )}
+            onConfirm={() => handleRevoke(record)}
+          >
+            <Button size="small" danger type="link">
+              {t('mySessionsPage.actions.revoke')}
+            </Button>
+          </Popconfirm>
+        );
+      },
+    },
+  ];
+
+  if (!canView) {
+    return null;
+  }
+
+  return (
+    <AppPage>
+      <Card size="small">
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Typography.Title level={4} style={{ margin: 0 }}>
+            {t('mySessionsPage.title')}
+          </Typography.Title>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            {t('mySessionsPage.subtitle')}
+          </Typography.Paragraph>
+
+          <Alert type="info" showIcon message={t('mySessionsPage.notice')} />
+
+          <Space wrap>
+            <RangePicker
+              value={dateRange}
+              onChange={(range) => {
+                if (!range || range.length !== 2) return;
+                setDateRange([range[0]!, range[1]!]);
+              }}
+              allowClear={false}
+            />
+          </Space>
+
+          <Space wrap>
+            <Button onClick={handleLogoutCurrent}>
+              {t('mySessionsPage.actions.logoutCurrent')}
+            </Button>
+            <Popconfirm
+              title={t('mySessionsPage.actions.logoutAllConfirmTitle')}
+              description={t('mySessionsPage.actions.logoutAllConfirm')}
+              onConfirm={handleLogoutAll}
+            >
+              <Button danger>{t('mySessionsPage.actions.logoutAll')}</Button>
+            </Popconfirm>
+          </Space>
+        </Space>
+      </Card>
+
+      <AppTable<AdminSession, MySessionTableParams>
+        rowKey="id"
+        columns={columns}
+        loading={isLoading || isInitialLoading}
+        search={false}
+        dataSource={sessions}
+        pagination={false}
+        toolBarRender={() => [
+          paging.hasNext && (
+            <Button key="load-more" onClick={loadMore}>
+              {t('mySessionsPage.actions.loadMore')}
+            </Button>
+          ),
+        ]}
+      />
+    </AppPage>
+  );
+}

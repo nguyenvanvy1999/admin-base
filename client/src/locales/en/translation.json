@@ -14,6 +14,8 @@
   },
   "sidebar": {
     "dashboard": "Dashboard",
+    "mySessions": "My sessions",
+    "adminSessions": "Session management",
     "adminUsers": "Users",
     "adminRoles": "Roles",
     "adminPermissions": "Permissions",
@@ -179,6 +181,36 @@
         "db": "Primary database connectivity and latency.",
         "disk": "Disk usage across the main volume."
       }
+    }
+  },
+  "mySessionsPage": {
+    "title": "My sessions",
+    "subtitle": "Review and manage recent sign-in sessions for your account.",
+    "notice": "If you notice unfamiliar activity, revoke the suspicious session or sign out from all devices.",
+    "currentDevice": "Current device",
+    "status": {
+      "active": "Active",
+      "revoked": "Revoked",
+      "expired": "Expired"
+    },
+    "table": {
+      "created": "Signed in at",
+      "expired": "Expires at",
+      "ip": "IP address",
+      "status": "Status",
+      "current": "Current device",
+      "actions": "Actions"
+    },
+    "actions": {
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Confirm revoke session",
+      "revokeCurrentConfirm": "This will revoke the current session and sign you out from the system.",
+      "revokeOtherConfirm": "This session will be revoked. Continue?",
+      "logoutCurrent": "Sign out from this device",
+      "logoutAll": "Sign out from all devices",
+      "logoutAllConfirmTitle": "Confirm sign out from all devices",
+      "logoutAllConfirm": "You will be signed out from all devices, including this one.",
+      "loadMore": "Load more sessions"
     }
   },
   "accessDeniedPage": {
@@ -462,5 +494,34 @@
     "actions": {
       "edit": "Edit"
     }
+  },
+  "adminSessionsPage": {
+    "status": {
+      "active": "Active",
+      "revoked": "Revoked",
+      "expired": "Expired"
+    },
+    "table": {
+      "created": "Signed in at",
+      "expired": "Expires at",
+      "userId": "User ID",
+      "ip": "IP address",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "filters": {
+      "status": {
+        "all": "All statuses",
+        "active": "Only active",
+        "revoked": "Only revoked"
+      }
+    },
+    "actions": {
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Confirm revoke session",
+      "revokeConfirm": "This session will be revoked. Continue?",
+      "loadMore": "Load more sessions"
+    },
+    "onlyOneSessionNotice": "The system is configured to allow only one active session per user. When a user signs in from a new device, previous sessions will be automatically logged out."
   }
 }

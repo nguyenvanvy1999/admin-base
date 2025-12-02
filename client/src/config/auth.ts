@@ -9,6 +9,7 @@ export const AUTH_ENDPOINTS = {
   registerOtp: '/api/auth/otp',
   profile: '/api/auth/me',
   logout: '/api/auth/logout',
+  logoutAll: '/api/auth/logout/all',
   refreshToken: '/api/auth/refresh-token',
   mfaSetupRequest: '/api/auth/mfa/setup/request',
   mfaSetupConfirm: '/api/auth/mfa/setup/confirm',
