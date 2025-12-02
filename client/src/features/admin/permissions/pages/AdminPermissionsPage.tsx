@@ -133,7 +133,7 @@ export default function AdminPermissionsPage() {
       subtitle={t('adminPermissionsPage.subtitle')}
     >
       <Alert
-        message={t('adminPermissionsPage.info.title')}
+        title={t('adminPermissionsPage.info.title')}
         description={t('adminPermissionsPage.info.description')}
         type="info"
         showIcon
@@ -141,7 +141,7 @@ export default function AdminPermissionsPage() {
       />
 
       <Card size="small" style={{ marginBottom: 16 }}>
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+        <Space orientation="vertical" style={{ width: '100%' }} size="middle">
           <Space wrap>
             <Input.Search
               placeholder={t('adminPermissionsPage.table.filters.search')}
@@ -180,7 +180,8 @@ export default function AdminPermissionsPage() {
           pageSize: 20,
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total) => `Tổng ${total} permissions`,
+          showTotal: (total) =>
+            t('common.pagination.totalPermissions', { total }),
         }}
         request={() => {
           return Promise.resolve({

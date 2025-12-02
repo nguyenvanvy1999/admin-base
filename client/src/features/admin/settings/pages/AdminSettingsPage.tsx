@@ -258,7 +258,8 @@ export default function AdminSettingsPage() {
             pageSize: 20,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total) => `Tổng ${total} settings`,
+            showTotal: (total) =>
+              t('common.pagination.totalSettings', { total }),
           }}
           request={() => {
             return Promise.resolve({
@@ -285,7 +286,8 @@ export default function AdminSettingsPage() {
             pageSize: 20,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total) => `Tổng ${total} settings`,
+            showTotal: (total) =>
+              t('common.pagination.totalSettings', { total }),
           }}
           request={() => {
             return Promise.resolve({
@@ -312,7 +314,8 @@ export default function AdminSettingsPage() {
             pageSize: 20,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total) => `Tổng ${total} settings`,
+            showTotal: (total) =>
+              t('common.pagination.totalSettings', { total }),
           }}
           request={() => {
             return Promise.resolve({
@@ -339,7 +342,8 @@ export default function AdminSettingsPage() {
             pageSize: 20,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total) => `Tổng ${total} settings`,
+            showTotal: (total) =>
+              t('common.pagination.totalSettings', { total }),
           }}
           request={() => {
             return Promise.resolve({
@@ -360,7 +364,7 @@ export default function AdminSettingsPage() {
       subtitle={t('adminSettingsPage.subtitle')}
     >
       <Alert
-        message={t('adminSettingsPage.info.title')}
+        title={t('adminSettingsPage.info.title')}
         description={t('adminSettingsPage.info.description')}
         type="info"
         showIcon
@@ -368,7 +372,7 @@ export default function AdminSettingsPage() {
       />
 
       <Card size="small" style={{ marginBottom: 16 }}>
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+        <Space orientation="vertical" style={{ width: '100%' }} size="middle">
           <Space wrap>
             <Input.Search
               placeholder={t('adminSettingsPage.table.filters.search')}

@@ -222,7 +222,7 @@ export function AdminUserDetailDrawer({
     >
       {isLoading && <Skeleton active paragraph={{ rows: 6 }} />}
       {!isLoading && !data && (
-        <Alert type="warning" message={t('errors.itemNotFound')} showIcon />
+        <Alert type="warning" title={t('errors.itemNotFound')} showIcon />
       )}
       {!isLoading && data && (
         <Tabs
@@ -309,7 +309,7 @@ export function AdminUserDetailDrawer({
                     <Alert
                       type="info"
                       showIcon
-                      message={t('adminUsersPage.update.tabSecurity')}
+                      title={t('adminUsersPage.update.tabSecurity')}
                       action={
                         <Space>
                           <Button

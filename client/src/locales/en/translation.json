@@ -4,7 +4,12 @@
     "disabled": "Disabled",
     "cancel": "Cancel",
     "save": "Save",
-    "viewDetails": "View details"
+    "viewDetails": "View details",
+    "pagination": {
+      "total": "Total {{total}} items",
+      "totalSettings": "Total {{total}} settings",
+      "totalPermissions": "Total {{total}} permissions"
+    }
   },
   "sidebar": {
     "dashboard": "Dashboard",

@@ -107,7 +107,7 @@ export function RegisterOtpStep({
       </Form.Item>
 
       <Space
-        direction="vertical"
+        orientation="vertical"
         style={{ width: '100%', marginTop: 8 }}
         size="small"
       >

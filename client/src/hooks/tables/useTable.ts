@@ -1,5 +1,6 @@
 import type { PaginationProps } from 'antd';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { SortOrder } from 'src/types/common';
 
 export interface UseTableOptions {
@@ -28,6 +29,7 @@ export interface UseTableReturn {
 }
 
 export function useTable(options: UseTableOptions = {}): UseTableReturn {
+  const { t } = useTranslation();
   const {
     defaultPageSize = 10,
     defaultCurrent = 1,
@@ -64,7 +66,7 @@ export function useTable(options: UseTableOptions = {}): UseTableReturn {
       pageSize,
       showSizeChanger: true,
       showQuickJumper: true,
-      showTotal: (total) => `Tổng ${total} mục`,
+      showTotal: (total) => t('common.pagination.total', { total }),
       onChange: (page, size) => {
         setCurrent(page);
         if (size !== pageSize) {
@@ -72,7 +74,7 @@ export function useTable(options: UseTableOptions = {}): UseTableReturn {
         }
       },
     }),
-    [current, pageSize],
+    [current, pageSize, t],
   );
 
   return {

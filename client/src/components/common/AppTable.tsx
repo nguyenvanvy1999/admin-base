@@ -1,6 +1,7 @@
 import type { ProTableProps } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface AppTableProps<
   T extends Record<string, any>,
@@ -17,6 +18,7 @@ export function AppTable<
   T extends Record<string, any>,
   U extends Record<string, any> = Record<string, any>,
 >(props: AppTableProps<T, U>) {
+  const { t } = useTranslation();
   const {
     search: searchProp,
     pagination: paginationProp,
@@ -46,7 +48,7 @@ export function AppTable<
               pageSize: 10,
               showSizeChanger: true,
               showQuickJumper: true,
-              showTotal: (total) => `Tổng ${total} mục`,
+              showTotal: (total) => t('common.pagination.total', { total }),
             })
       }
       options={

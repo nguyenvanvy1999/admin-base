@@ -4,7 +4,12 @@
     "disabled": "Đã vô hiệu hóa",
     "cancel": "Hủy",
     "save": "Lưu",
-    "viewDetails": "Xem chi tiết"
+    "viewDetails": "Xem chi tiết",
+    "pagination": {
+      "total": "Tổng {{total}} mục",
+      "totalSettings": "Tổng {{total}} settings",
+      "totalPermissions": "Tổng {{total}} permissions"
+    }
   },
   "sidebar": {
     "dashboard": "Tổng quan",

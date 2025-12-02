@@ -213,7 +213,7 @@ export function SettingFormModal({
       }}
     >
       <Alert
-        message={setting.key}
+        title={setting.key}
         description={setting.description || '-'}
         type="info"
         showIcon
@@ -222,7 +222,7 @@ export function SettingFormModal({
 
       {setting.isSecret && setting.value === '************' && (
         <Alert
-          message={t('adminSettingsPage.form.secretWarning')}
+          title={t('adminSettingsPage.form.secretWarning')}
           type="warning"
           showIcon
           style={{ marginBottom: 16 }}
