@@ -71,10 +71,10 @@ enum LockoutReason {
 
 // Core user account with authentication and profile data
 model User {
-  id     String     @id
-  email  String     @unique
-  status UserStatus @default(inactive)
-  protected Boolean @default(false)
+  id        String     @id
+  email     String     @unique
+  status    UserStatus @default(inactive)
+  protected Boolean    @default(false)
 
   password             String
   passwordExpired      DateTime? @default(now()) @map("password_expired")
