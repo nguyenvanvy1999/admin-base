@@ -1,12 +1,14 @@
 import { Drawer, type DrawerProps } from 'antd';
 
-export function AppDrawer(props: DrawerProps) {
+type DrawerPropsWithoutWidth = Omit<DrawerProps, 'width'>;
+
+export function AppDrawer(props: DrawerPropsWithoutWidth) {
   return (
     <Drawer
-      destroyOnClose
+      forceRender={false}
       maskClosable={false}
       placement={props.placement ?? 'right'}
-      width={props.width ?? 480}
+      size={props.size ?? 480}
       {...props}
     />
   );

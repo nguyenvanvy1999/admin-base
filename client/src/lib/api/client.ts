@@ -2,13 +2,22 @@ import axios, {
   AxiosHeaders,
   type AxiosInstance,
   type AxiosRequestConfig,
+  type InternalAxiosRequestConfig,
 } from 'axios';
+import { AUTH_ENDPOINTS } from 'src/config/auth';
 import { ACCESS_TOKEN_KEY } from 'src/constants';
 import { parseApiError } from 'src/lib/api/errorHandler';
+import { authService } from 'src/services/api/auth.service';
+import { authStore } from 'src/store/authStore';
 import type { ApiResponse } from 'src/types/api';
 
 class ApiClient {
   private instance: AxiosInstance;
+  private isRefreshing = false;
+  private failedQueue: Array<{
+    resolve: (value?: unknown) => void;
+    reject: (error?: unknown) => void;
+  }> = [];
 
   constructor() {
     this.instance = axios.create({
@@ -44,9 +53,63 @@ class ApiClient {
 
     this.instance.interceptors.response.use(
       (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          localStorage.removeItem(ACCESS_TOKEN_KEY);
+      async (error) => {
+        const originalRequest = error.config as InternalAxiosRequestConfig & {
+          _retry?: boolean;
+        };
+
+        if (
+          error.response?.status === 401 &&
+          error.response?.data?.code === 'invalid-token' &&
+          !originalRequest._retry &&
+          !originalRequest.url?.includes(AUTH_ENDPOINTS.refreshToken)
+        ) {
+          if (this.isRefreshing) {
+            return new Promise((resolve, reject) => {
+              this.failedQueue.push({ resolve, reject });
+            })
+              .then(() => {
+                return this.instance(originalRequest);
+              })
+              .catch((err) => {
+                return Promise.reject(err);
+              });
+          }
+
+          originalRequest._retry = true;
+          this.isRefreshing = true;
+
+          const refreshToken = authStore.getRefreshToken();
+
+          if (refreshToken) {
+            try {
+              const tokenSet = await authService.refreshTokens(refreshToken);
+              authStore.setTokens(tokenSet);
+              this.setAuthToken(tokenSet.accessToken);
+
+              this.processQueue(null);
+
+              const headers = AxiosHeaders.from(originalRequest.headers ?? {});
+              headers.setAuthorization(`Bearer ${tokenSet.accessToken}`);
+              originalRequest.headers = headers;
+
+              return this.instance(originalRequest);
+            } catch (refreshError) {
+              this.processQueue(refreshError);
+              authStore.clear();
+              localStorage.removeItem(ACCESS_TOKEN_KEY);
+              parseApiError(error);
+              return Promise.reject(error);
+            } finally {
+              this.isRefreshing = false;
+            }
+          } else {
+            this.isRefreshing = false;
+            authStore.clear();
+            localStorage.removeItem(ACCESS_TOKEN_KEY);
+            parseApiError(error);
+            return Promise.reject(error);
+          }
         }
 
         parseApiError(error);
@@ -117,6 +180,18 @@ class ApiClient {
 
   getInstance(): AxiosInstance {
     return this.instance;
+  }
+
+  private processQueue(error: unknown): void {
+    this.failedQueue.forEach((promise) => {
+      if (error) {
+        promise.reject(error);
+      } else {
+        promise.resolve();
+      }
+    });
+
+    this.failedQueue = [];
   }
 }
 

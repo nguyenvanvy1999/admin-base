@@ -9,17 +9,7 @@ import {
   ProFormText,
   ProFormTextArea,
 } from '@ant-design/pro-components';
-import {
-  Alert,
-  Button,
-  Flex,
-  Input,
-  Modal,
-  Skeleton,
-  Space,
-  Tabs,
-  Tag,
-} from 'antd';
+import { Alert, Button, Flex, Input, Skeleton, Space, Tabs, Tag } from 'antd';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -31,6 +21,7 @@ import {
   useUpdateAdminUser,
 } from 'src/features/admin/users/hooks/useAdminUsers';
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
+import { useModal } from 'src/hooks/useModal';
 import { useNotify } from 'src/hooks/useNotify';
 import {
   ADMIN_LOCKOUT_REASONS,
@@ -101,6 +92,7 @@ export function AdminUserDetailDrawer({
   );
   const { t } = useTranslation();
   const notify = useNotify();
+  const modal = useModal();
   const { data: roles, isLoading: isLoadingRoles } = useAdminRoles();
 
   const { data, isLoading } = useAdminUserDetail(userId ?? undefined, open);
@@ -108,7 +100,6 @@ export function AdminUserDetailDrawer({
     onSuccess: () => {
       notify.notification.success({
         title: t('adminUsersPage.update.success'),
-        message: t('adminUsersPage.update.success'),
       });
       onActionCompleted?.();
     },
@@ -118,7 +109,6 @@ export function AdminUserDetailDrawer({
     onSuccess: ({ auditLogId }) => {
       notify.notification.success({
         title: t('adminUsersPage.update.mfaResetSuccess'),
-        message: t('adminUsersPage.update.mfaResetSuccess'),
         description: t('adminUsersPage.create.auditLog', {
           auditId: auditLogId,
         }),
@@ -131,7 +121,6 @@ export function AdminUserDetailDrawer({
     onSuccess: ({ auditLogId }) => {
       notify.notification.success({
         title: t('adminUsersPage.update.mfaDisableSuccess'),
-        message: t('adminUsersPage.update.mfaDisableSuccess'),
         description: t('adminUsersPage.create.auditLog', {
           auditId: auditLogId,
         }),
@@ -183,7 +172,7 @@ export function AdminUserDetailDrawer({
     }
 
     let reasonValue = '';
-    Modal.confirm({
+    modal.confirm({
       title:
         action === 'reset'
           ? t('adminUsersPage.actions.resetMfa')
@@ -218,7 +207,7 @@ export function AdminUserDetailDrawer({
       open={open}
       onClose={onClose}
       title={t('adminUsersPage.update.title')}
-      width={800}
+      size={800}
     >
       {isLoading && <Skeleton active paragraph={{ rows: 6 }} />}
       {!isLoading && !data && (
