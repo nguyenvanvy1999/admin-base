@@ -24,6 +24,7 @@ import {
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
 import { useModal } from 'src/hooks/useModal';
 import { useNotify } from 'src/hooks/useNotify';
+import { toIsoStringOrNull } from 'src/lib/utils/date.utils';
 import {
   ADMIN_LOCKOUT_REASONS,
   type AdminLockoutReason,
@@ -98,6 +99,7 @@ export function AdminUserDetailDrawer({
   const { data, isLoading } = useAdminUserDetail(userId ?? undefined, open);
   const updateMutation = useUpdateAdminUser({
     onSuccess: () => {
+      onClose();
       notify.notification.success({
         title: t('adminUsersPage.update.success'),
       });
@@ -152,16 +154,13 @@ export function AdminUserDetailDrawer({
     if (!userId) {
       return;
     }
+
     const payload = {
       ...values,
       name: values.name ?? null,
-      lockoutUntil: values.lockoutUntil
-        ? values.lockoutUntil.toISOString()
-        : null,
+      lockoutUntil: toIsoStringOrNull(values.lockoutUntil),
       lockoutReason: values.lockoutReason ?? null,
-      passwordExpired: values.passwordExpired
-        ? values.passwordExpired.toISOString()
-        : null,
+      passwordExpired: toIsoStringOrNull(values.passwordExpired),
     };
     await updateMutation.mutateAsync({ userId, payload });
   };
