@@ -73,14 +73,14 @@ export default function AdminSessionsPage() {
   const [userIdsFilter, setUserIdsFilter] = useState<string[] | undefined>(
     undefined,
   );
-  const created0 = useMemo(
-    () => dateRange[0].startOf('day').toISOString(),
-    [dateRange],
-  );
-  const created1 = useMemo(
-    () => dateRange[1].endOf('day').toISOString(),
-    [dateRange],
-  );
+  const created0 = useMemo(() => {
+    const start = dayjs(dateRange[0]);
+    return start.startOf('day').toISOString();
+  }, [dateRange]);
+  const created1 = useMemo(() => {
+    const end = dayjs(dateRange[1]);
+    return end.endOf('day').toISOString();
+  }, [dateRange]);
 
   const listParams = useMemo(
     () => ({
@@ -179,6 +179,7 @@ export default function AdminSessionsPage() {
     {
       title: t('adminSessionsPage.table.created'),
       dataIndex: 'created',
+      valueType: 'dateRange',
       sorter: (a, b) => dayjs(a.created).valueOf() - dayjs(b.created).valueOf(),
       render: (_, record) =>
         dayjs(record.created).format('YYYY-MM-DD HH:mm:ss'),
