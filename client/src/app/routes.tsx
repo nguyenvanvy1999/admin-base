@@ -17,6 +17,9 @@ const AdminUsersPage = lazy(
 const AdminRolesPage = lazy(
   () => import('../features/admin/roles/pages/AdminRolesPage'),
 );
+const AdminPermissionsPage = lazy(
+  () => import('../features/admin/permissions/pages/AdminPermissionsPage'),
+);
 
 export function AppRoutes() {
   return (
@@ -47,6 +50,14 @@ export function AppRoutes() {
           element={
             <ProtectedRoute requiredPermissions={['ROLE.VIEW']}>
               <AdminRolesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/permissions"
+          element={
+            <ProtectedRoute requiredPermissions={['ROLE.VIEW']}>
+              <AdminPermissionsPage />
             </ProtectedRoute>
           }
         />

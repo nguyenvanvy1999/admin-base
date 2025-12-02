@@ -10,7 +10,9 @@
     "dashboard": "Dashboard",
     "workspaces": "Workspaces",
     "settings": "Settings",
-    "adminUsers": "Admin users"
+    "adminUsers": "Admin users",
+    "adminRoles": "Admin roles",
+    "adminPermissions": "Admin permissions"
   },
   "header": {
     "appName": "FinTrack",
@@ -298,6 +300,94 @@
     "actions": {
       "edit": "Edit",
       "delete": "Delete"
+    }
+  },
+  "adminPermissionsPage": {
+    "title": "Admin permission management",
+    "subtitle": "View available permissions in the system and understand the permissions.",
+    "table": {
+      "title": "Permission name",
+      "description": "Description",
+      "category": "Category",
+      "action": "Action",
+      "filters": {
+        "category": "Filter by category",
+        "search": "Search permission"
+      }
+    },
+    "info": {
+      "title": "About Permissions",
+      "description": "Permissions are privileges defined in the system. Each permission has the format CATEGORY.ACTION (e.g., ROLE.VIEW, USER.UPDATE). Permissions are assigned to roles, and users have permissions through the roles they own.",
+      "note": "Note: Permissions are automatically created from the backend when seeding the database. FE cannot create/update/delete permissions directly."
+    },
+    "categories": {
+      "ROLE": "Role Management",
+      "USER": "User Management",
+      "SESSION": "Session Management",
+      "SETTING": "Settings",
+      "I18N": "Internationalization",
+      "IPWHITELIST": "IP Whitelist",
+      "TELE_BOT": "Telegram Bot",
+      "TELE_CHAT": "Telegram Chat",
+      "TELE_TEMPLATE": "Telegram Template",
+      "API_KEY": "API Key",
+      "ACTIVITY": "Activity",
+      "CHAT_THREAD": "Chat Thread",
+      "FILE": "File"
+    },
+    "actions": {
+      "VIEW": "View",
+      "VIEW_ALL": "View All",
+      "CREATE": "Create",
+      "UPDATE": "Update",
+      "DELETE": "Delete",
+      "REVOKE": "Revoke",
+      "REVOKE_ALL": "Revoke All",
+      "RESET_MFA": "Reset MFA",
+      "MANAGE": "Manage",
+      "UPLOAD": "Upload",
+      "SEND": "Send"
+    },
+    "descriptions": {
+      "ROLE.VIEW": "View list and details of roles",
+      "ROLE.UPDATE": "Create and update roles",
+      "ROLE.DELETE": "Delete roles",
+      "USER.VIEW": "View list and details of users",
+      "USER.UPDATE": "Create and update users",
+      "USER.RESET_MFA": "Reset MFA for users",
+      "SESSION.VIEW": "View own sessions",
+      "SESSION.VIEW_ALL": "View all sessions in the system",
+      "SESSION.REVOKE": "Revoke own sessions",
+      "SESSION.REVOKE_ALL": "Revoke all sessions",
+      "SETTING.VIEW": "View system settings",
+      "SETTING.UPDATE": "Update system settings",
+      "I18N.VIEW": "View internationalization translations",
+      "I18N.UPDATE": "Update internationalization translations",
+      "I18N.DELETE": "Delete internationalization translations",
+      "IPWHITELIST.VIEW": "View IP whitelist",
+      "IPWHITELIST.CREATE": "Add IP to whitelist",
+      "IPWHITELIST.DELETE": "Remove IP from whitelist",
+      "API_KEY.VIEW": "View own API keys",
+      "API_KEY.VIEW_ALL": "View all API keys",
+      "API_KEY.UPDATE": "Update own API keys",
+      "API_KEY.UPDATE_ALL": "Update all API keys",
+      "API_KEY.DELETE": "Delete own API keys",
+      "API_KEY.DELETE_ALL": "Delete all API keys",
+      "ACTIVITY.VIEW": "View own activities",
+      "ACTIVITY.VIEW_ALL": "View all activities",
+      "CHAT_THREAD.VIEW": "View chat threads",
+      "CHAT_THREAD.MANAGE": "Manage chat threads",
+      "FILE.UPLOAD": "Upload files to the system",
+      "TELE_BOT.VIEW": "View Telegram bots",
+      "TELE_BOT.UPDATE": "Update Telegram bots",
+      "TELE_BOT.DELETE": "Delete Telegram bots",
+      "TELE_CHAT.VIEW": "View Telegram chats",
+      "TELE_CHAT.UPDATE": "Update Telegram chats",
+      "TELE_CHAT.DELETE": "Delete Telegram chats",
+      "TELE_TEMPLATE.VIEW": "View Telegram templates",
+      "TELE_TEMPLATE.UPDATE": "Update Telegram templates",
+      "TELE_TEMPLATE.DELETE": "Delete Telegram templates",
+      "TELE_TEMPLATE.SEND": "Send Telegram templates"
     }
   }
 }

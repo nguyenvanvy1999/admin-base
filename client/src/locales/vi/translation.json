@@ -10,7 +10,9 @@
     "dashboard": "Tổng quan",
     "workspaces": "Workspace",
     "settings": "Cấu hình",
-    "adminUsers": "Quản lý user"
+    "adminUsers": "Quản lý user",
+    "adminRoles": "Quản lý role",
+    "adminPermissions": "Quản lý permission"
   },
   "header": {
     "appName": "FinTrack",
@@ -298,6 +300,94 @@
     "actions": {
       "edit": "Chỉnh sửa",
       "delete": "Xóa"
+    }
+  },
+  "adminPermissionsPage": {
+    "title": "Quản trị permissions",
+    "subtitle": "Xem danh sách permissions có sẵn trong hệ thống và hiểu về các quyền.",
+    "table": {
+      "title": "Tên permission",
+      "description": "Mô tả",
+      "category": "Danh mục",
+      "action": "Hành động",
+      "filters": {
+        "category": "Lọc theo danh mục",
+        "search": "Tìm kiếm permission"
+      }
+    },
+    "info": {
+      "title": "Thông tin về Permissions",
+      "description": "Permissions là các quyền được định nghĩa trong hệ thống. Mỗi permission có format CATEGORY.ACTION (ví dụ: ROLE.VIEW, USER.UPDATE). Permissions được gán vào roles, và users có quyền thông qua các roles mà họ sở hữu.",
+      "note": "Lưu ý: Permissions được tạo tự động từ backend khi seed database. FE không thể tạo/sửa/xóa permissions trực tiếp."
+    },
+    "categories": {
+      "ROLE": "Quản lý Role",
+      "USER": "Quản lý User",
+      "SESSION": "Quản lý Session",
+      "SETTING": "Cấu hình",
+      "I18N": "Đa ngôn ngữ",
+      "IPWHITELIST": "Danh sách IP trắng",
+      "TELE_BOT": "Telegram Bot",
+      "TELE_CHAT": "Telegram Chat",
+      "TELE_TEMPLATE": "Telegram Template",
+      "API_KEY": "API Key",
+      "ACTIVITY": "Hoạt động",
+      "CHAT_THREAD": "Luồng chat",
+      "FILE": "File"
+    },
+    "actions": {
+      "VIEW": "Xem",
+      "VIEW_ALL": "Xem tất cả",
+      "CREATE": "Tạo mới",
+      "UPDATE": "Cập nhật",
+      "DELETE": "Xóa",
+      "REVOKE": "Thu hồi",
+      "REVOKE_ALL": "Thu hồi tất cả",
+      "RESET_MFA": "Reset MFA",
+      "MANAGE": "Quản lý",
+      "UPLOAD": "Tải lên",
+      "SEND": "Gửi"
+    },
+    "descriptions": {
+      "ROLE.VIEW": "Xem danh sách và chi tiết roles",
+      "ROLE.UPDATE": "Tạo mới và cập nhật roles",
+      "ROLE.DELETE": "Xóa roles",
+      "USER.VIEW": "Xem danh sách và chi tiết users",
+      "USER.UPDATE": "Tạo mới và cập nhật users",
+      "USER.RESET_MFA": "Reset MFA cho users",
+      "SESSION.VIEW": "Xem sessions của chính mình",
+      "SESSION.VIEW_ALL": "Xem tất cả sessions trong hệ thống",
+      "SESSION.REVOKE": "Thu hồi sessions của chính mình",
+      "SESSION.REVOKE_ALL": "Thu hồi tất cả sessions",
+      "SETTING.VIEW": "Xem cấu hình hệ thống",
+      "SETTING.UPDATE": "Cập nhật cấu hình hệ thống",
+      "I18N.VIEW": "Xem bản dịch đa ngôn ngữ",
+      "I18N.UPDATE": "Cập nhật bản dịch đa ngôn ngữ",
+      "I18N.DELETE": "Xóa bản dịch đa ngôn ngữ",
+      "IPWHITELIST.VIEW": "Xem danh sách IP trắng",
+      "IPWHITELIST.CREATE": "Thêm IP vào danh sách trắng",
+      "IPWHITELIST.DELETE": "Xóa IP khỏi danh sách trắng",
+      "API_KEY.VIEW": "Xem API keys của chính mình",
+      "API_KEY.VIEW_ALL": "Xem tất cả API keys",
+      "API_KEY.UPDATE": "Cập nhật API keys của chính mình",
+      "API_KEY.UPDATE_ALL": "Cập nhật tất cả API keys",
+      "API_KEY.DELETE": "Xóa API keys của chính mình",
+      "API_KEY.DELETE_ALL": "Xóa tất cả API keys",
+      "ACTIVITY.VIEW": "Xem hoạt động của chính mình",
+      "ACTIVITY.VIEW_ALL": "Xem tất cả hoạt động",
+      "CHAT_THREAD.VIEW": "Xem luồng chat",
+      "CHAT_THREAD.MANAGE": "Quản lý luồng chat",
+      "FILE.UPLOAD": "Tải file lên hệ thống",
+      "TELE_BOT.VIEW": "Xem Telegram bots",
+      "TELE_BOT.UPDATE": "Cập nhật Telegram bots",
+      "TELE_BOT.DELETE": "Xóa Telegram bots",
+      "TELE_CHAT.VIEW": "Xem Telegram chats",
+      "TELE_CHAT.UPDATE": "Cập nhật Telegram chats",
+      "TELE_CHAT.DELETE": "Xóa Telegram chats",
+      "TELE_TEMPLATE.VIEW": "Xem Telegram templates",
+      "TELE_TEMPLATE.UPDATE": "Cập nhật Telegram templates",
+      "TELE_TEMPLATE.DELETE": "Xóa Telegram templates",
+      "TELE_TEMPLATE.SEND": "Gửi Telegram templates"
     }
   }
 }

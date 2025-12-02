@@ -2,6 +2,7 @@ import {
   GithubOutlined,
   HomeOutlined,
   MoonOutlined,
+  SafetyOutlined,
   SettingOutlined,
   SunOutlined,
   TeamOutlined,
@@ -39,6 +40,18 @@ const ADMIN_USERS_ROUTE: MenuDataItem = {
   icon: <UserSwitchOutlined />,
 };
 
+const ADMIN_ROLES_ROUTE: MenuDataItem = {
+  path: '/admin/roles',
+  name: 'sidebar.adminRoles',
+  icon: <SafetyOutlined />,
+};
+
+const ADMIN_PERMISSIONS_ROUTE: MenuDataItem = {
+  path: '/admin/permissions',
+  name: 'sidebar.adminPermissions',
+  icon: <SafetyOutlined />,
+};
+
 export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,17 +59,25 @@ export default function MainLayout() {
   const { mode, setMode } = useThemeMode();
   const { user, logout } = useAuth();
   const canViewAdminUsers = user?.permissions?.includes('USER.VIEW');
+  const canViewRoles = user?.permissions?.includes('ROLE.VIEW');
 
   const menuRoutes = useMemo<RouteConfig>(() => {
-    const routes = canViewAdminUsers
-      ? [...BASE_ROUTES, ADMIN_USERS_ROUTE]
-      : BASE_ROUTES;
+    const adminRoutes: MenuDataItem[] = [];
+
+    if (canViewAdminUsers) {
+      adminRoutes.push(ADMIN_USERS_ROUTE);
+    }
+
+    if (canViewRoles) {
+      adminRoutes.push(ADMIN_ROLES_ROUTE);
+      adminRoutes.push(ADMIN_PERMISSIONS_ROUTE);
+    }
 
     return {
       path: '/',
-      routes,
+      routes: [...BASE_ROUTES, ...adminRoutes],
     };
-  }, [canViewAdminUsers]);
+  }, [canViewAdminUsers, canViewRoles]);
 
   const translateMenu = useCallback(
     (items: MenuDataItem[]): MenuDataItem[] =>
