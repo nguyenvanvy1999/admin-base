@@ -3,7 +3,6 @@ import {
   ProForm,
   ProFormDateTimePicker,
   ProFormDigit,
-  type ProFormInstance,
   ProFormSelect,
   ProFormSwitch,
   ProFormText,
@@ -12,7 +11,7 @@ import {
 import { Alert, Button, Flex, Input, Skeleton, Space, Tabs, Tag } from 'antd';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppAdminUserStatusSelect } from 'src/components/common/AppAdminUserStatusSelect';
 import { AppDrawer } from 'src/components/common/AppDrawer';
@@ -85,9 +84,6 @@ export function AdminUserDetailDrawer({
   onActionCompleted,
   initialTab = 'general',
 }: AdminUserDetailDrawerProps) {
-  const formRef = useRef<ProFormInstance<AdminUserUpdateFormValues> | null>(
-    null,
-  );
   const [tabKey, setTabKey] = useState<'general' | 'security' | 'edit'>(
     initialTab,
   );
@@ -137,12 +133,6 @@ export function AdminUserDetailDrawer({
     }
     return mapDetailToFormValues(data);
   }, [data]);
-
-  useEffect(() => {
-    if (initialValues && formRef.current) {
-      formRef.current.setFieldsValue(initialValues);
-    }
-  }, [initialValues]);
 
   useEffect(() => {
     if (open) {
@@ -323,7 +313,7 @@ export function AdminUserDetailDrawer({
                 </Flex>
               ),
             },
-            ...(canUpdate
+            ...(canUpdate && data
               ? [
                   {
                     key: 'edit',
@@ -331,7 +321,7 @@ export function AdminUserDetailDrawer({
                     children: (
                       <ProForm<AdminUserUpdateFormValues>
                         layout="vertical"
-                        formRef={formRef}
+                        initialValues={initialValues}
                         submitter={{
                           searchConfig: {
                             submitText: t('adminUsersPage.actions.submit'),
