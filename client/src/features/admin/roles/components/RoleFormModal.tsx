@@ -5,7 +5,7 @@ import {
   ProFormTextArea,
 } from '@ant-design/pro-components';
 import { Tabs } from 'antd';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormModal } from 'src/components/common/FormModal';
 import { useAdminPermissions } from 'src/hooks/api/useAdminPermissions';
@@ -31,28 +31,35 @@ export function RoleFormModal({
 }: RoleFormModalProps) {
   const { t } = useTranslation();
   const { data: permissions, isLoading: isLoadingPermissions } =
-    useAdminPermissions(role ? { roleId: role.id } : undefined);
+    useAdminPermissions();
   const [users, setUsers] = useState<Array<{ value: string; label: string }>>(
     [],
   );
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      setIsLoadingUsers(true);
-      adminUsersService
-        .list({ take: 1000 })
-        .then((response) => {
-          setUsers(
-            response.docs.map((user) => ({
-              value: user.id,
-              label: user.email,
-            })),
-          );
-        })
-        .finally(() => setIsLoadingUsers(false));
+  const handleSearchUsers = async (value: string) => {
+    const search = value.trim();
+    if (!search) {
+      setUsers([]);
+      return;
     }
-  }, [open]);
+
+    setIsLoadingUsers(true);
+    try {
+      const response = await adminUsersService.list({
+        take: 20,
+        search,
+      });
+      setUsers(
+        response.docs.map((user) => ({
+          value: user.id,
+          label: user.email,
+        })),
+      );
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
 
   const initialValues: Partial<RoleFormValues> = role
     ? {
@@ -70,6 +77,13 @@ export function RoleFormModal({
       };
 
   const handleSubmit = async (values: RoleFormValues) => {
+    const permissionIds =
+      (values.permissionIds as string[] | undefined) ??
+      role?.permissionIds ??
+      [];
+    const playerIds =
+      (values.playerIds as string[] | undefined) ?? role?.playerIds ?? [];
+
     const payload: UpsertRoleDto = {
       ...(role ? { id: role.id } : {}),
       title: values.title.trim(),
@@ -79,8 +93,8 @@ export function RoleFormModal({
           ? values.description.trim()
           : null,
       enabled: values.enabled ?? true,
-      permissionIds: (values.permissionIds as string[]) || [],
-      playerIds: (values.playerIds as string[]) || [],
+      permissionIds,
+      playerIds,
     };
     await onSubmit(payload);
   };
@@ -178,11 +192,13 @@ export function RoleFormModal({
                 name="playerIds"
                 label={t('adminRolesPage.form.users')}
                 mode="multiple"
-                options={users}
                 fieldProps={{
                   loading: isLoadingUsers,
                   showSearch: true,
                   optionFilterProp: 'label',
+                  filterOption: false,
+                  onSearch: handleSearchUsers,
+                  options: users,
                   placeholder: t('adminRolesPage.form.usersPlaceholder'),
                 }}
               />
