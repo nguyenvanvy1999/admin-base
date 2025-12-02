@@ -62,7 +62,7 @@ const baseUserSelect = {
   protected: true,
   created: true,
   roles: {
-    select: { role: { select: { title: true, id: true } } },
+    select: { role: { select: { title: true, id: true } }, expiresAt: true },
   },
 } satisfies UserSelect;
 

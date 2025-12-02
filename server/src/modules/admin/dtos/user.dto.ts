@@ -31,6 +31,7 @@ const roleListDto = t.Array(
       title: t.String(),
       id: t.String(),
     }),
+    expiresAt: t.Nullable(isoDateField),
   }),
 );
 
