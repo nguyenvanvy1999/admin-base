@@ -201,7 +201,7 @@
       "emailVerified": "Xác thực email",
       "actions": "Thao tác",
       "filters": {
-        "email": "Tìm email",
+        "keyword": "Email hoặc tên hiển thị",
         "status": "Trạng thái",
         "role": "Role"
       }

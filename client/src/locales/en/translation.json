@@ -201,7 +201,7 @@
       "emailVerified": "Email verified",
       "actions": "Actions",
       "filters": {
-        "email": "Search email",
+        "keyword": "Email or display name",
         "status": "Status",
         "role": "Role"
       }

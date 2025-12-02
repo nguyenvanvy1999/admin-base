@@ -122,6 +122,13 @@ export const AdminUserListQueryDto = t.Intersect([
         description: 'Filter by partial email match.',
       }),
     ),
+    search: t.Optional(
+      t.String({
+        minLength: 1,
+        maxLength: 128,
+        description: 'Filter by partial email or display name match.',
+      }),
+    ),
     status: t.Optional(t.Enum(UserStatus)),
     roleId: t.Optional(t.String({ minLength: 1 })),
   }),

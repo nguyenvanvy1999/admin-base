@@ -19,7 +19,7 @@ import {
 type AdminUserTableParams = {
   current?: number;
   pageSize?: number;
-  email?: string;
+  search?: string;
   status?: AdminUserStatus;
   roleId?: string;
 };
@@ -54,15 +54,27 @@ export default function AdminUsersPage() {
 
   const columns: ProColumns<AdminUserSummary>[] = [
     {
+      title: t('adminUsersPage.table.filters.keyword'),
+      dataIndex: 'search',
+      hideInTable: true,
+      valueType: 'text',
+      fieldProps: {
+        allowClear: true,
+        placeholder: t('adminUsersPage.table.filters.keyword'),
+      },
+    },
+    {
       title: t('adminUsersPage.table.email'),
       dataIndex: 'email',
       copyable: true,
       ellipsis: true,
+      hideInSearch: true,
     },
     {
       title: t('adminUsersPage.table.name'),
       dataIndex: 'name',
       render: (_, record) => record.name ?? '-',
+      hideInSearch: true,
     },
     {
       title: t('adminUsersPage.table.status'),
@@ -171,15 +183,21 @@ export default function AdminUsersPage() {
         }}
         manualRequest={false}
         request={async (params) => {
-          const { current = 1, pageSize = 20, email, status, roleId } = params;
+          const {
+            current = 1,
+            pageSize = 20,
+            status,
+            roleId,
+            search: searchParam,
+          } = params;
           const take = pageSize;
           const skip = (current - 1) * pageSize;
           const response = await adminUsersService.list({
             skip,
             take,
-            email: email?.trim() || undefined,
             status,
             roleId: roleId?.trim() || undefined,
+            search: searchParam?.trim() || undefined,
           });
           return {
             data: response.docs,

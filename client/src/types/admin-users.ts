@@ -46,6 +46,7 @@ export interface AdminUserListQuery {
   skip?: number;
   take?: number;
   email?: string;
+  search?: string;
   status?: AdminUserStatus;
   roleId?: string;
 }
