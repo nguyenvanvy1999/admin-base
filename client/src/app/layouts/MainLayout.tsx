@@ -52,6 +52,12 @@ const ADMIN_PERMISSIONS_ROUTE: MenuDataItem = {
   icon: <SafetyOutlined />,
 };
 
+const ADMIN_SETTINGS_ROUTE: MenuDataItem = {
+  path: '/admin/settings',
+  name: 'sidebar.adminSettings',
+  icon: <SettingOutlined />,
+};
+
 export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -60,6 +66,7 @@ export default function MainLayout() {
   const { user, logout } = useAuth();
   const canViewAdminUsers = user?.permissions?.includes('USER.VIEW');
   const canViewRoles = user?.permissions?.includes('ROLE.VIEW');
+  const canViewSettings = user?.permissions?.includes('SETTING.VIEW');
 
   const menuRoutes = useMemo<RouteConfig>(() => {
     const adminRoutes: MenuDataItem[] = [];
@@ -73,11 +80,15 @@ export default function MainLayout() {
       adminRoutes.push(ADMIN_PERMISSIONS_ROUTE);
     }
 
+    if (canViewSettings) {
+      adminRoutes.push(ADMIN_SETTINGS_ROUTE);
+    }
+
     return {
       path: '/',
       routes: [...BASE_ROUTES, ...adminRoutes],
     };
-  }, [canViewAdminUsers, canViewRoles]);
+  }, [canViewAdminUsers, canViewRoles, canViewSettings]);
 
   const translateMenu = useCallback(
     (items: MenuDataItem[]): MenuDataItem[] =>

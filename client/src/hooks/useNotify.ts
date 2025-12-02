@@ -10,5 +10,9 @@ export function useNotify() {
       notification.success({
         title: content,
       }),
+    error: (content: string) =>
+      notification.error({
+        title: content,
+      }),
   };
 }

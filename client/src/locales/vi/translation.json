@@ -12,7 +12,8 @@
     "settings": "Cấu hình",
     "adminUsers": "Quản lý user",
     "adminRoles": "Quản lý role",
-    "adminPermissions": "Quản lý permission"
+    "adminPermissions": "Quản lý permission",
+    "adminSettings": "Quản lý settings"
   },
   "header": {
     "appName": "FinTrack",
@@ -388,6 +389,59 @@
       "TELE_TEMPLATE.UPDATE": "Cập nhật Telegram templates",
       "TELE_TEMPLATE.DELETE": "Xóa Telegram templates",
       "TELE_TEMPLATE.SEND": "Gửi Telegram templates"
+    }
+  },
+  "adminSettingsPage": {
+    "title": "Quản trị settings",
+    "subtitle": "Quản lý cấu hình hệ thống và các thiết lập bảo mật.",
+    "secret": "Secret",
+    "tabs": {
+      "all": "Tất cả"
+    },
+    "categories": {
+      "security": "Bảo mật",
+      "rateLimit": "Rate Limiting",
+      "system": "Hệ thống",
+      "other": "Khác"
+    },
+    "types": {
+      "string": "Chuỗi",
+      "number": "Số",
+      "boolean": "Boolean",
+      "date": "Ngày giờ",
+      "json": "JSON"
+    },
+    "table": {
+      "key": "Key",
+      "description": "Mô tả",
+      "type": "Kiểu",
+      "value": "Giá trị",
+      "isSecret": "Secret",
+      "category": "Danh mục",
+      "actions": "Thao tác",
+      "filters": {
+        "category": "Lọc theo danh mục",
+        "search": "Tìm kiếm setting"
+      }
+    },
+    "info": {
+      "title": "Thông tin về Settings",
+      "description": "Settings là các cấu hình hệ thống được định nghĩa sẵn. Mỗi setting có key, type và value. Settings có thể được đánh dấu là secret để bảo vệ thông tin nhạy cảm."
+    },
+    "update": {
+      "title": "Cập nhật setting"
+    },
+    "form": {
+      "value": "Giá trị",
+      "valueRequired": "Vui lòng nhập giá trị",
+      "isSecret": "Đánh dấu là Secret",
+      "secretWarning": "Giá trị hiện tại đã được ẩn vì lý do bảo mật. Vui lòng nhập giá trị mới nếu muốn thay đổi.",
+      "secretPlaceholder": "Nhập giá trị mới (giá trị cũ đã được ẩn vì lý do bảo mật)",
+      "jsonPlaceholder": "Nhập JSON hợp lệ, ví dụ: {\"key\": \"value\"}",
+      "jsonInvalid": "Giá trị phải là JSON hợp lệ"
+    },
+    "actions": {
+      "edit": "Chỉnh sửa"
     }
   }
 }

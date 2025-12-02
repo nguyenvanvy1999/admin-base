@@ -12,7 +12,8 @@
     "settings": "Settings",
     "adminUsers": "Admin users",
     "adminRoles": "Admin roles",
-    "adminPermissions": "Admin permissions"
+    "adminPermissions": "Admin permissions",
+    "adminSettings": "Admin settings"
   },
   "header": {
     "appName": "FinTrack",
@@ -388,6 +389,59 @@
       "TELE_TEMPLATE.UPDATE": "Update Telegram templates",
       "TELE_TEMPLATE.DELETE": "Delete Telegram templates",
       "TELE_TEMPLATE.SEND": "Send Telegram templates"
+    }
+  },
+  "adminSettingsPage": {
+    "title": "Admin settings management",
+    "subtitle": "Manage system configuration and security settings.",
+    "secret": "Secret",
+    "tabs": {
+      "all": "All"
+    },
+    "categories": {
+      "security": "Security",
+      "rateLimit": "Rate Limiting",
+      "system": "System",
+      "other": "Other"
+    },
+    "types": {
+      "string": "String",
+      "number": "Number",
+      "boolean": "Boolean",
+      "date": "Date/Time",
+      "json": "JSON"
+    },
+    "table": {
+      "key": "Key",
+      "description": "Description",
+      "type": "Type",
+      "value": "Value",
+      "isSecret": "Secret",
+      "category": "Category",
+      "actions": "Actions",
+      "filters": {
+        "category": "Filter by category",
+        "search": "Search setting"
+      }
+    },
+    "info": {
+      "title": "About Settings",
+      "description": "Settings are predefined system configurations. Each setting has a key, type, and value. Settings can be marked as secret to protect sensitive information."
+    },
+    "update": {
+      "title": "Update setting"
+    },
+    "form": {
+      "value": "Value",
+      "valueRequired": "Please enter a value",
+      "isSecret": "Mark as Secret",
+      "secretWarning": "Current value is hidden for security reasons. Please enter a new value if you want to change it.",
+      "secretPlaceholder": "Enter new value (old value is hidden for security reasons)",
+      "jsonPlaceholder": "Enter valid JSON, e.g.: {\"key\": \"value\"}",
+      "jsonInvalid": "Value must be valid JSON"
+    },
+    "actions": {
+      "edit": "Edit"
     }
   }
 }
