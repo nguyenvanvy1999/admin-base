@@ -18,10 +18,14 @@ export function ProtectedRoute({
   permissionMode = 'all',
   fallback,
 }: ProtectedRouteProps) {
-  const { isAuthenticated, isBootstrapping, isLoadingProfile, user } =
+  const { isAuthenticated, isBootstrapping, isLoadingProfile, user, tokens } =
     useAuth();
 
   if (isBootstrapping || isLoadingProfile) {
+    return <FullScreenLoader />;
+  }
+
+  if (tokens?.accessToken && !user) {
     return <FullScreenLoader />;
   }
 

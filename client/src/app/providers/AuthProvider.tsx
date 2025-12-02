@@ -89,7 +89,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     tokens,
     isAuthenticated: Boolean(tokens?.accessToken && user),
     isBootstrapping:
-      !bootstrapped || (Boolean(tokens?.accessToken) && isFetchingProfile),
+      !bootstrapped ||
+      (Boolean(tokens?.accessToken) && !user) ||
+      (Boolean(tokens?.accessToken) && isFetchingProfile),
     isLoadingProfile: isFetchingProfile,
     completeSignIn,
     logout,
