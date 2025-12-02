@@ -114,8 +114,10 @@ export default function AdminUsersPage() {
       hideInSearch: true,
       render: (_, record) => (
         <Space wrap>
-          {record.roles.map((role) => (
-            <Tag key={`${record.id}-${role.roleId}`}>{role.roleId}</Tag>
+          {record.roles.map((roleRef) => (
+            <Tag key={`${record.id}-${roleRef.role.id}`}>
+              {roleRef.role.title || roleRef.role.id}
+            </Tag>
           ))}
         </Space>
       ),

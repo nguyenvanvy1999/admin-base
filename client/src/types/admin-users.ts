@@ -16,7 +16,10 @@ export type AdminUserStatus = (typeof ADMIN_USER_STATUSES)[number];
 export type AdminLockoutReason = (typeof ADMIN_LOCKOUT_REASONS)[number];
 
 export interface AdminUserRoleRef {
-  roleId: string;
+  role: {
+    id: string;
+    title: string;
+  };
 }
 
 export interface AdminUserSummary {

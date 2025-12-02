@@ -204,7 +204,9 @@ export class AdminUserService {
           name: true,
           created: true,
           emailVerified: true,
-          roles: { select: { roleId: true } },
+          roles: {
+            select: { role: { select: { title: true, id: true } } },
+          },
         },
         skip,
         take,
@@ -236,7 +238,7 @@ export class AdminUserService {
         lockoutReason: true,
         passwordAttempt: true,
         passwordExpired: true,
-        roles: { select: { roleId: true } },
+        roles: { select: { role: { select: { title: true, id: true } } } },
       },
     });
 
@@ -244,7 +246,7 @@ export class AdminUserService {
       throw new NotFoundErr(ErrCode.UserNotFound);
     }
 
-    return user as typeof AdminUserDetailResDto.static;
+    return user;
   }
 
   async resetUserMfa(params: BaseUserActionParams): Promise<UserActionResult> {

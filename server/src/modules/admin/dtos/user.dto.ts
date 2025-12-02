@@ -27,7 +27,10 @@ const isoDateField = t.Date({ format: 'date-time' });
 
 const roleListDto = t.Array(
   t.Object({
-    roleId: t.String(),
+    role: t.Object({
+      title: t.String(),
+      id: t.String(),
+    }),
   }),
 );
 

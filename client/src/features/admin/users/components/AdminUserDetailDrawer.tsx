@@ -63,7 +63,7 @@ function mapDetailToFormValues(
   return {
     status: detail.status,
     name: detail.name,
-    roleIds: detail.roles.map((role) => role.roleId),
+    roleIds: detail.roles.map((roleRef) => roleRef.role.id),
     lockoutUntil: detail.lockoutUntil ? dayjs(detail.lockoutUntil) : null,
     lockoutReason: detail.lockoutReason,
     emailVerified: detail.emailVerified,
@@ -255,8 +255,10 @@ export function AdminUserDetailDrawer({
                   </ProDescriptions.Item>
                   <ProDescriptions.Item label={t('adminUsersPage.table.roles')}>
                     <Space wrap>
-                      {data.roles.map((role) => (
-                        <Tag key={role.roleId}>{role.roleId}</Tag>
+                      {data.roles.map((roleRef) => (
+                        <Tag key={roleRef.role.id}>
+                          {roleRef.role.title || roleRef.role.id}
+                        </Tag>
                       ))}
                     </Space>
                   </ProDescriptions.Item>
