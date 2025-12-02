@@ -130,7 +130,13 @@ export const AdminUserListQueryDto = t.Intersect([
       }),
     ),
     status: t.Optional(t.Enum(UserStatus)),
-    roleId: t.Optional(t.String({ minLength: 1 })),
+    roleIds: t.Optional(
+      t.Array(t.String(), {
+        minItems: 1,
+        maxItems: 25,
+        description: 'Filter by any of the provided role ids.',
+      }),
+    ),
   }),
 ]);
 

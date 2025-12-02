@@ -145,7 +145,7 @@ export class AdminUserService {
   }
 
   async listUsers(params: ListUsersParams) {
-    const { take = 20, skip = 0, email, search, status, roleId } = params;
+    const { take = 20, skip = 0, email, search, status, roleIds } = params;
 
     const whereClauses: Prisma.UserWhereInput[] = [];
     if (email) {
@@ -183,9 +183,10 @@ export class AdminUserService {
       whereClauses.push({ status });
     }
 
-    if (roleId) {
+    const normalizedRoleIds = this.normalizeRoleFilters(roleIds);
+    if (normalizedRoleIds.length > 0) {
       whereClauses.push({
-        roles: { some: { roleId: { equals: roleId } } },
+        roles: { some: { roleId: { in: normalizedRoleIds } } },
       });
     }
 
@@ -490,6 +491,15 @@ export class AdminUserService {
       return undefined;
     }
     return trimmed.slice(0, 512);
+  }
+
+  private normalizeRoleFilters(roleIds?: string[]): string[] {
+    const result = new Set<string>();
+    roleIds
+      ?.map((id) => id.trim())
+      .filter(Boolean)
+      .forEach((id) => result.add(id));
+    return Array.from(result);
   }
 }
 

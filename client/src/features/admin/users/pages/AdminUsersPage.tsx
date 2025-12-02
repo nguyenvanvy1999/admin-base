@@ -8,6 +8,7 @@ import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
 import { AdminUserCreateModal } from 'src/features/admin/users/components/AdminUserCreateModal';
 import { AdminUserDetailDrawer } from 'src/features/admin/users/components/AdminUserDetailDrawer';
+import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { adminUsersService } from 'src/services/api/admin-users.service';
 import {
@@ -21,7 +22,7 @@ type AdminUserTableParams = {
   pageSize?: number;
   search?: string;
   status?: AdminUserStatus;
-  roleId?: string;
+  roleIds?: string[];
 };
 
 function formatStatus(status: AdminUserStatus): string {
@@ -34,6 +35,7 @@ export default function AdminUsersPage() {
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('USER.UPDATE');
   const canManageMfa = hasPermission('USER.RESET_MFA');
+  const { data: adminRoles = [], isLoading: rolesLoading } = useAdminRoles();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
@@ -51,6 +53,15 @@ export default function AdminUsersPage() {
       {} as Record<string, { text: string }>,
     );
   }, []);
+
+  const roleOptions = useMemo(
+    () =>
+      adminRoles.map((role) => ({
+        label: role.title || role.id,
+        value: role.id,
+      })),
+    [adminRoles],
+  );
 
   const columns: ProColumns<AdminUserSummary>[] = [
     {
@@ -117,9 +128,18 @@ export default function AdminUsersPage() {
     },
     {
       title: t('adminUsersPage.table.filters.role'),
-      dataIndex: 'roleId',
+      dataIndex: 'roleIds',
       hideInTable: true,
-      valueType: 'text',
+      valueType: 'select',
+      fieldProps: {
+        mode: 'multiple',
+        allowClear: true,
+        showSearch: true,
+        placeholder: t('adminUsersPage.table.filters.role'),
+        optionFilterProp: 'label',
+        options: roleOptions,
+        loading: rolesLoading,
+      },
     },
     {
       title: t('adminUsersPage.table.actions'),
@@ -187,16 +207,19 @@ export default function AdminUsersPage() {
             current = 1,
             pageSize = 20,
             status,
-            roleId,
+            roleIds,
             search: searchParam,
           } = params;
           const take = pageSize;
           const skip = (current - 1) * pageSize;
+          const normalizedRoleIds =
+            roleIds?.map((id) => id.trim()).filter(Boolean) ?? [];
           const response = await adminUsersService.list({
             skip,
             take,
             status,
-            roleId: roleId?.trim() || undefined,
+            roleIds:
+              normalizedRoleIds.length > 0 ? normalizedRoleIds : undefined,
             search: searchParam?.trim() || undefined,
           });
           return {

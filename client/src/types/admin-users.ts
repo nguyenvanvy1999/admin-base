@@ -48,7 +48,7 @@ export interface AdminUserListQuery {
   email?: string;
   search?: string;
   status?: AdminUserStatus;
-  roleId?: string;
+  roleIds?: string[];
 }
 
 export interface AdminUserCreatePayload {

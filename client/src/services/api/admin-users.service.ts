@@ -22,8 +22,13 @@ export const adminUserKeys = {
 
 export const adminUsersService = {
   list(params?: AdminUserListQuery): Promise<AdminUserListResponse> {
+    const normalizedParams =
+      params && params.roleIds?.length
+        ? { ...params, roleIds: params.roleIds.join(',') }
+        : params;
+
     return apiClient.get<AdminUserListResponse>(ADMIN_USER_BASE_PATH, {
-      params,
+      params: normalizedParams,
     });
   },
 
