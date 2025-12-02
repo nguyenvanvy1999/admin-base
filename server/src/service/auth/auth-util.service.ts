@@ -15,7 +15,6 @@ import {
 } from 'src/service/misc/setting.service';
 import {
   ArrayUtil,
-  BadReqErr,
   DB_PREFIX,
   ErrCode,
   IdUtil,
@@ -24,6 +23,7 @@ import {
   LoginResType,
   type PrismaTx,
   type SecurityDeviceInsight,
+  UnAuthErr,
   type UPermission,
 } from 'src/share';
 import { timeStringToSeconds } from 'src/share/utils/time.util';
@@ -83,7 +83,7 @@ export class TokenService {
   ): Promise<JWTPayload & { data: ITokenPayload }> {
     const res = await this.verifyJwt(token);
     if (!res) {
-      throw new BadReqErr(ErrCode.InvalidToken);
+      throw new UnAuthErr(ErrCode.InvalidToken);
     }
     const data = EncryptService.aes256Decrypt<ITokenPayload>(res.data);
     return { ...res, data };
