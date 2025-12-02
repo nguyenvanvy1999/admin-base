@@ -1,7 +1,13 @@
 import { db, type IDb } from 'src/config/db';
 import type { RoleWhereInput } from 'src/generated';
 import type { RolePaginationDto, UpsertRoleDto } from 'src/modules/admin/dtos';
-import { ErrCode, type IIdsDto } from 'src/share';
+import {
+  BadReqErr,
+  ErrCode,
+  type IIdsDto,
+  NotFoundErr,
+  UnAuthErr,
+} from 'src/share';
 
 type ListParams = typeof RolePaginationDto.static;
 type UpsertParams = typeof UpsertRoleDto.static;
@@ -54,6 +60,7 @@ export class RoleService {
         id: true,
         title: true,
         description: true,
+        protected: true,
         enabled: true,
         permissions: { select: { permissionId: true } },
         players: { select: { playerId: true } },
@@ -65,6 +72,7 @@ export class RoleService {
       title: role.title,
       description: role.description,
       enabled: role.enabled,
+      protected: role.protected,
       permissionIds: role.permissions.map((p) => p.permissionId),
       playerIds: role.players.map((p) => p.playerId),
     }));
@@ -75,6 +83,16 @@ export class RoleService {
       params;
 
     if (id) {
+      const targetRole = await this.deps.db.role.findUnique({
+        where: { id },
+        select: { id: true, protected: true },
+      });
+      if (!targetRole) {
+        throw new NotFoundErr(ErrCode.ItemNotFound);
+      }
+      if (targetRole.protected) {
+        throw new UnAuthErr(ErrCode.PermissionDenied);
+      }
       await this.deps.db.role.update({
         where: { id },
         data: {
@@ -141,11 +159,18 @@ export class RoleService {
 
   async delete(params: IIdsDto): Promise<void> {
     const { ids } = params;
+    const protectedRoles = await this.deps.db.role.findMany({
+      where: { id: { in: ids }, protected: true },
+      select: { id: true },
+    });
+    if (protectedRoles.length > 0) {
+      throw new UnAuthErr(ErrCode.PermissionDenied);
+    }
     const existUserRole = await this.deps.db.rolePlayer.findFirst({
       where: { roleId: { in: ids } },
     });
     if (existUserRole) {
-      throw new Error(ErrCode.PermissionDenied);
+      throw new BadReqErr(ErrCode.ActionNotAllowed);
     }
 
     await this.deps.db.role.deleteMany({

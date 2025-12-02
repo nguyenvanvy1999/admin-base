@@ -4,7 +4,7 @@ import type { Setting } from 'src/generated';
 import type { UpdateSettingDto } from 'src/modules/admin/dtos';
 import { EncryptService } from 'src/service/auth/encrypt.service';
 import { settingService } from 'src/service/misc/setting.service';
-import { ErrCode, NotFoundErr } from 'src/share';
+import { BadReqErr, ErrCode, NotFoundErr } from 'src/share';
 
 type UpdateParams = typeof UpdateSettingDto.static & { id: string };
 
@@ -42,7 +42,7 @@ export class SettingAdminService {
       throw new NotFoundErr(ErrCode.ItemNotFound);
     }
     if (!this.deps.settingService.checkValue(value, setting.type)) {
-      throw new Error(ErrCode.BadRequest);
+      throw new BadReqErr(ErrCode.BadRequest);
     }
     const newValue = isSecret ? EncryptService.aes256Encrypt(value) : value;
     const updated = await this.deps.db.setting.update({

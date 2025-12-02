@@ -62,6 +62,7 @@ const updateUserSelect = {
   emailVerified: true,
   passwordAttempt: true,
   passwordExpired: true,
+  protected: true,
   roles: { select: { roleId: true } },
 } as const;
 
@@ -253,6 +254,9 @@ export class AdminUserService {
     const { targetUserId, actorId, reason } = params;
     const normalizedReason = this.normalizeReason(reason);
     const user = await this.ensureUserExists(targetUserId);
+    if (user.protected) {
+      throw new BadReqErr(ErrCode.PermissionDenied);
+    }
 
     await this.resetMfaState(targetUserId);
 
@@ -276,6 +280,9 @@ export class AdminUserService {
     const { targetUserId, actorId, reason } = params;
     const normalizedReason = this.normalizeReason(reason);
     const user = await this.ensureUserExists(targetUserId);
+    if (user.protected) {
+      throw new BadReqErr(ErrCode.PermissionDenied);
+    }
 
     await this.resetMfaState(targetUserId);
 
@@ -318,11 +325,14 @@ export class AdminUserService {
     if (!existingUser) {
       throw new NotFoundErr(ErrCode.UserNotFound);
     }
+    if (existingUser.protected) {
+      throw new BadReqErr(ErrCode.PermissionDenied);
+    }
 
     type UserSnapshot = typeof existingUser;
     type AssignableField = Exclude<
       keyof UserSnapshot,
-      'id' | 'roles' | 'status'
+      'id' | 'roles' | 'status' | 'protected'
     >;
 
     const updateData: Record<string, unknown> = {};
@@ -437,6 +447,7 @@ export class AdminUserService {
     id: string;
     status: UserStatus;
     mfaTotpEnabled: boolean | null;
+    protected: boolean;
   }> {
     const user = await this.deps.db.user.findUnique({
       where: { id: userId },
@@ -444,6 +455,7 @@ export class AdminUserService {
         id: true,
         status: true,
         mfaTotpEnabled: true,
+        protected: true,
       },
     });
 

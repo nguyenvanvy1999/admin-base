@@ -69,6 +69,7 @@ export class SeedService {
               id: role.id,
               title: role.title,
               description: role.description,
+              protected: true,
             })),
             skipDuplicates: true,
           });
@@ -279,10 +280,12 @@ export class SeedService {
             roleId: params.roleId,
           },
         },
+        protected: true,
       },
       update: {
         status: UserStatus.active,
         emailVerified: true,
+        protected: true,
         roles: {
           connectOrCreate: {
             where: {

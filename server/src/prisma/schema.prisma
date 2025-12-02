@@ -74,6 +74,7 @@ model User {
   id     String     @id
   email  String     @unique
   status UserStatus @default(inactive)
+  protected Boolean @default(false)
 
   password             String
   passwordExpired      DateTime? @default(now()) @map("password_expired")
@@ -178,6 +179,7 @@ model Role {
   id          String           @id
   title       String           @unique
   description String?
+  protected   Boolean          @default(false)
   enabled     Boolean          @default(true)
   permissions RolePermission[]
   players     RolePlayer[]
