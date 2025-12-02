@@ -13,7 +13,7 @@ import { PageContainer, ProLayout } from '@ant-design/pro-components';
 import { Button, Dropdown, Switch, Tooltip } from 'antd';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { LanguageSwitcher } from 'src/components/LanguageSwitcher';
 import { useAuth } from 'src/hooks/auth/useAuth';
 import { useThemeMode } from '../providers/ThemeModeProvider';
@@ -60,7 +60,6 @@ const ADMIN_SETTINGS_ROUTE: MenuDataItem = {
 
 export default function MainLayout() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { t, i18n: _ } = useTranslation();
   const { mode, setMode } = useThemeMode();
   const { user, logout } = useAuth();
@@ -181,24 +180,7 @@ export default function MainLayout() {
           style={{ height: '32px', marginRight: '8px' }}
         />
       }
-      menuHeaderRender={() => (
-        <Button
-          type="text"
-          onClick={() => navigate('/')}
-          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
-          <img src="/logo.svg" alt="Admin Portal" style={{ height: '24px' }} />
-          <span>{t('header.appName')}</span>
-        </Button>
-      )}
-      appList={[
-        {
-          title: t('sidebar.dashboard'),
-          icon: <HomeOutlined />,
-          desc: t('common.viewDetails'),
-          url: '/',
-        },
-      ]}
+      menuHeaderRender={() => null}
     >
       <PageContainer>
         <Outlet />

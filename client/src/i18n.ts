@@ -22,8 +22,8 @@ i18n
   .use(initReactI18next)
   .init({
     debug: !isProduction,
-    lng: 'vi',
-    fallbackLng: 'vi',
+    lng: 'en',
+    fallbackLng: 'en',
     defaultNS,
     resources,
     interpolation: {
