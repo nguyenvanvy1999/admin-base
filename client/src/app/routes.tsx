@@ -12,8 +12,14 @@ const AccessDeniedPage = lazy(() => import('./pages/AccessDeniedPage'));
 const AdminUsersPage = lazy(
   () => import('../features/admin/users/pages/AdminUsersPage'),
 );
+const AdminUserDetailPage = lazy(
+  () => import('../features/admin/users/pages/AdminUserDetailPage'),
+);
 const AdminRolesPage = lazy(
   () => import('../features/admin/roles/pages/AdminRolesPage'),
+);
+const AdminRoleDetailPage = lazy(
+  () => import('../features/admin/roles/pages/AdminRoleDetailPage'),
 );
 const AdminPermissionsPage = lazy(
   () => import('../features/admin/permissions/pages/AdminPermissionsPage'),
@@ -60,10 +66,26 @@ export function AppRoutes() {
           }
         />
         <Route
+          path="admin/users/:userId"
+          element={
+            <ProtectedRoute requiredPermissions={['USER.VIEW']}>
+              <AdminUserDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="admin/roles"
           element={
             <ProtectedRoute requiredPermissions={['ROLE.VIEW']}>
               <AdminRolesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/roles/:roleId"
+          element={
+            <ProtectedRoute requiredPermissions={['ROLE.VIEW']}>
+              <AdminRoleDetailPage />
             </ProtectedRoute>
           }
         />

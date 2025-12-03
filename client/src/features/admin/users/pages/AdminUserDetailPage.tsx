@@ -1,3 +1,4 @@
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import {
   ProDescriptions,
@@ -26,8 +27,14 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 import { AppAdminUserStatusSelect } from 'src/components/common/AppAdminUserStatusSelect';
-import { AppDrawer } from 'src/components/common/AppDrawer';
+import { AppPage } from 'src/components/common/AppPage';
 import { SessionsTable } from 'src/features/admin/sessions/components/SessionsTable';
 import { useSessionDateRange } from 'src/features/admin/sessions/hooks/useSessionDateRange';
 import { getSessionStatus } from 'src/features/admin/sessions/utils/sessionStatus';
@@ -51,16 +58,6 @@ import {
   type AdminUserDetail as AdminUserDetailType,
   type AdminUserStatus,
 } from 'src/types/admin-users';
-
-interface AdminUserDetailDrawerProps {
-  userId?: string | null;
-  open: boolean;
-  onClose: () => void;
-  canUpdate: boolean;
-  canManageMfa: boolean;
-  onActionCompleted?: () => void;
-  initialTab?: 'general' | 'security' | 'edit' | 'roles' | 'sessions';
-}
 
 interface AdminUserUpdateFormValues {
   status?: AdminUserStatus;
@@ -146,40 +143,44 @@ function getRoleExpiryMeta(expiresAt: string | null) {
   };
 }
 
-export function AdminUserDetailDrawer({
-  userId,
-  open,
-  onClose,
-  canUpdate,
-  canManageMfa,
-  onActionCompleted,
-  initialTab = 'general',
-}: AdminUserDetailDrawerProps) {
-  const [tabKey, setTabKey] = useState<
-    'general' | 'security' | 'edit' | 'roles' | 'sessions'
-  >(initialTab);
+export default function AdminUserDetailPage() {
+  const { userId } = useParams<{ userId: string }>();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const notify = useNotify();
   const modal = useModal();
 
-  const { data, isLoading } = useAdminUserDetail(userId ?? undefined, open);
+  const initialTab = (searchParams.get('tab') || 'general') as
+    | 'general'
+    | 'security'
+    | 'edit'
+    | 'roles'
+    | 'sessions';
+  const [tabKey, setTabKey] = useState<
+    'general' | 'security' | 'edit' | 'roles' | 'sessions'
+  >(initialTab);
+
+  const { hasPermission } = usePermissions();
+  const canUpdate = hasPermission('USER.UPDATE');
+  const canManageMfa = hasPermission('USER.RESET_MFA');
+
+  const { data, isLoading } = useAdminUserDetail(userId ?? undefined, true);
   const updateMutation = useUpdateAdminUser({
     onSuccess: () => {
-      onClose();
       notify.notification.success({
         title: t('adminUsersPage.update.success'),
       });
-      onActionCompleted?.();
+      navigate('/admin/users');
     },
   });
 
   const updateRolesMutation = useUpdateAdminUserRoles({
     onSuccess: () => {
-      onClose();
       notify.notification.success({
         title: t('adminUsersPage.update.rolesSuccess'),
       });
-      onActionCompleted?.();
+      navigate('/admin/users');
     },
   });
 
@@ -193,7 +194,6 @@ export function AdminUserDetailDrawer({
           auditId: auditLogId,
         }),
       });
-      onActionCompleted?.();
     },
   });
 
@@ -205,7 +205,6 @@ export function AdminUserDetailDrawer({
           auditId: auditLogId,
         }),
       });
-      onActionCompleted?.();
     },
   });
 
@@ -230,10 +229,11 @@ export function AdminUserDetailDrawer({
   }, [data]);
 
   useEffect(() => {
-    if (open) {
-      setTabKey(initialTab);
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setTabKey(tab as typeof tabKey);
     }
-  }, [initialTab, open]);
+  }, [searchParams]);
 
   const handleUpdate = async (values: AdminUserUpdateFormValues) => {
     if (!userId) {
@@ -307,12 +307,30 @@ export function AdminUserDetailDrawer({
     });
   };
 
+  const handleTabChange = (key: string) => {
+    setTabKey(key as typeof tabKey);
+    navigate(`/admin/users/${userId}?tab=${key}`, { replace: true });
+  };
+
   return (
-    <AppDrawer
-      open={open}
-      onClose={onClose}
+    <AppPage
       title={t('adminUsersPage.update.title')}
-      size={800}
+      breadcrumb={{
+        items: [
+          {
+            title: <Link to="/admin/users">{t('sidebar.adminUsers')}</Link>,
+          },
+          { title: data?.email ?? userId },
+        ],
+      }}
+      extra={
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate('/admin/users')}
+        >
+          {t('common.back')}
+        </Button>
+      }
     >
       {isLoading && <Skeleton active paragraph={{ rows: 6 }} />}
       {!isLoading && !data && (
@@ -321,7 +339,7 @@ export function AdminUserDetailDrawer({
       {!isLoading && data && (
         <Tabs
           activeKey={tabKey}
-          onChange={(key) => setTabKey(key as typeof tabKey)}
+          onChange={handleTabChange}
           items={[
             {
               key: 'general',
@@ -660,30 +678,16 @@ export function AdminUserDetailDrawer({
             {
               key: 'sessions',
               label: t('adminUsersPage.update.tabSessions'),
-              children: (
-                <UserSessionsTab
-                  userId={userId}
-                  open={tabKey === 'sessions' && open}
-                  onActionCompleted={onActionCompleted}
-                />
-              ),
+              children: <UserSessionsTab userId={userId} />,
             },
           ]}
         />
       )}
-    </AppDrawer>
+    </AppPage>
   );
 }
 
-function UserSessionsTab({
-  userId,
-  open,
-  onActionCompleted,
-}: {
-  userId?: string | null;
-  open: boolean;
-  onActionCompleted?: () => void;
-}) {
+function UserSessionsTab({ userId }: { userId?: string }) {
   const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const canRevokeAll = hasPermission('SESSION.REVOKE_ALL');
@@ -712,19 +716,12 @@ function UserSessionsTab({
     loadMore,
   } = useAdminSessions({
     initialParams: listParams,
-    autoLoad: false,
+    autoLoad: true,
   });
-
-  useEffect(() => {
-    if (open && userId) {
-      void reload();
-    }
-  }, [open, userId, reload]);
 
   const handleRevoke = async (session: AdminSession) => {
     await adminSessionsService.revoke([session.id]);
     await reload();
-    onActionCompleted?.();
   };
 
   const columns: ProColumns<AdminSession>[] = [

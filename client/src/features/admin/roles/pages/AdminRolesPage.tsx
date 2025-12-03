@@ -3,9 +3,9 @@ import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Modal, Space, Tag, Tooltip } from 'antd';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
-import { RoleDetailDrawer } from 'src/features/admin/roles/components/RoleDetailDrawer';
 import { RoleFormModal } from 'src/features/admin/roles/components/RoleFormModal';
 import { useUserSearchSelect } from 'src/features/admin/users/hooks/useUserSearchSelect';
 import { createUserSelectColumn } from 'src/features/admin/users/utils/userSelectColumn';
@@ -24,6 +24,7 @@ type AdminRoleTableParams = {
 
 export default function AdminRolesPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const notify = useNotify();
   const actionRef = useRef<ActionType | null>(null);
   const { hasPermission } = usePermissions();
@@ -35,11 +36,6 @@ export default function AdminRolesPage() {
   const [editingRole, setEditingRole] = useState<AdminRole | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingRole, setDeletingRole] = useState<AdminRole | null>(null);
-  const [detailRoleId, setDetailRoleId] = useState<string | null>(null);
-  const [detailTab, setDetailTab] = useState<
-    'general' | 'permissions' | 'players'
-  >('general');
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const upsertMutation = useUpsertRole({
     onSuccess: () => {
@@ -164,9 +160,7 @@ export default function AdminRolesPage() {
                 size="small"
                 icon={<EyeOutlined />}
                 onClick={() => {
-                  setDetailRoleId(record.id);
-                  setDetailTab('general');
-                  setDrawerOpen(true);
+                  navigate(`/admin/roles/${record.id}`);
                 }}
               />
             </Tooltip>
@@ -273,20 +267,6 @@ export default function AdminRolesPage() {
           </p>
         )}
       </Modal>
-
-      <RoleDetailDrawer
-        open={drawerOpen}
-        roleId={detailRoleId}
-        onClose={() => {
-          setDrawerOpen(false);
-          setDetailRoleId(null);
-          setDetailTab('general');
-        }}
-        onActionCompleted={() => {
-          actionRef.current?.reload();
-        }}
-        initialTab={detailTab}
-      />
     </AppPage>
   );
 }

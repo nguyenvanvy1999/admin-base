@@ -4,12 +4,12 @@ import { Button, Space, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { ADMIN_USER_STATUS_COLORS } from 'src/components/common/AppAdminUserStatusSelect';
 import { AppEnumMultiSelect } from 'src/components/common/AppEnumMultiSelect';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
 import { AdminUserCreateModal } from 'src/features/admin/users/components/AdminUserCreateModal';
-import { AdminUserDetailDrawer } from 'src/features/admin/users/components/AdminUserDetailDrawer';
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { adminUsersService } from 'src/services/api/admin-users.service';
@@ -33,18 +33,13 @@ function formatStatus(status: AdminUserStatus): string {
 
 export default function AdminUsersPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const actionRef = useRef<ActionType | null>(null);
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('USER.UPDATE');
-  const canManageMfa = hasPermission('USER.RESET_MFA');
   const { data: adminRoles = [], isLoading: rolesLoading } = useAdminRoles();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [detailUserId, setDetailUserId] = useState<string | null>(null);
-  const [detailTab, setDetailTab] = useState<'general' | 'security' | 'edit'>(
-    'general',
-  );
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const roleOptions = useMemo(
     () =>
@@ -266,9 +261,7 @@ export default function AdminUsersPage() {
               size="small"
               icon={<EyeOutlined />}
               onClick={() => {
-                setDetailUserId(record.id);
-                setDetailTab('general');
-                setDrawerOpen(true);
+                navigate(`/admin/users/${record.id}`);
               }}
             />
           </Tooltip>
@@ -279,9 +272,7 @@ export default function AdminUsersPage() {
                 size="small"
                 icon={<EditOutlined />}
                 onClick={() => {
-                  setDetailUserId(record.id);
-                  setDetailTab('edit');
-                  setDrawerOpen(true);
+                  navigate(`/admin/users/${record.id}?tab=edit`);
                 }}
               />
             </Tooltip>
@@ -293,12 +284,6 @@ export default function AdminUsersPage() {
 
   const handleReload = () => {
     actionRef.current?.reload();
-  };
-
-  const handleCloseDrawer = () => {
-    setDrawerOpen(false);
-    setDetailUserId(null);
-    setDetailTab('general');
   };
 
   return (
@@ -359,16 +344,6 @@ export default function AdminUsersPage() {
           setCreateModalOpen(false);
           handleReload();
         }}
-      />
-
-      <AdminUserDetailDrawer
-        open={drawerOpen}
-        userId={detailUserId}
-        canUpdate={canUpdate}
-        canManageMfa={canManageMfa}
-        onClose={handleCloseDrawer}
-        onActionCompleted={handleReload}
-        initialTab={detailTab}
       />
     </AppPage>
   );

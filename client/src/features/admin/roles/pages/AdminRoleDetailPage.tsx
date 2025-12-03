@@ -1,21 +1,20 @@
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import { ProDescriptions, ProTable } from '@ant-design/pro-components';
-import { Alert, Skeleton, Space, Tabs, Tag, Tooltip } from 'antd';
+import { Alert, Button, Skeleton, Space, Tabs, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppDrawer } from 'src/components/common/AppDrawer';
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
+import { AppPage } from 'src/components/common/AppPage';
 import { useAdminPermissions } from 'src/hooks/api/useAdminPermissions';
 import { useAdminRoleDetail } from 'src/hooks/api/useAdminRoles';
 import type { RolePlayerDetail } from 'src/types/admin-roles';
-
-interface RoleDetailDrawerProps {
-  roleId?: string | null;
-  open: boolean;
-  onClose: () => void;
-  onActionCompleted?: () => void;
-  initialTab?: 'general' | 'permissions' | 'players';
-}
 
 function getRoleExpiryMeta(expiresAt: string | null) {
   if (!expiresAt) {
@@ -61,17 +60,19 @@ function getRoleExpiryMeta(expiresAt: string | null) {
   };
 }
 
-export function RoleDetailDrawer({
-  roleId,
-  open,
-  onClose,
-  onActionCompleted,
-  initialTab = 'general',
-}: RoleDetailDrawerProps) {
+export default function AdminRoleDetailPage() {
+  const { roleId } = useParams<{ roleId: string }>();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const initialTab = (searchParams.get('tab') || 'general') as
+    | 'general'
+    | 'permissions'
+    | 'players';
   const [tabKey, setTabKey] = useState<'general' | 'permissions' | 'players'>(
     initialTab,
   );
-  const { t } = useTranslation();
 
   const { data, isLoading } = useAdminRoleDetail(roleId ?? undefined);
   const { data: allPermissions = [], isLoading: permissionsLoading } =
@@ -117,10 +118,16 @@ export function RoleDetailDrawer({
   }, [data]);
 
   useEffect(() => {
-    if (open) {
-      setTabKey(initialTab);
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setTabKey(tab as typeof tabKey);
     }
-  }, [initialTab, open]);
+  }, [searchParams]);
+
+  const handleTabChange = (key: string) => {
+    setTabKey(key as typeof tabKey);
+    navigate(`/admin/roles/${roleId}?tab=${key}`, { replace: true });
+  };
 
   const playerColumns: ProColumns<RolePlayerDetail>[] = [
     {
@@ -186,11 +193,24 @@ export function RoleDetailDrawer({
   ];
 
   return (
-    <AppDrawer
-      open={open}
-      onClose={onClose}
+    <AppPage
       title={t('adminRolesPage.detail.title')}
-      size={800}
+      breadcrumb={{
+        items: [
+          {
+            title: <Link to="/admin/roles">{t('sidebar.adminRoles')}</Link>,
+          },
+          { title: data?.title ?? roleId },
+        ],
+      }}
+      extra={
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate('/admin/roles')}
+        >
+          {t('common.back')}
+        </Button>
+      }
     >
       {isLoading && <Skeleton active paragraph={{ rows: 6 }} />}
       {!isLoading && !data && (
@@ -199,7 +219,7 @@ export function RoleDetailDrawer({
       {!isLoading && data && (
         <Tabs
           activeKey={tabKey}
-          onChange={(key) => setTabKey(key as typeof tabKey)}
+          onChange={handleTabChange}
           items={[
             {
               key: 'general',
@@ -311,6 +331,6 @@ export function RoleDetailDrawer({
           ]}
         />
       )}
-    </AppDrawer>
+    </AppPage>
   );
 }
