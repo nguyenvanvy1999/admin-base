@@ -1,6 +1,6 @@
 # Bắt Đầu Sử Dụng
 
-Hướng dẫn cài đặt và cấu hình dự án FinTrack.
+Hướng dẫn cài đặt và cấu hình dự án Admin Base.
 
 ## Prerequisites
 
@@ -40,7 +40,7 @@ cp .env.example .env
 Chỉnh sửa `.env` với thông tin của bạn:
 
 ```env
-POSTGRESQL_URI=postgresql://user:password@localhost:5432/investment
+POSTGRESQL_URI=postgresql://user:password@localhost:5432/admin_base
 JWT_SECRET=your-super-secret-jwt-key-here
 PORT=3000
 ```
@@ -48,7 +48,7 @@ PORT=3000
 ### Bước 4: Database Setup
 
 1. Đảm bảo PostgreSQL đang chạy
-2. Tạo database (ví dụ: `investment`)
+2. Tạo database (ví dụ: `admin_base`)
 3. Cập nhật `POSTGRESQL_URI` trong `.env`
 4. Chạy migrations:
 
@@ -114,12 +114,12 @@ bun start
 
 2. Tạo database:
    ```sql
-   CREATE DATABASE investment;
+   CREATE DATABASE admin_base;
    ```
 
 3. Cập nhật connection string trong `.env`:
    ```env
-   POSTGRESQL_URI=postgresql://username:password@localhost:5432/investment
+   POSTGRESQL_URI=postgresql://username:password@localhost:5432/admin_base
    ```
 
 #### Prisma Migrations
@@ -258,7 +258,7 @@ bun run db:generate
 ### Types Not Syncing
 
 1. Restart dev server
-2. Kiểm tra `@server` path alias trong `tsconfig.json`
+2. Kiểm tra `src` path alias trong `tsconfig.json`
 3. Verify Eden Treaty configuration
 
 ### Bun Not Found

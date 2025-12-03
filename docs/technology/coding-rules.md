@@ -1,6 +1,6 @@
 # Quy Tắc Code
 
-Tài liệu này mô tả các quy tắc và conventions bắt buộc khi phát triển dự án FinTrack.
+Tài liệu này mô tả các quy tắc và conventions bắt buộc khi phát triển dự án Admin Base.
 
 ## Quy Tắc Bắt Buộc
 
@@ -185,8 +185,10 @@ const isValid = await Bun.password.verify(password, hashed, "bcrypt");
 
 1. **Schema Management**: Tất cả models phải được định nghĩa trong `prisma/schema.prisma`
 2. **Migrations**:
-  - Tạo migration: `bun run db:migrate`
-  - Generate client: `bun run db:generate`
+
+- Tạo migration: `bun run db:migrate`
+- Generate client: `bun run db:generate`
+
 3. **Indexes**: Thêm indexes cho các trường thường query (userId, date, type, etc.)
 
 ## Testing

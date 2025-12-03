@@ -1,0 +1,13 @@
+[test]
+# Test configuration for Bun
+preload = ["test/preload.ts"]
+
+# Test timeout
+timeout = 30000
+
+# Test watch mode
+watch = true
+
+# [install.security]
+# scanner = "@socketsecurity/bun-security-scanner"
+

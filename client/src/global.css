@@ -1,0 +1,95 @@
+@import "./styles/tokens.css";
+
+:root {
+  color-scheme: light dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", sans-serif;
+  background-color: var(--app-bg);
+  color: var(--app-fg);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ant-layout {
+  min-height: 100vh;
+}
+
+.ant-pro-sider.ant-pro-sider-fixed {
+  inset-inline-start: 0;
+}
+
+.ant-pro-sider-logo {
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0b1221 0%, #14233d 50%, #1b3460 100%);
+}
+
+.login-page__wrapper {
+  min-height: 100vh;
+}
+
+.login-page__hero {
+  padding: 80px;
+  display: flex;
+  align-items: center;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.12), transparent 45%),
+    radial-gradient(
+      circle at bottom,
+      rgba(255, 255, 255, 0.08),
+      transparent 60%
+    );
+}
+
+.login-page__form {
+  background: var(--app-bg, #fff);
+  padding: 32px 16px;
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  .login-page__form {
+    padding: 24px 16px;
+  }
+}
+
+.login-page__form .ant-pro-form-login-container {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding-inline: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.login-page__form .ant-pro-form-login-main {
+  width: 100%;
+  max-width: 100%;
+  padding-inline: 0;
+}

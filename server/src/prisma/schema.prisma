@@ -1,0 +1,385 @@
+// ============================================
+// Generator & Datasource
+// ============================================
+
+generator client {
+  provider   = "prisma-client"
+  output     = "../generated/prisma"
+  engineType = "client"
+  runtime    = "bun"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// Enums
+// ============================================
+
+// Referral program status
+enum ReferralStatus {
+  active
+  inactive
+}
+
+// Proxy protocol
+enum ProxyProtocol {
+  http
+  https
+  socks4
+  socks5
+}
+
+// Data types for application settings
+enum SettingDataType {
+  string
+  number
+  boolean
+  date
+  json
+}
+
+enum UserStatus {
+  inactive
+  active
+  suspendded
+  banned
+}
+
+// Security event types for tracking authentication and security events
+enum SecurityEventType {
+  login_failed
+  password_changed
+  mfa_enabled
+  mfa_disabled
+  account_locked
+  suspicious_activity
+}
+
+// Account lockout reasons
+enum LockoutReason {
+  brute_force
+  suspicious_activity
+  admin_action
+  policy_violation
+}
+
+// ============================================
+// System/Auth Models
+// ============================================
+
+// Core user account with authentication and profile data
+model User {
+  id        String     @id
+  email     String     @unique
+  status    UserStatus @default(inactive)
+  protected Boolean    @default(false)
+
+  password             String
+  passwordExpired      DateTime? @default(now()) @map("password_expired")
+  passwordCreated      DateTime? @default(now()) @map("password_created")
+  passwordAttempt      Int       @default(0) @map("password_attempt")
+  lastPasswordChangeAt DateTime? @map("last_password_change_at")
+
+  name     String?
+  settings Json?
+
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+  lastLoginAt DateTime? @map("last_login_at")
+  refCode     String?   @unique @map("ref_code")
+
+  mfaTotpEnabled  Boolean @default(false) @map("mfa_totp_enabled")
+  totpSecret      String? @map("totp_secret")
+  backupCodes     String? @map("backup_codes")
+  backupCodesUsed String? @map("backup_codes_used")
+
+  // Email verification
+  emailVerified          Boolean @default(false) @map("email_verified")
+  emailVerificationToken String? @unique @map("email_verification_token")
+
+  // Account lockout
+  lockoutUntil  DateTime?      @map("lockout_until")
+  lockoutReason LockoutReason? @map("lockout_reason")
+
+  // Password reset
+  passwordResetToken          String?   @unique @map("password_reset_token")
+  passwordResetTokenExpiresAt DateTime? @map("password_reset_token_expires_at")
+
+  // Security tracking
+  lastFailedLoginAt       DateTime? @map("last_failed_login_at")
+  suspiciousActivityCount Int       @default(0) @map("suspicious_activity_count")
+
+  roles          RolePlayer[]
+  sessions       Session[]
+  referralMade   Referral?          @relation("UserReferrer")
+  referralsGot   Referral[]         @relation("UserReferred")
+  authProviders  UserAuthProvider[]
+  securityEvents SecurityEvent[]
+  ipWhitelist    UserIpWhitelist[]
+
+  pendingRef Int @default(0) @map("pending_ref")
+  activeRef  Int @default(0) @map("active_ref")
+
+  @@index([email], name: "user_email_idx")
+  @@map("users")
+}
+
+// Authentication provider configuration (Google, Telegram, etc.)
+model AuthProvider {
+  id          String  @id
+  name        String  @unique
+  code        String  @unique
+  description String?
+  config      Json?
+  enabled     Boolean @default(true)
+
+  usersAuth UserAuthProvider[]
+
+  created  DateTime @default(now())
+  modified DateTime @updatedAt()
+
+  @@map("auth_providers")
+}
+
+// Links users to their external authentication providers
+model UserAuthProvider {
+  id         String @id
+  providerId String @map("provider_id")
+  authUserId String @map("auth_user_id")
+
+  providerCode String       @map("provider_code")
+  provider     AuthProvider @relation(fields: [providerCode], references: [code], onDelete: Restrict)
+
+  modified   DateTime  @updatedAt()
+  created    DateTime  @default(now())
+  lastUsedAt DateTime? @map("last_used_at")
+
+  authUser User @relation(fields: [authUserId], references: [id], onDelete: Cascade)
+
+  @@unique([providerCode, providerId])
+  @@index([authUserId])
+  @@index([providerCode])
+  @@map("user_auth_providers")
+}
+
+// System permissions for RBAC
+model Permission {
+  id          String           @id
+  title       String           @unique
+  description String?
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+// User roles for access control
+model Role {
+  id          String           @id
+  title       String           @unique
+  description String?
+  protected   Boolean          @default(false)
+  enabled     Boolean          @default(true)
+  permissions RolePermission[]
+  players     RolePlayer[]
+  created     DateTime         @default(now())
+  modified    DateTime         @updatedAt
+
+  // Hierarchical roles
+  parentRoleId String? @map("parent_role_id")
+  parent       Role?   @relation("RoleHierarchy", fields: [parentRoleId], references: [id], onDelete: SetNull)
+  children     Role[]  @relation("RoleHierarchy")
+
+  @@index([parentRoleId], name: "role_parentRoleId_idx")
+  @@map("roles")
+}
+
+// Many-to-many relationship between roles and permissions
+model RolePermission {
+  id           String   @id @default(uuid(7))
+  roleId       String   @map("role_id")
+  permissionId String   @map("permission_id")
+  created      DateTime @default(now())
+  modified     DateTime @updatedAt
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId], name: "role_permission_unique")
+  @@index([roleId], name: "role_permission_roleId_idx")
+  @@index([permissionId], name: "role_permission_permissionId_idx")
+  @@map("role_permissions")
+}
+
+// Assigns roles to users
+model RolePlayer {
+  id          String   @id @default(uuid(7))
+  playerId    String   @map("player_id")
+  roleId      String   @map("role_id")
+  description String?
+  created     DateTime @default(now())
+  modified    DateTime @updatedAt
+
+  // Role expiration
+  expiresAt DateTime? @map("expires_at")
+
+  player User @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, playerId], name: "role_player_unique")
+  @@index([playerId], name: "role_player_playerId_idx")
+  @@index([roleId], name: "role_player_roleId_idx")
+  @@index([expiresAt], name: "role_player_expiresAt_idx")
+  @@map("role_players")
+}
+
+// User authentication sessions
+model Session {
+  id          String   @id
+  device      String
+  ip          String
+  token       String   @unique()
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById String   @map("created_by_id")
+  expired     DateTime
+  revoked     Boolean  @default(false)
+  modified    DateTime @updatedAt()
+  created     DateTime @default(now())
+
+  // Activity and device tracking
+  lastActivityAt    DateTime? @map("last_activity_at")
+  deviceFingerprint String?   @map("device_fingerprint")
+
+  @@index([createdById])
+  @@index([lastActivityAt], name: "session_lastActivityAt_idx")
+  @@map("sessions")
+}
+
+// Referral program tracking
+model Referral {
+  id         String         @id
+  referrerId String         @unique @map("referrer_id")
+  referredId String         @map("referred_id")
+  created    DateTime       @default(now())
+  status     ReferralStatus @default(inactive)
+
+  referrer User @relation("UserReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referred User @relation("UserReferred", fields: [referredId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId, referredId])
+  @@map("referrals")
+}
+
+// ============================================
+// System/Misc Models
+// ============================================
+
+// Internationalization translations
+model I18n {
+  id  String  @id
+  key String  @unique()
+  en  String?
+  vi  String?
+
+  @@index([key])
+  @@map("i18n")
+}
+
+// IP addresses allowed to access restricted resources
+model IPWhitelist {
+  id   String  @id
+  ip   String  @unique
+  note String?
+
+  @@index([ip])
+  @@map("ip_whitelist")
+}
+
+// Application configuration settings
+model Setting {
+  id          String  @id
+  key         String  @unique
+  value       String
+  description String?
+  isSecret    Boolean @default(false) @map("is_secret")
+
+  type SettingDataType @default(string)
+
+  @@index([key])
+  @@map("settings")
+}
+
+// Proxy server configurations for external connections
+model Proxy {
+  id       String        @id
+  protocol ProxyProtocol
+  host     String
+  port     Int
+  username String
+  password String
+  enabled  Boolean       @default(true)
+  modified DateTime      @updatedAt()
+  created  DateTime      @default(now())
+
+  @@unique([host, port, protocol, username, password])
+  @@map("proxies")
+}
+
+// Security event tracking for authentication and security operations
+model SecurityEvent {
+  id        String            @id
+  userId    String?           @map("user_id")
+  eventType SecurityEventType @map("event_type")
+  ip        String?
+  metadata  Json?
+  created   DateTime          @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId], name: "security_event_userId_idx")
+  @@index([eventType], name: "security_event_eventType_idx")
+  @@index([created], name: "security_event_created_idx")
+  @@map("security_events")
+}
+
+// Per-user IP whitelist for additional security
+model UserIpWhitelist {
+  id      String   @id
+  userId  String   @map("user_id")
+  ip      String
+  created DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ip], name: "user_ip_whitelist_unique")
+  @@index([userId], name: "user_ip_whitelist_userId_idx")
+  @@index([ip], name: "user_ip_whitelist_ip_idx")
+  @@map("user_ip_whitelist")
+}
+
+// Audit log
+model AuditLog {
+  id            BigInt   @id
+  payload       Json
+  level         String
+  logType       String   @map("log_type")
+  userId        String?  @map("user_id")
+  sessionId     String?  @map("session_id")
+  ip            String?
+  userAgent     String?  @map("user_agent")
+  requestId     String?  @map("request_id")
+  traceId       String?  @map("trace_id")
+  correlationId String?  @map("correlation_id")
+  occurredAt    DateTime @default(now()) @map("occurred_at")
+  created       DateTime @default(now())
+
+  @@index([created], map: "audit_log_created_idx")
+  @@index([level], map: "audit_log_level_idx")
+  @@index([logType], map: "audit_log_type_idx")
+  @@index([userId, occurredAt(sort: Desc)], map: "audit_log_user_id_occurred_at_idx")
+  @@index([sessionId, occurredAt(sort: Desc)], map: "audit_log_session_id_occurred_at_idx")
+  @@index([traceId], map: "audit_log_trace_id_idx")
+  @@index([correlationId], map: "audit_log_correlation_id_idx")
+  @@map("audit_logs")
+}

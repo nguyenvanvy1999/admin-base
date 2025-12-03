@@ -1,0 +1,547 @@
+{
+  "common": {
+    "search": "Tìm kiếm",
+    "enabled": "Đã kích hoạt",
+    "disabled": "Đã vô hiệu hóa",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "back": "Quay lại",
+    "viewDetails": "Xem chi tiết",
+    "empty": {
+      "noData": "Không có dữ liệu"
+    },
+    "pagination": {
+      "total": "Tổng {{total}} mục",
+      "totalSettings": "Tổng {{total}} settings",
+      "totalPermissions": "Tổng {{total}} permissions"
+    },
+    "table": {
+      "actions": "Thao tác",
+      "created": "Ngày tạo",
+      "status": "Trạng thái",
+      "filters": {
+        "search": "Tìm kiếm"
+      }
+    },
+    "actions": {
+      "view": "Chi tiết",
+      "edit": "Chỉnh sửa",
+      "delete": "Xóa",
+      "revoke": "Thu hồi"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Tổng quan",
+    "mySessions": "Phiên của tôi",
+    "adminSessions": "Quản lý session",
+    "adminUsers": "Quản lý user",
+    "adminRoles": "Quản lý role",
+    "adminPermissions": "Quản lý permission",
+    "adminSettings": "Quản lý settings"
+  },
+  "header": {
+    "appName": "Admin Portal",
+    "profile": "Hồ sơ",
+    "logout": "Đăng xuất"
+  },
+  "errors": {
+    "generic": "Hệ thống gặp lỗi. Vui lòng thử lại sau.",
+    "network": "Không thể kết nối tới máy chủ. Vui lòng thử lại sau.",
+    "unknown": "Đã xảy ra lỗi không xác định. Vui lòng thử lại.",
+    "internalError": "Hệ thống gặp sự cố bất ngờ. Vui lòng thử lại sau.",
+    "notFound": "Không tìm thấy tài nguyên yêu cầu.",
+    "badRequest": "Yêu cầu không hợp lệ. Vui lòng kiểm tra dữ liệu và thử lại.",
+    "validationError": "Một số trường không hợp lệ. Vui lòng kiểm tra và gửi lại.",
+    "itemNotFound": "Không tìm thấy mục bạn yêu cầu.",
+    "itemExists": "Mục này đã tồn tại. Hãy chọn giá trị khác.",
+    "mfaBroken": "Cấu hình MFA bị lỗi. Vui lòng thiết lập lại.",
+    "invalidOtp": "Mã xác thực không đúng. Vui lòng thử lại.",
+    "passwordNotMatch": "Mật khẩu không khớp với hệ thống.",
+    "passwordExpired": "Mật khẩu đã hết hạn. Vui lòng đặt lại.",
+    "passwordMaxAttempt": "Bạn đã vượt quá số lần nhập mật khẩu. Vui lòng chờ.",
+    "userNotFound": "Không tìm thấy tài khoản tương ứng.",
+    "userExisted": "Người dùng đã tồn tại. Vui lòng đăng nhập.",
+    "userNotActive": "Tài khoản chưa hoạt động. Liên hệ quản trị viên.",
+    "invalidToken": "Token không hợp lệ. Vui lòng yêu cầu token mới.",
+    "expiredToken": "Token đã hết hạn. Vui lòng yêu cầu token mới.",
+    "permissionDenied": "Bạn không có quyền thực hiện hành động này.",
+    "sessionExpired": "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.",
+    "invalidFile": "Tệp tải lên không được hỗ trợ.",
+    "importDataInvalid": "Dữ liệu import không hợp lệ. Hãy sửa file và thử lại.",
+    "oauthProviderNotFound": "Không nhận diện được nhà cung cấp OAuth.",
+    "googleAccountNotFound": "Không tìm thấy tài khoản Google.",
+    "invalidGoogleAccount": "Tài khoản Google không hợp lệ cho thao tác này.",
+    "invalidTelegramAccount": "Tài khoản Telegram không hợp lệ.",
+    "telegramAccountWasLinked": "Tài khoản Telegram đã được liên kết.",
+    "mfaHasBeenSetup": "MFA đã được cấu hình cho tài khoản này.",
+    "mfaNotEnabled": "MFA chưa được bật. Vui lòng thiết lập trước.",
+    "invalidBackupCode": "Mã dự phòng không đúng hoặc đã dùng.",
+    "backupCodeAlreadyUsed": "Mã dự phòng này đã được sử dụng.",
+    "invalidAmount": "Số tiền không hợp lệ.",
+    "actionNotAllowed": "Không thể thực hiện hành động này.",
+    "suspiciousLoginBlocked": "Đăng nhập đáng ngờ đã bị chặn để bảo vệ tài khoản.",
+    "tooManyAttempts": "Bạn thao tác quá nhiều. Vui lòng thử lại sau."
+  },
+  "auth": {
+    "hero": {
+      "title": "Admin Portal",
+      "subtitle": "Kiến trúc bảo mật đa lớp cho đội ngũ vận hành.",
+      "items": {
+        "security": "Chuẩn bảo mật OWASP & SOC2",
+        "audit": "Giám sát mọi phiên đặc quyền theo thời gian thực",
+        "mfa": "MFA & backup code sẵn sàng"
+      }
+    },
+    "login": {
+      "title": "Đăng nhập an toàn",
+      "subtitle": "Dùng thông tin nội bộ để truy cập bảng điều khiển.",
+      "email": "Email công việc",
+      "emailPlaceholder": "admin@company.com",
+      "emailRequired": "Vui lòng nhập email",
+      "emailInvalid": "Email không hợp lệ",
+      "password": "Mật khẩu",
+      "passwordPlaceholder": "Nhập mật khẩu",
+      "passwordRequired": "Vui lòng nhập mật khẩu",
+      "passwordMin": "Mật khẩu tối thiểu 6 ký tự",
+      "cta": "Tiếp tục",
+      "needAccount": "Chưa có tài khoản?",
+      "gotoRegister": "Đăng ký ngay",
+      "successTitle": "Đăng nhập thành công",
+      "successSubtitle": "Đang chuyển hướng..."
+    },
+    "register": {
+      "title": "Tạo tài khoản cho workspace",
+      "subtitle": "Sử dụng email công việc và mật khẩu mạnh để bắt đầu.",
+      "email": "Email công việc",
+      "emailPlaceholder": "ban@congty.com",
+      "emailRequired": "Vui lòng nhập email",
+      "emailInvalid": "Email không hợp lệ",
+      "password": "Mật khẩu",
+      "passwordPlaceholder": "Tạo mật khẩu",
+      "passwordRequired": "Vui lòng nhập mật khẩu",
+      "passwordRule": "Mật khẩu phải dài 8-128 ký tự",
+      "cta": "Đăng ký",
+      "haveAccount": "Đã có tài khoản?",
+      "gotoLogin": "Quay về đăng nhập",
+      "rateLimited": "Bạn thao tác quá nhanh. Vui lòng thử lại sau {{seconds}}s.",
+      "successToast": "Đăng ký thành công. Vui lòng đăng nhập.",
+      "otpTitle": "Xác minh email",
+      "otpSubtitle": "Nhập mã 6 chữ số đã gửi tới {{email}}.",
+      "otpLabel": "Mã xác minh",
+      "otpRequired": "Vui lòng nhập mã OTP",
+      "otpInvalid": "OTP phải gồm 6 chữ số",
+      "otpCta": "Xác nhận & tiếp tục",
+      "otpResend": "Gửi lại OTP",
+      "otpResendCountdown": "Gửi lại sau {{seconds}}s",
+      "otpLimitReached": "Bạn đã đạt giới hạn gửi lại OTP. Hãy thử lại sau.",
+      "backToCredentials": "Chỉnh sửa email & mật khẩu"
+    },
+    "mfa": {
+      "title": "Xác thực đa yếu tố",
+      "subtitle": "Nhập mã OTP từ ứng dụng xác thực.",
+      "codeLabel": "Mã xác thực",
+      "codeRequired": "Vui lòng nhập mã OTP",
+      "codeInvalid": "Mã OTP không hợp lệ",
+      "cta": "Xác nhận",
+      "useBackup": "Dùng mã dự phòng",
+      "locked": "Bạn đã nhập sai quá nhiều lần. Vui lòng chờ hoặc đăng nhập lại."
+    },
+    "backup": {
+      "title": "Sử dụng mã dự phòng",
+      "subtitle": "Nhập một mã dự phòng để tiếp tục.",
+      "codeLabel": "Mã dự phòng",
+      "placeholder": "Nhập mã dự phòng",
+      "codeRequired": "Vui lòng nhập mã dự phòng",
+      "codeInvalid": "Mã dự phòng phải có 8 ký tự",
+      "cta": "Xác nhận",
+      "useOtp": "Quay lại OTP",
+      "locked": "Bạn đã dùng sai quá nhiều lần. Hãy quay lại OTP hoặc đăng nhập lại."
+    },
+    "setup": {
+      "title": "Bắt buộc bật bảo vệ MFA",
+      "subtitle": "Cần cấu hình ứng dụng xác thực trước khi vào hệ thống.",
+      "requestCta": "Sinh QR/secret",
+      "requestHint": "Nếu vừa tải lại trang, hãy sinh secret mới để tiếp tục.",
+      "scanTitle": "Quét mã QR",
+      "scanSubtitle": "Thêm vào Google Authenticator, 1Password, Authy hoặc ứng dụng TOTP bất kỳ.",
+      "copyHint": "Không quét được? Sao chép secret trên và nhập thủ công.",
+      "otpLabel": "Nhập OTP từ ứng dụng",
+      "otpRequired": "Vui lòng nhập OTP",
+      "otpInvalid": "OTP phải gồm 6 chữ số",
+      "confirmCta": "Xác nhận & tiếp tục",
+      "backupHint": "Sau khi xác nhận, bạn cần nhập thêm OTP (hoặc mã dự phòng) để hoàn tất đăng nhập."
+    }
+  },
+  "dashboard": {
+    "health": {
+      "overviewTitle": "Tình trạng hệ thống",
+      "overviewDescription": "Theo dõi trạng thái hạ tầng cốt lõi theo thời gian thực để phản ứng kịp thời.",
+      "statusLabel": "Trạng thái tổng thể",
+      "statusOk": "Hoạt động ổn định",
+      "statusError": "Cần kiểm tra",
+      "refresh": "Làm mới",
+      "loading": "Đang kiểm tra health check...",
+      "error": "Không thể tải trạng thái health. Thử lại sau.",
+      "componentsTitle": "Từng thành phần",
+      "noDetails": "Chưa nhận được số liệu chi tiết.",
+      "componentOk": "Hoạt động bình thường",
+      "componentNoData": "Chưa có số liệu",
+      "componentErrorTitle": "Thành phần gặp lỗi",
+      "components": {
+        "memory": "Bộ nhớ",
+        "redis": "Redis",
+        "db": "CSDL",
+        "disk": "Ổ đĩa"
+      },
+      "componentDescriptions": {
+        "memory": "Dung lượng sử dụng và khả dụng trên máy chủ.",
+        "redis": "Khả năng kết nối và thao tác đọc/ghi.",
+        "db": "Kết nối và độ trễ tới cơ sở dữ liệu chính.",
+        "disk": "Mức sử dụng ổ đĩa của volume chính."
+      }
+    }
+  },
+  "mySessionsPage": {
+    "notice": "Nếu phát hiện đăng nhập lạ, hãy thu hồi phiên tương ứng hoặc đăng xuất khỏi tất cả thiết bị.",
+    "currentDevice": "Thiết bị hiện tại",
+    "actions": {
+      "revoke": "Thu hồi",
+      "revokeConfirmTitle": "Xác nhận thu hồi phiên",
+      "revokeCurrentConfirm": "Phiên hiện tại sẽ bị thu hồi và bạn sẽ bị đăng xuất khỏi hệ thống.",
+      "revokeOtherConfirm": "Phiên này sẽ bị thu hồi. Tiếp tục?",
+      "logoutCurrent": "Đăng xuất thiết bị hiện tại",
+      "logoutAll": "Đăng xuất khỏi tất cả thiết bị",
+      "logoutAllConfirmTitle": "Xác nhận đăng xuất khỏi tất cả thiết bị",
+      "logoutAllConfirm": "Bạn sẽ bị đăng xuất khỏi tất cả thiết bị, bao gồm cả thiết bị hiện tại.",
+      "loadMore": "Tải thêm phiên"
+    }
+  },
+  "accessDeniedPage": {
+    "title": "Bạn không có quyền truy cập",
+    "subtitle": "Vui lòng liên hệ quản trị viên để được cấp quyền phù hợp.",
+    "backHome": "Về trang chủ"
+  },
+  "adminUsersPage": {
+    "table": {
+      "email": "Email",
+      "name": "Tên hiển thị",
+      "roles": "Roles",
+      "rolesWithExpiry": "Roles & Hạn dùng",
+      "emailVerified": "Xác thực email",
+      "sessions": "Sessions",
+      "filters": {
+        "keyword": "Email hoặc tên hiển thị",
+        "status": "Trạng thái",
+        "role": "Role"
+      }
+    },
+    "sessionStats": {
+      "total": "Tổng",
+      "active": "Đang hoạt động",
+      "revoked": "Đã thu hồi",
+      "expired": "Đã hết hạn"
+    },
+    "create": {
+      "button": "Tạo user",
+      "title": "Tạo mới admin user",
+      "success": "Tạo user thành công",
+      "auditLog": "Mã audit: {{auditId}}"
+    },
+    "update": {
+      "title": "Cập nhật user",
+      "success": "Đã cập nhật user thành công",
+      "rolesSuccess": "Đã cập nhật roles cho user thành công",
+      "tabGeneral": "Thông tin",
+      "tabSecurity": "Bảo mật",
+      "tabEdit": "Chỉnh sửa",
+      "tabRoles": "Roles",
+      "tabSessions": "Sessions",
+      "mfaResetSuccess": "Đã reset MFA",
+      "mfaDisableSuccess": "Đã vô hiệu hóa MFA"
+    },
+    "detail": {
+      "email": "Email",
+      "status": "Trạng thái",
+      "name": "Tên hiển thị",
+      "baseCurrency": "Tiền tệ gốc",
+      "emailVerified": "Email đã xác thực",
+      "created": "Ngày tạo",
+      "modified": "Cập nhật",
+      "lockoutUntil": "Khóa tới",
+      "lockoutReason": "Lý do khóa",
+      "passwordAttempt": "Số lần sai mật khẩu",
+      "passwordExpired": "Hết hạn mật khẩu"
+    },
+    "statuses": {
+      "inactive": "Không hoạt động",
+      "active": "Đang hoạt động",
+      "suspendded": "Tạm khóa",
+      "banned": "Cấm vĩnh viễn"
+    },
+    "roleExpiry": {
+      "noExpiry": "Không hết hạn",
+      "activeUntil": "Còn hạn đến {{date}}",
+      "soonExpire": "Sắp hết hạn {{date}}",
+      "expiredAt": "Đã hết hạn {{date}}",
+      "tooltipRole": "Role",
+      "tooltipStatus": "Trạng thái",
+      "tooltipExpiry": "Ngày hết hạn"
+    },
+    "form": {
+      "email": "Email",
+      "password": "Mật khẩu",
+      "name": "Tên hiển thị",
+      "roles": "Danh sách role",
+      "rolesRequired": "Vui lòng chọn ít nhất một role",
+      "rolesPlaceholder": "Chọn roles",
+      "roleExpiresAt": "Thời điểm hết hạn role (tùy chọn)",
+      "baseCurrency": "Tiền tệ gốc",
+      "status": "Trạng thái",
+      "emailVerified": "Đã xác thực email",
+      "lockoutUntil": "Khóa tới thời điểm",
+      "lockoutReason": "Lý do khóa",
+      "passwordAttempt": "Số lần sai mật khẩu",
+      "passwordExpired": "Thời điểm hết hạn mật khẩu",
+      "reason": "Reason ghi log",
+      "reasonRequired": "Vui lòng nhập reason để ghi log",
+      "mfaReasonPlaceholder": "Nhập lý do để ghi vào audit log"
+    },
+    "actions": {
+      "resetMfa": "Reset MFA",
+      "disableMfa": "Disable MFA",
+      "submit": "Lưu thay đổi"
+    }
+  },
+  "adminRolesPage": {
+    "users": {
+      "tooltip": "Users: tổng {{total}}, đang hoạt động {{active}}, đã hết hạn {{expired}}",
+      "total": "Tổng",
+      "active": "Đang hoạt động",
+      "expired": "Đã hết hạn"
+    },
+    "detail": {
+      "title": "Chi tiết role",
+      "tabGeneral": "Thông tin",
+      "tabPermissions": "Permissions",
+      "tabPlayers": "Players"
+    },
+    "players": {
+      "table": {
+        "email": "Email",
+        "expiresAt": "Ngày hết hạn"
+      }
+    },
+    "table": {
+      "title": "Tên role",
+      "description": "Mô tả",
+      "permissions": "Số permissions",
+      "users": "Số users",
+      "enabled": "Kích hoạt",
+      "filters": {
+        "user": "Lọc theo user"
+      }
+    },
+    "create": {
+      "button": "Tạo role",
+      "title": "Tạo mới role"
+    },
+    "update": {
+      "title": "Chỉnh sửa role"
+    },
+    "upsert": {
+      "success": "Đã lưu role thành công"
+    },
+    "delete": {
+      "title": "Xác nhận xóa role",
+      "message": "Bạn có chắc chắn muốn xóa role này? Role sẽ không thể xóa nếu còn user đang sử dụng.",
+      "confirm": "Xóa",
+      "success": "Đã xóa role thành công"
+    },
+    "form": {
+      "title": "Tên role",
+      "titleRequired": "Vui lòng nhập tên role",
+      "titleMin": "Tên role phải có ít nhất 3 ký tự",
+      "titlePlaceholder": "Nhập tên role",
+      "description": "Mô tả",
+      "descriptionPlaceholder": "Nhập mô tả (tùy chọn)",
+      "enabled": "Kích hoạt",
+      "permissions": "Danh sách permissions",
+      "permissionsRequired": "Vui lòng chọn ít nhất một permission",
+      "permissionsMin": "Phải chọn ít nhất một permission",
+      "permissionsPlaceholder": "Chọn permissions",
+      "users": "Danh sách users",
+      "usersPlaceholder": "Chọn users (tùy chọn)",
+      "tabs": {
+        "general": "Thông tin chung",
+        "permissions": "Permissions",
+        "users": "Users"
+      }
+    },
+    "actions": {
+      "delete": "Xóa"
+    }
+  },
+  "adminPermissionsPage": {
+    "table": {
+      "title": "Tên permission",
+      "description": "Mô tả",
+      "category": "Danh mục",
+      "action": "Hành động",
+      "filters": {
+        "category": "Lọc theo danh mục"
+      }
+    },
+    "info": {
+      "note": "Lưu ý: Permissions được tạo tự động từ backend khi seed database. FE không thể tạo/sửa/xóa permissions trực tiếp."
+    },
+    "categories": {
+      "ROLE": "Quản lý Role",
+      "USER": "Quản lý User",
+      "SESSION": "Quản lý Session",
+      "SETTING": "Cấu hình",
+      "I18N": "Đa ngôn ngữ",
+      "IPWHITELIST": "Danh sách IP trắng",
+      "TELE_BOT": "Telegram Bot",
+      "TELE_CHAT": "Telegram Chat",
+      "TELE_TEMPLATE": "Telegram Template",
+      "API_KEY": "API Key",
+      "ACTIVITY": "Hoạt động",
+      "CHAT_THREAD": "Luồng chat",
+      "FILE": "File"
+    },
+    "actions": {
+      "VIEW": "Xem",
+      "VIEW_ALL": "Xem tất cả",
+      "CREATE": "Tạo mới",
+      "UPDATE": "Cập nhật",
+      "UPDATE_ALL": "Cập nhật tất cả",
+      "DELETE": "Xóa",
+      "DELETE_ALL": "Xóa tất cả",
+      "REVOKE": "Thu hồi",
+      "REVOKE_ALL": "Thu hồi tất cả",
+      "RESET_MFA": "Reset MFA",
+      "MANAGE": "Quản lý",
+      "UPLOAD": "Tải lên",
+      "SEND": "Gửi"
+    },
+    "descriptions": {
+      "ROLE.VIEW": "Xem danh sách và chi tiết roles",
+      "ROLE.UPDATE": "Tạo mới và cập nhật roles",
+      "ROLE.DELETE": "Xóa roles",
+      "USER.VIEW": "Xem danh sách và chi tiết users",
+      "USER.UPDATE": "Tạo mới và cập nhật users",
+      "USER.RESET_MFA": "Reset MFA cho users",
+      "SESSION.VIEW": "Xem sessions của chính mình",
+      "SESSION.VIEW_ALL": "Xem tất cả sessions trong hệ thống",
+      "SESSION.REVOKE": "Thu hồi sessions của chính mình",
+      "SESSION.REVOKE_ALL": "Thu hồi tất cả sessions",
+      "SETTING.VIEW": "Xem cấu hình hệ thống",
+      "SETTING.UPDATE": "Cập nhật cấu hình hệ thống",
+      "I18N.VIEW": "Xem bản dịch đa ngôn ngữ",
+      "I18N.UPDATE": "Cập nhật bản dịch đa ngôn ngữ",
+      "I18N.DELETE": "Xóa bản dịch đa ngôn ngữ",
+      "IPWHITELIST.VIEW": "Xem danh sách IP trắng",
+      "IPWHITELIST.CREATE": "Thêm IP vào danh sách trắng",
+      "IPWHITELIST.DELETE": "Xóa IP khỏi danh sách trắng",
+      "API_KEY.VIEW": "Xem API keys của chính mình",
+      "API_KEY.VIEW_ALL": "Xem tất cả API keys",
+      "API_KEY.UPDATE": "Cập nhật API keys của chính mình",
+      "API_KEY.UPDATE_ALL": "Cập nhật tất cả API keys",
+      "API_KEY.DELETE": "Xóa API keys của chính mình",
+      "API_KEY.DELETE_ALL": "Xóa tất cả API keys",
+      "ACTIVITY.VIEW": "Xem hoạt động của chính mình",
+      "ACTIVITY.VIEW_ALL": "Xem tất cả hoạt động",
+      "CHAT_THREAD.VIEW": "Xem luồng chat",
+      "CHAT_THREAD.MANAGE": "Quản lý luồng chat",
+      "FILE.UPLOAD": "Tải file lên hệ thống",
+      "TELE_BOT.VIEW": "Xem Telegram bots",
+      "TELE_BOT.UPDATE": "Cập nhật Telegram bots",
+      "TELE_BOT.DELETE": "Xóa Telegram bots",
+      "TELE_CHAT.VIEW": "Xem Telegram chats",
+      "TELE_CHAT.UPDATE": "Cập nhật Telegram chats",
+      "TELE_CHAT.DELETE": "Xóa Telegram chats",
+      "TELE_TEMPLATE.VIEW": "Xem Telegram templates",
+      "TELE_TEMPLATE.UPDATE": "Cập nhật Telegram templates",
+      "TELE_TEMPLATE.DELETE": "Xóa Telegram templates",
+      "TELE_TEMPLATE.SEND": "Gửi Telegram templates"
+    }
+  },
+  "adminSettingsPage": {
+    "secret": "Secret",
+    "tabs": {
+      "all": "Tất cả"
+    },
+    "categories": {
+      "security": "Bảo mật",
+      "rateLimit": "Rate Limiting",
+      "system": "Hệ thống",
+      "other": "Khác"
+    },
+    "types": {
+      "string": "Chuỗi",
+      "number": "Số",
+      "boolean": "Boolean",
+      "date": "Ngày giờ",
+      "json": "JSON"
+    },
+    "table": {
+      "key": "Key",
+      "description": "Mô tả",
+      "type": "Kiểu",
+      "value": "Giá trị",
+      "isSecret": "Secret",
+      "category": "Danh mục",
+      "filters": {
+        "category": "Lọc theo danh mục"
+      }
+    },
+    "info": {},
+    "update": {
+      "title": "Cập nhật setting"
+    },
+    "form": {
+      "value": "Giá trị",
+      "valueRequired": "Vui lòng nhập giá trị",
+      "description": "Mô tả",
+      "descriptionPlaceholder": "Nhập mô tả cho setting này",
+      "isSecret": "Đánh dấu là Secret",
+      "secretWarning": "Giá trị hiện tại đã được ẩn vì lý do bảo mật. Vui lòng nhập giá trị mới nếu muốn thay đổi.",
+      "secretPlaceholder": "Nhập giá trị mới (giá trị cũ đã được ẩn vì lý do bảo mật)",
+      "jsonPlaceholder": "Nhập JSON hợp lệ, ví dụ: {\"key\": \"value\"}",
+      "jsonInvalid": "Giá trị phải là JSON hợp lệ"
+    }
+  },
+  "adminSessionsPage": {
+    "title": "Quản lý sessions",
+    "subtitle": "Theo dõi và thu hồi các phiên đăng nhập trong hệ thống.",
+    "status": {
+      "active": "Đang hoạt động",
+      "revoked": "Đã thu hồi",
+      "expired": "Đã hết hạn"
+    },
+    "table": {
+      "expired": "Hết hạn",
+      "device": "Thiết bị",
+      "userId": "User ID",
+      "ip": "Địa chỉ IP"
+    },
+    "filters": {
+      "ip": "Địa chỉ IP",
+      "users": "User",
+      "status": {
+        "all": "Tất cả trạng thái",
+        "active": "Chỉ đang hoạt động",
+        "revoked": "Chỉ đã thu hồi"
+      }
+    },
+    "actions": {
+      "revokeConfirmTitle": "Xác nhận thu hồi session",
+      "revokeConfirm": "Session này sẽ bị thu hồi. Tiếp tục?",
+      "revokeSelected": "Thu hồi đã chọn ({{count}})",
+      "revokeSelectedConfirmTitle": "Xác nhận thu hồi nhiều sessions",
+      "revokeSelectedConfirm": "{{count}} session(s) sẽ bị thu hồi. Tiếp tục?",
+      "loadMore": "Tải thêm session"
+    },
+    "onlyOneSessionNotice": "Hệ thống đang bật chế độ chỉ cho phép một phiên đăng nhập hoạt động cho mỗi user. Khi user đăng nhập từ thiết bị mới, các phiên cũ sẽ tự động bị đăng xuất."
+  }
+}

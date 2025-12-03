@@ -1,155 +1,155 @@
 # Tech Stack
 
-Tài liệu này mô tả chi tiết các công nghệ và công cụ được sử dụng trong dự án FinTrack.
+Tài liệu này mô tả chi tiết các công nghệ và công cụ được sử dụng trong dự án Admin Base.
 
 ## Tổng Quan
 
-FinTrack được xây dựng với stack công nghệ hiện đại, tập trung vào performance, type safety và developer experience.
+Admin Base được xây dựng với stack công nghệ hiện đại, tập trung vào performance, type safety và developer experience.
 
 ## Backend
 
 ### Runtime
 
 - **Bun** - JavaScript runtime nhanh, thay thế Node.js
-  - Hot reload tự động
-  - Built-in bundler và package manager
-  - Native TypeScript support
-  - Tích hợp sẵn các APIs (SQLite, WebSocket, etc.)
+    - Hot reload tự động
+    - Built-in bundler và package manager
+    - Native TypeScript support
+    - Tích hợp sẵn các APIs (SQLite, WebSocket, etc.)
 
 ### Framework
 
 - **Elysia.js** - High-performance TypeScript web framework
-  - Type-safe routing và validation
-  - Macro system cho custom functionality
-  - Auto-generated Swagger documentation
-  - Eden Treaty cho end-to-end type safety
+    - Type-safe routing và validation
+    - Macro system cho custom functionality
+    - Auto-generated Swagger documentation
+    - Eden Treaty cho end-to-end type safety
 
 ### Database
 
 - **PostgreSQL** - Relational database
-  - ACID compliance
-  - JSON support cho flexible data
-  - Full-text search capabilities
+    - ACID compliance
+    - JSON support cho flexible data
+    - Full-text search capabilities
 
 - **Prisma ORM** - Type-safe ORM
-  - Auto-generated TypeScript types
-  - Migration management
-  - Query builder với type safety
-  - Database introspection
+    - Auto-generated TypeScript types
+    - Migration management
+    - Query builder với type safety
+    - Database introspection
 
 ### Authentication
 
 - **JWT (jsonwebtoken)** - Token-based authentication
-  - Stateless authentication
-  - Macro-based route protection
-  - Role-based access control
+    - Stateless authentication
+    - Macro-based route protection
+    - Role-based access control
 
 ### Logging
 
 - **Logtape** - Structured logging với file rotation
-  - Multiple log levels
-  - File rotation để quản lý disk space
-  - Structured output cho easy parsing
+    - Multiple log levels
+    - File rotation để quản lý disk space
+    - Structured output cho easy parsing
 
 ## Frontend
 
 ### Framework & Library
 
 - **React 19** - UI library
-  - Component-based architecture
-  - Hooks API
-  - Server Components support (tương lai)
+    - Component-based architecture
+    - Hooks API
+    - Server Components support (tương lai)
 
 ### UI Components
 
 - **Mantine UI v8** - Modern React component library
-  - Comprehensive component set
-  - Built-in theming và dark mode
-  - Accessibility support
-  - Form components với validation
+    - Comprehensive component set
+    - Built-in theming và dark mode
+    - Accessibility support
+    - Form components với validation
 
 - **Tailwind CSS v4** - Utility-first CSS framework
-  - Rapid UI development
-  - Responsive design utilities
-  - Custom design system integration
+    - Rapid UI development
+    - Responsive design utilities
+    - Custom design system integration
 
 ### State Management
 
 - **Zustand** - Lightweight global state management
-  - Simple API
-  - Minimal boilerplate
-  - Used for: user state, theme preferences
+    - Simple API
+    - Minimal boilerplate
+    - Used for: user state, theme preferences
 
 - **TanStack Query** - Powerful server state management
-  - Automatic caching và synchronization
-  - Background refetching
-  - Optimistic updates
-  - Used for: all API data
+    - Automatic caching và synchronization
+    - Background refetching
+    - Optimistic updates
+    - Used for: all API data
 
 ### Forms & Tables
 
 - **TanStack Form** - Type-safe form management
-  - Validation với Zod
-  - Field-level error handling
-  - Form state management
+    - Validation với Zod
+    - Field-level error handling
+    - Form state management
 
 - **TanStack Table** - Headless table component
-  - Sorting, filtering, pagination
-  - Column resizing
-  - Virtual scrolling support
+    - Sorting, filtering, pagination
+    - Column resizing
+    - Virtual scrolling support
 
 ### Routing
 
 - **React Router v7** - Client-side routing
-  - Hash Router (bắt buộc để tránh conflict với server routes)
-  - Protected routes
-  - Nested routing
+    - Hash Router (bắt buộc để tránh conflict với server routes)
+    - Protected routes
+    - Nested routing
 
 ### Internationalization
 
 - **i18next** với **react-i18next** - Internationalization
-  - Multi-language support (hiện tại: vi, en)
-  - Language detection
-  - Translation management
+    - Multi-language support (hiện tại: vi, en)
+    - Language detection
+    - Translation management
 
 ### Type Safety
 
 - **Eden Treaty** - End-to-end type safety
-  - Auto-generated types từ backend
-  - Type-safe API calls
-  - No manual type definitions needed
+    - Auto-generated types từ backend
+    - Type-safe API calls
+    - No manual type definitions needed
 
 ### Icons
 
 - **Material UI Icons** - Icon library
-  - Comprehensive icon set
-  - Consistent design
+    - Comprehensive icon set
+    - Consistent design
 
 ## Development Tools
 
 ### Code Quality
 
 - **Biome** - Fast formatter và linter
-  - Thay thế Prettier và ESLint
-  - Fast performance
-  - Built-in TypeScript support
-  - Configuration trong `biome.json`
+    - Thay thế Prettier và ESLint
+    - Fast performance
+    - Built-in TypeScript support
+    - Configuration trong `biome.json`
 
 ### Type Checking
 
 - **TypeScript** - Static type checking
-  - Strict mode enabled
-  - Type inference
-  - Type safety across frontend và backend
+    - Strict mode enabled
+    - Type inference
+    - Type safety across frontend và backend
 
 ## Optional/Tương Lai
 
 ### Background Jobs
 
 - **BullMQ/Redis** - Cho đồng bộ giá
-  - Scheduled jobs
-  - Queue management
-  - Price sync từ external APIs
+    - Scheduled jobs
+    - Queue management
+    - Price sync từ external APIs
 
 ### Price APIs
 

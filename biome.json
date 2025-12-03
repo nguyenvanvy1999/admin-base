@@ -1,21 +1,27 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.7/schema.json",
-  "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
+  "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": false
+  },
   "files": {
     "ignoreUnknown": false,
     "includes": [
-      "src/**/*.ts",
-      "src/**/*.tsx",
-      "test/**/*.ts",
-      "client/**/*.ts",
-      "client/**/*.html",
-      "client/**/*.tsx",
-      "client/**/*.tsx",
-      "client/**/*.json",
-      "client/**/*.css",
+      "server/src/**/*.ts",
+      "server/src/**/*.tsx",
+      "server/test/**/*.ts",
+      "client/src/**/*.ts",
+      "client/src/**/*.tsx",
+      "client/src/**/*.css",
+      "client/src/**/*.json",
+      "client/index.html",
+      "client/tailwind.config.ts",
+      "client/postcss.config.cjs",
       "docs/**/*.md",
-      "prisma.config.ts",
-      "!src/generated/prisma"
+      "server/prisma.config.ts",
+      "!server/src/generated/prisma",
+      "!client/postcss.config.cjs"
     ]
   },
   "formatter": {
@@ -130,8 +136,16 @@
     },
     "globals": ["exports"]
   },
-  "html": { "formatter": { "enabled": true } },
-  "json": { "formatter": { "enabled": true } },
+  "html": {
+    "formatter": {
+      "enabled": true
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true
+    }
+  },
   "css": {
     "parser": {
       "tailwindDirectives": true
@@ -142,7 +156,9 @@
       "includes": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
       "linter": {
         "rules": {
-          "complexity": { "noArguments": "error" },
+          "complexity": {
+            "noArguments": "error"
+          },
           "correctness": {
             "noConstAssign": "error",
             "noGlobalObjectCalls": "error",
@@ -153,7 +169,9 @@
             "noUnreachable": "error",
             "noUnreachableSuper": "error"
           },
-          "style": { "useConst": "error" },
+          "style": {
+            "useConst": "error"
+          },
           "suspicious": {
             "noClassAssign": "error",
             "noDuplicateClassMembers": "error",
@@ -173,6 +191,10 @@
   ],
   "assist": {
     "enabled": true,
-    "actions": { "source": { "organizeImports": "on" } }
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
   }
 }

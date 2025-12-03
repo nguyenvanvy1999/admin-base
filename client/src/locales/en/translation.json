@@ -1,0 +1,547 @@
+{
+  "common": {
+    "search": "Search",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "cancel": "Cancel",
+    "save": "Save",
+    "back": "Back",
+    "viewDetails": "View details",
+    "empty": {
+      "noData": "No data"
+    },
+    "pagination": {
+      "total": "Total {{total}} items",
+      "totalSettings": "Total {{total}} settings",
+      "totalPermissions": "Total {{total}} permissions"
+    },
+    "table": {
+      "actions": "Actions",
+      "created": "Created at",
+      "status": "Status",
+      "filters": {
+        "search": "Search"
+      }
+    },
+    "actions": {
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete",
+      "revoke": "Revoke"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "mySessions": "My sessions",
+    "adminSessions": "Session",
+    "adminUsers": "Users",
+    "adminRoles": "Roles",
+    "adminPermissions": "Permissions",
+    "adminSettings": "Settings"
+  },
+  "header": {
+    "appName": "Admin Portal",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again later.",
+    "network": "Cannot connect to the server. Please try again later.",
+    "unknown": "An unknown error occurred. Please try again later.",
+    "internalError": "The system encountered an unexpected issue. Please try again later.",
+    "notFound": "The requested resource could not be found.",
+    "badRequest": "The request is invalid. Please review the data and try again.",
+    "validationError": "Some fields failed validation. Please double-check and resubmit.",
+    "itemNotFound": "The item you are looking for does not exist.",
+    "itemExists": "This item already exists. Try a different value.",
+    "mfaBroken": "MFA configuration is corrupted. Restart the setup flow.",
+    "invalidOtp": "The verification code is incorrect. Please try again.",
+    "passwordNotMatch": "Password does not match our records.",
+    "passwordExpired": "Your password has expired. Please reset it.",
+    "passwordMaxAttempt": "Password attempt limit reached. Please wait before retrying.",
+    "userNotFound": "No account matches these credentials.",
+    "userExisted": "User already exists. Try signing in instead.",
+    "userNotActive": "This account is inactive. Contact an administrator.",
+    "invalidToken": "The token is invalid. Please request a new one.",
+    "expiredToken": "The token has expired. Please request a new one.",
+    "permissionDenied": "You do not have permission to perform this action.",
+    "sessionExpired": "Your session expired. Please sign in again.",
+    "invalidFile": "The uploaded file format is not supported.",
+    "importDataInvalid": "Import data is invalid. Fix the file and retry.",
+    "oauthProviderNotFound": "The OAuth provider is not recognized.",
+    "googleAccountNotFound": "Google account not found.",
+    "invalidGoogleAccount": "Google account is invalid for this action.",
+    "invalidTelegramAccount": "Telegram account is invalid for this action.",
+    "telegramAccountWasLinked": "Telegram account has already been linked.",
+    "mfaHasBeenSetup": "MFA is already configured for this account.",
+    "mfaNotEnabled": "MFA is not enabled yet. Please set it up first.",
+    "invalidBackupCode": "Backup code is incorrect or already used.",
+    "backupCodeAlreadyUsed": "This backup code was already used.",
+    "invalidAmount": "The amount is invalid.",
+    "actionNotAllowed": "This action is not allowed.",
+    "suspiciousLoginBlocked": "Suspicious login attempt was blocked for safety.",
+    "tooManyAttempts": "Too many attempts. Please slow down and try again later."
+  },
+  "auth": {
+    "hero": {
+      "title": "Admin Portal",
+      "subtitle": "Multi-layer security for your operations team.",
+      "items": {
+        "security": "OWASP & SOC2 grade security baseline",
+        "audit": "Live auditing for every privileged session",
+        "mfa": "MFA and backup codes ready out of the box"
+      }
+    },
+    "login": {
+      "title": "Secure sign in",
+      "subtitle": "Use your workplace credentials to access the admin console.",
+      "email": "Work email",
+      "emailPlaceholder": "admin@company.com",
+      "emailRequired": "Please enter your email",
+      "emailInvalid": "Please enter a valid email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "passwordRequired": "Please enter your password",
+      "passwordMin": "Password must be at least 6 characters",
+      "cta": "Continue",
+      "needAccount": "Need an account?",
+      "gotoRegister": "Create one",
+      "successTitle": "Signed in successfully",
+      "successSubtitle": "Redirecting you to the dashboard..."
+    },
+    "register": {
+      "title": "Create your workspace account",
+      "subtitle": "Use your work email and a strong password to get started.",
+      "email": "Work email",
+      "emailPlaceholder": "you@company.com",
+      "emailRequired": "Please enter your email",
+      "emailInvalid": "Please enter a valid email",
+      "password": "Password",
+      "passwordPlaceholder": "Create a password",
+      "passwordRequired": "Please enter your password",
+      "passwordRule": "Password must be 8-128 characters",
+      "cta": "Create account",
+      "haveAccount": "Already onboarded?",
+      "gotoLogin": "Back to login",
+      "rateLimited": "Too many attempts. Please retry in {{seconds}}s.",
+      "successToast": "Account created. Please sign in.",
+      "otpTitle": "Verify your email",
+      "otpSubtitle": "Enter the 6-digit code we sent to {{email}}.",
+      "otpLabel": "Verification code",
+      "otpRequired": "Please enter the OTP",
+      "otpInvalid": "OTP must be 6 digits",
+      "otpCta": "Verify & continue",
+      "otpResend": "Resend OTP",
+      "otpResendCountdown": "Resend in {{seconds}}s",
+      "otpLimitReached": "You have reached the resend limit. Please try again later.",
+      "backToCredentials": "Edit email & password"
+    },
+    "mfa": {
+      "title": "Two-factor verification",
+      "subtitle": "Enter the OTP from your authenticator app.",
+      "codeLabel": "Verification code",
+      "codeRequired": "Please enter the OTP",
+      "codeInvalid": "Invalid OTP",
+      "cta": "Verify",
+      "useBackup": "Use backup code",
+      "locked": "Too many attempts. Please wait or restart the login flow."
+    },
+    "backup": {
+      "title": "Use a backup code",
+      "subtitle": "Enter one of your backup codes to continue.",
+      "codeLabel": "Backup code",
+      "placeholder": "Enter backup code",
+      "codeRequired": "Please enter the backup code",
+      "codeInvalid": "Backup code must be 8 characters",
+      "cta": "Verify",
+      "useOtp": "Back to OTP",
+      "locked": "Too many attempts. Switch back to OTP or restart login."
+    },
+    "setup": {
+      "title": "Multi-factor protection required",
+      "subtitle": "We need to set up an authenticator app before granting access.",
+      "requestCta": "Generate QR secret",
+      "requestHint": "If you reloaded the page, request a new secret to continue.",
+      "scanTitle": "Scan the QR code",
+      "scanSubtitle": "Add it to Google Authenticator, 1Password, Authy, or any TOTP app.",
+      "copyHint": "Can't scan the code? Copy the secret above and paste it into your app.",
+      "otpLabel": "Enter OTP from your authenticator",
+      "otpRequired": "Please enter the OTP",
+      "otpInvalid": "OTP must be 6 digits",
+      "confirmCta": "Confirm & continue",
+      "backupHint": "After confirming, you'll verify one more OTP (or a backup code) to finish login."
+    }
+  },
+  "dashboard": {
+    "health": {
+      "overviewTitle": "System health",
+      "overviewDescription": "Live status for core infrastructure so you can react quickly when something degrades.",
+      "statusLabel": "Overall status",
+      "statusOk": "All systems operational",
+      "statusError": "Attention required",
+      "refresh": "Refresh",
+      "loading": "Checking system health...",
+      "error": "Unable to load health status. Please try again.",
+      "componentsTitle": "Component status",
+      "noDetails": "No component telemetry reported.",
+      "componentOk": "Operating normally",
+      "componentNoData": "No metrics available",
+      "componentErrorTitle": "Component error",
+      "components": {
+        "memory": "Memory",
+        "redis": "Redis",
+        "db": "Database",
+        "disk": "Disk"
+      },
+      "componentDescriptions": {
+        "memory": "Usage and free capacity from application hosts.",
+        "redis": "Connectivity and read/write operations.",
+        "db": "Primary database connectivity and latency.",
+        "disk": "Disk usage across the main volume."
+      }
+    }
+  },
+  "mySessionsPage": {
+    "notice": "If you notice unfamiliar activity, revoke the suspicious session or sign out from all devices.",
+    "currentDevice": "Current device",
+    "actions": {
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Confirm revoke session",
+      "revokeCurrentConfirm": "This will revoke the current session and sign you out from the system.",
+      "revokeOtherConfirm": "This session will be revoked. Continue?",
+      "logoutCurrent": "Sign out from this device",
+      "logoutAll": "Sign out from all devices",
+      "logoutAllConfirmTitle": "Confirm sign out from all devices",
+      "logoutAllConfirm": "You will be signed out from all devices, including this one.",
+      "loadMore": "Load more sessions"
+    }
+  },
+  "accessDeniedPage": {
+    "title": "You are not allowed to access this page",
+    "subtitle": "Contact your administrator to request the required permissions.",
+    "backHome": "Back to dashboard"
+  },
+  "adminUsersPage": {
+    "table": {
+      "email": "Email",
+      "name": "Display name",
+      "roles": "Roles",
+      "rolesWithExpiry": "Roles & Expiry",
+      "emailVerified": "Email verified",
+      "sessions": "Sessions",
+      "filters": {
+        "keyword": "Email or display name",
+        "status": "Status",
+        "role": "Role"
+      }
+    },
+    "sessionStats": {
+      "total": "Total",
+      "active": "Active",
+      "revoked": "Revoked",
+      "expired": "Expired"
+    },
+    "create": {
+      "button": "Create user",
+      "title": "Create admin user",
+      "success": "User created successfully",
+      "auditLog": "Audit log: {{auditId}}"
+    },
+    "update": {
+      "title": "Update user",
+      "success": "User updated successfully",
+      "rolesSuccess": "User roles updated successfully",
+      "tabGeneral": "Overview",
+      "tabSecurity": "Security",
+      "tabEdit": "Edit",
+      "tabRoles": "Roles",
+      "tabSessions": "Sessions",
+      "mfaResetSuccess": "MFA reset successfully",
+      "mfaDisableSuccess": "MFA disabled successfully"
+    },
+    "detail": {
+      "email": "Email",
+      "status": "Status",
+      "name": "Display name",
+      "baseCurrency": "Base currency",
+      "emailVerified": "Email verified",
+      "created": "Created at",
+      "modified": "Updated at",
+      "lockoutUntil": "Lockout until",
+      "lockoutReason": "Lockout reason",
+      "passwordAttempt": "Password attempts",
+      "passwordExpired": "Password expired at"
+    },
+    "statuses": {
+      "inactive": "Inactive",
+      "active": "Active",
+      "suspendded": "Suspended",
+      "banned": "Banned"
+    },
+    "roleExpiry": {
+      "noExpiry": "No expiry",
+      "activeUntil": "Valid until {{date}}",
+      "soonExpire": "Expiring {{date}}",
+      "expiredAt": "Expired {{date}}",
+      "tooltipRole": "Role",
+      "tooltipStatus": "Status",
+      "tooltipExpiry": "Expiry date"
+    },
+    "form": {
+      "email": "Email",
+      "password": "Password",
+      "name": "Display name",
+      "roles": "Roles",
+      "rolesRequired": "Please select at least one role",
+      "rolesPlaceholder": "Select roles",
+      "roleExpiresAt": "Role expiry time (optional)",
+      "baseCurrency": "Base currency",
+      "status": "Status",
+      "emailVerified": "Email verified",
+      "lockoutUntil": "Lockout until",
+      "lockoutReason": "Lockout reason",
+      "passwordAttempt": "Password attempts",
+      "passwordExpired": "Password expires at",
+      "reason": "Audit reason",
+      "reasonRequired": "Please provide an audit reason",
+      "mfaReasonPlaceholder": "Provide a reason for the audit log"
+    },
+    "actions": {
+      "resetMfa": "Reset MFA",
+      "disableMfa": "Disable MFA",
+      "submit": "Save changes"
+    }
+  },
+  "adminRolesPage": {
+    "users": {
+      "tooltip": "Users: total {{total}}, active {{active}}, expired {{expired}}",
+      "total": "Total",
+      "active": "Active",
+      "expired": "Expired"
+    },
+    "detail": {
+      "title": "Role details",
+      "tabGeneral": "Overview",
+      "tabPermissions": "Permissions",
+      "tabPlayers": "Players"
+    },
+    "players": {
+      "table": {
+        "email": "Email",
+        "expiresAt": "Expires at"
+      }
+    },
+    "table": {
+      "title": "Role name",
+      "description": "Description",
+      "permissions": "Permission count",
+      "users": "User count",
+      "enabled": "Enabled",
+      "filters": {
+        "user": "Filter by user"
+      }
+    },
+    "create": {
+      "button": "Create role",
+      "title": "Create new role"
+    },
+    "update": {
+      "title": "Update role"
+    },
+    "upsert": {
+      "success": "Role saved successfully"
+    },
+    "delete": {
+      "title": "Confirm delete role",
+      "message": "Are you sure you want to delete this role? The role cannot be deleted if there are still users using it.",
+      "confirm": "Delete",
+      "success": "Role deleted successfully"
+    },
+    "form": {
+      "title": "Role name",
+      "titleRequired": "Please enter role name",
+      "titleMin": "Role name must be at least 3 characters",
+      "titlePlaceholder": "Enter role name",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter description (optional)",
+      "enabled": "Enabled",
+      "permissions": "Permission list",
+      "permissionsRequired": "Please select at least one permission",
+      "permissionsMin": "Must select at least one permission",
+      "permissionsPlaceholder": "Select permissions",
+      "users": "User list",
+      "usersPlaceholder": "Select users (optional)",
+      "tabs": {
+        "general": "General",
+        "permissions": "Permissions",
+        "users": "Users"
+      }
+    },
+    "actions": {
+      "delete": "Delete"
+    }
+  },
+  "adminPermissionsPage": {
+    "table": {
+      "title": "Permission name",
+      "description": "Description",
+      "category": "Category",
+      "action": "Action",
+      "filters": {
+        "category": "Filter by category"
+      }
+    },
+    "info": {
+      "note": "Note: Permissions are automatically created from the backend when seeding the database. FE cannot create/update/delete permissions directly."
+    },
+    "categories": {
+      "ROLE": "Role Management",
+      "USER": "User Management",
+      "SESSION": "Session Management",
+      "SETTING": "Settings",
+      "I18N": "Internationalization",
+      "IPWHITELIST": "IP Whitelist",
+      "TELE_BOT": "Telegram Bot",
+      "TELE_CHAT": "Telegram Chat",
+      "TELE_TEMPLATE": "Telegram Template",
+      "API_KEY": "API Key",
+      "ACTIVITY": "Activity",
+      "CHAT_THREAD": "Chat Thread",
+      "FILE": "File"
+    },
+    "actions": {
+      "VIEW": "View",
+      "VIEW_ALL": "View All",
+      "CREATE": "Create",
+      "UPDATE": "Update",
+      "UPDATE_ALL": "Update All",
+      "DELETE": "Delete",
+      "DELETE_ALL": "Delete All",
+      "REVOKE": "Revoke",
+      "REVOKE_ALL": "Revoke All",
+      "RESET_MFA": "Reset MFA",
+      "MANAGE": "Manage",
+      "UPLOAD": "Upload",
+      "SEND": "Send"
+    },
+    "descriptions": {
+      "ROLE.VIEW": "View list and details of roles",
+      "ROLE.UPDATE": "Create and update roles",
+      "ROLE.DELETE": "Delete roles",
+      "USER.VIEW": "View list and details of users",
+      "USER.UPDATE": "Create and update users",
+      "USER.RESET_MFA": "Reset MFA for users",
+      "SESSION.VIEW": "View own sessions",
+      "SESSION.VIEW_ALL": "View all sessions in the system",
+      "SESSION.REVOKE": "Revoke own sessions",
+      "SESSION.REVOKE_ALL": "Revoke all sessions",
+      "SETTING.VIEW": "View system settings",
+      "SETTING.UPDATE": "Update system settings",
+      "I18N.VIEW": "View internationalization translations",
+      "I18N.UPDATE": "Update internationalization translations",
+      "I18N.DELETE": "Delete internationalization translations",
+      "IPWHITELIST.VIEW": "View IP whitelist",
+      "IPWHITELIST.CREATE": "Add IP to whitelist",
+      "IPWHITELIST.DELETE": "Remove IP from whitelist",
+      "API_KEY.VIEW": "View own API keys",
+      "API_KEY.VIEW_ALL": "View all API keys",
+      "API_KEY.UPDATE": "Update own API keys",
+      "API_KEY.UPDATE_ALL": "Update all API keys",
+      "API_KEY.DELETE": "Delete own API keys",
+      "API_KEY.DELETE_ALL": "Delete all API keys",
+      "ACTIVITY.VIEW": "View own activities",
+      "ACTIVITY.VIEW_ALL": "View all activities",
+      "CHAT_THREAD.VIEW": "View chat threads",
+      "CHAT_THREAD.MANAGE": "Manage chat threads",
+      "FILE.UPLOAD": "Upload files to the system",
+      "TELE_BOT.VIEW": "View Telegram bots",
+      "TELE_BOT.UPDATE": "Update Telegram bots",
+      "TELE_BOT.DELETE": "Delete Telegram bots",
+      "TELE_CHAT.VIEW": "View Telegram chats",
+      "TELE_CHAT.UPDATE": "Update Telegram chats",
+      "TELE_CHAT.DELETE": "Delete Telegram chats",
+      "TELE_TEMPLATE.VIEW": "View Telegram templates",
+      "TELE_TEMPLATE.UPDATE": "Update Telegram templates",
+      "TELE_TEMPLATE.DELETE": "Delete Telegram templates",
+      "TELE_TEMPLATE.SEND": "Send Telegram templates"
+    }
+  },
+  "adminSettingsPage": {
+    "secret": "Secret",
+    "tabs": {
+      "all": "All"
+    },
+    "categories": {
+      "security": "Security",
+      "rateLimit": "Rate Limiting",
+      "system": "System",
+      "other": "Other"
+    },
+    "types": {
+      "string": "String",
+      "number": "Number",
+      "boolean": "Boolean",
+      "date": "Date/Time",
+      "json": "JSON"
+    },
+    "table": {
+      "key": "Key",
+      "description": "Description",
+      "type": "Type",
+      "value": "Value",
+      "isSecret": "Secret",
+      "category": "Category",
+      "filters": {
+        "category": "Filter by category"
+      }
+    },
+    "info": {},
+    "update": {
+      "title": "Update setting"
+    },
+    "form": {
+      "value": "Value",
+      "valueRequired": "Please enter a value",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter a description for this setting",
+      "isSecret": "Mark as Secret",
+      "secretWarning": "Current value is hidden for security reasons. Please enter a new value if you want to change it.",
+      "secretPlaceholder": "Enter new value (old value is hidden for security reasons)",
+      "jsonPlaceholder": "Enter valid JSON, e.g.: {\"key\": \"value\"}",
+      "jsonInvalid": "Value must be valid JSON"
+    }
+  },
+  "adminSessionsPage": {
+    "title": "Session management",
+    "subtitle": "Review and revoke sign-in sessions across the system.",
+    "status": {
+      "active": "Active",
+      "revoked": "Revoked",
+      "expired": "Expired"
+    },
+    "table": {
+      "expired": "Expires at",
+      "device": "Device",
+      "userId": "User ID",
+      "ip": "IP address"
+    },
+    "filters": {
+      "ip": "IP address",
+      "users": "Users",
+      "status": {
+        "all": "All statuses",
+        "active": "Only active",
+        "revoked": "Only revoked"
+      }
+    },
+    "actions": {
+      "revokeConfirmTitle": "Confirm revoke session",
+      "revokeConfirm": "This session will be revoked. Continue?",
+      "revokeSelected": "Revoke Selected ({{count}})",
+      "revokeSelectedConfirmTitle": "Confirm revoke multiple sessions",
+      "revokeSelectedConfirm": "{{count}} session(s) will be revoked. Continue?",
+      "loadMore": "Load more sessions"
+    },
+    "onlyOneSessionNotice": "The system is configured to allow only one active session per user. When a user signs in from a new device, previous sessions will be automatically logged out."
+  }
+}

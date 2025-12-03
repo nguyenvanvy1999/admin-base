@@ -1,6 +1,7 @@
-# FinTrack - Personal Finance & Investment Management
+# Admin Base - Admin Management Base
 
-Ứng dụng web quản lý tài chính cá nhân và đầu tư được xây dựng với Elysia.js (backend) và React (frontend), sử dụng Bun runtime.
+Dự án admin base để tái sử dụng ở nhiều dự án khác, được xây dựng với Elysia.js (backend) và React (frontend), sử dụng
+Bun runtime.
 
 ## Quick Start
 
@@ -15,7 +16,7 @@
 
 ```bash
 git clone <repository-url>
-cd fin-track
+cd admin-base
 ```
 
 2. **Install dependencies**
@@ -23,6 +24,10 @@ cd fin-track
 ```bash
 bun install
 ```
+
+> ℹ️ Repo sử dụng Bun workspaces để quản lý `server/` và `client/` như hai package độc lập, theo hướng dẫn chính thức
+> của Bun về workspaces. Xem thêm
+> tại [bun.com/docs/guides/install/workspaces](https://bun.com/docs/guides/install/workspaces).
 
 3. **Set up environment variables**
 
@@ -38,15 +43,24 @@ bun run db:migrate
 bun run db:generate
 ```
 
-5. **Start development server**
+5. **Start development servers**
 
 ```bash
+# API (Elysia + Bun)
 bun run dev
+
+# Frontend (Vite + React)
+bun run dev:client
 ```
+
+> Vite chạy hoàn toàn bằng Bun CLI giống như tài
+> liệu [bun.com/docs/guides/ecosystem/vite](https://bun.com/docs/guides/ecosystem/vite) nên bạn có thể dùng
+`bun run dev:client`, `bun run build:client` hoặc `bun run preview:client` cho vòng đời FE.
 
 6. **Open your browser**
 
-Navigate to `http://localhost:3000` to see your application!
+- `http://localhost:3000` → Bun API (Swagger docs, health checks…)
+- `http://localhost:5173` → React admin console
 
 ## Documentation
 
@@ -62,8 +76,10 @@ Navigate to `http://localhost:3000` to see your application!
 
 - **Runtime**: Bun
 - **Backend**: Elysia.js + PostgreSQL + Prisma
-- **Frontend**: React 19 + Mantine UI + Tailwind CSS
-- **State**: Zustand + TanStack Query
+- **Frontend**: React 19 + Ant Design 5 + Tailwind CSS + Ant Design Pro Layout
+- **State**: React useState + TanStack Query (server state)
+- **Routing**: React Router (HashRouter) + Bun dev server
+- **HTTP**: Axios + interceptors
 - **Type Safety**: Eden Treaty (end-to-end types)
 
 ## Development Commands
@@ -82,13 +98,14 @@ bun run lint            # Lint code with Biome
 bun run check           # Format and lint
 
 # Development with hot reload
-bun run dev
+bun run dev          # server
+bun run dev:client   # client
 
 # Build for production
-bun run build
+bun run build        # server + client
 
 # Start production server
-bun start
+bun run --cwd server start:server:prod
 ```
 
 ## API Documentation
@@ -100,18 +117,54 @@ bun start
 
 ```
 fin-track/
-├── docs/                # Documentation (tiếng Việt)
-├── src/                 # Backend (Elysia.js)
-├── client/              # Frontend (React)
-├── prisma/              # Prisma schema and migrations
-└── package.json
+├── package.json         # Bun workspace root (client + server)
+├── client/              # Frontend (Vite + React + Pro AntD)
+└── server/              # Backend (Elysia.js + Prisma + Bun)
 ```
+
+### Server (server/) layout
+
+```
+server/
+├── src/                 # Elysia app, controllers, services
+├── prisma/              # Prisma schema + migrations
+├── test/                # Unit tests
+├── bunfig.toml          # Bun runtime config
+└── package.json         # Server-specific scripts & deps
+```
+
+### Frontend (client/) layout
+
+```
+client/src/
+├── app/                 # Router, layouts, page shells
+├── components/          # Reusable AntD wrappers (Form, Table, Modal, Drawer…)
+├── config/              # Theme tokens, provider config
+├── hooks/               # Custom hooks (notifications, modal helper, etc.)
+├── lib/                 # Axios instance, React Query client
+├── services/            # API service modules + query hooks
+├── locales/             # i18n resources
+└── global.css           # Tailwind layer + token bridge
+```
+
+#### Nguyên tắc mở rộng client
+
+- **Provider gốc**: `client/src/app/AppProvider.tsx` gom `ConfigProvider`, `AntdApp`, `QueryClientProvider` và
+  `RouterProvider` (HashRouter).
+- **Layout**: `client/src/app/layouts/MainLayout.tsx` sử dụng Ant Design Pro Layout (mix layout) với sidebar cố định.
+- **Dữ liệu**: Toàn bộ request đi qua `client/src/lib/http.ts` (Axios + interceptor). React Query dùng
+  `client/src/lib/queryClient.ts`.
+- **Components tái sử dụng**: `client/src/components/common` chứa wrapper cho Form, ProTable, Modal, Drawer, PageHeader,
+  Loader… giữ style đồng nhất.
+- **Services**: tạo file mới ở `client/src/services/*`, expose hàm fetch + hook `useXxxQuery`.
+- **State**: dùng `useState` cho local UI, dữ liệu server đi qua React Query (không sử dụng Redux/Zustand).
+- **Styling**: Ưu tiên AntD token + Tailwind utility trong `global.css`. Token chung nằm ở `client/styles/tokens.css`.
+- **Alias import**: sử dụng `src/app`, `src/components`, `src/lib`, `src/services`… đã cấu hình trong `tsconfig.json`.
 
 ## Features
 
 - ✅ Account management
 - ✅ Transaction tracking
-- ✅ Investment management (priced & manual modes)
 - ✅ Category management
 - ✅ Multi-currency support
 - ✅ P&L calculations

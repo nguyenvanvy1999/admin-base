@@ -1,0 +1,18 @@
+:root {
+  --app-bg: #f5f5f5;
+  --app-bg-strong: #ffffff;
+  --app-fg: #0f172a;
+  --app-muted: #475569;
+  --app-border: #e2e8f0;
+  --app-radius: 8px;
+  --app-layout-width: 1440px;
+  --app-sidebar-width: 256px;
+}
+
+:root.dark {
+  --app-bg: #0f172a;
+  --app-bg-strong: #101828;
+  --app-fg: #f8fafc;
+  --app-muted: #cbd5f5;
+  --app-border: #1e293b;
+}

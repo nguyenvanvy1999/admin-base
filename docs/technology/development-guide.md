@@ -1,6 +1,25 @@
 # Hướng Dẫn Phát Triển
 
-Tài liệu này hướng dẫn các tác vụ phát triển phổ biến trong dự án FinTrack.
+Tài liệu này hướng dẫn các tác vụ phát triển phổ biến trong dự án Admin Base.
+
+## Advanced Login Security
+
+- `ENB_SECURITY_DEVICE_RECOGNITION`: bật so khớp fingerprint dựa trên `userAgent` + `clientIp`. Khi tắt, luồng login
+  hoạt động như trước.
+- `ENB_SECURITY_AUDIT_WARNING`: ghi `security_events` + audit log ở mức WARNING khi phát hiện thiết bị lạ.
+- `ENB_SECURITY_BLOCK_UNKNOWN_DEVICE`: từ chối đăng nhập nếu thiết bị chưa từng thấy (sau khi đã ghi cảnh báo).
+
+### Luồng xử lý
+
+1. `AuthService` gọi `SecurityMonitorService.evaluateLogin` ngay sau khi xác thực mật khẩu (và trong bước xác nhận
+   MFA/OAuth).
+2. Hệ thống tìm `session` cùng `deviceFingerprint` trước đó. Nếu có, đăng nhập tiếp tục bình thường.
+3. Nếu thiết bị lạ:
+    - Khi `ENB_SECURITY_AUDIT_WARNING=true`, tạo bản ghi `security_events` + audit log với `error=unknown_device`.
+    - Khi `ENB_SECURITY_BLOCK_UNKNOWN_DEVICE=true`, trả lỗi `ErrCode.SuspiciousLoginBlocked`.
+    - Nếu không chặn, fingerprint mới được lưu vào session vừa tạo để các lần sau được nhận diện.
+4. Bối cảnh bảo mật (fingerprint, trạng thái thiết bị) được truyền qua bước MFA thông qua `mfaCache`, bảo đảm phiên cuối
+   cùng luôn có fingerprint chính xác.
 
 ## Thêm API Endpoint Mới
 
@@ -99,7 +118,7 @@ export type MyEntityFormData = {
 ```typescript
 // client/hooks/queries/useMyEntityQueries.ts
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@client/libs/api";
+import { api } from "src/libs/api";
 
 export const useMyEntitiesQuery = (query = {}) => {
     return useQuery({
@@ -120,9 +139,9 @@ export const useMyEntitiesQuery = (query = {}) => {
 ```typescript
 // client/hooks/mutations/useMyEntityMutations.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import useToast from "@client/hooks/useToast";
-import { api } from "@client/libs/api";
-import type { MyEntityFormData } from "@client/types/myentity";
+import useToast from "src/hooks/useToast";
+import { api } from "src/libs/api";
+import type { MyEntityFormData } from "src/types/myentity";
 
 export const useCreateMyEntityMutation = () => {
     const { showError, showSuccess } = useToast();
@@ -151,8 +170,8 @@ export const useCreateMyEntityMutation = () => {
 
 ```typescript
 // client/pages/MyEntityPage.tsx
-import { useMyEntitiesQuery } from "@client/hooks/queries/useMyEntityQueries";
-import { useCreateMyEntityMutation } from "@client/hooks/mutations/useMyEntityMutations";
+import { useMyEntitiesQuery } from "src/hooks/queries/useMyEntityQueries";
+import { useCreateMyEntityMutation } from "src/hooks/mutations/useMyEntityMutations";
 
 const MyEntityPage = () => {
     const { data, isLoading } = useMyEntitiesQuery();
@@ -218,7 +237,7 @@ const router = createHashRouter([
 ### Bước 2: Tạo Page Component (`client/pages/NewPage.tsx`)
 
 ```typescript
-import useUserStore from "@client/store/user";
+import useUserStore from "src/store/user";
 
 const NewPage = () => {
     const { user } = useUserStore(); // Access user
@@ -267,7 +286,7 @@ async ({ user }) => {
 ### 4. Types không sync giữa frontend/backend
 
 - Restart dev server để regenerate types
-- Kiểm tra `@server` path alias trong tsconfig.json
+- Kiểm tra `src` path alias trong tsconfig.json
 - Verify Eden Treaty được cấu hình đúng
 
 ### 5. Query không refetch sau mutation
