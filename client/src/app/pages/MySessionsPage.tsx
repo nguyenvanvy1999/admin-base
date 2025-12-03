@@ -1,35 +1,22 @@
 import type { ProColumns } from '@ant-design/pro-components';
 import { Alert, Button, Card, Popconfirm, Space, Tag, Typography } from 'antd';
 import dayjs from 'dayjs';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
-import { AppTable } from 'src/components/common/AppTable';
+import { SessionsTable } from 'src/features/admin/sessions/components/SessionsTable';
+import { useSessionDateRange } from 'src/features/admin/sessions/hooks/useSessionDateRange';
+import { getSessionStatus } from 'src/features/admin/sessions/utils/sessionStatus';
 import { useAdminSessions } from 'src/hooks/api/useAdminSessions';
 import { useAuth } from 'src/hooks/auth/useAuth';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { adminSessionsService } from 'src/services/api/admin-sessions.service';
 import { authService } from 'src/services/api/auth.service';
-import type {
-  AdminSession,
-  AdminSessionStatus,
-} from 'src/types/admin-sessions';
+import type { AdminSession } from 'src/types/admin-sessions';
 
 type MySessionTableParams = {
   created?: [dayjs.Dayjs, dayjs.Dayjs];
 };
-
-function getStatusTag(status: AdminSessionStatus, t: any) {
-  if (status === 'revoked') {
-    return <Tag color="default">{t('adminSessionsPage.status.revoked')}</Tag>;
-  }
-
-  if (status === 'expired') {
-    return <Tag color="default">{t('adminSessionsPage.status.expired')}</Tag>;
-  }
-
-  return <Tag color="green">{t('adminSessionsPage.status.active')}</Tag>;
-}
 
 export default function MySessionsPage() {
   const { t } = useTranslation();
@@ -41,19 +28,8 @@ export default function MySessionsPage() {
     'any',
   );
 
-  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>(() => {
-    const end = dayjs();
-    const start = end.subtract(7, 'day');
-    return [start, end];
-  });
-  const created0 = useMemo(() => {
-    const start = dayjs(dateRange[0]);
-    return start.startOf('day').toISOString();
-  }, [dateRange]);
-  const created1 = useMemo(() => {
-    const end = dayjs(dateRange[1]);
-    return end.endOf('day').toISOString();
-  }, [dateRange]);
+  const { dateRange, setDateRange, created0, created1, resetDateRange } =
+    useSessionDateRange(7);
 
   const listParams = useMemo(
     () => ({
@@ -116,42 +92,6 @@ export default function MySessionsPage() {
 
   const columns: ProColumns<AdminSession>[] = [
     {
-      title: t('adminSessionsPage.table.created'),
-      dataIndex: 'created',
-      valueType: 'dateRange',
-      sorter: (a, b) => dayjs(a.created).valueOf() - dayjs(b.created).valueOf(),
-      render: (_, record) =>
-        dayjs(record.created).format('YYYY-MM-DD HH:mm:ss'),
-    },
-    {
-      title: t('adminSessionsPage.table.expired'),
-      dataIndex: 'expired',
-      hideInSearch: true,
-      render: (_, record) =>
-        dayjs(record.expired).format('YYYY-MM-DD HH:mm:ss'),
-    },
-    {
-      title: t('adminSessionsPage.table.device'),
-      dataIndex: 'device',
-      hideInSearch: true,
-      ellipsis: true,
-      render: (_, record) => record.device,
-    },
-    {
-      title: t('adminSessionsPage.table.ip'),
-      dataIndex: 'ip',
-      render: (_, record) => record.ip ?? '-',
-    },
-    {
-      title: t('adminSessionsPage.table.status'),
-      dataIndex: 'status',
-      hideInSearch: true,
-      render: (_, record) => {
-        const status = statusById[record.id];
-        return getStatusTag(status, t);
-      },
-    },
-    {
       title: t('mySessionsPage.currentDevice'),
       dataIndex: 'current',
       hideInSearch: true,
@@ -167,7 +107,7 @@ export default function MySessionsPage() {
       dataIndex: 'actions',
       hideInSearch: true,
       render: (_, record) => {
-        const status = statusById[record.id];
+        const status = getSessionStatus(record, statusById);
         const isCurrent = record.id === currentSessionId;
 
         if (!canRevoke || status !== 'active') {
@@ -225,19 +165,16 @@ export default function MySessionsPage() {
         </Space>
       </Card>
 
-      <AppTable<AdminSession, MySessionTableParams>
-        rowKey="id"
-        columns={columns}
+      <SessionsTable<MySessionTableParams>
+        sessions={sessions}
+        statusById={statusById}
         loading={isLoading || isInitialLoading}
-        dataSource={sessions}
-        pagination={false}
-        search={{
-          labelWidth: 'auto',
-        }}
-        form={{
-          initialValues: {
-            created: dateRange,
-          },
+        paging={paging}
+        onLoadMore={loadMore}
+        columns={columns}
+        extendBaseColumns
+        formInitialValues={{
+          created: dateRange,
         }}
         onSubmit={(values) => {
           const range = values.created as
@@ -247,18 +184,7 @@ export default function MySessionsPage() {
             setDateRange([range[0]!, range[1]!]);
           }
         }}
-        onReset={() => {
-          const end = dayjs();
-          const start = end.subtract(7, 'day');
-          setDateRange([start, end]);
-        }}
-        toolBarRender={() => [
-          paging.hasNext && (
-            <Button key="load-more" onClick={loadMore}>
-              {t('adminSessionsPage.actions.loadMore')}
-            </Button>
-          ),
-        ]}
+        onReset={resetDateRange}
       />
     </AppPage>
   );

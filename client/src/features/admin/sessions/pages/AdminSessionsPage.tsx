@@ -1,21 +1,20 @@
 import type { ProColumns } from '@ant-design/pro-components';
-import { Alert, Button, Popconfirm, Tag } from 'antd';
-import dayjs from 'dayjs';
+import { Alert, Button, Popconfirm } from 'antd';
+import type dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
-import { AppTable } from 'src/components/common/AppTable';
 import { useAdminSessions } from 'src/hooks/api/useAdminSessions';
 import { useAdminSettings } from 'src/hooks/api/useAdminSettings';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { adminSessionsService } from 'src/services/api/admin-sessions.service';
 import { adminUsersService } from 'src/services/api/admin-users.service';
-import type {
-  AdminSession,
-  AdminSessionStatus,
-} from 'src/types/admin-sessions';
+import type { AdminSession } from 'src/types/admin-sessions';
 import type { AdminSetting } from 'src/types/admin-settings';
 import { SettingDataType } from 'src/types/admin-settings';
+import { SessionsTable } from '../components/SessionsTable';
+import { useSessionDateRange } from '../hooks/useSessionDateRange';
+import { getSessionStatus } from '../utils/sessionStatus';
 
 type AdminSessionTableParams = {
   ip?: string;
@@ -23,25 +22,6 @@ type AdminSessionTableParams = {
   userIds?: string[];
   created?: [dayjs.Dayjs, dayjs.Dayjs];
 };
-
-function getSessionStatus(
-  record: AdminSession,
-  statusById: Record<string, AdminSessionStatus>,
-): AdminSessionStatus {
-  return statusById[record.id] ?? 'expired';
-}
-
-function getStatusTag(status: AdminSessionStatus, t: any) {
-  if (status === 'revoked') {
-    return <Tag color="default">{t('adminSessionsPage.status.revoked')}</Tag>;
-  }
-
-  if (status === 'expired') {
-    return <Tag color="default">{t('adminSessionsPage.status.expired')}</Tag>;
-  }
-
-  return <Tag color="green">{t('adminSessionsPage.status.active')}</Tag>;
-}
 
 function getSettingValue(
   settings: AdminSetting[],
@@ -61,11 +41,8 @@ export default function AdminSessionsPage() {
   const canRevokeAll = hasPermission('SESSION.REVOKE_ALL');
   const canRevokeSelf = hasPermission('SESSION.REVOKE');
 
-  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>(() => {
-    const end = dayjs();
-    const start = end.subtract(7, 'day');
-    return [start, end];
-  });
+  const { dateRange, setDateRange, created0, created1, resetDateRange } =
+    useSessionDateRange(7);
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'active' | 'revoked'
   >('all');
@@ -73,14 +50,6 @@ export default function AdminSessionsPage() {
   const [userIdsFilter, setUserIdsFilter] = useState<string[] | undefined>(
     undefined,
   );
-  const created0 = useMemo(() => {
-    const start = dayjs(dateRange[0]);
-    return start.startOf('day').toISOString();
-  }, [dateRange]);
-  const created1 = useMemo(() => {
-    const end = dayjs(dateRange[1]);
-    return end.endOf('day').toISOString();
-  }, [dateRange]);
 
   const listParams = useMemo(
     () => ({
@@ -166,10 +135,7 @@ export default function AdminSessionsPage() {
   };
 
   const handleResetFilters = () => {
-    const end = dayjs();
-    const start = end.subtract(7, 'day');
-
-    setDateRange([start, end]);
+    resetDateRange();
     setStatusFilter('all');
     setIpFilter(undefined);
     setUserIdsFilter(undefined);
@@ -178,32 +144,21 @@ export default function AdminSessionsPage() {
 
   const columns: ProColumns<AdminSession>[] = [
     {
-      title: t('adminSessionsPage.table.created'),
-      dataIndex: 'created',
-      valueType: 'dateRange',
-      sorter: (a, b) => dayjs(a.created).valueOf() - dayjs(b.created).valueOf(),
-      render: (_, record) =>
-        dayjs(record.created).format('YYYY-MM-DD HH:mm:ss'),
-    },
-    {
-      title: t('adminSessionsPage.table.expired'),
-      dataIndex: 'expired',
-      hideInSearch: true,
-      render: (_, record) =>
-        dayjs(record.expired).format('YYYY-MM-DD HH:mm:ss'),
-    },
-    {
-      title: t('adminSessionsPage.table.device'),
-      dataIndex: 'device',
-      hideInSearch: true,
-      ellipsis: true,
-      render: (_, record) => record.device,
-    },
-    {
       title: t('adminSessionsPage.table.userId'),
       dataIndex: 'createdById',
       hideInSearch: true,
       render: (_, record) => record.createdById,
+    },
+    {
+      title: t('adminSessionsPage.table.status'),
+      dataIndex: 'status',
+      hideInTable: true,
+      valueType: 'select',
+      valueEnum: {
+        all: { text: t('adminSessionsPage.filters.status.all') },
+        active: { text: t('adminSessionsPage.filters.status.active') },
+        revoked: { text: t('adminSessionsPage.filters.status.revoked') },
+      },
     },
     ...(canViewAll
       ? [
@@ -225,20 +180,6 @@ export default function AdminSessionsPage() {
           } as ProColumns<AdminSession>,
         ]
       : []),
-    {
-      title: t('adminSessionsPage.table.ip'),
-      dataIndex: 'ip',
-      render: (_, record) => record.ip ?? '-',
-    },
-    {
-      title: t('adminSessionsPage.table.status'),
-      dataIndex: 'status',
-      hideInSearch: true,
-      render: (_, record) => {
-        const status = getSessionStatus(record, statusById);
-        return getStatusTag(status, t);
-      },
-    },
     {
       title: t('adminSessionsPage.table.actions'),
       dataIndex: 'actions',
@@ -285,22 +226,19 @@ export default function AdminSessionsPage() {
         />
       )}
 
-      <AppTable<AdminSession, AdminSessionTableParams>
-        rowKey="id"
-        columns={columns}
+      <SessionsTable<AdminSessionTableParams>
+        sessions={filteredSessions}
+        statusById={statusById}
         loading={isLoading || isInitialLoading}
-        dataSource={filteredSessions}
-        pagination={false}
-        search={{
-          labelWidth: 'auto',
-        }}
-        form={{
-          initialValues: {
-            ip: ipFilter,
-            status: statusFilter,
-            userIds: userIdsFilter,
-            created: dateRange,
-          },
+        paging={paging}
+        onLoadMore={loadMore}
+        columns={columns}
+        extendBaseColumns
+        formInitialValues={{
+          ip: ipFilter,
+          status: statusFilter,
+          userIds: userIdsFilter,
+          created: dateRange,
         }}
         onSubmit={(values) => {
           const range = values.created as
@@ -323,16 +261,7 @@ export default function AdminSessionsPage() {
             valuesUserIds && valuesUserIds.length ? valuesUserIds : undefined,
           );
         }}
-        onReset={() => {
-          handleResetFilters();
-        }}
-        toolBarRender={() => [
-          paging.hasNext && (
-            <Button key="load-more" onClick={loadMore}>
-              {t('adminSessionsPage.actions.loadMore')}
-            </Button>
-          ),
-        ]}
+        onReset={handleResetFilters}
       />
     </AppPage>
   );
