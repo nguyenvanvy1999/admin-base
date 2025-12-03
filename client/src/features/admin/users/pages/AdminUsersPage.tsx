@@ -11,6 +11,7 @@ import { AppTable } from 'src/components/common/AppTable';
 import {
   createActionColumn,
   createDateColumn,
+  createSearchColumn,
 } from 'src/components/common/tableColumns';
 import { AdminUserCreateModal } from 'src/features/admin/users/components/AdminUserCreateModal';
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
@@ -54,16 +55,10 @@ export default function AdminUsersPage() {
   );
 
   const columns: ProColumns<AdminUserSummary>[] = [
-    {
-      title: t('adminUsersPage.table.filters.keyword'),
+    createSearchColumn<AdminUserSummary>({
       dataIndex: 'search',
-      hideInTable: true,
-      valueType: 'text',
-      fieldProps: {
-        allowClear: true,
-        placeholder: t('adminUsersPage.table.filters.keyword'),
-      },
-    },
+      placeholder: t('adminUsersPage.table.filters.keyword'),
+    }),
     {
       title: t('adminUsersPage.table.email'),
       dataIndex: 'email',

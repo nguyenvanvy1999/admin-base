@@ -2,6 +2,7 @@ import { DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import { Button, Space, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
+import type React from 'react';
 import type { TableActionConfig } from 'src/types/table';
 
 export interface CreateActionColumnOptions<T> extends TableActionConfig<T> {
@@ -96,6 +97,8 @@ export interface CreateStatusColumnOptions<T> {
   getColor?: (status: string) => string;
   width?: number;
   hideInSearch?: boolean;
+  title?: string;
+  render?: (status: string, record: T) => React.ReactNode;
 }
 
 export function createStatusColumn<T = Record<string, unknown>>(
@@ -107,15 +110,20 @@ export function createStatusColumn<T = Record<string, unknown>>(
     getColor = () => 'default',
     width = 100,
     hideInSearch = true,
+    title = 'Status',
+    render: customRender,
   } = options;
 
   return {
-    title: 'Status',
+    title,
     dataIndex: Array.isArray(dataIndex) ? dataIndex[0] : dataIndex,
     width,
     hideInSearch,
     render: (_: unknown, record: T) => {
       const status = getStatus(record);
+      if (customRender) {
+        return customRender(status, record);
+      }
       const color = getColor(status);
       return <Tag color={color}>{status}</Tag>;
     },

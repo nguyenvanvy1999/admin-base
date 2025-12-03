@@ -1,20 +1,10 @@
-import { EditOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
-import {
-  Badge,
-  Button,
-  Card,
-  Input,
-  Select,
-  Space,
-  Tabs,
-  Tag,
-  Tooltip,
-} from 'antd';
+import { Badge, Card, Input, Select, Space, Tabs, Tag } from 'antd';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
+import { createActionColumn } from 'src/components/common/tableColumns';
 import { SettingFormModal } from 'src/features/admin/settings/components/SettingFormModal';
 import {
   useAdminSettings,
@@ -228,26 +218,20 @@ export default function AdminSettingsPage() {
         );
       },
     },
-    {
-      title: t('common.table.actions'),
-      dataIndex: 'actions',
-      valueType: 'option',
-      hideInTable: !canUpdate,
-      width: 60,
-      render: (_, record) => (
-        <Tooltip title={t('common.actions.edit')}>
-          <Button
-            type="text"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => {
+    ...(canUpdate
+      ? [
+          createActionColumn<AdminSetting>({
+            onEdit: (record) => {
               setEditingSetting(record);
               setFormModalOpen(true);
-            }}
-          />
-        </Tooltip>
-      ),
-    },
+            },
+            canEdit: () => canUpdate,
+            editTooltip: t('common.actions.edit'),
+            title: t('common.table.actions'),
+            width: 60,
+          }),
+        ]
+      : []),
   ];
 
   if (!canView) {

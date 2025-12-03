@@ -5,7 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
-import { createActionColumn } from 'src/components/common/tableColumns';
+import {
+  createActionColumn,
+  createSearchColumn,
+} from 'src/components/common/tableColumns';
 import { RoleFormModal } from 'src/features/admin/roles/components/RoleFormModal';
 import { useUserSearchSelect } from 'src/features/admin/users/hooks/useUserSearchSelect';
 import { createUserSelectColumn } from 'src/features/admin/users/utils/userSelectColumn';
@@ -135,15 +138,10 @@ export default function AdminRolesPage() {
       placeholder: t('adminRolesPage.table.filters.user'),
       mode: undefined,
     }),
-    {
-      title: t('common.search'),
+    createSearchColumn<AdminRole>({
       dataIndex: 'search',
-      hideInTable: true,
-      valueType: 'text',
-      fieldProps: {
-        placeholder: t('common.search'),
-      },
-    },
+      placeholder: t('common.search'),
+    }),
     ...(canView || canUpdate || canDelete
       ? [
           createActionColumn<AdminRole>({

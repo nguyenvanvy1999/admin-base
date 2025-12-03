@@ -1,11 +1,13 @@
 import type { ProColumns } from '@ant-design/pro-components';
 import { Button } from 'antd';
 import type { TableRowSelection } from 'antd/es/table/interface';
-import dayjs from 'dayjs';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppTable } from 'src/components/common/AppTable';
-import { createDateColumn } from 'src/components/common/tableColumns';
+import {
+  createDateColumn,
+  createStatusColumn,
+} from 'src/components/common/tableColumns';
 import type {
   AdminSession,
   AdminSessionStatus,
@@ -71,13 +73,12 @@ export function SessionsTable<
       valueType: 'dateRange',
       sorter: true,
     }),
-    {
-      title: t('adminSessionsPage.table.expired'),
+    createDateColumn<AdminSession>({
       dataIndex: 'expired',
+      title: t('adminSessionsPage.table.expired'),
+      format: 'YYYY-MM-DD HH:mm:ss',
       hideInSearch: true,
-      render: (_, record) =>
-        dayjs(record.expired).format('YYYY-MM-DD HH:mm:ss'),
-    },
+    }),
     {
       title: t('adminSessionsPage.table.device'),
       dataIndex: 'device',
@@ -90,15 +91,15 @@ export function SessionsTable<
       dataIndex: 'ip',
       render: (_, record) => record.ip ?? '-',
     },
-    {
-      title: t('common.table.status'),
+    createStatusColumn<AdminSession>({
       dataIndex: 'status',
+      title: t('common.table.status'),
+      getStatus: (record) => getSessionStatus(record, statusById),
       hideInSearch: true,
-      render: (_, record) => {
-        const status = getSessionStatus(record, statusById);
-        return <SessionStatusTag status={status} />;
-      },
-    },
+      render: (status: string) => (
+        <SessionStatusTag status={status as AdminSessionStatus} />
+      ),
+    }),
   ];
 
   const columns = extendBaseColumns
