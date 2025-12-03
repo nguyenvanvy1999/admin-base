@@ -515,6 +515,9 @@
       "revoke": "Thu hồi",
       "revokeConfirmTitle": "Xác nhận thu hồi session",
       "revokeConfirm": "Session này sẽ bị thu hồi. Tiếp tục?",
+      "revokeSelected": "Thu hồi đã chọn ({{count}})",
+      "revokeSelectedConfirmTitle": "Xác nhận thu hồi nhiều sessions",
+      "revokeSelectedConfirm": "{{count}} session(s) sẽ bị thu hồi. Tiếp tục?",
       "loadMore": "Tải thêm session"
     },
     "onlyOneSessionNotice": "Hệ thống đang bật chế độ chỉ cho phép một phiên đăng nhập hoạt động cho mỗi user. Khi user đăng nhập từ thiết bị mới, các phiên cũ sẽ tự động bị đăng xuất."

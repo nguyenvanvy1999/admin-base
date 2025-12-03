@@ -1,5 +1,6 @@
 import type { ProColumns } from '@ant-design/pro-components';
 import { Button } from 'antd';
+import type { TableRowSelection } from 'antd/es/table/interface';
 import dayjs from 'dayjs';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -30,6 +31,7 @@ export interface SessionsTableProps<
   onSubmit?: (values: T) => void;
   onReset?: () => void;
   extraToolbarActions?: ReactNode[];
+  rowSelection?: TableRowSelection<AdminSession>;
 }
 
 export function SessionsTable<
@@ -47,6 +49,7 @@ export function SessionsTable<
   onSubmit,
   onReset,
   extraToolbarActions = [],
+  rowSelection,
 }: SessionsTableProps<T>) {
   const { t } = useTranslation();
 
@@ -100,6 +103,7 @@ export function SessionsTable<
       loading={loading}
       dataSource={sessions}
       pagination={false}
+      rowSelection={rowSelection}
       search={searchConfig ?? { labelWidth: 'auto' }}
       form={
         formInitialValues

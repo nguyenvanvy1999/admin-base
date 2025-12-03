@@ -515,6 +515,9 @@
       "revoke": "Revoke",
       "revokeConfirmTitle": "Confirm revoke session",
       "revokeConfirm": "This session will be revoked. Continue?",
+      "revokeSelected": "Revoke Selected ({{count}})",
+      "revokeSelectedConfirmTitle": "Confirm revoke multiple sessions",
+      "revokeSelectedConfirm": "{{count}} session(s) will be revoked. Continue?",
       "loadMore": "Load more sessions"
     },
     "onlyOneSessionNotice": "The system is configured to allow only one active session per user. When a user signs in from a new device, previous sessions will be automatically logged out."

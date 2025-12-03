@@ -1,5 +1,6 @@
 import type { ProColumns } from '@ant-design/pro-components';
 import { Alert, Button, Popconfirm } from 'antd';
+import type { TableRowSelection } from 'antd/es/table/interface';
 import type dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -51,6 +52,7 @@ export default function AdminSessionsPage() {
   const [userIdsFilter, setUserIdsFilter] = useState<string[] | undefined>(
     undefined,
   );
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
 
   const listParams = useMemo(
     () => ({
@@ -105,12 +107,35 @@ export default function AdminSessionsPage() {
     await reload();
   };
 
+  const handleRevokeSelected = async () => {
+    if (selectedRowKeys.length === 0) return;
+
+    await adminSessionsService.revoke(selectedRowKeys);
+    setSelectedRowKeys([]);
+    await reload();
+  };
+
   const handleResetFilters = () => {
     resetDateRange();
     setStatusFilter('all');
     setIpFilter(undefined);
     setUserIdsFilter(undefined);
     userSearchSelect.setUserSearch('');
+    setSelectedRowKeys([]);
+  };
+
+  const rowSelection: TableRowSelection<AdminSession> = {
+    selectedRowKeys,
+    onChange: (keys) => {
+      setSelectedRowKeys(keys.map(String));
+    },
+    getCheckboxProps: (record) => {
+      const status = getSessionStatus(record, statusById);
+      const canRevokeThis = canRevokeAll || (canRevokeSelf && !canViewAll);
+      return {
+        disabled: !canRevokeThis || status !== 'active',
+      };
+    },
   };
 
   const columns: ProColumns<AdminSession>[] = [
@@ -188,6 +213,30 @@ export default function AdminSessionsPage() {
         onLoadMore={loadMore}
         columns={columns}
         extendBaseColumns
+        rowSelection={rowSelection}
+        extraToolbarActions={[
+          <Popconfirm
+            key="revoke-selected"
+            title={t('adminSessionsPage.actions.revokeSelectedConfirmTitle')}
+            description={t('adminSessionsPage.actions.revokeSelectedConfirm', {
+              count: selectedRowKeys.length,
+            })}
+            onConfirm={handleRevokeSelected}
+            disabled={selectedRowKeys.length === 0}
+          >
+            <Button
+              danger
+              disabled={
+                selectedRowKeys.length === 0 ||
+                (!canRevokeAll && !canRevokeSelf)
+              }
+            >
+              {t('adminSessionsPage.actions.revokeSelected', {
+                count: selectedRowKeys.length,
+              })}
+            </Button>
+          </Popconfirm>,
+        ]}
         formInitialValues={{
           ip: ipFilter,
           status: statusFilter,
