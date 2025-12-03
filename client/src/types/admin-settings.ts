@@ -18,4 +18,5 @@ export interface AdminSetting {
 export interface UpdateSettingDto {
   value: string;
   isSecret: boolean;
+  description?: string | null;
 }

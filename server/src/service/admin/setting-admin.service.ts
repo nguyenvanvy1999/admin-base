@@ -33,7 +33,7 @@ export class SettingAdminService {
   }
 
   async update(params: UpdateParams): Promise<void> {
-    const { id, value, isSecret } = params;
+    const { id, value, isSecret, description } = params;
     const setting = await this.deps.db.setting.findUnique({
       where: { id },
       select: { value: true, type: true, key: true },
@@ -50,6 +50,7 @@ export class SettingAdminService {
       data: {
         value: newValue,
         isSecret,
+        ...(description !== undefined && { description }),
       },
     });
     await settingCache.set(

@@ -54,6 +54,7 @@ export function SettingFormModal({
           ? JSON.stringify(parsedValue, null, 2)
           : parsedValue,
       isSecret: setting.isSecret ?? false,
+      description: setting.description ?? '',
     };
   }, [setting]);
 
@@ -79,6 +80,7 @@ export function SettingFormModal({
     const payload: UpdateSettingDto = {
       value: formattedValue,
       isSecret: values.isSecret ?? false,
+      description: values.description ?? null,
     };
 
     await onSubmit(payload);
@@ -213,7 +215,6 @@ export function SettingFormModal({
     >
       <Alert
         title={setting.key}
-        description={setting.description || '-'}
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
@@ -227,6 +228,15 @@ export function SettingFormModal({
           style={{ marginBottom: 16 }}
         />
       )}
+
+      <ProFormTextArea
+        name="description"
+        label={t('adminSettingsPage.form.description')}
+        fieldProps={{
+          rows: 3,
+          placeholder: t('adminSettingsPage.form.descriptionPlaceholder'),
+        }}
+      />
 
       {renderValueInput()}
 

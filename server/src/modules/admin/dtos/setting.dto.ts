@@ -12,4 +12,5 @@ export const SettingResDto = t.Object({
 export const UpdateSettingDto = t.Object({
   value: t.String(),
   isSecret: t.Boolean(),
+  description: t.Optional(t.Nullable(t.String())),
 });

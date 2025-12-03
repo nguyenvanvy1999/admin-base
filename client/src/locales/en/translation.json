@@ -473,6 +473,8 @@
     "form": {
       "value": "Value",
       "valueRequired": "Please enter a value",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter a description for this setting",
       "isSecret": "Mark as Secret",
       "secretWarning": "Current value is hidden for security reasons. Please enter a new value if you want to change it.",
       "secretPlaceholder": "Enter new value (old value is hidden for security reasons)",

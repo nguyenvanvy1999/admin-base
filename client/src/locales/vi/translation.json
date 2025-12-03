@@ -473,6 +473,8 @@
     "form": {
       "value": "Giá trị",
       "valueRequired": "Vui lòng nhập giá trị",
+      "description": "Mô tả",
+      "descriptionPlaceholder": "Nhập mô tả cho setting này",
       "isSecret": "Đánh dấu là Secret",
       "secretWarning": "Giá trị hiện tại đã được ẩn vì lý do bảo mật. Vui lòng nhập giá trị mới nếu muốn thay đổi.",
       "secretPlaceholder": "Nhập giá trị mới (giá trị cũ đã được ẩn vì lý do bảo mật)",
