@@ -109,6 +109,54 @@ export default function AdminUsersPage() {
       ),
     },
     {
+      title: t('adminUsersPage.table.sessions'),
+      dataIndex: 'sessionStats',
+      hideInSearch: true,
+      render: (_, record) => {
+        const { sessionStats } = record;
+        return (
+          <Tooltip
+            title={
+              <>
+                <div>
+                  {t('adminUsersPage.sessionStats.total')}: {sessionStats.total}
+                </div>
+                <div>
+                  {t('adminUsersPage.sessionStats.active')}:{' '}
+                  {sessionStats.active}
+                </div>
+                <div>
+                  {t('adminUsersPage.sessionStats.revoked')}:{' '}
+                  {sessionStats.revoked}
+                </div>
+                <div>
+                  {t('adminUsersPage.sessionStats.expired')}:{' '}
+                  {sessionStats.expired}
+                </div>
+              </>
+            }
+          >
+            <Space size="small">
+              <Tag color="blue">
+                {t('adminUsersPage.sessionStats.total')}: {sessionStats.total}
+              </Tag>
+              <Tag color="green">
+                {t('adminUsersPage.sessionStats.active')}: {sessionStats.active}
+              </Tag>
+              <Tag color="red">
+                {t('adminUsersPage.sessionStats.revoked')}:{' '}
+                {sessionStats.revoked}
+              </Tag>
+              <Tag color="default">
+                {t('adminUsersPage.sessionStats.expired')}:{' '}
+                {sessionStats.expired}
+              </Tag>
+            </Space>
+          </Tooltip>
+        );
+      },
+    },
+    {
       title: t('adminUsersPage.table.rolesWithExpiry'),
       dataIndex: 'roles',
       hideInSearch: true,

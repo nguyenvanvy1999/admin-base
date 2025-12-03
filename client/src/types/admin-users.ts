@@ -23,6 +23,13 @@ export interface AdminUserRoleRef {
   expiresAt: string | null;
 }
 
+export interface SessionStats {
+  total: number;
+  active: number;
+  revoked: number;
+  expired: number;
+}
+
 export interface AdminUserSummary {
   id: string;
   email: string;
@@ -32,6 +39,7 @@ export interface AdminUserSummary {
   emailVerified: boolean;
   roles: AdminUserRoleRef[];
   protected?: boolean;
+  sessionStats: SessionStats;
 }
 
 export interface AdminUserDetail extends AdminUserSummary {

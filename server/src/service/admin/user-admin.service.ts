@@ -218,8 +218,21 @@ export class AdminUserService {
       this.deps.db.user.count({ where }),
     ]);
 
+    const userIds = docs.map((doc) => doc.id);
+    const sessionStatsMap = await this.getSessionStatsForUsers(userIds);
+
+    const docsWithStats = docs.map((doc) => ({
+      ...doc,
+      sessionStats: sessionStatsMap.get(doc.id) ?? {
+        total: 0,
+        active: 0,
+        revoked: 0,
+        expired: 0,
+      },
+    }));
+
     return {
-      docs,
+      docs: docsWithStats,
       count,
     };
   }
@@ -243,7 +256,18 @@ export class AdminUserService {
       throw new NotFoundErr(ErrCode.UserNotFound);
     }
 
-    return user;
+    const sessionStatsMap = await this.getSessionStatsForUsers([userId]);
+    const sessionStats = sessionStatsMap.get(userId) ?? {
+      total: 0,
+      active: 0,
+      revoked: 0,
+      expired: 0,
+    };
+
+    return {
+      ...user,
+      sessionStats,
+    };
   }
 
   async resetUserMfa(params: BaseUserActionParams): Promise<UserActionResult> {
@@ -568,6 +592,88 @@ export class AdminUserService {
       .filter(Boolean)
       .forEach((id) => result.add(id));
     return Array.from(result);
+  }
+
+  private async getSessionStatsForUsers(
+    userIds: string[],
+  ): Promise<
+    Map<
+      string,
+      { total: number; active: number; revoked: number; expired: number }
+    >
+  > {
+    if (userIds.length === 0) {
+      return new Map();
+    }
+
+    const now = new Date();
+    const statsMap = new Map<
+      string,
+      { total: number; active: number; revoked: number; expired: number }
+    >();
+
+    for (const userId of userIds) {
+      statsMap.set(userId, {
+        total: 0,
+        active: 0,
+        revoked: 0,
+        expired: 0,
+      });
+    }
+
+    const [totalStats, revokedStats, expiredStats] = await Promise.all([
+      this.deps.db.session.groupBy({
+        by: ['createdById'],
+        where: {
+          createdById: { in: userIds },
+        },
+        _count: true,
+      }),
+      this.deps.db.session.groupBy({
+        by: ['createdById'],
+        where: {
+          createdById: { in: userIds },
+          revoked: true,
+        },
+        _count: true,
+      }),
+      this.deps.db.session.groupBy({
+        by: ['createdById'],
+        where: {
+          createdById: { in: userIds },
+          revoked: false,
+          expired: { lt: now },
+        },
+        _count: true,
+      }),
+    ]);
+
+    for (const stat of totalStats) {
+      const userStats = statsMap.get(stat.createdById);
+      if (userStats) {
+        userStats.total = stat._count;
+      }
+    }
+
+    for (const stat of revokedStats) {
+      const userStats = statsMap.get(stat.createdById);
+      if (userStats) {
+        userStats.revoked = stat._count;
+      }
+    }
+
+    for (const stat of expiredStats) {
+      const userStats = statsMap.get(stat.createdById);
+      if (userStats) {
+        userStats.expired = stat._count;
+      }
+    }
+
+    for (const stats of statsMap.values()) {
+      stats.active = stats.total - stats.revoked - stats.expired;
+    }
+
+    return statsMap;
   }
 }
 

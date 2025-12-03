@@ -215,12 +215,19 @@
       "rolesWithExpiry": "Roles & Expiry",
       "created": "Created at",
       "emailVerified": "Email verified",
+      "sessions": "Sessions",
       "actions": "Actions",
       "filters": {
         "keyword": "Email or display name",
         "status": "Status",
         "role": "Role"
       }
+    },
+    "sessionStats": {
+      "total": "Total",
+      "active": "Active",
+      "revoked": "Revoked",
+      "expired": "Expired"
     },
     "create": {
       "button": "Create user",
@@ -236,6 +243,7 @@
       "tabSecurity": "Security",
       "tabEdit": "Edit",
       "tabRoles": "Roles",
+      "tabSessions": "Sessions",
       "mfaResetSuccess": "MFA reset successfully",
       "mfaDisableSuccess": "MFA disabled successfully"
     },

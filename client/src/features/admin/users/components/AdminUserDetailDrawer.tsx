@@ -1,3 +1,4 @@
+import type { ProColumns } from '@ant-design/pro-components';
 import {
   ProDescriptions,
   ProForm,
@@ -14,6 +15,7 @@ import {
   Button,
   Flex,
   Input,
+  Popconfirm,
   Skeleton,
   Space,
   Tabs,
@@ -26,6 +28,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppAdminUserStatusSelect } from 'src/components/common/AppAdminUserStatusSelect';
 import { AppDrawer } from 'src/components/common/AppDrawer';
+import { SessionsTable } from 'src/features/admin/sessions/components/SessionsTable';
+import { useSessionDateRange } from 'src/features/admin/sessions/hooks/useSessionDateRange';
+import { getSessionStatus } from 'src/features/admin/sessions/utils/sessionStatus';
 import {
   useAdminUserDetail,
   useAdminUserMfaAction,
@@ -33,9 +38,13 @@ import {
   useUpdateAdminUserRoles,
 } from 'src/features/admin/users/hooks/useAdminUsers';
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
+import { useAdminSessions } from 'src/hooks/api/useAdminSessions';
+import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { useModal } from 'src/hooks/useModal';
 import { useNotify } from 'src/hooks/useNotify';
 import { toIsoStringOrNull } from 'src/lib/utils/date.utils';
+import { adminSessionsService } from 'src/services/api/admin-sessions.service';
+import type { AdminSession } from 'src/types/admin-sessions';
 import {
   ADMIN_LOCKOUT_REASONS,
   type AdminLockoutReason,
@@ -50,7 +59,7 @@ interface AdminUserDetailDrawerProps {
   canUpdate: boolean;
   canManageMfa: boolean;
   onActionCompleted?: () => void;
-  initialTab?: 'general' | 'security' | 'edit' | 'roles';
+  initialTab?: 'general' | 'security' | 'edit' | 'roles' | 'sessions';
 }
 
 interface AdminUserUpdateFormValues {
@@ -147,7 +156,7 @@ export function AdminUserDetailDrawer({
   initialTab = 'general',
 }: AdminUserDetailDrawerProps) {
   const [tabKey, setTabKey] = useState<
-    'general' | 'security' | 'edit' | 'roles'
+    'general' | 'security' | 'edit' | 'roles' | 'sessions'
   >(initialTab);
   const { t } = useTranslation();
   const notify = useNotify();
@@ -648,9 +657,131 @@ export function AdminUserDetailDrawer({
                   },
                 ]
               : []),
+            {
+              key: 'sessions',
+              label: t('adminUsersPage.update.tabSessions'),
+              children: (
+                <UserSessionsTab
+                  userId={userId}
+                  open={tabKey === 'sessions' && open}
+                  onActionCompleted={onActionCompleted}
+                />
+              ),
+            },
           ]}
         />
       )}
     </AppDrawer>
+  );
+}
+
+function UserSessionsTab({
+  userId,
+  open,
+  onActionCompleted,
+}: {
+  userId?: string | null;
+  open: boolean;
+  onActionCompleted?: () => void;
+}) {
+  const { t } = useTranslation();
+  const { hasPermission } = usePermissions();
+  const canRevokeAll = hasPermission('SESSION.REVOKE_ALL');
+  const canRevokeSelf = hasPermission('SESSION.REVOKE');
+
+  const { dateRange, setDateRange, created0, created1, resetDateRange } =
+    useSessionDateRange(30);
+
+  const listParams = useMemo(
+    () => ({
+      take: 20,
+      created0,
+      created1,
+      userIds: userId ? [userId] : undefined,
+    }),
+    [created0, created1, userId],
+  );
+
+  const {
+    sessions,
+    statusById,
+    paging,
+    isLoading,
+    isInitialLoading,
+    reload,
+    loadMore,
+  } = useAdminSessions({
+    initialParams: listParams,
+    autoLoad: false,
+  });
+
+  useEffect(() => {
+    if (open && userId) {
+      void reload();
+    }
+  }, [open, userId, reload]);
+
+  const handleRevoke = async (session: AdminSession) => {
+    await adminSessionsService.revoke([session.id]);
+    await reload();
+    onActionCompleted?.();
+  };
+
+  const columns: ProColumns<AdminSession>[] = [
+    {
+      title: t('adminSessionsPage.table.actions'),
+      dataIndex: 'actions',
+      hideInSearch: true,
+      render: (_, record) => {
+        const status = getSessionStatus(record, statusById);
+        if (status !== 'active') {
+          return '-';
+        }
+
+        const canRevokeThis = canRevokeAll || canRevokeSelf;
+
+        if (!canRevokeThis) {
+          return '-';
+        }
+
+        return (
+          <Popconfirm
+            title={t('adminSessionsPage.actions.revokeConfirmTitle')}
+            description={t('adminSessionsPage.actions.revokeConfirm')}
+            onConfirm={() => handleRevoke(record)}
+          >
+            <Button size="small" danger type="link">
+              {t('adminSessionsPage.actions.revoke')}
+            </Button>
+          </Popconfirm>
+        );
+      },
+    },
+  ];
+
+  if (!userId) {
+    return null;
+  }
+
+  return (
+    <SessionsTable
+      sessions={sessions}
+      statusById={statusById}
+      loading={isLoading || isInitialLoading}
+      paging={paging}
+      onLoadMore={loadMore}
+      columns={columns}
+      extendBaseColumns
+      formInitialValues={{
+        created: dateRange,
+      }}
+      onSubmit={(values) => {
+        const range = values.created as [dayjs.Dayjs, dayjs.Dayjs] | undefined;
+        if (range && range.length === 2) {
+          setDateRange([range[0]!, range[1]!]);
+        }
+      }}
+      onReset={resetDateRange}
+    />
   );
 }

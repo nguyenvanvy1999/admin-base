@@ -177,6 +177,13 @@ export const AdminUserListQueryDto = t.Intersect([
   }),
 ]);
 
+const SessionStatsDto = t.Object({
+  total: t.Integer({ description: 'Total number of sessions' }),
+  active: t.Integer({ description: 'Number of active sessions' }),
+  revoked: t.Integer({ description: 'Number of revoked sessions' }),
+  expired: t.Integer({ description: 'Number of expired sessions' }),
+});
+
 const AdminUserSummaryDto = t.Object({
   id: t.String(),
   email: t.String({ format: 'email' }),
@@ -186,6 +193,7 @@ const AdminUserSummaryDto = t.Object({
   emailVerified: t.Boolean(),
   roles: roleListDto,
   protected: t.Boolean(),
+  sessionStats: SessionStatsDto,
 });
 
 export const AdminUserListResDto = PaginatedDto(AdminUserSummaryDto);
