@@ -509,6 +509,22 @@
       "secretPlaceholder": "Enter new value (old value is hidden for security reasons)",
       "jsonPlaceholder": "Enter valid JSON, e.g.: {\"key\": \"value\"}",
       "jsonInvalid": "Value must be valid JSON"
+    },
+    "keys": {
+      "ENB_IP_WHITELIST": "Enable IP Whitelist",
+      "MAINTENANCE_END_DATE": "Maintenance End Date",
+      "ENB_PASSWORD_ATTEMPT": "Enable Password Attempt Tracking",
+      "ENB_PASSWORD_EXPIRED": "Enable Password Expiration",
+      "ENB_MFA_REQUIRED": "Require MFA",
+      "ENB_ONLY_ONE_SESSION": "Allow Only One Session",
+      "REGISTER_OTP_LIMIT": "Register OTP Limit",
+      "REGISTER_RATE_LIMIT_MAX": "Register Rate Limit Max",
+      "REGISTER_RATE_LIMIT_WINDOW_SECONDS": "Register Rate Limit Window (seconds)",
+      "LOGIN_RATE_LIMIT_MAX": "Login Rate Limit Max",
+      "LOGIN_RATE_LIMIT_WINDOW_SECONDS": "Login Rate Limit Window (seconds)",
+      "ENB_SECURITY_DEVICE_RECOGNITION": "Enable Device Recognition",
+      "ENB_SECURITY_BLOCK_UNKNOWN_DEVICE": "Block Unknown Device",
+      "ENB_SECURITY_AUDIT_WARNING": "Audit Warning for New Device"
     }
   },
   "adminSessionsPage": {

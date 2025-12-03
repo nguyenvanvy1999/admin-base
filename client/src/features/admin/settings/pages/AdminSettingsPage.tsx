@@ -160,6 +160,11 @@ export default function AdminSettingsPage() {
       copyable: true,
       ellipsis: true,
       width: 250,
+      render: (_, record) => {
+        const i18nKey = `adminSettingsPage.keys.${record.key}`;
+        const translatedKey = t(i18nKey as any);
+        return translatedKey !== i18nKey ? translatedKey : record.key;
+      },
     },
     {
       title: t('adminSettingsPage.table.description'),

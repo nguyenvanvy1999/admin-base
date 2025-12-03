@@ -233,7 +233,11 @@ export function SettingFormModal({
       }}
     >
       <Alert
-        title={setting.key}
+        title={(() => {
+          const i18nKey = `adminSettingsPage.keys.${setting.key}`;
+          const translatedKey = t(i18nKey as any);
+          return translatedKey !== i18nKey ? translatedKey : setting.key;
+        })()}
         type="info"
         showIcon
         style={{ marginBottom: 16 }}

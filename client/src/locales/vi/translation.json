@@ -509,6 +509,22 @@
       "secretPlaceholder": "Nhập giá trị mới (giá trị cũ đã được ẩn vì lý do bảo mật)",
       "jsonPlaceholder": "Nhập JSON hợp lệ, ví dụ: {\"key\": \"value\"}",
       "jsonInvalid": "Giá trị phải là JSON hợp lệ"
+    },
+    "keys": {
+      "ENB_IP_WHITELIST": "Bật IP Whitelist",
+      "MAINTENANCE_END_DATE": "Ngày kết thúc bảo trì",
+      "ENB_PASSWORD_ATTEMPT": "Bật theo dõi số lần thử mật khẩu",
+      "ENB_PASSWORD_EXPIRED": "Bật tính năng hết hạn mật khẩu",
+      "ENB_MFA_REQUIRED": "Bắt buộc MFA",
+      "ENB_ONLY_ONE_SESSION": "Chỉ cho phép một session",
+      "REGISTER_OTP_LIMIT": "Giới hạn OTP đăng ký",
+      "REGISTER_RATE_LIMIT_MAX": "Số lần đăng ký tối đa",
+      "REGISTER_RATE_LIMIT_WINDOW_SECONDS": "Thời gian cửa sổ rate limit đăng ký (giây)",
+      "LOGIN_RATE_LIMIT_MAX": "Số lần đăng nhập tối đa",
+      "LOGIN_RATE_LIMIT_WINDOW_SECONDS": "Thời gian cửa sổ rate limit đăng nhập (giây)",
+      "ENB_SECURITY_DEVICE_RECOGNITION": "Bật nhận diện thiết bị",
+      "ENB_SECURITY_BLOCK_UNKNOWN_DEVICE": "Chặn thiết bị không nhận diện được",
+      "ENB_SECURITY_AUDIT_WARNING": "Cảnh báo audit thiết bị mới"
     }
   },
   "adminSessionsPage": {
