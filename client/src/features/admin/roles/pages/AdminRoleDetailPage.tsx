@@ -398,22 +398,18 @@ export default function AdminRoleDetailPage() {
     </Button>,
   ];
 
-  const pageExtra = (
+  const showEditButton = canUpdate && !isCreateMode && !isEditing;
+  const pageExtra = showEditButton ? (
     <Space>
-      <Button onClick={() => navigate('/admin/roles')}>
-        {t('common.back')}
+      <Button
+        type="primary"
+        disabled={isLoading}
+        onClick={() => setIsEditing(true)}
+      >
+        {t('common.actions.edit')}
       </Button>
-      {canUpdate && !isCreateMode && !isEditing && (
-        <Button
-          type="primary"
-          disabled={isLoading}
-          onClick={() => setIsEditing(true)}
-        >
-          {t('common.actions.edit')}
-        </Button>
-      )}
     </Space>
-  );
+  ) : undefined;
 
   const showNotFound = !isLoading && !data && !isCreateMode;
   const showForm = canUpdate && isEditing;
