@@ -4,6 +4,7 @@ import { adminUsersService } from 'src/services/api/admin-users.service';
 export interface UseUserSearchSelectOptions {
   enabled?: boolean;
   take?: number;
+  debounceMs?: number;
 }
 
 export interface UseUserSearchSelectResult {
@@ -16,7 +17,7 @@ export interface UseUserSearchSelectResult {
 export function useUserSearchSelect(
   options: UseUserSearchSelectOptions = {},
 ): UseUserSearchSelectResult {
-  const { enabled = true, take = 20 } = options;
+  const { enabled = true, take = 30, debounceMs = 300 } = options;
   const [userSearch, setUserSearch] = useState('');
   const [userOptions, setUserOptions] = useState<
     { label: string; value: string }[]
@@ -29,6 +30,13 @@ export function useUserSearchSelect(
       return;
     }
 
+    // Only fetch when user actually searches (not on mount)
+    if (!userSearch.trim()) {
+      setUserOptions([]);
+      setIsLoading(false);
+      return;
+    }
+
     const controller = new AbortController();
     let timeoutId: ReturnType<typeof setTimeout>;
 
@@ -38,7 +46,7 @@ export function useUserSearchSelect(
         const result = await adminUsersService.list({
           skip: 0,
           take,
-          search: userSearch || undefined,
+          search: userSearch.trim() || undefined,
         });
 
         if (!controller.signal.aborted) {
@@ -58,16 +66,16 @@ export function useUserSearchSelect(
       }
     };
 
-    // Debounce search
+    // Debounce search to avoid spam API calls
     timeoutId = setTimeout(() => {
       void fetchUsers();
-    }, 300);
+    }, debounceMs);
 
     return () => {
       controller.abort();
       clearTimeout(timeoutId);
     };
-  }, [enabled, userSearch, take]);
+  }, [enabled, userSearch, take, debounceMs]);
 
   return {
     userSearch,
