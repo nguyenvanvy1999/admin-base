@@ -41,6 +41,7 @@ import { getSessionStatus } from 'src/features/admin/sessions/utils/sessionStatu
 import {
   useAdminUserDetail,
   useAdminUserMfaAction,
+  useCreateAdminUser,
   useUpdateAdminUser,
   useUpdateAdminUserRoles,
 } from 'src/features/admin/users/hooks/useAdminUsers';
@@ -143,12 +144,14 @@ function getRoleExpiryMeta(expiresAt: string | null) {
 }
 
 export default function AdminUserDetailPage() {
-  const { userId } = useParams<{ userId: string }>();
+  const { userId } = useParams<{ userId?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const notify = useNotify();
   const modal = useModal();
+
+  const isCreateMode = !userId || userId === 'new';
 
   const initialTab = (searchParams.get('tab') || 'general') as
     | 'general'
@@ -164,11 +167,27 @@ export default function AdminUserDetailPage() {
   const canUpdate = hasPermission('USER.UPDATE');
   const canManageMfa = hasPermission('USER.RESET_MFA');
 
-  const { data, isLoading } = useAdminUserDetail(userId ?? undefined, true);
+  const effectiveUserId = isCreateMode ? undefined : userId;
+  const { data, isLoading } = useAdminUserDetail(
+    effectiveUserId ?? undefined,
+    !isCreateMode,
+  );
   const updateMutation = useUpdateAdminUser({
     onSuccess: () => {
       notify.notification.success({
         title: t('adminUsersPage.update.success'),
+      });
+      navigate('/admin/users');
+    },
+  });
+
+  const createMutation = useCreateAdminUser({
+    onSuccess: ({ auditLogId }) => {
+      notify.notification.success({
+        title: t('adminUsersPage.create.success'),
+        description: t('adminUsersPage.create.auditLog', {
+          auditId: auditLogId,
+        }),
       });
       navigate('/admin/users');
     },
@@ -249,6 +268,24 @@ export default function AdminUserDetailPage() {
     await updateMutation.mutateAsync({ userId, payload });
   };
 
+  const handleCreate = async (values: AdminUserUpdateFormValues) => {
+    const payload = {
+      email: (values as any).email as string,
+      password: (values as any).password as string,
+      roleIds: ((values as any).roleIds as string[] | undefined)?.filter(
+        Boolean,
+      ),
+      name:
+        typeof values.name === 'string' && values.name.trim().length > 0
+          ? values.name
+          : undefined,
+      status: values.status,
+      emailVerified: values.emailVerified,
+    };
+
+    await createMutation.mutateAsync(payload);
+  };
+
   const handleUpdateRoles = async (values: AdminUserUpdateRolesFormValues) => {
     if (!userId) {
       return;
@@ -308,8 +345,95 @@ export default function AdminUserDetailPage() {
 
   const handleTabChange = (key: string) => {
     setTabKey(key as typeof tabKey);
-    navigate(`/admin/users/${userId}?tab=${key}`, { replace: true });
+    const targetUserId = userId ?? 'new';
+    navigate(`/admin/users/${targetUserId}?tab=${key}`, { replace: true });
   };
+
+  if (isCreateMode) {
+    return (
+      <AppPage
+        title={t('adminUsersPage.create.title')}
+        breadcrumb={{
+          items: [
+            {
+              title: <Link to="/admin/users">{t('sidebar.adminUsers')}</Link>,
+            },
+            { title: t('adminUsersPage.create.title') },
+          ],
+        }}
+      >
+        <ProForm<AdminUserUpdateFormValues>
+          layout="vertical"
+          submitter={{
+            searchConfig: {
+              submitText: t('adminUsersPage.create.button'),
+            },
+            submitButtonProps: {
+              type: 'primary',
+              loading: createMutation.isPending,
+            },
+            resetButtonProps: false,
+          }}
+          onFinish={async (values) => {
+            await handleCreate(values);
+            return true;
+          }}
+        >
+          <ProFormText
+            name="email"
+            label={t('adminUsersPage.form.email')}
+            rules={[
+              { required: true, message: t('adminUsersPage.form.email') },
+              { type: 'email' },
+            ]}
+          />
+          <ProFormText.Password
+            name="password"
+            label={t('adminUsersPage.form.password')}
+            rules={[{ required: true }]}
+          />
+          <ProFormTextArea
+            name="name"
+            label={t('adminUsersPage.form.name')}
+            placeholder="Jane Doe"
+          />
+          <ProFormSelect
+            name="roleIds"
+            label={t('adminUsersPage.form.roles')}
+            mode="multiple"
+            placeholder="admin"
+            options={(allRolesResponse?.docs ?? []).map((role) => ({
+              value: role.id,
+              label: role.title,
+            }))}
+            fieldProps={{
+              loading: isLoadingRoles,
+              showSearch: true,
+              optionFilterProp: 'label',
+            }}
+          />
+          <ProFormSelect
+            name="status"
+            label={t('adminUsersPage.form.status')}
+            fieldProps={{
+              showSearch: true,
+              optionFilterProp: 'label',
+            }}
+            options={undefined}
+          >
+            <AppAdminUserStatusSelect
+              style={{ width: '100%' }}
+              placeholder={t('adminUsersPage.form.status')}
+            />
+          </ProFormSelect>
+          <ProFormSwitch
+            name="emailVerified"
+            label={t('adminUsersPage.form.emailVerified')}
+          />
+        </ProForm>
+      </AppPage>
+    );
+  }
 
   return (
     <AppPage

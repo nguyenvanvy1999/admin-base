@@ -1,7 +1,7 @@
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Space, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ADMIN_USER_STATUS_COLORS } from 'src/components/common/AppAdminUserStatusSelect';
@@ -13,7 +13,6 @@ import {
   createDateColumn,
   createSearchColumn,
 } from 'src/components/common/tableColumns';
-import { AdminUserCreateModal } from 'src/features/admin/users/components/AdminUserCreateModal';
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { adminUsersService } from 'src/services/api/admin-users.service';
@@ -42,8 +41,6 @@ export default function AdminUsersPage() {
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('USER.UPDATE');
   const { data: adminRolesResponse, isLoading: rolesLoading } = useAdminRoles();
-
-  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const roleOptions = useMemo(
     () =>
@@ -264,10 +261,6 @@ export default function AdminUsersPage() {
     }),
   ];
 
-  const handleReload = () => {
-    actionRef.current?.reload();
-  };
-
   return (
     <AppPage>
       <AppTable<AdminUserSummary, AdminUserTableParams>
@@ -310,22 +303,13 @@ export default function AdminUsersPage() {
                 <Button
                   key="create"
                   type="primary"
-                  onClick={() => setCreateModalOpen(true)}
+                  onClick={() => navigate('/admin/users/new')}
                 >
                   {t('adminUsersPage.create.button')}
                 </Button>,
               ]
             : []
         }
-      />
-
-      <AdminUserCreateModal
-        open={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        onSuccess={() => {
-          setCreateModalOpen(false);
-          handleReload();
-        }}
       />
     </AppPage>
   );
