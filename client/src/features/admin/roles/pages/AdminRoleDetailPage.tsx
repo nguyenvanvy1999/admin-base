@@ -1,8 +1,18 @@
-import type { ProColumns } from '@ant-design/pro-components';
-import { ProDescriptions, ProTable } from '@ant-design/pro-components';
-import { Alert, Skeleton, Space, Tabs, Tag, Tooltip } from 'antd';
+import type { ProColumns, ProFormInstance } from '@ant-design/pro-components';
+import {
+  ProDescriptions,
+  ProForm,
+  ProFormDateTimePicker,
+  ProFormList,
+  ProFormSelect,
+  ProFormSwitch,
+  ProFormText,
+  ProFormTextArea,
+  ProTable,
+} from '@ant-design/pro-components';
+import { Alert, Button, Card, Skeleton, Space, Tabs, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Link,
@@ -12,8 +22,15 @@ import {
 } from 'react-router-dom';
 import { AppPage } from 'src/components/common/AppPage';
 import { useAdminPermissions } from 'src/hooks/api/useAdminPermissions';
-import { useAdminRoleDetail } from 'src/hooks/api/useAdminRoles';
-import type { RolePlayerDetail } from 'src/types/admin-roles';
+import { useAdminRoleDetail, useUpsertRole } from 'src/hooks/api/useAdminRoles';
+import { usePermissions } from 'src/hooks/auth/usePermissions';
+import { useNotify } from 'src/hooks/useNotify';
+import { adminUsersService } from 'src/services/api/admin-users.service';
+import type {
+  AdminRole,
+  RolePlayerDetail,
+  UpsertRoleDto,
+} from 'src/types/admin-roles';
 
 function getRoleExpiryMeta(expiresAt: string | null) {
   if (!expiresAt) {
@@ -59,11 +76,26 @@ function getRoleExpiryMeta(expiresAt: string | null) {
   };
 }
 
+type RoleFormValues = {
+  title: string;
+  description?: string | null;
+  enabled: boolean;
+  permissionIds: string[];
+  players: {
+    playerId: string;
+    expiresAt: dayjs.Dayjs | null;
+  }[];
+};
+
 export default function AdminRoleDetailPage() {
-  const { roleId } = useParams<{ roleId: string }>();
+  const { roleId } = useParams<{ roleId?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const notify = useNotify();
+  const { hasPermission } = usePermissions();
+  const canUpdate = hasPermission('ROLE.UPDATE');
+  const isCreateMode = !roleId || roleId === 'new';
 
   const initialTab = (searchParams.get('tab') || 'general') as
     | 'general'
@@ -73,9 +105,27 @@ export default function AdminRoleDetailPage() {
     initialTab,
   );
 
-  const { data, isLoading } = useAdminRoleDetail(roleId ?? undefined);
+  const effectiveRoleId = isCreateMode ? undefined : roleId;
+  const { data, isLoading } = useAdminRoleDetail(effectiveRoleId);
   const { data: allPermissions = [], isLoading: permissionsLoading } =
     useAdminPermissions();
+  const [isEditing, setIsEditing] = useState(isCreateMode);
+  const [users, setUsers] = useState<Array<{ value: string; label: string }>>(
+    [],
+  );
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const searchTimeoutRef = useRef<number | null>(null);
+  const formRef = useRef<ProFormInstance<RoleFormValues>>(null);
+  const upsertMutation = useUpsertRole({
+    onSuccess: () => {
+      notify.success(t('adminRolesPage.upsert.success'));
+      if (isCreateMode) {
+        navigate('/admin/roles');
+      } else {
+        setIsEditing(false);
+      }
+    },
+  });
 
   const permissionMap = useMemo(() => {
     const map = new Map<
@@ -125,8 +175,23 @@ export default function AdminRoleDetailPage() {
 
   const handleTabChange = (key: string) => {
     setTabKey(key as typeof tabKey);
-    navigate(`/admin/roles/${roleId}?tab=${key}`, { replace: true });
+    const targetRoleId = roleId ?? 'new';
+    navigate(`/admin/roles/${targetRoleId}?tab=${key}`, { replace: true });
   };
+
+  const editableRole = useMemo<AdminRole | null>(() => {
+    if (!data) {
+      return null;
+    }
+    return {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      enabled: data.enabled,
+      permissionIds: data.permissionIds,
+      protected: data.protected,
+    };
+  }, [data]);
 
   const playerColumns: ProColumns<RolePlayerDetail>[] = [
     {
@@ -191,23 +256,333 @@ export default function AdminRoleDetailPage() {
     },
   ];
 
+  const breadcrumbTitle = isCreateMode
+    ? t('adminRolesPage.create.title')
+    : (data?.title ?? roleId);
+
+  const formInitialValues = useMemo<Partial<RoleFormValues>>(() => {
+    if (!data) {
+      return {
+        enabled: true,
+        permissionIds: [],
+        players: [],
+      };
+    }
+    return {
+      title: data.title,
+      description: data.description ?? '',
+      enabled: data.enabled,
+      permissionIds: data.permissionIds,
+      players:
+        data.players.map((player) => ({
+          playerId: player.id,
+          expiresAt: player.expiresAt ? dayjs(player.expiresAt) : null,
+        })) ?? [],
+    };
+  }, [data]);
+
+  useEffect(() => {
+    if (!data?.players) return;
+    setUsers((prev) => {
+      const existingIds = new Set(prev.map((u) => u.value));
+      const next = [...prev];
+      data.players.forEach((player) => {
+        if (!existingIds.has(player.id)) {
+          next.push({
+            value: player.id,
+            label: player.email,
+          });
+        }
+      });
+      return next;
+    });
+  }, [data]);
+
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current != null) {
+        window.clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleSearchUsers = (value: string) => {
+    const search = value.trim();
+
+    if (searchTimeoutRef.current != null) {
+      window.clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = null;
+    }
+
+    if (!search) {
+      setIsLoadingUsers(false);
+      return;
+    }
+
+    setIsLoadingUsers(true);
+
+    searchTimeoutRef.current = window.setTimeout(async () => {
+      try {
+        const response = await adminUsersService.list({
+          take: 20,
+          search,
+        });
+        setUsers((prev) => {
+          const map = new Map(prev.map((u) => [u.value, u]));
+          response.docs.forEach((user) => {
+            map.set(user.id, { value: user.id, label: user.email });
+          });
+          return Array.from(map.values());
+        });
+      } finally {
+        setIsLoadingUsers(false);
+      }
+    }, 300);
+  };
+
+  const handleCancelEdit = () => {
+    if (isCreateMode) {
+      navigate('/admin/roles');
+      return;
+    }
+    setIsEditing(false);
+    formRef.current?.setFieldsValue(formInitialValues);
+  };
+
+  const handleFormFinish = async (values: RoleFormValues) => {
+    const permissionIds =
+      values.permissionIds ??
+      editableRole?.permissionIds ??
+      formInitialValues.permissionIds ??
+      [];
+
+    const playersInput = values.players ?? formInitialValues.players ?? [];
+    const payload: UpsertRoleDto = {
+      ...(editableRole ? { id: editableRole.id } : {}),
+      title: values.title.trim(),
+      description:
+        typeof values.description === 'string' &&
+        values.description.trim().length > 0
+          ? values.description.trim()
+          : null,
+      enabled: values.enabled ?? true,
+      permissionIds,
+      players: playersInput.map((player) => ({
+        playerId: player.playerId,
+        expiresAt: player.expiresAt
+          ? (() => {
+              const date = dayjs(player.expiresAt);
+              return date.isValid() ? date.toISOString() : null;
+            })()
+          : null,
+      })),
+    };
+    await upsertMutation.mutateAsync(payload);
+  };
+
+  const submitterButtons = [
+    <Button
+      key="cancel"
+      onClick={handleCancelEdit}
+      disabled={upsertMutation.isPending}
+    >
+      {t('common.cancel')}
+    </Button>,
+    <Button
+      key="submit"
+      type="primary"
+      loading={upsertMutation.isPending}
+      onClick={() => formRef.current?.submit?.()}
+    >
+      {isCreateMode ? t('adminRolesPage.create.button') : t('common.save')}
+    </Button>,
+  ];
+
+  const pageExtra = (
+    <Space>
+      <Button onClick={() => navigate('/admin/roles')}>
+        {t('common.back')}
+      </Button>
+      {canUpdate && !isCreateMode && !isEditing && (
+        <Button
+          type="primary"
+          disabled={isLoading}
+          onClick={() => setIsEditing(true)}
+        >
+          {t('common.actions.edit')}
+        </Button>
+      )}
+    </Space>
+  );
+
+  const showNotFound = !isLoading && !data && !isCreateMode;
+  const showForm = canUpdate && isEditing;
+
   return (
     <AppPage
-      title={t('adminRolesPage.detail.title')}
+      title={
+        isCreateMode
+          ? t('adminRolesPage.create.title')
+          : t('adminRolesPage.detail.title')
+      }
+      extra={pageExtra}
       breadcrumb={{
         items: [
           {
             title: <Link to="/admin/roles">{t('sidebar.adminRoles')}</Link>,
           },
-          { title: data?.title ?? roleId },
+          { title: breadcrumbTitle },
         ],
       }}
     >
-      {isLoading && <Skeleton active paragraph={{ rows: 6 }} />}
-      {!isLoading && !data && (
+      {isLoading && !isCreateMode && (
+        <Skeleton active paragraph={{ rows: 6 }} />
+      )}
+      {showForm && (
+        <Card>
+          <ProForm<RoleFormValues>
+            key={editableRole?.id ?? 'new'}
+            formRef={formRef}
+            layout="vertical"
+            initialValues={formInitialValues}
+            onFinish={handleFormFinish}
+            submitter={{
+              render: () => submitterButtons,
+            }}
+          >
+            <Tabs
+              items={[
+                {
+                  key: 'general',
+                  label: t('adminRolesPage.form.tabs.general'),
+                  children: (
+                    <>
+                      <ProFormText
+                        name="title"
+                        label={t('adminRolesPage.form.title')}
+                        rules={[
+                          {
+                            required: true,
+                            message: t('adminRolesPage.form.titleRequired'),
+                          },
+                          {
+                            min: 3,
+                            message: t('adminRolesPage.form.titleMin'),
+                          },
+                        ]}
+                        placeholder={t('adminRolesPage.form.titlePlaceholder')}
+                      />
+                      <ProFormTextArea
+                        name="description"
+                        label={t('adminRolesPage.form.description')}
+                        placeholder={t(
+                          'adminRolesPage.form.descriptionPlaceholder',
+                        )}
+                      />
+                      <ProFormSwitch
+                        name="enabled"
+                        label={t('adminRolesPage.form.enabled')}
+                      />
+                    </>
+                  ),
+                },
+                {
+                  key: 'permissions',
+                  label: t('adminRolesPage.form.tabs.permissions'),
+                  children: (
+                    <ProFormSelect
+                      name="permissionIds"
+                      label={t('adminRolesPage.form.permissions')}
+                      mode="multiple"
+                      options={allPermissions.map((perm) => ({
+                        value: perm.id,
+                        label: perm.title,
+                      }))}
+                      fieldProps={{
+                        loading: permissionsLoading,
+                        showSearch: true,
+                        optionFilterProp: 'label',
+                        placeholder: t(
+                          'adminRolesPage.form.permissionsPlaceholder',
+                        ),
+                      }}
+                      rules={[
+                        {
+                          required: true,
+                          message: t('adminRolesPage.form.permissionsRequired'),
+                        },
+                        {
+                          type: 'array',
+                          min: 1,
+                          message: t('adminRolesPage.form.permissionsMin'),
+                        },
+                      ]}
+                    />
+                  ),
+                },
+                {
+                  key: 'users',
+                  label: t('adminRolesPage.form.tabs.users'),
+                  children: (
+                    <ProFormList
+                      name="players"
+                      label={t('adminRolesPage.form.users')}
+                      creatorButtonProps={{
+                        position: 'bottom',
+                      }}
+                      copyIconProps={false}
+                      deleteIconProps={{
+                        tooltipText: t('common.cancel'),
+                      }}
+                    >
+                      {(field) => (
+                        <Space
+                          key={field.key}
+                          align="baseline"
+                          style={{ display: 'flex', gap: 16 }}
+                        >
+                          <ProFormSelect
+                            name="playerId"
+                            label={t('adminRolesPage.form.users')}
+                            rules={[
+                              {
+                                required: true,
+                                message: t('adminRolesPage.form.titleRequired'),
+                              },
+                            ]}
+                            fieldProps={{
+                              loading: isLoadingUsers,
+                              showSearch: true,
+                              optionFilterProp: 'label',
+                              filterOption: false,
+                              onSearch: handleSearchUsers,
+                              options: users,
+                              placeholder: t(
+                                'adminRolesPage.form.usersPlaceholder',
+                              ),
+                            }}
+                          />
+                          <ProFormDateTimePicker
+                            name="expiresAt"
+                            label={t('adminRolesPage.form.users')}
+                            fieldProps={{
+                              showTime: true,
+                            }}
+                          />
+                        </Space>
+                      )}
+                    </ProFormList>
+                  ),
+                },
+              ]}
+            />
+          </ProForm>
+        </Card>
+      )}
+      {showNotFound && (
         <Alert type="warning" title={t('errors.itemNotFound')} showIcon />
       )}
-      {!isLoading && data && (
+      {!showNotFound && !isLoading && !isEditing && (
         <Tabs
           activeKey={tabKey}
           onChange={handleTabChange}
@@ -218,21 +593,25 @@ export default function AdminRoleDetailPage() {
               children: (
                 <ProDescriptions column={1} bordered>
                   <ProDescriptions.Item label={t('adminRolesPage.table.title')}>
-                    {data.title}
+                    {data?.title ?? '-'}
                   </ProDescriptions.Item>
                   <ProDescriptions.Item
                     label={t('adminRolesPage.table.description')}
                   >
-                    {data.description ?? '-'}
+                    {data?.description ?? '-'}
                   </ProDescriptions.Item>
                   <ProDescriptions.Item
                     label={t('adminRolesPage.table.enabled')}
                   >
-                    <Tag color={data.enabled ? 'green' : 'red'}>
-                      {data.enabled
-                        ? t('common.enabled')
-                        : t('common.disabled')}
-                    </Tag>
+                    {data ? (
+                      <Tag color={data.enabled ? 'green' : 'red'}>
+                        {data.enabled
+                          ? t('common.enabled')
+                          : t('common.disabled')}
+                      </Tag>
+                    ) : (
+                      <Tag color="default">-</Tag>
+                    )}
                   </ProDescriptions.Item>
                   <ProDescriptions.Item label={t('adminRolesPage.table.users')}>
                     <Tooltip
@@ -269,7 +648,7 @@ export default function AdminRoleDetailPage() {
                   search={false}
                   pagination={false}
                   loading={permissionsLoading}
-                  dataSource={data.permissionIds
+                  dataSource={(data?.permissionIds ?? [])
                     .map((id) => {
                       const perm = permissionMap.get(id);
                       if (!perm) return null;
@@ -318,7 +697,7 @@ export default function AdminRoleDetailPage() {
                       t('common.pagination.total', { total }),
                     pageSizeOptions: ['10', '20', '50', '100'],
                   }}
-                  dataSource={data.players}
+                  dataSource={data?.players ?? []}
                   columns={playerColumns}
                 />
               ),

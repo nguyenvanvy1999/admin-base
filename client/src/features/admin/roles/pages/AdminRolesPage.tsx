@@ -9,10 +9,9 @@ import {
   createActionColumn,
   createSearchColumn,
 } from 'src/components/common/tableColumns';
-import { RoleFormModal } from 'src/features/admin/roles/components/RoleFormModal';
 import { useUserSearchSelect } from 'src/features/admin/users/hooks/useUserSearchSelect';
 import { createUserSelectColumn } from 'src/features/admin/users/utils/userSelectColumn';
-import { useDeleteRoles, useUpsertRole } from 'src/hooks/api/useAdminRoles';
+import { useDeleteRoles } from 'src/hooks/api/useAdminRoles';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { useNotify } from 'src/hooks/useNotify';
 import { adminRolesService } from 'src/services/api/admin-roles.service';
@@ -35,19 +34,8 @@ export default function AdminRolesPage() {
   const canUpdate = hasPermission('ROLE.UPDATE');
   const canDelete = hasPermission('ROLE.DELETE');
 
-  const [formModalOpen, setFormModalOpen] = useState(false);
-  const [editingRole, setEditingRole] = useState<AdminRole | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingRole, setDeletingRole] = useState<AdminRole | null>(null);
-
-  const upsertMutation = useUpsertRole({
-    onSuccess: () => {
-      notify.success(t('adminRolesPage.upsert.success'));
-      setFormModalOpen(false);
-      setEditingRole(null);
-      actionRef.current?.reload();
-    },
-  });
 
   const deleteMutation = useDeleteRoles({
     onSuccess: () => {
@@ -58,11 +46,6 @@ export default function AdminRolesPage() {
     },
   });
 
-  const handleEdit = (role: AdminRole) => {
-    setEditingRole(role);
-    setFormModalOpen(true);
-  };
-
   const handleDelete = (role: AdminRole) => {
     setDeletingRole(role);
     setDeleteModalOpen(true);
@@ -72,11 +55,6 @@ export default function AdminRolesPage() {
     if (deletingRole) {
       deleteMutation.mutate([deletingRole.id]);
     }
-  };
-
-  const handleFormClose = () => {
-    setFormModalOpen(false);
-    setEditingRole(null);
   };
 
   const userSearchSelect = useUserSearchSelect({
@@ -150,7 +128,7 @@ export default function AdminRolesPage() {
             },
             onEdit: (record) => {
               if (canUpdate && !record.protected) {
-                handleEdit(record);
+                navigate(`/admin/roles/${record.id}`);
               }
             },
             onDelete: (record) => {
@@ -210,23 +188,13 @@ export default function AdminRolesPage() {
                 <Button
                   key="create"
                   type="primary"
-                  onClick={() => setFormModalOpen(true)}
+                  onClick={() => navigate('/admin/roles/new')}
                 >
                   {t('adminRolesPage.create.button')}
                 </Button>,
               ]
             : []
         }
-      />
-
-      <RoleFormModal
-        open={formModalOpen}
-        role={editingRole}
-        onClose={handleFormClose}
-        onSubmit={async (data) => {
-          await upsertMutation.mutateAsync(data);
-        }}
-        loading={upsertMutation.isPending}
       />
 
       <Modal
