@@ -4,11 +4,12 @@ import type dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
+import { useUserSearchSelect } from 'src/features/admin/users/hooks/useUserSearchSelect';
+import { createUserSelectColumn } from 'src/features/admin/users/utils/userSelectColumn';
 import { useAdminSessions } from 'src/hooks/api/useAdminSessions';
 import { useAdminSettings } from 'src/hooks/api/useAdminSettings';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { adminSessionsService } from 'src/services/api/admin-sessions.service';
-import { adminUsersService } from 'src/services/api/admin-users.service';
 import type { AdminSession } from 'src/types/admin-sessions';
 import type { AdminSetting } from 'src/types/admin-settings';
 import { SettingDataType } from 'src/types/admin-settings';
@@ -94,40 +95,10 @@ export default function AdminSessionsPage() {
   const { data: settings = [] } = useAdminSettings();
   const enbOnlyOneSession = getSettingValue(settings, 'ENB_ONLY_ONE_SESSION');
 
-  const [userSearch, setUserSearch] = useState('');
-  const [userOptions, setUserOptions] = useState<
-    { label: string; value: string }[]
-  >([]);
-
-  useEffect(() => {
-    if (!canViewAll) return;
-    const controller = new AbortController();
-
-    const fetchUsers = async () => {
-      try {
-        const result = await adminUsersService.list({
-          skip: 0,
-          take: 20,
-          search: userSearch || undefined,
-        });
-
-        setUserOptions(
-          result.docs.map((user) => ({
-            label: user.email,
-            value: user.id,
-          })),
-        );
-      } catch {
-        // handled by global error handler in apiClient
-      }
-    };
-
-    void fetchUsers();
-
-    return () => {
-      controller.abort();
-    };
-  }, [canViewAll, userSearch]);
+  const userSearchSelect = useUserSearchSelect({
+    enabled: canViewAll,
+    take: 20,
+  });
 
   const handleRevoke = async (session: AdminSession) => {
     await adminSessionsService.revoke([session.id]);
@@ -139,7 +110,7 @@ export default function AdminSessionsPage() {
     setStatusFilter('all');
     setIpFilter(undefined);
     setUserIdsFilter(undefined);
-    setUserSearch('');
+    userSearchSelect.setUserSearch('');
   };
 
   const columns: ProColumns<AdminSession>[] = [
@@ -161,24 +132,7 @@ export default function AdminSessionsPage() {
       },
     },
     ...(canViewAll
-      ? [
-          {
-            title: t('adminSessionsPage.filters.users'),
-            dataIndex: 'userIds',
-            hideInTable: true,
-            valueType: 'select',
-            fieldProps: {
-              mode: 'multiple',
-              allowClear: true,
-              showSearch: true,
-              style: { minWidth: 240 },
-              placeholder: t('adminSessionsPage.filters.users'),
-              options: userOptions,
-              onSearch: (value: string) => setUserSearch(value),
-              filterOption: false,
-            },
-          } as ProColumns<AdminSession>,
-        ]
+      ? [createUserSelectColumn<AdminSession>(userSearchSelect)]
       : []),
     {
       title: t('adminSessionsPage.table.actions'),

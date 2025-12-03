@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
 import { RoleFormModal } from 'src/features/admin/roles/components/RoleFormModal';
+import { useUserSearchSelect } from 'src/features/admin/users/hooks/useUserSearchSelect';
+import { createUserSelectColumn } from 'src/features/admin/users/utils/userSelectColumn';
 import { useDeleteRoles, useUpsertRole } from 'src/hooks/api/useAdminRoles';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { useNotify } from 'src/hooks/useNotify';
@@ -72,6 +74,11 @@ export default function AdminRolesPage() {
     setEditingRole(null);
   };
 
+  const userSearchSelect = useUserSearchSelect({
+    enabled: true,
+    take: 20,
+  });
+
   const columns: ProColumns<AdminRole>[] = [
     {
       title: t('adminRolesPage.table.title'),
@@ -120,15 +127,12 @@ export default function AdminRolesPage() {
         );
       },
     },
-    {
+    createUserSelectColumn<AdminRole>(userSearchSelect, {
       title: t('adminRolesPage.table.filters.user'),
       dataIndex: 'userId',
-      hideInTable: true,
-      valueType: 'text',
-      fieldProps: {
-        placeholder: t('adminRolesPage.table.filters.user'),
-      },
-    },
+      placeholder: t('adminRolesPage.table.filters.user'),
+      mode: undefined,
+    }),
     {
       title: t('common.search'),
       dataIndex: 'search',
