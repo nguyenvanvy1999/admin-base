@@ -12,6 +12,8 @@ export const adminRoleKeys = {
   ...createQueryKeys('admin-roles'),
   list: (filters?: Partial<AdminRoleListQuery>) =>
     [...createQueryKeys('admin-roles').lists(), filters] as const,
+  detail: (id: string) =>
+    [...createQueryKeys('admin-roles').details(), id] as const,
 };
 
 export interface AdminRoleListQuery {

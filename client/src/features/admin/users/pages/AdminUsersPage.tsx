@@ -83,6 +83,7 @@ export default function AdminUsersPage() {
       title: t('adminUsersPage.table.status'),
       dataIndex: 'statuses',
       valueType: 'select',
+      width: 100,
       renderFormItem: () => (
         <AppEnumMultiSelect
           keys={[...ADMIN_USER_STATUSES]}
@@ -102,6 +103,7 @@ export default function AdminUsersPage() {
       title: t('adminUsersPage.table.emailVerified'),
       dataIndex: 'emailVerified',
       hideInSearch: true,
+      width: 120,
       render: (_, record) => (
         <Tag color={record.emailVerified ? 'green' : 'red'}>
           {record.emailVerified ? t('common.enabled') : t('common.disabled')}
@@ -112,6 +114,7 @@ export default function AdminUsersPage() {
       title: t('adminUsersPage.table.sessions'),
       dataIndex: 'sessionStats',
       hideInSearch: true,
+      width: 320,
       render: (_, record) => {
         const { sessionStats } = record;
         return (

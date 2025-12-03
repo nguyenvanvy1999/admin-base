@@ -303,18 +303,34 @@
     }
   },
   "adminRolesPage": {
+    "users": {
+      "tooltip": "Users: total {{total}}, active {{active}}, expired {{expired}}",
+      "total": "Total",
+      "active": "Active",
+      "expired": "Expired"
+    },
+    "detail": {
+      "title": "Role details",
+      "tabGeneral": "Overview",
+      "tabPermissions": "Permissions",
+      "tabPlayers": "Players"
+    },
+    "players": {
+      "table": {
+        "email": "Email",
+        "expiresAt": "Expires at"
+      }
+    },
     "table": {
       "title": "Role name",
       "description": "Description",
       "permissions": "Permission count",
       "users": "User count",
       "actions": "Actions",
+      "enabled": "Enabled",
       "filters": {
         "user": "Filter by user"
       }
-    },
-    "users": {
-      "tooltip": "Users: total {{total}}, active {{active}}, expired {{expired}}"
     },
     "create": {
       "button": "Create role",
@@ -353,6 +369,7 @@
       }
     },
     "actions": {
+      "view": "View",
       "edit": "Edit",
       "delete": "Delete"
     }

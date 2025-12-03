@@ -1,10 +1,11 @@
-import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Modal, Space, Tag, Tooltip } from 'antd';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
+import { RoleDetailDrawer } from 'src/features/admin/roles/components/RoleDetailDrawer';
 import { RoleFormModal } from 'src/features/admin/roles/components/RoleFormModal';
 import { useUserSearchSelect } from 'src/features/admin/users/hooks/useUserSearchSelect';
 import { createUserSelectColumn } from 'src/features/admin/users/utils/userSelectColumn';
@@ -34,6 +35,11 @@ export default function AdminRolesPage() {
   const [editingRole, setEditingRole] = useState<AdminRole | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingRole, setDeletingRole] = useState<AdminRole | null>(null);
+  const [detailRoleId, setDetailRoleId] = useState<string | null>(null);
+  const [detailTab, setDetailTab] = useState<
+    'general' | 'permissions' | 'players'
+  >('general');
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const upsertMutation = useUpsertRole({
     onSuccess: () => {
@@ -146,12 +152,24 @@ export default function AdminRolesPage() {
       title: t('adminRolesPage.table.actions'),
       dataIndex: 'actions',
       valueType: 'option',
-      hideInTable: !canUpdate && !canDelete,
-      width: 80,
+      hideInTable: !canView && !canUpdate && !canDelete,
+      width: 120,
       render: (_, record) => {
         const isProtected = Boolean(record.protected);
         return (
           <Space size="small">
+            <Tooltip title={t('adminRolesPage.actions.view')}>
+              <Button
+                type="text"
+                size="small"
+                icon={<EyeOutlined />}
+                onClick={() => {
+                  setDetailRoleId(record.id);
+                  setDetailTab('general');
+                  setDrawerOpen(true);
+                }}
+              />
+            </Tooltip>
             {canUpdate && !isProtected && (
               <Tooltip title={t('adminRolesPage.actions.edit')}>
                 <Button
@@ -255,6 +273,20 @@ export default function AdminRolesPage() {
           </p>
         )}
       </Modal>
+
+      <RoleDetailDrawer
+        open={drawerOpen}
+        roleId={detailRoleId}
+        onClose={() => {
+          setDrawerOpen(false);
+          setDetailRoleId(null);
+          setDetailTab('general');
+        }}
+        onActionCompleted={() => {
+          actionRef.current?.reload();
+        }}
+        initialTab={detailTab}
+      />
     </AppPage>
   );
 }

@@ -303,18 +303,34 @@
     }
   },
   "adminRolesPage": {
+    "users": {
+      "tooltip": "Users: tổng {{total}}, đang hoạt động {{active}}, đã hết hạn {{expired}}",
+      "total": "Tổng",
+      "active": "Đang hoạt động",
+      "expired": "Đã hết hạn"
+    },
+    "detail": {
+      "title": "Chi tiết role",
+      "tabGeneral": "Thông tin",
+      "tabPermissions": "Permissions",
+      "tabPlayers": "Players"
+    },
+    "players": {
+      "table": {
+        "email": "Email",
+        "expiresAt": "Ngày hết hạn"
+      }
+    },
     "table": {
       "title": "Tên role",
       "description": "Mô tả",
       "permissions": "Số permissions",
       "users": "Số users",
       "actions": "Thao tác",
+      "enabled": "Kích hoạt",
       "filters": {
         "user": "Lọc theo user"
       }
-    },
-    "users": {
-      "tooltip": "Users: tổng {{total}}, đang hoạt động {{active}}, đã hết hạn {{expired}}"
     },
     "create": {
       "button": "Tạo role",
@@ -353,6 +369,7 @@
       }
     },
     "actions": {
+      "view": "Chi tiết",
       "edit": "Chỉnh sửa",
       "delete": "Xóa"
     }
