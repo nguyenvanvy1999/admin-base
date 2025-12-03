@@ -132,7 +132,7 @@ export default function AdminPermissionsPage() {
         <Space orientation="vertical" style={{ width: '100%' }} size="middle">
           <Space wrap>
             <Input.Search
-              placeholder={t('adminPermissionsPage.table.filters.search')}
+              placeholder={t('common.table.filters.search')}
               allowClear
               style={{ width: 300 }}
               value={searchText}

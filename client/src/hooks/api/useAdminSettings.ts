@@ -25,8 +25,9 @@ export function useUpdateSetting(options?: { onSuccess?: () => void }) {
       notify.success('Cập nhật setting thành công');
       options?.onSuccess?.();
     },
-    onError: (error: any) => {
-      const code = error?.response?.data?.code;
+    onError: (error: unknown) => {
+      const code = (error as { response?: { data?: { code?: string } } })
+        ?.response?.data?.code;
       let message = 'Có lỗi xảy ra khi cập nhật setting';
 
       if (code === 'ERR_ITEM_NOT_FOUND') {

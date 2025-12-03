@@ -1,4 +1,3 @@
-import { EditOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Space, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
@@ -9,6 +8,10 @@ import { ADMIN_USER_STATUS_COLORS } from 'src/components/common/AppAdminUserStat
 import { AppEnumMultiSelect } from 'src/components/common/AppEnumMultiSelect';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
+import {
+  createActionColumn,
+  createDateColumn,
+} from 'src/components/common/tableColumns';
 import { AdminUserCreateModal } from 'src/features/admin/users/components/AdminUserCreateModal';
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
@@ -37,17 +40,17 @@ export default function AdminUsersPage() {
   const actionRef = useRef<ActionType | null>(null);
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('USER.UPDATE');
-  const { data: adminRoles = [], isLoading: rolesLoading } = useAdminRoles();
+  const { data: adminRolesResponse, isLoading: rolesLoading } = useAdminRoles();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const roleOptions = useMemo(
     () =>
-      adminRoles.map((role) => ({
+      (adminRolesResponse?.docs ?? []).map((role) => ({
         label: role.title || role.id,
         value: role.id,
       })),
-    [adminRoles],
+    [adminRolesResponse],
   );
 
   const columns: ProColumns<AdminUserSummary>[] = [
@@ -75,7 +78,7 @@ export default function AdminUsersPage() {
       hideInSearch: true,
     },
     {
-      title: t('adminUsersPage.table.status'),
+      title: t('common.table.status'),
       dataIndex: 'statuses',
       valueType: 'select',
       width: 100,
@@ -227,12 +230,12 @@ export default function AdminUsersPage() {
         </Space>
       ),
     },
-    {
-      title: t('adminUsersPage.table.created'),
+    createDateColumn<AdminUserSummary>({
       dataIndex: 'created',
+      title: t('common.table.created'),
+      format: 'YYYY-MM-DD HH:mm',
       hideInSearch: true,
-      render: (_, record) => dayjs(record.created).format('YYYY-MM-DD HH:mm'),
-    },
+    }),
     {
       title: t('adminUsersPage.table.filters.role'),
       dataIndex: 'roleIds',
@@ -248,38 +251,22 @@ export default function AdminUsersPage() {
         loading: rolesLoading,
       },
     },
-    {
-      title: t('adminUsersPage.table.actions'),
-      dataIndex: 'actions',
-      valueType: 'option',
+    createActionColumn<AdminUserSummary>({
+      onView: (record) => {
+        navigate(`/admin/users/${record.id}`);
+      },
+      onEdit: (record) => {
+        if (canUpdate && !record.protected) {
+          navigate(`/admin/users/${record.id}?tab=edit`);
+        }
+      },
+      canView: () => true,
+      canEdit: (record) => canUpdate && !record.protected,
+      viewTooltip: t('common.actions.view'),
+      editTooltip: t('common.actions.edit'),
+      title: t('common.table.actions'),
       width: 80,
-      render: (_, record) => (
-        <Space size="small">
-          <Tooltip title={t('adminUsersPage.actions.view')}>
-            <Button
-              type="text"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => {
-                navigate(`/admin/users/${record.id}`);
-              }}
-            />
-          </Tooltip>
-          {canUpdate && !record.protected && (
-            <Tooltip title={t('adminUsersPage.actions.edit')}>
-              <Button
-                type="text"
-                size="small"
-                icon={<EditOutlined />}
-                onClick={() => {
-                  navigate(`/admin/users/${record.id}?tab=edit`);
-                }}
-              />
-            </Tooltip>
-          )}
-        </Space>
-      ),
-    },
+    }),
   ];
 
   const handleReload = () => {

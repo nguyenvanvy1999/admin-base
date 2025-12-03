@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppTable } from 'src/components/common/AppTable';
+import { createDateColumn } from 'src/components/common/tableColumns';
 import type {
   AdminSession,
   AdminSessionStatus,
@@ -63,14 +64,13 @@ export function SessionsTable<
   const { t } = useTranslation();
 
   const baseColumns: ProColumns<AdminSession>[] = [
-    {
-      title: t('adminSessionsPage.table.created'),
+    createDateColumn<AdminSession>({
       dataIndex: 'created',
+      title: t('common.table.created'),
+      format: 'YYYY-MM-DD HH:mm:ss',
       valueType: 'dateRange',
-      sorter: (a, b) => dayjs(a.created).valueOf() - dayjs(b.created).valueOf(),
-      render: (_, record) =>
-        dayjs(record.created).format('YYYY-MM-DD HH:mm:ss'),
-    },
+      sorter: true,
+    }),
     {
       title: t('adminSessionsPage.table.expired'),
       dataIndex: 'expired',
@@ -91,7 +91,7 @@ export function SessionsTable<
       render: (_, record) => record.ip ?? '-',
     },
     {
-      title: t('adminSessionsPage.table.status'),
+      title: t('common.table.status'),
       dataIndex: 'status',
       hideInSearch: true,
       render: (_, record) => {

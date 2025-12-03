@@ -1,6 +1,8 @@
 import { type AdminSetting, SettingDataType } from 'src/types/admin-settings';
 
-export const parseSettingValue = (setting: AdminSetting): any => {
+export const parseSettingValue = (
+  setting: AdminSetting,
+): string | number | boolean | Date | Record<string, unknown> | null => {
   const { value, type } = setting;
 
   switch (type) {
@@ -22,7 +24,7 @@ export const parseSettingValue = (setting: AdminSetting): any => {
 };
 
 export const formatSettingValue = (
-  value: any,
+  value: string | number | boolean | Date | Record<string, unknown> | null,
   type: SettingDataType,
 ): string => {
   switch (type) {
@@ -31,9 +33,13 @@ export const formatSettingValue = (
     case SettingDataType.NUMBER:
       return String(value);
     case SettingDataType.DATE:
-      return value instanceof Date
-        ? value.toISOString()
-        : new Date(value).toISOString();
+      if (value instanceof Date) {
+        return value.toISOString();
+      }
+      if (value === null) {
+        return '';
+      }
+      return new Date(value as string | number).toISOString();
     case SettingDataType.JSON:
       return typeof value === 'string' ? value : JSON.stringify(value);
     default:

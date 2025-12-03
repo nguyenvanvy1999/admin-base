@@ -14,6 +14,20 @@
       "total": "Tổng {{total}} mục",
       "totalSettings": "Tổng {{total}} settings",
       "totalPermissions": "Tổng {{total}} permissions"
+    },
+    "table": {
+      "actions": "Thao tác",
+      "created": "Ngày tạo",
+      "status": "Trạng thái",
+      "filters": {
+        "search": "Tìm kiếm"
+      }
+    },
+    "actions": {
+      "view": "Chi tiết",
+      "edit": "Chỉnh sửa",
+      "delete": "Xóa",
+      "revoke": "Thu hồi"
     }
   },
   "sidebar": {
@@ -211,13 +225,10 @@
     "table": {
       "email": "Email",
       "name": "Tên hiển thị",
-      "status": "Trạng thái",
       "roles": "Roles",
       "rolesWithExpiry": "Roles & Hạn dùng",
-      "created": "Ngày tạo",
       "emailVerified": "Xác thực email",
       "sessions": "Sessions",
-      "actions": "Thao tác",
       "filters": {
         "keyword": "Email hoặc tên hiển thị",
         "status": "Trạng thái",
@@ -296,8 +307,6 @@
       "mfaReasonPlaceholder": "Nhập lý do để ghi vào audit log"
     },
     "actions": {
-      "view": "Chi tiết",
-      "edit": "Chỉnh sửa",
       "resetMfa": "Reset MFA",
       "disableMfa": "Disable MFA",
       "submit": "Lưu thay đổi"
@@ -327,7 +336,6 @@
       "description": "Mô tả",
       "permissions": "Số permissions",
       "users": "Số users",
-      "actions": "Thao tác",
       "enabled": "Kích hoạt",
       "filters": {
         "user": "Lọc theo user"
@@ -370,8 +378,6 @@
       }
     },
     "actions": {
-      "view": "Chi tiết",
-      "edit": "Chỉnh sửa",
       "delete": "Xóa"
     }
   },
@@ -382,8 +388,7 @@
       "category": "Danh mục",
       "action": "Hành động",
       "filters": {
-        "category": "Lọc theo danh mục",
-        "search": "Tìm kiếm permission"
+        "category": "Lọc theo danh mục"
       }
     },
     "info": {
@@ -486,10 +491,8 @@
       "value": "Giá trị",
       "isSecret": "Secret",
       "category": "Danh mục",
-      "actions": "Thao tác",
       "filters": {
-        "category": "Lọc theo danh mục",
-        "search": "Tìm kiếm setting"
+        "category": "Lọc theo danh mục"
       }
     },
     "info": {},
@@ -506,9 +509,6 @@
       "secretPlaceholder": "Nhập giá trị mới (giá trị cũ đã được ẩn vì lý do bảo mật)",
       "jsonPlaceholder": "Nhập JSON hợp lệ, ví dụ: {\"key\": \"value\"}",
       "jsonInvalid": "Giá trị phải là JSON hợp lệ"
-    },
-    "actions": {
-      "edit": "Chỉnh sửa"
     }
   },
   "adminSessionsPage": {
@@ -520,13 +520,10 @@
       "expired": "Đã hết hạn"
     },
     "table": {
-      "created": "Thời gian đăng nhập",
       "expired": "Hết hạn",
       "device": "Thiết bị",
       "userId": "User ID",
-      "ip": "Địa chỉ IP",
-      "status": "Trạng thái",
-      "actions": "Thao tác"
+      "ip": "Địa chỉ IP"
     },
     "filters": {
       "ip": "Địa chỉ IP",
@@ -538,7 +535,6 @@
       }
     },
     "actions": {
-      "revoke": "Thu hồi",
       "revokeConfirmTitle": "Xác nhận thu hồi session",
       "revokeConfirm": "Session này sẽ bị thu hồi. Tiếp tục?",
       "revokeSelected": "Thu hồi đã chọn ({{count}})",

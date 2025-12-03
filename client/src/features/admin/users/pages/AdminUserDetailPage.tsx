@@ -183,7 +183,7 @@ export default function AdminUserDetailPage() {
     },
   });
 
-  const { data: allRoles, isLoading: isLoadingRoles } = useAdminRoles();
+  const { data: allRolesResponse, isLoading: isLoadingRoles } = useAdminRoles();
 
   const resetMfaMutation = useAdminUserMfaAction('reset', {
     onSuccess: ({ auditLogId }) => {
@@ -630,11 +630,12 @@ export default function AdminUserDetailPage() {
                                   loading: isLoadingRoles,
                                   showSearch: true,
                                   optionFilterProp: 'label',
-                                  options:
-                                    allRoles?.map((role) => ({
+                                  options: (allRolesResponse?.docs ?? []).map(
+                                    (role) => ({
                                       value: role.id,
                                       label: role.title,
-                                    })) ?? [],
+                                    }),
+                                  ),
                                   placeholder: t(
                                     'adminUsersPage.form.rolesPlaceholder',
                                   ),
@@ -727,7 +728,7 @@ function UserSessionsTab({ userId }: { userId?: string }) {
 
   const columns: ProColumns<AdminSession>[] = [
     {
-      title: t('adminSessionsPage.table.actions'),
+      title: t('common.table.actions'),
       dataIndex: 'actions',
       hideInSearch: true,
       render: (_, record) => {
@@ -749,7 +750,7 @@ function UserSessionsTab({ userId }: { userId?: string }) {
             onConfirm={() => handleRevoke(record)}
           >
             <Button size="small" danger type="link">
-              {t('adminSessionsPage.actions.revoke')}
+              {t('common.actions.revoke')}
             </Button>
           </Popconfirm>
         );

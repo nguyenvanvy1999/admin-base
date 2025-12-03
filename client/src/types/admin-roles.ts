@@ -59,3 +59,8 @@ export interface AdminPermission {
   title: string;
   description?: string | null;
 }
+
+export interface AdminRoleListResponse {
+  docs: AdminRole[];
+  count: number;
+}

@@ -144,7 +144,7 @@ export default function AdminSessionsPage() {
       render: (_, record) => record.createdById,
     },
     {
-      title: t('adminSessionsPage.table.status'),
+      title: t('common.table.status'),
       dataIndex: 'status',
       hideInTable: true,
       valueType: 'select',
@@ -158,7 +158,7 @@ export default function AdminSessionsPage() {
       ? [createUserSelectColumn<AdminSession>(userSearchSelect)]
       : []),
     {
-      title: t('adminSessionsPage.table.actions'),
+      title: t('common.table.actions'),
       dataIndex: 'actions',
       hideInSearch: true,
       render: (_, record) => {
@@ -180,7 +180,7 @@ export default function AdminSessionsPage() {
             onConfirm={() => handleRevoke(record)}
           >
             <Button size="small" danger type="link">
-              {t('adminSessionsPage.actions.revoke')}
+              {t('common.actions.revoke')}
             </Button>
           </Popconfirm>
         );

@@ -129,7 +129,7 @@ export default function MySessionsPage() {
         ),
     },
     {
-      title: t('adminSessionsPage.table.actions'),
+      title: t('common.table.actions'),
       dataIndex: 'actions',
       hideInSearch: true,
       render: (_, record) => {
@@ -151,7 +151,7 @@ export default function MySessionsPage() {
             onConfirm={() => handleRevoke(record)}
           >
             <Button size="small" danger type="link">
-              {t('adminSessionsPage.actions.revoke')}
+              {t('common.actions.revoke')}
             </Button>
           </Popconfirm>
         );

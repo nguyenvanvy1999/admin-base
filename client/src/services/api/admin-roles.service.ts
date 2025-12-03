@@ -3,6 +3,7 @@ import { createQueryKeys } from 'src/services/api/base.service';
 import type {
   AdminRole,
   AdminRoleDetail,
+  AdminRoleListResponse,
   UpsertRoleDto,
 } from 'src/types/admin-roles';
 
@@ -17,6 +18,8 @@ export const adminRoleKeys = {
 };
 
 export interface AdminRoleListQuery {
+  skip?: number;
+  take?: number;
   userId?: string;
   search?: string;
 
@@ -24,10 +27,22 @@ export interface AdminRoleListQuery {
 }
 
 export const adminRolesService = {
-  list(params?: AdminRoleListQuery): Promise<AdminRole[]> {
-    return apiClient.get<AdminRole[]>(ADMIN_ROLE_BASE_PATH, {
-      params,
-    });
+  async list(params?: AdminRoleListQuery): Promise<AdminRoleListResponse> {
+    const response = await apiClient.get<AdminRole[] | AdminRoleListResponse>(
+      ADMIN_ROLE_BASE_PATH,
+      {
+        params,
+      },
+    );
+
+    if (Array.isArray(response)) {
+      return {
+        docs: response,
+        count: response.length,
+      };
+    }
+
+    return response;
   },
 
   detail(id: string): Promise<AdminRoleDetail> {

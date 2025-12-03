@@ -1,11 +1,11 @@
-import { DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Modal, Space, Tag, Tooltip } from 'antd';
+import { Button, Modal, Tag, Tooltip } from 'antd';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
+import { createActionColumn } from 'src/components/common/tableColumns';
 import { RoleFormModal } from 'src/features/admin/roles/components/RoleFormModal';
 import { useUserSearchSelect } from 'src/features/admin/users/hooks/useUserSearchSelect';
 import { createUserSelectColumn } from 'src/features/admin/users/utils/userSelectColumn';
@@ -144,51 +144,32 @@ export default function AdminRolesPage() {
         placeholder: t('common.search'),
       },
     },
-    {
-      title: t('adminRolesPage.table.actions'),
-      dataIndex: 'actions',
-      valueType: 'option',
-      hideInTable: !canView && !canUpdate && !canDelete,
-      width: 120,
-      render: (_, record) => {
-        const isProtected = Boolean(record.protected);
-        return (
-          <Space size="small">
-            <Tooltip title={t('adminRolesPage.actions.view')}>
-              <Button
-                type="text"
-                size="small"
-                icon={<EyeOutlined />}
-                onClick={() => {
-                  navigate(`/admin/roles/${record.id}`);
-                }}
-              />
-            </Tooltip>
-            {canUpdate && !isProtected && (
-              <Tooltip title={t('adminRolesPage.actions.edit')}>
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<EditOutlined />}
-                  onClick={() => handleEdit(record)}
-                />
-              </Tooltip>
-            )}
-            {canDelete && !isProtected && (
-              <Tooltip title={t('adminRolesPage.actions.delete')}>
-                <Button
-                  type="text"
-                  size="small"
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={() => handleDelete(record)}
-                />
-              </Tooltip>
-            )}
-          </Space>
-        );
-      },
-    },
+    ...(canView || canUpdate || canDelete
+      ? [
+          createActionColumn<AdminRole>({
+            onView: (record) => {
+              navigate(`/admin/roles/${record.id}`);
+            },
+            onEdit: (record) => {
+              if (canUpdate && !record.protected) {
+                handleEdit(record);
+              }
+            },
+            onDelete: (record) => {
+              if (canDelete && !record.protected) {
+                handleDelete(record);
+              }
+            },
+            canView: () => canView,
+            canEdit: (record) => canUpdate && !record.protected,
+            canDelete: (record) => canDelete && !record.protected,
+            viewTooltip: t('common.actions.view'),
+            editTooltip: t('common.actions.edit'),
+            deleteTooltip: t('adminRolesPage.actions.delete'),
+            title: t('common.table.actions'),
+          }),
+        ]
+      : []),
   ];
 
   if (!canView) {
@@ -205,15 +186,18 @@ export default function AdminRolesPage() {
           labelWidth: 'auto',
         }}
         request={async (params) => {
-          const { userId, search } = params;
+          const { current = 1, pageSize = 20, userId, search } = params;
+          const skip = (current - 1) * pageSize;
           const response = await adminRolesService.list({
+            skip,
+            take: pageSize,
             userId: userId?.trim() || undefined,
             search: search?.trim() || undefined,
           });
           return {
-            data: response || [],
+            data: response.docs || [],
             success: true,
-            total: response?.length || 0,
+            total: response.count || 0,
           };
         }}
         pagination={{

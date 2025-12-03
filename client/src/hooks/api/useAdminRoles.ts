@@ -5,13 +5,13 @@ import {
   adminRolesService,
 } from 'src/services/api/admin-roles.service';
 import type {
-  AdminRole,
   AdminRoleDetail,
+  AdminRoleListResponse,
   UpsertRoleDto,
 } from 'src/types/admin-roles';
 
 export function useAdminRoles(params?: AdminRoleListQuery) {
-  return useQuery<AdminRole[]>({
+  return useQuery<AdminRoleListResponse>({
     queryKey: adminRoleKeys.list(params),
     queryFn: () => adminRolesService.list(params),
   });

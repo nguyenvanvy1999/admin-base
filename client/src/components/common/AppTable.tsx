@@ -45,10 +45,11 @@ export function AppTable<
         paginationProp === false
           ? false
           : (paginationProp ?? {
-              pageSize: 10,
+              pageSize: 20,
               showSizeChanger: true,
               showQuickJumper: true,
               showTotal: (total) => t('common.pagination.total', { total }),
+              pageSizeOptions: ['10', '20', '50', '100'],
             })
       }
       options={

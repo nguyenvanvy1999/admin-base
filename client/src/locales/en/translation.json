@@ -14,6 +14,20 @@
       "total": "Total {{total}} items",
       "totalSettings": "Total {{total}} settings",
       "totalPermissions": "Total {{total}} permissions"
+    },
+    "table": {
+      "actions": "Actions",
+      "created": "Created at",
+      "status": "Status",
+      "filters": {
+        "search": "Search"
+      }
+    },
+    "actions": {
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete",
+      "revoke": "Revoke"
     }
   },
   "sidebar": {
@@ -211,13 +225,10 @@
     "table": {
       "email": "Email",
       "name": "Display name",
-      "status": "Status",
       "roles": "Roles",
       "rolesWithExpiry": "Roles & Expiry",
-      "created": "Created at",
       "emailVerified": "Email verified",
       "sessions": "Sessions",
-      "actions": "Actions",
       "filters": {
         "keyword": "Email or display name",
         "status": "Status",
@@ -296,8 +307,6 @@
       "mfaReasonPlaceholder": "Provide a reason for the audit log"
     },
     "actions": {
-      "view": "Details",
-      "edit": "Edit",
       "resetMfa": "Reset MFA",
       "disableMfa": "Disable MFA",
       "submit": "Save changes"
@@ -327,7 +336,6 @@
       "description": "Description",
       "permissions": "Permission count",
       "users": "User count",
-      "actions": "Actions",
       "enabled": "Enabled",
       "filters": {
         "user": "Filter by user"
@@ -370,8 +378,6 @@
       }
     },
     "actions": {
-      "view": "View",
-      "edit": "Edit",
       "delete": "Delete"
     }
   },
@@ -382,8 +388,7 @@
       "category": "Category",
       "action": "Action",
       "filters": {
-        "category": "Filter by category",
-        "search": "Search permission"
+        "category": "Filter by category"
       }
     },
     "info": {
@@ -486,10 +491,8 @@
       "value": "Value",
       "isSecret": "Secret",
       "category": "Category",
-      "actions": "Actions",
       "filters": {
-        "category": "Filter by category",
-        "search": "Search setting"
+        "category": "Filter by category"
       }
     },
     "info": {},
@@ -506,9 +509,6 @@
       "secretPlaceholder": "Enter new value (old value is hidden for security reasons)",
       "jsonPlaceholder": "Enter valid JSON, e.g.: {\"key\": \"value\"}",
       "jsonInvalid": "Value must be valid JSON"
-    },
-    "actions": {
-      "edit": "Edit"
     }
   },
   "adminSessionsPage": {
@@ -520,13 +520,10 @@
       "expired": "Expired"
     },
     "table": {
-      "created": "Signed in at",
       "expired": "Expires at",
       "device": "Device",
       "userId": "User ID",
-      "ip": "IP address",
-      "status": "Status",
-      "actions": "Actions"
+      "ip": "IP address"
     },
     "filters": {
       "ip": "IP address",
@@ -538,7 +535,6 @@
       }
     },
     "actions": {
-      "revoke": "Revoke",
       "revokeConfirmTitle": "Confirm revoke session",
       "revokeConfirm": "This session will be revoked. Continue?",
       "revokeSelected": "Revoke Selected ({{count}})",

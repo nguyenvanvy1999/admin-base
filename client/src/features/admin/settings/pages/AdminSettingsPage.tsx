@@ -127,14 +127,28 @@ export default function AdminSettingsPage() {
           </Tag>
         );
       case SettingDataType.NUMBER:
-        return <span>{parsedValue}</span>;
+        return (
+          <span>
+            {typeof parsedValue === 'number'
+              ? parsedValue
+              : String(parsedValue)}
+          </span>
+        );
       case SettingDataType.DATE:
         return (
           <span>
-            {new Date(parsedValue).toLocaleString('vi-VN', {
-              dateStyle: 'short',
-              timeStyle: 'short',
-            })}
+            {parsedValue instanceof Date
+              ? parsedValue.toLocaleString('vi-VN', {
+                  dateStyle: 'short',
+                  timeStyle: 'short',
+                })
+              : new Date(parsedValue as string | number).toLocaleString(
+                  'vi-VN',
+                  {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                  },
+                )}
           </span>
         );
       case SettingDataType.JSON:
@@ -215,13 +229,13 @@ export default function AdminSettingsPage() {
       },
     },
     {
-      title: t('adminSettingsPage.table.actions'),
+      title: t('common.table.actions'),
       dataIndex: 'actions',
       valueType: 'option',
       hideInTable: !canUpdate,
       width: 60,
       render: (_, record) => (
-        <Tooltip title={t('adminSettingsPage.actions.edit')}>
+        <Tooltip title={t('common.actions.edit')}>
           <Button
             type="text"
             size="small"
@@ -333,7 +347,7 @@ export default function AdminSettingsPage() {
         <Space orientation="vertical" style={{ width: '100%' }} size="middle">
           <Space wrap>
             <Input.Search
-              placeholder={t('adminSettingsPage.table.filters.search')}
+              placeholder={t('common.table.filters.search')}
               allowClear
               style={{ width: 300 }}
               value={searchText}

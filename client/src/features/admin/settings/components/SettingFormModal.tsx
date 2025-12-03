@@ -30,7 +30,13 @@ interface SettingFormModalProps {
 }
 
 type SettingFormValues = UpdateSettingDto & {
-  valueInput?: any;
+  valueInput?:
+    | string
+    | number
+    | boolean
+    | Date
+    | Record<string, unknown>
+    | null;
 } & Record<string, unknown>;
 
 export function SettingFormModal({
@@ -61,16 +67,29 @@ export function SettingFormModal({
   const handleSubmit = async (values: SettingFormValues) => {
     if (!setting) return;
 
-    let valueToFormat = values.valueInput;
+    let valueToFormat:
+      | string
+      | number
+      | boolean
+      | Date
+      | Record<string, unknown>
+      | null = values.valueInput ?? null;
 
     if (setting.type === SettingDataType.JSON) {
       valueToFormat =
         typeof valueToFormat === 'string'
           ? valueToFormat
-          : JSON.stringify(valueToFormat);
+          : typeof valueToFormat === 'object' &&
+              valueToFormat !== null &&
+              !(valueToFormat instanceof Date)
+            ? valueToFormat
+            : JSON.stringify(valueToFormat);
     }
 
-    const formattedValue = formatSettingValue(valueToFormat, setting.type);
+    const formattedValue = formatSettingValue(
+      valueToFormat ?? null,
+      setting.type,
+    );
 
     const validation = validateSettingValue(formattedValue, setting.type);
     if (!validation.valid) {
@@ -153,7 +172,7 @@ export function SettingFormModal({
                 message: t('adminSettingsPage.form.valueRequired'),
               },
               {
-                validator: (_: Rule, value: any) => {
+                validator: (_: Rule, value: unknown) => {
                   if (!value) return Promise.resolve();
                   const stringValue =
                     typeof value === 'string' ? value : JSON.stringify(value);

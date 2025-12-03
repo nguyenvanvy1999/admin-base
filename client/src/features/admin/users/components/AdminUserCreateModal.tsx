@@ -25,7 +25,7 @@ export function AdminUserCreateModal({
 }: AdminUserCreateModalProps) {
   const { t } = useTranslation();
   const notify = useNotify();
-  const { data: roles, isLoading: isLoadingRoles } = useAdminRoles();
+  const { data: rolesResponse, isLoading: isLoadingRoles } = useAdminRoles();
 
   const createMutation = useCreateAdminUser({
     onSuccess: ({ auditLogId }) => {
@@ -91,12 +91,10 @@ export function AdminUserCreateModal({
         label={t('adminUsersPage.form.roles')}
         mode="multiple"
         placeholder="admin"
-        options={
-          roles?.map((role) => ({
-            value: role.id,
-            label: role.title,
-          })) ?? []
-        }
+        options={(rolesResponse?.docs ?? []).map((role) => ({
+          value: role.id,
+          label: role.title,
+        }))}
         fieldProps={{
           loading: isLoadingRoles,
           showSearch: true,
