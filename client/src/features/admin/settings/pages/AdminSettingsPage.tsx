@@ -97,10 +97,9 @@ export default function AdminSettingsPage() {
   }, [filteredSettings]);
 
   const renderValue = (setting: AdminSetting) => {
-    const parsedValue = parseSettingValue(setting);
     const { type, isSecret, value } = setting;
 
-    if (isSecret && value === '************') {
+    if (isSecret) {
       return (
         <Space>
           <Tag color="red">Secret</Tag>
@@ -108,6 +107,8 @@ export default function AdminSettingsPage() {
         </Space>
       );
     }
+
+    const parsedValue = parseSettingValue(setting);
 
     switch (type) {
       case SettingDataType.BOOLEAN:

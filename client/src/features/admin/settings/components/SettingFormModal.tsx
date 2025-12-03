@@ -51,12 +51,21 @@ export function SettingFormModal({
   const initialValues = useMemo<Partial<SettingFormValues>>(() => {
     if (!setting) return { isSecret: false };
 
-    const parsedValue = parseSettingValue(setting);
     const isValueMasked = setting.isSecret && setting.value === '************';
+
+    if (isValueMasked) {
+      return {
+        valueInput: undefined,
+        isSecret: setting.isSecret ?? false,
+        description: setting.description ?? '',
+      };
+    }
+
+    const parsedValue = parseSettingValue(setting);
 
     return {
       valueInput:
-        setting.type === SettingDataType.JSON && !isValueMasked
+        setting.type === SettingDataType.JSON
           ? JSON.stringify(parsedValue, null, 2)
           : parsedValue,
       isSecret: setting.isSecret ?? false,
@@ -67,13 +76,37 @@ export function SettingFormModal({
   const handleSubmit = async (values: SettingFormValues) => {
     if (!setting) return;
 
+    const isValueMasked = setting.isSecret && setting.value === '************';
+    const currentValueInput = values.valueInput;
+    const newIsSecret = values.isSecret ?? false;
+
+    if (
+      isValueMasked &&
+      newIsSecret &&
+      (currentValueInput === undefined || currentValueInput === null)
+    ) {
+      const payload: UpdateSettingDto = {
+        value: setting.value,
+        isSecret: newIsSecret,
+        description: values.description ?? null,
+      };
+      await onSubmit(payload);
+      return;
+    }
+
+    if (isValueMasked && !newIsSecret) {
+      if (currentValueInput === undefined || currentValueInput === null) {
+        throw new Error('Vui lòng nhập giá trị mới khi bỏ secret');
+      }
+    }
+
     let valueToFormat:
       | string
       | number
       | boolean
       | Date
       | Record<string, unknown>
-      | null = values.valueInput ?? null;
+      | null = currentValueInput ?? null;
 
     if (setting.type === SettingDataType.JSON) {
       valueToFormat =
@@ -91,6 +124,12 @@ export function SettingFormModal({
       setting.type,
     );
 
+    if (formattedValue === '************') {
+      throw new Error(
+        'Giá trị không được là "************". Vui lòng nhập giá trị hợp lệ.',
+      );
+    }
+
     const validation = validateSettingValue(formattedValue, setting.type);
     if (!validation.valid) {
       throw new Error(validation.error);
@@ -98,7 +137,7 @@ export function SettingFormModal({
 
     const payload: UpdateSettingDto = {
       value: formattedValue,
-      isSecret: values.isSecret ?? false,
+      isSecret: newIsSecret,
       description: values.description ?? null,
     };
 

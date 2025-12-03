@@ -7,6 +7,7 @@ export const SettingResDto = t.Object({
   description: t.Nullable(t.String()),
   type: t.Enum(SettingDataType),
   value: t.String(),
+  isSecret: t.Boolean(),
 });
 
 export const UpdateSettingDto = t.Object({
