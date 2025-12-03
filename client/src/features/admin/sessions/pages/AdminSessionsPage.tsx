@@ -2,12 +2,11 @@ import type { ProColumns } from '@ant-design/pro-components';
 import { Alert, Button, Popconfirm } from 'antd';
 import type { TableRowSelection } from 'antd/es/table/interface';
 import type dayjs from 'dayjs';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
 import { useUserSearchSelect } from 'src/features/admin/users/hooks/useUserSearchSelect';
 import { createUserSelectColumn } from 'src/features/admin/users/utils/userSelectColumn';
-import { useAdminSessions } from 'src/hooks/api/useAdminSessions';
 import { useAdminSettings } from 'src/hooks/api/useAdminSettings';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { adminSessionsService } from 'src/services/api/admin-sessions.service';
@@ -15,6 +14,7 @@ import type { AdminSession } from 'src/types/admin-sessions';
 import type { AdminSetting } from 'src/types/admin-settings';
 import { SettingDataType } from 'src/types/admin-settings';
 import { SessionsTable } from '../components/SessionsTable';
+import { useAdminSessionsPagination } from '../hooks/useAdminSessionsPagination';
 import { useSessionDateRange } from '../hooks/useSessionDateRange';
 import { getSessionStatus } from '../utils/sessionStatus';
 
@@ -69,19 +69,17 @@ export default function AdminSessionsPage() {
   const {
     sessions,
     statusById,
-    paging,
+    pagination,
     isLoading,
     isInitialLoading,
     reload,
-    loadMore,
-  } = useAdminSessions({
+    goToPage,
+    changePageSize,
+  } = useAdminSessionsPagination({
     initialParams: listParams,
-    autoLoad: false,
+    pageSize: 20,
+    autoLoad: true,
   });
-
-  useEffect(() => {
-    void reload();
-  }, [listParams, reload]);
 
   const filteredSessions = useMemo(() => {
     if (statusFilter === 'all') return sessions;
@@ -209,8 +207,14 @@ export default function AdminSessionsPage() {
         sessions={filteredSessions}
         statusById={statusById}
         loading={isLoading || isInitialLoading}
-        paging={paging}
-        onLoadMore={loadMore}
+        pagination={pagination}
+        onPageChange={async (page, pageSize) => {
+          if (pageSize && pageSize !== pagination.pageSize) {
+            await changePageSize(pageSize);
+          } else {
+            await goToPage(page);
+          }
+        }}
         columns={columns}
         extendBaseColumns
         rowSelection={rowSelection}

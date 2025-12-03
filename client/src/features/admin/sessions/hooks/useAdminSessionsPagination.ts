@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { handleApiError } from 'src/lib/api/errorHandler';
 import { adminSessionsService } from 'src/services/api/admin-sessions.service';
 import type {
@@ -62,6 +62,12 @@ export function useAdminSessionsPagination(
   const [hasNext, setHasNext] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const prevParamsRef = useRef<{
+    created0?: string | null;
+    created1?: string | null;
+    userIds?: string[] | null;
+  }>({});
+  const hasLoadedOnceRef = useRef(false);
 
   const fetchPage = useCallback(
     async (page: number, cursor: string | null) => {
@@ -94,6 +100,7 @@ export function useAdminSessionsPagination(
       } finally {
         setIsLoading(false);
         setIsInitialLoading(false);
+        hasLoadedOnceRef.current = true;
       }
     },
     [initialParams, pageSize],
@@ -181,21 +188,34 @@ export function useAdminSessionsPagination(
   }, [currentPage, hasNext, pageSize, sessions.length]);
 
   useEffect(() => {
-    if (autoLoad && sessions.length === 0 && !isInitialLoading && !isLoading) {
-      void reload();
-    }
-  }, [autoLoad, sessions.length, isInitialLoading, isLoading, reload]);
+    if (!autoLoad) return;
 
-  useEffect(() => {
-    if (autoLoad) {
-      void reload();
+    const prevParams = prevParamsRef.current;
+    const currentParams = {
+      created0: initialParams.created0,
+      created1: initialParams.created1,
+      userIds: initialParams.userIds,
+    };
+
+    const hasParamsChanged =
+      prevParams.created0 !== currentParams.created0 ||
+      prevParams.created1 !== currentParams.created1 ||
+      JSON.stringify(prevParams.userIds) !==
+        JSON.stringify(currentParams.userIds);
+
+    if (!hasLoadedOnceRef.current || hasParamsChanged) {
+      prevParamsRef.current = currentParams;
+      hasLoadedOnceRef.current = false;
+      setPageCursors(new Map([[1, null]]));
+      setCurrentPage(1);
+      void fetchPage(1, null);
     }
   }, [
+    autoLoad,
     initialParams.created0,
     initialParams.created1,
     initialParams.userIds,
-    reload,
-    autoLoad,
+    fetchPage,
   ]);
 
   return {

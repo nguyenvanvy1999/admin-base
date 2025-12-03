@@ -1,7 +1,6 @@
-import { ArrowLeftOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import { ProDescriptions, ProTable } from '@ant-design/pro-components';
-import { Alert, Button, Skeleton, Space, Tabs, Tag, Tooltip } from 'antd';
+import { Alert, Skeleton, Space, Tabs, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -203,14 +202,6 @@ export default function AdminRoleDetailPage() {
           { title: data?.title ?? roleId },
         ],
       }}
-      extra={
-        <Button
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate('/admin/roles')}
-        >
-          {t('common.back')}
-        </Button>
-      }
     >
       {isLoading && <Skeleton active paragraph={{ rows: 6 }} />}
       {!isLoading && !data && (

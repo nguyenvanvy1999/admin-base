@@ -1,4 +1,3 @@
-import { ArrowLeftOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import {
   ProDescriptions,
@@ -323,14 +322,6 @@ export default function AdminUserDetailPage() {
           { title: data?.email ?? userId },
         ],
       }}
-      extra={
-        <Button
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate('/admin/users')}
-        >
-          {t('common.back')}
-        </Button>
-      }
     >
       {isLoading && <Skeleton active paragraph={{ rows: 6 }} />}
       {!isLoading && !data && (

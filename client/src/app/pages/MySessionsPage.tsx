@@ -2,13 +2,13 @@ import type { ProColumns } from '@ant-design/pro-components';
 import { Alert, Button, Card, Popconfirm, Space, Tag, Typography } from 'antd';
 import type { TableRowSelection } from 'antd/es/table/interface';
 import dayjs from 'dayjs';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
 import { SessionsTable } from 'src/features/admin/sessions/components/SessionsTable';
+import { useAdminSessionsPagination } from 'src/features/admin/sessions/hooks/useAdminSessionsPagination';
 import { useSessionDateRange } from 'src/features/admin/sessions/hooks/useSessionDateRange';
 import { getSessionStatus } from 'src/features/admin/sessions/utils/sessionStatus';
-import { useAdminSessions } from 'src/hooks/api/useAdminSessions';
 import { useAuth } from 'src/hooks/auth/useAuth';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { adminSessionsService } from 'src/services/api/admin-sessions.service';
@@ -47,19 +47,17 @@ export default function MySessionsPage() {
   const {
     sessions,
     statusById,
-    paging,
+    pagination,
     isLoading,
     isInitialLoading,
     reload,
-    loadMore,
-  } = useAdminSessions({
+    goToPage,
+    changePageSize,
+  } = useAdminSessionsPagination({
     initialParams: listParams,
-    autoLoad: false,
+    pageSize: 20,
+    autoLoad: true,
   });
-
-  useEffect(() => {
-    void reload();
-  }, [listParams, reload]);
 
   const currentSessionId = useMemo(() => {
     // Backend encodes session id inside tokens; FE does not decode,
@@ -197,8 +195,14 @@ export default function MySessionsPage() {
         sessions={sessions}
         statusById={statusById}
         loading={isLoading || isInitialLoading}
-        paging={paging}
-        onLoadMore={loadMore}
+        pagination={pagination}
+        onPageChange={async (page, pageSize) => {
+          if (pageSize && pageSize !== pagination.pageSize) {
+            await changePageSize(pageSize);
+          } else {
+            await goToPage(page);
+          }
+        }}
         columns={columns}
         extendBaseColumns
         rowSelection={rowSelection}
