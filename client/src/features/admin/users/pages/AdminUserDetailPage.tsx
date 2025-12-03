@@ -36,6 +36,7 @@ import {
 import { AppAdminUserStatusSelect } from 'src/components/common/AppAdminUserStatusSelect';
 import { AppPage } from 'src/components/common/AppPage';
 import { SessionsTable } from 'src/features/admin/sessions/components/SessionsTable';
+import { useAdminSessionsPagination } from 'src/features/admin/sessions/hooks/useAdminSessionsPagination';
 import { useSessionDateRange } from 'src/features/admin/sessions/hooks/useSessionDateRange';
 import { getSessionStatus } from 'src/features/admin/sessions/utils/sessionStatus';
 import {
@@ -45,7 +46,6 @@ import {
   useUpdateAdminUserRoles,
 } from 'src/features/admin/users/hooks/useAdminUsers';
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
-import { useAdminSessions } from 'src/hooks/api/useAdminSessions';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { useModal } from 'src/hooks/useModal';
 import { useNotify } from 'src/hooks/useNotify';
@@ -709,19 +709,29 @@ function UserSessionsTab({ userId }: { userId?: string }) {
   const {
     sessions,
     statusById,
-    paging,
+    pagination,
     isLoading,
     isInitialLoading,
     reload,
-    loadMore,
-  } = useAdminSessions({
+    goToPage,
+    changePageSize,
+  } = useAdminSessionsPagination({
     initialParams: listParams,
+    pageSize: 20,
     autoLoad: true,
   });
 
   const handleRevoke = async (session: AdminSession) => {
     await adminSessionsService.revoke([session.id]);
     await reload();
+  };
+
+  const handlePageChange = async (page: number, pageSize?: number) => {
+    if (pageSize && pageSize !== pagination.pageSize) {
+      await changePageSize(pageSize);
+    } else {
+      await goToPage(page);
+    }
   };
 
   const columns: ProColumns<AdminSession>[] = [
@@ -765,8 +775,8 @@ function UserSessionsTab({ userId }: { userId?: string }) {
       sessions={sessions}
       statusById={statusById}
       loading={isLoading || isInitialLoading}
-      paging={paging}
-      onLoadMore={loadMore}
+      pagination={pagination}
+      onPageChange={handlePageChange}
       columns={columns}
       extendBaseColumns
       formInitialValues={{

@@ -22,6 +22,13 @@ export interface SessionsTableProps<
     hasNext: boolean;
   };
   onLoadMore?: () => void;
+  pagination?: {
+    current: number;
+    pageSize: number;
+    total: number;
+    hasNext: boolean;
+  };
+  onPageChange?: (page: number, pageSize?: number) => void;
   columns?: ProColumns<AdminSession>[];
   extendBaseColumns?: boolean;
   searchConfig?: {
@@ -42,6 +49,8 @@ export function SessionsTable<
   loading = false,
   paging,
   onLoadMore,
+  pagination: paginationProp,
+  onPageChange,
   columns: customColumns,
   extendBaseColumns = false,
   searchConfig,
@@ -96,13 +105,33 @@ export function SessionsTable<
     ? [...baseColumns, ...(customColumns ?? [])]
     : (customColumns ?? baseColumns);
 
+  const usePagination = paginationProp && onPageChange;
+
   return (
     <AppTable<AdminSession, T>
       rowKey="id"
       columns={columns}
       loading={loading}
       dataSource={sessions}
-      pagination={false}
+      pagination={
+        usePagination
+          ? {
+              current: paginationProp.current,
+              pageSize: paginationProp.pageSize,
+              total: paginationProp.total,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total) => t('common.pagination.total', { total }),
+              pageSizeOptions: ['10', '20', '50', '100'],
+              onChange: (page, size) => {
+                onPageChange(page, size);
+              },
+              onShowSizeChange: (current, size) => {
+                onPageChange(1, size);
+              },
+            }
+          : false
+      }
       rowSelection={rowSelection}
       search={searchConfig ?? { labelWidth: 'auto' }}
       form={
@@ -116,7 +145,7 @@ export function SessionsTable<
       onReset={onReset}
       toolBarRender={() => [
         ...extraToolbarActions,
-        paging?.hasNext && onLoadMore && (
+        !usePagination && paging?.hasNext && onLoadMore && (
           <Button key="load-more" onClick={onLoadMore}>
             {t('adminSessionsPage.actions.loadMore')}
           </Button>

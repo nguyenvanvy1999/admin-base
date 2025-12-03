@@ -322,6 +322,10 @@ export default function AdminRoleDetailPage() {
                   pagination={{
                     pageSize: 20,
                     showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total) =>
+                      t('common.pagination.total', { total }),
+                    pageSizeOptions: ['10', '20', '50', '100'],
                   }}
                   dataSource={data.players}
                   columns={playerColumns}
