@@ -335,12 +335,12 @@ model SecurityEvent {
 
 // Per-user IP whitelist for additional security
 model UserIpWhitelist {
-  id      String   @id
-  userId  String   @map("user_id")
-  ip      String
-  note    String?
-  created DateTime @default(now())
-  updated DateTime @updatedAt
+  id       String   @id
+  userId   String   @map("user_id")
+  ip       String
+  note     String?
+  created  DateTime @default(now())
+  modified DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

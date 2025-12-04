@@ -7,8 +7,6 @@ export const IdsDto = t.Object({
 });
 export type IIdsDto = typeof IdsDto.static;
 
-export const SuccessResDto = t.Object({ success: t.Boolean() });
-
 export const ErrorResDto = t.NoValidate(
   t.Object({
     success: t.Boolean(),
@@ -46,5 +44,3 @@ export const PaginatedDto = <T extends TSchema>(itemSchema: T) =>
     docs: t.Array(itemSchema),
     count: t.Number(),
   });
-
-export const tNumberString = t.String({ pattern: '^-?(?:\\d+)(?:\\.\\d+)?$' });

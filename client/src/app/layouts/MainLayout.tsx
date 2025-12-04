@@ -75,7 +75,7 @@ const ADMIN_USER_IP_WHITELISTS_ROUTE: MenuDataItem = {
 
 export default function MainLayout() {
   const location = useLocation();
-  const { t, i18n: _ } = useTranslation();
+  const { t } = useTranslation();
   const { mode, setMode } = useThemeMode();
   const { user, logout } = useAuth();
   const canViewAdminUsers = user?.permissions?.includes('USER.VIEW');
@@ -190,7 +190,7 @@ export default function MainLayout() {
       ]}
       avatarProps={{
         src: 'https://avatars.githubusercontent.com/u/9919?s=200&v=4',
-        render: (props, dom) => (
+        render: (_, dom) => (
           <Dropdown
             key="avatar"
             menu={{

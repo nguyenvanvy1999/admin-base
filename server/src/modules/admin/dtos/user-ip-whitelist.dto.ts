@@ -1,5 +1,5 @@
 import { t } from 'elysia';
-import { DtoFields } from 'src/share';
+import { DtoFields, PaginationReqDto } from 'src/share';
 
 export const UpsertUserIpWhitelistDto = t.Object({
   id: t.Optional(t.String()),
@@ -14,7 +14,7 @@ export const UserIpWhitelistItemDto = t.Object({
   userId: t.String(),
   note: t.Nullable(t.String()),
   created: t.Date(),
-  updated: t.Date(),
+  modified: t.Date(),
 });
 
 export const PaginateUserIpWhitelistResDto = t.Object({
@@ -22,26 +22,24 @@ export const PaginateUserIpWhitelistResDto = t.Object({
   count: t.Number(),
 });
 
-export const UserIpWhitelistDetailResDto = t.Object({
-  id: t.String(),
-  ip: t.String(),
-  userId: t.String(),
-  note: t.Nullable(t.String()),
-  created: t.Date(),
-  updated: t.Date(),
-  user: t.Optional(
-    t.Object({
-      id: t.String(),
-      email: t.String(),
-    }),
-  ),
-});
+export const UserIpWhitelistDetailResDto = t.Intersect([
+  UserIpWhitelistItemDto,
+  t.Object({
+    user: t.Optional(
+      t.Object({
+        id: t.String(),
+        email: t.String(),
+      }),
+    ),
+  }),
+]);
 
-export const UserIpWhitelistPaginationDto = t.Object({
-  userId: t.Optional(t.String()),
-  userIds: t.Optional(t.Array(t.String())),
-  ip: t.Optional(t.String()),
-  search: DtoFields.search,
-  take: t.Optional(t.Integer({ minimum: 1, examples: [20], default: 20 })),
-  skip: t.Optional(t.Integer({ minimum: 0, examples: [0], default: 0 })),
-});
+export const UserIpWhitelistPaginationDto = t.Intersect([
+  PaginationReqDto,
+  t.Object({
+    userId: t.Optional(t.String()),
+    userIds: t.Optional(t.Array(t.String())),
+    ip: t.Optional(t.String()),
+    search: DtoFields.search,
+  }),
+]);

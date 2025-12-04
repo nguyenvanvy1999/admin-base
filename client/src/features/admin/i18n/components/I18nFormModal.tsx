@@ -49,14 +49,14 @@ export function I18nFormModal({
       }
       title={
         isEditMode
-          ? t('adminI18nPage.form.editTitle', 'Edit Translation')
-          : t('adminI18nPage.form.createTitle', 'Create Translation')
+          ? t('adminI18nPage.form.editTitle')
+          : t('adminI18nPage.form.createTitle')
       }
       initialValues={initialValues}
       loading={loading}
       mode={isEditMode ? 'edit' : 'create'}
-      okText={t('common.actions.save', 'Save')}
-      cancelText={t('common.actions.cancel', 'Cancel')}
+      okText={t('common.save')}
+      cancelText={t('common.cancel')}
       width={600}
       formProps={{
         layout: 'vertical',
@@ -64,11 +64,11 @@ export function I18nFormModal({
     >
       <ProFormText
         name="key"
-        label={t('adminI18nPage.form.key', 'Key')}
+        label={t('adminI18nPage.form.key')}
         rules={[
           {
             required: true,
-            message: t('adminI18nPage.form.keyRequired', 'Please enter a key'),
+            message: t('adminI18nPage.form.keyRequired'),
           },
         ]}
         fieldProps={{
@@ -82,25 +82,19 @@ export function I18nFormModal({
 
       <ProFormTextArea
         name="en"
-        label={t('adminI18nPage.form.en', 'English Translation')}
+        label={t('adminI18nPage.form.en')}
         fieldProps={{
           rows: 3,
-          placeholder: t(
-            'adminI18nPage.form.enPlaceholder',
-            'Enter English translation',
-          ),
+          placeholder: t('adminI18nPage.form.enPlaceholder'),
         }}
       />
 
       <ProFormTextArea
         name="vi"
-        label={t('adminI18nPage.form.vi', 'Vietnamese Translation')}
+        label={t('adminI18nPage.form.vi')}
         fieldProps={{
           rows: 3,
-          placeholder: t(
-            'adminI18nPage.form.viPlaceholder',
-            'Enter Vietnamese translation',
-          ),
+          placeholder: t('adminI18nPage.form.viPlaceholder'),
         }}
       />
     </FormModal>

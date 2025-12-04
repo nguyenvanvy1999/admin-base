@@ -209,7 +209,7 @@ CREATE TABLE "user_ip_whitelist" (
     "ip" TEXT NOT NULL,
     "note" TEXT,
     "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated" TIMESTAMP(3) NOT NULL,
+    "modified" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "user_ip_whitelist_pkey" PRIMARY KEY ("id")
 );
