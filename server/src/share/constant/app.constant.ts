@@ -117,6 +117,7 @@ export const PERMISSIONS = {
   IPWHITELIST: {
     VIEW: { roles: [defaultRoles.administrator.id] },
     CREATE: { roles: [defaultRoles.administrator.id] },
+    UPDATE: { roles: [defaultRoles.administrator.id] },
     DELETE: { roles: [defaultRoles.administrator.id] },
   },
   USER: {

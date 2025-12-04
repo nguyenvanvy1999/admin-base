@@ -33,6 +33,12 @@ const AdminSessionsPage = lazy(
 const AdminI18nPage = lazy(
   () => import('../features/admin/i18n/pages/AdminI18nPage'),
 );
+const AdminUserIpWhitelistPage = lazy(
+  () =>
+    import(
+      '../features/admin/user-ip-whitelists/pages/AdminUserIpWhitelistPage'
+    ),
+);
 const MySessionsPage = lazy(() => import('./pages/MySessionsPage'));
 
 export function AppRoutes() {
@@ -121,6 +127,14 @@ export function AppRoutes() {
           element={
             <ProtectedRoute requiredPermissions={['I18N.VIEW']}>
               <AdminI18nPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/user-ip-whitelists"
+          element={
+            <ProtectedRoute requiredPermissions={['IPWHITELIST.VIEW']}>
+              <AdminUserIpWhitelistPage />
             </ProtectedRoute>
           }
         />

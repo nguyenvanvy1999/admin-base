@@ -35,6 +35,7 @@
     "mySessions": "Phiên của tôi",
     "adminSessions": "Quản lý session",
     "adminUsers": "Quản lý user",
+    "adminUserIpWhitelists": "Quản lý IP trắng User",
     "adminRoles": "Quản lý role",
     "adminPermissions": "Quản lý permission",
     "adminSettings": "Quản lý settings"
@@ -442,6 +443,7 @@
       "I18N.DELETE": "Xóa bản dịch đa ngôn ngữ",
       "IPWHITELIST.VIEW": "Xem danh sách IP trắng",
       "IPWHITELIST.CREATE": "Thêm IP vào danh sách trắng",
+      "IPWHITELIST.UPDATE": "Cập nhật IP trong danh sách trắng",
       "IPWHITELIST.DELETE": "Xóa IP khỏi danh sách trắng",
       "API_KEY.VIEW": "Xem API keys của chính mình",
       "API_KEY.VIEW_ALL": "Xem tất cả API keys",
@@ -605,6 +607,39 @@
     },
     "pagination": {
       "total": "{{total}} bản dịch"
+    }
+  },
+  "adminUserIpWhitelistPage": {
+    "table": {
+      "userId": "User ID",
+      "ip": "Địa chỉ IP"
+    },
+    "filters": {
+      "userIdsPlaceholder": "Lọc theo user IDs (ngăn cách bằng dấu phẩy)",
+      "ipPlaceholder": "Lọc theo địa chỉ IP"
+    },
+    "actions": {
+      "create": "Tạo mới",
+      "edit": "Sửa",
+      "delete": "Xóa",
+      "deleteSelected": "Xóa ({{count}})",
+      "deleteConfirmTitle": "Xóa IP whitelist?",
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa mục IP whitelist này?",
+      "deleteSelectedConfirmTitle": "Xóa các mục đã chọn?",
+      "deleteSelectedConfirm": "Bạn có chắc chắn muốn xóa {{count}} mục?"
+    },
+    "form": {
+      "createTitle": "Tạo IP trắng cho User",
+      "editTitle": "Sửa IP trắng cho User",
+      "userId": "User ID",
+      "userIdRequired": "Vui lòng nhập user ID",
+      "userIdPlaceholder": "Nhập user ID",
+      "ip": "Địa chỉ IP",
+      "ipRequired": "Vui lòng nhập địa chỉ IP",
+      "ipPlaceholder": "Ví dụ: 192.168.1.1"
+    },
+    "pagination": {
+      "total": "{{total}} mục"
     }
   }
 }
