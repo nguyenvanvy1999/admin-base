@@ -19,11 +19,13 @@ describe('settingService', () => {
     get: ReturnType<typeof mock>;
     set: ReturnType<typeof mock>;
     getMany: ReturnType<typeof mock>;
+    del: ReturnType<typeof mock>;
   };
   let mockDb: {
     setting: {
       findUnique: ReturnType<typeof mock>;
       findMany: ReturnType<typeof mock>;
+      update: ReturnType<typeof mock>;
     };
   };
   let decryptSpy: ReturnType<typeof spyOn>;
@@ -33,13 +35,15 @@ describe('settingService', () => {
       get: mock(() => Promise.resolve(null)),
       set: mock(() => Promise.resolve()),
       getMany: mock(() => Promise.resolve(new Map())),
-    };
+      del: mock(() => Promise.resolve()),
+    } as any;
     mockDb = {
       setting: {
         findUnique: mock(() => Promise.resolve(null)),
         findMany: mock(() => Promise.resolve([])),
+        update: mock(() => Promise.resolve(null)),
       },
-    };
+    } as any;
     decryptSpy = spyOn(EncryptService, 'aes256Decrypt').mockReturnValue(
       'decrypted_encrypted_value',
     );
@@ -227,70 +231,83 @@ describe('settingService', () => {
     });
   });
 
-  describe('checkValue', () => {
+  describe('validateSetting', () => {
     it('should validate boolean values correctly', () => {
-      expect(service.checkValue('true', 'boolean')).toBe(true);
-      expect(service.checkValue('false', 'boolean')).toBe(true);
-      expect(service.checkValue('invalid', 'boolean')).toBe(false);
-      expect(service.checkValue('True', 'boolean')).toBe(false);
-      expect(service.checkValue('FALSE', 'boolean')).toBe(false);
+      expect(service.validateSetting('dummy', 'true', 'boolean').valid).toBe(
+        true,
+      );
+      expect(service.validateSetting('dummy', 'false', 'boolean').valid).toBe(
+        true,
+      );
+      expect(service.validateSetting('dummy', 'invalid', 'boolean').valid).toBe(
+        false,
+      );
+      expect(service.validateSetting('dummy', 'True', 'boolean').valid).toBe(
+        false,
+      );
+      expect(service.validateSetting('dummy', 'FALSE', 'boolean').valid).toBe(
+        false,
+      );
     });
 
     it('should validate number values correctly', () => {
-      expect(service.checkValue('123', 'number')).toBe(true);
-      expect(service.checkValue('123.45', 'number')).toBe(true);
-      expect(service.checkValue('-123.45', 'number')).toBe(true);
-      expect(service.checkValue('0', 'number')).toBe(true);
-      expect(service.checkValue('-0', 'number')).toBe(true);
-      expect(service.checkValue('not_a_number', 'number')).toBe(false);
-      expect(service.checkValue('12.34.56', 'number')).toBe(false);
-      expect(service.checkValue('', 'number')).toBe(false);
+      expect(service.validateSetting('dummy', '123', 'number').valid).toBe(
+        true,
+      );
+      expect(service.validateSetting('dummy', '123.45', 'number').valid).toBe(
+        true,
+      );
+      expect(service.validateSetting('dummy', '-123.45', 'number').valid).toBe(
+        true,
+      );
+      expect(service.validateSetting('dummy', '0', 'number').valid).toBe(true);
+      expect(service.validateSetting('dummy', '-0', 'number').valid).toBe(true);
+      expect(
+        service.validateSetting('dummy', 'not_a_number', 'number').valid,
+      ).toBe(false);
+      expect(service.validateSetting('dummy', '12.34.56', 'number').valid).toBe(
+        false,
+      );
+      expect(service.validateSetting('dummy', '', 'number').valid).toBe(false);
     });
 
     it('should validate string values correctly', () => {
-      expect(service.checkValue('any string', 'string')).toBe(true);
-      expect(service.checkValue('', 'string')).toBe(true);
-      expect(service.checkValue('123', 'string')).toBe(true);
-      expect(service.checkValue('special !@#$%^&*()', 'string')).toBe(true);
+      expect(
+        service.validateSetting('dummy', 'any string', 'string').valid,
+      ).toBe(true);
+      expect(service.validateSetting('dummy', '', 'string').valid).toBe(true);
+      expect(service.validateSetting('dummy', '123', 'string').valid).toBe(
+        true,
+      );
+      expect(
+        service.validateSetting('dummy', 'special !@#$%^&*()', 'string').valid,
+      ).toBe(true);
     });
 
     it('should validate date values correctly', () => {
-      // Note: Based on actual behavior testing, TypeBox date-time format validation
-      // appears to be very strict or may require additional configuration.
-      // Testing the actual behavior of the current implementation.
-
-      // Test that the checkValue function runs without errors for date type
-      expect(() =>
-        service.checkValue('2023-12-25T10:30:00.000Z', 'date'),
-      ).not.toThrow();
-      expect(() =>
-        service.checkValue('2023-12-25T10:30:00Z', 'date'),
-      ).not.toThrow();
-      expect(() => service.checkValue('invalid_date', 'date')).not.toThrow();
-      expect(() => service.checkValue('2023-12-25', 'date')).not.toThrow();
-      expect(() => service.checkValue('', 'date')).not.toThrow();
-
-      // Test that all calls return boolean values
       expect(
-        typeof service.checkValue('2023-12-25T10:30:00.000Z', 'date'),
-      ).toBe('boolean');
-      expect(typeof service.checkValue('invalid_date', 'date')).toBe('boolean');
-
-      // Since the actual validation behavior may vary depending on TypeBox configuration,
-      // we focus on testing that the function works correctly structurally
-      // rather than specific validation outcomes which might need environment-specific setup.
+        service.validateSetting('dummy', '2023-12-25T10:30:00.000Z', 'date')
+          .valid,
+      ).toBe(true);
+      // TypeBox date-time format might be strict, but basic ISO should pass if configured or if default behavior allows
+      // If it fails, we might need to adjust expectation based on actual TypeBox behavior in this project
     });
 
     it('should validate JSON values correctly', () => {
-      expect(service.checkValue('{}', 'json')).toBe(true);
-      expect(service.checkValue('[]', 'json')).toBe(true);
-      expect(service.checkValue('{"key": "value"}', 'json')).toBe(true);
-      expect(service.checkValue('[1, 2, 3]', 'json')).toBe(true);
-      expect(service.checkValue('null', 'json')).toBe(true);
-      expect(service.checkValue('true', 'json')).toBe(true);
-      expect(service.checkValue('123', 'json')).toBe(true);
-      expect(service.checkValue('"string"', 'json')).toBe(true);
-      // Note: JSON schema with Type.Any() accepts any value
+      expect(service.validateSetting('dummy', '{}', 'json').valid).toBe(true);
+      expect(service.validateSetting('dummy', '[]', 'json').valid).toBe(true);
+      expect(
+        service.validateSetting('dummy', '{"key": "value"}', 'json').valid,
+      ).toBe(true);
+      expect(service.validateSetting('dummy', '[1, 2, 3]', 'json').valid).toBe(
+        true,
+      );
+      expect(service.validateSetting('dummy', 'null', 'json').valid).toBe(true);
+      expect(service.validateSetting('dummy', 'true', 'json').valid).toBe(true);
+      expect(service.validateSetting('dummy', '123', 'json').valid).toBe(true);
+      expect(service.validateSetting('dummy', '"string"', 'json').valid).toBe(
+        true,
+      );
     });
   });
 
@@ -561,6 +578,213 @@ describe('settingService', () => {
     it('should handle empty keys', async () => {
       const record = await service.getManySettingsAsRecord([] as const);
       expect(record).toEqual({});
+    });
+  });
+
+  describe('validateDependencies', () => {
+    it('should validate correct dependencies', () => {
+      const settings = {
+        [SETTING.ENB_SECURITY_BLOCK_UNKNOWN_DEVICE]: true,
+        [SETTING.ENB_SECURITY_DEVICE_RECOGNITION]: true,
+      };
+      const result = service.validateDependencies(settings);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should fail when dependency is missing', () => {
+      const settings = {
+        [SETTING.ENB_SECURITY_BLOCK_UNKNOWN_DEVICE]: true,
+        // Missing ENB_SECURITY_DEVICE_RECOGNITION
+      };
+      const result = service.validateDependencies(settings);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0]).toContain('missing');
+    });
+
+    it('should fail when dependency condition is not met', () => {
+      const settings = {
+        [SETTING.ENB_SECURITY_BLOCK_UNKNOWN_DEVICE]: true,
+        [SETTING.ENB_SECURITY_DEVICE_RECOGNITION]: false, // Should be true
+      };
+      const result = service.validateDependencies(settings);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0]).toContain('requires');
+    });
+
+    it('should validate custom dependencies', () => {
+      const settings = {
+        key1: 'value1',
+        key2: 'value2',
+      };
+      const dependencies = {
+        key1: [
+          {
+            key: 'key2',
+            condition: (val: unknown) => val === 'value2',
+            message: 'key1 requires key2 to be value2',
+          },
+        ],
+      };
+      const result = service.validateDependencies(settings, dependencies);
+      expect(result.valid).toBe(true);
+    });
+  });
+
+  describe('exportSettings', () => {
+    it('should export all settings decrypted', async () => {
+      const dbSettings = [
+        SettingFixtures.createSetting('key1', 'value1', 'string'),
+        SettingFixtures.createSetting(
+          'secret_key',
+          'encrypted_value',
+          'string',
+          true,
+        ),
+      ];
+      mockDb.setting.findMany.mockResolvedValueOnce(dbSettings);
+
+      const result = await service.exportSettings();
+
+      expect(result).toEqual({
+        key1: 'value1',
+        secret_key: 'decrypted_encrypted_value',
+      });
+      expect(decryptSpy).toHaveBeenCalledWith('encrypted_value');
+    });
+
+    it('should export specific settings when keys provided', async () => {
+      const keys = ['key1'];
+      mockDb.setting.findMany.mockResolvedValueOnce([
+        SettingFixtures.createSetting('key1', 'value1', 'string'),
+      ]);
+
+      const result = await service.exportSettings(keys);
+
+      expect(result).toEqual({ key1: 'value1' });
+      expect(mockDb.setting.findMany).toHaveBeenCalledWith({
+        where: { key: { in: keys } },
+      });
+    });
+  });
+
+  describe('importSettings', () => {
+    it('should import valid settings', async () => {
+      const importData = { key1: 'new_value' };
+      const existingSetting = SettingFixtures.createSetting(
+        'key1',
+        'old_value',
+        'string',
+      );
+      mockDb.setting.findMany.mockResolvedValue([existingSetting]);
+      mockDb.setting.update.mockResolvedValue(existingSetting);
+
+      const result = await service.importSettings(importData);
+
+      expect(result.imported).toBe(1);
+      expect(result.errors).toHaveLength(0);
+      expect(mockDb.setting.update).toHaveBeenCalledWith({
+        where: { key: 'key1' },
+        data: { value: 'new_value' },
+      });
+      expect(mockCache.del).toHaveBeenCalledWith('key1');
+    });
+
+    it('should encrypt secret settings on import', async () => {
+      const importData = { secret_key: 'new_secret_value' };
+      const existingSetting = SettingFixtures.createSetting(
+        'secret_key',
+        'old_value',
+        'string',
+        true,
+      );
+      mockDb.setting.findMany.mockResolvedValue([existingSetting]);
+      spyOn(EncryptService, 'aes256Encrypt').mockReturnValue('encrypted_new');
+
+      const result = await service.importSettings(importData);
+
+      expect(result.imported).toBe(1);
+      expect(mockDb.setting.update).toHaveBeenCalledWith({
+        where: { key: 'secret_key' },
+        data: { value: 'encrypted_new' },
+      });
+    });
+
+    it('should return errors for non-existent settings', async () => {
+      const importData = { non_existent: 'value' };
+      mockDb.setting.findMany.mockResolvedValue([]);
+
+      const result = await service.importSettings(importData);
+
+      expect(result.imported).toBe(0);
+      expect(result.errors).toContain(
+        'Setting non_existent does not exist in database',
+      );
+    });
+
+    it('should validate values before import', async () => {
+      const importData = { num_key: 'not_a_number' };
+      const existingSetting = SettingFixtures.createSetting(
+        'num_key',
+        '0',
+        'number',
+      );
+      mockDb.setting.findMany.mockResolvedValue([existingSetting]);
+
+      const result = await service.importSettings(importData);
+
+      expect(result.imported).toBe(0);
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors[0]).toContain('Invalid value type');
+    });
+
+    it('should validate dependencies before import', async () => {
+      const importData = {
+        [SETTING.ENB_SECURITY_BLOCK_UNKNOWN_DEVICE]: 'true',
+        // Missing required dependency ENB_SECURITY_DEVICE_RECOGNITION=true
+      };
+      const existingSetting = SettingFixtures.createSetting(
+        SETTING.ENB_SECURITY_BLOCK_UNKNOWN_DEVICE,
+        'false',
+        'boolean',
+      );
+      const allSettings = [
+        existingSetting,
+        SettingFixtures.createSetting(
+          SETTING.ENB_SECURITY_DEVICE_RECOGNITION,
+          'false',
+          'boolean',
+        ),
+      ];
+
+      mockDb.setting.findMany
+        .mockResolvedValueOnce([existingSetting]) // for existing check
+        .mockResolvedValueOnce(allSettings); // for dependency check
+
+      const result = await service.importSettings(importData);
+
+      expect(result.imported).toBe(0);
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors[0]).toContain('requires');
+    });
+
+    it('should skip validation when opts.validate is false', async () => {
+      const importData = { num_key: 'not_a_number' };
+      const existingSetting = SettingFixtures.createSetting(
+        'num_key',
+        '0',
+        'number',
+      );
+      mockDb.setting.findMany.mockResolvedValue([existingSetting]);
+
+      const result = await service.importSettings(importData, {
+        validate: false,
+        validateRules: false,
+        validateDependencies: false,
+      });
+
+      expect(result.imported).toBe(1);
+      expect(result.errors).toHaveLength(0);
     });
   });
 });

@@ -471,7 +471,7 @@ describe('SeedService', () => {
         expect.objectContaining({
           where: { id: SYS_USER_ID },
           create: expect.objectContaining({
-            email: 'system@investment.local',
+            email: 'system@admin-base.local',
             roles: expect.objectContaining({
               create: expect.objectContaining({
                 roleId: defaultRoles.system.id,
@@ -485,7 +485,7 @@ describe('SeedService', () => {
         expect.objectContaining({
           where: { id: ADMIN_USER_ID },
           create: expect.objectContaining({
-            email: 'admin@investment.local',
+            email: 'admin@admin-base.local',
             roles: expect.objectContaining({
               create: expect.objectContaining({
                 roleId: defaultRoles.administrator.id,
