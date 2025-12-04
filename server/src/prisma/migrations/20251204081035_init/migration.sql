@@ -164,15 +164,6 @@ CREATE TABLE "i18n" (
 );
 
 -- CreateTable
-CREATE TABLE "ip_whitelist" (
-    "id" TEXT NOT NULL,
-    "ip" TEXT NOT NULL,
-    "note" TEXT,
-
-    CONSTRAINT "ip_whitelist_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "settings" (
     "id" TEXT NOT NULL,
     "key" TEXT NOT NULL,
@@ -216,7 +207,9 @@ CREATE TABLE "user_ip_whitelist" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "ip" TEXT NOT NULL,
+    "note" TEXT,
     "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "user_ip_whitelist_pkey" PRIMARY KEY ("id")
 );
@@ -320,12 +313,6 @@ CREATE UNIQUE INDEX "i18n_key_key" ON "i18n"("key");
 
 -- CreateIndex
 CREATE INDEX "i18n_key_idx" ON "i18n"("key");
-
--- CreateIndex
-CREATE UNIQUE INDEX "ip_whitelist_ip_key" ON "ip_whitelist"("ip");
-
--- CreateIndex
-CREATE INDEX "ip_whitelist_ip_idx" ON "ip_whitelist"("ip");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "settings_key_key" ON "settings"("key");

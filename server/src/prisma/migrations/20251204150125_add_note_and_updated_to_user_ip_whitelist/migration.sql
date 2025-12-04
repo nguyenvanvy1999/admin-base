@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "user_ip_whitelist" ADD COLUMN "note" TEXT,
-ADD COLUMN "updated" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
