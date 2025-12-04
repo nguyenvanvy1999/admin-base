@@ -130,7 +130,9 @@ export class I18nService {
   }
 
   async export(): Promise<Response> {
-    const translations = await this.deps.db.i18n.findMany();
+    const translations = await this.deps.db.i18n.findMany({
+      select: { key: true, en: true, vi: true },
+    });
     const keys = ['KEY', 'EN', 'ZH', 'KR', 'VI'];
     const data = translations.map((translation) => [
       translation.key,

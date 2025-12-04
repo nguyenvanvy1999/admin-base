@@ -18,6 +18,11 @@ export class PermissionService {
     return this.deps.db.permission.findMany({
       where,
       orderBy: { title: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+      },
     });
   }
 }

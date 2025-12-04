@@ -15,7 +15,7 @@ export class SessionService {
     const whereCondition: SessionWhereInput = {
       createdById: userId,
       revoked: { not: { equals: true } },
-      ...(sessionIds.length > 0 ? { id: { in: sessionIds } } : {}),
+      ...(sessionIds.length > 0 && { id: { in: sessionIds } }),
     };
 
     await this.deps.db.session.updateMany({

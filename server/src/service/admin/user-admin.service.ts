@@ -41,8 +41,10 @@ import {
   defaultRoles,
   ErrCode,
   IdUtil,
+  type MfaMethod,
   NotFoundErr,
   normalizeEmail,
+  ServiceUtils,
 } from 'src/share';
 
 type UserActionResult = typeof AdminUserActionResDto.static;
@@ -89,13 +91,6 @@ export class AdminUserService {
       passwordService: PasswordService;
       passwordValidationService: PasswordValidationService;
       userUtilService: UserUtilService;
-    } = {
-      db,
-      sessionService,
-      auditLogService,
-      passwordService,
-      passwordValidationService,
-      userUtilService,
     },
   ) {}
 
@@ -116,7 +111,7 @@ export class AdminUserService {
 
     const resolvedRoleIds = await this.resolveRoleIds(roleIds);
     const userId = IdUtil.dbId(DB_PREFIX.USER);
-    const trimmedName = name && name.trim().length > 0 ? name.trim() : null;
+    const trimmedName = ServiceUtils.trimOrNull(name);
     const nextStatus = status ?? UserStatus.active;
     const shouldVerifyEmail = emailVerified ?? nextStatus === UserStatus.active;
 
@@ -198,7 +193,7 @@ export class AdminUserService {
       });
     }
 
-    const normalizedRoleIds = this.normalizeRoleFilters(roleIds);
+    const normalizedRoleIds = ServiceUtils.normalizeStringArray(roleIds);
     if (normalizedRoleIds.length > 0) {
       whereClauses.push({
         roles: { some: { roleId: { in: normalizedRoleIds } } },
@@ -270,35 +265,20 @@ export class AdminUserService {
     };
   }
 
-  async resetUserMfa(params: BaseUserActionParams): Promise<UserActionResult> {
-    const { targetUserId, actorId, reason } = params;
-    const normalizedReason = this.normalizeReason(reason);
-    const user = await this.ensureUserExists(targetUserId);
-    if (user.protected) {
-      throw new BadReqErr(ErrCode.PermissionDenied);
-    }
-
-    await this.resetMfaState(targetUserId);
-
-    const auditLogId = await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.RESET_MFA,
-      payload: {
-        method: 'admin-reset',
-        reason: normalizedReason,
-        actorId,
-        targetUserId,
-        previouslyEnabled: user.mfaTotpEnabled ?? false,
-      },
-    });
-
-    return { userId: targetUserId, auditLogId };
+  resetUserMfa(params: BaseUserActionParams): Promise<UserActionResult> {
+    return this.performMfaReset(params, 'admin-reset');
   }
 
-  async disableUserMfa(
+  disableUserMfa(params: BaseUserActionParams): Promise<UserActionResult> {
+    return this.performMfaReset(params, 'admin-disable');
+  }
+
+  private async performMfaReset(
     params: BaseUserActionParams,
+    method: MfaMethod,
   ): Promise<UserActionResult> {
     const { targetUserId, actorId, reason } = params;
-    const normalizedReason = this.normalizeReason(reason);
+    const normalizedReason = ServiceUtils.normalizeReason(reason);
     const user = await this.ensureUserExists(targetUserId);
     if (user.protected) {
       throw new BadReqErr(ErrCode.PermissionDenied);
@@ -309,7 +289,7 @@ export class AdminUserService {
     const auditLogId = await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.RESET_MFA,
       payload: {
-        method: 'admin-disable',
+        method,
         reason: normalizedReason,
         actorId,
         targetUserId,
@@ -335,7 +315,7 @@ export class AdminUserService {
       passwordExpired,
       reason,
     } = params;
-    const normalizedReason = this.normalizeReason(reason);
+    const normalizedReason = ServiceUtils.normalizeReason(reason);
 
     const existingUser = await this.deps.db.user.findUnique({
       where: { id: targetUserId },
@@ -432,7 +412,7 @@ export class AdminUserService {
     params: UpdateUserRolesParams,
   ): Promise<UserActionResult> {
     const { targetUserId, actorId, roles, reason } = params;
-    const normalizedReason = this.normalizeReason(reason);
+    const normalizedReason = ServiceUtils.normalizeReason(reason);
 
     if (!normalizedReason) {
       throw new BadReqErr(ErrCode.BadRequest, {
@@ -574,26 +554,6 @@ export class AdminUserService {
     await this.deps.sessionService.revoke(userId);
   }
 
-  private normalizeReason(reason?: string) {
-    if (!reason) {
-      return undefined;
-    }
-    const trimmed = reason.trim();
-    if (!trimmed) {
-      return undefined;
-    }
-    return trimmed.slice(0, 512);
-  }
-
-  private normalizeRoleFilters(roleIds?: string[]): string[] {
-    const result = new Set<string>();
-    roleIds
-      ?.map((id) => id.trim())
-      .filter(Boolean)
-      .forEach((id) => result.add(id));
-    return Array.from(result);
-  }
-
   private async getSessionStatsForUsers(
     userIds: string[],
   ): Promise<
@@ -612,29 +572,19 @@ export class AdminUserService {
       { total: number; active: number; revoked: number; expired: number }
     >();
 
-    for (const userId of userIds) {
-      statsMap.set(userId, {
-        total: 0,
-        active: 0,
-        revoked: 0,
-        expired: 0,
-      });
-    }
+    userIds.forEach((id) =>
+      statsMap.set(id, { total: 0, active: 0, revoked: 0, expired: 0 }),
+    );
 
     const [totalStats, revokedStats, expiredStats] = await Promise.all([
       this.deps.db.session.groupBy({
         by: ['createdById'],
-        where: {
-          createdById: { in: userIds },
-        },
+        where: { createdById: { in: userIds } },
         _count: true,
       }),
       this.deps.db.session.groupBy({
         by: ['createdById'],
-        where: {
-          createdById: { in: userIds },
-          revoked: true,
-        },
+        where: { createdById: { in: userIds }, revoked: true },
         _count: true,
       }),
       this.deps.db.session.groupBy({
@@ -648,26 +598,19 @@ export class AdminUserService {
       }),
     ]);
 
-    for (const stat of totalStats) {
-      const userStats = statsMap.get(stat.createdById);
-      if (userStats) {
-        userStats.total = stat._count;
-      }
-    }
+    const updateStat = (
+      stats: typeof totalStats,
+      key: 'total' | 'revoked' | 'expired',
+    ) => {
+      stats.forEach(({ createdById, _count }) => {
+        const userStats = statsMap.get(createdById);
+        if (userStats) userStats[key] = _count;
+      });
+    };
 
-    for (const stat of revokedStats) {
-      const userStats = statsMap.get(stat.createdById);
-      if (userStats) {
-        userStats.revoked = stat._count;
-      }
-    }
-
-    for (const stat of expiredStats) {
-      const userStats = statsMap.get(stat.createdById);
-      if (userStats) {
-        userStats.expired = stat._count;
-      }
-    }
+    updateStat(totalStats, 'total');
+    updateStat(revokedStats, 'revoked');
+    updateStat(expiredStats, 'expired');
 
     for (const stats of statsMap.values()) {
       stats.active = stats.total - stats.revoked - stats.expired;
@@ -677,4 +620,11 @@ export class AdminUserService {
   }
 }
 
-export const adminUserService = new AdminUserService();
+export const adminUserService = new AdminUserService({
+  db,
+  sessionService,
+  auditLogService,
+  passwordService,
+  passwordValidationService,
+  userUtilService,
+});

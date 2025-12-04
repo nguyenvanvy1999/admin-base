@@ -13,9 +13,6 @@ export class SettingAdminService {
     private readonly deps: {
       db: IDb;
       settingService: typeof settingService;
-    } = {
-      db,
-      settingService,
     },
   ) {}
 
@@ -78,4 +75,7 @@ export class SettingAdminService {
   }
 }
 
-export const settingAdminService = new SettingAdminService();
+export const settingAdminService = new SettingAdminService({
+  db,
+  settingService,
+});

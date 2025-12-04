@@ -18,8 +18,6 @@ export class RoleService {
   constructor(
     private readonly deps: {
       db: IDb;
-    } = {
-      db,
     },
   ) {}
 
@@ -101,11 +99,9 @@ export class RoleService {
       const activePlayers = activeMap.get(role.id) ?? 0;
       const expiredPlayers = Math.max(totalPlayers - activePlayers, 0);
 
-      const { permissions, _count, ...rest } = role;
-
       return {
-        ...rest,
-        permissionIds: permissions.map((p) => p.permissionId),
+        ...role,
+        permissionIds: role.permissions.map((p) => p.permissionId),
         totalPlayers,
         activePlayers,
         expiredPlayers,
@@ -259,4 +255,4 @@ export class RoleService {
   }
 }
 
-export const roleService = new RoleService();
+export const roleService = new RoleService({ db });

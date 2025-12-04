@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { DtoFields } from 'src/share';
 
 export const RolePlayerDto = t.Object({
   playerId: t.String(),
@@ -46,5 +47,5 @@ export const RoleDetailResDto = t.Object({
 
 export const RolePaginationDto = t.Object({
   userId: t.Optional(t.String()),
-  search: t.Optional(t.String()),
+  search: DtoFields.search,
 });
