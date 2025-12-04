@@ -5,6 +5,7 @@ import { adminRoleController } from 'src/modules/admin/controllers/admin-role.co
 import { adminSessionController } from 'src/modules/admin/controllers/admin-session.controller';
 import { adminSettingController } from 'src/modules/admin/controllers/admin-setting.controller';
 import { adminUserController } from 'src/modules/admin/controllers/admin-user.controller';
+import { adminUserIpWhitelistController } from 'src/modules/admin/controllers/admin-user-ip-whitelist.controller';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { ACCESS_AUTH } from 'src/share';
 
@@ -18,4 +19,5 @@ export const adminController = new Elysia({
   .use(adminPermissionController)
   .use(adminSettingController)
   .use(adminSessionController)
-  .use(adminUserController);
+  .use(adminUserController)
+  .use(adminUserIpWhitelistController);
