@@ -30,6 +30,10 @@
       "revoke": "Thu hồi",
       "export": "Xuất",
       "import": "Nhập"
+    },
+    "messages": {
+      "saveSuccess": "Lưu thành công",
+      "deleteSuccess": "Xóa thành công"
     }
   },
   "sidebar": {

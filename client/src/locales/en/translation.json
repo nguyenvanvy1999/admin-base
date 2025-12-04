@@ -30,6 +30,10 @@
       "revoke": "Revoke",
       "export": "Export",
       "import": "Import"
+    },
+    "messages": {
+      "saveSuccess": "Saved successfully",
+      "deleteSuccess": "Deleted successfully"
     }
   },
   "sidebar": {

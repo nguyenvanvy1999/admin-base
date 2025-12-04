@@ -38,10 +38,10 @@ export function useUpsertUserIpWhitelist(
   return useMutation<UserIpWhitelist, Error, UserIpWhitelistFormData>({
     mutationFn: (data) => userIpWhitelistService.upsert(data),
     onSuccess: () => {
-      message.success(t('common.actions.saveSuccess', 'Saved successfully'));
+      message.success(t('common.messages.saveSuccess'));
     },
     onError: (error) => {
-      message.error(error.message || t('errors.generic', 'An error occurred'));
+      message.error(error.message || t('errors.generic'));
     },
     ...options,
   });
@@ -55,12 +55,10 @@ export function useDeleteUserIpWhitelists(
   return useMutation<{ count: number }, Error, string[]>({
     mutationFn: (ids) => userIpWhitelistService.delete(ids),
     onSuccess: () => {
-      message.success(
-        t('common.actions.deleteSuccess', 'Deleted successfully'),
-      );
+      message.success(t('common.messages.deleteSuccess'));
     },
     onError: (error) => {
-      message.error(error.message || t('errors.generic', 'An error occurred'));
+      message.error(error.message || t('errors.generic'));
     },
     ...options,
   });

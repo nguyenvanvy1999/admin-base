@@ -217,7 +217,7 @@ export default function AdminUserIpWhitelistPage() {
             icon={<PlusOutlined />}
             onClick={handleCreate}
           >
-            {t('adminUserIpWhitelistPage.actions.create', 'Create')}
+            {t('adminUserIpWhitelistPage.actions.create')}
           </Button>,
           <Popconfirm
             key="delete-selected"

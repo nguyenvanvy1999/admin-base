@@ -68,8 +68,8 @@ export function UserIpWhitelistFormModal({
       initialValues={initialValues}
       loading={loading}
       mode={isEditMode ? 'edit' : 'create'}
-      okText={t('common.save', 'Save')}
-      cancelText={t('common.cancel', 'Cancel')}
+      okText={t('common.save')}
+      cancelText={t('common.cancel')}
       width={500}
       formProps={{
         layout: 'vertical',
