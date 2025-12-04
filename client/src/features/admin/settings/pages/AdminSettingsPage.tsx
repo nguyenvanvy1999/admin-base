@@ -1,5 +1,16 @@
+import { DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
-import { Badge, Card, Input, Select, Space, Tabs, Tag } from 'antd';
+import {
+  Badge,
+  Button,
+  Card,
+  Input,
+  Select,
+  Space,
+  Tabs,
+  Tag,
+  Upload,
+} from 'antd';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
@@ -8,6 +19,8 @@ import { createActionColumn } from 'src/components/common/tableColumns';
 import { SettingFormModal } from 'src/features/admin/settings/components/SettingFormModal';
 import {
   useAdminSettings,
+  useExportSettings,
+  useImportSettings,
   useUpdateSetting,
 } from 'src/hooks/api/useAdminSettings';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
@@ -44,6 +57,9 @@ export default function AdminSettingsPage() {
       setEditingSetting(null);
     },
   });
+
+  const exportMutation = useExportSettings();
+  const importMutation = useImportSettings();
 
   const categories = useMemo(() => {
     const cats = new Set<string>();
@@ -152,6 +168,21 @@ export default function AdminSettingsPage() {
       default:
         return <span>{value}</span>;
     }
+  };
+
+  const handleExport = async () => {
+    await exportMutation.mutateAsync();
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text) as Record<string, string>;
+      await importMutation.mutateAsync(data);
+    } catch (error) {
+      console.error('Import error:', error);
+    }
+    return false;
   };
 
   const columns: ProColumns<AdminSetting>[] = [
@@ -336,6 +367,31 @@ export default function AdminSettingsPage() {
       <Card size="small" style={{ marginBottom: 16 }}>
         <Space orientation="vertical" style={{ width: '100%' }} size="middle">
           <Space wrap>
+            {canUpdate && (
+              <>
+                <Button
+                  type="primary"
+                  icon={<DownloadOutlined />}
+                  onClick={handleExport}
+                  loading={exportMutation.isPending}
+                >
+                  Export
+                </Button>
+                <Upload
+                  accept=".json"
+                  showUploadList={false}
+                  beforeUpload={handleImport}
+                >
+                  <Button
+                    type="default"
+                    icon={<UploadOutlined />}
+                    loading={importMutation.isPending}
+                  >
+                    Import
+                  </Button>
+                </Upload>
+              </>
+            )}
             <Input.Search
               placeholder={t('common.table.filters.search')}
               allowClear

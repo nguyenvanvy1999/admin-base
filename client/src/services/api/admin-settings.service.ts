@@ -17,4 +17,14 @@ export const adminSettingsService = {
   update(id: string, data: UpdateSettingDto): Promise<void> {
     return apiClient.post<void>(`${ADMIN_SETTING_BASE_PATH}/${id}`, data);
   },
+
+  export(): Promise<Record<string, string>> {
+    return apiClient.get<Record<string, string>>(
+      `${ADMIN_SETTING_BASE_PATH}/export`,
+    );
+  },
+
+  import(data: Record<string, string>): Promise<void> {
+    return apiClient.post<void>(`${ADMIN_SETTING_BASE_PATH}/import`, data);
+  },
 };
