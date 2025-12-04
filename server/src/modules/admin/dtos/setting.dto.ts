@@ -15,3 +15,5 @@ export const UpdateSettingDto = t.Object({
   isSecret: t.Boolean(),
   description: t.Optional(t.Nullable(t.String())),
 });
+
+export const ImportSettingsDto = t.Record(t.String(), t.String());

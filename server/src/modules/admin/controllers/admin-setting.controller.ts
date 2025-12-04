@@ -1,5 +1,9 @@
 import { Elysia, t } from 'elysia';
-import { SettingResDto, UpdateSettingDto } from 'src/modules/admin/dtos';
+import {
+  ImportSettingsDto,
+  SettingResDto,
+  UpdateSettingDto,
+} from 'src/modules/admin/dtos';
 import { settingAdminService } from 'src/service/admin/setting-admin.service';
 import { authorize, has } from 'src/service/auth/authorization';
 import {
@@ -26,6 +30,34 @@ export const adminSettingController = new Elysia<'admin-setting', AppAuthMeta>({
       {
         response: {
           200: ResWrapper(t.Array(SettingResDto)),
+        },
+      },
+    )
+    .get(
+      '/export',
+      async () => {
+        const result = await settingAdminService.export();
+        return castToRes(result);
+      },
+      {
+        response: {
+          200: ResWrapper(t.Record(t.String(), t.String())),
+        },
+      },
+    )
+    .use(authorize(has('SETTING.UPDATE')))
+    .post(
+      '/import',
+      async ({ body }) => {
+        await settingAdminService.import(body);
+        return castToRes(null);
+      },
+      {
+        body: ImportSettingsDto,
+        response: {
+          200: ResWrapper(t.Null()),
+          400: ErrorResDto,
+          ...authErrors,
         },
       },
     )

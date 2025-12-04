@@ -28,6 +28,28 @@ type SettingKeyTypes = {
   [K in keyof DefaultSettingsShape]: SettingDataTypeMap[DefaultSettingsShape[K]['type']];
 };
 
+type SettingDependency = {
+  key: string;
+  condition: (value: unknown) => boolean;
+  message?: string;
+};
+
+type SettingDependencies = {
+  [key: string]: SettingDependency[];
+};
+
+export type ValidationRules = {
+  min?: number;
+  max?: number;
+  pattern?: string | RegExp;
+  custom?: (value: unknown) => boolean | string;
+  message?: string;
+};
+
+export type ValidationRulesMap = {
+  [key: string]: ValidationRules;
+};
+
 export class SettingService {
   constructor(
     private readonly deps: {
@@ -80,7 +102,24 @@ export class SettingService {
     }
   }
 
-  checkValue(value: string, type: SettingDataType): boolean {
+  validateSetting(
+    key: string,
+    value: string,
+    type: SettingDataType,
+    rules?: ValidationRules,
+    isSecret?: boolean,
+  ): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    let decryptedValue = value;
+    if (isSecret) {
+      try {
+        decryptedValue = EncryptService.aes256Decrypt(value);
+      } catch {
+        decryptedValue = value;
+      }
+    }
+
     const schemaMap = {
       boolean: Type.Union([Type.Literal('true'), Type.Literal('false')]),
       number: Type.String({ pattern: '^-?\\d+(\\.\\d+)?$' }),
@@ -88,7 +127,109 @@ export class SettingService {
       date: Type.String({ format: 'date-time' }),
       json: Type.Any(),
     } as const;
-    return Value.Check(schemaMap[type], value);
+
+    if (!Value.Check(schemaMap[type], decryptedValue)) {
+      errors.push(`Invalid value type for setting ${key}: expected ${type}`);
+      return { valid: false, errors };
+    }
+
+    const defaultRules: ValidationRulesMap = {
+      [SETTING.REGISTER_OTP_LIMIT]: {
+        min: 1,
+        max: 100,
+        message: `${SETTING.REGISTER_OTP_LIMIT} must be between 1 and 100`,
+      },
+      [SETTING.REGISTER_RATE_LIMIT_MAX]: {
+        min: 1,
+        max: 1000,
+        message: `${SETTING.REGISTER_RATE_LIMIT_MAX} must be between 1 and 1000`,
+      },
+      [SETTING.REGISTER_RATE_LIMIT_WINDOW_SECONDS]: {
+        min: 1,
+        max: 86400,
+        message: `${SETTING.REGISTER_RATE_LIMIT_WINDOW_SECONDS} must be between 1 and 86400`,
+      },
+      [SETTING.LOGIN_RATE_LIMIT_MAX]: {
+        min: 1,
+        max: 1000,
+        message: `${SETTING.LOGIN_RATE_LIMIT_MAX} must be between 1 and 1000`,
+      },
+      [SETTING.LOGIN_RATE_LIMIT_WINDOW_SECONDS]: {
+        min: 1,
+        max: 86400,
+        message: `${SETTING.LOGIN_RATE_LIMIT_WINDOW_SECONDS} must be between 1 and 86400`,
+      },
+    };
+
+    const finalRules = rules || defaultRules[key];
+
+    if (!finalRules) {
+      return { valid: true, errors: [] };
+    }
+
+    let parsedValue: unknown;
+    switch (type) {
+      case SettingDataType.boolean:
+        parsedValue = this.parseBoolean(decryptedValue);
+        break;
+      case SettingDataType.number:
+        parsedValue = this.parseNumber(decryptedValue);
+        break;
+      case SettingDataType.date:
+        parsedValue = this.parseDate(decryptedValue);
+        break;
+      case SettingDataType.json:
+        parsedValue = this.parseJSON(decryptedValue);
+        break;
+      default:
+        parsedValue = decryptedValue;
+    }
+
+    if (type === SettingDataType.number) {
+      const numValue = parsedValue as number;
+      if (finalRules.min !== undefined && numValue < finalRules.min) {
+        errors.push(
+          finalRules.message ||
+            `Value for setting ${key} must be at least ${finalRules.min}`,
+        );
+      }
+      if (finalRules.max !== undefined && numValue > finalRules.max) {
+        errors.push(
+          finalRules.message ||
+            `Value for setting ${key} must be at most ${finalRules.max}`,
+        );
+      }
+    }
+
+    if (type === SettingDataType.string && finalRules.pattern) {
+      const pattern =
+        finalRules.pattern instanceof RegExp
+          ? finalRules.pattern
+          : new RegExp(finalRules.pattern);
+      if (!pattern.test(decryptedValue)) {
+        errors.push(
+          finalRules.message ||
+            `Value for setting ${key} does not match required pattern`,
+        );
+      }
+    }
+
+    if (finalRules.custom) {
+      const result = finalRules.custom(parsedValue);
+      if (result === false) {
+        errors.push(
+          finalRules.message ||
+            `Value for setting ${key} failed custom validation`,
+        );
+      } else if (typeof result === 'string') {
+        errors.push(result);
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+    };
   }
 
   async getSetting<T>(key: string): Promise<T> {
@@ -253,6 +394,187 @@ export class SettingService {
       blockUnknownDevice,
       auditWarning,
     };
+  }
+
+  validateDependencies(
+    settings: Record<string, unknown>,
+    dependencies?: SettingDependencies,
+  ): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    const defaultDependencies: SettingDependencies = {
+      [SETTING.ENB_SECURITY_BLOCK_UNKNOWN_DEVICE]: [
+        {
+          key: SETTING.ENB_SECURITY_DEVICE_RECOGNITION,
+          condition: (value) => value === true,
+          message: `${SETTING.ENB_SECURITY_BLOCK_UNKNOWN_DEVICE} requires ${SETTING.ENB_SECURITY_DEVICE_RECOGNITION} to be enabled`,
+        },
+      ],
+      [SETTING.ENB_PASSWORD_EXPIRED]: [
+        {
+          key: SETTING.ENB_PASSWORD_ATTEMPT,
+          condition: (value) => value === true,
+          message: `${SETTING.ENB_PASSWORD_EXPIRED} requires ${SETTING.ENB_PASSWORD_ATTEMPT} to be enabled`,
+        },
+      ],
+    };
+
+    const mergedDependencies = { ...defaultDependencies, ...dependencies };
+
+    for (const settingKey of Object.keys(settings)) {
+      const deps = mergedDependencies[settingKey];
+      if (!deps || deps.length === 0) {
+        continue;
+      }
+
+      for (const dep of deps) {
+        const depValue = settings[dep.key];
+        if (depValue === undefined) {
+          errors.push(
+            `Setting ${settingKey} depends on ${dep.key} which is missing`,
+          );
+          continue;
+        }
+
+        if (!dep.condition(depValue)) {
+          errors.push(
+            dep.message ||
+              `Setting ${settingKey} has invalid dependency on ${dep.key}`,
+          );
+        }
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+    };
+  }
+
+  async exportSettings(keys?: string[]): Promise<Record<string, string>> {
+    const where = keys && keys.length > 0 ? { key: { in: keys } } : {};
+    const settings = await this.deps.db.setting.findMany({ where });
+
+    const result: Record<string, string> = {};
+    for (const setting of settings) {
+      let value = setting.value;
+      if (setting.isSecret) {
+        value = EncryptService.aes256Decrypt(value);
+      }
+      result[setting.key] = value;
+    }
+
+    return result;
+  }
+
+  async importSettings(
+    data: Record<string, string>,
+    opts?: {
+      validate?: boolean;
+      validateRules?: boolean;
+      validateDependencies?: boolean;
+      rulesMap?: ValidationRulesMap;
+    },
+  ): Promise<{ imported: number; errors: string[] }> {
+    const errors: string[] = [];
+    const keys = Object.keys(data);
+
+    if (keys.length === 0) {
+      return { imported: 0, errors: [] };
+    }
+
+    const existingSettings = await this.deps.db.setting.findMany({
+      where: { key: { in: keys } },
+    });
+
+    if (opts?.validate !== false) {
+      for (const [key, value] of Object.entries(data)) {
+        const setting = existingSettings.find((s) => s.key === key);
+        if (setting) {
+          const validation = this.validateSetting(
+            key,
+            value,
+            setting.type,
+            undefined,
+            setting.isSecret,
+          );
+          if (!validation.valid) {
+            errors.push(...validation.errors);
+          }
+        } else {
+          errors.push(`Setting ${key} does not exist in database`);
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      return { imported: 0, errors };
+    }
+
+    if (opts?.validateRules !== false) {
+      for (const [key, value] of Object.entries(data)) {
+        const setting = existingSettings.find((s) => s.key === key);
+        if (setting) {
+          const rules = opts?.rulesMap?.[key];
+          const validation = this.validateSetting(
+            key,
+            value,
+            setting.type,
+            rules,
+            setting.isSecret,
+          );
+          if (!validation.valid) {
+            return { imported: 0, errors: validation.errors };
+          }
+        }
+      }
+    }
+
+    if (opts?.validateDependencies !== false) {
+      const allSettings = await this.deps.db.setting.findMany();
+      const settingsRecord: Record<string, unknown> = {};
+
+      for (const setting of allSettings) {
+        const importedValue = data[setting.key];
+        if (importedValue !== undefined) {
+          settingsRecord[setting.key] = this.getValue<unknown>({
+            ...setting,
+            value: importedValue,
+          });
+        } else {
+          settingsRecord[setting.key] = this.getValue<unknown>(setting);
+        }
+      }
+
+      const validation = await this.validateDependencies(settingsRecord);
+      if (!validation.valid) {
+        return { imported: 0, errors: validation.errors };
+      }
+    }
+
+    const updates = existingSettings
+      .filter((s) => data[s.key] !== undefined)
+      .map((setting) => {
+        let value = data[setting.key]!;
+        if (setting.isSecret) {
+          value = EncryptService.aes256Encrypt(value);
+        }
+        return {
+          where: { key: setting.key },
+          data: { value },
+        };
+      });
+
+    await Promise.all(
+      updates.map(async (update) => {
+        await this.deps.db.setting.update({
+          where: update.where,
+          data: update.data,
+        });
+        await this.deps.cache.del(update.where.key);
+      }),
+    );
+
+    return { imported: updates.length, errors: [] };
   }
 }
 

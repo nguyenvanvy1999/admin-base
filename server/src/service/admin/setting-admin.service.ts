@@ -41,7 +41,13 @@ export class SettingAdminService {
     if (!setting) {
       throw new NotFoundErr(ErrCode.ItemNotFound);
     }
-    if (!this.deps.settingService.checkValue(value, setting.type)) {
+    if (
+      !this.deps.settingService.validateSetting(
+        setting.key,
+        value,
+        setting.type,
+      ).valid
+    ) {
       throw new BadReqErr(ErrCode.BadRequest);
     }
     const newValue = isSecret ? EncryptService.aes256Encrypt(value) : value;
@@ -57,6 +63,18 @@ export class SettingAdminService {
       updated.key,
       this.deps.settingService.getValue(updated),
     );
+  }
+
+  export() {
+    return this.deps.settingService.exportSettings();
+  }
+
+  async import(data: Record<string, string>) {
+    const result = await this.deps.settingService.importSettings(data);
+    if (result.errors.length > 0) {
+      throw new BadReqErr(ErrCode.BadRequest, { errors: result.errors });
+    }
+    return result;
   }
 }
 
