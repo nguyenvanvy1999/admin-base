@@ -111,21 +111,21 @@ export default function AdminI18nPage() {
 
   const columns: ProColumns<I18n>[] = [
     {
-      title: t('adminI18nPage.table.key'),
+      title: t('common.fields.key'),
       dataIndex: 'key',
       copyable: true,
       ellipsis: true,
       width: 300,
     },
     {
-      title: t('adminI18nPage.table.en'),
+      title: t('common.fields.english'),
       dataIndex: 'en',
       ellipsis: true,
       width: 250,
       render: (_, record) => record.en ?? '-',
     },
     {
-      title: t('adminI18nPage.table.vi'),
+      title: t('common.fields.vietnamese'),
       dataIndex: 'vi',
       ellipsis: true,
       width: 250,
@@ -134,7 +134,7 @@ export default function AdminI18nPage() {
     ...(canUpdate
       ? [
           {
-            title: t('common.table.actions'),
+            title: t('common.fields.actions'),
             dataIndex: 'actions',
             hideInSearch: true,
             width: 100,
@@ -147,8 +147,8 @@ export default function AdminI18nPage() {
                   onClick={() => handleEdit(record)}
                 />
                 <Popconfirm
-                  title={t('adminI18nPage.actions.deleteConfirmTitle')}
-                  description={t('adminI18nPage.actions.deleteConfirm')}
+                  title={t('adminI18nPage.dialogs.deleteConfirmTitle')}
+                  description={t('adminI18nPage.dialogs.deleteConfirm')}
                   onConfirm={() => handleDelete(record)}
                 >
                   <Button
@@ -213,7 +213,7 @@ export default function AdminI18nPage() {
                   icon={<PlusOutlined />}
                   onClick={handleCreate}
                 >
-                  {t('adminI18nPage.actions.create')}
+                  {t('common.actions.create')}
                 </Button>,
                 <ImportExportActions
                   key="import-export"
@@ -227,13 +227,9 @@ export default function AdminI18nPage() {
                 />,
                 <Popconfirm
                   key="delete-selected"
-                  title={t(
-                    'adminI18nPage.actions.deleteSelectedConfirmTitle',
-                    'Delete selected translations?',
-                  )}
+                  title={t('adminI18nPage.dialogs.deleteSelectedConfirmTitle')}
                   description={t(
-                    'adminI18nPage.actions.deleteSelectedConfirm',
-                    'Are you sure you want to delete {{count}} translation(s)?',
+                    'adminI18nPage.dialogs.deleteSelectedConfirm',
                     { count: selectedRowKeys.length },
                   )}
                   onConfirm={handleDeleteSelected}
@@ -244,11 +240,9 @@ export default function AdminI18nPage() {
                     icon={<DeleteOutlined />}
                     disabled={selectedRowKeys.length === 0}
                   >
-                    {t(
-                      'adminI18nPage.actions.deleteSelected',
-                      'Delete ({{count}})',
-                      { count: selectedRowKeys.length },
-                    )}
+                    {t('common.actions.deleteSelected', {
+                      count: selectedRowKeys.length,
+                    })}
                   </Button>
                 </Popconfirm>,
               ]

@@ -177,7 +177,7 @@ export default function AdminSettingsPage() {
 
   const columns: ProColumns<AdminSetting>[] = [
     {
-      title: t('adminSettingsPage.table.key'),
+      title: t('common.fields.key'),
       dataIndex: 'key',
       copyable: true,
       ellipsis: true,
@@ -189,14 +189,14 @@ export default function AdminSettingsPage() {
       },
     },
     {
-      title: t('adminSettingsPage.table.description'),
+      title: t('common.fields.description'),
       dataIndex: 'description',
       ellipsis: true,
       width: 300,
       render: (_, record) => record.description ?? '-',
     },
     {
-      title: t('adminSettingsPage.table.type'),
+      title: t('common.fields.type'),
       dataIndex: 'type',
       hideInSearch: true,
       width: 100,
@@ -205,14 +205,14 @@ export default function AdminSettingsPage() {
       ),
     },
     {
-      title: t('adminSettingsPage.table.value'),
+      title: t('common.fields.value'),
       dataIndex: 'value',
       hideInSearch: true,
       width: 200,
       render: (_, record) => renderValue(record),
     },
     {
-      title: t('adminSettingsPage.table.isSecret'),
+      title: t('common.fields.isSecret'),
       dataIndex: 'isSecret',
       hideInSearch: true,
       width: 100,
@@ -224,12 +224,12 @@ export default function AdminSettingsPage() {
         ),
     },
     {
-      title: t('adminSettingsPage.table.category'),
+      title: t('common.fields.category'),
       dataIndex: 'category',
       hideInTable: true,
       valueType: 'select',
       fieldProps: {
-        placeholder: t('adminSettingsPage.table.filters.category'),
+        placeholder: t('common.filters.category'),
         allowClear: true,
         options: categories.map((cat) => ({
           label: t(`adminSettingsPage.categories.${cat}` as any) || cat,
@@ -254,7 +254,7 @@ export default function AdminSettingsPage() {
             },
             canEdit: () => canUpdate,
             editTooltip: t('common.actions.edit'),
-            title: t('common.table.actions'),
+            title: t('common.fields.actions'),
             width: 60,
           }),
         ]
@@ -369,14 +369,14 @@ export default function AdminSettingsPage() {
               />
             )}
             <Input.Search
-              placeholder={t('common.table.filters.search')}
+              placeholder={t('common.search')}
               allowClear
               style={{ width: 300 }}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
             />
             <Select
-              placeholder={t('adminSettingsPage.table.filters.category')}
+              placeholder={t('common.filters.category')}
               allowClear
               style={{ width: 200 }}
               value={categoryFilter}

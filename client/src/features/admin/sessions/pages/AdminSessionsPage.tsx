@@ -139,27 +139,27 @@ export default function AdminSessionsPage() {
 
   const columns: ProColumns<AdminSession>[] = [
     {
-      title: t('adminSessionsPage.table.userId'),
+      title: t('common.fields.userId'),
       dataIndex: 'createdById',
       hideInSearch: true,
       render: (_, record) => record.createdById,
     },
     {
-      title: t('common.table.status'),
+      title: t('common.fields.status'),
       dataIndex: 'status',
       hideInTable: true,
       valueType: 'select',
       valueEnum: {
-        all: { text: t('adminSessionsPage.filters.status.all') },
-        active: { text: t('adminSessionsPage.filters.status.active') },
-        revoked: { text: t('adminSessionsPage.filters.status.revoked') },
+        all: { text: t('common.filters.statusOptions.all') },
+        active: { text: t('common.filters.statusOptions.active') },
+        revoked: { text: t('common.filters.statusOptions.revoked') },
       },
     },
     ...(canViewAll
       ? [createUserSelectColumn<AdminSession>(userSearchSelect)]
       : []),
     {
-      title: t('common.table.actions'),
+      title: t('common.fields.actions'),
       dataIndex: 'actions',
       hideInSearch: true,
       render: (_, record) => {
@@ -176,8 +176,8 @@ export default function AdminSessionsPage() {
 
         return (
           <Popconfirm
-            title={t('adminSessionsPage.actions.revokeConfirmTitle')}
-            description={t('adminSessionsPage.actions.revokeConfirm')}
+            title={t('adminSessionsPage.dialogs.revokeConfirmTitle')}
+            description={t('adminSessionsPage.dialogs.revokeConfirm')}
             onConfirm={() => handleRevoke(record)}
           >
             <Button size="small" danger type="link">
@@ -222,8 +222,8 @@ export default function AdminSessionsPage() {
         extraToolbarActions={[
           <Popconfirm
             key="revoke-selected"
-            title={t('adminSessionsPage.actions.revokeSelectedConfirmTitle')}
-            description={t('adminSessionsPage.actions.revokeSelectedConfirm', {
+            title={t('adminSessionsPage.dialogs.revokeSelectedConfirmTitle')}
+            description={t('adminSessionsPage.dialogs.revokeSelectedConfirm', {
               count: selectedRowKeys.length,
             })}
             onConfirm={handleRevokeSelected}
@@ -236,7 +236,7 @@ export default function AdminSessionsPage() {
                 (!canRevokeAll && !canRevokeSelf)
               }
             >
-              {t('adminSessionsPage.actions.revokeSelected', {
+              {t('common.actions.revokeSelected', {
                 count: selectedRowKeys.length,
               })}
             </Button>

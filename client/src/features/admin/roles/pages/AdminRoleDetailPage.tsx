@@ -97,7 +97,7 @@ function RoleGeneralFormSection({ t }: RoleGeneralFormSectionProps) {
     <>
       <ProFormText
         name="title"
-        label={t('adminRolesPage.form.title')}
+        label={t('common.fields.roleName')}
         rules={[
           {
             required: true,
@@ -108,14 +108,14 @@ function RoleGeneralFormSection({ t }: RoleGeneralFormSectionProps) {
             message: t('adminRolesPage.form.titleMin'),
           },
         ]}
-        placeholder={t('adminRolesPage.form.titlePlaceholder')}
+        placeholder={t('common.fields.roleName')}
       />
       <ProFormTextArea
         name="description"
-        label={t('adminRolesPage.form.description')}
-        placeholder={t('adminRolesPage.form.descriptionPlaceholder')}
+        label={t('common.fields.description')}
+        placeholder={t('common.placeholders.descriptionOptional')}
       />
-      <ProFormSwitch name="enabled" label={t('adminRolesPage.form.enabled')} />
+      <ProFormSwitch name="enabled" label={t('common.fields.enabled')} />
     </>
   );
 }
@@ -134,7 +134,7 @@ function RolePermissionsFormSection({
   return (
     <ProFormSelect
       name="permissionIds"
-      label={t('adminRolesPage.form.permissions')}
+      label={t('common.fields.permissions')}
       mode="multiple"
       options={allPermissions.map((perm) => ({
         value: perm.id,
@@ -144,7 +144,7 @@ function RolePermissionsFormSection({
         loading: permissionsLoading,
         showSearch: true,
         optionFilterProp: 'label',
-        placeholder: t('adminRolesPage.form.permissionsPlaceholder'),
+        placeholder: t('common.placeholders.selectPermissions'),
       }}
       rules={[
         {
@@ -177,7 +177,7 @@ function RoleUsersFormSection({
   return (
     <ProFormList
       name="players"
-      label={t('adminRolesPage.form.users')}
+      label={t('common.fields.users')}
       creatorButtonProps={{
         position: 'bottom',
       }}
@@ -194,7 +194,7 @@ function RoleUsersFormSection({
         >
           <ProFormSelect
             name="playerId"
-            label={t('adminRolesPage.form.users')}
+            label={t('common.fields.users')}
             rules={[
               {
                 required: true,
@@ -208,12 +208,12 @@ function RoleUsersFormSection({
               filterOption: false,
               onSearch: onSearchUsers,
               options: users,
-              placeholder: t('adminRolesPage.form.usersPlaceholder'),
+              placeholder: t('common.placeholders.selectUsers'),
             }}
           />
           <ProFormDateTimePicker
             name="expiresAt"
-            label={t('adminRolesPage.form.users')}
+            label={t('common.fields.expiresAt')}
             fieldProps={{
               showTime: true,
             }}
@@ -255,7 +255,7 @@ export default function AdminRoleDetailPage() {
   const formRef = useRef<ProFormInstance<RoleFormValues>>(null);
   const upsertMutation = useUpsertRole({
     onSuccess: () => {
-      notify.success(t('adminRolesPage.upsert.success'));
+      notify.success(t('common.messages.saveSuccess'));
       if (isCreateMode) {
         navigate('/admin/roles');
       } else {
@@ -332,13 +332,13 @@ export default function AdminRoleDetailPage() {
 
   const playerColumns: ProColumns<RolePlayerDetail>[] = [
     {
-      title: t('adminRolesPage.players.table.email'),
+      title: t('common.fields.email'),
       dataIndex: 'email',
       copyable: true,
       ellipsis: true,
     },
     {
-      title: t('adminRolesPage.players.table.expiresAt'),
+      title: t('common.fields.expiresAt'),
       dataIndex: 'expiresAt',
       render: (_, record) => {
         const meta = getRoleExpiryMeta(record.expiresAt);
@@ -531,7 +531,7 @@ export default function AdminRoleDetailPage() {
       loading={upsertMutation.isPending}
       onClick={() => formRef.current?.submit?.()}
     >
-      {isCreateMode ? t('adminRolesPage.create.button') : t('common.save')}
+      {isCreateMode ? t('common.actions.create') : t('common.save')}
     </Button>,
   ];
 
@@ -632,17 +632,13 @@ export default function AdminRoleDetailPage() {
               label: t('adminRolesPage.detail.tabGeneral'),
               children: (
                 <ProDescriptions column={1} bordered>
-                  <ProDescriptions.Item label={t('adminRolesPage.table.title')}>
+                  <ProDescriptions.Item label={t('common.fields.roleName')}>
                     {data?.title ?? '-'}
                   </ProDescriptions.Item>
-                  <ProDescriptions.Item
-                    label={t('adminRolesPage.table.description')}
-                  >
+                  <ProDescriptions.Item label={t('common.fields.description')}>
                     {data?.description ?? '-'}
                   </ProDescriptions.Item>
-                  <ProDescriptions.Item
-                    label={t('adminRolesPage.table.enabled')}
-                  >
+                  <ProDescriptions.Item label={t('common.fields.enabled')}>
                     {data ? (
                       <Tag color={data.enabled ? 'green' : 'red'}>
                         {data.enabled
@@ -653,7 +649,7 @@ export default function AdminRoleDetailPage() {
                       <Tag color="default">-</Tag>
                     )}
                   </ProDescriptions.Item>
-                  <ProDescriptions.Item label={t('adminRolesPage.table.users')}>
+                  <ProDescriptions.Item label={t('common.fields.users')}>
                     <Tooltip
                       title={t('adminRolesPage.users.tooltip', {
                         total: playerStats.total,
@@ -709,12 +705,12 @@ export default function AdminRoleDetailPage() {
                     )}
                   columns={[
                     {
-                      title: t('adminPermissionsPage.table.title'),
+                      title: t('common.fields.permissions'),
                       dataIndex: 'title',
                       copyable: true,
                     },
                     {
-                      title: t('adminPermissionsPage.table.description'),
+                      title: t('common.fields.description'),
                       dataIndex: 'description',
                       render: (_, record) => record.description ?? '-',
                     },

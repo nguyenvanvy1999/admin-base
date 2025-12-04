@@ -24,7 +24,7 @@ export function createUserSelectColumn<T extends Record<string, any>>(
   const { t } = useTranslation();
 
   return {
-    title: title ?? t('adminSessionsPage.filters.users'),
+    title: title ?? t('common.filters.users'),
     dataIndex: dataIndex as keyof T,
     hideInTable: true,
     valueType: 'select',
@@ -33,7 +33,7 @@ export function createUserSelectColumn<T extends Record<string, any>>(
       allowClear: true,
       showSearch: true,
       style: { minWidth },
-      placeholder: placeholder ?? t('adminSessionsPage.filters.users'),
+      placeholder: placeholder ?? t('common.filters.users'),
       options: hookResult.userOptions,
       onSearch: (value: string) => hookResult.setUserSearch(value),
       filterOption: false,

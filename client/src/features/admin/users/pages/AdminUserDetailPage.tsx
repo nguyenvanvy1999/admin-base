@@ -175,7 +175,7 @@ export default function AdminUserDetailPage() {
   const updateMutation = useUpdateAdminUser({
     onSuccess: () => {
       notify.notification.success({
-        title: t('adminUsersPage.update.success'),
+        title: t('common.messages.updateSuccess'),
       });
       navigate('/admin/users');
     },
@@ -184,7 +184,7 @@ export default function AdminUserDetailPage() {
   const createMutation = useCreateAdminUser({
     onSuccess: ({ auditLogId }) => {
       notify.notification.success({
-        title: t('adminUsersPage.create.success'),
+        title: t('common.messages.createSuccess'),
         description: t('adminUsersPage.create.auditLog', {
           auditId: auditLogId,
         }),
@@ -196,7 +196,7 @@ export default function AdminUserDetailPage() {
   const updateRolesMutation = useUpdateAdminUserRoles({
     onSuccess: () => {
       notify.notification.success({
-        title: t('adminUsersPage.update.rolesSuccess'),
+        title: t('common.messages.rolesUpdateSuccess'),
       });
       navigate('/admin/users');
     },
@@ -207,7 +207,7 @@ export default function AdminUserDetailPage() {
   const resetMfaMutation = useAdminUserMfaAction('reset', {
     onSuccess: ({ auditLogId }) => {
       notify.notification.success({
-        title: t('adminUsersPage.update.mfaResetSuccess'),
+        title: t('common.messages.mfaResetSuccess'),
         description: t('adminUsersPage.create.auditLog', {
           auditId: auditLogId,
         }),
@@ -218,7 +218,7 @@ export default function AdminUserDetailPage() {
   const disableMfaMutation = useAdminUserMfaAction('disable', {
     onSuccess: ({ auditLogId }) => {
       notify.notification.success({
-        title: t('adminUsersPage.update.mfaDisableSuccess'),
+        title: t('common.messages.mfaDisableSuccess'),
         description: t('adminUsersPage.create.auditLog', {
           auditId: auditLogId,
         }),
@@ -316,13 +316,13 @@ export default function AdminUserDetailPage() {
     modal.confirm({
       title:
         action === 'reset'
-          ? t('adminUsersPage.actions.resetMfa')
-          : t('adminUsersPage.actions.disableMfa'),
+          ? t('common.actions.resetMfa')
+          : t('common.actions.disableMfa'),
       content: (
         <Input.TextArea
           autoFocus
           rows={3}
-          placeholder={t('adminUsersPage.form.mfaReasonPlaceholder')}
+          placeholder={t('common.placeholders.auditReason')}
           onChange={(event) => {
             reasonValue = event.target.value;
           }}
@@ -330,8 +330,8 @@ export default function AdminUserDetailPage() {
       ),
       okText:
         action === 'reset'
-          ? t('adminUsersPage.actions.resetMfa')
-          : t('adminUsersPage.actions.disableMfa'),
+          ? t('common.actions.resetMfa')
+          : t('common.actions.disableMfa'),
       cancelText: t('common.cancel') ?? 'Hủy',
       onOk: () => {
         const payload = { reason: reasonValue || undefined };
@@ -366,7 +366,7 @@ export default function AdminUserDetailPage() {
           layout="vertical"
           submitter={{
             searchConfig: {
-              submitText: t('adminUsersPage.create.button'),
+              submitText: t('common.actions.create'),
             },
             submitButtonProps: {
               type: 'primary',
@@ -381,25 +381,25 @@ export default function AdminUserDetailPage() {
         >
           <ProFormText
             name="email"
-            label={t('adminUsersPage.form.email')}
+            label={t('common.fields.email')}
             rules={[
-              { required: true, message: t('adminUsersPage.form.email') },
+              { required: true, message: t('common.fields.email') },
               { type: 'email' },
             ]}
           />
           <ProFormText.Password
             name="password"
-            label={t('adminUsersPage.form.password')}
+            label={t('common.fields.password')}
             rules={[{ required: true }]}
           />
           <ProFormTextArea
             name="name"
-            label={t('adminUsersPage.form.name')}
+            label={t('common.fields.displayName')}
             placeholder="Jane Doe"
           />
           <ProFormSelect
             name="roleIds"
-            label={t('adminUsersPage.form.roles')}
+            label={t('common.fields.roles')}
             mode="multiple"
             placeholder="admin"
             options={(allRolesResponse?.docs ?? []).map((role) => ({
@@ -414,7 +414,7 @@ export default function AdminUserDetailPage() {
           />
           <ProFormSelect
             name="status"
-            label={t('adminUsersPage.form.status')}
+            label={t('common.fields.status')}
             fieldProps={{
               showSearch: true,
               optionFilterProp: 'label',
@@ -423,12 +423,12 @@ export default function AdminUserDetailPage() {
           >
             <AppAdminUserStatusSelect
               style={{ width: '100%' }}
-              placeholder={t('adminUsersPage.form.status')}
+              placeholder={t('common.fields.status')}
             />
           </ProFormSelect>
           <ProFormSwitch
             name="emailVerified"
-            label={t('adminUsersPage.form.emailVerified')}
+            label={t('common.fields.emailVerified')}
           />
         </ProForm>
       </AppPage>
@@ -461,37 +461,29 @@ export default function AdminUserDetailPage() {
               label: t('adminUsersPage.update.tabGeneral'),
               children: (
                 <ProDescriptions column={1} bordered>
-                  <ProDescriptions.Item
-                    label={t('adminUsersPage.detail.email')}
-                  >
+                  <ProDescriptions.Item label={t('common.fields.email')}>
                     {data.email}
                   </ProDescriptions.Item>
-                  <ProDescriptions.Item
-                    label={t('adminUsersPage.detail.status')}
-                  >
+                  <ProDescriptions.Item label={t('common.fields.status')}>
                     {formatStatus(data.status)}
                   </ProDescriptions.Item>
-                  <ProDescriptions.Item label={t('adminUsersPage.detail.name')}>
+                  <ProDescriptions.Item label={t('common.fields.displayName')}>
                     {data.name ?? '-'}
                   </ProDescriptions.Item>
                   <ProDescriptions.Item
-                    label={t('adminUsersPage.detail.emailVerified')}
+                    label={t('common.fields.emailVerified')}
                   >
                     {data.emailVerified
                       ? t('common.enabled')
                       : t('common.disabled')}
                   </ProDescriptions.Item>
-                  <ProDescriptions.Item
-                    label={t('adminUsersPage.detail.created')}
-                  >
+                  <ProDescriptions.Item label={t('common.fields.createdAt')}>
                     {dayjs(data.created).format('YYYY-MM-DD HH:mm')}
                   </ProDescriptions.Item>
-                  <ProDescriptions.Item
-                    label={t('adminUsersPage.detail.modified')}
-                  >
+                  <ProDescriptions.Item label={t('common.fields.updatedAt')}>
                     {dayjs(data.modified).format('YYYY-MM-DD HH:mm')}
                   </ProDescriptions.Item>
-                  <ProDescriptions.Item label={t('adminUsersPage.table.roles')}>
+                  <ProDescriptions.Item label={t('common.fields.roles')}>
                     <Space wrap>
                       {data.roles.map((roleRef) => {
                         const meta = getRoleExpiryMeta(roleRef.expiresAt);
@@ -572,24 +564,24 @@ export default function AdminUserDetailPage() {
                 <Flex vertical gap={16}>
                   <ProDescriptions column={1} bordered>
                     <ProDescriptions.Item
-                      label={t('adminUsersPage.detail.lockoutUntil')}
+                      label={t('common.fields.lockoutUntil')}
                     >
                       {data.lockoutUntil
                         ? dayjs(data.lockoutUntil).format('YYYY-MM-DD HH:mm')
                         : '-'}
                     </ProDescriptions.Item>
                     <ProDescriptions.Item
-                      label={t('adminUsersPage.detail.lockoutReason')}
+                      label={t('common.fields.lockoutReason')}
                     >
                       {data.lockoutReason ?? '-'}
                     </ProDescriptions.Item>
                     <ProDescriptions.Item
-                      label={t('adminUsersPage.detail.passwordAttempt')}
+                      label={t('common.fields.passwordAttempts')}
                     >
                       {data.passwordAttempt}
                     </ProDescriptions.Item>
                     <ProDescriptions.Item
-                      label={t('adminUsersPage.detail.passwordExpired')}
+                      label={t('common.fields.passwordExpiresAt')}
                     >
                       {data.passwordExpired
                         ? dayjs(data.passwordExpired).format('YYYY-MM-DD HH:mm')
@@ -609,7 +601,7 @@ export default function AdminUserDetailPage() {
                             loading={resetMfaMutation.isPending}
                             onClick={() => promptMfaReason('reset')}
                           >
-                            {t('adminUsersPage.actions.resetMfa')}
+                            {t('common.actions.resetMfa')}
                           </Button>
                           <Button
                             danger
@@ -617,7 +609,7 @@ export default function AdminUserDetailPage() {
                             loading={disableMfaMutation.isPending}
                             onClick={() => promptMfaReason('disable')}
                           >
-                            {t('adminUsersPage.actions.disableMfa')}
+                            {t('common.actions.disableMfa')}
                           </Button>
                         </Space>
                       }
@@ -637,7 +629,7 @@ export default function AdminUserDetailPage() {
                         initialValues={initialValues}
                         submitter={{
                           searchConfig: {
-                            submitText: t('adminUsersPage.actions.submit'),
+                            submitText: t('common.actions.saveChanges'),
                           },
                           submitButtonProps: {
                             type: 'primary',
@@ -652,7 +644,7 @@ export default function AdminUserDetailPage() {
                       >
                         <ProFormSelect
                           name="status"
-                          label={t('adminUsersPage.form.status')}
+                          label={t('common.fields.status')}
                           fieldProps={{
                             showSearch: true,
                             optionFilterProp: 'label',
@@ -662,25 +654,25 @@ export default function AdminUserDetailPage() {
                         >
                           <AppAdminUserStatusSelect
                             style={{ width: '100%' }}
-                            placeholder={t('adminUsersPage.form.status')}
+                            placeholder={t('common.fields.status')}
                           />
                         </ProFormSelect>
                         <ProFormText
                           name="name"
-                          label={t('adminUsersPage.form.name')}
+                          label={t('common.fields.displayName')}
                           placeholder="Jane Doe"
                         />
                         <ProFormSwitch
                           name="emailVerified"
-                          label={t('adminUsersPage.form.emailVerified')}
+                          label={t('common.fields.emailVerified')}
                         />
                         <ProFormDateTimePicker
                           name="lockoutUntil"
-                          label={t('adminUsersPage.form.lockoutUntil')}
+                          label={t('common.fields.lockoutUntil')}
                         />
                         <ProFormSelect
                           name="lockoutReason"
-                          label={t('adminUsersPage.form.lockoutReason')}
+                          label={t('common.fields.lockoutReason')}
                           allowClear
                           options={ADMIN_LOCKOUT_REASONS.map((reason) => ({
                             value: reason,
@@ -689,16 +681,16 @@ export default function AdminUserDetailPage() {
                         />
                         <ProFormDigit
                           name="passwordAttempt"
-                          label={t('adminUsersPage.form.passwordAttempt')}
+                          label={t('common.fields.passwordAttempts')}
                           min={0}
                         />
                         <ProFormDateTimePicker
                           name="passwordExpired"
-                          label={t('adminUsersPage.form.passwordExpired')}
+                          label={t('common.fields.passwordExpiresAt')}
                         />
                         <ProFormTextArea
                           name="reason"
-                          label={t('adminUsersPage.form.reason')}
+                          label={t('common.fields.reason')}
                           placeholder="Audit note"
                         />
                       </ProForm>
@@ -713,7 +705,7 @@ export default function AdminUserDetailPage() {
                         initialValues={initialRoleValues}
                         submitter={{
                           searchConfig: {
-                            submitText: t('adminUsersPage.actions.submit'),
+                            submitText: t('common.actions.saveChanges'),
                           },
                           submitButtonProps: {
                             type: 'primary',
@@ -728,7 +720,7 @@ export default function AdminUserDetailPage() {
                       >
                         <ProFormList
                           name="roles"
-                          label={t('adminUsersPage.form.roles')}
+                          label={t('common.fields.roles')}
                           creatorButtonProps={{
                             position: 'bottom',
                           }}
@@ -741,7 +733,7 @@ export default function AdminUserDetailPage() {
                             >
                               <ProFormSelect
                                 name="roleId"
-                                label={t('adminUsersPage.form.roles')}
+                                label={t('common.fields.roles')}
                                 rules={[
                                   {
                                     required: true,
@@ -761,13 +753,13 @@ export default function AdminUserDetailPage() {
                                     }),
                                   ),
                                   placeholder: t(
-                                    'adminUsersPage.form.rolesPlaceholder',
+                                    'common.placeholders.selectRoles',
                                   ),
                                 }}
                               />
                               <ProFormDateTimePicker
                                 name="expiresAt"
-                                label={t('adminUsersPage.form.roleExpiresAt')}
+                                label={t('common.fields.roleExpiry')}
                                 fieldProps={{
                                   showTime: true,
                                 }}
@@ -777,7 +769,7 @@ export default function AdminUserDetailPage() {
                         </ProFormList>
                         <ProFormTextArea
                           name="reason"
-                          label={t('adminUsersPage.form.reason')}
+                          label={t('common.fields.reason')}
                           placeholder="Audit note"
                           rules={[
                             {
@@ -852,7 +844,7 @@ function UserSessionsTab({ userId }: { userId?: string }) {
 
   const columns: ProColumns<AdminSession>[] = [
     {
-      title: t('common.table.actions'),
+      title: t('common.fields.actions'),
       dataIndex: 'actions',
       hideInSearch: true,
       render: (_, record) => {
@@ -869,8 +861,8 @@ function UserSessionsTab({ userId }: { userId?: string }) {
 
         return (
           <Popconfirm
-            title={t('adminSessionsPage.actions.revokeConfirmTitle')}
-            description={t('adminSessionsPage.actions.revokeConfirm')}
+            title={t('adminSessionsPage.dialogs.revokeConfirmTitle')}
+            description={t('adminSessionsPage.dialogs.revokeConfirm')}
             onConfirm={() => handleRevoke(record)}
           >
             <Button size="small" danger type="link">

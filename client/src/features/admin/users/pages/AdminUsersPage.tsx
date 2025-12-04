@@ -57,23 +57,23 @@ export default function AdminUsersPage() {
   const columns: ProColumns<AdminUserSummary>[] = [
     createSearchColumn<AdminUserSummary>({
       dataIndex: 'search',
-      placeholder: t('adminUsersPage.table.filters.keyword'),
+      placeholder: t('common.filters.keyword'),
     }),
     {
-      title: t('adminUsersPage.table.email'),
+      title: t('common.fields.email'),
       dataIndex: 'email',
       copyable: true,
       ellipsis: true,
       hideInSearch: true,
     },
     {
-      title: t('adminUsersPage.table.name'),
+      title: t('common.fields.displayName'),
       dataIndex: 'name',
       render: (_, record) => record.name ?? '-',
       hideInSearch: true,
     },
     {
-      title: t('common.table.status'),
+      title: t('common.fields.status'),
       dataIndex: 'statuses',
       valueType: 'select',
       width: 100,
@@ -82,7 +82,7 @@ export default function AdminUsersPage() {
           keys={[...ADMIN_USER_STATUSES]}
           colorMap={ADMIN_USER_STATUS_COLORS}
           i18nPrefix="adminUsersPage.statuses"
-          placeholder={t('adminUsersPage.table.filters.status')}
+          placeholder={t('common.filters.status')}
           style={{ width: '100%' }}
         />
       ),
@@ -93,7 +93,7 @@ export default function AdminUsersPage() {
       ),
     },
     {
-      title: t('adminUsersPage.table.emailVerified'),
+      title: t('common.fields.emailVerified'),
       dataIndex: 'emailVerified',
       hideInSearch: true,
       width: 120,
@@ -104,7 +104,7 @@ export default function AdminUsersPage() {
       ),
     },
     {
-      title: t('adminUsersPage.table.sessions'),
+      title: t('common.fields.sessions'),
       dataIndex: 'sessionStats',
       hideInSearch: true,
       width: 320,
@@ -153,7 +153,7 @@ export default function AdminUsersPage() {
       },
     },
     {
-      title: t('adminUsersPage.table.rolesWithExpiry'),
+      title: t('common.fields.rolesWithExpiry'),
       dataIndex: 'roles',
       hideInSearch: true,
       render: (_, record) => (
@@ -227,12 +227,12 @@ export default function AdminUsersPage() {
     },
     createDateColumn<AdminUserSummary>({
       dataIndex: 'created',
-      title: t('common.table.created'),
+      title: t('common.fields.createdAt'),
       format: 'YYYY-MM-DD HH:mm',
       hideInSearch: true,
     }),
     {
-      title: t('adminUsersPage.table.filters.role'),
+      title: t('common.filters.role'),
       dataIndex: 'roleIds',
       hideInTable: true,
       valueType: 'select',
@@ -240,7 +240,7 @@ export default function AdminUsersPage() {
         mode: 'multiple',
         allowClear: true,
         showSearch: true,
-        placeholder: t('adminUsersPage.table.filters.role'),
+        placeholder: t('common.filters.role'),
         optionFilterProp: 'label',
         options: roleOptions,
         loading: rolesLoading,
@@ -259,7 +259,7 @@ export default function AdminUsersPage() {
       canEdit: (record) => canUpdate && !record.protected,
       viewTooltip: t('common.actions.view'),
       editTooltip: t('common.actions.edit'),
-      title: t('common.table.actions'),
+      title: t('common.fields.actions'),
       width: 80,
     }),
   ];
@@ -304,7 +304,7 @@ export default function AdminUsersPage() {
                   type="primary"
                   onClick={() => navigate('/admin/users/new')}
                 >
-                  {t('adminUsersPage.create.button')}
+                  {t('common.actions.create')}
                 </Button>,
               ]
             : []

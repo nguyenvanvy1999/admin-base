@@ -15,25 +15,110 @@
       "totalSettings": "Total {{total}} settings",
       "totalPermissions": "Total {{total}} permissions"
     },
-    "table": {
-      "actions": "Actions",
-      "created": "Created at",
-      "status": "Status",
-      "filters": {
-        "search": "Search"
-      }
-    },
     "actions": {
       "view": "View",
       "edit": "Edit",
       "delete": "Delete",
       "revoke": "Revoke",
       "export": "Export",
-      "import": "Import"
+      "import": "Import",
+      "create": "Create",
+      "update": "Update",
+      "submit": "Submit",
+      "saveChanges": "Save changes",
+      "resetMfa": "Reset MFA",
+      "disableMfa": "Disable MFA",
+      "deleteSelected": "Delete selected ({{count}})",
+      "revokeSelected": "Revoke selected ({{count}})",
+      "loadMore": "Load more sessions",
+      "logoutCurrent": "Sign out from this device",
+      "logoutAll": "Sign out from all devices",
+      "generate": "Generate",
+      "verify": "Verify",
+      "resend": "Resend"
     },
     "messages": {
       "saveSuccess": "Saved successfully",
-      "deleteSuccess": "Deleted successfully"
+      "deleteSuccess": "Deleted successfully",
+      "createSuccess": "Created successfully",
+      "updateSuccess": "Updated successfully",
+      "saveError": "Failed to save: {{error}}",
+      "deleteError": "Failed to delete: {{error}}",
+      "importSuccess": "Imported successfully",
+      "importError": "Failed to import: {{error}}",
+      "exportSuccess": "Exported successfully",
+      "exportError": "Failed to export: {{error}}",
+      "rolesUpdateSuccess": "User roles updated successfully",
+      "mfaResetSuccess": "MFA reset successfully",
+      "mfaDisableSuccess": "MFA disabled successfully"
+    },
+    "fields": {
+      "email": "Email",
+      "displayName": "Display name",
+      "roleName": "Role name",
+      "roles": "Roles",
+      "rolesWithExpiry": "Roles & Expiry",
+      "permissions": "Permissions",
+      "permissionCount": "Permission count",
+      "users": "Users",
+      "userCount": "User count",
+      "emailVerified": "Email verified",
+      "sessions": "Sessions",
+      "status": "Status",
+      "actions": "Actions",
+      "baseCurrency": "Base currency",
+      "createdAt": "Created at",
+      "updatedAt": "Updated at",
+      "lockoutUntil": "Lockout until",
+      "lockoutReason": "Lockout reason",
+      "passwordAttempts": "Password attempts",
+      "passwordExpiresAt": "Password expires at",
+      "password": "Password",
+      "roleExpiry": "Role expiry time (optional)",
+      "reason": "Audit reason",
+      "mfaReason": "Audit reason for MFA",
+      "device": "Device",
+      "userId": "User ID",
+      "ip": "IP address",
+      "note": "Note",
+      "expiresAt": "Expires at",
+      "description": "Description",
+      "enabled": "Enabled",
+      "category": "Category",
+      "action": "Action",
+      "key": "Key",
+      "type": "Type",
+      "value": "Value",
+      "isSecret": "Secret",
+      "english": "English",
+      "vietnamese": "Vietnamese"
+    },
+    "filters": {
+      "keyword": "Email or display name",
+      "status": "Status",
+      "role": "Role",
+      "user": "Filter by user",
+      "users": "Users",
+      "category": "Filter by category",
+      "ip": "IP address",
+      "statusOptions": {
+        "all": "All statuses",
+        "active": "Only active",
+        "revoked": "Only revoked"
+      }
+    },
+    "placeholders": {
+      "selectRoles": "Select roles",
+      "selectPermissions": "Select permissions",
+      "selectUsers": "Select users (optional)",
+      "descriptionOptional": "Enter description (optional)",
+      "noteOptional": "Enter note (optional)",
+      "userId": "Enter user ID",
+      "ip": "e.g. 192.168.1.1",
+      "translationKey": "e.g. common.actions.save",
+      "englishTranslation": "Enter English translation",
+      "vietnameseTranslation": "Enter Vietnamese translation",
+      "auditReason": "Provide a reason for the audit log"
     }
   },
   "sidebar": {
@@ -212,16 +297,12 @@
   "mySessionsPage": {
     "notice": "If you notice unfamiliar activity, revoke the suspicious session or sign out from all devices.",
     "currentDevice": "Current device",
-    "actions": {
-      "revoke": "Revoke",
+    "dialogs": {
       "revokeConfirmTitle": "Confirm revoke session",
       "revokeCurrentConfirm": "This will revoke the current session and sign you out from the system.",
       "revokeOtherConfirm": "This session will be revoked. Continue?",
-      "logoutCurrent": "Sign out from this device",
-      "logoutAll": "Sign out from all devices",
       "logoutAllConfirmTitle": "Confirm sign out from all devices",
-      "logoutAllConfirm": "You will be signed out from all devices, including this one.",
-      "loadMore": "Load more sessions"
+      "logoutAllConfirm": "You will be signed out from all devices, including this one."
     }
   },
   "accessDeniedPage": {
@@ -230,19 +311,6 @@
     "backHome": "Back to dashboard"
   },
   "adminUsersPage": {
-    "table": {
-      "email": "Email",
-      "name": "Display name",
-      "roles": "Roles",
-      "rolesWithExpiry": "Roles & Expiry",
-      "emailVerified": "Email verified",
-      "sessions": "Sessions",
-      "filters": {
-        "keyword": "Email or display name",
-        "status": "Status",
-        "role": "Role"
-      }
-    },
     "sessionStats": {
       "total": "Total",
       "active": "Active",
@@ -252,33 +320,15 @@
     "create": {
       "button": "Create user",
       "title": "Create admin user",
-      "success": "User created successfully",
       "auditLog": "Audit log: {{auditId}}"
     },
     "update": {
       "title": "Update user",
-      "success": "User updated successfully",
-      "rolesSuccess": "User roles updated successfully",
       "tabGeneral": "Overview",
       "tabSecurity": "Security",
       "tabEdit": "Edit",
       "tabRoles": "Roles",
-      "tabSessions": "Sessions",
-      "mfaResetSuccess": "MFA reset successfully",
-      "mfaDisableSuccess": "MFA disabled successfully"
-    },
-    "detail": {
-      "email": "Email",
-      "status": "Status",
-      "name": "Display name",
-      "baseCurrency": "Base currency",
-      "emailVerified": "Email verified",
-      "created": "Created at",
-      "modified": "Updated at",
-      "lockoutUntil": "Lockout until",
-      "lockoutReason": "Lockout reason",
-      "passwordAttempt": "Password attempts",
-      "passwordExpired": "Password expired at"
+      "tabSessions": "Sessions"
     },
     "statuses": {
       "inactive": "Inactive",
@@ -296,28 +346,8 @@
       "tooltipExpiry": "Expiry date"
     },
     "form": {
-      "email": "Email",
-      "password": "Password",
-      "name": "Display name",
-      "roles": "Roles",
       "rolesRequired": "Please select at least one role",
-      "rolesPlaceholder": "Select roles",
-      "roleExpiresAt": "Role expiry time (optional)",
-      "baseCurrency": "Base currency",
-      "status": "Status",
-      "emailVerified": "Email verified",
-      "lockoutUntil": "Lockout until",
-      "lockoutReason": "Lockout reason",
-      "passwordAttempt": "Password attempts",
-      "passwordExpired": "Password expires at",
-      "reason": "Audit reason",
-      "reasonRequired": "Please provide an audit reason",
-      "mfaReasonPlaceholder": "Provide a reason for the audit log"
-    },
-    "actions": {
-      "resetMfa": "Reset MFA",
-      "disableMfa": "Disable MFA",
-      "submit": "Save changes"
+      "reasonRequired": "Please provide an audit reason"
     }
   },
   "adminRolesPage": {
@@ -333,22 +363,6 @@
       "tabPermissions": "Permissions",
       "tabPlayers": "Players"
     },
-    "players": {
-      "table": {
-        "email": "Email",
-        "expiresAt": "Expires at"
-      }
-    },
-    "table": {
-      "title": "Role name",
-      "description": "Description",
-      "permissions": "Permission count",
-      "users": "User count",
-      "enabled": "Enabled",
-      "filters": {
-        "user": "Filter by user"
-      }
-    },
     "create": {
       "button": "Create role",
       "title": "Create new role"
@@ -356,49 +370,24 @@
     "update": {
       "title": "Update role"
     },
-    "upsert": {
-      "success": "Role saved successfully"
-    },
     "delete": {
       "title": "Confirm delete role",
       "message": "Are you sure you want to delete this role? The role cannot be deleted if there are still users using it.",
-      "confirm": "Delete",
-      "success": "Role deleted successfully"
+      "confirm": "Delete"
     },
     "form": {
-      "title": "Role name",
       "titleRequired": "Please enter role name",
       "titleMin": "Role name must be at least 3 characters",
-      "titlePlaceholder": "Enter role name",
-      "description": "Description",
-      "descriptionPlaceholder": "Enter description (optional)",
-      "enabled": "Enabled",
-      "permissions": "Permission list",
       "permissionsRequired": "Please select at least one permission",
       "permissionsMin": "Must select at least one permission",
-      "permissionsPlaceholder": "Select permissions",
-      "users": "User list",
-      "usersPlaceholder": "Select users (optional)",
       "tabs": {
         "general": "General",
         "permissions": "Permissions",
         "users": "Users"
       }
-    },
-    "actions": {
-      "delete": "Delete"
     }
   },
   "adminPermissionsPage": {
-    "table": {
-      "title": "Permission name",
-      "description": "Description",
-      "category": "Category",
-      "action": "Action",
-      "filters": {
-        "category": "Filter by category"
-      }
-    },
     "info": {
       "note": "Note: Permissions are automatically created from the backend when seeding the database. FE cannot create/update/delete permissions directly."
     },
@@ -493,18 +482,6 @@
       "date": "Date/Time",
       "json": "JSON"
     },
-    "table": {
-      "key": "Key",
-      "description": "Description",
-      "type": "Type",
-      "value": "Value",
-      "isSecret": "Secret",
-      "category": "Category",
-      "filters": {
-        "category": "Filter by category"
-      }
-    },
-    "info": {},
     "update": {
       "title": "Update setting"
     },
@@ -544,46 +521,20 @@
       "revoked": "Revoked",
       "expired": "Expired"
     },
-    "table": {
-      "expired": "Expires at",
-      "device": "Device",
-      "userId": "User ID",
-      "ip": "IP address"
-    },
-    "filters": {
-      "ip": "IP address",
-      "users": "Users",
-      "status": {
-        "all": "All statuses",
-        "active": "Only active",
-        "revoked": "Only revoked"
-      }
-    },
-    "actions": {
+    "dialogs": {
       "revokeConfirmTitle": "Confirm revoke session",
       "revokeConfirm": "This session will be revoked. Continue?",
-      "revokeSelected": "Revoke Selected ({{count}})",
       "revokeSelectedConfirmTitle": "Confirm revoke multiple sessions",
-      "revokeSelectedConfirm": "{{count}} session(s) will be revoked. Continue?",
-      "loadMore": "Load more sessions"
+      "revokeSelectedConfirm": "{{count}} session(s) will be revoked. Continue?"
     },
     "onlyOneSessionNotice": "The system is configured to allow only one active session per user. When a user signs in from a new device, previous sessions will be automatically logged out."
   },
   "adminI18nPage": {
     "title": "Translation Management",
-    "table": {
-      "key": "Key",
-      "en": "English",
-      "vi": "Vietnamese"
-    },
     "filters": {
       "keyPlaceholder": "Search by key"
     },
-    "actions": {
-      "create": "Create",
-      "edit": "Edit",
-      "delete": "Delete",
-      "deleteSelected": "Delete ({{count}})",
+    "dialogs": {
       "deleteConfirmTitle": "Delete translation?",
       "deleteConfirm": "Are you sure you want to delete this translation?",
       "deleteSelectedConfirmTitle": "Delete selected translations?",
@@ -592,43 +543,18 @@
     "form": {
       "createTitle": "Create Translation",
       "editTitle": "Edit Translation",
-      "key": "Key",
-      "keyRequired": "Please enter a key",
-      "keyPlaceholder": "e.g. common.actions.save",
-      "en": "English Translation",
-      "enPlaceholder": "Enter English translation",
-      "vi": "Vietnamese Translation",
-      "viPlaceholder": "Enter Vietnamese translation"
-    },
-    "messages": {
-      "saveSuccess": "Saved successfully",
-      "saveError": "Failed to save: {{error}}",
-      "deleteSuccess": "Deleted successfully",
-      "deleteError": "Failed to delete: {{error}}",
-      "importSuccess": "Imported successfully",
-      "importError": "Failed to import: {{error}}",
-      "exportSuccess": "Exported successfully",
-      "exportError": "Failed to export: {{error}}"
+      "keyRequired": "Please enter a key"
     },
     "pagination": {
       "total": "{{total}} translations"
     }
   },
   "adminUserIpWhitelistPage": {
-    "table": {
-      "userId": "User ID",
-      "ip": "IP Address",
-      "note": "Note"
-    },
     "filters": {
       "userIdsPlaceholder": "Filter by user IDs (comma-separated)",
       "ipPlaceholder": "Filter by IP address"
     },
-    "actions": {
-      "create": "Create",
-      "edit": "Edit",
-      "delete": "Delete",
-      "deleteSelected": "Delete ({{count}})",
+    "dialogs": {
       "deleteConfirmTitle": "Delete IP whitelist?",
       "deleteConfirm": "Are you sure you want to delete this IP whitelist entry?",
       "deleteSelectedConfirmTitle": "Delete selected entries?",
@@ -637,14 +563,8 @@
     "form": {
       "createTitle": "Create User IP Whitelist",
       "editTitle": "Edit User IP Whitelist",
-      "userId": "User ID",
       "userIdRequired": "Please enter user ID",
-      "userIdPlaceholder": "Enter user ID",
-      "ip": "IP Address",
-      "ipRequired": "Please enter IP address",
-      "ipPlaceholder": "e.g. 192.168.1.1",
-      "note": "Note",
-      "notePlaceholder": "Enter note (optional)"
+      "ipRequired": "Please enter IP address"
     },
     "pagination": {
       "total": "{{total}} entries"

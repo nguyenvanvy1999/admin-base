@@ -68,32 +68,32 @@ export function SessionsTable<
   const baseColumns: ProColumns<AdminSession>[] = [
     createDateColumn<AdminSession>({
       dataIndex: 'created',
-      title: t('common.table.created'),
+      title: t('common.fields.createdAt'),
       format: 'YYYY-MM-DD HH:mm:ss',
       valueType: 'dateRange',
       sorter: true,
     }),
     createDateColumn<AdminSession>({
       dataIndex: 'expired',
-      title: t('adminSessionsPage.table.expired'),
+      title: t('common.fields.expiresAt'),
       format: 'YYYY-MM-DD HH:mm:ss',
       hideInSearch: true,
     }),
     {
-      title: t('adminSessionsPage.table.device'),
+      title: t('common.fields.device'),
       dataIndex: 'device',
       hideInSearch: true,
       ellipsis: true,
       render: (_, record) => record.device,
     },
     {
-      title: t('adminSessionsPage.table.ip'),
+      title: t('common.fields.ip'),
       dataIndex: 'ip',
       render: (_, record) => record.ip ?? '-',
     },
     createStatusColumn<AdminSession>({
       dataIndex: 'status',
-      title: t('common.table.status'),
+      title: t('common.fields.status'),
       getStatus: (record) => getSessionStatus(record, statusById),
       hideInSearch: true,
       render: (status: string) => (
@@ -148,7 +148,7 @@ export function SessionsTable<
         ...extraToolbarActions,
         !usePagination && paging?.hasNext && onLoadMore && (
           <Button key="load-more" onClick={onLoadMore}>
-            {t('adminSessionsPage.actions.loadMore')}
+            {t('common.actions.loadMore')}
           </Button>
         ),
       ]}

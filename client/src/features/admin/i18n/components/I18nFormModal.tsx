@@ -64,7 +64,7 @@ export function I18nFormModal({
     >
       <ProFormText
         name="key"
-        label={t('adminI18nPage.form.key')}
+        label={t('common.fields.key')}
         rules={[
           {
             required: true,
@@ -72,29 +72,26 @@ export function I18nFormModal({
           },
         ]}
         fieldProps={{
-          placeholder: t(
-            'adminI18nPage.form.keyPlaceholder',
-            'e.g. common.actions.save',
-          ),
+          placeholder: t('common.placeholders.translationKey'),
         }}
         disabled={isEditMode}
       />
 
       <ProFormTextArea
         name="en"
-        label={t('adminI18nPage.form.en')}
+        label={t('common.fields.english')}
         fieldProps={{
           rows: 3,
-          placeholder: t('adminI18nPage.form.enPlaceholder'),
+          placeholder: t('common.placeholders.englishTranslation'),
         }}
       />
 
       <ProFormTextArea
         name="vi"
-        label={t('adminI18nPage.form.vi')}
+        label={t('common.fields.vietnamese')}
         fieldProps={{
           rows: 3,
-          placeholder: t('adminI18nPage.form.viPlaceholder'),
+          placeholder: t('common.placeholders.vietnameseTranslation'),
         }}
       />
     </FormModal>

@@ -79,7 +79,7 @@ export function UserIpWhitelistFormModal({
 
       <ProFormText
         name="userId"
-        label={t('adminUserIpWhitelistPage.form.userId')}
+        label={t('common.fields.userId')}
         rules={[
           {
             required: true,
@@ -87,14 +87,14 @@ export function UserIpWhitelistFormModal({
           },
         ]}
         fieldProps={{
-          placeholder: t('adminUserIpWhitelistPage.form.userIdPlaceholder'),
+          placeholder: t('common.placeholders.userId'),
         }}
         disabled={isEditMode || !isAdmin}
       />
 
       <ProFormText
         name="ip"
-        label={t('adminUserIpWhitelistPage.form.ip')}
+        label={t('common.fields.ip')}
         rules={[
           {
             required: true,
@@ -102,16 +102,16 @@ export function UserIpWhitelistFormModal({
           },
         ]}
         fieldProps={{
-          placeholder: t('adminUserIpWhitelistPage.form.ipPlaceholder'),
+          placeholder: t('common.placeholders.ip'),
         }}
         disabled={isEditMode}
       />
 
       <ProFormTextArea
         name="note"
-        label={t('adminUserIpWhitelistPage.form.note')}
+        label={t('common.fields.note')}
         fieldProps={{
-          placeholder: t('adminUserIpWhitelistPage.form.notePlaceholder'),
+          placeholder: t('common.placeholders.noteOptional'),
           rows: 3,
         }}
       />

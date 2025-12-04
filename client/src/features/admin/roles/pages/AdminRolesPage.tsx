@@ -41,7 +41,7 @@ export default function AdminRolesPage() {
 
   const deleteMutation = useDeleteRoles({
     onSuccess: () => {
-      notify.success(t('adminRolesPage.delete.success'));
+      notify.success(t('common.messages.deleteSuccess'));
       setDeleteModalOpen(false);
       setDeletingRole(null);
       actionRef.current?.reload();
@@ -66,21 +66,21 @@ export default function AdminRolesPage() {
 
   const columns: ProColumns<AdminRole>[] = [
     {
-      title: t('adminRolesPage.table.title'),
+      title: t('common.fields.roleName'),
       dataIndex: 'title',
       copyable: true,
       ellipsis: true,
       hideInSearch: true,
     },
     {
-      title: t('adminRolesPage.table.description'),
+      title: t('common.fields.description'),
       dataIndex: 'description',
       ellipsis: true,
       hideInSearch: true,
       render: (_, record) => record.description ?? '-',
     },
     {
-      title: t('adminRolesPage.table.permissions'),
+      title: t('common.fields.permissionCount'),
       dataIndex: 'permissionIds',
       hideInSearch: true,
       render: (_, record) => (
@@ -88,7 +88,7 @@ export default function AdminRolesPage() {
       ),
     },
     {
-      title: t('adminRolesPage.table.users'),
+      title: t('common.fields.userCount'),
       dataIndex: 'players',
       hideInSearch: true,
       render: (_, record) => {
@@ -113,9 +113,9 @@ export default function AdminRolesPage() {
       },
     },
     createUserSelectColumn<AdminRole>(userSearchSelect, {
-      title: t('adminRolesPage.table.filters.user'),
+      title: t('common.filters.user'),
       dataIndex: 'userId',
-      placeholder: t('adminRolesPage.table.filters.user'),
+      placeholder: t('common.filters.user'),
       mode: undefined,
     }),
     createSearchColumn<AdminRole>({
@@ -143,8 +143,8 @@ export default function AdminRolesPage() {
             canDelete: (record) => canDelete && !record.protected,
             viewTooltip: t('common.actions.view'),
             editTooltip: t('common.actions.edit'),
-            deleteTooltip: t('adminRolesPage.actions.delete'),
-            title: t('common.table.actions'),
+            deleteTooltip: t('common.actions.delete'),
+            title: t('common.fields.actions'),
           }),
         ]
       : []),
@@ -192,7 +192,7 @@ export default function AdminRolesPage() {
                   type="primary"
                   onClick={() => navigate('/admin/roles/new')}
                 >
-                  {t('adminRolesPage.create.button')}
+                  {t('common.actions.create')}
                 </Button>,
               ]
             : []

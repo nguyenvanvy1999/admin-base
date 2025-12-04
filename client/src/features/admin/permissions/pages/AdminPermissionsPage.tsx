@@ -56,7 +56,7 @@ export default function AdminPermissionsPage() {
 
   const columns: ProColumns<AdminPermission>[] = [
     {
-      title: t('adminPermissionsPage.table.title'),
+      title: t('common.fields.permissions'),
       dataIndex: 'title',
       copyable: true,
       ellipsis: true,
@@ -72,12 +72,12 @@ export default function AdminPermissionsPage() {
       },
     },
     {
-      title: t('adminPermissionsPage.table.category'),
+      title: t('common.fields.category'),
       dataIndex: 'category',
       hideInTable: true,
       valueType: 'select',
       fieldProps: {
-        placeholder: t('adminPermissionsPage.table.filters.category'),
+        placeholder: t('common.filters.category'),
         allowClear: true,
         options: categories.map((cat) => ({
           label: t(`adminPermissionsPage.categories.${cat}` as any) || cat,
@@ -95,7 +95,7 @@ export default function AdminPermissionsPage() {
       },
     },
     {
-      title: t('adminPermissionsPage.table.action'),
+      title: t('common.fields.action'),
       dataIndex: 'action',
       hideInSearch: true,
       render: (_, record) => {
@@ -108,7 +108,7 @@ export default function AdminPermissionsPage() {
       },
     },
     {
-      title: t('adminPermissionsPage.table.description'),
+      title: t('common.fields.description'),
       dataIndex: 'description',
       ellipsis: true,
       hideInSearch: true,
@@ -132,7 +132,7 @@ export default function AdminPermissionsPage() {
         <Space orientation="vertical" style={{ width: '100%' }} size="middle">
           <Space wrap>
             <Input.Search
-              placeholder={t('common.table.filters.search')}
+              placeholder={t('common.search')}
               allowClear
               style={{ width: 300 }}
               value={searchText}
@@ -140,7 +140,7 @@ export default function AdminPermissionsPage() {
             />
             <Select
               mode="multiple"
-              placeholder={t('adminPermissionsPage.table.filters.category')}
+              placeholder={t('common.filters.category')}
               allowClear
               style={{ width: 200 }}
               value={categoryFilter}

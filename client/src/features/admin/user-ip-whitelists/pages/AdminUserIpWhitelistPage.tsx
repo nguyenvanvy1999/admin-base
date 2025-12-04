@@ -96,32 +96,32 @@ export default function AdminUserIpWhitelistPage() {
 
   const columns: ProColumns<UserIpWhitelist>[] = [
     {
-      title: t('adminUserIpWhitelistPage.table.userId'),
+      title: t('common.fields.userId'),
       dataIndex: 'userId',
       copyable: true,
       ellipsis: true,
       width: 250,
     },
     {
-      title: t('adminUserIpWhitelistPage.table.ip'),
+      title: t('common.fields.ip'),
       dataIndex: 'ip',
       copyable: true,
       width: 200,
     },
     {
-      title: t('adminUserIpWhitelistPage.table.note'),
+      title: t('common.fields.note'),
       dataIndex: 'note',
       ellipsis: true,
       width: 200,
     },
     {
-      title: t('common.table.created'),
+      title: t('common.fields.createdAt'),
       dataIndex: 'created',
       valueType: 'dateTime',
       width: 180,
     },
     {
-      title: t('common.table.actions'),
+      title: t('common.fields.actions'),
       dataIndex: 'actions',
       hideInSearch: true,
       width: 100,
@@ -134,14 +134,8 @@ export default function AdminUserIpWhitelistPage() {
             onClick={() => handleEdit(record)}
           />
           <Popconfirm
-            title={t(
-              'adminUserIpWhitelistPage.actions.deleteConfirmTitle',
-              'Delete IP whitelist?',
-            )}
-            description={t(
-              'adminUserIpWhitelistPage.actions.deleteConfirm',
-              'Are you sure you want to delete this IP whitelist entry?',
-            )}
+            title={t('adminUserIpWhitelistPage.dialogs.deleteConfirmTitle')}
+            description={t('adminUserIpWhitelistPage.dialogs.deleteConfirm')}
             onConfirm={() => handleDelete(record)}
           >
             <Button type="text" size="small" danger icon={<DeleteOutlined />} />
@@ -217,17 +211,15 @@ export default function AdminUserIpWhitelistPage() {
             icon={<PlusOutlined />}
             onClick={handleCreate}
           >
-            {t('adminUserIpWhitelistPage.actions.create')}
+            {t('common.actions.create')}
           </Button>,
           <Popconfirm
             key="delete-selected"
             title={t(
-              'adminUserIpWhitelistPage.actions.deleteSelectedConfirmTitle',
-              'Delete selected entries?',
+              'adminUserIpWhitelistPage.dialogs.deleteSelectedConfirmTitle',
             )}
             description={t(
-              'adminUserIpWhitelistPage.actions.deleteSelectedConfirm',
-              'Are you sure you want to delete {{count}} entry(s)?',
+              'adminUserIpWhitelistPage.dialogs.deleteSelectedConfirm',
               { count: selectedRowKeys.length },
             )}
             onConfirm={handleDeleteSelected}
@@ -238,11 +230,9 @@ export default function AdminUserIpWhitelistPage() {
               icon={<DeleteOutlined />}
               disabled={selectedRowKeys.length === 0}
             >
-              {t(
-                'adminUserIpWhitelistPage.actions.deleteSelected',
-                'Delete ({{count}})',
-                { count: selectedRowKeys.length },
-              )}
+              {t('common.actions.deleteSelected', {
+                count: selectedRowKeys.length,
+              })}
             </Button>
           </Popconfirm>,
         ]}

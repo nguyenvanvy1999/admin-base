@@ -129,7 +129,7 @@ export default function MySessionsPage() {
         ),
     },
     {
-      title: t('common.table.actions'),
+      title: t('common.fields.actions'),
       dataIndex: 'actions',
       hideInSearch: true,
       render: (_, record) => {
@@ -142,11 +142,11 @@ export default function MySessionsPage() {
 
         return (
           <Popconfirm
-            title={t('adminSessionsPage.actions.revokeConfirmTitle')}
+            title={t('adminSessionsPage.dialogs.revokeConfirmTitle')}
             description={t(
               isCurrent
-                ? 'mySessionsPage.actions.revokeCurrentConfirm'
-                : 'mySessionsPage.actions.revokeOtherConfirm',
+                ? 'mySessionsPage.dialogs.revokeCurrentConfirm'
+                : 'mySessionsPage.dialogs.revokeOtherConfirm',
             )}
             onConfirm={() => handleRevoke(record)}
           >
@@ -178,14 +178,14 @@ export default function MySessionsPage() {
 
           <Space wrap>
             <Button onClick={handleLogoutCurrent}>
-              {t('mySessionsPage.actions.logoutCurrent')}
+              {t('common.actions.logoutCurrent')}
             </Button>
             <Popconfirm
-              title={t('mySessionsPage.actions.logoutAllConfirmTitle')}
-              description={t('mySessionsPage.actions.logoutAllConfirm')}
+              title={t('mySessionsPage.dialogs.logoutAllConfirmTitle')}
+              description={t('mySessionsPage.dialogs.logoutAllConfirm')}
               onConfirm={handleLogoutAll}
             >
-              <Button danger>{t('mySessionsPage.actions.logoutAll')}</Button>
+              <Button danger>{t('common.actions.logoutAll')}</Button>
             </Popconfirm>
           </Space>
         </Space>
@@ -209,8 +209,8 @@ export default function MySessionsPage() {
         extraToolbarActions={[
           <Popconfirm
             key="revoke-selected"
-            title={t('adminSessionsPage.actions.revokeSelectedConfirmTitle')}
-            description={t('adminSessionsPage.actions.revokeSelectedConfirm', {
+            title={t('adminSessionsPage.dialogs.revokeSelectedConfirmTitle')}
+            description={t('adminSessionsPage.dialogs.revokeSelectedConfirm', {
               count: selectedRowKeys.length,
             })}
             onConfirm={handleRevokeSelected}
@@ -220,7 +220,7 @@ export default function MySessionsPage() {
               danger
               disabled={selectedRowKeys.length === 0 || !canRevoke}
             >
-              {t('adminSessionsPage.actions.revokeSelected', {
+              {t('common.actions.revokeSelected', {
                 count: selectedRowKeys.length,
               })}
             </Button>
