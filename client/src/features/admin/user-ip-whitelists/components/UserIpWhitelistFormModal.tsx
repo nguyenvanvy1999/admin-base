@@ -75,6 +75,8 @@ export function UserIpWhitelistFormModal({
         layout: 'vertical',
       }}
     >
+      {isEditMode && <ProFormText name="id" hidden />}
+
       <ProFormText
         name="userId"
         label={t('adminUserIpWhitelistPage.form.userId')}

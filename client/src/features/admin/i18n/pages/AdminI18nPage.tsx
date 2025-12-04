@@ -1,17 +1,12 @@
-import {
-  DeleteOutlined,
-  DownloadOutlined,
-  EditOutlined,
-  PlusOutlined,
-  UploadOutlined,
-} from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
-import { Button, Input, Popconfirm, Space, Upload } from 'antd';
+import { Button, Input, Popconfirm, Space } from 'antd';
 import type { TableRowSelection } from 'antd/es/table/interface';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
+import { ImportExportActions } from 'src/components/common/ImportExportActions';
 import { I18nFormModal } from 'src/features/admin/i18n/components/I18nFormModal';
 import { useAdminI18nPagination } from 'src/features/admin/i18n/hooks/useAdminI18nPagination';
 import {
@@ -69,7 +64,6 @@ export default function AdminI18nPage() {
   const deleteMutation = useDeleteI18n({
     onSuccess: () => {
       setSelectedRowKeys([]);
-      reload();
     },
   });
 
@@ -230,27 +224,16 @@ export default function AdminI18nPage() {
                 >
                   {t('adminI18nPage.actions.create', 'Create')}
                 </Button>,
-                <Button
-                  key="export"
-                  icon={<DownloadOutlined />}
-                  onClick={handleExport}
-                  loading={exportMutation.isPending}
-                >
-                  {t('adminI18nPage.actions.export', 'Export')}
-                </Button>,
-                <Upload
-                  key="import"
-                  accept=".xlsx,.xls"
-                  showUploadList={false}
-                  beforeUpload={handleImport}
-                >
-                  <Button
-                    icon={<UploadOutlined />}
-                    loading={importMutation.isPending}
-                  >
-                    {t('adminI18nPage.actions.import', 'Import')}
-                  </Button>
-                </Upload>,
+                <ImportExportActions
+                  key="import-export"
+                  onExport={handleExport}
+                  onImport={handleImport}
+                  exportLoading={exportMutation.isPending}
+                  importLoading={importMutation.isPending}
+                  importAccept=".xlsx,.xls"
+                  exportLabel={t('adminI18nPage.actions.export', 'Export')}
+                  importLabel={t('adminI18nPage.actions.import', 'Import')}
+                />,
                 <Popconfirm
                   key="delete-selected"
                   title={t(

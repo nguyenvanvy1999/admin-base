@@ -1,20 +1,10 @@
-import { DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
-import {
-  Badge,
-  Button,
-  Card,
-  Input,
-  Select,
-  Space,
-  Tabs,
-  Tag,
-  Upload,
-} from 'antd';
+import { Badge, Card, Input, Select, Space, Tabs, Tag } from 'antd';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
+import { ImportExportActions } from 'src/components/common/ImportExportActions';
 import { createActionColumn } from 'src/components/common/tableColumns';
 import { SettingFormModal } from 'src/features/admin/settings/components/SettingFormModal';
 import {
@@ -368,29 +358,15 @@ export default function AdminSettingsPage() {
         <Space orientation="vertical" style={{ width: '100%' }} size="middle">
           <Space wrap>
             {canUpdate && (
-              <>
-                <Button
-                  type="primary"
-                  icon={<DownloadOutlined />}
-                  onClick={handleExport}
-                  loading={exportMutation.isPending}
-                >
-                  Export
-                </Button>
-                <Upload
-                  accept=".json"
-                  showUploadList={false}
-                  beforeUpload={handleImport}
-                >
-                  <Button
-                    type="default"
-                    icon={<UploadOutlined />}
-                    loading={importMutation.isPending}
-                  >
-                    Import
-                  </Button>
-                </Upload>
-              </>
+              <ImportExportActions
+                onExport={handleExport}
+                onImport={handleImport}
+                exportLoading={exportMutation.isPending}
+                importLoading={importMutation.isPending}
+                importAccept=".json"
+                exportLabel={t('adminSettingsPage.actions.export', 'Export')}
+                importLabel={t('adminSettingsPage.actions.import', 'Import')}
+              />
             )}
             <Input.Search
               placeholder={t('common.table.filters.search')}

@@ -1,4 +1,4 @@
-import { apiClient } from 'src/lib/api/client';
+import { apiClient, http } from 'src/lib/api/client';
 import { createQueryKeys } from 'src/services/api/base.service';
 import type {
   I18nListParams,
@@ -40,18 +40,18 @@ export const adminI18nService = {
   },
 
   async export(): Promise<void> {
-    const response = await fetch(`${ADMIN_I18N_BASE_PATH}/export`, {
-      method: 'GET',
+    const response = await http.get<Blob>(`${ADMIN_I18N_BASE_PATH}/export`, {
+      responseType: 'blob',
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Accept: 'application/octet-stream',
       },
     });
 
-    if (!response.ok) {
+    if (!response.data) {
       throw new Error('Export failed');
     }
 
-    const blob = await response.blob();
+    const blob = response.data;
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
