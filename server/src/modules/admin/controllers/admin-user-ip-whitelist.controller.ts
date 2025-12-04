@@ -1,59 +1,117 @@
 import { Elysia, t } from 'elysia';
 import {
-  CreateUserIpWhitelistDto,
-  UserIpWhitelistResponseDto,
+  PaginateUserIpWhitelistResDto,
+  UpsertUserIpWhitelistDto,
+  UserIpWhitelistDetailResDto,
+  UserIpWhitelistPaginationDto,
 } from 'src/modules/admin/dtos/user-ip-whitelist.dto';
 import { userIpWhitelistAdminService } from 'src/service/admin/user-ip-whitelist-admin.service';
-import { authorize, has } from 'src/service/auth/authorization';
 import {
+  type AppAuthMeta,
   authErrors,
   castToRes,
   DOC_TAG,
+  ErrCode,
   ErrorResDto,
+  IdDto,
+  IdsDto,
   ResWrapper,
+  UnAuthErr,
 } from 'src/share';
 
-export const adminUserIpWhitelistController = new Elysia({
+export const adminUserIpWhitelistController = new Elysia<
+  'admin-user-ip-whitelist',
+  AppAuthMeta
+>({
   tags: [DOC_TAG.ADMIN_USER],
-  prefix: '/users/:userId/ip-whitelist',
-})
-  .use(authorize(has('USER.UPDATE')))
-  .get(
-    '/',
-    async ({ params: { userId } }) =>
-      castToRes(await userIpWhitelistAdminService.list(userId)),
-    {
-      params: t.Object({ userId: t.String() }),
-      response: {
-        200: ResWrapper(t.Array(UserIpWhitelistResponseDto)),
-        ...authErrors,
+}).group('/user-ip-whitelists', (app) =>
+  app
+    .get(
+      '/',
+      async ({ query, currentUser }) => {
+        if (!currentUser.permissions.includes('IPWHITELIST.VIEW')) {
+          query.userIds = [currentUser.id];
+        }
+        return castToRes(await userIpWhitelistAdminService.list(query));
       },
-    },
-  )
-  .post(
-    '/',
-    async ({ params: { userId }, body }) =>
-      castToRes(await userIpWhitelistAdminService.add(userId, body.ip)),
-    {
-      params: t.Object({ userId: t.String() }),
-      body: CreateUserIpWhitelistDto,
-      response: {
-        200: ResWrapper(UserIpWhitelistResponseDto),
-        400: ErrorResDto,
-        ...authErrors,
+      {
+        query: UserIpWhitelistPaginationDto,
+        response: {
+          200: ResWrapper(PaginateUserIpWhitelistResDto),
+          ...authErrors,
+        },
       },
-    },
-  )
-  .delete(
-    '/:id',
-    async ({ params: { userId, id } }) =>
-      castToRes(await userIpWhitelistAdminService.remove(userId, id)),
-    {
-      params: t.Object({ userId: t.String(), id: t.String() }),
-      response: {
-        200: ResWrapper(UserIpWhitelistResponseDto),
-        400: ErrorResDto,
-        ...authErrors,
+    )
+    .get(
+      '/:id',
+      async ({ params: { id }, currentUser }) => {
+        const userId = !currentUser.permissions.includes('IPWHITELIST.VIEW')
+          ? currentUser.id
+          : undefined;
+
+        const result = await userIpWhitelistAdminService.detail(id, userId);
+        return castToRes(result);
       },
-    },
-  );
+      {
+        params: IdDto,
+        response: {
+          200: ResWrapper(UserIpWhitelistDetailResDto),
+          400: ErrorResDto,
+          404: ErrorResDto,
+          ...authErrors,
+        },
+      },
+    )
+    .post(
+      '/',
+      async ({ body, currentUser }) => {
+        if (
+          !currentUser.permissions.includes('IPWHITELIST.UPDATE') &&
+          body.userId !== currentUser.id
+        ) {
+          throw new UnAuthErr(ErrCode.ActionNotAllowed);
+        }
+
+        const restrictToUserId = !currentUser.permissions.includes(
+          'IPWHITELIST.UPDATE',
+        )
+          ? currentUser.id
+          : undefined;
+
+        await userIpWhitelistAdminService.upsert(body, restrictToUserId);
+        return castToRes(null);
+      },
+      {
+        body: UpsertUserIpWhitelistDto,
+        response: {
+          200: ResWrapper(t.Null()),
+          400: ErrorResDto,
+          ...authErrors,
+        },
+      },
+    )
+    .post(
+      '/del',
+      async ({ body, currentUser }) => {
+        const restrictToUserId = !currentUser.permissions.includes(
+          'IPWHITELIST.UPDATE',
+        )
+          ? currentUser.id
+          : undefined;
+
+        await userIpWhitelistAdminService.removeMany(
+          body.ids,
+          restrictToUserId,
+        );
+        return castToRes(null);
+      },
+      {
+        body: IdsDto,
+        response: {
+          200: ResWrapper(t.Null()),
+          400: ErrorResDto,
+          ...authErrors,
+        },
+      },
+    ),
+);

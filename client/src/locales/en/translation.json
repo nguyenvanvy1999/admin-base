@@ -35,6 +35,7 @@
     "mySessions": "My sessions",
     "adminSessions": "Session",
     "adminUsers": "Users",
+    "adminUserIpWhitelists": "User IP Whitelists",
     "adminRoles": "Roles",
     "adminPermissions": "Permissions",
     "adminSettings": "Settings"
@@ -442,6 +443,7 @@
       "I18N.DELETE": "Delete internationalization translations",
       "IPWHITELIST.VIEW": "View IP whitelist",
       "IPWHITELIST.CREATE": "Add IP to whitelist",
+      "IPWHITELIST.UPDATE": "Update IP whitelist",
       "IPWHITELIST.DELETE": "Remove IP from whitelist",
       "API_KEY.VIEW": "View own API keys",
       "API_KEY.VIEW_ALL": "View all API keys",
@@ -605,6 +607,39 @@
     },
     "pagination": {
       "total": "{{total}} translations"
+    }
+  },
+  "adminUserIpWhitelistPage": {
+    "table": {
+      "userId": "User ID",
+      "ip": "IP Address"
+    },
+    "filters": {
+      "userIdsPlaceholder": "Filter by user IDs (comma-separated)",
+      "ipPlaceholder": "Filter by IP address"
+    },
+    "actions": {
+      "create": "Create",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteSelected": "Delete ({{count}})",
+      "deleteConfirmTitle": "Delete IP whitelist?",
+      "deleteConfirm": "Are you sure you want to delete this IP whitelist entry?",
+      "deleteSelectedConfirmTitle": "Delete selected entries?",
+      "deleteSelectedConfirm": "Are you sure you want to delete {{count}} entry(s)?"
+    },
+    "form": {
+      "createTitle": "Create User IP Whitelist",
+      "editTitle": "Edit User IP Whitelist",
+      "userId": "User ID",
+      "userIdRequired": "Please enter user ID",
+      "userIdPlaceholder": "Enter user ID",
+      "ip": "IP Address",
+      "ipRequired": "Please enter IP address",
+      "ipPlaceholder": "e.g. 192.168.1.1"
+    },
+    "pagination": {
+      "total": "{{total}} entries"
     }
   }
 }

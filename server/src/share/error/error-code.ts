@@ -28,8 +28,8 @@ export enum ErrCode {
   MFANotEnabled = 'mfa-not-enabled',
   InvalidBackupCode = 'invalid-backup-code',
   BackupCodeAlreadyUsed = 'backup-code-already-used',
-  InvalidAmount = 'invalid-amount',
   ActionNotAllowed = 'action-not-allowed',
   SuspiciousLoginBlocked = 'suspicious-login-blocked',
   TooManyAttempts = 'too-many-attempts',
+  IPWhitelistNotFound = 'ip-whitelist-not-found',
 }

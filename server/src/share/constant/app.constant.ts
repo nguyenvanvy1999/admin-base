@@ -117,6 +117,7 @@ export const PERMISSIONS = {
   IPWHITELIST: {
     VIEW: { roles: [defaultRoles.administrator.id] },
     CREATE: { roles: [defaultRoles.administrator.id] },
+    UPDATE: { roles: [defaultRoles.administrator.id] },
     DELETE: { roles: [defaultRoles.administrator.id] },
   },
   USER: {
@@ -203,6 +204,7 @@ export enum DB_PREFIX {
   REFERRAL = 'ref',
   I18N = 'i18n',
   ROLE = 'role',
+  IP_WHITELIST = 'ip_wh',
 }
 
 export enum EmailType {

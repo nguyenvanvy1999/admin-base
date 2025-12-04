@@ -1,31 +1,132 @@
 import { db, type IDb } from 'src/config/db';
+import type { UserIpWhitelistWhereInput } from 'src/generated';
+import type {
+  UpsertUserIpWhitelistDto,
+  UserIpWhitelistPaginationDto,
+} from 'src/modules/admin/dtos/user-ip-whitelist.dto';
+import { DB_PREFIX, ErrCode, IdUtil, NotFoundErr } from '../../share';
 
 export class UserIpWhitelistAdminService {
   constructor(private readonly deps: { db: IDb }) {}
 
-  list(userId: string) {
-    return this.deps.db.userIpWhitelist.findMany({
-      where: { userId },
-      orderBy: { created: 'desc' },
-    });
+  async list(query: typeof UserIpWhitelistPaginationDto.static) {
+    const { userIds, userId, ip, search, take = 20, skip = 0 } = query;
+    const where: UserIpWhitelistWhereInput = {};
+
+    // Filter by user IDs
+    if (userIds?.length) {
+      where.userId = { in: userIds };
+    } else if (userId) {
+      where.userId = userId;
+    }
+
+    // Filter by IP (partial match)
+    if (ip) {
+      where.ip = { contains: ip, mode: 'insensitive' };
+    }
+
+    // Search functionality
+    if (search) {
+      where.OR = [
+        { ip: { contains: search, mode: 'insensitive' } },
+        { note: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [docs, count] = await Promise.all([
+      this.deps.db.userIpWhitelist.findMany({
+        where,
+        orderBy: { created: 'desc' },
+        take,
+        skip,
+        select: {
+          id: true,
+          ip: true,
+          userId: true,
+          note: true,
+          created: true,
+          updated: true,
+        },
+      }),
+      this.deps.db.userIpWhitelist.count({ where }),
+    ]);
+
+    return { docs, count };
   }
 
-  add(userId: string, ip: string) {
-    return this.deps.db.userIpWhitelist.create({
-      data: {
-        id: crypto.randomUUID(),
-        userId,
-        ip,
+  async detail(id: string, userId?: string) {
+    const where: UserIpWhitelistWhereInput = { id };
+
+    if (userId) {
+      where.userId = userId;
+    }
+
+    const doc = await this.deps.db.userIpWhitelist.findFirst({
+      where,
+      select: {
+        id: true,
+        ip: true,
+        userId: true,
+        note: true,
+        created: true,
+        updated: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
       },
     });
+
+    if (!doc) {
+      throw new NotFoundErr(ErrCode.IPWhitelistNotFound);
+    }
+
+    return doc;
   }
 
-  remove(userId: string, id: string) {
-    return this.deps.db.userIpWhitelist.delete({
-      where: {
-        id,
-        userId,
-      },
+  async upsert(
+    data: typeof UpsertUserIpWhitelistDto.static,
+    restrictToUserId?: string,
+  ) {
+    const { userId, ip, note, id } = data;
+
+    if (id) {
+      const where: UserIpWhitelistWhereInput = { id };
+      if (restrictToUserId) {
+        where.userId = restrictToUserId;
+      }
+
+      await this.deps.db.userIpWhitelist.update({
+        where: { id, userId: where.userId },
+        data: { ip, note },
+        select: { id: true },
+      });
+    } else {
+      await this.deps.db.userIpWhitelist.create({
+        data: {
+          id: IdUtil.dbId(DB_PREFIX.IP_WHITELIST),
+          userId,
+          ip,
+          note,
+        },
+        select: { id: true },
+      });
+    }
+  }
+
+  async removeMany(ids: string[], restrictToUserId?: string) {
+    const where: UserIpWhitelistWhereInput = {
+      id: { in: ids },
+    };
+
+    if (restrictToUserId) {
+      where.userId = restrictToUserId;
+    }
+
+    await this.deps.db.userIpWhitelist.deleteMany({
+      where,
     });
   }
 }
