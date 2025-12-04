@@ -30,11 +30,11 @@ import {
 } from 'src/lib/utils/setting.utils';
 import type { AdminSetting } from 'src/types/admin-settings';
 import { SettingDataType } from 'src/types/admin-settings';
+import type { TableParamsWithFilters } from 'src/types/table';
 
-type AdminSettingTableParams = {
+type AdminSettingTableParams = TableParamsWithFilters<{
   category?: string;
-  search?: string;
-};
+}>;
 
 export default function AdminSettingsPage() {
   const { t } = useTranslation();

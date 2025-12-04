@@ -16,13 +16,11 @@ import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { useNotify } from 'src/hooks/useNotify';
 import { adminRolesService } from 'src/services/api/admin-roles.service';
 import type { AdminRole } from 'src/types/admin-roles';
+import type { TableParamsWithFilters } from 'src/types/table';
 
-type AdminRoleTableParams = {
-  current?: number;
-  pageSize?: number;
+type AdminRoleTableParams = TableParamsWithFilters<{
   userId?: string;
-  search?: string;
-};
+}>;
 
 export default function AdminRolesPage() {
   const { t } = useTranslation();

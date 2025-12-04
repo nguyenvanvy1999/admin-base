@@ -21,14 +21,12 @@ import {
   type AdminUserStatus,
   type AdminUserSummary,
 } from 'src/types/admin-users';
+import type { TableParamsWithFilters } from 'src/types/table';
 
-type AdminUserTableParams = {
-  current?: number;
-  pageSize?: number;
-  search?: string;
+type AdminUserTableParams = TableParamsWithFilters<{
   statuses?: AdminUserStatus[];
   roleIds?: string[];
-};
+}>;
 
 function formatStatus(status: AdminUserStatus): string {
   return status.toUpperCase();
