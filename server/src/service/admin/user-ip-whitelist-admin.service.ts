@@ -1,11 +1,21 @@
 import { db, type IDb } from 'src/config/db';
-import type { UserIpWhitelistWhereInput } from 'src/generated';
+import type {
+  UserIpWhitelistSelect,
+  UserIpWhitelistWhereInput,
+} from 'src/generated';
 import type {
   UpsertUserIpWhitelistDto,
   UserIpWhitelistPaginationDto,
 } from 'src/modules/admin/dtos/user-ip-whitelist.dto';
 import { DB_PREFIX, ErrCode, IdUtil, NotFoundErr } from '../../share';
 
+const ipWhitelistSelect = {
+  id: true,
+  ip: true,
+  userId: true,
+  note: true,
+  created: true,
+} satisfies UserIpWhitelistSelect;
 export class UserIpWhitelistAdminService {
   constructor(private readonly deps: { db: IDb }) {}
 
@@ -39,14 +49,7 @@ export class UserIpWhitelistAdminService {
         orderBy: { created: 'desc' },
         take,
         skip,
-        select: {
-          id: true,
-          ip: true,
-          userId: true,
-          note: true,
-          created: true,
-          updated: true,
-        },
+        select: ipWhitelistSelect,
       }),
       this.deps.db.userIpWhitelist.count({ where }),
     ]);
@@ -64,12 +67,7 @@ export class UserIpWhitelistAdminService {
     const doc = await this.deps.db.userIpWhitelist.findFirst({
       where,
       select: {
-        id: true,
-        ip: true,
-        userId: true,
-        note: true,
-        created: true,
-        updated: true,
+        ...ipWhitelistSelect,
         user: {
           select: {
             id: true,

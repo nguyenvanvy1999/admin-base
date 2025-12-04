@@ -96,38 +96,32 @@ export default function AdminUserIpWhitelistPage() {
 
   const columns: ProColumns<UserIpWhitelist>[] = [
     {
-      title: t('adminUserIpWhitelistPage.table.userId', 'User ID'),
+      title: t('adminUserIpWhitelistPage.table.userId'),
       dataIndex: 'userId',
       copyable: true,
       ellipsis: true,
       width: 250,
     },
     {
-      title: t('adminUserIpWhitelistPage.table.ip', 'IP Address'),
+      title: t('adminUserIpWhitelistPage.table.ip'),
       dataIndex: 'ip',
       copyable: true,
       width: 200,
     },
     {
-      title: t('adminUserIpWhitelistPage.table.note', 'Note'),
+      title: t('adminUserIpWhitelistPage.table.note'),
       dataIndex: 'note',
       ellipsis: true,
       width: 200,
     },
     {
-      title: t('common.table.created', 'Created at'),
+      title: t('common.table.created'),
       dataIndex: 'created',
       valueType: 'dateTime',
       width: 180,
     },
     {
-      title: t('common.table.updated', 'Updated at'),
-      dataIndex: 'updated',
-      valueType: 'dateTime',
-      width: 180,
-    },
-    {
-      title: t('common.table.actions', 'Actions'),
+      title: t('common.table.actions'),
       dataIndex: 'actions',
       hideInSearch: true,
       width: 100,

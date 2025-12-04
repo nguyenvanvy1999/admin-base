@@ -77,54 +77,39 @@ export function UserIpWhitelistFormModal({
     >
       <ProFormText
         name="userId"
-        label={t('adminUserIpWhitelistPage.form.userId', 'User ID')}
+        label={t('adminUserIpWhitelistPage.form.userId')}
         rules={[
           {
             required: true,
-            message: t(
-              'adminUserIpWhitelistPage.form.userIdRequired',
-              'Please enter user ID',
-            ),
+            message: t('adminUserIpWhitelistPage.form.userIdRequired'),
           },
         ]}
         fieldProps={{
-          placeholder: t(
-            'adminUserIpWhitelistPage.form.userIdPlaceholder',
-            'Enter user ID',
-          ),
+          placeholder: t('adminUserIpWhitelistPage.form.userIdPlaceholder'),
         }}
         disabled={isEditMode || !isAdmin}
       />
 
       <ProFormText
         name="ip"
-        label={t('adminUserIpWhitelistPage.form.ip', 'IP Address')}
+        label={t('adminUserIpWhitelistPage.form.ip')}
         rules={[
           {
             required: true,
-            message: t(
-              'adminUserIpWhitelistPage.form.ipRequired',
-              'Please enter IP address',
-            ),
+            message: t('adminUserIpWhitelistPage.form.ipRequired'),
           },
         ]}
         fieldProps={{
-          placeholder: t(
-            'adminUserIpWhitelistPage.form.ipPlaceholder',
-            'e.g. 192.168.1.1',
-          ),
+          placeholder: t('adminUserIpWhitelistPage.form.ipPlaceholder'),
         }}
         disabled={isEditMode}
       />
 
       <ProFormTextArea
         name="note"
-        label={t('adminUserIpWhitelistPage.form.note', 'Note')}
+        label={t('adminUserIpWhitelistPage.form.note')}
         fieldProps={{
-          placeholder: t(
-            'adminUserIpWhitelistPage.form.notePlaceholder',
-            'Optional note',
-          ),
+          placeholder: t('adminUserIpWhitelistPage.form.notePlaceholder'),
           rows: 3,
         }}
       />

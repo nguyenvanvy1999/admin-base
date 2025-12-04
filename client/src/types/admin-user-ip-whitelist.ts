@@ -4,7 +4,7 @@ export interface UserIpWhitelist {
   ip: string;
   note: string | null;
   created: string;
-  updated: string;
+  modified: string;
 }
 
 export interface UserIpWhitelistListParams {

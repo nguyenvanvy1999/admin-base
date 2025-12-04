@@ -613,7 +613,8 @@
   "adminUserIpWhitelistPage": {
     "table": {
       "userId": "User ID",
-      "ip": "Địa chỉ IP"
+      "ip": "Địa chỉ IP",
+      "note": "Note"
     },
     "filters": {
       "userIdsPlaceholder": "Lọc theo user IDs (ngăn cách bằng dấu phẩy)",
@@ -637,7 +638,9 @@
       "userIdPlaceholder": "Nhập user ID",
       "ip": "Địa chỉ IP",
       "ipRequired": "Vui lòng nhập địa chỉ IP",
-      "ipPlaceholder": "Ví dụ: 192.168.1.1"
+      "ipPlaceholder": "Ví dụ: 192.168.1.1",
+      "note": "Note",
+      "notePlaceholder": "Vui lòng nhập note"
     },
     "pagination": {
       "total": "{{total}} mục"

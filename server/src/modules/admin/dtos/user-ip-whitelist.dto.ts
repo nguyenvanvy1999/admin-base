@@ -14,7 +14,6 @@ export const UserIpWhitelistItemDto = t.Object({
   userId: t.String(),
   note: t.Nullable(t.String()),
   created: t.Date(),
-  modified: t.Date(),
 });
 
 export const PaginateUserIpWhitelistResDto = t.Object({

@@ -613,7 +613,8 @@
   "adminUserIpWhitelistPage": {
     "table": {
       "userId": "User ID",
-      "ip": "IP Address"
+      "ip": "IP Address",
+      "note": "Note"
     },
     "filters": {
       "userIdsPlaceholder": "Filter by user IDs (comma-separated)",
@@ -637,7 +638,9 @@
       "userIdPlaceholder": "Enter user ID",
       "ip": "IP Address",
       "ipRequired": "Please enter IP address",
-      "ipPlaceholder": "e.g. 192.168.1.1"
+      "ipPlaceholder": "e.g. 192.168.1.1",
+      "note": "Note",
+      "notePlaceholder": "Enter note (optional)"
     },
     "pagination": {
       "total": "{{total}} entries"
