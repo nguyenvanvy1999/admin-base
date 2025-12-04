@@ -11,6 +11,17 @@ export interface TableSearchParams {
   [key: string]: unknown;
 }
 
+// Base table params for all admin tables
+export interface BaseTableParams {
+  current?: number;
+  pageSize?: number;
+  search?: string;
+}
+
+// Generic table params with custom filters
+export type TableParamsWithFilters<T = Record<string, unknown>> =
+  BaseTableParams & T;
+
 export interface TableActionConfig<T = unknown> {
   onView?: (record: T) => void;
   onEdit?: (record: T) => void;

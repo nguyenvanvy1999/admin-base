@@ -100,7 +100,7 @@ export default function AdminI18nPage() {
   };
 
   const handleExport = async () => {
-    await exportMutation.mutateAsync();
+    await exportMutation.mutateAsync(undefined as never);
   };
 
   const handleImport = async (file: File) => {

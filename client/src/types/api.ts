@@ -30,6 +30,12 @@ export interface PaginatedResponse<T> {
   };
 }
 
+// Generic list response with items and total count
+export interface ListResponse<T> {
+  docs: T[];
+  count: number;
+}
+
 export interface ApiListResponse<T> extends ApiResponse<T[]> {
   pagination?: {
     page: number;

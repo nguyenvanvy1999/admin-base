@@ -1,11 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { message } from 'antd';
-import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import {
   adminI18nKeys,
   adminI18nService,
 } from 'src/services/api/admin-i18n.service';
 import type { I18nListParams, I18nUpsertDto } from 'src/types/admin-i18n';
+import { type MutationCallbacks, useAppMutation } from './useAppMutation';
 
 export function useAdminI18nList(params: I18nListParams) {
   return useQuery({
@@ -14,103 +13,52 @@ export function useAdminI18nList(params: I18nListParams) {
   });
 }
 
-export function useUpsertI18n(options?: {
-  onSuccess?: () => void;
-  onError?: (error: Error) => void;
-}) {
-  const queryClient = useQueryClient();
-  const { t } = useTranslation();
-
-  return useMutation({
+export function useUpsertI18n(options?: MutationCallbacks) {
+  return useAppMutation({
     mutationFn: (data: I18nUpsertDto) => adminI18nService.upsert(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminI18nKeys.all });
-      message.success(
-        t('adminI18nPage.messages.saveSuccess', 'Saved successfully'),
-      );
-      options?.onSuccess?.();
-    },
-    onError: (error: Error) => {
-      message.error(
-        t('adminI18nPage.messages.saveError', 'Failed to save: {{error}}', {
-          error: error.message,
-        }),
-      );
-      options?.onError?.(error);
-    },
+    invalidateKeys: [adminI18nKeys.all],
+    successMessageKey: 'adminI18nPage.messages.saveSuccess',
+    successMessageDefault: 'Saved successfully',
+    errorMessageKey: 'adminI18nPage.messages.saveError',
+    errorMessageDefault: 'Failed to save',
+    ...options,
   });
 }
 
-export function useDeleteI18n(options?: {
-  onSuccess?: () => void;
-  onError?: (error: Error) => void;
-}) {
-  const queryClient = useQueryClient();
-  const { t } = useTranslation();
-
-  return useMutation({
+export function useDeleteI18n(
+  options?: MutationCallbacks<void, Error, string[]>,
+) {
+  return useAppMutation({
     mutationFn: (ids: string[]) => adminI18nService.delete(ids),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminI18nKeys.all });
-      message.success(
-        t('adminI18nPage.messages.deleteSuccess', 'Deleted successfully'),
-      );
-      options?.onSuccess?.();
-    },
-    onError: (error: Error) => {
-      message.error(
-        t('adminI18nPage.messages.deleteError', 'Failed to delete: {{error}}', {
-          error: error.message,
-        }),
-      );
-      options?.onError?.(error);
-    },
+    invalidateKeys: [adminI18nKeys.all],
+    successMessageKey: 'adminI18nPage.messages.deleteSuccess',
+    successMessageDefault: 'Deleted successfully',
+    errorMessageKey: 'adminI18nPage.messages.deleteError',
+    errorMessageDefault: 'Failed to delete',
+    ...options,
   });
 }
 
-export function useImportI18n(options?: {
-  onSuccess?: () => void;
-  onError?: (error: Error) => void;
-}) {
-  const queryClient = useQueryClient();
-  const { t } = useTranslation();
-
-  return useMutation({
+export function useImportI18n(options?: MutationCallbacks<void, Error, File>) {
+  return useAppMutation({
     mutationFn: (file: File) => adminI18nService.import(file),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminI18nKeys.all });
-      message.success(
-        t('adminI18nPage.messages.importSuccess', 'Imported successfully'),
-      );
-      options?.onSuccess?.();
-    },
-    onError: (error: Error) => {
-      message.error(
-        t('adminI18nPage.messages.importError', 'Failed to import: {{error}}', {
-          error: error.message,
-        }),
-      );
-      options?.onError?.(error);
-    },
+    invalidateKeys: [adminI18nKeys.all],
+    successMessageKey: 'adminI18nPage.messages.importSuccess',
+    successMessageDefault: 'Imported successfully',
+    errorMessageKey: 'adminI18nPage.messages.importError',
+    errorMessageDefault: 'Failed to import',
+    ...options,
   });
 }
 
-export function useExportI18n() {
-  const { t } = useTranslation();
-
-  return useMutation({
+export function useExportI18n(options?: MutationCallbacks) {
+  return useAppMutation({
     mutationFn: () => adminI18nService.export(),
-    onSuccess: () => {
-      message.success(
-        t('adminI18nPage.messages.exportSuccess', 'Exported successfully'),
-      );
-    },
-    onError: (error: Error) => {
-      message.error(
-        t('adminI18nPage.messages.exportError', 'Failed to export: {{error}}', {
-          error: error.message,
-        }),
-      );
-    },
+    successMessageKey: 'adminI18nPage.messages.exportSuccess',
+    successMessageDefault: 'Exported successfully',
+    errorMessageKey: 'adminI18nPage.messages.exportError',
+    errorMessageDefault: 'Failed to export',
+    skipSuccessMessage: false,
+    ...options,
   });
 }
