@@ -27,7 +27,9 @@
       "view": "View",
       "edit": "Edit",
       "delete": "Delete",
-      "revoke": "Revoke"
+      "revoke": "Revoke",
+      "export": "Export",
+      "import": "Import"
     }
   },
   "sidebar": {
@@ -577,8 +579,6 @@
       "create": "Create",
       "edit": "Edit",
       "delete": "Delete",
-      "import": "Import",
-      "export": "Export",
       "deleteSelected": "Delete ({{count}})",
       "deleteConfirmTitle": "Delete translation?",
       "deleteConfirm": "Are you sure you want to delete this translation?",

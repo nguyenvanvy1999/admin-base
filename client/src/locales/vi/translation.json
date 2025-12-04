@@ -27,7 +27,9 @@
       "view": "Chi tiết",
       "edit": "Chỉnh sửa",
       "delete": "Xóa",
-      "revoke": "Thu hồi"
+      "revoke": "Thu hồi",
+      "export": "Xuất",
+      "import": "Nhập"
     }
   },
   "sidebar": {
@@ -577,8 +579,6 @@
       "create": "Tạo mới",
       "edit": "Sửa",
       "delete": "Xóa",
-      "import": "Nhập",
-      "export": "Xuất",
       "deleteSelected": "Xóa ({{count}})",
       "deleteConfirmTitle": "Xóa bản dịch?",
       "deleteConfirm": "Bạn có chắc chắn muốn xóa bản dịch này?",

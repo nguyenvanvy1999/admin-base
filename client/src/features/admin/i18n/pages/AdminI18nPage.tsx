@@ -111,21 +111,21 @@ export default function AdminI18nPage() {
 
   const columns: ProColumns<I18n>[] = [
     {
-      title: t('adminI18nPage.table.key', 'Key'),
+      title: t('adminI18nPage.table.key'),
       dataIndex: 'key',
       copyable: true,
       ellipsis: true,
       width: 300,
     },
     {
-      title: t('adminI18nPage.table.en', 'English'),
+      title: t('adminI18nPage.table.en'),
       dataIndex: 'en',
       ellipsis: true,
       width: 250,
       render: (_, record) => record.en ?? '-',
     },
     {
-      title: t('adminI18nPage.table.vi', 'Vietnamese'),
+      title: t('adminI18nPage.table.vi'),
       dataIndex: 'vi',
       ellipsis: true,
       width: 250,
@@ -134,7 +134,7 @@ export default function AdminI18nPage() {
     ...(canUpdate
       ? [
           {
-            title: t('common.table.actions', 'Actions'),
+            title: t('common.table.actions'),
             dataIndex: 'actions',
             hideInSearch: true,
             width: 100,
@@ -147,14 +147,8 @@ export default function AdminI18nPage() {
                   onClick={() => handleEdit(record)}
                 />
                 <Popconfirm
-                  title={t(
-                    'adminI18nPage.actions.deleteConfirmTitle',
-                    'Delete translation?',
-                  )}
-                  description={t(
-                    'adminI18nPage.actions.deleteConfirm',
-                    'Are you sure you want to delete this translation?',
-                  )}
+                  title={t('adminI18nPage.actions.deleteConfirmTitle')}
+                  description={t('adminI18nPage.actions.deleteConfirm')}
                   onConfirm={() => handleDelete(record)}
                 >
                   <Button
@@ -191,7 +185,7 @@ export default function AdminI18nPage() {
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total) =>
-            t('adminI18nPage.pagination.total', '{{total}} translations', {
+            t('adminI18nPage.pagination.total', {
               total,
             }),
           onChange: async (page, pageSize) => {
@@ -205,10 +199,7 @@ export default function AdminI18nPage() {
         toolBarRender={() => [
           <Input.Search
             key="search"
-            placeholder={t(
-              'adminI18nPage.filters.keyPlaceholder',
-              'Search by key',
-            )}
+            placeholder={t('adminI18nPage.filters.keyPlaceholder')}
             allowClear
             style={{ width: 300 }}
             value={keyFilter}
@@ -222,7 +213,7 @@ export default function AdminI18nPage() {
                   icon={<PlusOutlined />}
                   onClick={handleCreate}
                 >
-                  {t('adminI18nPage.actions.create', 'Create')}
+                  {t('adminI18nPage.actions.create')}
                 </Button>,
                 <ImportExportActions
                   key="import-export"
@@ -231,8 +222,8 @@ export default function AdminI18nPage() {
                   exportLoading={exportMutation.isPending}
                   importLoading={importMutation.isPending}
                   importAccept=".xlsx,.xls"
-                  exportLabel={t('adminI18nPage.actions.export', 'Export')}
-                  importLabel={t('adminI18nPage.actions.import', 'Import')}
+                  exportLabel={t('common.actions.export')}
+                  importLabel={t('common.actions.import')}
                 />,
                 <Popconfirm
                   key="delete-selected"

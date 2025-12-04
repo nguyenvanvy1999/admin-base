@@ -364,8 +364,8 @@ export default function AdminSettingsPage() {
                 exportLoading={exportMutation.isPending}
                 importLoading={importMutation.isPending}
                 importAccept=".json"
-                exportLabel={t('adminSettingsPage.actions.export', 'Export')}
-                importLabel={t('adminSettingsPage.actions.import', 'Import')}
+                exportLabel={t('common.actions.export')}
+                importLabel={t('common.actions.import')}
               />
             )}
             <Input.Search
