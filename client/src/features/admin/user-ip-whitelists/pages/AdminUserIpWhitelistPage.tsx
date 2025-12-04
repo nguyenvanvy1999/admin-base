@@ -108,8 +108,20 @@ export default function AdminUserIpWhitelistPage() {
       width: 200,
     },
     {
+      title: t('adminUserIpWhitelistPage.table.note', 'Note'),
+      dataIndex: 'note',
+      ellipsis: true,
+      width: 200,
+    },
+    {
       title: t('common.table.created', 'Created at'),
       dataIndex: 'created',
+      valueType: 'dateTime',
+      width: 180,
+    },
+    {
+      title: t('common.table.updated', 'Updated at'),
+      dataIndex: 'updated',
       valueType: 'dateTime',
       width: 180,
     },

@@ -20,6 +20,6 @@ export const userIpWhitelistService = {
   },
 
   delete(ids: string[]): Promise<{ count: number }> {
-    return apiClient.delete<{ count: number }>(BASE_URL, { data: { ids } });
+    return apiClient.post<{ count: number }>(`${BASE_URL}/del`, { ids });
   },
 };

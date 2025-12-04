@@ -1,4 +1,4 @@
-import { ProFormText } from '@ant-design/pro-components';
+import { ProFormText, ProFormTextArea } from '@ant-design/pro-components';
 import { useTranslation } from 'react-i18next';
 import { FormModal } from 'src/components/common/FormModal';
 import { sanitizeFormValues } from 'src/lib/utils/form.utils';
@@ -32,8 +32,10 @@ export function UserIpWhitelistFormModal({
 
   const initialValues: Partial<UserIpWhitelistFormData> = entry
     ? {
+        id: entry.id,
         userId: entry.userId,
         ip: entry.ip,
+        note: entry.note || undefined,
       }
     : {};
 
@@ -105,6 +107,19 @@ export function UserIpWhitelistFormModal({
             'adminUserIpWhitelistPage.form.ipPlaceholder',
             'e.g. 192.168.1.1',
           ),
+        }}
+        disabled={isEditMode}
+      />
+
+      <ProFormTextArea
+        name="note"
+        label={t('adminUserIpWhitelistPage.form.note', 'Note')}
+        fieldProps={{
+          placeholder: t(
+            'adminUserIpWhitelistPage.form.notePlaceholder',
+            'Optional note',
+          ),
+          rows: 3,
         }}
       />
     </FormModal>
