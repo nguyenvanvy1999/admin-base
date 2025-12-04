@@ -12,7 +12,7 @@ import {
 } from '@ant-design/icons';
 import type { MenuDataItem, ProLayoutProps } from '@ant-design/pro-components';
 import { ProLayout } from '@ant-design/pro-components';
-import { Button, Dropdown, Switch, Tooltip } from 'antd';
+import { Dropdown, Switch, Tooltip } from 'antd';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Outlet, useLocation } from 'react-router-dom';
@@ -165,6 +165,12 @@ export default function MainLayout() {
       fixedHeader
       route={localizedRoutes}
       location={locationProps}
+      contentStyle={{
+        paddingLeft: 16,
+        paddingRight: 16,
+        paddingTop: 16,
+        paddingBottom: 16,
+      }}
       menuItemRender={(item, dom) =>
         item.path ? <Link to={item.path}>{dom}</Link> : dom
       }
@@ -181,12 +187,6 @@ export default function MainLayout() {
           />
         </Tooltip>,
         <LanguageSwitcher key="lang" size="small" />,
-        <Button
-          key="github"
-          type="text"
-          icon={<GithubOutlined />}
-          onClick={() => window.open('https://ant.design', '_blank')}
-        />,
       ]}
       avatarProps={{
         src: 'https://avatars.githubusercontent.com/u/9919?s=200&v=4',
