@@ -13,6 +13,8 @@ interface UserIpWhitelistFormModalProps {
   onClose: () => void;
   onSubmit: (data: UserIpWhitelistFormData) => Promise<void>;
   loading?: boolean;
+  currentUserId?: string;
+  isAdmin?: boolean;
 }
 
 export function UserIpWhitelistFormModal({
@@ -21,6 +23,8 @@ export function UserIpWhitelistFormModal({
   onClose,
   onSubmit,
   loading = false,
+  currentUserId,
+  isAdmin = false,
 }: UserIpWhitelistFormModalProps) {
   const { t } = useTranslation();
 
@@ -37,7 +41,9 @@ export function UserIpWhitelistFormModal({
         ip: entry.ip,
         note: entry.note || undefined,
       }
-    : {};
+    : {
+        userId: !isAdmin ? currentUserId : undefined,
+      };
 
   return (
     <FormModal
@@ -87,7 +93,7 @@ export function UserIpWhitelistFormModal({
             'Enter user ID',
           ),
         }}
-        disabled={isEditMode}
+        disabled={isEditMode || !isAdmin}
       />
 
       <ProFormText

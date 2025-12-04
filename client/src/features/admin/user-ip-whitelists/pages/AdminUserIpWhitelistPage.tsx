@@ -12,6 +12,7 @@ import {
   useDeleteUserIpWhitelists,
   useUpsertUserIpWhitelist,
 } from 'src/hooks/api/useAdminUserIpWhitelist';
+import { useAuth } from 'src/hooks/auth/useAuth';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import type { UserIpWhitelist } from 'src/types/admin-user-ip-whitelist';
 import type { TableParamsWithFilters } from 'src/types/table';
@@ -23,9 +24,9 @@ type AdminUserIpWhitelistTableParams = TableParamsWithFilters<{
 
 export default function AdminUserIpWhitelistPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { hasPermission } = usePermissions();
-  const canView = hasPermission('IPWHITELIST.VIEW');
-  const canUpdate = hasPermission('IPWHITELIST.UPDATE');
+  const isAdmin = hasPermission('IPWHITELIST.UPDATE');
 
   const [userIdsFilter, setUserIdsFilter] = useState<string | undefined>(
     undefined,
@@ -125,49 +126,36 @@ export default function AdminUserIpWhitelistPage() {
       valueType: 'dateTime',
       width: 180,
     },
-    ...(canUpdate
-      ? [
-          {
-            title: t('common.table.actions', 'Actions'),
-            dataIndex: 'actions',
-            hideInSearch: true,
-            width: 100,
-            render: (_: unknown, record: UserIpWhitelist) => (
-              <Space size="small">
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<EditOutlined />}
-                  onClick={() => handleEdit(record)}
-                />
-                <Popconfirm
-                  title={t(
-                    'adminUserIpWhitelistPage.actions.deleteConfirmTitle',
-                    'Delete IP whitelist?',
-                  )}
-                  description={t(
-                    'adminUserIpWhitelistPage.actions.deleteConfirm',
-                    'Are you sure you want to delete this IP whitelist entry?',
-                  )}
-                  onConfirm={() => handleDelete(record)}
-                >
-                  <Button
-                    type="text"
-                    size="small"
-                    danger
-                    icon={<DeleteOutlined />}
-                  />
-                </Popconfirm>
-              </Space>
-            ),
-          },
-        ]
-      : []),
+    {
+      title: t('common.table.actions', 'Actions'),
+      dataIndex: 'actions',
+      hideInSearch: true,
+      width: 100,
+      render: (_: unknown, record: UserIpWhitelist) => (
+        <Space size="small">
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          />
+          <Popconfirm
+            title={t(
+              'adminUserIpWhitelistPage.actions.deleteConfirmTitle',
+              'Delete IP whitelist?',
+            )}
+            description={t(
+              'adminUserIpWhitelistPage.actions.deleteConfirm',
+              'Are you sure you want to delete this IP whitelist entry?',
+            )}
+            onConfirm={() => handleDelete(record)}
+          >
+            <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
+      ),
+    },
   ];
-
-  if (!canView) {
-    return null;
-  }
 
   return (
     <AppPage>
@@ -177,7 +165,7 @@ export default function AdminUserIpWhitelistPage() {
         loading={isLoading}
         dataSource={entries}
         search={false}
-        rowSelection={canUpdate ? rowSelection : undefined}
+        rowSelection={rowSelection}
         pagination={{
           current: pagination.current,
           pageSize: pagination.pageSize,
@@ -201,17 +189,23 @@ export default function AdminUserIpWhitelistPage() {
           },
         }}
         toolBarRender={() => [
-          <Input.Search
-            key="userIds"
-            placeholder={t(
-              'adminUserIpWhitelistPage.filters.userIdsPlaceholder',
-              'Filter by user IDs (comma-separated)',
-            )}
-            allowClear
-            style={{ width: 300 }}
-            value={userIdsFilter}
-            onChange={(e) => setUserIdsFilter(e.target.value || undefined)}
-          />,
+          ...(isAdmin
+            ? [
+                <Input.Search
+                  key="userIds"
+                  placeholder={t(
+                    'adminUserIpWhitelistPage.filters.userIdsPlaceholder',
+                    'Filter by user IDs (comma-separated)',
+                  )}
+                  allowClear
+                  style={{ width: 300 }}
+                  value={userIdsFilter}
+                  onChange={(e) =>
+                    setUserIdsFilter(e.target.value || undefined)
+                  }
+                />,
+              ]
+            : []),
           <Input.Search
             key="ip"
             placeholder={t(
@@ -223,44 +217,40 @@ export default function AdminUserIpWhitelistPage() {
             value={ipFilter}
             onChange={(e) => setIpFilter(e.target.value || undefined)}
           />,
-          ...(canUpdate
-            ? [
-                <Button
-                  key="create"
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={handleCreate}
-                >
-                  {t('adminUserIpWhitelistPage.actions.create', 'Create')}
-                </Button>,
-                <Popconfirm
-                  key="delete-selected"
-                  title={t(
-                    'adminUserIpWhitelistPage.actions.deleteSelectedConfirmTitle',
-                    'Delete selected entries?',
-                  )}
-                  description={t(
-                    'adminUserIpWhitelistPage.actions.deleteSelectedConfirm',
-                    'Are you sure you want to delete {{count}} entry(s)?',
-                    { count: selectedRowKeys.length },
-                  )}
-                  onConfirm={handleDeleteSelected}
-                  disabled={selectedRowKeys.length === 0}
-                >
-                  <Button
-                    danger
-                    icon={<DeleteOutlined />}
-                    disabled={selectedRowKeys.length === 0}
-                  >
-                    {t(
-                      'adminUserIpWhitelistPage.actions.deleteSelected',
-                      'Delete ({{count}})',
-                      { count: selectedRowKeys.length },
-                    )}
-                  </Button>
-                </Popconfirm>,
-              ]
-            : []),
+          <Button
+            key="create"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreate}
+          >
+            {t('adminUserIpWhitelistPage.actions.create', 'Create')}
+          </Button>,
+          <Popconfirm
+            key="delete-selected"
+            title={t(
+              'adminUserIpWhitelistPage.actions.deleteSelectedConfirmTitle',
+              'Delete selected entries?',
+            )}
+            description={t(
+              'adminUserIpWhitelistPage.actions.deleteSelectedConfirm',
+              'Are you sure you want to delete {{count}} entry(s)?',
+              { count: selectedRowKeys.length },
+            )}
+            onConfirm={handleDeleteSelected}
+            disabled={selectedRowKeys.length === 0}
+          >
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              disabled={selectedRowKeys.length === 0}
+            >
+              {t(
+                'adminUserIpWhitelistPage.actions.deleteSelected',
+                'Delete ({{count}})',
+                { count: selectedRowKeys.length },
+              )}
+            </Button>
+          </Popconfirm>,
         ]}
       />
 
@@ -275,6 +265,8 @@ export default function AdminUserIpWhitelistPage() {
           await upsertMutation.mutateAsync(data);
         }}
         loading={upsertMutation.isPending}
+        currentUserId={user?.id}
+        isAdmin={isAdmin}
       />
     </AppPage>
   );
