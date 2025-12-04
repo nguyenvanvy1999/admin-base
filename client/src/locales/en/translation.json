@@ -559,5 +559,52 @@
       "loadMore": "Load more sessions"
     },
     "onlyOneSessionNotice": "The system is configured to allow only one active session per user. When a user signs in from a new device, previous sessions will be automatically logged out."
+  },
+  "adminI18nPage": {
+    "title": "Translation Management",
+    "table": {
+      "key": "Key",
+      "en": "English",
+      "vi": "Vietnamese"
+    },
+    "filters": {
+      "keyPlaceholder": "Search by key"
+    },
+    "actions": {
+      "create": "Create",
+      "edit": "Edit",
+      "delete": "Delete",
+      "import": "Import",
+      "export": "Export",
+      "deleteSelected": "Delete ({{count}})",
+      "deleteConfirmTitle": "Delete translation?",
+      "deleteConfirm": "Are you sure you want to delete this translation?",
+      "deleteSelectedConfirmTitle": "Delete selected translations?",
+      "deleteSelectedConfirm": "Are you sure you want to delete {{count}} translation(s)?"
+    },
+    "form": {
+      "createTitle": "Create Translation",
+      "editTitle": "Edit Translation",
+      "key": "Key",
+      "keyRequired": "Please enter a key",
+      "keyPlaceholder": "e.g. common.actions.save",
+      "en": "English Translation",
+      "enPlaceholder": "Enter English translation",
+      "vi": "Vietnamese Translation",
+      "viPlaceholder": "Enter Vietnamese translation"
+    },
+    "messages": {
+      "saveSuccess": "Saved successfully",
+      "saveError": "Failed to save: {{error}}",
+      "deleteSuccess": "Deleted successfully",
+      "deleteError": "Failed to delete: {{error}}",
+      "importSuccess": "Imported successfully",
+      "importError": "Failed to import: {{error}}",
+      "exportSuccess": "Exported successfully",
+      "exportError": "Failed to export: {{error}}"
+    },
+    "pagination": {
+      "total": "{{total}} translations"
+    }
   }
 }

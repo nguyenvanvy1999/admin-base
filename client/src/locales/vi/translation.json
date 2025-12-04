@@ -558,6 +558,53 @@
       "revokeSelectedConfirm": "{{count}} session(s) sẽ bị thu hồi. Tiếp tục?",
       "loadMore": "Tải thêm session"
     },
-    "onlyOneSessionNotice": "Hệ thống đang bật chế độ chỉ cho phép một phiên đăng nhập hoạt động cho mỗi user. Khi user đăng nhập từ thiết bị mới, các phiên cũ sẽ tự động bị đăng xuất."
+    "onlyOneSessionNotice": "Hệ thống được cấu hình chỉ cho phép một phiên đăng nhập đang hoạt động cho mỗi người dùng. Khi người dùng đăng nhập từ thiết bị mới, các phiên trước đó sẽ tự động bị đăng xuất."
+  },
+  "adminI18nPage": {
+    "title": "Quản lý đa ngôn ngữ",
+    "table": {
+      "key": "Khóa",
+      "en": "Tiếng Anh",
+      "vi": "Tiếng Việt"
+    },
+    "filters": {
+      "keyPlaceholder": "Tìm kiếm theo khóa"
+    },
+    "actions": {
+      "create": "Tạo mới",
+      "edit": "Sửa",
+      "delete": "Xóa",
+      "import": "Nhập",
+      "export": "Xuất",
+      "deleteSelected": "Xóa ({{count}})",
+      "deleteConfirmTitle": "Xóa bản dịch?",
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa bản dịch này?",
+      "deleteSelectedConfirmTitle": "Xóa các bản dịch đã chọn?",
+      "deleteSelectedConfirm": "Bạn có chắc chắn muốn xóa {{count}} bản dịch?"
+    },
+    "form": {
+      "createTitle": "Tạo bản dịch",
+      "editTitle": "Sửa bản dịch",
+      "key": "Khóa",
+      "keyRequired": "Vui lòng nhập khóa",
+      "keyPlaceholder": "Ví dụ: common.actions.save",
+      "en": "Bản dịch tiếng Anh",
+      "enPlaceholder": "Nhập bản dịch tiếng Anh",
+      "vi": "Bản dịch tiếng Việt",
+      "viPlaceholder": "Nhập bản dịch tiếng Việt"
+    },
+    "messages": {
+      "saveSuccess": "Lưu thành công",
+      "saveError": "Lưu thất bại: {{error}}",
+      "deleteSuccess": "Xóa thành công",
+      "deleteError": "Xóa thất bại: {{error}}",
+      "importSuccess": "Nhập thành công",
+      "importError": "Nhập thất bại: {{error}}",
+      "exportSuccess": "Xuất thành công",
+      "exportError": "Xuất thất bại: {{error}}"
+    },
+    "pagination": {
+      "total": "{{total}} bản dịch"
+    }
   }
 }
