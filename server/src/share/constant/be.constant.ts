@@ -27,6 +27,7 @@ export enum DOC_TAG {
   ADMIN_USER = 'Admin User',
   ADMIN_SESSION = 'Admin Session',
   ADMIN_TELEGRAM = 'Admin Telegram',
+  ADMIN_USER_IP_WHITELIST = 'Admin User IP Whitelist',
 }
 
 export const ACCESS_AUTH = [{ accessToken: [] }];

@@ -27,8 +27,8 @@ export function useAdminI18nPagination(options: UseAdminI18nPaginationOptions) {
   const { data, isLoading, isFetching, refetch } =
     useAdminI18nList(queryParams);
 
-  const i18nEntries = data?.items ?? [];
-  const total = data?.total ?? 0;
+  const i18nEntries = data?.docs ?? [];
+  const total = data?.count ?? 0;
 
   const goToPage = useCallback(
     async (page: number) => {

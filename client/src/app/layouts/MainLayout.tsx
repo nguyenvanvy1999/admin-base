@@ -1,5 +1,6 @@
 import {
   GithubOutlined,
+  GlobalOutlined,
   HomeOutlined,
   MobileOutlined,
   MoonOutlined,
@@ -60,6 +61,18 @@ const ADMIN_SETTINGS_ROUTE: MenuDataItem = {
   icon: <SettingOutlined />,
 };
 
+const ADMIN_I18N_ROUTE: MenuDataItem = {
+  path: '/admin/i18n',
+  name: 'sidebar.adminI18n',
+  icon: <GlobalOutlined />,
+};
+
+const ADMIN_USER_IP_WHITELISTS_ROUTE: MenuDataItem = {
+  path: '/admin/user-ip-whitelists',
+  name: 'sidebar.adminUserIpWhitelists',
+  icon: <SafetyOutlined />,
+};
+
 export default function MainLayout() {
   const location = useLocation();
   const { t, i18n: _ } = useTranslation();
@@ -69,6 +82,9 @@ export default function MainLayout() {
   const canViewRoles = user?.permissions?.includes('ROLE.VIEW');
   const canViewSettings = user?.permissions?.includes('SETTING.VIEW');
   const canViewSessions = user?.permissions?.includes('SESSION.VIEW');
+  const canViewI18n = user?.permissions?.includes('I18N.VIEW');
+  const canViewUserIpWhitelists =
+    user?.permissions?.includes('IPWHITELIST.VIEW');
 
   const menuRoutes = useMemo<RouteConfig>(() => {
     const adminRoutes: MenuDataItem[] = [];
@@ -90,11 +106,26 @@ export default function MainLayout() {
       adminRoutes.push(ADMIN_SESSIONS_ROUTE);
     }
 
+    if (canViewI18n) {
+      adminRoutes.push(ADMIN_I18N_ROUTE);
+    }
+
+    if (canViewUserIpWhitelists) {
+      adminRoutes.push(ADMIN_USER_IP_WHITELISTS_ROUTE);
+    }
+
     return {
       path: '/',
       routes: [...BASE_ROUTES, ...adminRoutes],
     };
-  }, [canViewAdminUsers, canViewRoles, canViewSettings]);
+  }, [
+    canViewAdminUsers,
+    canViewRoles,
+    canViewSettings,
+    canViewSessions,
+    canViewI18n,
+    canViewUserIpWhitelists,
+  ]);
 
   const translateMenu = useCallback(
     (items: MenuDataItem[]): MenuDataItem[] =>

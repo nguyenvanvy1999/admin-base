@@ -23,7 +23,7 @@ export const adminUserIpWhitelistController = new Elysia<
   'admin-user-ip-whitelist',
   AppAuthMeta
 >({
-  tags: [DOC_TAG.ADMIN_USER],
+  tags: [DOC_TAG.ADMIN_USER_IP_WHITELIST],
 }).group('/user-ip-whitelists', (app) =>
   app
     .get(

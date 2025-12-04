@@ -6,8 +6,8 @@ export interface I18n {
 }
 
 export interface I18nPaginatedResponse {
-  items: I18n[];
-  total: number;
+  docs: I18n[];
+  count: number;
 }
 
 export interface I18nListParams {

@@ -35,7 +35,8 @@
     "mySessions": "Phiên của tôi",
     "adminSessions": "Quản lý session",
     "adminUsers": "Quản lý user",
-    "adminUserIpWhitelists": "Quản lý IP trắng User",
+    "adminI18n": "Quản lý dịch",
+    "adminUserIpWhitelists": "Quản lý IPWhitelist User",
     "adminRoles": "Quản lý role",
     "adminPermissions": "Quản lý permission",
     "adminSettings": "Quản lý settings"

@@ -35,7 +35,8 @@
     "mySessions": "My sessions",
     "adminSessions": "Session",
     "adminUsers": "Users",
-    "adminUserIpWhitelists": "User IP Whitelists",
+    "adminI18n": "Translations",
+    "adminUserIpWhitelists": "IP Whitelists",
     "adminRoles": "Roles",
     "adminPermissions": "Permissions",
     "adminSettings": "Settings"
