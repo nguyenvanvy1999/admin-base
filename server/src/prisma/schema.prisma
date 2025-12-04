@@ -286,16 +286,6 @@ model I18n {
   @@map("i18n")
 }
 
-// IP addresses allowed to access restricted resources
-model IPWhitelist {
-  id   String  @id
-  ip   String  @unique
-  note String?
-
-  @@index([ip])
-  @@map("ip_whitelist")
-}
-
 // Application configuration settings
 model Setting {
   id          String  @id
@@ -348,7 +338,9 @@ model UserIpWhitelist {
   id      String   @id
   userId  String   @map("user_id")
   ip      String
+  note    String?
   created DateTime @default(now())
+  updated DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

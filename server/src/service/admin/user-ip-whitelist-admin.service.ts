@@ -1,30 +1,36 @@
 import { db, type IDb } from 'src/config/db';
+import type { UserIpWhitelistWhereInput } from 'src/generated';
 import type {
-  CreateUserIpWhitelistDto,
-  UserIpWhitelistListQueryDto,
+  UpsertUserIpWhitelistDto,
+  UserIpWhitelistPaginationDto,
 } from 'src/modules/admin/dtos/user-ip-whitelist.dto';
-import type { ICurrentUser } from 'src/share';
+import { DB_PREFIX, ErrCode, IdUtil, NotFoundErr } from '../../share';
 
 export class UserIpWhitelistAdminService {
   constructor(private readonly deps: { db: IDb }) {}
 
-  async list(
-    query: typeof UserIpWhitelistListQueryDto.static,
-    currentUser: ICurrentUser,
-  ) {
-    const { userIds, ip, take, skip } = query;
-    const where: any = {};
+  async list(query: typeof UserIpWhitelistPaginationDto.static) {
+    const { userIds, userId, ip, search, take = 20, skip = 0 } = query;
+    const where: UserIpWhitelistWhereInput = {};
 
-    const hasViewAll = currentUser.permissions.includes('IPWHITELIST.VIEW');
-
-    if (!hasViewAll) {
-      where.userId = currentUser.id;
-    } else if (userIds) {
-      where.userId = { in: userIds.split(',') };
+    // Filter by user IDs
+    if (userIds?.length) {
+      where.userId = { in: userIds };
+    } else if (userId) {
+      where.userId = userId;
     }
 
+    // Filter by IP (partial match)
     if (ip) {
       where.ip = { contains: ip, mode: 'insensitive' };
+    }
+
+    // Search functionality
+    if (search) {
+      where.OR = [
+        { ip: { contains: search, mode: 'insensitive' } },
+        { note: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     const [docs, count] = await Promise.all([
@@ -33,6 +39,14 @@ export class UserIpWhitelistAdminService {
         orderBy: { created: 'desc' },
         take,
         skip,
+        select: {
+          id: true,
+          ip: true,
+          userId: true,
+          note: true,
+          created: true,
+          updated: true,
+        },
       }),
       this.deps.db.userIpWhitelist.count({ where }),
     ]);
@@ -40,69 +54,79 @@ export class UserIpWhitelistAdminService {
     return { docs, count };
   }
 
-  async upsert(
-    data: typeof CreateUserIpWhitelistDto.static,
-    currentUser: ICurrentUser,
-  ) {
-    const { userId, ip } = data;
-    // Permission check could be here or in controller.
-    // Assuming controller checks IPWHITELIST.UPDATE for general access.
-    // If we want to allow users to upsert their own, we need to check here.
-    const hasUpdate = currentUser.permissions.includes('IPWHITELIST.UPDATE');
-    if (!hasUpdate && userId !== currentUser.id) {
-      throw new Error('Permission denied'); // Or use a specific error class
+  async detail(id: string, userId?: string) {
+    const where: UserIpWhitelistWhereInput = { id };
+
+    if (userId) {
+      where.userId = userId;
     }
 
-    const existing = await this.deps.db.userIpWhitelist.findUnique({
-      where: { user_ip_whitelist_unique: { userId, ip } },
-    });
-
-    if (existing) {
-      // Update? The model doesn't have many fields. Maybe just return it.
-      // Or if we had a note field (which I added to DTO but not sure if in DB).
-      // Checking schema... UserIpWhitelist has: id, userId, ip, created. NO NOTE.
-      // Wait, schema says:
-      // model UserIpWhitelist { ... id, userId, ip, created ... }
-      // model IPWhitelist { ... ip, note ... } -> This is global whitelist?
-      // The requirement says "User IP Whitelist".
-      // I added `note` to DTO but DB doesn't have it.
-      // I should probably remove `note` from DTO or add it to DB?
-      // Requirement: "Upsert ( check quyền)".
-      // If DB doesn't have note, I can't update it.
-      // So Upsert = Create if not exists.
-      return existing;
-    }
-
-    return this.deps.db.userIpWhitelist.create({
-      data: {
-        id: crypto.randomUUID(),
-        userId,
-        ip,
+    const doc = await this.deps.db.userIpWhitelist.findFirst({
+      where,
+      select: {
+        id: true,
+        ip: true,
+        userId: true,
+        note: true,
+        created: true,
+        updated: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
       },
     });
+
+    if (!doc) {
+      throw new NotFoundErr(ErrCode.IPWhitelistNotFound);
+    }
+
+    return doc;
   }
 
-  async removeMany(ids: string[], currentUser: ICurrentUser) {
-    const hasUpdate = currentUser.permissions.includes('IPWHITELIST.UPDATE');
+  async upsert(
+    data: typeof UpsertUserIpWhitelistDto.static,
+    restrictToUserId?: string,
+  ) {
+    const { userId, ip, note, id } = data;
 
-    if (!hasUpdate) {
-      // Only allow deleting own?
-      // Need to check if these IDs belong to user.
-      const items = await this.deps.db.userIpWhitelist.findMany({
-        where: { id: { in: ids } },
-        select: { id: true, userId: true },
-      });
-      for (const item of items) {
-        if (item.userId !== currentUser.id) {
-          throw new Error('Permission denied');
-        }
+    if (id) {
+      const where: UserIpWhitelistWhereInput = { id };
+      if (restrictToUserId) {
+        where.userId = restrictToUserId;
       }
+
+      await this.deps.db.userIpWhitelist.update({
+        where: { id, userId: where.userId },
+        data: { ip, note },
+        select: { id: true },
+      });
+    } else {
+      await this.deps.db.userIpWhitelist.create({
+        data: {
+          id: IdUtil.dbId(DB_PREFIX.IP_WHITELIST),
+          userId,
+          ip,
+          note,
+        },
+        select: { id: true },
+      });
+    }
+  }
+
+  async removeMany(ids: string[], restrictToUserId?: string) {
+    const where: UserIpWhitelistWhereInput = {
+      id: { in: ids },
+    };
+
+    if (restrictToUserId) {
+      where.userId = restrictToUserId;
     }
 
-    return this.deps.db.userIpWhitelist.deleteMany({
-      where: {
-        id: { in: ids },
-      },
+    await this.deps.db.userIpWhitelist.deleteMany({
+      where,
     });
   }
 }

@@ -204,6 +204,7 @@ export enum DB_PREFIX {
   REFERRAL = 'ref',
   I18N = 'i18n',
   ROLE = 'role',
+  IP_WHITELIST = 'ip_wh',
 }
 
 export enum EmailType {

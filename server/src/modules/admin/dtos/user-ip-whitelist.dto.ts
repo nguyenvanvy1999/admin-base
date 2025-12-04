@@ -1,34 +1,47 @@
 import { t } from 'elysia';
-import { PaginationReqDto } from 'src/share';
+import { DtoFields } from 'src/share';
 
-export const UserIpWhitelistDto = t.Object({
-  id: t.String(),
-  userId: t.String(),
-  ip: t.String(),
-  created: t.Date(),
-});
-
-export const UserIpWhitelistListQueryDto = t.Composite([
-  PaginationReqDto,
-  t.Object({
-    userIds: t.Optional(t.String()),
-    ip: t.Optional(t.String()),
-  }),
-]);
-
-export const CreateUserIpWhitelistDto = t.Object({
-  ip: t.String(),
-  userId: t.String(),
+export const UpsertUserIpWhitelistDto = t.Object({
+  id: t.Optional(t.String()),
+  ip: t.String({ minLength: 1 }),
+  userId: t.String({ minLength: 1 }),
   note: t.Optional(t.String()),
 });
 
-export const DeleteUserIpWhitelistDto = t.Object({
-  ids: t.Array(t.String()),
-});
-
-export const UserIpWhitelistResponseDto = t.Object({
+export const UserIpWhitelistItemDto = t.Object({
   id: t.String(),
   ip: t.String(),
   userId: t.String(),
+  note: t.Nullable(t.String()),
   created: t.Date(),
+  updated: t.Date(),
+});
+
+export const PaginateUserIpWhitelistResDto = t.Object({
+  docs: t.Array(UserIpWhitelistItemDto),
+  count: t.Number(),
+});
+
+export const UserIpWhitelistDetailResDto = t.Object({
+  id: t.String(),
+  ip: t.String(),
+  userId: t.String(),
+  note: t.Nullable(t.String()),
+  created: t.Date(),
+  updated: t.Date(),
+  user: t.Optional(
+    t.Object({
+      id: t.String(),
+      email: t.String(),
+    }),
+  ),
+});
+
+export const UserIpWhitelistPaginationDto = t.Object({
+  userId: t.Optional(t.String()),
+  userIds: t.Optional(t.Array(t.String())),
+  ip: t.Optional(t.String()),
+  search: DtoFields.search,
+  take: t.Optional(t.Integer({ minimum: 1, examples: [20], default: 20 })),
+  skip: t.Optional(t.Integer({ minimum: 0, examples: [0], default: 0 })),
 });

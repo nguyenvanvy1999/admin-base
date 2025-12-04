@@ -66,18 +66,8 @@ export const AdminUserListQueryDto = t.Intersect([
       }),
     ),
     search: DtoFields.search,
-    statuses: t.Optional(
-      t.Array(t.Enum(UserStatus), {
-        minItems: 1,
-        maxItems: 25,
-      }),
-    ),
-    roleIds: t.Optional(
-      t.Array(t.String(), {
-        minItems: 1,
-        maxItems: 25,
-      }),
-    ),
+    statuses: t.Optional(t.Array(t.Enum(UserStatus))),
+    roleIds: t.Optional(t.Array(t.String())),
   }),
 ]);
 
