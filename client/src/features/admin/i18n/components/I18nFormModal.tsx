@@ -1,6 +1,7 @@
 import { ProFormText, ProFormTextArea } from '@ant-design/pro-components';
 import { useTranslation } from 'react-i18next';
 import { FormModal } from 'src/components/common/FormModal';
+import { sanitizeFormValues } from 'src/lib/utils/form.utils';
 import type { I18n, I18nUpsertDto } from 'src/types/admin-i18n';
 
 interface I18nFormModalProps {
@@ -24,7 +25,7 @@ export function I18nFormModal({
 
   const handleSubmit = async (values: I18nUpsertDto) => {
     await onSubmit({
-      ...values,
+      ...sanitizeFormValues(values),
       id: i18nEntry?.id,
     });
   };

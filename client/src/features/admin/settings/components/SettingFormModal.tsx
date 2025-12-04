@@ -10,6 +10,7 @@ import type { Rule } from 'antd/es/form';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormModal } from 'src/components/common/FormModal';
+import { sanitizeFormValues } from 'src/lib/utils/form.utils';
 import {
   formatSettingValue,
   parseSettingValue,
@@ -73,8 +74,9 @@ export function SettingFormModal({
     };
   }, [setting]);
 
-  const handleSubmit = async (values: SettingFormValues) => {
+  const handleSubmit = async (rawValues: SettingFormValues) => {
     if (!setting) return;
+    const values = sanitizeFormValues(rawValues);
 
     const isValueMasked = setting.isSecret && setting.value === '************';
     const currentValueInput = values.valueInput;

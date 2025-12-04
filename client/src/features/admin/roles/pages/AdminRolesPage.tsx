@@ -14,6 +14,10 @@ import { createUserSelectColumn } from 'src/features/admin/users/utils/userSelec
 import { useDeleteRoles } from 'src/hooks/api/useAdminRoles';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { useNotify } from 'src/hooks/useNotify';
+import {
+  createSkipFromPagination,
+  getSearchValue,
+} from 'src/lib/utils/table.utils';
 import { adminRolesService } from 'src/services/api/admin-roles.service';
 import type { AdminRole } from 'src/types/admin-roles';
 import type { TableParamsWithFilters } from 'src/types/table';
@@ -161,12 +165,12 @@ export default function AdminRolesPage() {
         }}
         request={async (params) => {
           const { current = 1, pageSize = 20, userId, search } = params;
-          const skip = (current - 1) * pageSize;
+          const skip = createSkipFromPagination(current, pageSize);
           const response = await adminRolesService.list({
             skip,
             take: pageSize,
-            userId: userId?.trim() || undefined,
-            search: search?.trim() || undefined,
+            userId: getSearchValue(userId),
+            search: getSearchValue(search),
           });
           return {
             data: response.docs || [],
