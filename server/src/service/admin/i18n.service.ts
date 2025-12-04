@@ -6,7 +6,7 @@ import {
   type I18nPaginationDto,
   type I18nUpsertDto,
 } from 'src/modules/admin/dtos';
-import { BadReqErr, ErrCode, type IIdsDto } from 'src/share';
+import { BadReqErr, DB_PREFIX, ErrCode, IdUtil, type IIdsDto } from 'src/share';
 import XLSX from 'xlsx';
 
 type ListParams = typeof I18nPaginationDto.static;
@@ -58,7 +58,7 @@ export class I18nService {
       });
     } else {
       await this.deps.db.i18n.create({
-        data: { ...params, id: crypto.randomUUID() },
+        data: { ...params, id: IdUtil.dbId(DB_PREFIX.I18N) },
         select: { id: true },
       });
     }
@@ -117,7 +117,7 @@ export class I18nService {
       this.deps.db.i18n.deleteMany({ where: { key: { in: keys } } }),
       this.deps.db.i18n.createMany({
         data: validatedData.map((data) => ({
-          id: crypto.randomUUID(),
+          id: IdUtil.dbId(DB_PREFIX.I18N),
           key: data.KEY,
           en: data.EN,
           zh: data.ZH,

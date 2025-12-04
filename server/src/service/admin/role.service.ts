@@ -3,7 +3,9 @@ import type { RoleWhereInput } from 'src/generated';
 import type { RolePaginationDto, UpsertRoleDto } from 'src/modules/admin/dtos';
 import {
   BadReqErr,
+  DB_PREFIX,
   ErrCode,
+  IdUtil,
   type IIdsDto,
   NotFoundErr,
   UnAuthErr,
@@ -139,7 +141,7 @@ export class RoleService {
             createMany: {
               skipDuplicates: true,
               data: permissionIds.map((permId) => ({
-                id: crypto.randomUUID(),
+                id: IdUtil.dbId(),
                 permissionId: permId,
               })),
             },
@@ -151,7 +153,7 @@ export class RoleService {
             createMany: {
               skipDuplicates: true,
               data: players.map((player) => ({
-                id: crypto.randomUUID(),
+                id: IdUtil.dbId(),
                 playerId: player.playerId,
                 expiresAt: player.expiresAt ? new Date(player.expiresAt) : null,
               })),
@@ -163,14 +165,14 @@ export class RoleService {
     } else {
       await this.deps.db.role.create({
         data: {
-          id: crypto.randomUUID(),
+          id: IdUtil.dbId(DB_PREFIX.ROLE),
           description,
           title,
           enabled,
           permissions: {
             createMany: {
               data: permissionIds.map((permId) => ({
-                id: crypto.randomUUID(),
+                id: IdUtil.dbId(),
                 permissionId: permId,
               })),
             },
@@ -178,7 +180,7 @@ export class RoleService {
           players: {
             createMany: {
               data: players.map((player) => ({
-                id: crypto.randomUUID(),
+                id: IdUtil.dbId(),
                 playerId: player.playerId,
                 expiresAt: player.expiresAt ? new Date(player.expiresAt) : null,
               })),

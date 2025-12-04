@@ -201,6 +201,8 @@ export enum DB_PREFIX {
   USER_AUTH_PROVIDER = 'user_oauth',
   AUTH_PROVIDER = 'auth_prov',
   REFERRAL = 'ref',
+  I18N = 'i18n',
+  ROLE = 'role',
 }
 
 export enum EmailType {

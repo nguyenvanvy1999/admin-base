@@ -481,7 +481,7 @@ export class AdminUserService {
       if (roles.length > 0) {
         await tx.rolePlayer.createMany({
           data: roles.map((role) => ({
-            id: crypto.randomUUID(),
+            id: IdUtil.dbId(),
             playerId: targetUserId,
             roleId: role.roleId,
             expiresAt: role.expiresAt ?? null,
