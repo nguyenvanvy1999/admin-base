@@ -7,11 +7,11 @@ import { AppTable } from 'src/components/common/AppTable';
 import { useAdminPermissions } from 'src/hooks/api/useAdminPermissions';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import type { AdminPermission } from 'src/types/admin-roles';
+import type { TableParamsWithFilters } from 'src/types/table';
 
-type AdminPermissionTableParams = {
+type AdminPermissionTableParams = TableParamsWithFilters<{
   category?: string[];
-  search?: string;
-};
+}>;
 
 export default function AdminPermissionsPage() {
   const { t } = useTranslation();

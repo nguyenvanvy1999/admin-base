@@ -22,10 +22,11 @@ import {
 } from 'src/hooks/api/useAdminI18n';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import type { I18n } from 'src/types/admin-i18n';
+import type { TableParamsWithFilters } from 'src/types/table';
 
-type AdminI18nTableParams = {
+type AdminI18nTableParams = TableParamsWithFilters<{
   key?: string;
-};
+}>;
 
 export default function AdminI18nPage() {
   const { t } = useTranslation();
@@ -100,7 +101,7 @@ export default function AdminI18nPage() {
   };
 
   const handleExport = async () => {
-    await exportMutation.mutateAsync();
+    await exportMutation.mutateAsync(undefined as never);
   };
 
   const handleImport = async (file: File) => {

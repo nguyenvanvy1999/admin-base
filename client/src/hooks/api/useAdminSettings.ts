@@ -1,10 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNotify } from 'src/hooks/useNotify';
+import { useQuery } from '@tanstack/react-query';
 import {
   adminSettingKeys,
   adminSettingsService,
 } from 'src/services/api/admin-settings.service';
 import type { AdminSetting, UpdateSettingDto } from 'src/types/admin-settings';
+import { type MutationCallbacks, useAppMutation } from './useAppMutation';
 
 export function useAdminSettings() {
   return useQuery<AdminSetting[]>({
@@ -13,41 +13,31 @@ export function useAdminSettings() {
   });
 }
 
-export function useUpdateSetting(options?: { onSuccess?: () => void }) {
-  const queryClient = useQueryClient();
-  const notify = useNotify();
-
-  return useMutation({
+export function useUpdateSetting(options?: MutationCallbacks) {
+  return useAppMutation({
     mutationFn: ({ id, ...data }: { id: string } & UpdateSettingDto) =>
       adminSettingsService.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminSettingKeys.lists() });
-      notify.success('Cập nhật setting thành công');
-      options?.onSuccess?.();
+    invalidateKeys: [adminSettingKeys.lists()],
+    successMessageKey: 'adminSettingPage.messages.updateSuccess',
+    successMessageDefault: 'Cập nhật setting thành công',
+    errorMessageKey: 'adminSettingPage.messages.updateError',
+    errorMessageDefault: 'Có lỗi xảy ra khi cập nhật setting',
+    errorCodeMap: {
+      ERR_ITEM_NOT_FOUND: 'Setting không tồn tại',
+      ERR_BAD_REQUEST: 'Giá trị không hợp lệ. Vui lòng kiểm tra lại định dạng.',
+      ERR_PERMISSION_DENIED: 'Bạn không có quyền thực hiện thao tác này',
     },
-    onError: (error: unknown) => {
-      const code = (error as { response?: { data?: { code?: string } } })
-        ?.response?.data?.code;
-      let message = 'Có lỗi xảy ra khi cập nhật setting';
-
-      if (code === 'ERR_ITEM_NOT_FOUND') {
-        message = 'Setting không tồn tại';
-      } else if (code === 'ERR_BAD_REQUEST') {
-        message = 'Giá trị không hợp lệ. Vui lòng kiểm tra lại định dạng.';
-      } else if (code === 'ERR_PERMISSION_DENIED') {
-        message = 'Bạn không có quyền thực hiện thao tác này';
-      }
-
-      notify.error(message);
-    },
+    ...options,
   });
 }
 
 export function useExportSettings() {
-  const notify = useNotify();
-
-  return useMutation({
+  return useAppMutation({
     mutationFn: () => adminSettingsService.export(),
+    successMessageKey: 'adminSettingPage.messages.exportSuccess',
+    successMessageDefault: 'Export settings thành công',
+    errorMessageKey: 'adminSettingPage.messages.exportError',
+    errorMessageDefault: 'Có lỗi xảy ra khi export settings',
     onSuccess: (data) => {
       const blob = new Blob([JSON.stringify(data, null, 2)], {
         type: 'application/json',
@@ -60,38 +50,23 @@ export function useExportSettings() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      notify.success('Export settings thành công');
-    },
-    onError: () => {
-      notify.error('Có lỗi xảy ra khi export settings');
     },
   });
 }
 
-export function useImportSettings(options?: { onSuccess?: () => void }) {
-  const queryClient = useQueryClient();
-  const notify = useNotify();
-
-  return useMutation({
+export function useImportSettings(options?: MutationCallbacks) {
+  return useAppMutation({
     mutationFn: (data: Record<string, string>) =>
       adminSettingsService.import(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminSettingKeys.lists() });
-      notify.success('Import settings thành công');
-      options?.onSuccess?.();
+    invalidateKeys: [adminSettingKeys.lists()],
+    successMessageKey: 'adminSettingPage.messages.importSuccess',
+    successMessageDefault: 'Import settings thành công',
+    errorMessageKey: 'adminSettingPage.messages.importError',
+    errorMessageDefault: 'Có lỗi xảy ra khi import settings',
+    errorCodeMap: {
+      ERR_BAD_REQUEST: 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại file JSON.',
+      ERR_PERMISSION_DENIED: 'Bạn không có quyền thực hiện thao tác này',
     },
-    onError: (error: unknown) => {
-      const code = (error as { response?: { data?: { code?: string } } })
-        ?.response?.data?.code;
-      let message = 'Có lỗi xảy ra khi import settings';
-
-      if (code === 'ERR_BAD_REQUEST') {
-        message = 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại file JSON.';
-      } else if (code === 'ERR_PERMISSION_DENIED') {
-        message = 'Bạn không có quyền thực hiện thao tác này';
-      }
-
-      notify.error(message);
-    },
+    ...options,
   });
 }

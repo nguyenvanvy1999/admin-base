@@ -13,17 +13,18 @@ import { adminSessionsService } from 'src/services/api/admin-sessions.service';
 import type { AdminSession } from 'src/types/admin-sessions';
 import type { AdminSetting } from 'src/types/admin-settings';
 import { SettingDataType } from 'src/types/admin-settings';
+import type { TableParamsWithFilters } from 'src/types/table';
 import { SessionsTable } from '../components/SessionsTable';
 import { useAdminSessionsPagination } from '../hooks/useAdminSessionsPagination';
 import { useSessionDateRange } from '../hooks/useSessionDateRange';
 import { getSessionStatus } from '../utils/sessionStatus';
 
-type AdminSessionTableParams = {
+type AdminSessionTableParams = TableParamsWithFilters<{
   ip?: string;
   status?: 'all' | 'active' | 'revoked';
   userIds?: string[];
   created?: [dayjs.Dayjs, dayjs.Dayjs];
-};
+}>;
 
 function getSettingValue(
   settings: AdminSetting[],

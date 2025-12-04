@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   type AdminRoleListQuery,
   adminRoleKeys,
@@ -9,6 +9,7 @@ import type {
   AdminRoleListResponse,
   UpsertRoleDto,
 } from 'src/types/admin-roles';
+import { type MutationCallbacks, useAppMutation } from './useAppMutation';
 
 export function useAdminRoles(params?: AdminRoleListQuery) {
   return useQuery<AdminRoleListResponse>({
@@ -31,25 +32,26 @@ export function useAdminRoleDetail(id?: string | null) {
   });
 }
 
-export function useUpsertRole(options?: { onSuccess?: () => void }) {
-  const queryClient = useQueryClient();
-  return useMutation({
+export function useUpsertRole(options?: MutationCallbacks) {
+  return useAppMutation({
     mutationFn: (data: UpsertRoleDto) => adminRolesService.upsert(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminRoleKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: adminRoleKeys.details() });
-      options?.onSuccess?.();
-    },
+    invalidateKeys: [adminRoleKeys.lists(), adminRoleKeys.details()],
+    successMessageKey: 'adminRolesPage.messages.upsertSuccess',
+    successMessageDefault: 'Role saved successfully',
+    errorMessageKey: 'adminRolesPage.messages.upsertError',
+    errorMessageDefault: 'Failed to save role',
+    ...options,
   });
 }
 
-export function useDeleteRoles(options?: { onSuccess?: () => void }) {
-  const queryClient = useQueryClient();
-  return useMutation({
+export function useDeleteRoles(options?: MutationCallbacks) {
+  return useAppMutation({
     mutationFn: (ids: string[]) => adminRolesService.delete(ids),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminRoleKeys.lists() });
-      options?.onSuccess?.();
-    },
+    invalidateKeys: [adminRoleKeys.lists()],
+    successMessageKey: 'adminRolesPage.messages.deleteSuccess',
+    successMessageDefault: 'Roles deleted successfully',
+    errorMessageKey: 'adminRolesPage.messages.deleteError',
+    errorMessageDefault: 'Failed to delete roles',
+    ...options,
   });
 }

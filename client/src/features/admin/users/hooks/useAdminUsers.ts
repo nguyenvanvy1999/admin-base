@@ -1,4 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import {
+  type MutationCallbacks,
+  useAppMutation,
+} from 'src/hooks/api/useAppMutation';
 import {
   adminUserKeys,
   adminUsersService,
@@ -27,25 +31,33 @@ export function useAdminUserDetail(userId?: string, enabled = true) {
   });
 }
 
-export function useCreateAdminUser(options?: {
-  onSuccess?: (res: AdminUserActionResponse) => void;
-}) {
-  const queryClient = useQueryClient();
-  return useMutation({
+export function useCreateAdminUser(
+  options?: MutationCallbacks<
+    AdminUserActionResponse,
+    Error,
+    AdminUserCreatePayload
+  >,
+) {
+  return useAppMutation({
     mutationFn: (payload: AdminUserCreatePayload) =>
       adminUsersService.create(payload),
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: adminUserKeys.lists() });
-      options?.onSuccess?.(response);
-    },
+    invalidateKeys: [adminUserKeys.lists()],
+    successMessageKey: 'adminUsersPage.messages.createSuccess',
+    successMessageDefault: 'User created successfully',
+    errorMessageKey: 'adminUsersPage.messages.createError',
+    errorMessageDefault: 'Failed to create user',
+    ...options,
   });
 }
 
-export function useUpdateAdminUser(options?: {
-  onSuccess?: (res: AdminUserActionResponse) => void;
-}) {
-  const queryClient = useQueryClient();
-  return useMutation({
+export function useUpdateAdminUser(
+  options?: MutationCallbacks<
+    AdminUserActionResponse,
+    Error,
+    { userId: string; payload: AdminUserUpdatePayload }
+  >,
+) {
+  return useAppMutation({
     mutationFn: ({
       userId,
       payload,
@@ -53,21 +65,26 @@ export function useUpdateAdminUser(options?: {
       userId: string;
       payload: AdminUserUpdatePayload;
     }) => adminUsersService.update(userId, payload),
-    onSuccess: (response, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: adminUserKeys.detail(variables.userId),
-      });
-      queryClient.invalidateQueries({ queryKey: adminUserKeys.lists() });
-      options?.onSuccess?.(response);
-    },
+    invalidateKeys: (vars) => [
+      adminUserKeys.detail(vars.userId),
+      adminUserKeys.lists(),
+    ],
+    successMessageKey: 'adminUsersPage.messages.updateSuccess',
+    successMessageDefault: 'User updated successfully',
+    errorMessageKey: 'adminUsersPage.messages.updateError',
+    errorMessageDefault: 'Failed to update user',
+    ...options,
   });
 }
 
-export function useUpdateAdminUserRoles(options?: {
-  onSuccess?: (res: AdminUserActionResponse) => void;
-}) {
-  const queryClient = useQueryClient();
-  return useMutation({
+export function useUpdateAdminUserRoles(
+  options?: MutationCallbacks<
+    AdminUserActionResponse,
+    Error,
+    { userId: string; payload: AdminUserUpdateRolesPayload }
+  >,
+) {
+  return useAppMutation({
     mutationFn: ({
       userId,
       payload,
@@ -75,24 +92,27 @@ export function useUpdateAdminUserRoles(options?: {
       userId: string;
       payload: AdminUserUpdateRolesPayload;
     }) => adminUsersService.updateRoles(userId, payload),
-    onSuccess: (response, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: adminUserKeys.detail(variables.userId),
-      });
-      queryClient.invalidateQueries({ queryKey: adminUserKeys.lists() });
-      options?.onSuccess?.(response);
-    },
+    invalidateKeys: (vars) => [
+      adminUserKeys.detail(vars.userId),
+      adminUserKeys.lists(),
+    ],
+    successMessageKey: 'adminUsersPage.messages.updateRolesSuccess',
+    successMessageDefault: 'User roles updated successfully',
+    errorMessageKey: 'adminUsersPage.messages.updateRolesError',
+    errorMessageDefault: 'Failed to update user roles',
+    ...options,
   });
 }
 
 export function useAdminUserMfaAction(
   action: 'reset' | 'disable',
-  options?: {
-    onSuccess?: (res: AdminUserActionResponse) => void;
-  },
+  options?: MutationCallbacks<
+    AdminUserActionResponse,
+    Error,
+    { userId: string; payload: AdminUserMfaPayload }
+  >,
 ) {
-  const queryClient = useQueryClient();
-  return useMutation({
+  return useAppMutation({
     mutationFn: ({
       userId,
       payload,
@@ -105,11 +125,21 @@ export function useAdminUserMfaAction(
       }
       return adminUsersService.disableMfa(userId, payload);
     },
-    onSuccess: (response, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: adminUserKeys.detail(variables.userId),
-      });
-      options?.onSuccess?.(response);
-    },
+    invalidateKeys: (vars) => [adminUserKeys.detail(vars.userId)],
+    successMessageKey:
+      action === 'reset'
+        ? 'adminUsersPage.messages.resetMfaSuccess'
+        : 'adminUsersPage.messages.disableMfaSuccess',
+    successMessageDefault:
+      action === 'reset'
+        ? 'MFA reset successfully'
+        : 'MFA disabled successfully',
+    errorMessageKey:
+      action === 'reset'
+        ? 'adminUsersPage.messages.resetMfaError'
+        : 'adminUsersPage.messages.disableMfaError',
+    errorMessageDefault:
+      action === 'reset' ? 'Failed to reset MFA' : 'Failed to disable MFA',
+    ...options,
   });
 }

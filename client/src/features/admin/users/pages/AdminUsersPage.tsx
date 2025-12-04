@@ -15,20 +15,23 @@ import {
 } from 'src/components/common/tableColumns';
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
+import {
+  createSkipFromPagination,
+  getSearchValue,
+  normalizeIds,
+} from 'src/lib/utils/table.utils';
 import { adminUsersService } from 'src/services/api/admin-users.service';
 import {
   ADMIN_USER_STATUSES,
   type AdminUserStatus,
   type AdminUserSummary,
 } from 'src/types/admin-users';
+import type { TableParamsWithFilters } from 'src/types/table';
 
-type AdminUserTableParams = {
-  current?: number;
-  pageSize?: number;
-  search?: string;
+type AdminUserTableParams = TableParamsWithFilters<{
   statuses?: AdminUserStatus[];
   roleIds?: string[];
-};
+}>;
 
 function formatStatus(status: AdminUserStatus): string {
   return status.toUpperCase();
@@ -279,17 +282,13 @@ export default function AdminUsersPage() {
             roleIds,
             search: searchParam,
           } = params;
-          const take = pageSize;
-          const skip = (current - 1) * pageSize;
-          const normalizedRoleIds =
-            roleIds?.map((id) => id.trim()).filter(Boolean) ?? [];
+          const skip = createSkipFromPagination(current, pageSize);
           const response = await adminUsersService.list({
             skip,
-            take,
+            take: pageSize,
             statuses,
-            roleIds:
-              normalizedRoleIds.length > 0 ? normalizedRoleIds : undefined,
-            search: searchParam?.trim() || undefined,
+            roleIds: normalizeIds(roleIds),
+            search: getSearchValue(searchParam),
           });
           return {
             data: response.docs,
