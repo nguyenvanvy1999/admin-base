@@ -63,7 +63,6 @@ export default function AdminI18nPage() {
     onSuccess: () => {
       setFormModalOpen(false);
       setEditingI18n(null);
-      reload();
     },
   });
 

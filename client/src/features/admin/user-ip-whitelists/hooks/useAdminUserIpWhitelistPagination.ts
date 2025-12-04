@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useListUserIpWhitelists } from 'src/hooks/api/useAdminUserIpWhitelist';
 import type { UserIpWhitelistListParams } from 'src/types/admin-user-ip-whitelist';
 
@@ -27,8 +27,10 @@ export function useAdminUserIpWhitelistPagination(
     [params, currentPage, currentPageSize],
   );
 
-  const { data, isLoading, isFetching, refetch } =
-    useListUserIpWhitelists(queryParams);
+  const { data, isLoading, isFetching, refetch } = useListUserIpWhitelists(
+    queryParams,
+    { enabled: autoLoad },
+  );
 
   const entries = data?.docs ?? [];
   const total = data?.count ?? 0;
@@ -36,18 +38,22 @@ export function useAdminUserIpWhitelistPagination(
   const goToPage = useCallback(
     async (page: number) => {
       setCurrentPage(page);
-      await refetch();
+      if (!autoLoad) {
+        await refetch();
+      }
     },
-    [refetch],
+    [autoLoad, refetch],
   );
 
   const changePageSize = useCallback(
     async (newPageSize: number) => {
       setCurrentPageSize(newPageSize);
       setCurrentPage(1);
-      await refetch();
+      if (!autoLoad) {
+        await refetch();
+      }
     },
-    [refetch],
+    [autoLoad, refetch],
   );
 
   const reload = useCallback(async () => {
@@ -58,13 +64,6 @@ export function useAdminUserIpWhitelistPagination(
     setParams(newParams);
     setCurrentPage(1);
   }, []);
-
-  useEffect(() => {
-    if (autoLoad) {
-      refetch();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryParams, autoLoad]);
 
   return {
     entries,

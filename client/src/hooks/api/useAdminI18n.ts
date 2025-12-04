@@ -6,10 +6,18 @@ import {
 import type { I18nListParams, I18nUpsertDto } from 'src/types/admin-i18n';
 import { type MutationCallbacks, useAppMutation } from './useAppMutation';
 
-export function useAdminI18nList(params: I18nListParams) {
+interface UseAdminI18nListOptions {
+  enabled?: boolean;
+}
+
+export function useAdminI18nList(
+  params: I18nListParams,
+  options?: UseAdminI18nListOptions,
+) {
   return useQuery({
     queryKey: adminI18nKeys.list(params),
     queryFn: () => adminI18nService.list(params),
+    enabled: options?.enabled,
   });
 }
 

@@ -66,7 +66,10 @@ export function useAdminSessionsPagination(
     created0?: string | null;
     created1?: string | null;
     userIds?: string[] | null;
+    ip?: string | null;
+    revoked?: boolean;
   }>({});
+  const isAutoLoadingRef = useRef(false);
   const hasLoadedOnceRef = useRef(false);
 
   const fetchPage = useCallback(
@@ -195,26 +198,41 @@ export function useAdminSessionsPagination(
       created0: initialParams.created0,
       created1: initialParams.created1,
       userIds: initialParams.userIds,
+      ip: initialParams.ip,
+      revoked: initialParams.revoked,
     };
 
     const hasParamsChanged =
       prevParams.created0 !== currentParams.created0 ||
       prevParams.created1 !== currentParams.created1 ||
+      prevParams.ip !== currentParams.ip ||
+      prevParams.revoked !== currentParams.revoked ||
       JSON.stringify(prevParams.userIds) !==
         JSON.stringify(currentParams.userIds);
 
-    if (!hasLoadedOnceRef.current || hasParamsChanged) {
+    const shouldLoad = !hasLoadedOnceRef.current || hasParamsChanged;
+
+    if (shouldLoad && !isAutoLoadingRef.current) {
       prevParamsRef.current = currentParams;
       hasLoadedOnceRef.current = false;
       setPageCursors(new Map([[1, null]]));
       setCurrentPage(1);
-      void fetchPage(1, null);
+      isAutoLoadingRef.current = true;
+      void (async () => {
+        try {
+          await fetchPage(1, null);
+        } finally {
+          isAutoLoadingRef.current = false;
+        }
+      })();
     }
   }, [
     autoLoad,
     initialParams.created0,
     initialParams.created1,
     initialParams.userIds,
+    initialParams.ip,
+    initialParams.revoked,
     fetchPage,
   ]);
 

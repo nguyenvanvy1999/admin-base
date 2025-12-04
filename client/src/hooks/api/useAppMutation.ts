@@ -3,7 +3,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import { message } from 'antd';
+import { App } from 'antd';
 import { useTranslation } from 'react-i18next';
 
 // Type for mutation callbacks
@@ -64,6 +64,7 @@ export function useAppMutation<
 >(options: AppMutationOptions<TData, TError, TVariables>) {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const { message: messageApi } = App.useApp();
 
   const {
     mutationFn,
@@ -96,7 +97,7 @@ export function useAppMutation<
 
       // Show success message
       if (!skipSuccessMessage && successMessageKey) {
-        message.success(t(successMessageKey, successMessageDefault));
+        messageApi?.success(t(successMessageKey, successMessageDefault));
       }
 
       // Call custom onSuccess
@@ -125,7 +126,7 @@ export function useAppMutation<
           });
         }
 
-        message.error(errorMessage);
+        messageApi?.error(errorMessage);
       }
 
       // Call custom onError

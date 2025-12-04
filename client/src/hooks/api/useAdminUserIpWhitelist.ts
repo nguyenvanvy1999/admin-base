@@ -15,10 +15,18 @@ import type { ListResponse } from 'src/types/api';
 
 export const USER_IP_WHITELIST_QUERY_KEY = 'user-ip-whitelists';
 
-export function useListUserIpWhitelists(params: UserIpWhitelistListParams) {
+interface UseListUserIpWhitelistsOptions {
+  enabled?: boolean;
+}
+
+export function useListUserIpWhitelists(
+  params: UserIpWhitelistListParams,
+  options?: UseListUserIpWhitelistsOptions,
+) {
   return useQuery<ListResponse<UserIpWhitelist>>({
     queryKey: [USER_IP_WHITELIST_QUERY_KEY, params],
     queryFn: () => userIpWhitelistService.list(params),
+    enabled: options?.enabled,
   });
 }
 

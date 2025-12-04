@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useAdminI18nList } from 'src/hooks/api/useAdminI18n';
 import type { I18nListParams } from 'src/types/admin-i18n';
 
@@ -24,8 +24,10 @@ export function useAdminI18nPagination(options: UseAdminI18nPaginationOptions) {
     [params, currentPage, currentPageSize],
   );
 
-  const { data, isLoading, isFetching, refetch } =
-    useAdminI18nList(queryParams);
+  const { data, isLoading, isFetching, refetch } = useAdminI18nList(
+    queryParams,
+    { enabled: autoLoad },
+  );
 
   const i18nEntries = data?.docs ?? [];
   const total = data?.count ?? 0;
@@ -33,18 +35,22 @@ export function useAdminI18nPagination(options: UseAdminI18nPaginationOptions) {
   const goToPage = useCallback(
     async (page: number) => {
       setCurrentPage(page);
-      await refetch();
+      if (!autoLoad) {
+        await refetch();
+      }
     },
-    [refetch],
+    [autoLoad, refetch],
   );
 
   const changePageSize = useCallback(
     async (newPageSize: number) => {
       setCurrentPageSize(newPageSize);
       setCurrentPage(1);
-      await refetch();
+      if (!autoLoad) {
+        await refetch();
+      }
     },
-    [refetch],
+    [autoLoad, refetch],
   );
 
   const reload = useCallback(async () => {
@@ -55,12 +61,6 @@ export function useAdminI18nPagination(options: UseAdminI18nPaginationOptions) {
     setParams(newParams);
     setCurrentPage(1);
   }, []);
-
-  useEffect(() => {
-    if (autoLoad) {
-      refetch();
-    }
-  }, [queryParams, autoLoad, refetch]);
 
   return {
     i18nEntries,
