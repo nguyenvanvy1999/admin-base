@@ -3,7 +3,7 @@ import {
   AuditLogListQueryDto,
   AuditLogListResDto,
 } from 'src/modules/admin/dtos';
-import { auditLogAdminService } from 'src/service/admin/audit-log-admin.service';
+import { auditLogAdminService } from 'src/service/admin';
 import { anyOf, authorize, has } from 'src/service/auth/authorization';
 import {
   type AppAuthMeta,
@@ -13,10 +13,7 @@ import {
   ResWrapper,
 } from 'src/share';
 
-export const adminAuditLogController = new Elysia<
-  'admin-audit-log',
-  AppAuthMeta
->({
+export const adminAuditLogController = new Elysia<'', AppAuthMeta>({
   tags: [DOC_TAG.ADMIN_AUDIT_LOG],
 }).group('/audit-logs', (app) =>
   app

@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { permissionService } from 'src/service/admin/permission.service';
+import { permissionService } from 'src/service/admin';
 import { authorize, has } from 'src/service/auth/authorization';
 import { type AppAuthMeta, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 

@@ -5,7 +5,7 @@ import {
   UserIpWhitelistDetailResDto,
   UserIpWhitelistPaginationDto,
 } from 'src/modules/admin/dtos/user-ip-whitelist.dto';
-import { userIpWhitelistAdminService } from 'src/service/admin/user-ip-whitelist-admin.service';
+import { userIpWhitelistAdminService } from 'src/service/admin';
 import {
   type AppAuthMeta,
   authErrors,

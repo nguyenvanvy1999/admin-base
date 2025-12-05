@@ -4,7 +4,7 @@ import {
   I18nUpsertDto,
   PaginateI18nResDto,
 } from 'src/modules/admin/dtos';
-import { i18nService } from 'src/service/admin/i18n.service';
+import { i18nService } from 'src/service/admin';
 import { authorize, has } from 'src/service/auth/authorization';
 import {
   type AppAuthMeta,

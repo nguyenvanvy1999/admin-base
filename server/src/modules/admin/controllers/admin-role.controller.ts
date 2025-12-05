@@ -5,7 +5,7 @@ import {
   RolePaginationDto,
   UpsertRoleDto,
 } from 'src/modules/admin/dtos';
-import { roleService } from 'src/service/admin/role.service';
+import { roleService } from 'src/service/admin';
 import { allOf, authorize, has } from 'src/service/auth/authorization';
 import {
   type AppAuthMeta,

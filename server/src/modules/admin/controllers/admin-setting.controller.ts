@@ -4,7 +4,7 @@ import {
   SettingResDto,
   UpdateSettingDto,
 } from 'src/modules/admin/dtos';
-import { settingAdminService } from 'src/service/admin/setting-admin.service';
+import { settingAdminService } from 'src/service/admin';
 import { authorize, has } from 'src/service/auth/authorization';
 import {
   type AppAuthMeta,

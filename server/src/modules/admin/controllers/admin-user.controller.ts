@@ -9,7 +9,7 @@ import {
   AdminUserUpdateDto,
   AdminUserUpdateRolesDto,
 } from 'src/modules/admin/dtos';
-import { adminUserService } from 'src/service/admin/user-admin.service';
+import { adminUserService } from 'src/service/admin';
 import { authorize, has } from 'src/service/auth/authorization';
 import {
   type AppAuthMeta,
