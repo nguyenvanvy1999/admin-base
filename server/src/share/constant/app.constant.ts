@@ -158,6 +158,17 @@ export const PERMISSIONS = {
     VIEW: { roles: [defaultRoles.administrator.id] },
     VIEW_ALL: { roles: [defaultRoles.administrator.id] },
   },
+  NOTIFICATION: {
+    CREATE: { roles: [defaultRoles.administrator.id] },
+    UPDATE: { roles: [defaultRoles.administrator.id] },
+    DELETE: { roles: [defaultRoles.administrator.id] },
+    VIEW: { roles: [defaultRoles.administrator.id] },
+  },
+  NOTIFICATION_TEMPLATE: {
+    UPDATE: { roles: [defaultRoles.administrator.id] },
+    DELETE: { roles: [defaultRoles.administrator.id] },
+    VIEW: { roles: [defaultRoles.administrator.id] },
+  },
 };
 
 export enum QueueName {
@@ -210,6 +221,8 @@ export enum DB_PREFIX {
   I18N = 'i18n',
   ROLE = 'role',
   IP_WHITELIST = 'ip_wh',
+  NOTIFICATION = 'notif',
+  NOTIFICATION_TEMPLATE = 'notif_tpl',
 }
 
 export enum EmailType {

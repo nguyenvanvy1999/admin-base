@@ -32,4 +32,7 @@ export enum ErrCode {
   SuspiciousLoginBlocked = 'suspicious-login-blocked',
   TooManyAttempts = 'too-many-attempts',
   IPWhitelistNotFound = 'ip-whitelist-not-found',
+  NotificationNotFound = 'notification-not-found',
+  NotificationTemplateNotFound = 'notification-template-not-found',
+  NotificationTemplateCodeExists = 'notification-template-code-exists',
 }

@@ -1,5 +1,7 @@
 export * from './audit-log.dto';
 export * from './i18n.dto';
+export * from './notification.dto';
+export * from './notification-template.dto';
 export * from './role.dto';
 export * from './session.dto';
 export * from './setting.dto';

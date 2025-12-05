@@ -73,6 +73,22 @@ enum SessionType {
   cli
 }
 
+// Notification types
+enum NotificationType {
+  email
+  sms
+  push
+  in_app
+}
+
+// Notification status
+enum NotificationStatus {
+  pending
+  sent
+  failed
+  read
+}
+
 // ============================================
 // System/Auth Models
 // ============================================
@@ -119,13 +135,15 @@ model User {
   lastFailedLoginAt       DateTime? @map("last_failed_login_at")
   suspiciousActivityCount Int       @default(0) @map("suspicious_activity_count")
 
-  roles          RolePlayer[]
-  sessions       Session[]
-  referralMade   Referral[]         @relation("UserReferrer")
-  referralsGot   Referral[]         @relation("UserReferred")
-  authProviders  UserAuthProvider[]
-  securityEvents SecurityEvent[]
-  ipWhitelist    UserIpWhitelist[]
+  roles                RolePlayer[]
+  sessions             Session[]
+  referralMade         Referral[]         @relation("UserReferrer")
+  referralsGot         Referral[]         @relation("UserReferred")
+  authProviders        UserAuthProvider[]
+  securityEvents       SecurityEvent[]
+  ipWhitelist          UserIpWhitelist[]
+  notifications        Notification[]
+  notificationPreferences Json? @map("notification_preferences")
 
   pendingRef Int @default(0) @map("pending_ref")
   activeRef  Int @default(0) @map("active_ref")
@@ -396,4 +414,54 @@ model AuditLog {
   @@index([traceId], map: "audit_log_trace_id_idx")
   @@index([correlationId], map: "audit_log_correlation_id_idx")
   @@map("audit_logs")
+}
+
+// ============================================
+// Notification System Models
+// ============================================
+
+// Notification templates for reusable notification content
+model NotificationTemplate {
+  id        String   @id
+  code      String   @unique
+  name      String
+  subject   String?
+  body      String
+  type      NotificationType
+  variables Json?
+  enabled   Boolean  @default(true)
+  created   DateTime @default(now())
+  modified  DateTime @updatedAt
+
+  notifications Notification[]
+
+  @@map("notification_templates")
+}
+
+// User notifications
+model Notification {
+  id         String             @id
+  userId     String             @map("user_id")
+  templateId String?             @map("template_id")
+  type       NotificationType
+  status     NotificationStatus @default(pending)
+  subject    String?
+  content    String
+  metadata   Json?
+
+  readAt   DateTime? @map("read_at")
+  sentAt   DateTime? @map("sent_at")
+  failedAt DateTime? @map("failed_at")
+  error    String?
+
+  created  DateTime @default(now())
+  modified DateTime @updatedAt
+
+  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status], name: "notification_user_status_idx")
+  @@index([type], name: "notification_type_idx")
+  @@index([created], name: "notification_created_idx")
+  @@map("notifications")
 }

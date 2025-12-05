@@ -1,0 +1,162 @@
+import { db, type IDb } from 'src/config/db';
+import type { NotificationSelect, NotificationWhereInput } from 'src/generated';
+import type {
+  CreateNotificationDto,
+  NotificationPaginationDto,
+} from 'src/modules/admin/dtos/notification.dto';
+import { DB_PREFIX, ErrCode, IdUtil, NotFoundErr } from '../../share';
+
+const notificationSelect = {
+  id: true,
+  userId: true,
+  templateId: true,
+  type: true,
+  status: true,
+  subject: true,
+  content: true,
+  metadata: true,
+  readAt: true,
+  sentAt: true,
+  failedAt: true,
+  error: true,
+  created: true,
+} satisfies NotificationSelect;
+
+export class NotificationAdminService {
+  constructor(private readonly deps: { db: IDb }) {}
+
+  async list(
+    query: typeof NotificationPaginationDto.static,
+    restrictToUserId?: string,
+  ) {
+    const {
+      userIds,
+      userId,
+      type,
+      status,
+      search,
+      take = 20,
+      skip = 0,
+    } = query;
+    const where: NotificationWhereInput = {};
+
+    if (restrictToUserId) {
+      where.userId = restrictToUserId;
+    } else {
+      if (userIds?.length) {
+        where.userId = { in: userIds };
+      } else if (userId) {
+        where.userId = userId;
+      }
+    }
+
+    if (type) {
+      where.type = type;
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (search) {
+      where.OR = [
+        { subject: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [docs, count] = await Promise.all([
+      this.deps.db.notification.findMany({
+        where,
+        orderBy: { created: 'desc' },
+        take,
+        skip,
+        select: notificationSelect,
+      }),
+      this.deps.db.notification.count({ where }),
+    ]);
+
+    return { docs, count };
+  }
+
+  async detail(id: string, restrictToUserId?: string) {
+    const where: NotificationWhereInput = { id };
+
+    if (restrictToUserId) {
+      where.userId = restrictToUserId;
+    }
+
+    const doc = await this.deps.db.notification.findFirst({
+      where,
+      select: {
+        ...notificationSelect,
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!doc) {
+      throw new NotFoundErr(ErrCode.NotificationNotFound);
+    }
+
+    return doc;
+  }
+
+  async create(data: typeof CreateNotificationDto.static) {
+    const { userId, templateId, type, subject, content, metadata } = data;
+
+    await this.deps.db.notification.create({
+      data: {
+        id: IdUtil.dbId(DB_PREFIX.NOTIFICATION),
+        userId,
+        templateId: templateId || null,
+        type,
+        status: 'pending',
+        subject: subject || null,
+        content,
+        metadata: metadata || null,
+      },
+      select: { id: true },
+    });
+  }
+
+  async removeMany(ids: string[], restrictToUserId?: string) {
+    const where: NotificationWhereInput = {
+      id: { in: ids },
+    };
+
+    if (restrictToUserId) {
+      where.userId = restrictToUserId;
+    }
+
+    await this.deps.db.notification.deleteMany({
+      where,
+    });
+  }
+
+  async markAsRead(ids: string[], restrictToUserId?: string) {
+    const where: NotificationWhereInput = {
+      id: { in: ids },
+    };
+
+    if (restrictToUserId) {
+      where.userId = restrictToUserId;
+    }
+
+    await this.deps.db.notification.updateMany({
+      where,
+      data: {
+        status: 'read',
+        readAt: new Date(),
+      },
+    });
+  }
+}
+
+export const notificationAdminService = new NotificationAdminService({
+  db,
+});
