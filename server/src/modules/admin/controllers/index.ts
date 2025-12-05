@@ -1,4 +1,5 @@
 import { Elysia } from 'elysia';
+import { adminAuditLogController } from 'src/modules/admin/controllers/admin-audit-log.controller';
 import { adminI18nController } from 'src/modules/admin/controllers/admin-i18n.controller';
 import { adminPermissionController } from 'src/modules/admin/controllers/admin-permission.controller';
 import { adminRoleController } from 'src/modules/admin/controllers/admin-role.controller';
@@ -20,4 +21,5 @@ export const adminController = new Elysia({
   .use(adminSettingController)
   .use(adminSessionController)
   .use(adminUserController)
-  .use(adminUserIpWhitelistController);
+  .use(adminUserIpWhitelistController)
+  .use(adminAuditLogController);

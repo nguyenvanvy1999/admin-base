@@ -1,5 +1,4 @@
 import {
-  GithubOutlined,
   GlobalOutlined,
   HomeOutlined,
   MobileOutlined,

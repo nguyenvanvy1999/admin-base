@@ -28,6 +28,7 @@ export enum DOC_TAG {
   ADMIN_SESSION = 'Admin Session',
   ADMIN_TELEGRAM = 'Admin Telegram',
   ADMIN_USER_IP_WHITELIST = 'Admin User IP Whitelist',
+  ADMIN_AUDIT_LOG = 'Admin Audit Log',
 }
 
 export const ACCESS_AUTH = [{ accessToken: [] }];
@@ -135,6 +136,10 @@ export const DOC_OPTIONS = {
     adminSession: {
       name: DOC_TAG.ADMIN_SESSION,
       description: 'Admin session endpoints',
+    },
+    adminAuditLog: {
+      name: DOC_TAG.ADMIN_AUDIT_LOG,
+      description: 'Admin audit log endpoints',
     },
   },
 };

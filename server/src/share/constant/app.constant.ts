@@ -154,6 +154,10 @@ export const PERMISSIONS = {
     DELETE: { roles: [defaultRoles.administrator.id, defaultRoles.user.id] },
     DELETE_ALL: { roles: [defaultRoles.administrator.id] },
   },
+  AUDIT_LOG: {
+    VIEW: { roles: [defaultRoles.administrator.id] },
+    VIEW_ALL: { roles: [defaultRoles.administrator.id] },
+  },
 };
 
 export enum QueueName {

@@ -1,3 +1,4 @@
+export * from './audit-log.dto';
 export * from './i18n.dto';
 export * from './role.dto';
 export * from './session.dto';
