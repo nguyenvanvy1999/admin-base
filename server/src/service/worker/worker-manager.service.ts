@@ -41,6 +41,11 @@ export class WorkerManagerService {
         handler: (jobName: string, data: any) =>
           this.deps.workerService.handleEmailJob(jobName, data),
       },
+      {
+        queue: QueueName.GeoIP,
+        handler: (jobName: string, data: any) =>
+          this.deps.workerService.handleGeoIPJob(jobName, data),
+      },
     ];
   }
 

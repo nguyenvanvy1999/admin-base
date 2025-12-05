@@ -34,8 +34,10 @@ export class ReferralService {
   }
 
   async activeReferral(tx: PrismaTx, referrerId: string): Promise<boolean> {
-    const referral = await tx.referral.findUnique({ where: { referrerId } });
-    if (referral && referral.status === ReferralStatus.inactive) {
+    const referral = await tx.referral.findFirst({
+      where: { referrerId, status: ReferralStatus.inactive },
+    });
+    if (referral) {
       await tx.referral.update({
         where: { id: referral.id },
         data: { status: ReferralStatus.active },

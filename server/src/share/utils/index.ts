@@ -5,6 +5,7 @@ export * from './email.util';
 export * from './id.util';
 export * from './response.util';
 export * from './service-utils';
+export * from './session.util';
 export * from './time.util';
 export * from './value.util';
 

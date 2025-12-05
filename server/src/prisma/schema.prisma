@@ -65,6 +65,14 @@ enum LockoutReason {
   policy_violation
 }
 
+// Session types
+enum SessionType {
+  web
+  mobile
+  api
+  cli
+}
+
 // ============================================
 // System/Auth Models
 // ============================================
@@ -113,7 +121,7 @@ model User {
 
   roles          RolePlayer[]
   sessions       Session[]
-  referralMade   Referral?          @relation("UserReferrer")
+  referralMade   Referral[]         @relation("UserReferrer")
   referralsGot   Referral[]         @relation("UserReferred")
   authProviders  UserAuthProvider[]
   securityEvents SecurityEvent[]
@@ -123,6 +131,11 @@ model User {
   activeRef  Int @default(0) @map("active_ref")
 
   @@index([email], name: "user_email_idx")
+  @@index([status], name: "user_status_idx")
+  @@index([created], name: "user_created_idx")
+  @@index([lastLoginAt], name: "user_lastLoginAt_idx")
+  @@index([refCode], name: "user_refCode_idx")
+  @@index([emailVerified], name: "user_emailVerified_idx")
   @@map("users")
 }
 
@@ -251,15 +264,21 @@ model Session {
   lastActivityAt    DateTime? @map("last_activity_at")
   deviceFingerprint String?   @map("device_fingerprint")
 
+  // Session type and additional tracking
+  sessionType SessionType @default(web) @map("session_type")
+  userAgent   String?     @map("user_agent")
+  location    Json?    
+
   @@index([createdById])
   @@index([lastActivityAt], name: "session_lastActivityAt_idx")
+  @@index([sessionType], name: "session_type_idx")
   @@map("sessions")
 }
 
 // Referral program tracking
 model Referral {
   id         String         @id
-  referrerId String         @unique @map("referrer_id")
+  referrerId String         @map("referrer_id")
   referredId String         @map("referred_id")
   created    DateTime       @default(now())
   status     ReferralStatus @default(inactive)
@@ -267,7 +286,10 @@ model Referral {
   referrer User @relation("UserReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
   referred User @relation("UserReferred", fields: [referredId], references: [id], onDelete: Cascade)
 
-  @@index([referrerId, referredId])
+  @@unique([referrerId, referredId], name: "referral_unique")
+  @@index([referrerId], name: "referral_referrerId_idx")
+  @@index([referredId], name: "referral_referredId_idx")
+  @@index([status], name: "referral_status_idx")
   @@map("referrals")
 }
 

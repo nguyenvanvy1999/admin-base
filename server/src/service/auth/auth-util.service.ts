@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import { type JWTPayload, jwtVerify, SignJWT } from 'jose';
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
+import { geoIPQueue, type IGeoIPQueue } from 'src/config/queue';
 import type { User } from 'src/generated';
 import type { ILoginRes } from 'src/modules/auth/dtos';
 import { EncryptService } from 'src/service/auth/encrypt.service';
@@ -25,6 +26,7 @@ import {
   UnAuthErr,
   type UPermission,
 } from 'src/share';
+import { detectSessionType } from 'src/share/utils/session.util';
 import { timeStringToSeconds } from 'src/share/utils/time.util';
 
 export class TokenService {
@@ -98,11 +100,13 @@ export class UserUtilService {
       tokenService: TokenService;
       sessionService: SessionService;
       settingService: SettingService;
+      geoIPQueue: IGeoIPQueue;
     } = {
       db,
       tokenService,
       sessionService,
       settingService,
+      geoIPQueue,
     },
   ) {}
 
@@ -172,6 +176,8 @@ export class UserUtilService {
           expired: refreshTokenExpirationTime,
           token: refreshToken,
           deviceFingerprint: security?.deviceFingerprint ?? null,
+          sessionType: detectSessionType(userAgent),
+          userAgent: userAgent,
         },
         select: { id: true },
       });
@@ -181,6 +187,11 @@ export class UserUtilService {
         data: { lastLoginAt: new Date() },
         select: { id: true },
       });
+    });
+
+    await this.deps.geoIPQueue.add('update-session-location', {
+      sessionId,
+      ip: clientIp,
     });
 
     const userRes = {

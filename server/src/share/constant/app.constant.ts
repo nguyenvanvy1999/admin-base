@@ -164,6 +164,7 @@ export enum QueueName {
   Email = 'Email',
   AuditLog = 'AuditLog',
   BatchAuditLog = 'BatchAuditLog',
+  GeoIP = 'GeoIP',
 }
 
 export enum SETTING {

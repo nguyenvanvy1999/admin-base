@@ -50,3 +50,21 @@ export const batchLogQueue = new Queue(QueueName.BatchAuditLog, {
   connection: queueConnection,
   defaultJobOptions: queueJobOptions,
 });
+
+export interface GeoIPJobData {
+  sessionId: string;
+  ip: string;
+}
+
+export const geoIPQueue = new Queue<GeoIPJobData>(QueueName.GeoIP, {
+  connection: queueConnection,
+  defaultJobOptions: {
+    ...queueJobOptions,
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 2000,
+    },
+  },
+});
+export type IGeoIPQueue = typeof geoIPQueue;
