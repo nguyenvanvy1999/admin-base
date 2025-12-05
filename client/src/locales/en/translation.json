@@ -82,6 +82,13 @@
       "ip": "IP address",
       "note": "Note",
       "expiresAt": "Expires at",
+      "level": "Level",
+      "logType": "Log type",
+      "sessionId": "Session ID",
+      "traceId": "Trace ID",
+      "correlationId": "Correlation ID",
+      "payload": "Payload",
+      "occurredAt": "Occurred at",
       "description": "Description",
       "enabled": "Enabled",
       "category": "Category",
@@ -130,7 +137,8 @@
     "adminUserIpWhitelists": "IP Whitelists",
     "adminRoles": "Roles",
     "adminPermissions": "Permissions",
-    "adminSettings": "Settings"
+    "adminSettings": "Settings",
+    "adminAuditLogs": "Audit Logs"
   },
   "header": {
     "appName": "Admin Portal",

@@ -82,6 +82,13 @@
       "ip": "Địa chỉ IP",
       "note": "Note",
       "expiresAt": "Hết hạn",
+      "level": "Mức độ",
+      "logType": "Loại log",
+      "sessionId": "Session ID",
+      "traceId": "Trace ID",
+      "correlationId": "Correlation ID",
+      "payload": "Dữ liệu",
+      "occurredAt": "Thời điểm xảy ra",
       "description": "Mô tả",
       "enabled": "Kích hoạt",
       "category": "Danh mục",
@@ -130,7 +137,8 @@
     "adminUserIpWhitelists": "Quản lý IPWhitelist User",
     "adminRoles": "Quản lý role",
     "adminPermissions": "Quản lý permission",
-    "adminSettings": "Quản lý settings"
+    "adminSettings": "Quản lý settings",
+    "adminAuditLogs": "Audit Logs"
   },
   "header": {
     "appName": "Admin Portal",

@@ -39,6 +39,9 @@ const AdminUserIpWhitelistPage = lazy(
       '../features/admin/user-ip-whitelists/pages/AdminUserIpWhitelistPage'
     ),
 );
+const AdminAuditLogPage = lazy(
+  () => import('../features/admin/audit-logs/pages/AdminAuditLogPage'),
+);
 const MySessionsPage = lazy(() => import('./pages/MySessionsPage'));
 
 export function AppRoutes() {
@@ -135,6 +138,17 @@ export function AppRoutes() {
           element={
             <ProtectedRoute requiredPermissions={['IPWHITELIST.VIEW']}>
               <AdminUserIpWhitelistPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/audit-logs"
+          element={
+            <ProtectedRoute
+              requiredPermissions={['AUDIT_LOG.VIEW_ALL', 'AUDIT_LOG.VIEW']}
+              permissionMode="any"
+            >
+              <AdminAuditLogPage />
             </ProtectedRoute>
           }
         />
