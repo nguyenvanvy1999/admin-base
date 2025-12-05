@@ -1,5 +1,5 @@
 import type { RedisClient } from 'bun';
-import { logger } from 'src/config/logger';
+import { type ILogger, logger } from 'src/config/logger';
 import { redis } from 'src/config/redis';
 
 const RELEASE_LOCK_SCRIPT = `
@@ -11,7 +11,10 @@ const RELEASE_LOCK_SCRIPT = `
 `;
 
 export class LockingService {
-  constructor(private readonly r: RedisClient = redis) {}
+  constructor(
+    private readonly r: RedisClient = redis,
+    private readonly l: ILogger = logger,
+  ) {}
 
   async acquire(key: string, ttl: number = 10): Promise<string | null> {
     const lockKey = `lock:${key}`;
@@ -84,7 +87,7 @@ export class LockingService {
       try {
         await this.release(key, lockValue);
       } catch (releaseError) {
-        logger.error(`Failed to release lock ${key}: ${releaseError}`);
+        this.l.error(`Failed to release lock ${key}: ${releaseError}`);
       }
     }
   }

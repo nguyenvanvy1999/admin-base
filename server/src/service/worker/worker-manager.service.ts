@@ -1,6 +1,6 @@
 import { type Job, Worker, type WorkerOptions } from 'bullmq';
 import { env } from 'src/config/env';
-import { logger } from 'src/config/logger';
+import { type ILogger, logger } from 'src/config/logger';
 import { QueueName } from 'src/share';
 import type { WorkerService } from './worker.service';
 import { workerService } from './worker.service';
@@ -15,22 +15,24 @@ export class WorkerManagerService {
     private readonly deps: {
       workerService: WorkerService;
       redisUri: string;
+      logger: ILogger;
     } = {
       workerService,
       redisUri: env.REDIS_URI,
+      logger,
     },
   ) {}
 
   private registerWorkerEvents(name: string, worker: Worker): void {
     worker.on('completed', () =>
-      logger.warning(`${name} worker task completed`),
+      this.deps.logger.warning(`${name} worker task completed`),
     );
     worker.on('failed', (_, error, prev) => {
-      logger.error(`${name} worker failed with error: ${error}`);
-      logger.error(prev);
+      this.deps.logger.error(`${name} worker failed with error: ${error}`);
+      this.deps.logger.error(prev);
     });
     worker.on('error', (err) => {
-      logger.error(`${name} worker error ${err}`);
+      this.deps.logger.error(`${name} worker error ${err}`);
     });
   }
 
@@ -65,14 +67,14 @@ export class WorkerManagerService {
           try {
             await handler(job.name, job.data);
           } catch (err) {
-            logger.error(`Error processing ${queue}: ${err}`);
+            this.deps.logger.error(`Error processing ${queue}: ${err}`);
           }
         },
         queueConfig,
       );
 
       this.registerWorkerEvents(queue, worker);
-      logger.info(`Starting ${queue} worker`);
+      this.deps.logger.info(`Starting ${queue} worker`);
     });
   }
 }

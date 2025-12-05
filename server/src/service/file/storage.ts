@@ -89,34 +89,38 @@ export interface S3StorageDependencies {
   };
 }
 
-const s3StorageDeps = {
-  ...sharedDeps,
-  s3Client: (() => {
-    if (
-      !env.S3_ACCESS_KEY ||
-      !env.S3_BUCKET ||
-      !env.S3_ENDPOINT ||
-      !env.S3_SECRET_KEY
-    ) {
-      logger.warning('Missing S3 configuration');
-      return undefined;
-    }
-    return new S3Client({
-      endpoint: env.S3_ENDPOINT,
-      accessKeyId: env.S3_ACCESS_KEY,
-      secretAccessKey: env.S3_SECRET_KEY,
-      region: env.S3_REGION ?? 'default',
-    });
-  })(),
-  logger,
-  env: {
-    S3_ACCESS_KEY: env.S3_ACCESS_KEY,
-    S3_BUCKET: env.S3_BUCKET,
-    S3_ENDPOINT: env.S3_ENDPOINT,
-    S3_SECRET_KEY: env.S3_SECRET_KEY,
-    S3_REGION: env.S3_REGION,
-  },
-} as const satisfies S3StorageDependencies;
+const createS3StorageDeps = (loggerInstance: ILogger = logger) => {
+  return {
+    ...sharedDeps,
+    s3Client: (() => {
+      if (
+        !env.S3_ACCESS_KEY ||
+        !env.S3_BUCKET ||
+        !env.S3_ENDPOINT ||
+        !env.S3_SECRET_KEY
+      ) {
+        loggerInstance.warning('Missing S3 configuration');
+        return undefined;
+      }
+      return new S3Client({
+        endpoint: env.S3_ENDPOINT,
+        accessKeyId: env.S3_ACCESS_KEY,
+        secretAccessKey: env.S3_SECRET_KEY,
+        region: env.S3_REGION ?? 'default',
+      });
+    })(),
+    logger: loggerInstance,
+    env: {
+      S3_ACCESS_KEY: env.S3_ACCESS_KEY,
+      S3_BUCKET: env.S3_BUCKET,
+      S3_ENDPOINT: env.S3_ENDPOINT,
+      S3_SECRET_KEY: env.S3_SECRET_KEY,
+      S3_REGION: env.S3_REGION,
+    },
+  } as const satisfies S3StorageDependencies;
+};
+
+const s3StorageDeps = createS3StorageDeps();
 
 export class FileStorageBackend implements IStorageBackend {
   constructor(

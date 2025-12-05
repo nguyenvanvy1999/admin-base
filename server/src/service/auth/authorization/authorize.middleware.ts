@@ -1,11 +1,12 @@
 import { Elysia } from 'elysia';
-import { logger } from 'src/config/logger';
+import { type ILogger, logger } from 'src/config/logger';
 import { type AppAuthMeta, ErrCode, UnAuthErr } from 'src/share';
 import type { AuthorizeOptions, Policy, PolicyCtx } from './policy-types';
 
 export function authorize<TResource>(
   policy: Policy<TResource>,
   options?: AuthorizeOptions<TResource>,
+  loggerInstance: ILogger = logger,
 ) {
   return new Elysia<'', AppAuthMeta>()
     .derive(
@@ -34,7 +35,7 @@ export function authorize<TResource>(
         try {
           await options?.onDeny?.({ ctx });
         } catch (error) {
-          logger.warning(`Error in onDeny handler: ${error}`);
+          loggerInstance.warning(`Error in onDeny handler: ${error}`);
         }
         throw new UnAuthErr(ErrCode.PermissionDenied);
       }

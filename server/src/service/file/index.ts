@@ -1,6 +1,6 @@
 import process from 'node:process';
 import { env } from 'src/config/env';
-import { logger } from 'src/config/logger';
+import { type ILogger, logger } from 'src/config/logger';
 import type { IDownloadRes, IStorageBackend } from 'src/share';
 import { FileStorageBackend, S3StorageBackend } from './storage';
 
@@ -20,9 +20,14 @@ export interface StorageManagerOptions {
 export class StorageManager implements IStorageBackend {
   private backend: IStorageBackend | null = null;
   private readonly mode: StorageMode;
+  private readonly logger: ILogger;
 
-  constructor(options?: StorageManagerOptions) {
+  constructor(
+    options?: StorageManagerOptions,
+    loggerInstance: ILogger = logger,
+  ) {
     this.mode = options?.mode ?? 'file';
+    this.logger = loggerInstance;
     if (options?.backend) {
       this.backend = options.backend;
     } else {
@@ -46,11 +51,11 @@ export class StorageManager implements IStorageBackend {
   private buildBackendPreferS3(): IStorageBackend {
     try {
       const s3 = new S3StorageBackend();
-      logger.info('Using S3StorageBackend');
+      this.logger.info('Using S3StorageBackend');
       return s3;
     } catch (e) {
-      logger.error(`S3StorageBackend failed: ${e}`);
-      logger.info('Using FileStorageBackend');
+      this.logger.error(`S3StorageBackend failed: ${e}`);
+      this.logger.info('Using FileStorageBackend');
       return new FileStorageBackend();
     }
   }
