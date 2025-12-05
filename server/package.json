@@ -8,6 +8,7 @@
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
     "start:server:dev": "bun --env-file=../.env --env-file=.env --watch src/app/backend/index.ts",
+    "start:dev": "bun --env-file=../.env --env-file=.env --watch src/app/dev-runner.ts",
     "build:server": "bun build --compile --minify-whitespace --minify-syntax --target bun --outfile app_server ./src/app/server/index.ts",
     "start:server:prod": "bun run build:server && ./app_server",
     "db:migrate": "bunx prisma migrate dev --create-only --name init",

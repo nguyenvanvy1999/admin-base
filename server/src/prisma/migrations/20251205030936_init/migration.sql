@@ -16,6 +16,9 @@ CREATE TYPE "SecurityEventType" AS ENUM ('login_failed', 'password_changed', 'mf
 -- CreateEnum
 CREATE TYPE "LockoutReason" AS ENUM ('brute_force', 'suspicious_activity', 'admin_action', 'policy_violation');
 
+-- CreateEnum
+CREATE TYPE "SessionType" AS ENUM ('web', 'mobile', 'api', 'cli');
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
@@ -138,6 +141,9 @@ CREATE TABLE "sessions" (
     "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "last_activity_at" TIMESTAMP(3),
     "device_fingerprint" TEXT,
+    "session_type" "SessionType" NOT NULL DEFAULT 'web',
+    "user_agent" TEXT,
+    "location" JSONB,
 
     CONSTRAINT "sessions_pkey" PRIMARY KEY ("id")
 );
@@ -249,6 +255,21 @@ CREATE UNIQUE INDEX "users_password_reset_token_key" ON "users"("password_reset_
 CREATE INDEX "user_email_idx" ON "users"("email");
 
 -- CreateIndex
+CREATE INDEX "user_status_idx" ON "users"("status");
+
+-- CreateIndex
+CREATE INDEX "user_created_idx" ON "users"("created");
+
+-- CreateIndex
+CREATE INDEX "user_lastLoginAt_idx" ON "users"("last_login_at");
+
+-- CreateIndex
+CREATE INDEX "user_refCode_idx" ON "users"("ref_code");
+
+-- CreateIndex
+CREATE INDEX "user_emailVerified_idx" ON "users"("email_verified");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "auth_providers_name_key" ON "auth_providers"("name");
 
 -- CreateIndex
@@ -303,10 +324,19 @@ CREATE INDEX "sessions_created_by_id_idx" ON "sessions"("created_by_id");
 CREATE INDEX "session_lastActivityAt_idx" ON "sessions"("last_activity_at");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "referrals_referrer_id_key" ON "referrals"("referrer_id");
+CREATE INDEX "session_type_idx" ON "sessions"("session_type");
 
 -- CreateIndex
-CREATE INDEX "referrals_referrer_id_referred_id_idx" ON "referrals"("referrer_id", "referred_id");
+CREATE INDEX "referral_referrerId_idx" ON "referrals"("referrer_id");
+
+-- CreateIndex
+CREATE INDEX "referral_referredId_idx" ON "referrals"("referred_id");
+
+-- CreateIndex
+CREATE INDEX "referral_status_idx" ON "referrals"("status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "referrals_referrer_id_referred_id_key" ON "referrals"("referrer_id", "referred_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "i18n_key_key" ON "i18n"("key");

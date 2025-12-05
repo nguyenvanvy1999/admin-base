@@ -8,7 +8,7 @@
   ],
   "packageManager": "bun@1.3.3",
   "scripts": {
-    "dev:server": "bun run --cwd server start:server:dev",
+    "dev:server": "bun run --cwd server start:dev",
     "dev:client": "bun run --cwd client dev",
     "build:server": "bun run --cwd server build:server",
     "build:client": "bun run --cwd client build",
