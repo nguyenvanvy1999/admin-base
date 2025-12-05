@@ -31,6 +31,7 @@ interface BufferedLog {
 
 export class AuditLogWorkerService {
   private db: SQL;
+  private readonly contextLogger: ReturnType<typeof logger.with>;
 
   constructor(
     private readonly deps: {
@@ -48,6 +49,7 @@ export class AuditLogWorkerService {
     },
   ) {
     this.db = new SQL(this.deps.dbUri);
+    this.contextLogger = logger.with({ workerName: WORKER_NAME });
   }
 
   private async flushBatchToDB(jobs: Job<AuditLogEntry>[]): Promise<void> {
@@ -82,8 +84,8 @@ export class AuditLogWorkerService {
       });
     } catch (err: unknown) {
       if (err instanceof SQL.PostgresError) {
-        logger.error(
-          `[${WORKER_NAME}] Postgres error during flush: ${err.message} {*}`,
+        this.contextLogger.error(
+          `Postgres error during flush: ${err.message} {*}`,
           {
             pgCode: err.code,
             detail: err.detail,
@@ -94,7 +96,7 @@ export class AuditLogWorkerService {
           },
         );
       } else {
-        logger.error(`[${WORKER_NAME}] Unknown DB error during flush`, { err });
+        this.contextLogger.error(`Unknown DB error during flush`, { err });
       }
       throw err;
     }
@@ -114,11 +116,11 @@ export class AuditLogWorkerService {
       await Promise.all(waitingJobs.map((job) => job.remove()));
 
       const duration = Date.now() - startTime;
-      logger.info(
-        `[${WORKER_NAME}] Batch processing completed: ${waitingJobs.length} jobs in ${duration}ms`,
+      this.contextLogger.info(
+        `Batch processing completed: ${waitingJobs.length} jobs in ${duration}ms`,
       );
     } catch (err) {
-      logger.error(`[${WORKER_NAME}] Scheduled flush failed ${err}`);
+      this.contextLogger.error(`Scheduled flush failed ${err}`);
       throw err;
     }
   }
@@ -139,11 +141,11 @@ export class AuditLogWorkerService {
     );
 
     worker.on('failed', (job: Job | undefined, err: Error) => {
-      logger.error(`[${WORKER_NAME}] Job failed: ${job?.id}`, { err });
+      this.contextLogger.error(`Job failed: ${job?.id}`, { err });
     });
 
     worker.on('error', (err: Error) => {
-      logger.error(`[${WORKER_NAME}] Worker error`, { err });
+      this.contextLogger.error(`Worker error`, { err });
     });
 
     return worker;
@@ -159,24 +161,24 @@ export class AuditLogWorkerService {
       },
     );
 
-    logger.info(
-      `[${WORKER_NAME}] Scheduled flush configured: every ${this.deps.flushIntervalMs}ms`,
+    this.contextLogger.info(
+      `Scheduled flush configured: every ${this.deps.flushIntervalMs}ms`,
     );
   }
 
   private async gracefulShutdown(): Promise<void> {
-    logger.info(`[${WORKER_NAME}] Graceful shutdown initiated`);
+    this.contextLogger.info(`Graceful shutdown initiated`);
 
     try {
       await this.processScheduledFlush();
     } catch (err) {
-      logger.error(`[${WORKER_NAME}] Final flush error`, { err });
+      this.contextLogger.error(`Final flush error`, { err });
     }
 
     try {
       await this.db.close();
     } catch (err) {
-      logger.warning(`[${WORKER_NAME}] DB close error`, { err });
+      this.contextLogger.warning(`DB close error`, { err });
     }
 
     process.exit(0);
@@ -190,7 +192,7 @@ export class AuditLogWorkerService {
 
     const worker = this.createWorker();
 
-    logger.info(`[${WORKER_NAME}] Audit log worker started`, {});
+    this.contextLogger.info(`Audit log worker started`);
 
     return worker;
   }
