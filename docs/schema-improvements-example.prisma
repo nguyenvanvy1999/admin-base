@@ -1,0 +1,512 @@
+// ============================================
+// SCHEMA IMPROVEMENTS - EXAMPLE
+// ============================================
+// File này chứa các cải thiện đề xuất cho schema.prisma
+// KHÔNG thay thế schema.prisma hiện tại
+// Chỉ dùng để tham khảo khi implement
+
+// ============================================
+// 1. IMPROVED USER MODEL
+// ============================================
+
+model User {
+  id        String     @id
+  email     String     @unique
+  status    UserStatus @default(inactive)
+  protected Boolean    @default(false)
+
+  password             String
+  passwordExpired      DateTime? @default(now()) @map("password_expired")
+  passwordCreated      DateTime? @default(now()) @map("password_created")
+  passwordAttempt      Int       @default(0) @map("password_attempt")
+  lastPasswordChangeAt DateTime? @map("last_password_change_at")
+
+  name     String?
+  settings Json?
+
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+  lastLoginAt DateTime? @map("last_login_at")
+  refCode     String?   @unique @map("ref_code")
+  
+  // NEW: Soft delete
+  deletedAt DateTime? @map("deleted_at")
+
+  mfaTotpEnabled  Boolean @default(false) @map("mfa_totp_enabled")
+  totpSecret      String? @map("totp_secret")
+  backupCodes     String? @map("backup_codes")
+  backupCodesUsed String? @map("backup_codes_used")
+
+  emailVerified          Boolean @default(false) @map("email_verified")
+  emailVerificationToken String? @unique @map("email_verification_token")
+
+  lockoutUntil  DateTime?      @map("lockout_until")
+  lockoutReason LockoutReason? @map("lockout_reason")
+
+  passwordResetToken          String?   @unique @map("password_reset_token")
+  passwordResetTokenExpiresAt DateTime? @map("password_reset_token_expires_at")
+
+  lastFailedLoginAt       DateTime? @map("last_failed_login_at")
+  suspiciousActivityCount Int       @default(0) @map("suspicious_activity_count")
+
+  // NEW: Notification preferences
+  notificationPreferences Json? @map("notification_preferences")
+
+  roles          RolePlayer[]
+  sessions       Session[]
+  referralMade   Referral?          @relation("UserReferrer")
+  referralsGot   Referral[]         @relation("UserReferred")
+  authProviders  UserAuthProvider[]
+  securityEvents SecurityEvent[]
+  ipWhitelist    UserIpWhitelist[]
+  
+  // NEW: Relations
+  notifications Notification[]
+  activities    Activity[]
+  files         File[]
+  apiKeys       ApiKey[]
+  dataExports   DataExport[]
+
+  pendingRef Int @default(0) @map("pending_ref")
+  activeRef  Int @default(0) @map("active_ref")
+
+  @@index([email], name: "user_email_idx")
+  @@index([status], name: "user_status_idx")
+  @@index([created], name: "user_created_idx")
+  @@index([lastLoginAt], name: "user_lastLoginAt_idx")
+  @@index([refCode], name: "user_refCode_idx")
+  @@index([emailVerified], name: "user_emailVerified_idx")
+  @@index([deletedAt], name: "user_deletedAt_idx")
+  @@map("users")
+}
+
+// ============================================
+// 2. IMPROVED SESSION MODEL
+// ============================================
+
+enum SessionType {
+  web
+  mobile
+  api
+  cli
+}
+
+model Session {
+  id          String   @id
+  device      String
+  ip          String
+  token       String   @unique()
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById String   @map("created_by_id")
+  expired     DateTime
+  revoked     Boolean  @default(false)
+  modified    DateTime @updatedAt()
+  created     DateTime @default(now())
+
+  lastActivityAt    DateTime? @map("last_activity_at")
+  deviceFingerprint String?   @map("device_fingerprint")
+  
+  // NEW: Additional fields
+  sessionType           SessionType @default(web) @map("session_type")
+  userAgent             String?     @map("user_agent")
+  location              Json?       // { country, city, lat, lng }
+  refreshToken          String?     @unique @map("refresh_token")
+  refreshTokenExpiresAt DateTime?   @map("refresh_token_expires_at")
+
+  // NEW: Relations
+  activities Activity[]
+
+  @@index([createdById])
+  @@index([lastActivityAt], name: "session_lastActivityAt_idx")
+  @@index([sessionType], name: "session_type_idx")
+  @@index([refreshToken], name: "session_refreshToken_idx")
+  @@map("sessions")
+}
+
+// ============================================
+// 3. IMPROVED REFERRAL MODEL
+// ============================================
+
+enum ReferralRewardStatus {
+  pending
+  approved
+  paid
+  cancelled
+}
+
+model Referral {
+  id         String         @id
+  referrerId String         @map("referrer_id")
+  referredId String         @map("referred_id")
+  created    DateTime       @default(now())
+  status     ReferralStatus @default(inactive)
+
+  referrer User @relation("UserReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referred User @relation("UserReferred", fields: [referredId], references: [id], onDelete: Cascade)
+
+  // NEW: Rewards tracking
+  rewardAmount    Decimal?              @map("reward_amount")
+  rewardStatus    ReferralRewardStatus? @map("reward_status")
+  rewardPaidAt    DateTime?             @map("reward_paid_at")
+  level           Int                   @default(1) // Multi-level support
+
+  @@unique([referrerId, referredId], name: "referral_unique")
+  @@index([referrerId], name: "referral_referrerId_idx")
+  @@index([referredId], name: "referral_referredId_idx")
+  @@index([status], name: "referral_status_idx")
+  @@index([rewardStatus], name: "referral_rewardStatus_idx")
+  @@map("referrals")
+}
+
+// ============================================
+// 4. NOTIFICATION SYSTEM
+// ============================================
+
+enum NotificationType {
+  email
+  sms
+  push
+  in_app
+}
+
+enum NotificationStatus {
+  pending
+  sent
+  failed
+  read
+}
+
+model NotificationTemplate {
+  id          String           @id
+  code        String           @unique
+  name        String
+  subject     String?
+  body        String
+  type        NotificationType
+  variables   Json?            // Template variables
+  enabled     Boolean          @default(true)
+  created     DateTime         @default(now())
+  modified    DateTime         @updatedAt
+
+  notifications Notification[]
+
+  @@map("notification_templates")
+}
+
+model Notification {
+  id        String            @id
+  userId    String            @map("user_id")
+  templateId String?          @map("template_id")
+  type      NotificationType
+  status    NotificationStatus @default(pending)
+  subject   String?
+  content   String
+  metadata  Json?
+  
+  readAt    DateTime?        @map("read_at")
+  sentAt    DateTime?        @map("sent_at")
+  failedAt  DateTime?        @map("failed_at")
+  error     String?
+  
+  created   DateTime         @default(now())
+  modified  DateTime         @updatedAt
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status], name: "notification_user_status_idx")
+  @@index([type], name: "notification_type_idx")
+  @@index([created], name: "notification_created_idx")
+  @@map("notifications")
+}
+
+// ============================================
+// 5. ACTIVITY LOG
+// ============================================
+
+enum ActivityType {
+  login
+  logout
+  profile_update
+  password_change
+  role_assigned
+  permission_granted
+  data_created
+  data_updated
+  data_deleted
+  file_uploaded
+  file_downloaded
+}
+
+model Activity {
+  id          String       @id
+  userId      String?      @map("user_id")
+  sessionId   String?      @map("session_id")
+  activityType ActivityType @map("activity_type")
+  entityType  String?      @map("entity_type") // "user", "role", etc.
+  entityId    String?     @map("entity_id")
+  description String
+  metadata    Json?
+  ip          String?
+  userAgent   String?      @map("user_agent")
+  created     DateTime     @default(now())
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, created(sort: Desc)], name: "activity_user_created_idx")
+  @@index([activityType], name: "activity_type_idx")
+  @@index([entityType, entityId], name: "activity_entity_idx")
+  @@index([created], name: "activity_created_idx")
+  @@map("activities")
+}
+
+// ============================================
+// 6. FILE MANAGEMENT
+// ============================================
+
+enum FileStatus {
+  uploading
+  active
+  archived
+  deleted
+}
+
+model File {
+  id          String     @id
+  userId      String?    @map("user_id")
+  filename    String
+  originalName String    @map("original_name")
+  mimeType    String     @map("mime_type")
+  size        BigInt
+  path        String
+  url         String?
+  status      FileStatus @default(active)
+  metadata    Json?      // { width, height, duration, etc. }
+  
+  // Security
+  isPublic    Boolean    @default(false) @map("is_public")
+  accessToken String?    @unique @map("access_token")
+  
+  // Versioning
+  version     Int        @default(1)
+  parentId    String?    @map("parent_id")
+  parent      File?      @relation("FileVersions", fields: [parentId], references: [id], onDelete: SetNull)
+  versions    File[]     @relation("FileVersions")
+  
+  created     DateTime   @default(now())
+  modified    DateTime   @updatedAt
+  deletedAt   DateTime?  @map("deleted_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId], name: "file_userId_idx")
+  @@index([status], name: "file_status_idx")
+  @@index([mimeType], name: "file_mimeType_idx")
+  @@index([created], name: "file_created_idx")
+  @@map("files")
+}
+
+// ============================================
+// 7. RATE LIMITING
+// ============================================
+
+enum RateLimitType {
+  api
+  login
+  password_reset
+  email_verification
+  file_upload
+}
+
+model RateLimit {
+  id          String         @id
+  identifier  String         // userId, IP, email, etc.
+  type        RateLimitType
+  count       Int            @default(0)
+  limit       Int
+  windowStart DateTime       @map("window_start")
+  windowEnd   DateTime       @map("window_end")
+  blocked     Boolean        @default(false)
+  blockedUntil DateTime?     @map("blocked_until")
+  created     DateTime       @default(now())
+  modified    DateTime       @updatedAt
+
+  @@unique([identifier, type, windowStart], name: "rate_limit_unique")
+  @@index([identifier, type], name: "rate_limit_identifier_type_idx")
+  @@index([blocked], name: "rate_limit_blocked_idx")
+  @@index([windowEnd], name: "rate_limit_windowEnd_idx")
+  @@map("rate_limits")
+}
+
+// ============================================
+// 8. API KEY MANAGEMENT
+// ============================================
+
+enum ApiKeyStatus {
+  active
+  revoked
+  expired
+}
+
+model ApiKey {
+  id          String        @id
+  userId      String        @map("user_id")
+  name        String
+  key         String        @unique // Hashed
+  keyPrefix   String        @map("key_prefix") // First 8 chars for display
+  status      ApiKeyStatus  @default(active)
+  lastUsedAt  DateTime?     @map("last_used_at")
+  expiresAt   DateTime?     @map("expires_at")
+  permissions Json?         // Scoped permissions
+  ipWhitelist String[]?     @map("ip_whitelist")
+  metadata    Json?
+  created     DateTime      @default(now())
+  modified    DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "api_key_userId_idx")
+  @@index([status], name: "api_key_status_idx")
+  @@index([keyPrefix], name: "api_key_prefix_idx")
+  @@map("api_keys")
+}
+
+// ============================================
+// 9. IMPROVED SECURITY EVENT
+// ============================================
+
+enum SecurityEventSeverity {
+  low
+  medium
+  high
+  critical
+}
+
+// Extended enum (add to existing)
+enum SecurityEventType {
+  login_failed
+  login_success
+  password_changed
+  password_reset_requested
+  password_reset_completed
+  mfa_enabled
+  mfa_disabled
+  mfa_verified
+  mfa_failed
+  account_locked
+  account_unlocked
+  suspicious_activity
+  ip_changed
+  device_changed
+  permission_escalation
+  api_key_created
+  api_key_revoked
+  data_exported
+  bulk_operation
+}
+
+model SecurityEvent {
+  id        String                @id
+  userId    String?               @map("user_id")
+  eventType SecurityEventType     @map("event_type")
+  severity  SecurityEventSeverity @default(medium)
+  ip        String?
+  userAgent String?               @map("user_agent")
+  location  Json?                 // GeoIP data
+  metadata  Json?
+  resolved  Boolean               @default(false)
+  resolvedAt DateTime?            @map("resolved_at")
+  resolvedBy String?              @map("resolved_by")
+  created   DateTime              @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId], name: "security_event_userId_idx")
+  @@index([eventType], name: "security_event_eventType_idx")
+  @@index([severity], name: "security_event_severity_idx")
+  @@index([resolved], name: "security_event_resolved_idx")
+  @@index([created], name: "security_event_created_idx")
+  @@map("security_events")
+}
+
+// ============================================
+// 10. DATA EXPORT
+// ============================================
+
+enum ExportStatus {
+  pending
+  processing
+  completed
+  failed
+}
+
+enum ExportFormat {
+  json
+  csv
+  xlsx
+  pdf
+}
+
+model DataExport {
+  id          String       @id
+  userId      String       @map("user_id")
+  format      ExportFormat
+  status      ExportStatus
+  filters     Json?        // What data to export
+  fileId      String?      @map("file_id")
+  error       String?
+  requestedAt DateTime     @default(now()) @map("requested_at")
+  completedAt DateTime?    @map("completed_at")
+  expiresAt   DateTime?    @map("expires_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "data_export_userId_idx")
+  @@index([status], name: "data_export_status_idx")
+  @@map("data_exports")
+}
+
+// ============================================
+// 11. IMPROVED SETTING MODEL
+// ============================================
+
+model Setting {
+  id          String         @id
+  key         String         @unique
+  value       String
+  description String?
+  category    String?        // "security", "email", "payment", etc.
+  isSecret    Boolean        @default(false) @map("is_secret")
+  type        SettingDataType @default(string)
+  validation  Json?          // Validation rules
+  defaultValue String?       @map("default_value")
+  version     Int            @default(1)
+  modifiedBy  String?        @map("modified_by")
+  created     DateTime       @default(now())
+  modified    DateTime       @updatedAt
+
+  @@index([key])
+  @@index([category], name: "setting_category_idx")
+  @@map("settings")
+}
+
+// ============================================
+// 12. IMPROVED I18N MODEL
+// ============================================
+
+model I18n {
+  id        String  @id
+  key       String
+  namespace String? @default("common")
+  locale    String  // "en", "vi", "ja", etc.
+  value     String
+  metadata  Json?   // { context, plural, etc. }
+
+  @@unique([key, locale, namespace], name: "i18n_unique")
+  @@index([key])
+  @@index([locale], name: "i18n_locale_idx")
+  @@index([namespace], name: "i18n_namespace_idx")
+  @@map("i18n")
+}
+
