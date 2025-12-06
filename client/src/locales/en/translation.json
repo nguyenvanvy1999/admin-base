@@ -90,6 +90,8 @@
       "payload": "Payload",
       "occurredAt": "Occurred at",
       "description": "Description",
+      "entityType": "Entity type",
+      "entityId": "Entity ID",
       "enabled": "Enabled",
       "category": "Category",
       "action": "Action",

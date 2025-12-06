@@ -1,6 +1,7 @@
 export * from './amount.util';
 export * from './array.util';
 export * from './async.util';
+export * from './audit-log.util';
 export * from './email.util';
 export * from './id.util';
 export * from './response.util';

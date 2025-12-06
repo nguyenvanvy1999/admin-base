@@ -19,6 +19,12 @@ CREATE TYPE "LockoutReason" AS ENUM ('brute_force', 'suspicious_activity', 'admi
 -- CreateEnum
 CREATE TYPE "SessionType" AS ENUM ('web', 'mobile', 'api', 'cli');
 
+-- CreateEnum
+CREATE TYPE "NotificationType" AS ENUM ('email', 'sms', 'push', 'in_app');
+
+-- CreateEnum
+CREATE TYPE "NotificationStatus" AS ENUM ('pending', 'sent', 'failed', 'read');
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
@@ -48,6 +54,7 @@ CREATE TABLE "users" (
     "password_reset_token_expires_at" TIMESTAMP(3),
     "last_failed_login_at" TIMESTAMP(3),
     "suspicious_activity_count" INTEGER NOT NULL DEFAULT 0,
+    "notification_preferences" JSONB,
     "pending_ref" INTEGER NOT NULL DEFAULT 0,
     "active_ref" INTEGER NOT NULL DEFAULT 0,
 
@@ -228,6 +235,9 @@ CREATE TABLE "audit_logs" (
     "log_type" TEXT NOT NULL,
     "user_id" TEXT,
     "session_id" TEXT,
+    "entity_type" TEXT,
+    "entity_id" TEXT,
+    "description" TEXT,
     "ip" TEXT,
     "user_agent" TEXT,
     "request_id" TEXT,
@@ -237,6 +247,42 @@ CREATE TABLE "audit_logs" (
     "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "notification_templates" (
+    "id" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "subject" TEXT,
+    "body" TEXT NOT NULL,
+    "type" "NotificationType" NOT NULL,
+    "variables" JSONB,
+    "enabled" BOOLEAN NOT NULL DEFAULT true,
+    "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "modified" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "notification_templates_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "notifications" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "template_id" TEXT,
+    "type" "NotificationType" NOT NULL,
+    "status" "NotificationStatus" NOT NULL DEFAULT 'pending',
+    "subject" TEXT,
+    "content" TEXT NOT NULL,
+    "metadata" JSONB,
+    "read_at" TIMESTAMP(3),
+    "sent_at" TIMESTAMP(3),
+    "failed_at" TIMESTAMP(3),
+    "error" TEXT,
+    "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "modified" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -387,10 +433,25 @@ CREATE INDEX "audit_log_user_id_occurred_at_idx" ON "audit_logs"("user_id", "occ
 CREATE INDEX "audit_log_session_id_occurred_at_idx" ON "audit_logs"("session_id", "occurred_at" DESC);
 
 -- CreateIndex
+CREATE INDEX "audit_log_entity_idx" ON "audit_logs"("entity_type", "entity_id");
+
+-- CreateIndex
 CREATE INDEX "audit_log_trace_id_idx" ON "audit_logs"("trace_id");
 
 -- CreateIndex
 CREATE INDEX "audit_log_correlation_id_idx" ON "audit_logs"("correlation_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "notification_templates_code_key" ON "notification_templates"("code");
+
+-- CreateIndex
+CREATE INDEX "notification_user_status_idx" ON "notifications"("user_id", "status");
+
+-- CreateIndex
+CREATE INDEX "notification_type_idx" ON "notifications"("type");
+
+-- CreateIndex
+CREATE INDEX "notification_created_idx" ON "notifications"("created");
 
 -- AddForeignKey
 ALTER TABLE "user_auth_providers" ADD CONSTRAINT "user_auth_providers_provider_code_fkey" FOREIGN KEY ("provider_code") REFERENCES "auth_providers"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -427,3 +488,15 @@ ALTER TABLE "security_events" ADD CONSTRAINT "security_events_user_id_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "user_ip_whitelist" ADD CONSTRAINT "user_ip_whitelist_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "sessions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_template_id_fkey" FOREIGN KEY ("template_id") REFERENCES "notification_templates"("id") ON DELETE SET NULL ON UPDATE CASCADE;

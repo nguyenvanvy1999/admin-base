@@ -144,6 +144,7 @@ model User {
   ipWhitelist          UserIpWhitelist[]
   notifications        Notification[]
   notificationPreferences Json? @map("notification_preferences")
+  auditLogs            AuditLog[]
 
   pendingRef Int @default(0) @map("pending_ref")
   activeRef  Int @default(0) @map("active_ref")
@@ -286,6 +287,7 @@ model Session {
   sessionType SessionType @default(web) @map("session_type")
   userAgent   String?     @map("user_agent")
   location    Json?    
+  auditLogs   AuditLog[]
 
   @@index([createdById])
   @@index([lastActivityAt], name: "session_lastActivityAt_idx")
@@ -398,6 +400,9 @@ model AuditLog {
   logType       String   @map("log_type")
   userId        String?  @map("user_id")
   sessionId     String?  @map("session_id")
+  entityType    String?  @map("entity_type")
+  entityId      String?  @map("entity_id")
+  description   String?
   ip            String?
   userAgent     String?  @map("user_agent")
   requestId     String?  @map("request_id")
@@ -406,11 +411,15 @@ model AuditLog {
   occurredAt    DateTime @default(now()) @map("occurred_at")
   created       DateTime @default(now())
 
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
   @@index([created], map: "audit_log_created_idx")
   @@index([level], map: "audit_log_level_idx")
   @@index([logType], map: "audit_log_type_idx")
   @@index([userId, occurredAt(sort: Desc)], map: "audit_log_user_id_occurred_at_idx")
   @@index([sessionId, occurredAt(sort: Desc)], map: "audit_log_session_id_occurred_at_idx")
+  @@index([entityType, entityId], map: "audit_log_entity_idx")
   @@index([traceId], map: "audit_log_trace_id_idx")
   @@index([correlationId], map: "audit_log_correlation_id_idx")
   @@map("audit_logs")

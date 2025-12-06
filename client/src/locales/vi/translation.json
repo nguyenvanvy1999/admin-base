@@ -90,6 +90,8 @@
       "payload": "Dữ liệu",
       "occurredAt": "Thời điểm xảy ra",
       "description": "Mô tả",
+      "entityType": "Loại entity",
+      "entityId": "ID entity",
       "enabled": "Kích hoạt",
       "category": "Danh mục",
       "action": "Hành động",

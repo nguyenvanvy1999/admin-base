@@ -17,6 +17,8 @@ export class AuditLogsService {
       skip = 0,
       userId,
       sessionId,
+      entityType,
+      entityId,
       level,
       logType,
       ip,
@@ -41,6 +43,14 @@ export class AuditLogsService {
 
     if (sessionId) {
       conditions.push({ sessionId });
+    }
+
+    if (entityType) {
+      conditions.push({ entityType });
+    }
+
+    if (entityId) {
+      conditions.push({ entityId });
     }
 
     if (level) {
@@ -86,6 +96,9 @@ export class AuditLogsService {
           logType: true,
           userId: true,
           sessionId: true,
+          entityType: true,
+          entityId: true,
+          description: true,
           ip: true,
           userAgent: true,
           requestId: true,

@@ -20,6 +20,9 @@ interface BufferedLog {
   log_type: string;
   user_id?: string | null;
   session_id?: string | null;
+  entity_type?: string | null;
+  entity_id?: string | null;
+  description?: string | null;
   ip?: string | null;
   user_agent?: string | null;
   request_id?: string | null;
@@ -67,6 +70,9 @@ export class AuditLogWorkerService {
         log_type: jobData.type,
         user_id: jobData.userId,
         session_id: jobData.sessionId,
+        entity_type: jobData.entityType,
+        entity_id: jobData.entityId,
+        description: jobData.description,
         ip: jobData.ip,
         user_agent: jobData.userAgent,
         request_id: jobData.requestId,

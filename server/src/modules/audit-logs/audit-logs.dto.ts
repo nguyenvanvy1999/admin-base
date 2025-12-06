@@ -6,6 +6,8 @@ export const AuditLogListQueryDto = t.Intersect([
   t.Object({
     userId: t.Optional(t.String()),
     sessionId: t.Optional(t.String()),
+    entityType: t.Optional(t.String()),
+    entityId: t.Optional(t.String()),
     level: t.Optional(t.String()),
     logType: t.Optional(t.String()),
     ip: t.Optional(t.String()),
@@ -33,6 +35,9 @@ export const AuditLogItemDto = t.Object({
   logType: t.String(),
   userId: t.Nullable(t.String()),
   sessionId: t.Nullable(t.String()),
+  entityType: t.Nullable(t.String()),
+  entityId: t.Nullable(t.String()),
+  description: t.Nullable(t.String()),
   ip: t.Nullable(t.String()),
   userAgent: t.Nullable(t.String()),
   requestId: t.Nullable(t.String()),

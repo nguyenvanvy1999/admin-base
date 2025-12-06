@@ -21,6 +21,8 @@ import type { TableParamsWithFilters } from 'src/types/table';
 type AdminAuditLogTableParams = TableParamsWithFilters<{
   userId?: string;
   sessionId?: string;
+  entityType?: string;
+  entityId?: string;
   level?: string;
   logType?: string;
   ip?: string;
@@ -75,6 +77,27 @@ export default function AdminAuditLogPage() {
       hideInSearch: true,
     },
     {
+      title: t('common.fields.description'),
+      dataIndex: 'description',
+      ellipsis: true,
+      hideInSearch: true,
+      width: 300,
+    },
+    {
+      title: t('common.fields.entityType'),
+      dataIndex: 'entityType',
+      ellipsis: true,
+      hideInTable: true,
+      copyable: true,
+    },
+    {
+      title: t('common.fields.entityId'),
+      dataIndex: 'entityId',
+      ellipsis: true,
+      hideInTable: true,
+      copyable: true,
+    },
+    {
       title: t('common.fields.userId'),
       dataIndex: 'userId',
       hideInTable: !canViewAll,
@@ -115,8 +138,9 @@ export default function AdminAuditLogPage() {
       title: t('common.fields.payload'),
       dataIndex: 'payload',
       hideInSearch: true,
-      width: 300,
+      width: 200,
       ellipsis: true,
+      hideInTable: true,
       render: (_: unknown, record) => (
         <Tooltip title={JSON.stringify(record.payload, null, 2)}>
           <pre
@@ -168,6 +192,8 @@ export default function AdminAuditLogPage() {
             level,
             userId,
             sessionId,
+            entityType,
+            entityId,
             ip,
             traceId,
             correlationId,
@@ -190,6 +216,8 @@ export default function AdminAuditLogPage() {
             sessionId: canViewAll
               ? (sessionId as string | undefined)
               : undefined,
+            entityType: entityType as string | undefined,
+            entityId: entityId as string | undefined,
             ip: ip as string | undefined,
             traceId: traceId as string | undefined,
             correlationId: correlationId as string | undefined,

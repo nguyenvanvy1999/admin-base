@@ -5,6 +5,9 @@ export interface AdminAuditLog {
   logType: string;
   userId: string | null;
   sessionId: string | null;
+  entityType: string | null;
+  entityId: string | null;
+  description: string | null;
   ip: string | null;
   userAgent: string | null;
   requestId: string | null;
@@ -19,6 +22,8 @@ export interface AdminAuditLogListQuery {
   take?: number;
   userId?: string;
   sessionId?: string;
+  entityType?: string;
+  entityId?: string;
   level?: string;
   logType?: string;
   ip?: string;

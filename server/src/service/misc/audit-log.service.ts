@@ -1,6 +1,13 @@
 import { auditLogQueue, type IAuditLogQueue } from 'src/config/queue';
 import type { ACTIVITY_TYPE, AuditLogEntry } from 'src/share';
-import { ctxStore, IdUtil, LOG_LEVEL } from 'src/share';
+import {
+  ctxStore,
+  extractEntityIdFromPayload,
+  generateAuditLogDescription,
+  IdUtil,
+  inferEntityTypeFromActivityType,
+  LOG_LEVEL,
+} from 'src/share';
 
 const JOB_NAME = 'audit-log';
 
@@ -14,6 +21,14 @@ export class AuditLogService {
     const pickValue = <T>(value: T | undefined | null, fallback?: T) =>
       value !== undefined ? value : fallback;
 
+    const entityType =
+      entry.entityType ?? inferEntityTypeFromActivityType(entry.type);
+    const entityId =
+      entry.entityId ?? extractEntityIdFromPayload(entry.type, entry.payload);
+    const description =
+      entry.description ??
+      generateAuditLogDescription(entry.type, entry.payload);
+
     const enrichedEntry: AuditLogEntry & {
       logId: string;
       timestamp: Date;
@@ -24,6 +39,9 @@ export class AuditLogService {
       timestamp: entry.timestamp ?? new Date(),
       userId: pickValue(entry.userId, ctx?.userId),
       sessionId: pickValue(entry.sessionId, ctx?.sessionId),
+      entityType,
+      entityId,
+      description,
       ip: pickValue(entry.ip, ctx?.clientIp),
       userAgent: pickValue(entry.userAgent, ctx?.userAgent),
       requestId: pickValue(entry.requestId, ctx?.id),

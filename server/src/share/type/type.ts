@@ -142,6 +142,9 @@ export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
 export type AuditLogEntry<T extends ACTIVITY_TYPE = ACTIVITY_TYPE> = {
   userId?: string | null;
   sessionId?: string | null;
+  entityType?: string | null;
+  entityId?: string | null;
+  description?: string | null;
   ip?: string | null;
   userAgent?: string | null;
   type: T;
