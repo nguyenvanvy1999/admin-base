@@ -22,13 +22,15 @@ const notificationSelect = {
   created: true,
 } satisfies NotificationSelect;
 
+type ListParams = typeof NotificationPaginationDto.static & {
+  currentUserId: string;
+  hasViewPermission: boolean;
+};
+
 export class NotificationAdminService {
   constructor(private readonly deps: { db: IDb }) {}
 
-  async list(
-    query: typeof NotificationPaginationDto.static,
-    restrictToUserId?: string,
-  ) {
+  async list(params: ListParams) {
     const {
       userIds,
       userId,
@@ -37,11 +39,14 @@ export class NotificationAdminService {
       search,
       take = 20,
       skip = 0,
-    } = query;
+      currentUserId,
+      hasViewPermission,
+    } = params;
+
     const where: NotificationWhereInput = {};
 
-    if (restrictToUserId) {
-      where.userId = restrictToUserId;
+    if (!hasViewPermission) {
+      where.userId = currentUserId;
     } else {
       if (userIds?.length) {
         where.userId = { in: userIds };
@@ -79,11 +84,18 @@ export class NotificationAdminService {
     return { docs, count };
   }
 
-  async detail(id: string, restrictToUserId?: string) {
+  async detail(
+    id: string,
+    params: {
+      currentUserId: string;
+      hasViewPermission: boolean;
+    },
+  ) {
+    const { currentUserId, hasViewPermission } = params;
     const where: NotificationWhereInput = { id };
 
-    if (restrictToUserId) {
-      where.userId = restrictToUserId;
+    if (!hasViewPermission) {
+      where.userId = currentUserId;
     }
 
     const doc = await this.deps.db.notification.findFirst({
@@ -124,13 +136,20 @@ export class NotificationAdminService {
     });
   }
 
-  async removeMany(ids: string[], restrictToUserId?: string) {
+  async removeMany(
+    ids: string[],
+    params: {
+      currentUserId: string;
+      hasViewPermission: boolean;
+    },
+  ) {
+    const { currentUserId, hasViewPermission } = params;
     const where: NotificationWhereInput = {
       id: { in: ids },
     };
 
-    if (restrictToUserId) {
-      where.userId = restrictToUserId;
+    if (!hasViewPermission) {
+      where.userId = currentUserId;
     }
 
     await this.deps.db.notification.deleteMany({
@@ -138,13 +157,20 @@ export class NotificationAdminService {
     });
   }
 
-  async markAsRead(ids: string[], restrictToUserId?: string) {
+  async markAsRead(
+    ids: string[],
+    params: {
+      currentUserId: string;
+      hasViewPermission: boolean;
+    },
+  ) {
+    const { currentUserId, hasViewPermission } = params;
     const where: NotificationWhereInput = {
       id: { in: ids },
     };
 
-    if (restrictToUserId) {
-      where.userId = restrictToUserId;
+    if (!hasViewPermission) {
+      where.userId = currentUserId;
     }
 
     await this.deps.db.notification.updateMany({

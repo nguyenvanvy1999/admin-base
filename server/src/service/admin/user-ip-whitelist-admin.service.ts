@@ -16,26 +16,42 @@ const ipWhitelistSelect = {
   note: true,
   created: true,
 } satisfies UserIpWhitelistSelect;
+
+type ListParams = typeof IpWhitelistPaginationDto.static & {
+  currentUserId: string;
+  hasViewPermission: boolean;
+};
+
 export class UserIpWhitelistAdminService {
   constructor(private readonly deps: { db: IDb }) {}
 
-  async list(query: typeof IpWhitelistPaginationDto.static) {
-    const { userIds, userId, ip, search, take = 20, skip = 0 } = query;
+  async list(params: ListParams) {
+    const {
+      userIds,
+      userId,
+      ip,
+      search,
+      take = 20,
+      skip = 0,
+      currentUserId,
+      hasViewPermission,
+    } = params;
     const where: UserIpWhitelistWhereInput = {};
 
-    // Filter by user IDs
-    if (userIds?.length) {
-      where.userId = { in: userIds };
-    } else if (userId) {
-      where.userId = userId;
+    if (!hasViewPermission) {
+      where.userId = currentUserId;
+    } else {
+      if (userIds?.length) {
+        where.userId = { in: userIds };
+      } else if (userId) {
+        where.userId = userId;
+      }
     }
 
-    // Filter by IP (partial match)
     if (ip) {
       where.ip = { contains: ip, mode: 'insensitive' };
     }
 
-    // Search functionality
     if (search) {
       where.OR = [
         { ip: { contains: search, mode: 'insensitive' } },
@@ -57,11 +73,18 @@ export class UserIpWhitelistAdminService {
     return { docs, count };
   }
 
-  async detail(id: string, userId?: string) {
+  async detail(
+    id: string,
+    params: {
+      currentUserId: string;
+      hasViewPermission: boolean;
+    },
+  ) {
+    const { currentUserId, hasViewPermission } = params;
     const where: UserIpWhitelistWhereInput = { id };
 
-    if (userId) {
-      where.userId = userId;
+    if (!hasViewPermission) {
+      where.userId = currentUserId;
     }
 
     const doc = await this.deps.db.userIpWhitelist.findFirst({
@@ -86,26 +109,37 @@ export class UserIpWhitelistAdminService {
 
   async upsert(
     data: typeof UpsertIpWhitelistDto.static,
-    restrictToUserId?: string,
+    params: {
+      currentUserId: string;
+      hasViewPermission: boolean;
+    },
   ) {
     const { userId, ip, note, id } = data;
+    const { currentUserId, hasViewPermission } = params;
 
     if (id) {
       const where: UserIpWhitelistWhereInput = { id };
-      if (restrictToUserId) {
-        where.userId = restrictToUserId;
+      if (!hasViewPermission) {
+        where.userId = currentUserId;
+      }
+
+      const existing = await this.deps.db.userIpWhitelist.findFirst({ where });
+      if (!existing) {
+        throw new NotFoundErr(ErrCode.IPWhitelistNotFound);
       }
 
       await this.deps.db.userIpWhitelist.update({
-        where: { id, userId: where.userId },
+        where: { id },
         data: { ip, note },
         select: { id: true },
       });
     } else {
+      const finalUserId = hasViewPermission ? userId : currentUserId;
+
       await this.deps.db.userIpWhitelist.create({
         data: {
           id: IdUtil.dbId(DB_PREFIX.IP_WHITELIST),
-          userId,
+          userId: finalUserId,
           ip,
           note,
         },
@@ -114,13 +148,20 @@ export class UserIpWhitelistAdminService {
     }
   }
 
-  async removeMany(ids: string[], restrictToUserId?: string) {
+  async removeMany(
+    ids: string[],
+    params: {
+      currentUserId: string;
+      hasViewPermission: boolean;
+    },
+  ) {
+    const { currentUserId, hasViewPermission } = params;
     const where: UserIpWhitelistWhereInput = {
       id: { in: ids },
     };
 
-    if (restrictToUserId) {
-      where.userId = restrictToUserId;
+    if (!hasViewPermission) {
+      where.userId = currentUserId;
     }
 
     await this.deps.db.userIpWhitelist.deleteMany({
