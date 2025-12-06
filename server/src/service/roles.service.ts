@@ -14,7 +14,7 @@ import {
 type ListParams = typeof RolePaginationDto.static;
 type UpsertParams = typeof UpsertRoleDto.static;
 
-export class RoleService {
+export class RolesService {
   constructor(
     private readonly deps: {
       db: IDb;
@@ -255,4 +255,4 @@ export class RoleService {
   }
 }
 
-export const roleService = new RoleService({ db });
+export const rolesService = new RolesService({ db });

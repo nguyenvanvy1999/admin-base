@@ -8,7 +8,7 @@ import { BadReqErr, ErrCode, NotFoundErr } from 'src/share';
 
 type UpdateParams = typeof UpdateSettingDto.static & { id: string };
 
-export class SettingAdminService {
+export class SettingsService {
   constructor(
     private readonly deps: {
       db: IDb;
@@ -75,7 +75,7 @@ export class SettingAdminService {
   }
 }
 
-export const settingAdminService = new SettingAdminService({
+export const settingsService = new SettingsService({
   db,
   settingService,
 });

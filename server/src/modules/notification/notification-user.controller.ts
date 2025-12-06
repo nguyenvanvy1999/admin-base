@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
-import { notificationAdminService } from 'src/service/admin';
 import { authCheck } from 'src/service/auth/auth.middleware';
+import { notificationsService } from 'src/service/notifications';
 import {
   authErrors,
   castToRes,
@@ -26,7 +26,7 @@ export const notificationUserController = new Elysia({
     '/',
     async ({ query, currentUser }) => {
       return castToRes(
-        await notificationAdminService.list({
+        await notificationsService.list({
           ...query,
           currentUserId: currentUser.id,
           hasViewPermission: false,
@@ -44,7 +44,7 @@ export const notificationUserController = new Elysia({
   .get(
     '/:id',
     async ({ params: { id }, currentUser }) => {
-      const result = await notificationAdminService.detail(id, {
+      const result = await notificationsService.detail(id, {
         currentUserId: currentUser.id,
         hasViewPermission: false,
       });
@@ -63,7 +63,7 @@ export const notificationUserController = new Elysia({
   .post(
     '/mark-read',
     async ({ body, currentUser }) => {
-      await notificationAdminService.markAsRead(body.ids, {
+      await notificationsService.markAsRead(body.ids, {
         currentUserId: currentUser.id,
         hasViewPermission: false,
       });
@@ -81,7 +81,7 @@ export const notificationUserController = new Elysia({
   .post(
     '/del',
     async ({ body, currentUser }) => {
-      await notificationAdminService.removeMany(body.ids, {
+      await notificationsService.removeMany(body.ids, {
         currentUserId: currentUser.id,
         hasViewPermission: false,
       });

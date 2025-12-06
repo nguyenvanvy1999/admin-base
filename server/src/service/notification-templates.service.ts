@@ -14,7 +14,7 @@ import {
   IdUtil,
   type IIdsDto,
   NotFoundErr,
-} from '../../share';
+} from 'src/share';
 
 const notificationTemplateSelect = {
   id: true,
@@ -29,7 +29,7 @@ const notificationTemplateSelect = {
   modified: true,
 } satisfies NotificationTemplateSelect;
 
-export class NotificationTemplateAdminService {
+export class NotificationTemplatesService {
   constructor(private readonly deps: { db: IDb }) {}
 
   async list(query: typeof NotificationTemplatePaginationDto.static) {
@@ -172,7 +172,6 @@ export class NotificationTemplateAdminService {
   }
 }
 
-export const notificationTemplateAdminService =
-  new NotificationTemplateAdminService({
-    db,
-  });
+export const notificationTemplatesService = new NotificationTemplatesService({
+  db,
+});

@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { settingAdminService } from 'src/service/admin';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
+import { settingsService } from 'src/service/settings.service';
 import {
   authErrors,
   castToRes,
@@ -25,7 +25,7 @@ export const settingsAdminController = new Elysia({
   .get(
     '/',
     async () => {
-      const result = await settingAdminService.list();
+      const result = await settingsService.list();
       return castToRes(result);
     },
     {
@@ -37,7 +37,7 @@ export const settingsAdminController = new Elysia({
   .get(
     '/export',
     async () => {
-      const result = await settingAdminService.export();
+      const result = await settingsService.export();
       return castToRes(result);
     },
     {
@@ -50,7 +50,7 @@ export const settingsAdminController = new Elysia({
   .post(
     '/import',
     async ({ body }) => {
-      await settingAdminService.import(body);
+      await settingsService.import(body);
       return castToRes(null);
     },
     {
@@ -65,7 +65,7 @@ export const settingsAdminController = new Elysia({
   .post(
     '/:id',
     async ({ body, params: { id } }) => {
-      await settingAdminService.update({ ...body, id });
+      await settingsService.update({ ...body, id });
       return castToRes(null);
     },
     {

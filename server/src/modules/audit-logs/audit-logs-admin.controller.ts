@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia';
-import { auditLogAdminService } from 'src/service/admin';
+import { auditLogsService } from 'src/service/audit-logs.service';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
 import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
@@ -14,7 +14,7 @@ export const auditLogsAdminController = new Elysia({
   .get(
     '/',
     async ({ currentUser, query }) => {
-      const result = await auditLogAdminService.list({
+      const result = await auditLogsService.list({
         ...query,
         currentUserId: currentUser.id,
         hasViewPermission: currentUser.permissions.includes('AUDIT_LOG.VIEW'),

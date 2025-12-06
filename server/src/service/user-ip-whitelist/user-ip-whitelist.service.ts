@@ -22,7 +22,7 @@ type ListParams = typeof IpWhitelistPaginationDto.static & {
   hasViewPermission: boolean;
 };
 
-export class UserIpWhitelistAdminService {
+export class UserIpWhitelistService {
   constructor(private readonly deps: { db: IDb }) {}
 
   async list(params: ListParams) {
@@ -170,6 +170,6 @@ export class UserIpWhitelistAdminService {
   }
 }
 
-export const userIpWhitelistAdminService = new UserIpWhitelistAdminService({
+export const userIpWhitelistService = new UserIpWhitelistService({
   db,
 });

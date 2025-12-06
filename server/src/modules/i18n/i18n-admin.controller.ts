@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { i18nService } from 'src/service/admin';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
+import { i18nService } from 'src/service/i18n.service';
 import { castToRes, DOC_TAG, IdsDto, ResWrapper } from 'src/share';
 import {
   I18nPaginationDto,

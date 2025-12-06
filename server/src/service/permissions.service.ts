@@ -1,7 +1,7 @@
 import { db, type IDb } from 'src/config/db';
 import type { PermissionWhereInput } from 'src/generated';
 
-export class PermissionService {
+export class PermissionsService {
   constructor(
     private readonly deps: {
       db: IDb;
@@ -27,4 +27,4 @@ export class PermissionService {
   }
 }
 
-export const permissionService = new PermissionService();
+export const permissionsService = new PermissionsService();

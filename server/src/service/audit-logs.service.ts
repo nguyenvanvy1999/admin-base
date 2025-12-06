@@ -8,7 +8,7 @@ type ListParams = typeof AuditLogListQueryDto.static & {
   hasViewPermission: boolean;
 };
 
-export class AuditLogAdminService {
+export class AuditLogsService {
   constructor(private readonly deps: { db: IDb } = { db }) {}
 
   async list(params: ListParams) {
@@ -113,4 +113,4 @@ export class AuditLogAdminService {
   }
 }
 
-export const auditLogAdminService = new AuditLogAdminService();
+export const auditLogsService = new AuditLogsService();

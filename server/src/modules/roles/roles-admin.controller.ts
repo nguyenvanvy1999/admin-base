@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { roleService } from 'src/service/admin';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { allOf, authorize, has } from 'src/service/auth/authorization';
+import { rolesService } from 'src/service/roles.service';
 import {
   authErrors,
   castToRes,
@@ -24,7 +24,7 @@ export const rolesAdminController = new Elysia({
 })
   .use(authCheck)
   .use(authorize(has('ROLE.VIEW')))
-  .get('/', async ({ query }) => castToRes(await roleService.list(query)), {
+  .get('/', async ({ query }) => castToRes(await rolesService.list(query)), {
     query: RolePaginationDto,
     response: {
       200: ResWrapper(PaginateRoleResDto),
@@ -33,7 +33,7 @@ export const rolesAdminController = new Elysia({
   .get(
     '/:id',
     async ({ params: { id } }) => {
-      const result = await roleService.detail(id);
+      const result = await rolesService.detail(id);
       return castToRes(result);
     },
     {
@@ -49,7 +49,7 @@ export const rolesAdminController = new Elysia({
   .post(
     '/',
     async ({ body }) => {
-      await roleService.upsert(body);
+      await rolesService.upsert(body);
       return castToRes(null);
     },
     {
@@ -64,7 +64,7 @@ export const rolesAdminController = new Elysia({
   .post(
     '/del',
     async ({ body }) => {
-      await roleService.delete(body);
+      await rolesService.delete(body);
       return castToRes(null);
     },
     {

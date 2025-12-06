@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { notificationTemplateAdminService } from 'src/service/admin';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
+import { notificationTemplatesService } from 'src/service/notification-templates.service';
 import {
   authErrors,
   castToRes,
@@ -27,7 +27,7 @@ export const notificationTemplatesAdminController = new Elysia({
   .get(
     '/',
     async ({ query }) =>
-      castToRes(await notificationTemplateAdminService.list(query)),
+      castToRes(await notificationTemplatesService.list(query)),
     {
       query: NotificationTemplatePaginationDto,
       response: {
@@ -39,7 +39,7 @@ export const notificationTemplatesAdminController = new Elysia({
   .get(
     '/:id',
     async ({ params: { id } }) => {
-      const result = await notificationTemplateAdminService.detail(id);
+      const result = await notificationTemplatesService.detail(id);
       return castToRes(result);
     },
     {
@@ -56,7 +56,7 @@ export const notificationTemplatesAdminController = new Elysia({
   .post(
     '/',
     async ({ body }) => {
-      await notificationTemplateAdminService.upsert(body);
+      await notificationTemplatesService.upsert(body);
       return castToRes(null);
     },
     {
@@ -72,7 +72,7 @@ export const notificationTemplatesAdminController = new Elysia({
   .post(
     '/del',
     async ({ body }) => {
-      await notificationTemplateAdminService.removeMany(body);
+      await notificationTemplatesService.removeMany(body);
       return castToRes(null);
     },
     {

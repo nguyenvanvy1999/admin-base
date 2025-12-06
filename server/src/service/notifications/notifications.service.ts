@@ -27,7 +27,7 @@ type ListParams = typeof NotificationPaginationDto.static & {
   hasViewPermission: boolean;
 };
 
-export class NotificationAdminService {
+export class NotificationsService {
   constructor(private readonly deps: { db: IDb }) {}
 
   async list(params: ListParams) {
@@ -183,6 +183,6 @@ export class NotificationAdminService {
   }
 }
 
-export const notificationAdminService = new NotificationAdminService({
+export const notificationsService = new NotificationsService({
   db,
 });

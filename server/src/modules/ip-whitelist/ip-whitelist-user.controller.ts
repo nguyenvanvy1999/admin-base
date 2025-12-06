@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
-import { userIpWhitelistAdminService } from 'src/service/admin';
 import { authCheck } from 'src/service/auth/auth.middleware';
+import { userIpWhitelistService } from 'src/service/user-ip-whitelist';
 import {
   authErrors,
   castToRes,
@@ -26,7 +26,7 @@ export const ipWhitelistUserController = new Elysia({
     '/',
     async ({ query, currentUser }) => {
       return castToRes(
-        await userIpWhitelistAdminService.list({
+        await userIpWhitelistService.list({
           ...query,
           currentUserId: currentUser.id,
           hasViewPermission: false,
@@ -44,7 +44,7 @@ export const ipWhitelistUserController = new Elysia({
   .get(
     '/:id',
     async ({ params: { id }, currentUser }) => {
-      const result = await userIpWhitelistAdminService.detail(id, {
+      const result = await userIpWhitelistService.detail(id, {
         currentUserId: currentUser.id,
         hasViewPermission: false,
       });
@@ -63,7 +63,7 @@ export const ipWhitelistUserController = new Elysia({
   .post(
     '/',
     async ({ body, currentUser }) => {
-      await userIpWhitelistAdminService.upsert(body, {
+      await userIpWhitelistService.upsert(body, {
         currentUserId: currentUser.id,
         hasViewPermission: false,
       });
@@ -81,7 +81,7 @@ export const ipWhitelistUserController = new Elysia({
   .post(
     '/del',
     async ({ body, currentUser }) => {
-      await userIpWhitelistAdminService.removeMany(body.ids, {
+      await userIpWhitelistService.removeMany(body.ids, {
         currentUserId: currentUser.id,
         hasViewPermission: false,
       });

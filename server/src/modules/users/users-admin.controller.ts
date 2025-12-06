@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia';
-import { adminUserService } from 'src/service/admin';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
+import { usersService } from 'src/service/users';
 import {
   authErrors,
   castToRes,
@@ -29,7 +29,7 @@ export const usersAdminController = new Elysia({
   .use(authorize(has('USER.VIEW')))
   .get(
     '/',
-    async ({ query }) => castToRes(await adminUserService.listUsers(query)),
+    async ({ query }) => castToRes(await usersService.listUsers(query)),
     {
       query: AdminUserListQueryDto,
       response: {
@@ -41,7 +41,7 @@ export const usersAdminController = new Elysia({
   .get(
     '/:id',
     async ({ params: { id } }) =>
-      castToRes(await adminUserService.getUserDetail(id)),
+      castToRes(await usersService.getUserDetail(id)),
     {
       params: IdDto,
       response: {
@@ -56,7 +56,7 @@ export const usersAdminController = new Elysia({
     '/',
     async ({ body, currentUser }) =>
       castToRes(
-        await adminUserService.createUser({
+        await usersService.createUser({
           actorId: currentUser.id,
           ...body,
         }),
@@ -74,7 +74,7 @@ export const usersAdminController = new Elysia({
     '/:id/roles',
     async ({ params: { id }, currentUser, body }) =>
       castToRes(
-        await adminUserService.updateUserRoles({
+        await usersService.updateUserRoles({
           targetUserId: id,
           actorId: currentUser.id,
           ...body,
@@ -94,7 +94,7 @@ export const usersAdminController = new Elysia({
     '/:id',
     async ({ params: { id }, currentUser, body }) =>
       castToRes(
-        await adminUserService.updateUser({
+        await usersService.updateUser({
           targetUserId: id,
           actorId: currentUser.id,
           ...body,
@@ -115,7 +115,7 @@ export const usersAdminController = new Elysia({
     '/:id/mfa/reset',
     async ({ params: { id }, currentUser, body }) =>
       castToRes(
-        await adminUserService.resetUserMfa({
+        await usersService.resetUserMfa({
           targetUserId: id,
           actorId: currentUser.id,
           ...body,
@@ -135,7 +135,7 @@ export const usersAdminController = new Elysia({
     '/:id/mfa/disable',
     async ({ params: { id }, currentUser, body }) =>
       castToRes(
-        await adminUserService.disableUserMfa({
+        await usersService.disableUserMfa({
           targetUserId: id,
           actorId: currentUser.id,
           ...body,

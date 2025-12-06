@@ -82,7 +82,7 @@ const updateUserSelect = {
   roles: { select: { roleId: true } },
 } satisfies UserSelect;
 
-export class AdminUserService {
+export class UsersService {
   constructor(
     private readonly deps: {
       db: IDb;
@@ -620,7 +620,7 @@ export class AdminUserService {
   }
 }
 
-export const adminUserService = new AdminUserService({
+export const usersService = new UsersService({
   db,
   sessionService,
   auditLogService,

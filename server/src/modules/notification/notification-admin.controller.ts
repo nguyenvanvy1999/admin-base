@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { notificationAdminService } from 'src/service/admin';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
+import { notificationsService } from 'src/service/notifications';
 import {
   authErrors,
   castToRes,
@@ -29,7 +29,7 @@ export const notificationAdminController = new Elysia({
     '/',
     async ({ query, currentUser }) => {
       return castToRes(
-        await notificationAdminService.list({
+        await notificationsService.list({
           ...query,
           currentUserId: currentUser.id,
           hasViewPermission:
@@ -48,7 +48,7 @@ export const notificationAdminController = new Elysia({
   .get(
     '/:id',
     async ({ params: { id }, currentUser }) => {
-      const result = await notificationAdminService.detail(id, {
+      const result = await notificationsService.detail(id, {
         currentUserId: currentUser.id,
         hasViewPermission:
           currentUser.permissions.includes('NOTIFICATION.VIEW'),
@@ -69,7 +69,7 @@ export const notificationAdminController = new Elysia({
   .post(
     '/',
     async ({ body }) => {
-      await notificationAdminService.create(body);
+      await notificationsService.create(body);
       return castToRes(null);
     },
     {
@@ -85,7 +85,7 @@ export const notificationAdminController = new Elysia({
   .post(
     '/del',
     async ({ body, currentUser }) => {
-      await notificationAdminService.removeMany(body.ids, {
+      await notificationsService.removeMany(body.ids, {
         currentUserId: currentUser.id,
         hasViewPermission: currentUser.permissions.includes(
           'NOTIFICATION.DELETE',
@@ -106,7 +106,7 @@ export const notificationAdminController = new Elysia({
   .post(
     '/mark-read',
     async ({ body, currentUser }) => {
-      await notificationAdminService.markAsRead(body.ids, {
+      await notificationsService.markAsRead(body.ids, {
         currentUserId: currentUser.id,
         hasViewPermission: currentUser.permissions.includes(
           'NOTIFICATION.UPDATE',
