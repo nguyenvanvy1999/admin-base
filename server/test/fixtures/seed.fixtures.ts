@@ -33,6 +33,7 @@ export class SeedFixtures {
       passwordResetTokenExpiresAt: null,
       lastFailedLoginAt: null,
       suspiciousActivityCount: 0,
+      notificationPreferences: null,
       ...overrides,
     };
   }

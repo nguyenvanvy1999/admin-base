@@ -5,7 +5,7 @@ import { ErrCode, NotFoundErr } from 'src/share';
 
 type ListParams = typeof SessionPaginateDto.static & {
   currentUserId: string;
-  hasViewAllPermission: boolean;
+  hasViewPermission: boolean;
 };
 
 export class SessionService {
@@ -46,7 +46,7 @@ export class SessionService {
       take,
       revoked,
       currentUserId,
-      hasViewAllPermission,
+      hasViewPermission,
     } = params;
 
     const conditions: SessionWhereInput[] = [
@@ -58,7 +58,7 @@ export class SessionService {
       },
     ];
 
-    if (!hasViewAllPermission) {
+    if (!hasViewPermission) {
       conditions.push({ createdById: currentUserId });
     }
 

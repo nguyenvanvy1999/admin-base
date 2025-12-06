@@ -5,7 +5,7 @@ import { BadReqErr, ErrCode } from 'src/share';
 
 type ListParams = typeof AuditLogListQueryDto.static & {
   currentUserId: string;
-  hasViewAllPermission: boolean;
+  hasViewPermission: boolean;
 };
 
 export class AuditLogAdminService {
@@ -25,17 +25,17 @@ export class AuditLogAdminService {
       occurredAt0,
       occurredAt1,
       currentUserId,
-      hasViewAllPermission,
+      hasViewPermission,
     } = params;
 
     const conditions: AuditLogWhereInput[] = [];
 
     if (userId) {
-      if (!hasViewAllPermission && userId !== currentUserId) {
+      if (!hasViewPermission && userId !== currentUserId) {
         throw new BadReqErr(ErrCode.PermissionDenied);
       }
       conditions.push({ userId });
-    } else if (!hasViewAllPermission) {
+    } else if (!hasViewPermission) {
       conditions.push({ userId: currentUserId });
     }
 

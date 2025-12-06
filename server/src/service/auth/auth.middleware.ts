@@ -48,6 +48,7 @@ export const authCheck = (app: Elysia) =>
         sessionId: data.sessionId,
         permissions: await userUtilService.getPermissions(user),
         roleIds: activeRoleIds,
+        notificationPreferences: null,
       };
 
       await currentUserCache.set(data.sessionId, currentUser);

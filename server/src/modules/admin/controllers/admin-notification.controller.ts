@@ -7,17 +7,16 @@ import {
   PaginateNotificationResDto,
 } from 'src/modules/admin/dtos/notification.dto';
 import { notificationAdminService } from 'src/service/admin';
+import { authorize, has } from 'src/service/auth/authorization';
 import {
   type AppAuthMeta,
   authErrors,
   castToRes,
   DOC_TAG,
-  ErrCode,
   ErrorResDto,
   IdDto,
   IdsDto,
   ResWrapper,
-  UnAuthErr,
 } from 'src/share';
 
 export const adminNotificationController = new Elysia<
@@ -27,22 +26,11 @@ export const adminNotificationController = new Elysia<
   tags: [DOC_TAG.ADMIN_NOTIFICATION],
 }).group('/notifications', (app) =>
   app
+    .use(authorize(has('NOTIFICATION.VIEW')))
     .get(
       '/',
-      async ({ query, currentUser }) => {
-        const restrictToUserId = !currentUser.permissions.includes(
-          'NOTIFICATION.VIEW',
-        )
-          ? currentUser.id
-          : undefined;
-
-        if (restrictToUserId) {
-          query.userIds = [currentUser.id];
-        }
-
-        return castToRes(
-          await notificationAdminService.list(query, restrictToUserId),
-        );
+      async ({ query }) => {
+        return castToRes(await notificationAdminService.list(query));
       },
       {
         query: NotificationPaginationDto,
@@ -54,17 +42,8 @@ export const adminNotificationController = new Elysia<
     )
     .get(
       '/:id',
-      async ({ params: { id }, currentUser }) => {
-        const restrictToUserId = !currentUser.permissions.includes(
-          'NOTIFICATION.VIEW',
-        )
-          ? currentUser.id
-          : undefined;
-
-        const result = await notificationAdminService.detail(
-          id,
-          restrictToUserId,
-        );
+      async ({ params: { id } }) => {
+        const result = await notificationAdminService.detail(id);
         return castToRes(result);
       },
       {
@@ -77,13 +56,10 @@ export const adminNotificationController = new Elysia<
         },
       },
     )
+    .use(authorize(has('NOTIFICATION.CREATE')))
     .post(
       '/',
-      async ({ body, currentUser }) => {
-        if (!currentUser.permissions.includes('NOTIFICATION.CREATE')) {
-          throw new UnAuthErr(ErrCode.PermissionDenied);
-        }
-
+      async ({ body }) => {
         await notificationAdminService.create(body);
         return castToRes(null);
       },
@@ -96,16 +72,11 @@ export const adminNotificationController = new Elysia<
         },
       },
     )
+    .use(authorize(has('NOTIFICATION.DELETE')))
     .post(
       '/del',
-      async ({ body, currentUser }) => {
-        const restrictToUserId = !currentUser.permissions.includes(
-          'NOTIFICATION.DELETE',
-        )
-          ? currentUser.id
-          : undefined;
-
-        await notificationAdminService.removeMany(body.ids, restrictToUserId);
+      async ({ body }) => {
+        await notificationAdminService.removeMany(body.ids);
         return castToRes(null);
       },
       {
@@ -117,16 +88,11 @@ export const adminNotificationController = new Elysia<
         },
       },
     )
+    .use(authorize(has('NOTIFICATION.UPDATE')))
     .post(
       '/mark-read',
-      async ({ body, currentUser }) => {
-        const restrictToUserId = !currentUser.permissions.includes(
-          'NOTIFICATION.UPDATE',
-        )
-          ? currentUser.id
-          : undefined;
-
-        await notificationAdminService.markAsRead(body.ids, restrictToUserId);
+      async ({ body }) => {
+        await notificationAdminService.markAsRead(body.ids);
         return castToRes(null);
       },
       {

@@ -7,4 +7,11 @@ export {
   otpController,
   userAuthController,
 } from './auth';
-export { captchaController, fileController, miscController } from './misc';
+export {
+  captchaController,
+  fileController,
+  miscController,
+  userIpWhitelistController,
+  userNotificationController,
+  userSessionController,
+} from './misc';

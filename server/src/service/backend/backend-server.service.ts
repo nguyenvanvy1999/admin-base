@@ -24,6 +24,9 @@ import {
   oauthController,
   otpController,
   userAuthController,
+  userIpWhitelistController,
+  userNotificationController,
+  userSessionController,
 } from 'src/modules';
 import { adminAuthMiddleware } from 'src/service/auth/auth.middleware';
 import { gracefulShutdownService } from 'src/service/misc/graceful-shutdown.service';
@@ -90,6 +93,9 @@ export class BackendServerService {
           .use(userAuthController)
           .use(otpController)
           .use(miscController)
+          .use(userSessionController)
+          .use(userNotificationController)
+          .use(userIpWhitelistController)
           .use(fileController)
           .use(oauthController)
           .use(mfaController)

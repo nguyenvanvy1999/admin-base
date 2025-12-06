@@ -89,8 +89,7 @@ export const defaultRoles: Record<
 
 export const PERMISSIONS = {
   ACTIVITY: {
-    VIEW: { roles: [defaultRoles.administrator.id, defaultRoles.user.id] },
-    VIEW_ALL: { roles: [defaultRoles.administrator.id] },
+    VIEW: { roles: [defaultRoles.administrator.id] },
   },
   CHAT_THREAD: {
     VIEW: { roles: [defaultRoles.administrator.id] },
@@ -100,10 +99,8 @@ export const PERMISSIONS = {
     UPLOAD: { roles: [defaultRoles.administrator.id] },
   },
   SESSION: {
-    VIEW: { roles: [defaultRoles.administrator.id, defaultRoles.user.id] },
-    VIEW_ALL: { roles: [defaultRoles.administrator.id] },
-    REVOKE: { roles: [defaultRoles.administrator.id, defaultRoles.user.id] },
-    REVOKE_ALL: { roles: [defaultRoles.administrator.id] },
+    VIEW: { roles: [defaultRoles.administrator.id] },
+    REVOKE: { roles: [defaultRoles.administrator.id] },
   },
   SETTING: {
     VIEW: { roles: [defaultRoles.administrator.id, defaultRoles.user.id] },
@@ -147,16 +144,12 @@ export const PERMISSIONS = {
     SEND: { roles: [defaultRoles.administrator.id] },
   },
   API_KEY: {
-    VIEW: { roles: [defaultRoles.administrator.id, defaultRoles.user.id] },
-    VIEW_ALL: { roles: [defaultRoles.administrator.id] },
-    UPDATE: { roles: [defaultRoles.administrator.id, defaultRoles.user.id] },
-    UPDATE_ALL: { roles: [defaultRoles.administrator.id] },
-    DELETE: { roles: [defaultRoles.administrator.id, defaultRoles.user.id] },
-    DELETE_ALL: { roles: [defaultRoles.administrator.id] },
+    VIEW: { roles: [defaultRoles.administrator.id] },
+    UPDATE: { roles: [defaultRoles.administrator.id] },
+    DELETE: { roles: [defaultRoles.administrator.id] },
   },
   AUDIT_LOG: {
     VIEW: { roles: [defaultRoles.administrator.id] },
-    VIEW_ALL: { roles: [defaultRoles.administrator.id] },
   },
   NOTIFICATION: {
     CREATE: { roles: [defaultRoles.administrator.id] },

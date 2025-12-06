@@ -6,17 +6,16 @@ import {
   UserIpWhitelistPaginationDto,
 } from 'src/modules/admin/dtos/user-ip-whitelist.dto';
 import { userIpWhitelistAdminService } from 'src/service/admin';
+import { anyOf, authorize, has } from 'src/service/auth/authorization';
 import {
   type AppAuthMeta,
   authErrors,
   castToRes,
   DOC_TAG,
-  ErrCode,
   ErrorResDto,
   IdDto,
   IdsDto,
   ResWrapper,
-  UnAuthErr,
 } from 'src/share';
 
 export const adminUserIpWhitelistController = new Elysia<
@@ -26,12 +25,10 @@ export const adminUserIpWhitelistController = new Elysia<
   tags: [DOC_TAG.ADMIN_USER_IP_WHITELIST],
 }).group('/user-ip-whitelists', (app) =>
   app
+    .use(authorize(has('IPWHITELIST.VIEW')))
     .get(
       '/',
-      async ({ query, currentUser }) => {
-        if (!currentUser.permissions.includes('IPWHITELIST.VIEW')) {
-          query.userIds = [currentUser.id];
-        }
+      async ({ query }) => {
         return castToRes(await userIpWhitelistAdminService.list(query));
       },
       {
@@ -44,12 +41,8 @@ export const adminUserIpWhitelistController = new Elysia<
     )
     .get(
       '/:id',
-      async ({ params: { id }, currentUser }) => {
-        const userId = !currentUser.permissions.includes('IPWHITELIST.VIEW')
-          ? currentUser.id
-          : undefined;
-
-        const result = await userIpWhitelistAdminService.detail(id, userId);
+      async ({ params: { id } }) => {
+        const result = await userIpWhitelistAdminService.detail(id);
         return castToRes(result);
       },
       {
@@ -62,23 +55,11 @@ export const adminUserIpWhitelistController = new Elysia<
         },
       },
     )
+    .use(authorize(anyOf(has('IPWHITELIST.CREATE'), has('IPWHITELIST.UPDATE'))))
     .post(
       '/',
-      async ({ body, currentUser }) => {
-        if (
-          !currentUser.permissions.includes('IPWHITELIST.UPDATE') &&
-          body.userId !== currentUser.id
-        ) {
-          throw new UnAuthErr(ErrCode.ActionNotAllowed);
-        }
-
-        const restrictToUserId = !currentUser.permissions.includes(
-          'IPWHITELIST.UPDATE',
-        )
-          ? currentUser.id
-          : undefined;
-
-        await userIpWhitelistAdminService.upsert(body, restrictToUserId);
+      async ({ body }) => {
+        await userIpWhitelistAdminService.upsert(body);
         return castToRes(null);
       },
       {
@@ -90,19 +71,11 @@ export const adminUserIpWhitelistController = new Elysia<
         },
       },
     )
+    .use(authorize(has('IPWHITELIST.DELETE')))
     .post(
       '/del',
-      async ({ body, currentUser }) => {
-        const restrictToUserId = !currentUser.permissions.includes(
-          'IPWHITELIST.UPDATE',
-        )
-          ? currentUser.id
-          : undefined;
-
-        await userIpWhitelistAdminService.removeMany(
-          body.ids,
-          restrictToUserId,
-        );
+      async ({ body }) => {
+        await userIpWhitelistAdminService.removeMany(body.ids);
         return castToRes(null);
       },
       {

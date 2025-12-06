@@ -73,7 +73,7 @@ describe('AdminUserIpWhitelistController', () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.data.id).toBe('1');
-    expect(mockDetail).toHaveBeenCalledWith('1', undefined);
+    expect(mockDetail).toHaveBeenCalledWith('1');
   });
 
   it('POST /user-ip-whitelists/ should add IP', async () => {
@@ -90,10 +90,10 @@ describe('AdminUserIpWhitelistController', () => {
       }),
     );
     expect(response.status).toBe(200);
-    expect(mockUpsert).toHaveBeenCalledWith(
-      { userId: 'user1', ip: '127.0.0.1' },
-      undefined,
-    );
+    expect(mockUpsert).toHaveBeenCalledWith({
+      userId: 'user1',
+      ip: '127.0.0.1',
+    });
   });
 
   it('POST /user-ip-whitelists/del should remove IPs', async () => {
@@ -107,6 +107,6 @@ describe('AdminUserIpWhitelistController', () => {
       }),
     );
     expect(response.status).toBe(200);
-    expect(mockRemoveMany).toHaveBeenCalledWith(['1', '2'], undefined);
+    expect(mockRemoveMany).toHaveBeenCalledWith(['1', '2']);
   });
 });
