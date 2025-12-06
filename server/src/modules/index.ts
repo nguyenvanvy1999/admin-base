@@ -1,4 +1,7 @@
-export { auditLogsAdminController } from './audit-logs';
+export {
+  auditLogsAdminController,
+  auditLogsUserController,
+} from './audit-logs';
 export { authController, userAuthController } from './auth';
 export { captchaController } from './captcha';
 export { fileController } from './file';

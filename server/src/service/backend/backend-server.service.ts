@@ -16,6 +16,7 @@ import { swaggerConfig } from 'src/config/swagger';
 import { subscribeInbox } from 'src/config/ws-pubsub';
 import {
   auditLogsAdminController,
+  auditLogsUserController,
   authController,
   captchaController,
   fileController,
@@ -107,6 +108,7 @@ export class BackendServerService {
           .use(sessionUserController)
           .use(notificationUserController)
           .use(ipWhitelistUserController)
+          .use(auditLogsUserController)
           .use(fileController)
           .use(oauthController)
           .use(mfaController)
