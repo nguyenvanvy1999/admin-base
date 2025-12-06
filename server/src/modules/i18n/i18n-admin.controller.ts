@@ -2,7 +2,14 @@ import { Elysia, t } from 'elysia';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
 import { i18nService } from 'src/service/i18n.service';
-import { castToRes, DOC_TAG, IdsDto, ResWrapper } from 'src/share';
+import {
+  authErrors,
+  castToRes,
+  DOC_TAG,
+  ErrorResDto,
+  IdsDto,
+  ResWrapper,
+} from 'src/share';
 import {
   I18nPaginationDto,
   I18nUpsertDto,
@@ -25,14 +32,15 @@ export const i18nAdminController = new Elysia({
   .post(
     '/',
     async ({ body }) => {
-      await i18nService.upsert(body);
-      return castToRes(null);
+      const result = await i18nService.upsert(body);
+      return castToRes(result);
     },
     {
       body: I18nUpsertDto,
       response: {
-        200: ResWrapper(t.Null()),
-        400: ResWrapper(t.Null()),
+        200: ResWrapper(t.Object({ id: t.String() })),
+        400: ErrorResDto,
+        ...authErrors,
       },
     },
   )

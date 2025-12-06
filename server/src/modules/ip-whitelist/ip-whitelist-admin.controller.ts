@@ -67,18 +67,18 @@ export const ipWhitelistAdminController = new Elysia({
   .post(
     '/',
     async ({ body, currentUser }) => {
-      await userIpWhitelistService.upsert(body, {
+      const result = await userIpWhitelistService.upsert(body, {
         currentUserId: currentUser.id,
         hasViewPermission:
           currentUser.permissions.includes('IPWHITELIST.CREATE') ||
           currentUser.permissions.includes('IPWHITELIST.UPDATE'),
       });
-      return castToRes(null);
+      return castToRes(result);
     },
     {
       body: UpsertIpWhitelistDto,
       response: {
-        200: ResWrapper(t.Null()),
+        200: ResWrapper(t.Object({ id: t.String() })),
         400: ErrorResDto,
         ...authErrors,
       },

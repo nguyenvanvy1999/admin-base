@@ -70,6 +70,7 @@ export class OAuthService {
 
     const provider = await this.deps.db.authProvider.findUnique({
       where: { code: OAUTH.GOOGLE },
+      select: { id: true, enabled: true, config: true },
     });
 
     const { clientId } = (provider?.config as { clientId?: string }) || {};
@@ -118,6 +119,7 @@ export class OAuthService {
     if (user) {
       const authExists = await this.deps.db.userAuthProvider.findFirst({
         where: { providerCode: OAUTH.GOOGLE, providerId: googleId },
+        select: { id: true },
       });
 
       if (!authExists) {
@@ -218,6 +220,7 @@ export class OAuthService {
 
     const provider = await this.deps.db.authProvider.findUnique({
       where: { code: OAUTH.TELEGRAM },
+      select: { id: true, enabled: true, config: true },
     });
 
     const { botToken } = (provider?.config as { botToken?: string }) || {};
@@ -256,6 +259,7 @@ export class OAuthService {
           { providerCode: OAUTH.TELEGRAM, providerId: telegramData.id },
         ],
       },
+      select: { id: true },
     });
 
     if (authExists) {

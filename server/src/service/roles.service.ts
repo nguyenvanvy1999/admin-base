@@ -109,7 +109,7 @@ export class RolesService {
     });
   }
 
-  async upsert(params: UpsertParams): Promise<void> {
+  async upsert(params: UpsertParams): Promise<{ id: string }> {
     const { id, title, enabled, description, players, permissionIds } = params;
 
     if (id) {
@@ -123,7 +123,7 @@ export class RolesService {
       if (targetRole.protected) {
         throw new UnAuthErr(ErrCode.PermissionDenied);
       }
-      await this.deps.db.role.update({
+      const updated = await this.deps.db.role.update({
         where: { id },
         data: {
           description,
@@ -158,8 +158,9 @@ export class RolesService {
         },
         select: { id: true },
       });
+      return { id: updated.id };
     } else {
-      await this.deps.db.role.create({
+      const created = await this.deps.db.role.create({
         data: {
           id: IdUtil.dbId(DB_PREFIX.ROLE),
           description,
@@ -185,6 +186,7 @@ export class RolesService {
         },
         select: { id: true },
       });
+      return { id: created.id };
     }
   }
 

@@ -585,6 +585,7 @@ export class AuthService {
         ...(await this.deps.passwordService.createPassword(newPassword)),
         lastPasswordChangeAt: new Date(),
       },
+      select: { id: true },
     });
 
     const { clientIp, userAgent } = getIpAndUa();

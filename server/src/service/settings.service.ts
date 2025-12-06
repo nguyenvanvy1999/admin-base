@@ -1,12 +1,21 @@
 import { settingCache } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
-import type { Setting } from 'src/generated';
+import type { SettingSelect } from 'src/generated';
 import type { UpdateSettingDto } from 'src/modules/settings';
 import { EncryptService } from 'src/service/auth/encrypt.service';
 import { settingService } from 'src/service/misc/setting.service';
 import { BadReqErr, ErrCode, NotFoundErr } from 'src/share';
 
 type UpdateParams = typeof UpdateSettingDto.static & { id: string };
+
+const settingSelect = {
+  id: true,
+  key: true,
+  description: true,
+  type: true,
+  value: true,
+  isSecret: true,
+} satisfies SettingSelect;
 
 export class SettingsService {
   constructor(
@@ -17,9 +26,11 @@ export class SettingsService {
   ) {}
 
   async list() {
-    const settings = await this.deps.db.setting.findMany();
+    const settings = await this.deps.db.setting.findMany({
+      select: settingSelect,
+    });
     return Promise.all(
-      settings.map((x: Setting) => {
+      settings.map((x) => {
         const result = { ...x };
         if (x.isSecret) {
           result.value = '************';
@@ -29,7 +40,7 @@ export class SettingsService {
     );
   }
 
-  async update(params: UpdateParams): Promise<void> {
+  async update(params: UpdateParams): Promise<{ id: string }> {
     const { id, value, isSecret, description } = params;
     const setting = await this.deps.db.setting.findUnique({
       where: { id },
@@ -55,11 +66,13 @@ export class SettingsService {
         isSecret,
         ...(description !== undefined && { description }),
       },
+      select: settingSelect,
     });
     await settingCache.set(
       updated.key,
       this.deps.settingService.getValue(updated),
     );
+    return { id: updated.id };
   }
 
   export() {

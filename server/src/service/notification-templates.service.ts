@@ -86,7 +86,9 @@ export class NotificationTemplatesService {
     return template;
   }
 
-  async upsert(data: typeof UpsertNotificationTemplateDto.static) {
+  async upsert(
+    data: typeof UpsertNotificationTemplateDto.static,
+  ): Promise<{ id: string }> {
     const { id, code, name, subject, body, type, variables, enabled } = data;
 
     if (id) {
@@ -111,7 +113,7 @@ export class NotificationTemplatesService {
         throw new BadReqErr(ErrCode.NotificationTemplateCodeExists);
       }
 
-      await this.deps.db.notificationTemplate.update({
+      const updated = await this.deps.db.notificationTemplate.update({
         where: { id },
         data: {
           code,
@@ -124,6 +126,7 @@ export class NotificationTemplatesService {
         },
         select: { id: true },
       });
+      return { id: updated.id };
     } else {
       const codeExists = await this.deps.db.notificationTemplate.findUnique({
         where: { code },
@@ -134,7 +137,7 @@ export class NotificationTemplatesService {
         throw new BadReqErr(ErrCode.NotificationTemplateCodeExists);
       }
 
-      await this.deps.db.notificationTemplate.create({
+      const created = await this.deps.db.notificationTemplate.create({
         data: {
           id: IdUtil.dbId(DB_PREFIX.NOTIFICATION_TEMPLATE),
           code,
@@ -147,6 +150,7 @@ export class NotificationTemplatesService {
         },
         select: { id: true },
       });
+      return { id: created.id };
     }
   }
 

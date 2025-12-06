@@ -69,13 +69,13 @@ export const notificationAdminController = new Elysia({
   .post(
     '/',
     async ({ body }) => {
-      await notificationsService.create(body);
-      return castToRes(null);
+      const result = await notificationsService.create(body);
+      return castToRes(result);
     },
     {
       body: CreateNotificationDto,
       response: {
-        200: ResWrapper(t.Null()),
+        200: ResWrapper(t.Object({ id: t.String() })),
         400: ErrorResDto,
         ...authErrors,
       },

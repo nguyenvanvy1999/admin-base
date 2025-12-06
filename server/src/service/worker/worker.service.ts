@@ -60,6 +60,7 @@ export class WorkerService {
       await this.deps.db.session.update({
         where: { id: sessionId },
         data: { location: location as any },
+        select: { id: true },
       });
     }
   }

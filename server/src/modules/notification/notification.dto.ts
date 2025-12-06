@@ -1,15 +1,11 @@
 import { t } from 'elysia';
+import { NotificationStatus, NotificationType } from 'src/generated';
 import { DtoFields, PaginationReqDto } from 'src/share';
 
 export const CreateNotificationDto = t.Object({
   userId: t.String({ minLength: 1 }),
   templateId: t.Optional(t.String()),
-  type: t.Union([
-    t.Literal('email'),
-    t.Literal('sms'),
-    t.Literal('push'),
-    t.Literal('in_app'),
-  ]),
+  type: t.Enum(NotificationType),
   subject: t.Optional(t.String()),
   content: t.String({ minLength: 1 }),
   metadata: t.Optional(t.Any()),
@@ -19,18 +15,8 @@ export const NotificationItemDto = t.Object({
   id: t.String(),
   userId: t.String(),
   templateId: t.Nullable(t.String()),
-  type: t.Union([
-    t.Literal('email'),
-    t.Literal('sms'),
-    t.Literal('push'),
-    t.Literal('in_app'),
-  ]),
-  status: t.Union([
-    t.Literal('pending'),
-    t.Literal('sent'),
-    t.Literal('failed'),
-    t.Literal('read'),
-  ]),
+  type: t.Enum(NotificationType),
+  status: t.Enum(NotificationStatus),
   subject: t.Nullable(t.String()),
   content: t.String(),
   metadata: t.Nullable(t.Any()),
@@ -63,22 +49,8 @@ export const NotificationPaginationDto = t.Intersect([
   t.Object({
     userId: t.Optional(t.String()),
     userIds: t.Optional(t.Array(t.String())),
-    type: t.Optional(
-      t.Union([
-        t.Literal('email'),
-        t.Literal('sms'),
-        t.Literal('push'),
-        t.Literal('in_app'),
-      ]),
-    ),
-    status: t.Optional(
-      t.Union([
-        t.Literal('pending'),
-        t.Literal('sent'),
-        t.Literal('failed'),
-        t.Literal('read'),
-      ]),
-    ),
+    type: t.Optional(t.Enum(NotificationType)),
+    status: t.Optional(t.Enum(NotificationStatus)),
     search: DtoFields.search,
   }),
 ]);

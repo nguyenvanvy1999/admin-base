@@ -113,7 +113,7 @@ export class UserIpWhitelistService {
       currentUserId: string;
       hasViewPermission: boolean;
     },
-  ) {
+  ): Promise<{ id: string }> {
     const { userId, ip, note, id } = data;
     const { currentUserId, hasViewPermission } = params;
 
@@ -123,20 +123,24 @@ export class UserIpWhitelistService {
         where.userId = currentUserId;
       }
 
-      const existing = await this.deps.db.userIpWhitelist.findFirst({ where });
+      const existing = await this.deps.db.userIpWhitelist.findFirst({
+        where,
+        select: { id: true },
+      });
       if (!existing) {
         throw new NotFoundErr(ErrCode.IPWhitelistNotFound);
       }
 
-      await this.deps.db.userIpWhitelist.update({
+      const updated = await this.deps.db.userIpWhitelist.update({
         where: { id },
         data: { ip, note },
         select: { id: true },
       });
+      return { id: updated.id };
     } else {
       const finalUserId = hasViewPermission ? userId : currentUserId;
 
-      await this.deps.db.userIpWhitelist.create({
+      const created = await this.deps.db.userIpWhitelist.create({
         data: {
           id: IdUtil.dbId(DB_PREFIX.IP_WHITELIST),
           userId: finalUserId,
@@ -145,6 +149,7 @@ export class UserIpWhitelistService {
         },
         select: { id: true },
       });
+      return { id: created.id };
     }
   }
 

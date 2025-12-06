@@ -37,7 +37,7 @@ export class I18nService {
     return { docs, count };
   }
 
-  async upsert(params: UpsertParams): Promise<void> {
+  async upsert(params: UpsertParams): Promise<{ id: string }> {
     const where: I18nWhereInput[] = [{ key: params.key }];
     if (params.id) {
       where.push({ id: { not: params.id } });
@@ -51,16 +51,18 @@ export class I18nService {
     }
 
     if (params.id) {
-      await this.deps.db.i18n.update({
+      const updated = await this.deps.db.i18n.update({
         where: { id: params.id },
         data: params,
         select: { id: true },
       });
+      return { id: updated.id };
     } else {
-      await this.deps.db.i18n.create({
+      const created = await this.deps.db.i18n.create({
         data: { ...params, id: IdUtil.dbId(DB_PREFIX.I18N) },
         select: { id: true },
       });
+      return { id: created.id };
     }
   }
 

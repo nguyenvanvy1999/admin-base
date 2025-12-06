@@ -118,10 +118,12 @@ export class NotificationsService {
     return doc;
   }
 
-  async create(data: typeof CreateNotificationDto.static) {
+  async create(
+    data: typeof CreateNotificationDto.static,
+  ): Promise<{ id: string }> {
     const { userId, templateId, type, subject, content, metadata } = data;
 
-    await this.deps.db.notification.create({
+    const created = await this.deps.db.notification.create({
       data: {
         id: IdUtil.dbId(DB_PREFIX.NOTIFICATION),
         userId,
@@ -134,6 +136,7 @@ export class NotificationsService {
       },
       select: { id: true },
     });
+    return { id: created.id };
   }
 
   async removeMany(
