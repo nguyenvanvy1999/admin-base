@@ -3,7 +3,7 @@ import type { NotificationSelect, NotificationWhereInput } from 'src/generated';
 import type {
   CreateNotificationDto,
   NotificationPaginationDto,
-} from 'src/modules/admin/dtos/notification.dto';
+} from 'src/modules/notification/notification.dto';
 import { DB_PREFIX, ErrCode, IdUtil, NotFoundErr } from '../../share';
 
 const notificationSelect = {

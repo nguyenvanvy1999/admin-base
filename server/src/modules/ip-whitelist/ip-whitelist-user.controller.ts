@@ -1,10 +1,4 @@
 import { Elysia, t } from 'elysia';
-import {
-  PaginateUserIpWhitelistResDto,
-  UpsertUserIpWhitelistDto,
-  UserIpWhitelistDetailResDto,
-  UserIpWhitelistPaginationDto,
-} from 'src/modules/admin/dtos/user-ip-whitelist.dto';
 import { userIpWhitelistAdminService } from 'src/service/admin';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import {
@@ -17,9 +11,15 @@ import {
   IdsDto,
   ResWrapper,
 } from 'src/share';
+import {
+  IpWhitelistDetailResDto,
+  IpWhitelistPaginationDto,
+  PaginateIpWhitelistResDto,
+  UpsertIpWhitelistDto,
+} from './ip-whitelist.dto';
 
-export const userIpWhitelistController = new Elysia<
-  'user-ip-whitelist',
+export const ipWhitelistUserController = new Elysia<
+  'ip-whitelist-user',
   AppAuthMeta
 >({
   tags: [DOC_TAG.MISC],
@@ -34,9 +34,9 @@ export const userIpWhitelistController = new Elysia<
           return castToRes(await userIpWhitelistAdminService.list(query));
         },
         {
-          query: UserIpWhitelistPaginationDto,
+          query: IpWhitelistPaginationDto,
           response: {
-            200: ResWrapper(PaginateUserIpWhitelistResDto),
+            200: ResWrapper(PaginateIpWhitelistResDto),
             ...authErrors,
           },
         },
@@ -53,7 +53,7 @@ export const userIpWhitelistController = new Elysia<
         {
           params: IdDto,
           response: {
-            200: ResWrapper(UserIpWhitelistDetailResDto),
+            200: ResWrapper(IpWhitelistDetailResDto),
             400: ErrorResDto,
             404: ErrorResDto,
             ...authErrors,
@@ -68,7 +68,7 @@ export const userIpWhitelistController = new Elysia<
           return castToRes(null);
         },
         {
-          body: UpsertUserIpWhitelistDto,
+          body: UpsertIpWhitelistDto,
           response: {
             200: ResWrapper(t.Null()),
             400: ErrorResDto,

@@ -1,10 +1,4 @@
 import { Elysia, t } from 'elysia';
-import {
-  MarkNotificationReadDto,
-  NotificationDetailResDto,
-  NotificationPaginationDto,
-  PaginateNotificationResDto,
-} from 'src/modules/admin/dtos/notification.dto';
 import { notificationAdminService } from 'src/service/admin';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import {
@@ -17,9 +11,15 @@ import {
   IdsDto,
   ResWrapper,
 } from 'src/share';
+import {
+  MarkNotificationReadDto,
+  NotificationDetailResDto,
+  NotificationPaginationDto,
+  PaginateNotificationResDto,
+} from './notification.dto';
 
-export const userNotificationController = new Elysia<
-  'user-notification',
+export const notificationUserController = new Elysia<
+  'notification-user',
   AppAuthMeta
 >({
   tags: [DOC_TAG.MISC],

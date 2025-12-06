@@ -8,10 +8,16 @@ export {
   userAuthController,
 } from './auth';
 export {
+  ipWhitelistAdminController,
+  ipWhitelistUserController,
+} from './ip-whitelist';
+export {
   captchaController,
   fileController,
   miscController,
-  userIpWhitelistController,
-  userNotificationController,
-  userSessionController,
 } from './misc';
+export {
+  notificationAdminController,
+  notificationUserController,
+} from './notification';
+export { sessionAdminController, sessionUserController } from './session';

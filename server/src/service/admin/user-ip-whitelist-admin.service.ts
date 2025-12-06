@@ -4,9 +4,9 @@ import type {
   UserIpWhitelistWhereInput,
 } from 'src/generated';
 import type {
-  UpsertUserIpWhitelistDto,
-  UserIpWhitelistPaginationDto,
-} from 'src/modules/admin/dtos/user-ip-whitelist.dto';
+  IpWhitelistPaginationDto,
+  UpsertIpWhitelistDto,
+} from 'src/modules/ip-whitelist/ip-whitelist.dto';
 import { DB_PREFIX, ErrCode, IdUtil, NotFoundErr } from '../../share';
 
 const ipWhitelistSelect = {
@@ -19,7 +19,7 @@ const ipWhitelistSelect = {
 export class UserIpWhitelistAdminService {
   constructor(private readonly deps: { db: IDb }) {}
 
-  async list(query: typeof UserIpWhitelistPaginationDto.static) {
+  async list(query: typeof IpWhitelistPaginationDto.static) {
     const { userIds, userId, ip, search, take = 20, skip = 0 } = query;
     const where: UserIpWhitelistWhereInput = {};
 
@@ -85,7 +85,7 @@ export class UserIpWhitelistAdminService {
   }
 
   async upsert(
-    data: typeof UpsertUserIpWhitelistDto.static,
+    data: typeof UpsertIpWhitelistDto.static,
     restrictToUserId?: string,
   ) {
     const { userId, ip, note, id } = data;

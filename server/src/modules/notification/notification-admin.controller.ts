@@ -1,11 +1,4 @@
 import { Elysia, t } from 'elysia';
-import {
-  CreateNotificationDto,
-  MarkNotificationReadDto,
-  NotificationDetailResDto,
-  NotificationPaginationDto,
-  PaginateNotificationResDto,
-} from 'src/modules/admin/dtos/notification.dto';
 import { notificationAdminService } from 'src/service/admin';
 import { authorize, has } from 'src/service/auth/authorization';
 import {
@@ -18,13 +11,20 @@ import {
   IdsDto,
   ResWrapper,
 } from 'src/share';
+import {
+  CreateNotificationDto,
+  MarkNotificationReadDto,
+  NotificationDetailResDto,
+  NotificationPaginationDto,
+  PaginateNotificationResDto,
+} from './notification.dto';
 
-export const adminNotificationController = new Elysia<
-  'admin-notification',
+export const notificationAdminController = new Elysia<
+  'notification-admin',
   AppAuthMeta
 >({
   tags: [DOC_TAG.ADMIN_NOTIFICATION],
-}).group('/notifications', (app) =>
+}).group('/admin/notifications', (app) =>
   app
     .use(authorize(has('NOTIFICATION.VIEW')))
     .get(

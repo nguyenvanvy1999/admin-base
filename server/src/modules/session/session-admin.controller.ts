@@ -1,8 +1,4 @@
 import { Elysia, t } from 'elysia';
-import {
-  SessionPaginateDto,
-  SessionPagingResDto,
-} from 'src/modules/admin/dtos';
 import { authorize, has } from 'src/service/auth/authorization';
 import { sessionService } from 'src/service/auth/session.service';
 import {
@@ -14,10 +10,11 @@ import {
   IdsDto,
   ResWrapper,
 } from 'src/share';
+import { SessionPaginateDto, SessionPagingResDto } from './session.dto';
 
-export const adminSessionController = new Elysia<'admin-session', AppAuthMeta>({
+export const sessionAdminController = new Elysia<'session-admin', AppAuthMeta>({
   tags: [DOC_TAG.ADMIN_SESSION],
-}).group('/sessions', (app) =>
+}).group('/admin/sessions', (app) =>
   app
     .use(authorize(has('SESSION.VIEW')))
     .get(

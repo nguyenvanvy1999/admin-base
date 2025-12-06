@@ -1,10 +1,4 @@
 import { Elysia, t } from 'elysia';
-import {
-  PaginateUserIpWhitelistResDto,
-  UpsertUserIpWhitelistDto,
-  UserIpWhitelistDetailResDto,
-  UserIpWhitelistPaginationDto,
-} from 'src/modules/admin/dtos/user-ip-whitelist.dto';
 import { userIpWhitelistAdminService } from 'src/service/admin';
 import { anyOf, authorize, has } from 'src/service/auth/authorization';
 import {
@@ -17,13 +11,19 @@ import {
   IdsDto,
   ResWrapper,
 } from 'src/share';
+import {
+  IpWhitelistDetailResDto,
+  IpWhitelistPaginationDto,
+  PaginateIpWhitelistResDto,
+  UpsertIpWhitelistDto,
+} from './ip-whitelist.dto';
 
-export const adminUserIpWhitelistController = new Elysia<
-  'admin-user-ip-whitelist',
+export const ipWhitelistAdminController = new Elysia<
+  'ip-whitelist-admin',
   AppAuthMeta
 >({
   tags: [DOC_TAG.ADMIN_USER_IP_WHITELIST],
-}).group('/user-ip-whitelists', (app) =>
+}).group('/admin/user-ip-whitelists', (app) =>
   app
     .use(authorize(has('IPWHITELIST.VIEW')))
     .get(
@@ -32,9 +32,9 @@ export const adminUserIpWhitelistController = new Elysia<
         return castToRes(await userIpWhitelistAdminService.list(query));
       },
       {
-        query: UserIpWhitelistPaginationDto,
+        query: IpWhitelistPaginationDto,
         response: {
-          200: ResWrapper(PaginateUserIpWhitelistResDto),
+          200: ResWrapper(PaginateIpWhitelistResDto),
           ...authErrors,
         },
       },
@@ -48,7 +48,7 @@ export const adminUserIpWhitelistController = new Elysia<
       {
         params: IdDto,
         response: {
-          200: ResWrapper(UserIpWhitelistDetailResDto),
+          200: ResWrapper(IpWhitelistDetailResDto),
           400: ErrorResDto,
           404: ErrorResDto,
           ...authErrors,
@@ -63,7 +63,7 @@ export const adminUserIpWhitelistController = new Elysia<
         return castToRes(null);
       },
       {
-        body: UpsertUserIpWhitelistDto,
+        body: UpsertIpWhitelistDto,
         response: {
           200: ResWrapper(t.Null()),
           400: ErrorResDto,

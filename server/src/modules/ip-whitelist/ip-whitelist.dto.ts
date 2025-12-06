@@ -1,14 +1,14 @@
 import { t } from 'elysia';
 import { DtoFields, PaginationReqDto } from 'src/share';
 
-export const UpsertUserIpWhitelistDto = t.Object({
+export const UpsertIpWhitelistDto = t.Object({
   id: t.Optional(t.String()),
   ip: t.String({ minLength: 1 }),
   userId: t.String({ minLength: 1 }),
   note: t.Optional(t.String()),
 });
 
-export const UserIpWhitelistItemDto = t.Object({
+export const IpWhitelistItemDto = t.Object({
   id: t.String(),
   ip: t.String(),
   userId: t.String(),
@@ -16,13 +16,13 @@ export const UserIpWhitelistItemDto = t.Object({
   created: t.Date(),
 });
 
-export const PaginateUserIpWhitelistResDto = t.Object({
-  docs: t.Array(UserIpWhitelistItemDto),
+export const PaginateIpWhitelistResDto = t.Object({
+  docs: t.Array(IpWhitelistItemDto),
   count: t.Number(),
 });
 
-export const UserIpWhitelistDetailResDto = t.Intersect([
-  UserIpWhitelistItemDto,
+export const IpWhitelistDetailResDto = t.Intersect([
+  IpWhitelistItemDto,
   t.Object({
     user: t.Optional(
       t.Object({
@@ -33,7 +33,7 @@ export const UserIpWhitelistDetailResDto = t.Intersect([
   }),
 ]);
 
-export const UserIpWhitelistPaginationDto = t.Intersect([
+export const IpWhitelistPaginationDto = t.Intersect([
   PaginationReqDto,
   t.Object({
     userId: t.Optional(t.String()),

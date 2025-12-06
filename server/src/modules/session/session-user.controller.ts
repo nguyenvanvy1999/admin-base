@@ -1,8 +1,4 @@
 import { Elysia, t } from 'elysia';
-import {
-  SessionPaginateDto,
-  SessionPagingResDto,
-} from 'src/modules/admin/dtos';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { sessionService } from 'src/service/auth/session.service';
 import {
@@ -14,8 +10,9 @@ import {
   IdsDto,
   ResWrapper,
 } from 'src/share';
+import { SessionPaginateDto, SessionPagingResDto } from './session.dto';
 
-export const userSessionController = new Elysia<'user-session', AppAuthMeta>({
+export const sessionUserController = new Elysia<'session-user', AppAuthMeta>({
   tags: [DOC_TAG.MISC],
 })
   .use(authCheck)
