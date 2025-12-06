@@ -1,85 +1,79 @@
 import { Elysia, t } from 'elysia';
 import { i18nService } from 'src/service/admin';
+import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
-import {
-  type AppAuthMeta,
-  castToRes,
-  DOC_TAG,
-  IdsDto,
-  ResWrapper,
-} from 'src/share';
+import { castToRes, DOC_TAG, IdsDto, ResWrapper } from 'src/share';
 import {
   I18nPaginationDto,
   I18nUpsertDto,
   PaginateI18nResDto,
 } from './i18n.dto';
 
-export const i18nAdminController = new Elysia<'admin', AppAuthMeta>({
-  prefix: 'admin',
+export const i18nAdminController = new Elysia({
+  prefix: '/admin/i18n',
   tags: [DOC_TAG.ADMIN_I18N],
-}).group('/i18n', (app) =>
-  app
-    .use(authorize(has('I18N.VIEW')))
-    .get('/', async ({ query }) => castToRes(await i18nService.list(query)), {
-      query: I18nPaginationDto,
+})
+  .use(authCheck)
+  .use(authorize(has('I18N.VIEW')))
+  .get('/', async ({ query }) => castToRes(await i18nService.list(query)), {
+    query: I18nPaginationDto,
+    response: {
+      200: ResWrapper(PaginateI18nResDto),
+    },
+  })
+  .use(authorize(has('I18N.UPDATE')))
+  .post(
+    '/',
+    async ({ body }) => {
+      await i18nService.upsert(body);
+      return castToRes(null);
+    },
+    {
+      body: I18nUpsertDto,
       response: {
-        200: ResWrapper(PaginateI18nResDto),
+        200: ResWrapper(t.Null()),
+        400: ResWrapper(t.Null()),
       },
-    })
-    .use(authorize(has('I18N.UPDATE')))
-    .post(
-      '/',
-      async ({ body }) => {
-        await i18nService.upsert(body);
-        return castToRes(null);
+    },
+  )
+  .post(
+    '/del',
+    async ({ body }) => {
+      await i18nService.delete(body);
+      return castToRes(null);
+    },
+    {
+      body: IdsDto,
+      response: {
+        200: ResWrapper(t.Null()),
+        400: ResWrapper(t.Null()),
       },
-      {
-        body: I18nUpsertDto,
-        response: {
-          200: ResWrapper(t.Null()),
-          400: ResWrapper(t.Null()),
-        },
+    },
+  )
+  .post(
+    '/import',
+    async ({ body }) => {
+      await i18nService.import(body);
+      return castToRes(null);
+    },
+    {
+      body: t.Object({
+        file: t.File({ format: 'application/vnd.ms-excel' }),
+      }),
+      response: {
+        200: ResWrapper(t.Null()),
+        400: ResWrapper(t.Null()),
       },
-    )
-    .post(
-      '/del',
-      async ({ body }) => {
-        await i18nService.delete(body);
-        return castToRes(null);
+    },
+  )
+  .get(
+    '/export',
+    () => {
+      return i18nService.export();
+    },
+    {
+      response: {
+        400: ResWrapper(t.Null()),
       },
-      {
-        body: IdsDto,
-        response: {
-          200: ResWrapper(t.Null()),
-          400: ResWrapper(t.Null()),
-        },
-      },
-    )
-    .post(
-      '/import',
-      async ({ body }) => {
-        await i18nService.import(body);
-        return castToRes(null);
-      },
-      {
-        body: t.Object({
-          file: t.File({ format: 'application/vnd.ms-excel' }),
-        }),
-        response: {
-          200: ResWrapper(t.Null()),
-          400: ResWrapper(t.Null()),
-        },
-      },
-    )
-    .get(
-      '/export',
-      () => {
-        return i18nService.export();
-      },
-      {
-        response: {
-          400: ResWrapper(t.Null()),
-        },
-      },
-    ),
-);
+    },
+  );

@@ -1,8 +1,8 @@
 import { Elysia } from 'elysia';
 import { adminUserService } from 'src/service/admin';
+import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
 import {
-  type AppAuthMeta,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -21,7 +21,11 @@ import {
   AdminUserUpdateRolesDto,
 } from './users.dto';
 
-const adminUserViewRoutes = new Elysia<'', AppAuthMeta>()
+export const usersAdminController = new Elysia({
+  prefix: '/admin/users',
+  tags: [DOC_TAG.ADMIN_USER],
+})
+  .use(authCheck)
   .use(authorize(has('USER.VIEW')))
   .get(
     '/',
@@ -46,9 +50,7 @@ const adminUserViewRoutes = new Elysia<'', AppAuthMeta>()
         ...authErrors,
       },
     },
-  );
-
-const adminUserManageRoutes = new Elysia<'', AppAuthMeta>()
+  )
   .use(authorize(has('USER.UPDATE')))
   .post(
     '/',
@@ -107,9 +109,7 @@ const adminUserManageRoutes = new Elysia<'', AppAuthMeta>()
         ...authErrors,
       },
     },
-  );
-
-const adminUserMfaRoutes = new Elysia<'', AppAuthMeta>()
+  )
   .use(authorize(has('USER.RESET_MFA')))
   .post(
     '/:id/mfa/reset',
@@ -151,13 +151,3 @@ const adminUserMfaRoutes = new Elysia<'', AppAuthMeta>()
       },
     },
   );
-
-export const usersAdminController = new Elysia<'', AppAuthMeta>({
-  prefix: '/admin',
-  tags: [DOC_TAG.ADMIN_USER],
-}).group('/users', (app) =>
-  app
-    .use(adminUserViewRoutes)
-    .use(adminUserManageRoutes)
-    .use(adminUserMfaRoutes),
-);

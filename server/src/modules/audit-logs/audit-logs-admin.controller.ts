@@ -1,20 +1,17 @@
 import { Elysia } from 'elysia';
 import { auditLogAdminService } from 'src/service/admin';
+import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
-import {
-  type AppAuthMeta,
-  authErrors,
-  castToRes,
-  DOC_TAG,
-  ResWrapper,
-} from 'src/share';
+import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 import { AuditLogListQueryDto, AuditLogListResDto } from './audit-logs.dto';
 
-export const auditLogsAdminController = new Elysia<'admin', AppAuthMeta>({
-  prefix: 'admin',
+export const auditLogsAdminController = new Elysia({
+  prefix: '/admin/audit-logs',
   tags: [DOC_TAG.ADMIN_AUDIT_LOG],
-}).group('/audit-logs', (app) =>
-  app.use(authorize(has('AUDIT_LOG.VIEW'))).get(
+})
+  .use(authCheck)
+  .use(authorize(has('AUDIT_LOG.VIEW')))
+  .get(
     '/',
     async ({ currentUser, query }) => {
       const result = await auditLogAdminService.list({
@@ -31,5 +28,4 @@ export const auditLogsAdminController = new Elysia<'admin', AppAuthMeta>({
         ...authErrors,
       },
     },
-  ),
-);
+  );
