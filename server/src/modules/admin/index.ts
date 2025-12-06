@@ -1,1 +1,0 @@
-export { adminController } from './controllers';

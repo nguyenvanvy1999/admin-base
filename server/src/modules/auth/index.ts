@@ -1,8 +1,2 @@
-export {
-  authBaseController,
-  backupController,
-  mfaController,
-  oauthController,
-  otpController,
-  userAuthController,
-} from './controllers';
+export { authController, userAuthController } from './auth.controller';
+export * from './auth.dto';

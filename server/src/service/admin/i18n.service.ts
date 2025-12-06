@@ -5,7 +5,7 @@ import {
   I18NImportDto,
   type I18nPaginationDto,
   type I18nUpsertDto,
-} from 'src/modules/admin/dtos';
+} from 'src/modules/i18n';
 import { BadReqErr, DB_PREFIX, ErrCode, IdUtil, type IIdsDto } from 'src/share';
 import XLSX from 'xlsx';
 

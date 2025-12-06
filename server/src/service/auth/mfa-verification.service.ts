@@ -11,7 +11,7 @@ import type {
   ILoginRes,
   MfaLoginRequestDto,
   VerifyBackupCodeRequestDto,
-} from 'src/modules/auth/dtos';
+} from 'src/modules/auth';
 import {
   type AuditLogService,
   auditLogService,

@@ -1,7 +1,7 @@
 import { settingCache } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import type { Setting } from 'src/generated';
-import type { UpdateSettingDto } from 'src/modules/admin/dtos';
+import type { UpdateSettingDto } from 'src/modules/settings';
 import { EncryptService } from 'src/service/auth/encrypt.service';
 import { settingService } from 'src/service/misc/setting.service';
 import { BadReqErr, ErrCode, NotFoundErr } from 'src/share';

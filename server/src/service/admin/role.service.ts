@@ -1,6 +1,6 @@
 import { db, type IDb } from 'src/config/db';
 import type { RoleWhereInput } from 'src/generated';
-import type { RolePaginationDto, UpsertRoleDto } from 'src/modules/admin/dtos';
+import type { RolePaginationDto, UpsertRoleDto } from 'src/modules/roles';
 import {
   BadReqErr,
   DB_PREFIX,

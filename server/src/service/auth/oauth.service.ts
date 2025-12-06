@@ -6,7 +6,7 @@ import type {
   GoogleLoginRequestDto,
   ILoginRes,
   LinkTelegramRequestDto,
-} from 'src/modules/auth/dtos';
+} from 'src/modules/auth';
 import {
   type UserUtilService,
   userUtilService,

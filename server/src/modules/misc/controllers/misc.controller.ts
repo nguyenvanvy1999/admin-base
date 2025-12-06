@@ -9,7 +9,6 @@ import {
   HEALTH_STATE,
   ResWrapper,
 } from 'src/share';
-import { captchaController } from './captcha.controller';
 
 export const miscController = new Elysia({
   detail: { tags: [DOC_TAG.MISC] },
@@ -132,5 +131,4 @@ export const miscController = new Elysia({
         description: 'Get server version',
       },
     },
-  )
-  .use(captchaController);
+  );

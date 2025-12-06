@@ -4,7 +4,7 @@ import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import { geoIPQueue, type IGeoIPQueue } from 'src/config/queue';
 import type { User } from 'src/generated';
-import type { ILoginRes } from 'src/modules/auth/dtos';
+import type { ILoginRes } from 'src/modules/auth';
 import { EncryptService } from 'src/service/auth/encrypt.service';
 import {
   type SessionService,

@@ -13,7 +13,7 @@ import type {
   AdminUserMfaActionDto,
   AdminUserUpdateDto,
   AdminUserUpdateRolesDto,
-} from 'src/modules/admin/dtos';
+} from 'src/modules/users';
 import {
   type UserUtilService,
   userUtilService,

@@ -6,7 +6,7 @@ import type {
 import type {
   NotificationTemplatePaginationDto,
   UpsertNotificationTemplateDto,
-} from 'src/modules/admin/dtos/notification-template.dto';
+} from 'src/modules/notification-templates';
 import {
   BadReqErr,
   DB_PREFIX,

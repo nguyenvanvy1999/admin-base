@@ -26,7 +26,7 @@ import type {
   RefreshTokenRequestDto,
   RegisterRequestDto,
   VerifyAccountRequestDto,
-} from 'src/modules/auth/dtos';
+} from 'src/modules/auth';
 import {
   type AuditLogService,
   auditLogService,

@@ -11,7 +11,7 @@ import type {
   ResetMfaRequestDto,
   SetupMfaConfirmDto,
   SetupMfaRequestDto,
-} from 'src/modules/auth/dtos';
+} from 'src/modules/auth';
 import { otpService } from 'src/service/auth/otp.service';
 import { sessionService } from 'src/service/auth/session.service';
 import { auditLogService } from 'src/service/misc/audit-log.service';

@@ -15,21 +15,28 @@ import { redis } from 'src/config/redis';
 import { swaggerConfig } from 'src/config/swagger';
 import { subscribeInbox } from 'src/config/ws-pubsub';
 import {
-  adminController,
-  authBaseController,
-  backupController,
+  auditLogsAdminController,
+  authController,
+  captchaController,
   fileController,
+  i18nAdminController,
   ipWhitelistAdminController,
   ipWhitelistUserController,
+  mfaBackupController,
   mfaController,
   miscController,
   notificationAdminController,
+  notificationTemplatesAdminController,
   notificationUserController,
   oauthController,
   otpController,
+  permissionsAdminController,
+  rolesAdminController,
   sessionAdminController,
   sessionUserController,
+  settingsAdminController,
   userAuthController,
+  usersAdminController,
 } from 'src/modules';
 import { adminAuthMiddleware } from 'src/service/auth/auth.middleware';
 import { gracefulShutdownService } from 'src/service/misc/graceful-shutdown.service';
@@ -92,21 +99,28 @@ export class BackendServerService {
               : []),
           ])
           .use(reqMeta)
-          .use(authBaseController)
+          .use(authController)
           .use(userAuthController)
           .use(otpController)
           .use(miscController)
+          .use(captchaController)
           .use(sessionUserController)
           .use(notificationUserController)
           .use(ipWhitelistUserController)
           .use(fileController)
           .use(oauthController)
           .use(mfaController)
-          .use(backupController)
+          .use(mfaBackupController)
           .use(sessionAdminController)
           .use(notificationAdminController)
           .use(ipWhitelistAdminController)
-          .use(adminController),
+          .use(usersAdminController)
+          .use(rolesAdminController)
+          .use(permissionsAdminController)
+          .use(auditLogsAdminController)
+          .use(i18nAdminController)
+          .use(settingsAdminController)
+          .use(notificationTemplatesAdminController),
       );
 
     gracefulShutdownService.setupShutdownHandlers();
