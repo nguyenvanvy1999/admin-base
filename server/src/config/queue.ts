@@ -68,3 +68,29 @@ export const geoIPQueue = new Queue<GeoIPJobData>(QueueName.GeoIP, {
   },
 });
 export type IGeoIPQueue = typeof geoIPQueue;
+
+export interface SecurityEventJobData {
+  userId?: string;
+  eventType: string;
+  severity?: string;
+  ip?: string;
+  userAgent?: string;
+  location?: Record<string, any>;
+  metadata?: Record<string, any>;
+}
+
+export const securityEventQueue = new Queue<SecurityEventJobData>(
+  QueueName.SecurityEvent,
+  {
+    connection: queueConnection,
+    defaultJobOptions: {
+      ...queueJobOptions,
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
+    },
+  },
+);
+export type ISecurityEventQueue = typeof securityEventQueue;

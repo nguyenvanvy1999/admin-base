@@ -1,4 +1,5 @@
 import { db, type IDb } from 'src/config/db';
+import { securityEventQueue } from 'src/config/queue';
 import type {
   SecurityEventSeverity,
   SecurityEventType,
@@ -48,7 +49,7 @@ type ListSecurityEventsParams = {
 export class SecurityEventService {
   constructor(private readonly deps: { db: IDb } = { db }) {}
 
-  async create(params: CreateSecurityEventParams) {
+  async create(params: CreateSecurityEventParams): Promise<void> {
     const {
       userId,
       eventType,
@@ -63,6 +64,50 @@ export class SecurityEventService {
     const { clientIp, userAgent: ctxUserAgent } = getIpAndUa();
     const finalIp = ip ?? clientIp;
     const finalUserAgent = userAgent ?? ctxUserAgent;
+
+    if (tx) {
+      return this.createDirect({
+        userId,
+        eventType,
+        severity,
+        ip: finalIp,
+        userAgent: finalUserAgent,
+        location,
+        metadata,
+        tx,
+      });
+    }
+
+    await securityEventQueue.add('create', {
+      userId,
+      eventType: eventType as string,
+      severity: severity as string | undefined,
+      ip: finalIp,
+      userAgent: finalUserAgent,
+      location,
+      metadata,
+    });
+  }
+
+  async createDirect(params: CreateSecurityEventParams) {
+    const {
+      userId,
+      eventType,
+      severity,
+      ip,
+      userAgent,
+      location,
+      metadata,
+      tx,
+    } = params;
+
+    let finalIp = ip;
+    let finalUserAgent = userAgent;
+    if (!finalIp || !finalUserAgent) {
+      const { clientIp, userAgent: ctxUserAgent } = getIpAndUa();
+      finalIp = finalIp ?? clientIp;
+      finalUserAgent = finalUserAgent ?? ctxUserAgent;
+    }
     const finalSeverity = severity ?? inferSeverityFromEventType(eventType);
     const autoResolve = shouldAutoResolve(eventType);
 
@@ -81,25 +126,12 @@ export class SecurityEventService {
     };
 
     const dbInstance = tx || this.deps.db;
-    const event = await dbInstance.securityEvent.create({
+    await dbInstance.securityEvent.create({
       data,
       select: {
         id: true,
-        userId: true,
-        eventType: true,
-        severity: true,
-        ip: true,
-        userAgent: true,
-        location: true,
-        metadata: true,
-        resolved: true,
-        resolvedAt: true,
-        resolvedBy: true,
-        created: true,
       },
     });
-
-    return event;
   }
 
   async resolve(params: ResolveSecurityEventParams) {

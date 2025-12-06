@@ -48,6 +48,11 @@ export class WorkerManagerService {
         handler: (jobName: string, data: any) =>
           this.deps.workerService.handleGeoIPJob(jobName, data),
       },
+      {
+        queue: QueueName.SecurityEvent,
+        handler: (jobName: string, data: any) =>
+          this.deps.workerService.handleSecurityEventJob(jobName, data),
+      },
     ];
   }
 

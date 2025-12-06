@@ -173,6 +173,7 @@ export enum QueueName {
   AuditLog = 'AuditLog',
   BatchAuditLog = 'BatchAuditLog',
   GeoIP = 'GeoIP',
+  SecurityEvent = 'SecurityEvent',
 }
 
 export enum SETTING {
