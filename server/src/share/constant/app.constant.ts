@@ -151,6 +151,10 @@ export const PERMISSIONS = {
   AUDIT_LOG: {
     VIEW: { roles: [defaultRoles.administrator.id] },
   },
+  SECURITY_EVENT: {
+    VIEW: { roles: [defaultRoles.administrator.id] },
+    RESOLVE: { roles: [defaultRoles.administrator.id] },
+  },
   NOTIFICATION: {
     CREATE: { roles: [defaultRoles.administrator.id] },
     UPDATE: { roles: [defaultRoles.administrator.id] },

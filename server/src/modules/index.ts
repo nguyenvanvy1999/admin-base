@@ -21,6 +21,10 @@ export { oauthController } from './oauth';
 export { otpController } from './otp';
 export { permissionsAdminController } from './permissions';
 export { rolesAdminController } from './roles';
+export {
+  securityEventsAdminController,
+  securityEventsUserController,
+} from './security-events';
 export { sessionAdminController, sessionUserController } from './session';
 export { settingsAdminController } from './settings';
 export { usersAdminController } from './users';

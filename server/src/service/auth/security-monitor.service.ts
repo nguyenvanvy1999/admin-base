@@ -6,16 +6,18 @@ import {
   auditLogService,
 } from 'src/service/misc/audit-log.service';
 import {
+  type SecurityEventService,
+  securityEventService,
+} from 'src/service/misc/security-event.service';
+import {
   type SettingService,
   settingService,
 } from 'src/service/misc/setting.service';
 import {
   ACTIVITY_TYPE,
   getIpAndUa,
-  IdUtil,
   LOG_LEVEL,
   type LoginMethod,
-  type PrismaTx,
   type SecurityDeviceInsight,
 } from 'src/share';
 
@@ -34,8 +36,9 @@ export class SecurityMonitorService {
     private readonly deps: {
       db: IDb;
       auditLogService: AuditLogService;
+      securityEventService: SecurityEventService;
       settingService: SettingService;
-    } = { db, auditLogService, settingService },
+    } = { db, auditLogService, securityEventService, settingService },
   ) {}
 
   async evaluateLogin(params: EvaluateParams): Promise<SecurityCheckResult> {
@@ -92,27 +95,23 @@ export class SecurityMonitorService {
   }): Promise<void> {
     const { userId, deviceFingerprint, method } = params;
     const { userAgent, clientIp } = getIpAndUa();
-    await this.deps.db.$transaction(async (tx: PrismaTx) => {
-      await tx.securityEvent.create({
-        data: {
-          id: IdUtil.dbId(),
-          userId,
-          eventType: SecurityEventType.suspicious_activity,
-          ip: clientIp,
-          metadata: {
-            userAgent,
-            deviceFingerprint,
-            reason: 'unknown_device',
-          },
-        },
-        select: { id: true },
-      });
 
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LOGIN,
-        payload: { method, error: 'unknown_device' },
-        level: LOG_LEVEL.WARNING,
-      });
+    await this.deps.securityEventService.create({
+      userId,
+      eventType: SecurityEventType.suspicious_activity,
+      ip: clientIp,
+      userAgent,
+      metadata: {
+        deviceFingerprint,
+        reason: 'unknown_device',
+        method,
+      },
+    });
+
+    await this.deps.auditLogService.push({
+      type: ACTIVITY_TYPE.LOGIN,
+      payload: { method, error: 'unknown_device' },
+      level: LOG_LEVEL.WARNING,
     });
   }
 }

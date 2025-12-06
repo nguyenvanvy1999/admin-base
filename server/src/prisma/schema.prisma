@@ -47,14 +47,35 @@ enum UserStatus {
   banned
 }
 
+// Security event severity levels
+enum SecurityEventSeverity {
+  low
+  medium
+  high
+  critical
+}
+
 // Security event types for tracking authentication and security events
 enum SecurityEventType {
   login_failed
+  login_success
   password_changed
+  password_reset_requested
+  password_reset_completed
   mfa_enabled
   mfa_disabled
+  mfa_verified
+  mfa_failed
   account_locked
+  account_unlocked
   suspicious_activity
+  ip_changed
+  device_changed
+  permission_escalation
+  api_key_created
+  api_key_revoked
+  data_exported
+  bulk_operation
 }
 
 // Account lockout reasons
@@ -360,17 +381,25 @@ model Proxy {
 
 // Security event tracking for authentication and security operations
 model SecurityEvent {
-  id        String            @id
-  userId    String?           @map("user_id")
-  eventType SecurityEventType @map("event_type")
+  id        String                @id
+  userId    String?               @map("user_id")
+  eventType SecurityEventType     @map("event_type")
+  severity  SecurityEventSeverity @default(medium)
   ip        String?
+  userAgent String?               @map("user_agent")
+  location  Json?                 // GeoIP data
   metadata  Json?
-  created   DateTime          @default(now())
+  resolved  Boolean               @default(false)
+  resolvedAt DateTime?            @map("resolved_at")
+  resolvedBy String?              @map("resolved_by")
+  created   DateTime              @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId], name: "security_event_userId_idx")
   @@index([eventType], name: "security_event_eventType_idx")
+  @@index([severity], name: "security_event_severity_idx")
+  @@index([resolved], name: "security_event_resolved_idx")
   @@index([created], name: "security_event_created_idx")
   @@map("security_events")
 }

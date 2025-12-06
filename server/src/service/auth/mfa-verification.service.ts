@@ -6,7 +6,7 @@ import {
   mfaCache,
 } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
-import { UserStatus } from 'src/generated';
+import { SecurityEventType, UserStatus } from 'src/generated';
 import type {
   ILoginRes,
   MfaLoginRequestDto,
@@ -16,6 +16,7 @@ import {
   type AuditLogService,
   auditLogService,
 } from 'src/service/misc/audit-log.service';
+import { securityEventService } from 'src/service/misc/security-event.service';
 import {
   ACTIVITY_TYPE,
   BadReqErr,
@@ -130,7 +131,16 @@ export class MfaVerificationService {
       });
 
       if (!isValid) {
-        await this.logMfaError('INVALID_OTP', user.id);
+        await Promise.all([
+          this.logMfaError('INVALID_OTP', user.id),
+          securityEventService.create({
+            userId: user.id,
+            eventType: SecurityEventType.mfa_failed,
+            ip: clientIp,
+            userAgent,
+            metadata: { method: 'totp', reason: 'invalid_otp' },
+          }),
+        ]);
         throw new BadReqErr(ErrCode.InvalidOtp);
       }
     } else if (backupCode) {
@@ -168,10 +178,19 @@ export class MfaVerificationService {
       securityContext,
     );
 
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.LOGIN,
-      payload: { method: otp ? 'email' : 'backup-code' },
-    });
+    await Promise.all([
+      this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.LOGIN,
+        payload: { method: otp ? 'email' : 'backup-code' },
+      }),
+      securityEventService.create({
+        userId: user.id,
+        eventType: SecurityEventType.mfa_verified,
+        ip: clientIp,
+        userAgent,
+        metadata: { method: otp ? 'totp' : 'backup_code' },
+      }),
+    ]);
 
     return loginRes;
   }

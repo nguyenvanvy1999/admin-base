@@ -7,6 +7,7 @@ import {
   mfaSetupTokenCache,
 } from 'src/config/cache';
 import { db } from 'src/config/db';
+import { SecurityEventType } from 'src/generated';
 import type {
   ResetMfaRequestDto,
   SetupMfaConfirmDto,
@@ -15,11 +16,13 @@ import type {
 import { otpService } from 'src/service/auth/otp.service';
 import { sessionService } from 'src/service/auth/session.service';
 import { auditLogService } from 'src/service/misc/audit-log.service';
+import { securityEventService } from 'src/service/misc/security-event.service';
 import {
   ACTIVITY_TYPE,
   BadReqErr,
   ctxStore,
   ErrCode,
+  getIpAndUa,
   type IDisableMfaParams,
   IdUtil,
   type IMfaStatus,
@@ -157,6 +160,7 @@ export class MfaSetupService {
     });
 
     const loginToken = IdUtil.token16();
+    const { clientIp, userAgent } = getIpAndUa();
 
     await mfaCache.set(mfaToken, {
       userId: cachedData.userId,
@@ -165,10 +169,19 @@ export class MfaSetupService {
       security: securityContext,
     });
 
-    await auditLogService.push({
-      type: ACTIVITY_TYPE.SETUP_MFA,
-      payload: { method: 'totp', stage: 'confirm' },
-    });
+    await Promise.all([
+      auditLogService.push({
+        type: ACTIVITY_TYPE.SETUP_MFA,
+        payload: { method: 'totp', stage: 'confirm' },
+      }),
+      securityEventService.create({
+        userId: cachedData.userId,
+        eventType: SecurityEventType.mfa_enabled,
+        ip: clientIp,
+        userAgent,
+        metadata: { method: 'totp' },
+      }),
+    ]);
 
     if (cachedData.sessionId) {
       await sessionService.revoke(cachedData.userId, [cachedData.sessionId]);
@@ -225,12 +238,23 @@ export class MfaSetupService {
       select: { id: true },
     });
 
+    const { clientIp, userAgent } = getIpAndUa();
+
     await sessionService.revoke(userId);
 
-    await auditLogService.push({
-      type: ACTIVITY_TYPE.RESET_MFA,
-      payload: { method: 'disable' },
-    });
+    await Promise.all([
+      auditLogService.push({
+        type: ACTIVITY_TYPE.RESET_MFA,
+        payload: { method: 'disable' },
+      }),
+      securityEventService.create({
+        userId,
+        eventType: SecurityEventType.mfa_disabled,
+        ip: clientIp,
+        userAgent,
+        metadata: { method: otp ? 'totp' : 'backup_code' },
+      }),
+    ]);
 
     return null;
   }
@@ -263,11 +287,22 @@ export class MfaSetupService {
       select: { id: true },
     });
 
+    const { clientIp, userAgent } = getIpAndUa();
+
     await sessionService.revoke(userId);
-    await auditLogService.push({
-      type: ACTIVITY_TYPE.RESET_MFA,
-      payload: { method: 'reset' },
-    });
+    await Promise.all([
+      auditLogService.push({
+        type: ACTIVITY_TYPE.RESET_MFA,
+        payload: { method: 'reset' },
+      }),
+      securityEventService.create({
+        userId,
+        eventType: SecurityEventType.mfa_disabled,
+        ip: clientIp,
+        userAgent,
+        metadata: { method: 'reset' },
+      }),
+    ]);
 
     return null;
   }

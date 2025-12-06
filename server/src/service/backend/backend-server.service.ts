@@ -33,6 +33,8 @@ import {
   otpController,
   permissionsAdminController,
   rolesAdminController,
+  securityEventsAdminController,
+  securityEventsUserController,
   sessionAdminController,
   sessionUserController,
   settingsAdminController,
@@ -105,21 +107,23 @@ export class BackendServerService {
           .use(otpController)
           .use(miscController)
           .use(captchaController)
-          .use(sessionUserController)
-          .use(notificationUserController)
-          .use(ipWhitelistUserController)
-          .use(auditLogsUserController)
           .use(fileController)
           .use(oauthController)
           .use(mfaController)
           .use(mfaBackupController)
           .use(sessionAdminController)
+          .use(sessionUserController)
           .use(notificationAdminController)
+          .use(notificationUserController)
           .use(ipWhitelistAdminController)
+          .use(ipWhitelistUserController)
           .use(usersAdminController)
           .use(rolesAdminController)
           .use(permissionsAdminController)
           .use(auditLogsAdminController)
+          .use(auditLogsUserController)
+          .use(securityEventsAdminController)
+          .use(securityEventsUserController)
           .use(i18nAdminController)
           .use(settingsAdminController)
           .use(notificationTemplatesAdminController),
