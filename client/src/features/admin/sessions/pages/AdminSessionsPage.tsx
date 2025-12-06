@@ -1,30 +1,21 @@
 import type { ProColumns } from '@ant-design/pro-components';
-import { Alert, Button, Popconfirm } from 'antd';
-import type { TableRowSelection } from 'antd/es/table/interface';
+import { Alert } from 'antd';
 import type dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppPage } from 'src/components/common/AppPage';
+import { GenericResourcePage } from 'src/components/resource/GenericResourcePage';
+import { createSessionResource } from 'src/features/admin/sessions/config/session.resource';
+import { useSessionDateRange } from 'src/features/admin/sessions/hooks/useSessionDateRange';
 import { useUserSearchSelect } from 'src/features/admin/users/hooks/useUserSearchSelect';
 import { createUserSelectColumn } from 'src/features/admin/users/utils/userSelectColumn';
 import { useAdminSettings } from 'src/hooks/api/useAdminSettings';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
-import { adminSessionsService } from 'src/services/api/admin-sessions.service';
-import type { AdminSession } from 'src/types/admin-sessions';
+import type {
+  AdminSession,
+  AdminSessionListParams,
+} from 'src/types/admin-sessions';
 import type { AdminSetting } from 'src/types/admin-settings';
 import { SettingDataType } from 'src/types/admin-settings';
-import type { TableParamsWithFilters } from 'src/types/table';
-import { SessionsTable } from '../components/SessionsTable';
-import { useAdminSessionsPagination } from '../hooks/useAdminSessionsPagination';
-import { useSessionDateRange } from '../hooks/useSessionDateRange';
-import { getSessionStatus } from '../utils/sessionStatus';
-
-type AdminSessionTableParams = TableParamsWithFilters<{
-  ip?: string;
-  status?: 'all' | 'active' | 'revoked';
-  userIds?: string[];
-  created?: [dayjs.Dayjs, dayjs.Dayjs];
-}>;
 
 function getSettingValue(
   settings: AdminSetting[],
@@ -40,9 +31,6 @@ export default function AdminSessionsPage() {
   const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const canViewAll = hasPermission('SESSION.VIEW_ALL');
-  const canView = hasPermission(['SESSION.VIEW_ALL', 'SESSION.VIEW'], 'any');
-  const canRevokeAll = hasPermission('SESSION.REVOKE_ALL');
-  const canRevokeSelf = hasPermission('SESSION.REVOKE');
 
   const { dateRange, setDateRange, created0, created1, resetDateRange } =
     useSessionDateRange(7);
@@ -53,9 +41,10 @@ export default function AdminSessionsPage() {
   const [userIdsFilter, setUserIdsFilter] = useState<string[] | undefined>(
     undefined,
   );
-  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
 
-  const listParams = useMemo(
+  const sessionResource = useMemo(() => createSessionResource(t as any), [t]);
+
+  const initialParams = useMemo<Partial<AdminSessionListParams>>(
     () => ({
       take: 20,
       created0,
@@ -67,52 +56,38 @@ export default function AdminSessionsPage() {
     [created0, created1, ipFilter, userIdsFilter, statusFilter, canViewAll],
   );
 
-  const {
-    sessions,
-    statusById,
-    pagination,
-    isLoading,
-    isInitialLoading,
-    reload,
-    goToPage,
-    changePageSize,
-  } = useAdminSessionsPagination({
-    initialParams: listParams,
-    pageSize: 20,
-    autoLoad: true,
-  });
-
-  const filteredSessions = useMemo(() => {
-    if (statusFilter === 'all') return sessions;
-    return sessions.filter((session) => {
-      const status = getSessionStatus(session, statusById);
-      if (statusFilter === 'active') {
-        return status === 'active';
-      }
-      return status === 'revoked';
-    });
-  }, [sessions, statusById, statusFilter]);
-
-  const { data: settings = [] } = useAdminSettings();
-  const enbOnlyOneSession = getSettingValue(settings, 'ENB_ONLY_ONE_SESSION');
-
   const userSearchSelect = useUserSearchSelect({
     enabled: canViewAll,
     take: 20,
   });
 
-  const handleRevoke = async (session: AdminSession) => {
-    await adminSessionsService.revoke([session.id]);
-    await reload();
-  };
+  const customColumns: ProColumns<AdminSession>[] = useMemo(() => {
+    const columns: ProColumns<AdminSession>[] = [
+      {
+        title: t('common.fields.userId'),
+        dataIndex: 'createdById',
+        hideInSearch: true,
+        render: (_: unknown, record: AdminSession) => record.createdById,
+      },
+      {
+        title: t('common.fields.status'),
+        dataIndex: 'status',
+        hideInTable: true,
+        valueType: 'select',
+        valueEnum: {
+          all: { text: t('common.filters.statusOptions.all') },
+          active: { text: t('common.filters.statusOptions.active') },
+          revoked: { text: t('common.filters.statusOptions.revoked') },
+        },
+      },
+    ];
 
-  const handleRevokeSelected = async () => {
-    if (selectedRowKeys.length === 0) return;
+    if (canViewAll) {
+      columns.push(createUserSelectColumn<AdminSession>(userSearchSelect));
+    }
 
-    await adminSessionsService.revoke(selectedRowKeys);
-    setSelectedRowKeys([]);
-    await reload();
-  };
+    return columns;
+  }, [t, canViewAll, userSearchSelect]);
 
   const handleResetFilters = () => {
     resetDateRange();
@@ -120,157 +95,66 @@ export default function AdminSessionsPage() {
     setIpFilter(undefined);
     setUserIdsFilter(undefined);
     userSearchSelect.setUserSearch('');
-    setSelectedRowKeys([]);
   };
 
-  const rowSelection: TableRowSelection<AdminSession> = {
-    selectedRowKeys,
-    onChange: (keys) => {
-      setSelectedRowKeys(keys.map(String));
-    },
-    getCheckboxProps: (record) => {
-      const status = getSessionStatus(record, statusById);
-      const canRevokeThis = canRevokeAll || (canRevokeSelf && !canViewAll);
-      return {
-        disabled: !canRevokeThis || status !== 'active',
-      };
-    },
-  };
+  const { data: settings = [] } = useAdminSettings();
+  const enbOnlyOneSession = getSettingValue(settings, 'ENB_ONLY_ONE_SESSION');
 
-  const columns: ProColumns<AdminSession>[] = [
-    {
-      title: t('common.fields.userId'),
-      dataIndex: 'createdById',
-      hideInSearch: true,
-      render: (_, record) => record.createdById,
-    },
-    {
-      title: t('common.fields.status'),
-      dataIndex: 'status',
-      hideInTable: true,
-      valueType: 'select',
-      valueEnum: {
-        all: { text: t('common.filters.statusOptions.all') },
-        active: { text: t('common.filters.statusOptions.active') },
-        revoked: { text: t('common.filters.statusOptions.revoked') },
-      },
-    },
-    ...(canViewAll
-      ? [createUserSelectColumn<AdminSession>(userSearchSelect)]
-      : []),
-    {
-      title: t('common.fields.actions'),
-      dataIndex: 'actions',
-      hideInSearch: true,
-      render: (_, record) => {
-        const status = getSessionStatus(record, statusById);
-        if (status !== 'active') {
-          return '-';
-        }
-
-        const canRevokeThis = canRevokeAll || (canRevokeSelf && !canViewAll);
-
-        if (!canRevokeThis) {
-          return '-';
-        }
-
-        return (
-          <Popconfirm
-            title={t('adminSessionsPage.dialogs.revokeConfirmTitle')}
-            description={t('adminSessionsPage.dialogs.revokeConfirm')}
-            onConfirm={() => handleRevoke(record)}
-          >
-            <Button size="small" danger type="link">
-              {t('common.actions.revoke')}
-            </Button>
-          </Popconfirm>
-        );
-      },
-    },
-  ];
-
-  if (!canView) {
-    return null;
-  }
-
-  return (
-    <AppPage>
-      {enbOnlyOneSession && (
+  const customHeader = useMemo(
+    () =>
+      enbOnlyOneSession ? (
         <Alert
           type="info"
           showIcon
           title={t('adminSessionsPage.onlyOneSessionNotice')}
           style={{ marginBottom: 16 }}
         />
-      )}
+      ) : undefined,
+    [enbOnlyOneSession, t],
+  );
 
-      <SessionsTable<AdminSessionTableParams>
-        sessions={filteredSessions}
-        statusById={statusById}
-        loading={isLoading || isInitialLoading}
-        pagination={pagination}
-        onPageChange={async (page, pageSize) => {
-          if (pageSize && pageSize !== pagination.pageSize) {
-            await changePageSize(pageSize);
-          } else {
-            await goToPage(page);
-          }
-        }}
-        columns={columns}
-        extendBaseColumns
-        rowSelection={rowSelection}
-        extraToolbarActions={[
-          <Popconfirm
-            key="revoke-selected"
-            title={t('adminSessionsPage.dialogs.revokeSelectedConfirmTitle')}
-            description={t('adminSessionsPage.dialogs.revokeSelectedConfirm', {
-              count: selectedRowKeys.length,
-            })}
-            onConfirm={handleRevokeSelected}
-            disabled={selectedRowKeys.length === 0}
-          >
-            <Button
-              danger
-              disabled={
-                selectedRowKeys.length === 0 ||
-                (!canRevokeAll && !canRevokeSelf)
-              }
-            >
-              {t('common.actions.revokeSelected', {
-                count: selectedRowKeys.length,
-              })}
-            </Button>
-          </Popconfirm>,
-        ]}
-        formInitialValues={{
+  return (
+    <GenericResourcePage<AdminSession, AdminSessionListParams>
+      resource={sessionResource}
+      scope="admin"
+      initialParams={initialParams}
+      pageSize={20}
+      customColumns={customColumns}
+      extendBaseColumns
+      formInitialValues={
+        {
           ip: ipFilter,
           status: statusFilter,
           userIds: userIdsFilter,
           created: dateRange,
-        }}
-        onSubmit={(values) => {
-          const range = values.created as
-            | [dayjs.Dayjs, dayjs.Dayjs]
-            | undefined;
-          if (range && range.length === 2) {
-            setDateRange([range[0]!, range[1]!]);
-          }
+        } as unknown as AdminSessionListParams
+      }
+      onSubmit={(values) => {
+        const range = (values as any).created as
+          | [dayjs.Dayjs, dayjs.Dayjs]
+          | undefined;
+        if (range && range.length === 2) {
+          setDateRange([range[0]!, range[1]!]);
+        }
 
-          const ip = (values.ip as string | undefined)?.trim();
-          setIpFilter(ip || undefined);
+        const ip = (values.ip as string | undefined)?.trim();
+        setIpFilter(ip || undefined);
 
-          const status =
-            (values.status as 'all' | 'active' | 'revoked' | undefined) ??
-            'all';
-          setStatusFilter(status);
+        const status =
+          ((values as any).status as
+            | 'all'
+            | 'active'
+            | 'revoked'
+            | undefined) ?? 'all';
+        setStatusFilter(status);
 
-          const valuesUserIds = values.userIds as string[] | undefined;
-          setUserIdsFilter(
-            valuesUserIds && valuesUserIds.length ? valuesUserIds : undefined,
-          );
-        }}
-        onReset={handleResetFilters}
-      />
-    </AppPage>
+        const valuesUserIds = (values as any).userIds as string[] | undefined;
+        setUserIdsFilter(
+          valuesUserIds && valuesUserIds.length ? valuesUserIds : undefined,
+        );
+      }}
+      onReset={handleResetFilters}
+      customHeader={customHeader}
+    />
   );
 }
