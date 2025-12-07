@@ -166,6 +166,10 @@ export const PERMISSIONS = {
     DELETE: { roles: [defaultRoles.administrator.id] },
     VIEW: { roles: [defaultRoles.administrator.id] },
   },
+  RATE_LIMIT: {
+    VIEW: { roles: [defaultRoles.administrator.id] },
+    MANAGE: { roles: [defaultRoles.administrator.id] },
+  },
 };
 
 export enum QueueName {
@@ -204,6 +208,7 @@ export enum CACHE_NS {
   REGISTER_OTP_LIMIT = 'register-otp-limit',
   REGISTER_RATE_LIMIT = 'register-rate-limit',
   LOGIN_RATE_LIMIT = 'login-rate-limit',
+  RATE_LIMIT = 'rate-limit',
   MFA_ATTEMPT = 'mfa-attempt',
   CURRENCY = 'currency',
 }
@@ -221,6 +226,7 @@ export enum DB_PREFIX {
   IP_WHITELIST = 'ip_wh',
   NOTIFICATION = 'notif',
   NOTIFICATION_TEMPLATE = 'notif_tpl',
+  RATE_LIMIT = 'rate_limit',
 }
 
 export enum EmailType {

@@ -31,6 +31,7 @@ export enum DOC_TAG {
   ADMIN_AUDIT_LOG = 'Admin Audit Log',
   ADMIN_NOTIFICATION = 'Admin Notification',
   ADMIN_NOTIFICATION_TEMPLATE = 'Admin Notification Template',
+  ADMIN_RATE_LIMIT = 'Admin Rate Limit',
 }
 
 export const ACCESS_AUTH = [{ accessToken: [] }];
@@ -150,6 +151,10 @@ export const DOC_OPTIONS = {
     adminNotificationTemplate: {
       name: DOC_TAG.ADMIN_NOTIFICATION_TEMPLATE,
       description: 'Admin notification template endpoints',
+    },
+    adminRateLimit: {
+      name: DOC_TAG.ADMIN_RATE_LIMIT,
+      description: 'Admin rate limit endpoints',
     },
   },
 };

@@ -35,4 +35,5 @@ export enum ErrCode {
   NotificationNotFound = 'notification-not-found',
   NotificationTemplateNotFound = 'notification-template-not-found',
   NotificationTemplateCodeExists = 'notification-template-code-exists',
+  RateLimitExceeded = 'rate-limit-exceeded',
 }

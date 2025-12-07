@@ -20,6 +20,7 @@ export { notificationTemplatesAdminController } from './notification-templates';
 export { oauthController } from './oauth';
 export { otpController } from './otp';
 export { permissionsAdminController } from './permissions';
+export { rateLimitAdminController } from './rate-limit';
 export { rolesAdminController } from './roles';
 export {
   securityEventsAdminController,

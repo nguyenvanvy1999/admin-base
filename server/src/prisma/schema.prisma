@@ -110,6 +110,15 @@ enum NotificationStatus {
   read
 }
 
+// Rate limit types
+enum RateLimitType {
+  api
+  login
+  password_reset
+  email_verification
+  file_upload
+}
+
 // ============================================
 // System/Auth Models
 // ============================================
@@ -502,4 +511,25 @@ model Notification {
   @@index([type], name: "notification_type_idx")
   @@index([created], name: "notification_created_idx")
   @@map("notifications")
+}
+
+// Rate limit tracking for API throttling and DDoS protection
+model RateLimit {
+  id          String         @id
+  identifier  String         // userId, IP, email, etc.
+  type        RateLimitType
+  count       Int            @default(0)
+  limit       Int
+  windowStart DateTime       @map("window_start")
+  windowEnd   DateTime       @map("window_end")
+  blocked     Boolean        @default(false)
+  blockedUntil DateTime?     @map("blocked_until")
+  created     DateTime       @default(now())
+  modified    DateTime       @updatedAt
+
+  @@unique([identifier, type, windowStart], name: "rate_limit_unique")
+  @@index([identifier, type], name: "rate_limit_identifier_type_idx")
+  @@index([blocked], name: "rate_limit_blocked_idx")
+  @@index([windowEnd], name: "rate_limit_windowEnd_idx")
+  @@map("rate_limits")
 }

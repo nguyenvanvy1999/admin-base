@@ -3,6 +3,8 @@
     "search": "Tìm kiếm",
     "enabled": "Đã kích hoạt",
     "disabled": "Đã vô hiệu hóa",
+    "yes": "Có",
+    "no": "Không",
     "cancel": "Hủy",
     "save": "Lưu",
     "back": "Quay lại",
@@ -35,7 +37,9 @@
       "logoutAll": "Đăng xuất khỏi tất cả thiết bị",
       "generate": "Sinh",
       "verify": "Xác nhận",
-      "resend": "Gửi lại"
+      "resend": "Gửi lại",
+      "block": "Chặn",
+      "unblock": "Bỏ chặn"
     },
     "messages": {
       "saveSuccess": "Lưu thành công",
@@ -100,7 +104,15 @@
       "value": "Giá trị",
       "isSecret": "Secret",
       "english": "Tiếng Anh",
-      "vietnamese": "Tiếng Việt"
+      "vietnamese": "Tiếng Việt",
+      "identifier": "Định danh",
+      "count": "Số lượng",
+      "limit": "Giới hạn",
+      "windowStart": "Bắt đầu cửa sổ",
+      "windowEnd": "Kết thúc cửa sổ",
+      "blocked": "Đã chặn",
+      "blockedUntil": "Chặn đến",
+      "created": "Ngày tạo"
     },
     "filters": {
       "keyword": "Email hoặc tên hiển thị",
@@ -578,6 +590,22 @@
     },
     "pagination": {
       "total": "{{total}} mục"
+    }
+  },
+  "adminRateLimitsPage": {
+    "confirmBlock": "Bạn có chắc chắn muốn chặn rate limit này?",
+    "confirmUnblock": "Bạn có chắc chắn muốn bỏ chặn rate limit này?",
+    "confirmCleanup": "Bạn có chắc chắn muốn dọn dẹp các cửa sổ rate limit đã hết hạn?",
+    "actions": {
+      "cleanup": "Dọn dẹp đã hết hạn"
+    },
+    "messages": {
+      "blockSuccess": "Chặn rate limit thành công",
+      "blockError": "Chặn rate limit thất bại",
+      "unblockSuccess": "Bỏ chặn rate limit thành công",
+      "unblockError": "Bỏ chặn rate limit thất bại",
+      "cleanupSuccess": "Dọn dẹp rate limit đã hết hạn thành công",
+      "cleanupError": "Dọn dẹp rate limit thất bại"
     }
   }
 }

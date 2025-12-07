@@ -42,6 +42,9 @@ const AdminUserIpWhitelistPage = lazy(
 const AdminAuditLogPage = lazy(
   () => import('../features/admin/audit-logs/pages/AdminAuditLogPage'),
 );
+const AdminRateLimitsPage = lazy(
+  () => import('../features/admin/rate-limits/pages/AdminRateLimitsPage'),
+);
 const MySessionsPage = lazy(() => import('./pages/MySessionsPage'));
 
 export function AppRoutes() {
@@ -149,6 +152,14 @@ export function AppRoutes() {
               permissionMode="any"
             >
               <AdminAuditLogPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/rate-limits"
+          element={
+            <ProtectedRoute requiredPermissions={['RATE_LIMIT.VIEW']}>
+              <AdminRateLimitsPage />
             </ProtectedRoute>
           }
         />

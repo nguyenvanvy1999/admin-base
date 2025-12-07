@@ -32,6 +32,7 @@ import {
   oauthController,
   otpController,
   permissionsAdminController,
+  rateLimitAdminController,
   rolesAdminController,
   securityEventsAdminController,
   securityEventsUserController,
@@ -126,7 +127,8 @@ export class BackendServerService {
           .use(securityEventsUserController)
           .use(i18nAdminController)
           .use(settingsAdminController)
-          .use(notificationTemplatesAdminController),
+          .use(notificationTemplatesAdminController)
+          .use(rateLimitAdminController),
       );
 
     gracefulShutdownService.setupShutdownHandlers();

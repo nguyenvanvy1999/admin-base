@@ -141,6 +141,11 @@ export const loginRateLimitCache = new RedisCache<number>({
 });
 export type ILoginRateLimitCache = typeof loginRateLimitCache;
 
+export const rateLimitCache = new RedisCache<number>({
+  namespace: CACHE_NS.RATE_LIMIT,
+});
+export type IRateLimitCache = typeof rateLimitCache;
+
 export const mfaAttemptCache = new RedisCache<number>({
   namespace: CACHE_NS.MFA_ATTEMPT,
   ttl: FIVE_MINUTES,

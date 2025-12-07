@@ -3,6 +3,8 @@
     "search": "Search",
     "enabled": "Enabled",
     "disabled": "Disabled",
+    "yes": "Yes",
+    "no": "No",
     "cancel": "Cancel",
     "save": "Save",
     "back": "Back",
@@ -35,7 +37,9 @@
       "logoutAll": "Sign out from all devices",
       "generate": "Generate",
       "verify": "Verify",
-      "resend": "Resend"
+      "resend": "Resend",
+      "block": "Block",
+      "unblock": "Unblock"
     },
     "messages": {
       "saveSuccess": "Saved successfully",
@@ -100,7 +104,15 @@
       "value": "Value",
       "isSecret": "Secret",
       "english": "English",
-      "vietnamese": "Vietnamese"
+      "vietnamese": "Vietnamese",
+      "identifier": "Identifier",
+      "count": "Count",
+      "limit": "Limit",
+      "windowStart": "Window start",
+      "windowEnd": "Window end",
+      "blocked": "Blocked",
+      "blockedUntil": "Blocked until",
+      "created": "Created"
     },
     "filters": {
       "keyword": "Email or display name",
@@ -578,6 +590,22 @@
     },
     "pagination": {
       "total": "{{total}} entries"
+    }
+  },
+  "adminRateLimitsPage": {
+    "confirmBlock": "Are you sure you want to block this rate limit?",
+    "confirmUnblock": "Are you sure you want to unblock this rate limit?",
+    "confirmCleanup": "Are you sure you want to cleanup expired rate limit windows?",
+    "actions": {
+      "cleanup": "Cleanup expired"
+    },
+    "messages": {
+      "blockSuccess": "Rate limit blocked successfully",
+      "blockError": "Failed to block rate limit",
+      "unblockSuccess": "Rate limit unblocked successfully",
+      "unblockError": "Failed to unblock rate limit",
+      "cleanupSuccess": "Expired rate limits cleaned up successfully",
+      "cleanupError": "Failed to cleanup rate limits"
     }
   }
 }
