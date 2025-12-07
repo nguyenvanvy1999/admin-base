@@ -26,12 +26,12 @@ import { useAdminPermissions } from 'src/hooks/api/useAdminPermissions';
 import { useAdminRoleDetail, useUpsertRole } from 'src/hooks/api/useAdminRoles';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { useNotify } from 'src/hooks/useNotify';
-import { adminUsersService } from 'src/services/api/admin-users.service';
 import type {
   AdminRole,
   RolePlayerDetail,
   UpsertRoleDto,
 } from 'src/types/admin-roles';
+import { adminUsersService } from '../../users/services/admin-users.service';
 
 function getRoleExpiryMeta(expiresAt: string | null) {
   if (!expiresAt) {

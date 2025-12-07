@@ -20,13 +20,14 @@ import {
   getSearchValue,
   normalizeIds,
 } from 'src/lib/utils/table.utils';
-import { adminUsersService } from 'src/services/api/admin-users.service';
+import type { TableParamsWithFilters } from 'src/types/table';
 import {
   ADMIN_USER_STATUSES,
+  type AdminUserRoleRef,
   type AdminUserStatus,
   type AdminUserSummary,
-} from 'src/types/admin-users';
-import type { TableParamsWithFilters } from 'src/types/table';
+  adminUsersService,
+} from '../index';
 
 type AdminUserTableParams = TableParamsWithFilters<{
   statuses?: AdminUserStatus[];
@@ -158,7 +159,7 @@ export default function AdminUsersPage() {
       hideInSearch: true,
       render: (_, record) => (
         <Space wrap>
-          {record.roles.map((roleRef) => {
+          {record.roles.map((roleRef: AdminUserRoleRef) => {
             const expiresAt = roleRef.expiresAt;
             let color: string = 'default';
             let statusLabel = t('adminUsersPage.roleExpiry.noExpiry');

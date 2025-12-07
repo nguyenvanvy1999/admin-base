@@ -151,7 +151,7 @@ export default function AdminUserIpWhitelistPage() {
         rowKey="id"
         columns={columns}
         loading={isLoading}
-        dataSource={entries}
+        dataSource={entries as UserIpWhitelist[]}
         search={false}
         rowSelection={rowSelection}
         pagination={{

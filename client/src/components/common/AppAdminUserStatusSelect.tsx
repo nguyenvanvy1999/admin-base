@@ -1,7 +1,7 @@
 import {
   ADMIN_USER_STATUSES,
   type AdminUserStatus,
-} from 'src/types/admin-users';
+} from 'src/features/admin/users/types';
 import type { AppEnumSelectProps } from './AppEnumSelect';
 import { AppEnumSelect } from './AppEnumSelect';
 

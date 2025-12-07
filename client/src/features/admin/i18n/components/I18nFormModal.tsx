@@ -2,7 +2,7 @@ import { ProFormText, ProFormTextArea } from '@ant-design/pro-components';
 import { useTranslation } from 'react-i18next';
 import { FormModal } from 'src/components/common/FormModal';
 import { sanitizeFormValues } from 'src/lib/utils/form.utils';
-import type { I18n, I18nUpsertDto } from 'src/types/admin-i18n';
+import type { I18n, I18nUpsertDto } from '../types';
 
 interface I18nFormModalProps {
   open: boolean;

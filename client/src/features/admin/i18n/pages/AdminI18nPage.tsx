@@ -9,15 +9,15 @@ import { AppTable } from 'src/components/common/AppTable';
 import { ImportExportActions } from 'src/components/common/ImportExportActions';
 import { I18nFormModal } from 'src/features/admin/i18n/components/I18nFormModal';
 import { useAdminI18nPagination } from 'src/features/admin/i18n/hooks/useAdminI18nPagination';
+import { usePermissions } from 'src/hooks/auth/usePermissions';
+import type { TableParamsWithFilters } from 'src/types/table';
 import {
   useDeleteI18n,
   useExportI18n,
   useImportI18n,
   useUpsertI18n,
-} from 'src/hooks/api/useAdminI18n';
-import { usePermissions } from 'src/hooks/auth/usePermissions';
-import type { I18n } from 'src/types/admin-i18n';
-import type { TableParamsWithFilters } from 'src/types/table';
+} from '../hooks/useAdminI18n';
+import type { I18n } from '../types';
 
 type AdminI18nTableParams = TableParamsWithFilters<{
   key?: string;
@@ -175,7 +175,7 @@ export default function AdminI18nPage() {
         rowKey="id"
         columns={columns}
         loading={isLoading}
-        dataSource={i18nEntries}
+        dataSource={i18nEntries as I18n[]}
         search={false}
         rowSelection={canUpdate ? rowSelection : undefined}
         pagination={{

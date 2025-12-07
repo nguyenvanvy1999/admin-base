@@ -9,3 +9,17 @@ export function createQueryKeys(baseKey: string) {
       [...createQueryKeys(baseKey).details(), id] as const,
   };
 }
+
+export interface BaseServiceConfig {
+  basePath: string;
+  queryKey: string;
+}
+
+export function createBaseService(config: BaseServiceConfig) {
+  const queryKeys = createQueryKeys(config.queryKey);
+
+  return {
+    queryKeys,
+    basePath: config.basePath,
+  };
+}

@@ -6,7 +6,7 @@ import {
 import {
   adminUserKeys,
   adminUsersService,
-} from 'src/services/api/admin-users.service';
+} from '../services/admin-users.service';
 import type {
   AdminUserActionResponse,
   AdminUserCreatePayload,
@@ -14,7 +14,7 @@ import type {
   AdminUserMfaPayload,
   AdminUserUpdatePayload,
   AdminUserUpdateRolesPayload,
-} from 'src/types/admin-users';
+} from '../types';
 
 export function useAdminUserDetail(userId?: string, enabled = true) {
   return useQuery<AdminUserDetail>({

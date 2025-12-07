@@ -57,7 +57,7 @@ import {
   type AdminLockoutReason,
   type AdminUserDetail as AdminUserDetailType,
   type AdminUserStatus,
-} from 'src/types/admin-users';
+} from '../types';
 
 interface AdminUserUpdateFormValues {
   status?: AdminUserStatus;
