@@ -1,14 +1,10 @@
 import dayjs from 'dayjs';
 import { authenticator } from 'otplib';
 import {
-  type ILoginRateLimitCache,
   type IMFACache,
-  type IRegisterRateLimitCache,
-  loginRateLimitCache,
   mfaCache,
   mfaSetupTokenByUserCache,
   mfaSetupTokenCache,
-  registerRateLimitCache,
 } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
@@ -100,8 +96,6 @@ export class AuthService {
       securityEventService: SecurityEventService;
       referralService: ReferralService;
       userUtilService: UserUtilService;
-      loginRateLimitCache: ILoginRateLimitCache;
-      registerRateLimitCache: IRegisterRateLimitCache;
       mfaCache: IMFACache;
       authenticator: typeof authenticator;
       securityMonitorService: SecurityMonitorService;
@@ -120,8 +114,6 @@ export class AuthService {
       securityEventService,
       referralService,
       userUtilService,
-      loginRateLimitCache,
-      registerRateLimitCache,
       mfaCache,
       authenticator,
       securityMonitorService,
@@ -132,8 +124,6 @@ export class AuthService {
   async login(params: LoginParams): Promise<ILoginResponse> {
     const { email, password } = params;
     const { clientIp, userAgent } = getIpAndUa();
-
-    await this.checkRateLimit(email, clientIp);
 
     const user = await this.findAndValidateUser(email);
 
@@ -211,55 +201,6 @@ export class AuthService {
       clientIp,
       userAgent,
       securityResult,
-    );
-  }
-
-  private async checkRateLimit(email: string, clientIp: string): Promise<void> {
-    const normalizedEmail = normalizeEmail(email);
-    const rateLimitKey = `login:${clientIp}:${normalizedEmail}`;
-    const currentAttempts =
-      (await this.deps.loginRateLimitCache.get(rateLimitKey)) ?? 0;
-
-    const { max, windowSeconds } =
-      await this.deps.settingService.loginRateLimit();
-
-    if (currentAttempts >= max) {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LOGIN,
-        payload: { method: 'email', error: 'rate_limit_exceeded' },
-      });
-      throw new BadReqErr(ErrCode.BadRequest, {
-        errors: 'Too many login attempts. Please try again later.',
-      });
-    }
-
-    await this.deps.loginRateLimitCache.set(
-      rateLimitKey,
-      currentAttempts + 1,
-      windowSeconds,
-    );
-  }
-
-  async checkRegisterRateLimit(email: string, clientIp: string): Promise<void> {
-    const normalizedEmail = normalizeEmail(email);
-    const rateLimitKey = `register:${clientIp}:${normalizedEmail}`;
-    const currentAttempts =
-      (await this.deps.registerRateLimitCache.get(rateLimitKey)) ?? 0;
-
-    const { max, windowSeconds } =
-      await this.deps.settingService.registerRateLimit();
-
-    if (currentAttempts >= max) {
-      await this.logRegisterRateLimitViolation(normalizedEmail);
-      throw new BadReqErr(ErrCode.BadRequest, {
-        errors: 'Too many registration attempts. Please try again later.',
-      });
-    }
-
-    await this.deps.registerRateLimitCache.set(
-      rateLimitKey,
-      currentAttempts + 1,
-      windowSeconds,
     );
   }
 
@@ -427,9 +368,6 @@ export class AuthService {
 
   async register(params: RegisterParams): Promise<{ otpToken: string } | null> {
     const { email, password } = params;
-
-    const { clientIp } = getIpAndUa();
-    await this.checkRegisterRateLimit(email, clientIp);
 
     this.deps.passwordValidationService.validatePasswordOrThrow(password);
 
@@ -770,13 +708,6 @@ export class AuthService {
       ...user,
       permissions,
     };
-  }
-
-  async logRegisterRateLimitViolation(email: string): Promise<void> {
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.REGISTER,
-      payload: { method: 'email', error: 'rate_limit_exceeded' },
-    });
   }
 }
 

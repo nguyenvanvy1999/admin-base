@@ -41,7 +41,7 @@ export class OtpControllerService {
     switch (purpose) {
       case PurposeVerify.REGISTER: {
         const limit = await this.deps.registerOtpLimitCache.get(user.id);
-        const { otpLimit } = await this.deps.settingService.registerRateLimit();
+        const otpLimit = await this.deps.settingService.registerOtpLimit();
         if (limit && limit >= otpLimit) {
           await this.deps.db.user.update({
             where: { id: user.id },

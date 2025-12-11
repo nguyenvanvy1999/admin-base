@@ -193,22 +193,6 @@ export const defaultSettings = {
     type: SettingDataType.number,
     value: '5',
   },
-  [SETTING.REGISTER_RATE_LIMIT_MAX]: {
-    type: SettingDataType.number,
-    value: '5',
-  },
-  [SETTING.REGISTER_RATE_LIMIT_WINDOW_SECONDS]: {
-    type: SettingDataType.number,
-    value: '900',
-  },
-  [SETTING.LOGIN_RATE_LIMIT_MAX]: {
-    type: SettingDataType.number,
-    value: '10',
-  },
-  [SETTING.LOGIN_RATE_LIMIT_WINDOW_SECONDS]: {
-    type: SettingDataType.number,
-    value: '900',
-  },
   [SETTING.ENB_SECURITY_DEVICE_RECOGNITION]: {
     type: SettingDataType.boolean,
     value: 'false',

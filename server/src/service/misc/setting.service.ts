@@ -139,26 +139,6 @@ export class SettingService {
         max: 100,
         message: `${SETTING.REGISTER_OTP_LIMIT} must be between 1 and 100`,
       },
-      [SETTING.REGISTER_RATE_LIMIT_MAX]: {
-        min: 1,
-        max: 1000,
-        message: `${SETTING.REGISTER_RATE_LIMIT_MAX} must be between 1 and 1000`,
-      },
-      [SETTING.REGISTER_RATE_LIMIT_WINDOW_SECONDS]: {
-        min: 1,
-        max: 86400,
-        message: `${SETTING.REGISTER_RATE_LIMIT_WINDOW_SECONDS} must be between 1 and 86400`,
-      },
-      [SETTING.LOGIN_RATE_LIMIT_MAX]: {
-        min: 1,
-        max: 1000,
-        message: `${SETTING.LOGIN_RATE_LIMIT_MAX} must be between 1 and 1000`,
-      },
-      [SETTING.LOGIN_RATE_LIMIT_WINDOW_SECONDS]: {
-        min: 1,
-        max: 86400,
-        message: `${SETTING.LOGIN_RATE_LIMIT_WINDOW_SECONDS} must be between 1 and 86400`,
-      },
     };
 
     const finalRules = rules || defaultRules[key];
@@ -350,35 +330,8 @@ export class SettingService {
     return this.getSetting<boolean>(SETTING.ENB_IP_WHITELIST);
   }
 
-  async registerRateLimit(): Promise<{
-    otpLimit: number;
-    max: number;
-    windowSeconds: number;
-  }> {
-    const [otpLimit, max, windowSeconds] = await this.getManySettings([
-      SETTING.REGISTER_OTP_LIMIT,
-      SETTING.REGISTER_RATE_LIMIT_MAX,
-      SETTING.REGISTER_RATE_LIMIT_WINDOW_SECONDS,
-    ]);
-    return {
-      otpLimit,
-      max,
-      windowSeconds,
-    };
-  }
-
-  async loginRateLimit(): Promise<{
-    max: number;
-    windowSeconds: number;
-  }> {
-    const [max, windowSeconds] = await this.getManySettings([
-      SETTING.LOGIN_RATE_LIMIT_MAX,
-      SETTING.LOGIN_RATE_LIMIT_WINDOW_SECONDS,
-    ]);
-    return {
-      max,
-      windowSeconds,
-    };
+  registerOtpLimit(): Promise<number> {
+    return this.getSetting<number>(SETTING.REGISTER_OTP_LIMIT);
   }
 
   async loginSecurity(): Promise<{
@@ -549,7 +502,7 @@ export class SettingService {
         }
       }
 
-      const validation = await this.validateDependencies(settingsRecord);
+      const validation = this.validateDependencies(settingsRecord);
       if (!validation.valid) {
         return { imported: 0, errors: validation.errors };
       }
