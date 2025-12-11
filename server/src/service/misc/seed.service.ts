@@ -1,11 +1,12 @@
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import { type ILogger, logger } from 'src/config/logger';
-import { UserStatus } from 'src/generated';
+import { RateLimitType, UserStatus } from 'src/generated';
 import {
   type PasswordService,
   passwordService,
 } from 'src/service/auth/password.service';
+import type { RateLimitStrategy } from 'src/service/rate-limit/rate-limit.middleware';
 import {
   ADMIN_USER_ID,
   DB_PREFIX,
@@ -30,6 +31,82 @@ type SeedUserParams = {
   password: string;
   roleId: string;
 };
+
+const rateLimitDefaults: Record<
+  RateLimitType,
+  { limit: number; windowSeconds: number; strategy: RateLimitStrategy }
+> = {
+  [RateLimitType.login]: { limit: 5, windowSeconds: 60, strategy: 'ip+ua' },
+  [RateLimitType.password_reset]: {
+    limit: 3,
+    windowSeconds: 3600,
+    strategy: 'ip+ua',
+  },
+  [RateLimitType.email_verification]: {
+    limit: 3,
+    windowSeconds: 3600,
+    strategy: 'ip+ua',
+  },
+  [RateLimitType.api]: { limit: 100, windowSeconds: 60, strategy: 'ip' },
+  [RateLimitType.file_upload]: {
+    limit: 10,
+    windowSeconds: 60,
+    strategy: 'user',
+  },
+};
+
+const buildAuthSeed = (
+  type: RateLimitType,
+  routePath: string,
+  description: string,
+) => ({
+  type,
+  routePath,
+  description,
+  ...rateLimitDefaults[type],
+});
+
+const authRateLimitSeeds: Array<{
+  type: RateLimitType;
+  routePath: string;
+  limit: number;
+  windowSeconds: number;
+  strategy: RateLimitStrategy;
+  description: string;
+}> = [
+  buildAuthSeed(RateLimitType.login, '/auth/login', 'Password login'),
+  buildAuthSeed(RateLimitType.login, '/auth/login/mfa', 'MFA login challenge'),
+  buildAuthSeed(
+    RateLimitType.login,
+    '/auth/login/mfa/confirm',
+    'Confirm MFA login',
+  ),
+  buildAuthSeed(
+    RateLimitType.email_verification,
+    '/auth/user/register',
+    'Register and send verification',
+  ),
+  buildAuthSeed(
+    RateLimitType.email_verification,
+    '/auth/user/verify-account',
+    'Verify account email OTP',
+  ),
+  buildAuthSeed(
+    RateLimitType.password_reset,
+    '/auth/forgot-password',
+    'Request password reset',
+  ),
+  buildAuthSeed(
+    RateLimitType.password_reset,
+    '/auth/change-password',
+    'Change password after reset',
+  ),
+  buildAuthSeed(
+    RateLimitType.api,
+    '/auth/refresh-token',
+    'Refresh access token',
+  ),
+];
 
 export class SeedService {
   constructor(
@@ -236,6 +313,32 @@ export class SeedService {
     }
   }
 
+  async seedRateLimitConfigs(): Promise<void> {
+    try {
+      await this.deps.db.$transaction(async (tx) => {
+        const data = authRateLimitSeeds.map((config) => ({
+          id: IdUtil.dbId(DB_PREFIX.RATE_LIMIT),
+          type: config.type,
+          routePath: config.routePath,
+          limit: config.limit,
+          windowSeconds: config.windowSeconds,
+          strategy: config.strategy,
+          description: config.description,
+          enabled: true,
+        }));
+
+        await tx.rateLimitConfig.createMany({
+          data,
+          skipDuplicates: true,
+        });
+      });
+
+      this.deps.logger.warning('Seed rate limit configs successfully.');
+    } catch (e) {
+      this.deps.logger.error(`Seed rate limit configs failed ${e}`);
+    }
+  }
+
   async seedUsers(): Promise<void> {
     try {
       await this.seedUser({
@@ -310,6 +413,7 @@ export class SeedService {
     await this.seedAuthProviders();
     await this.seedRoles();
     await this.seedPermissions();
+    await this.seedRateLimitConfigs();
     await this.seedUsers();
   }
 }
