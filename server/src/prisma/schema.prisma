@@ -533,3 +533,22 @@ model RateLimit {
   @@index([windowEnd], name: "rate_limit_windowEnd_idx")
   @@map("rate_limits")
 }
+
+// Rate limit configuration settings
+model RateLimitConfig {
+  id            String         @id
+  type          RateLimitType
+  routePath     String?        @map("route_path")
+  limit         Int
+  windowSeconds Int            @map("window_seconds")
+  strategy      String         // 'user' | 'ip' | 'ip+ua' | 'custom'
+  enabled       Boolean        @default(true)
+  description   String?
+  created       DateTime       @default(now())
+  modified      DateTime       @updatedAt
+
+  @@unique([type, routePath], name: "rate_limit_config_unique")
+  @@index([type], name: "rate_limit_config_type_idx")
+  @@index([enabled], name: "rate_limit_config_enabled_idx")
+  @@map("rate_limit_configs")
+}
