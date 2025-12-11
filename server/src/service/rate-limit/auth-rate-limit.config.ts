@@ -1,5 +1,6 @@
 import type { Elysia } from 'elysia';
 import type { RateLimitType } from 'src/generated';
+import { RateLimitStrategy } from 'src/generated';
 import { BadReqErr, ErrCode, getIpAndUa } from 'src/share';
 import type { RateLimitConfig } from './rate-limit.middleware';
 import { generateIdentifier } from './rate-limit.middleware';
@@ -76,7 +77,7 @@ export function authRateLimitMiddleware() {
       const { clientIp, userAgent } = getIpAndUa();
       const userId = (context as any).currentUser?.id;
 
-      if (config.strategy === 'user' && !userId) {
+      if (config.strategy === RateLimitStrategy.user && !userId) {
         return;
       }
 
@@ -86,7 +87,7 @@ export function authRateLimitMiddleware() {
           ip,
           userAgent: finalUserAgent,
         } = generateIdentifier(
-          config.strategy ?? 'ip',
+          config.strategy ?? RateLimitStrategy.ip,
           context,
           config.getIdentifier,
         );

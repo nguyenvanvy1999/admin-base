@@ -1,12 +1,11 @@
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import { type ILogger, logger } from 'src/config/logger';
-import { RateLimitType, UserStatus } from 'src/generated';
+import { RateLimitStrategy, RateLimitType, UserStatus } from 'src/generated';
 import {
   type PasswordService,
   passwordService,
 } from 'src/service/auth/password.service';
-import type { RateLimitStrategy } from 'src/service/rate-limit/rate-limit.middleware';
 import {
   ADMIN_USER_ID,
   DB_PREFIX,
@@ -36,22 +35,30 @@ const rateLimitDefaults: Record<
   RateLimitType,
   { limit: number; windowSeconds: number; strategy: RateLimitStrategy }
 > = {
-  [RateLimitType.login]: { limit: 5, windowSeconds: 60, strategy: 'ip+ua' },
+  [RateLimitType.login]: {
+    limit: 5,
+    windowSeconds: 60,
+    strategy: RateLimitStrategy.ip_ua,
+  },
   [RateLimitType.password_reset]: {
     limit: 3,
     windowSeconds: 3600,
-    strategy: 'ip+ua',
+    strategy: RateLimitStrategy.ip_ua,
   },
   [RateLimitType.email_verification]: {
     limit: 3,
     windowSeconds: 3600,
-    strategy: 'ip+ua',
+    strategy: RateLimitStrategy.ip_ua,
   },
-  [RateLimitType.api]: { limit: 100, windowSeconds: 60, strategy: 'ip' },
+  [RateLimitType.api]: {
+    limit: 100,
+    windowSeconds: 60,
+    strategy: RateLimitStrategy.ip,
+  },
   [RateLimitType.file_upload]: {
     limit: 10,
     windowSeconds: 60,
-    strategy: 'user',
+    strategy: RateLimitStrategy.user,
   },
 };
 

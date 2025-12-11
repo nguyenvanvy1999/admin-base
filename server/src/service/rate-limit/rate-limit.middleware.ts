@@ -1,9 +1,7 @@
 import type { Elysia } from 'elysia';
-import type { RateLimitType } from 'src/generated';
+import { RateLimitStrategy, type RateLimitType } from 'src/generated';
 import { BadReqErr, ErrCode, getIpAndUa } from 'src/share';
 import { rateLimitService } from './rate-limit.service';
-
-export type RateLimitStrategy = 'user' | 'ip' | 'ip+ua' | 'custom';
 
 export type RateLimitConfig = {
   type: RateLimitType;
@@ -22,7 +20,7 @@ export function generateIdentifier(
   const userId = context.currentUser?.id;
 
   switch (strategy) {
-    case 'user':
+    case RateLimitStrategy.user:
       if (!userId) {
         throw new BadReqErr(ErrCode.InternalError, {
           errors: 'User ID is required for user-based rate limiting',
@@ -34,14 +32,14 @@ export function generateIdentifier(
         userAgent,
       };
 
-    case 'ip':
+    case RateLimitStrategy.ip:
       return {
         identifier: `ip:${clientIp}`,
         ip: clientIp,
         userAgent,
       };
 
-    case 'ip+ua': {
+    case RateLimitStrategy.ip_ua: {
       const uaHash = userAgent
         ? Buffer.from(userAgent).toString('base64').slice(0, 16)
         : 'unknown';
@@ -52,7 +50,7 @@ export function generateIdentifier(
       };
     }
 
-    case 'custom':
+    case RateLimitStrategy.custom:
       if (!getIdentifier) {
         throw new BadReqErr(ErrCode.InternalError, {
           errors: 'getIdentifier is required for custom strategy',
@@ -74,7 +72,7 @@ export function generateIdentifier(
 }
 
 export const rateLimit = (config: RateLimitConfig) => {
-  const strategy = config.strategy ?? 'ip';
+  const strategy = config.strategy ?? RateLimitStrategy.ip;
 
   return (app: Elysia) =>
     app.onBeforeHandle(async (context) => {

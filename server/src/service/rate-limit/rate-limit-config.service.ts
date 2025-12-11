@@ -1,45 +1,8 @@
 import { settingCache } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
-import type { RateLimitType } from 'src/generated';
-import type {
-  RateLimitConfig,
-  RateLimitStrategy,
-} from './rate-limit.middleware';
-
-const DEFAULT_RATE_LIMIT_CONFIGS: Record<
-  RateLimitType,
-  {
-    limit: number;
-    windowSeconds: number;
-    strategy: RateLimitStrategy;
-  }
-> = {
-  login: {
-    limit: 5,
-    windowSeconds: 60,
-    strategy: 'ip+ua',
-  },
-  password_reset: {
-    limit: 3,
-    windowSeconds: 3600,
-    strategy: 'ip+ua',
-  },
-  email_verification: {
-    limit: 3,
-    windowSeconds: 3600,
-    strategy: 'ip+ua',
-  },
-  api: {
-    limit: 100,
-    windowSeconds: 60,
-    strategy: 'ip',
-  },
-  file_upload: {
-    limit: 10,
-    windowSeconds: 60,
-    strategy: 'user',
-  },
-};
+import type { RateLimitStrategy, RateLimitType } from 'src/generated';
+import { RateLimitStrategy as RateStrategyEnum } from 'src/generated';
+import type { RateLimitConfig } from './rate-limit.middleware';
 
 const CACHE_TTL = 300;
 
@@ -49,9 +12,12 @@ export class RateLimitConfigService {
   async getConfigForType(
     type: RateLimitType,
     routePath?: string,
-  ): Promise<RateLimitConfig> {
+  ): Promise<RateLimitConfig | null> {
     const cacheKey = `rate_limit_config:${type}:${routePath || 'default'}`;
-    const cached = (await settingCache.get(cacheKey)) as RateLimitConfig | null;
+    const cached = (await settingCache.get(cacheKey)) as
+      | RateLimitConfig
+      | null
+      | undefined;
 
     if (cached) {
       return cached;
@@ -68,13 +34,7 @@ export class RateLimitConfigService {
     }
 
     if (!config) {
-      const defaultConfig = DEFAULT_RATE_LIMIT_CONFIGS[type];
-      config = {
-        type,
-        limit: defaultConfig.limit,
-        windowSeconds: defaultConfig.windowSeconds,
-        strategy: defaultConfig.strategy,
-      };
+      return null;
     }
 
     await settingCache.set(cacheKey, config, CACHE_TTL);
@@ -109,7 +69,7 @@ export class RateLimitConfigService {
         type,
         limit: config.limit,
         windowSeconds: config.windowSeconds,
-        strategy: config.strategy as RateLimitStrategy,
+        strategy: this.validateStrategy(config.strategy),
       };
     } catch {
       return null;
@@ -140,7 +100,7 @@ export class RateLimitConfigService {
         type,
         limit: config.limit,
         windowSeconds: config.windowSeconds,
-        strategy: config.strategy as RateLimitStrategy,
+        strategy: this.validateStrategy(config.strategy),
       };
     } catch {
       return null;
@@ -220,6 +180,16 @@ export class RateLimitConfigService {
     ];
 
     await Promise.all(cacheKeys.map((key) => settingCache.del(key)));
+  }
+
+  private validateStrategy(strategy: string | null): RateLimitStrategy {
+    if (
+      strategy &&
+      Object.values(RateStrategyEnum).includes(strategy as RateLimitStrategy)
+    ) {
+      return strategy as RateLimitStrategy;
+    }
+    return RateStrategyEnum.ip;
   }
 }
 

@@ -119,6 +119,14 @@ enum RateLimitType {
   file_upload
 }
 
+// Rate limit strategies
+enum RateLimitStrategy {
+  user
+  ip
+  ip_ua 
+  custom
+}
+
 // ============================================
 // System/Auth Models
 // ============================================
@@ -541,7 +549,7 @@ model RateLimitConfig {
   routePath     String?        @map("route_path")
   limit         Int
   windowSeconds Int            @map("window_seconds")
-  strategy      String         // 'user' | 'ip' | 'ip+ua' | 'custom'
+  strategy      RateLimitStrategy
   enabled       Boolean        @default(true)
   description   String?
   created       DateTime       @default(now())
