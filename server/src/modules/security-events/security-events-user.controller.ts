@@ -1,11 +1,11 @@
 import { Elysia } from 'elysia';
-import { authCheck } from 'src/service/auth/auth.middleware';
-import { securityEventService } from 'src/service/misc/security-event.service';
-import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 import {
   SecurityEventListQueryDto,
   SecurityEventListResDto,
-} from './security-events.dto';
+} from 'src/dtos/security-events.dto';
+import { authCheck } from 'src/service/auth/auth.middleware';
+import { securityEventService } from 'src/service/misc/security-event.service';
+import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 
 export const securityEventsUserController = new Elysia({
   prefix: '/security-events',

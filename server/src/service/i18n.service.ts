@@ -1,11 +1,11 @@
 import { Value } from '@sinclair/typebox/value';
 import { db, type IDb } from 'src/config/db';
-import type { I18nWhereInput } from 'src/generated';
 import {
   I18NImportDto,
   type I18nPaginationDto,
   type I18nUpsertDto,
-} from 'src/modules/i18n';
+} from 'src/dtos/i18n.dto';
+import type { I18nWhereInput } from 'src/generated';
 import { BadReqErr, DB_PREFIX, ErrCode, IdUtil, type IIdsDto } from 'src/share';
 import XLSX from 'xlsx';
 

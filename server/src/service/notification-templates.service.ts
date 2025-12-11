@@ -1,12 +1,12 @@
 import { db, type IDb } from 'src/config/db';
 import type {
+  NotificationTemplatePaginationDto,
+  UpsertNotificationTemplateDto,
+} from 'src/dtos/notification-templates.dto';
+import type {
   NotificationTemplateSelect,
   NotificationTemplateWhereInput,
 } from 'src/generated';
-import type {
-  NotificationTemplatePaginationDto,
-  UpsertNotificationTemplateDto,
-} from 'src/modules/notification-templates';
 import {
   BadReqErr,
   DB_PREFIX,

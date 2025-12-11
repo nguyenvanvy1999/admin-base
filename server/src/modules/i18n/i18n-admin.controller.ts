@@ -1,4 +1,9 @@
 import { Elysia, t } from 'elysia';
+import {
+  I18nPaginationDto,
+  I18nUpsertDto,
+  PaginateI18nResDto,
+} from 'src/dtos/i18n.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
 import { i18nService } from 'src/service/i18n.service';
@@ -10,11 +15,6 @@ import {
   IdsDto,
   ResWrapper,
 } from 'src/share';
-import {
-  I18nPaginationDto,
-  I18nUpsertDto,
-  PaginateI18nResDto,
-} from './i18n.dto';
 
 export const i18nAdminController = new Elysia({
   prefix: '/admin/i18n',

@@ -1,8 +1,11 @@
 import { Elysia } from 'elysia';
+import {
+  AuditLogListQueryDto,
+  AuditLogListResDto,
+} from 'src/dtos/audit-logs.dto';
 import { auditLogsService } from 'src/service/audit-logs.service';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
-import { AuditLogListQueryDto, AuditLogListResDto } from './audit-logs.dto';
 
 export const auditLogsUserController = new Elysia({
   prefix: '/audit-logs',

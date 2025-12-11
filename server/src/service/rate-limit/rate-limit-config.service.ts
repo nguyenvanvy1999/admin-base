@@ -86,7 +86,7 @@ export class RateLimitConfigService {
     routePath: string,
   ): Promise<RateLimitConfig | null> {
     try {
-      const config = await (this.deps.db as any).rateLimitConfig.findUnique({
+      const config = await this.deps.db.rateLimitConfig.findUnique({
         where: {
           rate_limit_config_unique: {
             type,
@@ -120,12 +120,9 @@ export class RateLimitConfigService {
     type: RateLimitType,
   ): Promise<RateLimitConfig | null> {
     try {
-      const config = await (this.deps.db as any).rateLimitConfig.findUnique({
+      const config = await this.deps.db.rateLimitConfig.findFirst({
         where: {
-          rate_limit_config_unique: {
-            type,
-            routePath: null,
-          },
+          type,
         },
         select: {
           limit: true,
@@ -150,10 +147,10 @@ export class RateLimitConfigService {
     }
   }
 
-  async list(type?: RateLimitType) {
+  list(type?: RateLimitType) {
     try {
       const where = type ? { type, enabled: true } : { enabled: true };
-      return (this.deps.db as any).rateLimitConfig.findMany({
+      return this.deps.db.rateLimitConfig.findMany({
         where,
         orderBy: [{ type: 'asc' }, { routePath: 'asc' }],
       });
@@ -170,7 +167,7 @@ export class RateLimitConfigService {
     strategy: RateLimitStrategy;
     description?: string;
   }) {
-    const config = await (this.deps.db as any).rateLimitConfig.create({
+    const config = await this.deps.db.rateLimitConfig.create({
       data: {
         id: `rlcfg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
         type: data.type,
@@ -196,7 +193,7 @@ export class RateLimitConfigService {
       description?: string;
     },
   ) {
-    const config = await (this.deps.db as any).rateLimitConfig.update({
+    const config = await this.deps.db.rateLimitConfig.update({
       where: { id },
       data,
     });
@@ -206,7 +203,7 @@ export class RateLimitConfigService {
   }
 
   async delete(id: string) {
-    await (this.deps.db as any).rateLimitConfig.delete({
+    await this.deps.db.rateLimitConfig.delete({
       where: { id },
     });
 

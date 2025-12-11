@@ -5,7 +5,7 @@ import {
   ResetMfaRequestDto,
   SetupMfaConfirmDto,
   SetupMfaRequestDto,
-} from 'src/modules/auth';
+} from 'src/dtos/auth.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { mfaSetupService } from 'src/service/auth/mfa-setup.service';
 import {

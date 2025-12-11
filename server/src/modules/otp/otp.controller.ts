@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { OtpResDto } from 'src/modules/auth';
+import { OtpResDto } from 'src/dtos/auth.dto';
 import { otpControllerService } from 'src/service/auth/otp-controller.service';
 import {
   castToRes,

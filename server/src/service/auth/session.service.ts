@@ -1,6 +1,6 @@
 import { db, type IDb } from 'src/config/db';
+import type { SessionPaginateDto } from 'src/dtos/session.dto';
 import type { SessionWhereInput } from 'src/generated';
-import type { SessionPaginateDto } from 'src/modules/session';
 import { ErrCode, NotFoundErr } from 'src/share';
 
 type ListParams = typeof SessionPaginateDto.static & {

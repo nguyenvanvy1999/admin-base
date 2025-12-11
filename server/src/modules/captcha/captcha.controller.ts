@@ -1,11 +1,11 @@
 import { Elysia } from 'elysia';
-import { captchaService } from 'src/service/misc/captcha.service';
 import {
   captchaResponseDto,
   captchaVerifyResponseDto,
   generateCaptchaDto,
   verifyCaptchaDto,
-} from './captcha.dto';
+} from 'src/dtos/captcha.dto';
+import { captchaService } from 'src/service/misc/captcha.service';
 
 export const captchaController = new Elysia({ prefix: '/captcha' })
   .get(

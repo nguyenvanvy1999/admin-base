@@ -1,4 +1,10 @@
 import { Elysia, t } from 'elysia';
+import {
+  MarkNotificationReadDto,
+  NotificationDetailResDto,
+  NotificationPaginationDto,
+  PaginateNotificationResDto,
+} from 'src/dtos/notification.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { notificationsService } from 'src/service/notifications';
 import {
@@ -10,12 +16,6 @@ import {
   IdsDto,
   ResWrapper,
 } from 'src/share';
-import {
-  MarkNotificationReadDto,
-  NotificationDetailResDto,
-  NotificationPaginationDto,
-  PaginateNotificationResDto,
-} from './notification.dto';
 
 export const notificationUserController = new Elysia({
   prefix: '/notifications',

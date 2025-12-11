@@ -1,14 +1,4 @@
 import { Elysia, t } from 'elysia';
-import { authCheck } from 'src/service/auth/auth.middleware';
-import { authService } from 'src/service/auth/auth.service';
-import { authRateLimitMiddleware } from 'src/service/rate-limit/auth-rate-limit.config';
-import {
-  ACCESS_AUTH,
-  authErrors,
-  castToRes,
-  ErrorResDto,
-  ResWrapper,
-} from 'src/share';
 import {
   ChangePasswordRequestDto,
   ConfirmMfaLoginRequestDto,
@@ -22,7 +12,17 @@ import {
   RegisterRequestDto,
   UserResDto,
   VerifyAccountRequestDto,
-} from './auth.dto';
+} from 'src/dtos/auth.dto';
+import { authCheck } from 'src/service/auth/auth.middleware';
+import { authService } from 'src/service/auth/auth.service';
+import { authRateLimitMiddleware } from 'src/service/rate-limit/auth-rate-limit.config';
+import {
+  ACCESS_AUTH,
+  authErrors,
+  castToRes,
+  ErrorResDto,
+  ResWrapper,
+} from 'src/share';
 
 export const authController = new Elysia({
   prefix: '/auth',

@@ -6,12 +6,12 @@ import {
   mfaCache,
 } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
-import { SecurityEventType, UserStatus } from 'src/generated';
 import type {
   ILoginRes,
   MfaLoginRequestDto,
   VerifyBackupCodeRequestDto,
-} from 'src/modules/auth';
+} from 'src/dtos/auth.dto';
+import { SecurityEventType, UserStatus } from 'src/generated';
 import {
   type AuditLogService,
   auditLogService,

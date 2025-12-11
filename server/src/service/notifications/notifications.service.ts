@@ -1,9 +1,9 @@
 import { db, type IDb } from 'src/config/db';
-import type { NotificationSelect, NotificationWhereInput } from 'src/generated';
 import type {
   CreateNotificationDto,
   NotificationPaginationDto,
-} from 'src/modules/notification/notification.dto';
+} from 'src/dtos/notification.dto';
+import type { NotificationSelect, NotificationWhereInput } from 'src/generated';
 import { DB_PREFIX, ErrCode, IdUtil, NotFoundErr } from '../../share';
 
 const notificationSelect = {

@@ -1,4 +1,10 @@
 import { Elysia, t } from 'elysia';
+import {
+  PaginateRoleResDto,
+  RoleDetailResDto,
+  RolePaginationDto,
+  UpsertRoleDto,
+} from 'src/dtos/roles.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { allOf, authorize, has } from 'src/service/auth/authorization';
 import { rolesService } from 'src/service/roles.service';
@@ -11,12 +17,6 @@ import {
   IdsDto,
   ResWrapper,
 } from 'src/share';
-import {
-  PaginateRoleResDto,
-  RoleDetailResDto,
-  RolePaginationDto,
-  UpsertRoleDto,
-} from './roles.dto';
 
 export const rolesAdminController = new Elysia({
   prefix: '/admin/roles',

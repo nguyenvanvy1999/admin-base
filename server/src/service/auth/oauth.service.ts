@@ -1,12 +1,12 @@
 import { createHash, createHmac } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { db, type IDb } from 'src/config/db';
-import { UserStatus } from 'src/generated';
 import type {
   GoogleLoginRequestDto,
   ILoginRes,
   LinkTelegramRequestDto,
-} from 'src/modules/auth';
+} from 'src/dtos/auth.dto';
+import { UserStatus } from 'src/generated';
 import {
   type UserUtilService,
   userUtilService,

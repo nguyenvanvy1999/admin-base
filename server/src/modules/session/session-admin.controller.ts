@@ -1,4 +1,5 @@
 import { Elysia, t } from 'elysia';
+import { SessionPaginateDto, SessionPagingResDto } from 'src/dtos/session.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
 import { sessionService } from 'src/service/auth/session.service';
@@ -10,7 +11,6 @@ import {
   IdsDto,
   ResWrapper,
 } from 'src/share';
-import { SessionPaginateDto, SessionPagingResDto } from './session.dto';
 
 export const sessionAdminController = new Elysia({
   prefix: '/admin/sessions',

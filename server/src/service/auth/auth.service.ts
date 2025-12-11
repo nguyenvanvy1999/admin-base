@@ -12,7 +12,6 @@ import {
 } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
-import { SecurityEventType, type User, UserStatus } from 'src/generated';
 import type {
   ChangePasswordRequestDto,
   ConfirmMfaLoginRequestDto,
@@ -26,7 +25,8 @@ import type {
   RefreshTokenRequestDto,
   RegisterRequestDto,
   VerifyAccountRequestDto,
-} from 'src/modules/auth';
+} from 'src/dtos/auth.dto';
+import { SecurityEventType, type User, UserStatus } from 'src/generated';
 import {
   type AuditLogService,
   auditLogService,

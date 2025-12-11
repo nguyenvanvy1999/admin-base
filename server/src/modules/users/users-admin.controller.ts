@@ -1,4 +1,14 @@
 import { Elysia } from 'elysia';
+import {
+  AdminUserActionResDto,
+  AdminUserCreateDto,
+  AdminUserDetailResDto,
+  AdminUserListQueryDto,
+  AdminUserListResDto,
+  AdminUserMfaActionDto,
+  AdminUserUpdateDto,
+  AdminUserUpdateRolesDto,
+} from 'src/dtos/users.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
 import { usersService } from 'src/service/users';
@@ -10,16 +20,6 @@ import {
   IdDto,
   ResWrapper,
 } from 'src/share';
-import {
-  AdminUserActionResDto,
-  AdminUserCreateDto,
-  AdminUserDetailResDto,
-  AdminUserListQueryDto,
-  AdminUserListResDto,
-  AdminUserMfaActionDto,
-  AdminUserUpdateDto,
-  AdminUserUpdateRolesDto,
-} from './users.dto';
 
 export const usersAdminController = new Elysia({
   prefix: '/admin/users',

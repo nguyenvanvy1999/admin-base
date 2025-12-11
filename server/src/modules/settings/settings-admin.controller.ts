@@ -1,4 +1,9 @@
 import { Elysia, t } from 'elysia';
+import {
+  ImportSettingsDto,
+  SettingResDto,
+  UpdateSettingDto,
+} from 'src/dtos/settings.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
 import { settingsService } from 'src/service/settings.service';
@@ -10,11 +15,6 @@ import {
   IdDto,
   ResWrapper,
 } from 'src/share';
-import {
-  ImportSettingsDto,
-  SettingResDto,
-  UpdateSettingDto,
-} from './settings.dto';
 
 export const settingsAdminController = new Elysia({
   prefix: '/admin/settings',

@@ -5,7 +5,7 @@ import {
   GenerateBackupCodesRequestDto,
   LoginResDto,
   VerifyBackupCodeRequestDto,
-} from 'src/modules/auth';
+} from 'src/dtos/auth.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { mfaBackupService } from 'src/service/auth/mfa-backup.service';
 import {

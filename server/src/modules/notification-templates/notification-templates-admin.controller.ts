@@ -1,4 +1,10 @@
 import { Elysia, t } from 'elysia';
+import {
+  NotificationTemplateDetailResDto,
+  NotificationTemplatePaginationDto,
+  PaginateNotificationTemplateResDto,
+  UpsertNotificationTemplateDto,
+} from 'src/dtos/notification-templates.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
 import { notificationTemplatesService } from 'src/service/notification-templates.service';
@@ -11,12 +17,6 @@ import {
   IdsDto,
   ResWrapper,
 } from 'src/share';
-import {
-  NotificationTemplateDetailResDto,
-  NotificationTemplatePaginationDto,
-  PaginateNotificationTemplateResDto,
-  UpsertNotificationTemplateDto,
-} from './notification-templates.dto';
 
 export const notificationTemplatesAdminController = new Elysia({
   prefix: '/admin/notification-templates',

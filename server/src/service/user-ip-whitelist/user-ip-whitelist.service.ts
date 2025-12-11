@@ -1,12 +1,12 @@
 import { db, type IDb } from 'src/config/db';
 import type {
+  IpWhitelistPaginationDto,
+  UpsertIpWhitelistDto,
+} from 'src/dtos/ip-whitelist.dto';
+import type {
   UserIpWhitelistSelect,
   UserIpWhitelistWhereInput,
 } from 'src/generated';
-import type {
-  IpWhitelistPaginationDto,
-  UpsertIpWhitelistDto,
-} from 'src/modules/ip-whitelist/ip-whitelist.dto';
 import { DB_PREFIX, ErrCode, IdUtil, NotFoundErr } from '../../share';
 
 const ipWhitelistSelect = {

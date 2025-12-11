@@ -7,12 +7,12 @@ import {
   mfaSetupTokenCache,
 } from 'src/config/cache';
 import { db } from 'src/config/db';
-import { SecurityEventType } from 'src/generated';
 import type {
   ResetMfaRequestDto,
   SetupMfaConfirmDto,
   SetupMfaRequestDto,
-} from 'src/modules/auth';
+} from 'src/dtos/auth.dto';
+import { SecurityEventType } from 'src/generated';
 import { otpService } from 'src/service/auth/otp.service';
 import { sessionService } from 'src/service/auth/session.service';
 import { auditLogService } from 'src/service/misc/audit-log.service';

@@ -1,2 +1,2 @@
-export * from './notification-templates.dto';
+export * from 'src/dtos/notification-templates.dto';
 export { notificationTemplatesAdminController } from './notification-templates-admin.controller';

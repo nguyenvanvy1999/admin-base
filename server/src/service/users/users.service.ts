@@ -1,10 +1,4 @@
 import { db, type IDb } from 'src/config/db';
-import {
-  type Prisma,
-  type UserSelect,
-  UserStatus,
-  type UserUncheckedUpdateInput,
-} from 'src/generated';
 import type {
   AdminUserActionResDto,
   AdminUserCreateDto,
@@ -13,7 +7,13 @@ import type {
   AdminUserMfaActionDto,
   AdminUserUpdateDto,
   AdminUserUpdateRolesDto,
-} from 'src/modules/users';
+} from 'src/dtos/users.dto';
+import {
+  type Prisma,
+  type UserSelect,
+  UserStatus,
+  type UserUncheckedUpdateInput,
+} from 'src/generated';
 import {
   type UserUtilService,
   userUtilService,

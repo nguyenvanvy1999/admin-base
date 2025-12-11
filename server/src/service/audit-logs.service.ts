@@ -1,6 +1,6 @@
 import { db, type IDb } from 'src/config/db';
+import type { AuditLogListQueryDto } from 'src/dtos/audit-logs.dto';
 import type { AuditLogWhereInput } from 'src/generated';
-import type { AuditLogListQueryDto } from 'src/modules/audit-logs';
 import { BadReqErr, ErrCode } from 'src/share';
 
 type ListParams = typeof AuditLogListQueryDto.static & {

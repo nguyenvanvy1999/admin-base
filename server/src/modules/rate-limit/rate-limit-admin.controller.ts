@@ -1,14 +1,14 @@
 import { Elysia, t } from 'elysia';
-import { authCheck } from 'src/service/auth/auth.middleware';
-import { authorize, has } from 'src/service/auth/authorization';
-import { rateLimitService } from 'src/service/rate-limit/rate-limit.service';
-import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 import {
   BlockRateLimitDto,
   RateLimitListQueryDto,
   RateLimitListResDto,
   UnblockRateLimitDto,
-} from './rate-limit.dto';
+} from 'src/dtos/rate-limit.dto';
+import { authCheck } from 'src/service/auth/auth.middleware';
+import { authorize, has } from 'src/service/auth/authorization';
+import { rateLimitService } from 'src/service/rate-limit/rate-limit.service';
+import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 
 export const rateLimitAdminController = new Elysia({
   prefix: '/admin/rate-limits',

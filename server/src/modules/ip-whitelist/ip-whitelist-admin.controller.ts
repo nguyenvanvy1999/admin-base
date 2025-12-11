@@ -1,4 +1,10 @@
 import { Elysia, t } from 'elysia';
+import {
+  IpWhitelistDetailResDto,
+  IpWhitelistPaginationDto,
+  PaginateIpWhitelistResDto,
+  UpsertIpWhitelistDto,
+} from 'src/dtos/ip-whitelist.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { anyOf, authorize, has } from 'src/service/auth/authorization';
 import { userIpWhitelistService } from 'src/service/user-ip-whitelist';
@@ -11,12 +17,6 @@ import {
   IdsDto,
   ResWrapper,
 } from 'src/share';
-import {
-  IpWhitelistDetailResDto,
-  IpWhitelistPaginationDto,
-  PaginateIpWhitelistResDto,
-  UpsertIpWhitelistDto,
-} from './ip-whitelist.dto';
 
 export const ipWhitelistAdminController = new Elysia({
   prefix: '/admin/user-ip-whitelists',

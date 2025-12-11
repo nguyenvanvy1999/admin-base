@@ -1,4 +1,5 @@
 import { Elysia, t } from 'elysia';
+import { SessionPaginateDto, SessionPagingResDto } from 'src/dtos/session.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { sessionService } from 'src/service/auth/session.service';
 import {
@@ -9,7 +10,6 @@ import {
   IdsDto,
   ResWrapper,
 } from 'src/share';
-import { SessionPaginateDto, SessionPagingResDto } from './session.dto';
 
 export const sessionUserController = new Elysia({
   prefix: '/sessions',
