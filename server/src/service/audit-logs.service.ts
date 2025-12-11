@@ -1,17 +1,12 @@
 import { db, type IDb } from 'src/config/db';
-import type { AuditLogListQueryDto } from 'src/dtos/audit-logs.dto';
+import type { AuditLogListParams } from 'src/dtos/audit-logs.dto';
 import type { AuditLogWhereInput } from 'src/generated';
 import { BadReqErr, ErrCode } from 'src/share';
-
-type ListParams = typeof AuditLogListQueryDto.static & {
-  currentUserId: string;
-  hasViewPermission: boolean;
-};
 
 export class AuditLogsService {
   constructor(private readonly deps: { db: IDb } = { db }) {}
 
-  async list(params: ListParams) {
+  async list(params: AuditLogListParams) {
     const {
       take = 20,
       skip = 0,

@@ -49,3 +49,6 @@ export const RolePaginationDto = t.Object({
   userId: t.Optional(t.String()),
   search: DtoFields.search,
 });
+
+export type RoleListParams = typeof RolePaginationDto.static;
+export type UpsertRoleParams = typeof UpsertRoleDto.static;

@@ -17,3 +17,7 @@ export const UpdateSettingDto = t.Object({
 });
 
 export const ImportSettingsDto = t.Record(t.String(), t.String());
+
+export type UpdateSettingParams = typeof UpdateSettingDto.static & {
+  id: string;
+};

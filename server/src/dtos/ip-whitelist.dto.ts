@@ -42,3 +42,10 @@ export const IpWhitelistPaginationDto = t.Intersect([
     search: DtoFields.search,
   }),
 ]);
+
+export type IpWhitelistListParams = typeof IpWhitelistPaginationDto.static & {
+  currentUserId: string;
+  hasViewPermission: boolean;
+};
+
+export type UpsertIpWhitelistParams = typeof UpsertIpWhitelistDto.static;

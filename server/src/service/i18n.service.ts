@@ -2,15 +2,13 @@ import { Value } from '@sinclair/typebox/value';
 import { db, type IDb } from 'src/config/db';
 import {
   I18NImportDto,
-  type I18nPaginationDto,
-  type I18nUpsertDto,
+  type I18nImportRow,
+  type I18nListParams,
+  type I18nUpsertParams,
 } from 'src/dtos/i18n.dto';
 import type { I18nWhereInput } from 'src/generated';
 import { BadReqErr, DB_PREFIX, ErrCode, IdUtil, type IIdsDto } from 'src/share';
 import XLSX from 'xlsx';
-
-type ListParams = typeof I18nPaginationDto.static;
-type UpsertParams = typeof I18nUpsertDto.static;
 
 export class I18nService {
   constructor(
@@ -21,7 +19,7 @@ export class I18nService {
     },
   ) {}
 
-  async list(params: ListParams) {
+  async list(params: I18nListParams) {
     const { key, take, skip } = params;
     const where: I18nWhereInput = key ? { key: { contains: key } } : {};
     const [docs, count] = await Promise.all([
@@ -37,7 +35,7 @@ export class I18nService {
     return { docs, count };
   }
 
-  async upsert(params: UpsertParams): Promise<{ id: string }> {
+  async upsert(params: I18nUpsertParams): Promise<{ id: string }> {
     const where: I18nWhereInput[] = [{ key: params.key }];
     if (params.id) {
       where.push({ id: { not: params.id } });
@@ -92,7 +90,7 @@ export class I18nService {
     }
 
     const headers = data[0] ?? [];
-    const validatedData: (typeof I18NImportDto.static)[] = [];
+    const validatedData: I18nImportRow[] = [];
     const keys: string[] = [];
 
     for (let rowIndex = 1; rowIndex < data.length; rowIndex++) {

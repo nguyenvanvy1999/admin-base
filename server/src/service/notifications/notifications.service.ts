@@ -1,7 +1,7 @@
 import { db, type IDb } from 'src/config/db';
 import type {
-  CreateNotificationDto,
-  NotificationPaginationDto,
+  CreateNotificationParams,
+  NotificationListParams,
 } from 'src/dtos/notification.dto';
 import type { NotificationSelect, NotificationWhereInput } from 'src/generated';
 import { DB_PREFIX, ErrCode, IdUtil, NotFoundErr } from '../../share';
@@ -22,15 +22,10 @@ const notificationSelect = {
   created: true,
 } satisfies NotificationSelect;
 
-type ListParams = typeof NotificationPaginationDto.static & {
-  currentUserId: string;
-  hasViewPermission: boolean;
-};
-
 export class NotificationsService {
   constructor(private readonly deps: { db: IDb }) {}
 
-  async list(params: ListParams) {
+  async list(params: NotificationListParams) {
     const {
       userIds,
       userId,
@@ -118,9 +113,7 @@ export class NotificationsService {
     return doc;
   }
 
-  async create(
-    data: typeof CreateNotificationDto.static,
-  ): Promise<{ id: string }> {
+  async create(data: CreateNotificationParams): Promise<{ id: string }> {
     const { userId, templateId, type, subject, content, metadata } = data;
 
     const created = await this.deps.db.notification.create({

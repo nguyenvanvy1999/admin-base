@@ -48,3 +48,8 @@ export const AuditLogItemDto = t.Object({
 });
 
 export const AuditLogListResDto = PaginatedDto(AuditLogItemDto);
+
+export type AuditLogListParams = typeof AuditLogListQueryDto.static & {
+  currentUserId: string;
+  hasViewPermission: boolean;
+};

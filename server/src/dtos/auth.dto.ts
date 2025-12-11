@@ -144,3 +144,26 @@ export const BackupCodesRemainingResponseDto = t.Object({
   remaining: t.Number(),
   total: t.Number(),
 });
+
+export type LoginParams = typeof LoginRequestDto.static;
+export type RegisterParams = typeof RegisterRequestDto.static;
+export type ChangePasswordParams = {
+  userId: string;
+} & typeof ChangePasswordRequestDto.static;
+export type ForgotPasswordParams = typeof ForgotPasswordRequestDto.static;
+export type VerifyAccountParams = typeof VerifyAccountRequestDto.static;
+export type RefreshTokenParams = typeof RefreshTokenRequestDto.static;
+export type LogoutParams = { id: string; sessionId: string };
+export type ConfirmMfaLoginParams = typeof ConfirmMfaLoginRequestDto.static;
+export type LoginWithMfaParams = typeof MfaLoginRequestDto.static;
+export type SetupMfaRequestParams = typeof SetupMfaRequestDto.static;
+export type SetupMfaParams = typeof SetupMfaConfirmDto.static;
+export type ResetMfaParams = typeof ResetMfaRequestDto.static;
+export type GoogleLoginParams = typeof GoogleLoginRequestDto.static;
+export type LinkTelegramParams = {
+  userId: string;
+  telegramData: typeof LinkTelegramRequestDto.static;
+};
+export type VerifyAndCompleteLoginParams =
+  | typeof MfaLoginRequestDto.static
+  | typeof VerifyBackupCodeRequestDto.static;

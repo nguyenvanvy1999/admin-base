@@ -42,3 +42,8 @@ export const SessionPagingResDto = t.Object({
   hasNext: t.Boolean(),
   nextCursor: t.Optional(t.String()),
 });
+
+export type SessionListParams = typeof SessionPaginateDto.static & {
+  currentUserId: string;
+  hasViewPermission: boolean;
+};

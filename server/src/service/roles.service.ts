@@ -1,5 +1,5 @@
 import { db, type IDb } from 'src/config/db';
-import type { RolePaginationDto, UpsertRoleDto } from 'src/dtos/roles.dto';
+import type { RoleListParams, UpsertRoleParams } from 'src/dtos/roles.dto';
 import type { RoleWhereInput } from 'src/generated';
 import {
   BadReqErr,
@@ -11,9 +11,6 @@ import {
   UnAuthErr,
 } from 'src/share';
 
-type ListParams = typeof RolePaginationDto.static;
-type UpsertParams = typeof UpsertRoleDto.static;
-
 export class RolesService {
   constructor(
     private readonly deps: {
@@ -21,7 +18,7 @@ export class RolesService {
     },
   ) {}
 
-  async list(params: ListParams) {
+  async list(params: RoleListParams) {
     const { userId, search } = params;
     const where: RoleWhereInput = {};
     if (userId) {
@@ -109,7 +106,7 @@ export class RolesService {
     });
   }
 
-  async upsert(params: UpsertParams): Promise<{ id: string }> {
+  async upsert(params: UpsertRoleParams): Promise<{ id: string }> {
     const { id, title, enabled, description, players, permissionIds } = params;
 
     if (id) {

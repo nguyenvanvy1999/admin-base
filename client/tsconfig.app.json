@@ -23,7 +23,7 @@
     "types": [
       "vite/client"
     ],
-    "baseUrl": "."
+    "paths": {"*": ["./*"]}
   },
   "include": [
     "src"

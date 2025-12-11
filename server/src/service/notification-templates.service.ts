@@ -1,7 +1,7 @@
 import { db, type IDb } from 'src/config/db';
 import type {
-  NotificationTemplatePaginationDto,
-  UpsertNotificationTemplateDto,
+  NotificationTemplateListParams,
+  UpsertNotificationTemplateParams,
 } from 'src/dtos/notification-templates.dto';
 import type {
   NotificationTemplateSelect,
@@ -32,7 +32,7 @@ const notificationTemplateSelect = {
 export class NotificationTemplatesService {
   constructor(private readonly deps: { db: IDb }) {}
 
-  async list(query: typeof NotificationTemplatePaginationDto.static) {
+  async list(query: NotificationTemplateListParams) {
     const { type, enabled, search, take = 20, skip = 0 } = query;
     const where: NotificationTemplateWhereInput = {};
 
@@ -87,7 +87,7 @@ export class NotificationTemplatesService {
   }
 
   async upsert(
-    data: typeof UpsertNotificationTemplateDto.static,
+    data: UpsertNotificationTemplateParams,
   ): Promise<{ id: string }> {
     const { id, code, name, subject, body, type, variables, enabled } = data;
 

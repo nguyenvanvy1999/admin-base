@@ -30,3 +30,7 @@ export const I18NImportDto = Type.Object({
   KO: Type.Optional(Type.String()),
   VI: Type.Optional(Type.String()),
 });
+
+export type I18nListParams = typeof I18nPaginationDto.static;
+export type I18nUpsertParams = typeof I18nUpsertDto.static;
+export type I18nImportRow = typeof I18NImportDto.static;

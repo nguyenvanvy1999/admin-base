@@ -58,3 +58,10 @@ export const NotificationPaginationDto = t.Intersect([
 export const MarkNotificationReadDto = t.Object({
   ids: t.Array(t.String({ minLength: 1 }), { minItems: 1 }),
 });
+
+export type NotificationListParams = typeof NotificationPaginationDto.static & {
+  currentUserId: string;
+  hasViewPermission: boolean;
+};
+
+export type CreateNotificationParams = typeof CreateNotificationDto.static;

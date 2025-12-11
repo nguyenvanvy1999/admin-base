@@ -1,12 +1,7 @@
 import { db, type IDb } from 'src/config/db';
-import type { SessionPaginateDto } from 'src/dtos/session.dto';
+import type { SessionListParams } from 'src/dtos/session.dto';
 import type { SessionWhereInput } from 'src/generated';
 import { ErrCode, NotFoundErr } from 'src/share';
-
-type ListParams = typeof SessionPaginateDto.static & {
-  currentUserId: string;
-  hasViewPermission: boolean;
-};
 
 export class SessionService {
   constructor(private readonly deps: { db: IDb } = { db }) {}
@@ -36,7 +31,7 @@ export class SessionService {
     });
   }
 
-  async list(params: ListParams) {
+  async list(params: SessionListParams) {
     const {
       created0,
       created1,

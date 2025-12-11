@@ -1,7 +1,7 @@
 import { db, type IDb } from 'src/config/db';
 import type {
-  IpWhitelistPaginationDto,
-  UpsertIpWhitelistDto,
+  IpWhitelistListParams,
+  UpsertIpWhitelistParams,
 } from 'src/dtos/ip-whitelist.dto';
 import type {
   UserIpWhitelistSelect,
@@ -17,15 +17,10 @@ const ipWhitelistSelect = {
   created: true,
 } satisfies UserIpWhitelistSelect;
 
-type ListParams = typeof IpWhitelistPaginationDto.static & {
-  currentUserId: string;
-  hasViewPermission: boolean;
-};
-
 export class UserIpWhitelistService {
   constructor(private readonly deps: { db: IDb }) {}
 
-  async list(params: ListParams) {
+  async list(params: IpWhitelistListParams) {
     const {
       userIds,
       userId,
@@ -108,7 +103,7 @@ export class UserIpWhitelistService {
   }
 
   async upsert(
-    data: typeof UpsertIpWhitelistDto.static,
+    data: UpsertIpWhitelistParams,
     params: {
       currentUserId: string;
       hasViewPermission: boolean;

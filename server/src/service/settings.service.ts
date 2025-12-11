@@ -1,12 +1,10 @@
 import { settingCache } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
-import type { UpdateSettingDto } from 'src/dtos/settings.dto';
+import type { UpdateSettingParams } from 'src/dtos/settings.dto';
 import type { SettingSelect } from 'src/generated';
 import { EncryptService } from 'src/service/auth/encrypt.service';
 import { settingService } from 'src/service/misc/setting.service';
 import { BadReqErr, ErrCode, NotFoundErr } from 'src/share';
-
-type UpdateParams = typeof UpdateSettingDto.static & { id: string };
 
 const settingSelect = {
   id: true,
@@ -40,7 +38,7 @@ export class SettingsService {
     );
   }
 
-  async update(params: UpdateParams): Promise<{ id: string }> {
+  async update(params: UpdateSettingParams): Promise<{ id: string }> {
     const { id, value, isSecret, description } = params;
     const setting = await this.deps.db.setting.findUnique({
       where: { id },

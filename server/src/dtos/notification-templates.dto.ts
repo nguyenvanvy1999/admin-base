@@ -50,3 +50,8 @@ export const NotificationTemplatePaginationDto = t.Intersect([
     search: DtoFields.search,
   }),
 ]);
+
+export type NotificationTemplateListParams =
+  typeof NotificationTemplatePaginationDto.static;
+export type UpsertNotificationTemplateParams =
+  typeof UpsertNotificationTemplateDto.static;
