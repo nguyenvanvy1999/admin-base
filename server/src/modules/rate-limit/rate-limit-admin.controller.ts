@@ -1,13 +1,14 @@
 import { Elysia, t } from 'elysia';
 import {
-  BlockRateLimitDto,
-  RateLimitListQueryDto,
-  RateLimitListResDto,
-  UnblockRateLimitDto,
-} from 'src/dtos/rate-limit.dto';
+  CreateRateLimitConfigDto,
+  RateLimitConfigItemDto,
+  RateLimitConfigListQueryDto,
+  RateLimitConfigListResDto,
+  UpdateRateLimitConfigDto,
+} from 'src/dtos/rate-limit-config.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
-import { rateLimitService } from 'src/service/rate-limit/rate-limit.service';
+import { rateLimitConfigService } from 'src/service/rate-limit/rate-limit-config.service';
 import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 
 export const rateLimitAdminController = new Elysia({
@@ -19,66 +20,61 @@ export const rateLimitAdminController = new Elysia({
   .get(
     '/',
     async ({ query }) => {
-      const result = await rateLimitService.list({
+      const result = await rateLimitConfigService.list({
         ...query,
-        created0: query.created0?.toISOString(),
-        created1: query.created1?.toISOString(),
+        skip: query.skip,
+        take: query.take,
       });
       return castToRes(result);
     },
     {
-      query: RateLimitListQueryDto,
+      query: RateLimitConfigListQueryDto,
       response: {
-        200: ResWrapper(RateLimitListResDto),
+        200: ResWrapper(RateLimitConfigListResDto),
         ...authErrors,
       },
     },
   )
   .use(authorize(has('RATE_LIMIT.MANAGE')))
   .post(
-    '/block',
+    '/',
     async ({ body }) => {
-      await rateLimitService.block({
-        identifier: body.identifier,
-        routePath: body.routePath,
-        blockedUntil: body.blockedUntil,
-      });
-      return castToRes({ success: true });
+      const config = await rateLimitConfigService.create(body);
+      return castToRes(config);
     },
     {
-      body: BlockRateLimitDto,
+      body: CreateRateLimitConfigDto,
       response: {
-        200: ResWrapper(t.Object({ success: t.Boolean() })),
+        200: ResWrapper(RateLimitConfigItemDto),
         ...authErrors,
       },
     },
   )
   .post(
-    '/unblock',
-    async ({ body }) => {
-      await rateLimitService.unblock({
-        identifier: body.identifier,
-        routePath: body.routePath,
-      });
-      return castToRes({ success: true });
+    '/:id',
+    async ({ body, params }) => {
+      const config = await rateLimitConfigService.update(params.id, body);
+      return castToRes(config);
     },
     {
-      body: UnblockRateLimitDto,
+      body: UpdateRateLimitConfigDto,
+      params: t.Object({ id: t.String() }),
       response: {
-        200: ResWrapper(t.Object({ success: t.Boolean() })),
+        200: ResWrapper(RateLimitConfigItemDto),
         ...authErrors,
       },
     },
   )
-  .post(
-    '/cleanup',
-    async () => {
-      const count = await rateLimitService.cleanupExpiredWindows();
-      return castToRes({ count });
+  .delete(
+    '/:id',
+    async ({ params }) => {
+      await rateLimitConfigService.delete(params.id);
+      return castToRes({ success: true });
     },
     {
+      params: t.Object({ id: t.String() }),
       response: {
-        200: ResWrapper(t.Object({ count: t.Number() })),
+        200: ResWrapper(t.Object({ success: t.Boolean() })),
         ...authErrors,
       },
     },

@@ -37,23 +37,43 @@ export class RateLimitConfigService {
     }
   }
 
-  list(routePath?: string) {
+  async list(params: {
+    routePath?: string;
+    enabled?: boolean;
+    skip?: number;
+    take?: number;
+  }) {
+    const { routePath, enabled, skip = 0, take = 20 } = params;
+
     try {
-      const where: RateLimitConfigWhereInput | undefined = routePath
-        ? {
-            routePath: {
-              contains: routePath,
-              mode: Prisma.QueryMode.insensitive,
-            },
-            enabled: true,
-          }
-        : { enabled: true };
-      return this.deps.db.rateLimitConfig.findMany({
-        where,
-        orderBy: [{ routePath: 'asc' }],
-      });
+      const where: RateLimitConfigWhereInput | undefined =
+        routePath || enabled !== undefined
+          ? {
+              ...(routePath
+                ? {
+                    routePath: {
+                      contains: routePath,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  }
+                : {}),
+              ...(enabled !== undefined ? { enabled } : {}),
+            }
+          : undefined;
+
+      const [docs, count] = await this.deps.db.$transaction([
+        this.deps.db.rateLimitConfig.findMany({
+          where,
+          skip,
+          take,
+          orderBy: [{ routePath: 'asc' }],
+        }),
+        this.deps.db.rateLimitConfig.count({ where }),
+      ]);
+
+      return { docs, count };
     } catch {
-      return [];
+      return { docs: [], count: 0 };
     }
   }
 

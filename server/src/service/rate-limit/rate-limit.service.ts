@@ -1,10 +1,8 @@
 import { rateLimitCache } from 'src/config/cache';
-import { db, type IDb } from 'src/config/db';
-import type { RateLimitWhereInput } from 'src/generated';
+import { redis } from 'src/config/redis';
 import { SecurityEventSeverity, SecurityEventType } from 'src/generated';
 import { securityEventService } from 'src/service/misc/security-event.service';
-import { getIpAndUa, IdUtil, type PrismaTx } from 'src/share';
-import { DB_PREFIX } from 'src/share/constant/app.constant';
+import { getIpAndUa } from 'src/share';
 
 type CheckAndIncrementParams = {
   identifier: string;
@@ -14,34 +12,31 @@ type CheckAndIncrementParams = {
   userId?: string;
   ip?: string;
   userAgent?: string;
-  tx?: PrismaTx;
 };
 
 type BlockParams = {
   identifier: string;
   routePath: string;
   blockedUntil?: Date;
-  tx?: PrismaTx;
 };
 
 type UnblockParams = {
   identifier: string;
   routePath: string;
-  tx?: PrismaTx;
-};
-
-type ListParams = {
-  take?: number;
-  skip?: number;
-  identifier?: string;
-  routePath?: string;
-  blocked?: boolean;
-  created0?: string;
-  created1?: string;
 };
 
 export class RateLimitService {
-  constructor(private readonly deps: { db: IDb } = { db }) {}
+  private buildWindowKey(
+    identifier: string,
+    routePath: string,
+    window: number,
+  ) {
+    return `${identifier}:${routePath}:${window}`;
+  }
+
+  private buildBlockKey(identifier: string, routePath: string) {
+    return `block:${identifier}:${routePath}`;
+  }
 
   async checkAndIncrement(
     params: CheckAndIncrementParams,
@@ -54,7 +49,6 @@ export class RateLimitService {
       userId,
       ip,
       userAgent,
-      tx,
     } = params;
 
     const now = new Date();
@@ -62,47 +56,34 @@ export class RateLimitService {
       Math.floor(now.getTime() / (windowSeconds * 1000)) *
         (windowSeconds * 1000),
     );
-    const windowEnd = new Date(windowStart.getTime() + windowSeconds * 1000);
 
-    const cacheKey = `${identifier}:${routePath}:${windowStart.getTime()}`;
-    const cachedCount = await rateLimitCache.get(cacheKey);
+    const blockKey = this.buildBlockKey(identifier, routePath);
+    const blockedValue = await redis.get(blockKey);
 
-    let currentCount = cachedCount ?? 0;
-
-    const dbInstance = tx || this.deps.db;
-
-    const existing = await dbInstance.rateLimit.findUnique({
-      where: {
-        rate_limit_unique: {
-          identifier,
-          routePath,
-          windowStart,
-        },
-      },
-    });
-
-    const blockedRecord = await dbInstance.rateLimit.findFirst({
-      where: {
-        identifier,
-        routePath,
-        blocked: true,
-        OR: [{ blockedUntil: null }, { blockedUntil: { gt: now } }],
-      },
-    });
-
-    if (blockedRecord) {
+    if (blockedValue) {
       return {
         allowed: false,
-        count: existing?.count ?? 0,
+        count: 0,
         remaining: 0,
       };
     }
 
-    if (existing) {
-      currentCount = existing.count;
+    const cacheKey = this.buildWindowKey(
+      identifier,
+      routePath,
+      windowStart.getTime(),
+    );
+
+    const currentCount = await redis.incr(cacheKey);
+
+    if (currentCount === 1) {
+      await redis.expire(cacheKey, windowSeconds);
     }
 
-    if (currentCount >= limit) {
+    // Backfill in-memory cache for compatibility with existing callers
+    await rateLimitCache.set(cacheKey, currentCount, windowSeconds);
+
+    if (currentCount > limit) {
       const { clientIp, userAgent: ctxUserAgent } = getIpAndUa();
       const finalIp = ip ?? clientIp;
       const finalUserAgent = userAgent ?? ctxUserAgent;
@@ -120,7 +101,6 @@ export class RateLimitService {
           limit,
           windowSeconds,
         },
-        tx,
       });
 
       return {
@@ -130,38 +110,10 @@ export class RateLimitService {
       };
     }
 
-    const newCount = currentCount + 1;
-
-    await rateLimitCache.set(cacheKey, newCount, windowSeconds);
-
-    if (existing) {
-      await dbInstance.rateLimit.update({
-        where: {
-          id: existing.id,
-        },
-        data: {
-          count: newCount,
-          modified: now,
-        },
-      });
-    } else {
-      await dbInstance.rateLimit.create({
-        data: {
-          id: IdUtil.dbId(DB_PREFIX.RATE_LIMIT),
-          identifier,
-          routePath,
-          count: newCount,
-          limit,
-          windowStart,
-          windowEnd,
-        },
-      });
-    }
-
     return {
       allowed: true,
-      count: newCount,
-      remaining: Math.max(0, limit - newCount),
+      count: currentCount,
+      remaining: Math.max(0, limit - currentCount),
     };
   }
 
@@ -176,153 +128,36 @@ export class RateLimitService {
         (windowSeconds * 1000),
     );
 
-    const cacheKey = `${identifier}:${routePath}:${windowStart.getTime()}`;
-    const cachedCount = await rateLimitCache.get(cacheKey);
+    const cacheKey = this.buildWindowKey(
+      identifier,
+      routePath,
+      windowStart.getTime(),
+    );
+    const cachedCount = await redis.get(cacheKey);
 
-    if (cachedCount !== null) {
-      return cachedCount;
-    }
-
-    const existing = await this.deps.db.rateLimit.findUnique({
-      where: {
-        rate_limit_unique: {
-          identifier,
-          routePath,
-          windowStart,
-        },
-      },
-      select: {
-        count: true,
-      },
-    });
-
-    return existing?.count ?? 0;
+    return cachedCount ? Number(cachedCount) : 0;
   }
 
   async block(params: BlockParams): Promise<void> {
-    const { identifier, routePath, blockedUntil, tx } = params;
+    const { identifier, routePath, blockedUntil } = params;
+    const blockKey = this.buildBlockKey(identifier, routePath);
 
-    const dbInstance = tx || this.deps.db;
-    const now = new Date();
+    if (blockedUntil) {
+      const ttlSeconds = Math.max(
+        1,
+        Math.ceil((blockedUntil.getTime() - Date.now()) / 1000),
+      );
+      await redis.set(blockKey, blockedUntil.toISOString(), 'EX', ttlSeconds);
+      return;
+    }
 
-    await dbInstance.rateLimit.updateMany({
-      where: {
-        identifier,
-        routePath,
-        blocked: false,
-      },
-      data: {
-        blocked: true,
-        blockedUntil: blockedUntil ?? null,
-        modified: now,
-      },
-    });
+    await redis.set(blockKey, 'permanent');
   }
 
   async unblock(params: UnblockParams): Promise<void> {
-    const { identifier, routePath, tx } = params;
-
-    const dbInstance = tx || this.deps.db;
-    const now = new Date();
-
-    await dbInstance.rateLimit.updateMany({
-      where: {
-        identifier,
-        routePath,
-        blocked: true,
-      },
-      data: {
-        blocked: false,
-        blockedUntil: null,
-        modified: now,
-      },
-    });
-  }
-
-  async list(params: ListParams) {
-    const {
-      take = 20,
-      skip = 0,
-      identifier,
-      routePath,
-      blocked,
-      created0,
-      created1,
-    } = params;
-
-    const conditions: RateLimitWhereInput[] = [];
-
-    if (identifier) {
-      conditions.push({
-        identifier: { contains: identifier, mode: 'insensitive' },
-      });
-    }
-
-    if (routePath) {
-      conditions.push({
-        routePath: { contains: routePath, mode: 'insensitive' },
-      });
-    }
-
-    if (blocked !== undefined) {
-      conditions.push({ blocked });
-    }
-
-    if (created0 || created1) {
-      const dateCondition: RateLimitWhereInput['created'] = {};
-      if (created0) {
-        dateCondition.gte = new Date(created0);
-      }
-      if (created1) {
-        dateCondition.lte = new Date(created1);
-      }
-      conditions.push({ created: dateCondition });
-    }
-
-    const where = conditions.length > 0 ? { AND: conditions } : undefined;
-
-    const [docs, count] = await this.deps.db.$transaction([
-      this.deps.db.rateLimit.findMany({
-        where,
-        select: {
-          id: true,
-          identifier: true,
-          routePath: true,
-          count: true,
-          limit: true,
-          windowStart: true,
-          windowEnd: true,
-          blocked: true,
-          blockedUntil: true,
-          created: true,
-          modified: true,
-        },
-        skip,
-        take,
-        orderBy: { created: 'desc' },
-      }),
-      this.deps.db.rateLimit.count({ where }),
-    ]);
-
-    return {
-      docs,
-      count,
-    };
-  }
-
-  async cleanupExpiredWindows(): Promise<number> {
-    const now = new Date();
-
-    const result = await this.deps.db.rateLimit.deleteMany({
-      where: {
-        windowEnd: {
-          lt: now,
-        },
-        blocked: false,
-      },
-    });
-
-    return result.count;
+    const { identifier, routePath } = params;
+    const blockKey = this.buildBlockKey(identifier, routePath);
+    await redis.del(blockKey);
   }
 }
 
