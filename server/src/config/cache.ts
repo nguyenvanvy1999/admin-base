@@ -1,4 +1,5 @@
 import { redis } from 'src/config/redis';
+import type { RateLimitConfig } from 'src/generated';
 import {
   CACHE_NS,
   type ICurrentUser,
@@ -72,6 +73,12 @@ export const settingCache = new RedisCache({
   ttl: FIVE_MINUTES,
 });
 export type ISettingCache = typeof settingCache;
+
+export const rateLimitConfigCache = new RedisCache<RateLimitConfig>({
+  namespace: CACHE_NS.RATE_LIMIT_CONFIG,
+  ttl: FIVE_MINUTES,
+});
+export type IRateLimitConfigCache = typeof rateLimitConfigCache;
 
 export const otpCache = new RedisCache<{
   otp: string;

@@ -1,13 +1,13 @@
 import type { Elysia } from 'elysia';
-import { RateLimitStrategy, type RateLimitType } from 'src/generated';
+import { RateLimitStrategy } from 'src/generated';
 import { BadReqErr, ErrCode, getIpAndUa } from 'src/share';
 import { rateLimitService } from './rate-limit.service';
 
 export type RateLimitConfig = {
-  type: RateLimitType;
+  routePath: string;
   limit: number;
   windowSeconds: number;
-  strategy?: RateLimitStrategy;
+  strategy: RateLimitStrategy;
   getIdentifier?: (context: any) => string;
 };
 
@@ -76,7 +76,7 @@ export const rateLimit = (config: RateLimitConfig) => {
 
   return (app: Elysia) =>
     app.onBeforeHandle(async (context) => {
-      const { type, limit, windowSeconds, getIdentifier } = config;
+      const { routePath, limit, windowSeconds, getIdentifier } = config;
 
       const { identifier, ip, userAgent } = generateIdentifier(
         strategy,
@@ -88,7 +88,7 @@ export const rateLimit = (config: RateLimitConfig) => {
 
       const result = await rateLimitService.checkAndIncrement({
         identifier,
-        type,
+        routePath,
         limit,
         windowSeconds,
         userId,
@@ -98,7 +98,7 @@ export const rateLimit = (config: RateLimitConfig) => {
 
       if (!result.allowed) {
         throw new BadReqErr(ErrCode.RateLimitExceeded, {
-          errors: `Rate limit exceeded. Limit: ${limit} requests per ${windowSeconds} seconds`,
+          errors: `Rate limit exceeded on ${routePath}. Limit: ${limit} requests per ${windowSeconds} seconds`,
         });
       }
 

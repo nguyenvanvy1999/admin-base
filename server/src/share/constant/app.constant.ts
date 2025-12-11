@@ -203,6 +203,7 @@ export enum CACHE_NS {
   OTP_RATE_LIMIT = 'otp-rate-limit',
   REGISTER_OTP_LIMIT = 'register-otp-limit',
   RATE_LIMIT = 'rate-limit',
+  RATE_LIMIT_CONFIG = 'rate-limit-config',
   MFA_ATTEMPT = 'mfa-attempt',
   CURRENCY = 'currency',
   IP_WHITELIST = 'ip-whitelist',

@@ -40,7 +40,7 @@ export const rateLimitAdminController = new Elysia({
     async ({ body }) => {
       await rateLimitService.block({
         identifier: body.identifier,
-        type: body.type,
+        routePath: body.routePath,
         blockedUntil: body.blockedUntil,
       });
       return castToRes({ success: true });
@@ -58,7 +58,7 @@ export const rateLimitAdminController = new Elysia({
     async ({ body }) => {
       await rateLimitService.unblock({
         identifier: body.identifier,
-        type: body.type,
+        routePath: body.routePath,
       });
       return castToRes({ success: true });
     },

@@ -1,7 +1,10 @@
-import { settingCache } from 'src/config/cache';
+import { rateLimitConfigCache } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
-import type { RateLimitStrategy, RateLimitType } from 'src/generated';
-import { RateLimitStrategy as RateStrategyEnum } from 'src/generated';
+import {
+  Prisma,
+  type RateLimitConfigWhereInput,
+  type RateLimitStrategy,
+} from 'src/generated';
 import type { RateLimitConfig } from './rate-limit.middleware';
 
 const CACHE_TTL = 300;
@@ -9,55 +12,17 @@ const CACHE_TTL = 300;
 export class RateLimitConfigService {
   constructor(private readonly deps: { db: IDb } = { db }) {}
 
-  async getConfigForType(
-    type: RateLimitType,
-    routePath?: string,
-  ): Promise<RateLimitConfig | null> {
-    const cacheKey = `rate_limit_config:${type}:${routePath || 'default'}`;
-    const cached = (await settingCache.get(cacheKey)) as
-      | RateLimitConfig
-      | null
-      | undefined;
-
+  async getConfig(routePath: string): Promise<RateLimitConfig | null> {
+    const cacheKey = this.buildCacheKey(routePath);
+    const cached = await rateLimitConfigCache.get(cacheKey);
     if (cached) {
       return cached;
     }
 
-    let config: RateLimitConfig | null = null;
-
-    if (routePath) {
-      config = await this.getConfigByRoute(type, routePath);
-    }
-
-    if (!config) {
-      config = await this.getConfigByType(type);
-    }
-
-    if (!config) {
-      return null;
-    }
-
-    await settingCache.set(cacheKey, config, CACHE_TTL);
-    return config;
-  }
-
-  private async getConfigByRoute(
-    type: RateLimitType,
-    routePath: string,
-  ): Promise<RateLimitConfig | null> {
     try {
       const config = await this.deps.db.rateLimitConfig.findUnique({
         where: {
-          rate_limit_config_unique: {
-            type,
-            routePath,
-          },
-        },
-        select: {
-          limit: true,
-          windowSeconds: true,
-          strategy: true,
-          enabled: true,
+          routePath,
         },
       });
 
@@ -65,54 +30,27 @@ export class RateLimitConfigService {
         return null;
       }
 
-      return {
-        type,
-        limit: config.limit,
-        windowSeconds: config.windowSeconds,
-        strategy: this.validateStrategy(config.strategy),
-      };
+      await rateLimitConfigCache.set(cacheKey, config, CACHE_TTL);
+      return config;
     } catch {
       return null;
     }
   }
 
-  private async getConfigByType(
-    type: RateLimitType,
-  ): Promise<RateLimitConfig | null> {
+  list(routePath?: string) {
     try {
-      const config = await this.deps.db.rateLimitConfig.findFirst({
-        where: {
-          type,
-        },
-        select: {
-          limit: true,
-          windowSeconds: true,
-          strategy: true,
-          enabled: true,
-        },
-      });
-
-      if (!config || !config.enabled) {
-        return null;
-      }
-
-      return {
-        type,
-        limit: config.limit,
-        windowSeconds: config.windowSeconds,
-        strategy: this.validateStrategy(config.strategy),
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  list(type?: RateLimitType) {
-    try {
-      const where = type ? { type, enabled: true } : { enabled: true };
+      const where: RateLimitConfigWhereInput | undefined = routePath
+        ? {
+            routePath: {
+              contains: routePath,
+              mode: Prisma.QueryMode.insensitive,
+            },
+            enabled: true,
+          }
+        : { enabled: true };
       return this.deps.db.rateLimitConfig.findMany({
         where,
-        orderBy: [{ type: 'asc' }, { routePath: 'asc' }],
+        orderBy: [{ routePath: 'asc' }],
       });
     } catch {
       return [];
@@ -120,8 +58,7 @@ export class RateLimitConfigService {
   }
 
   async create(data: {
-    type: RateLimitType;
-    routePath?: string;
+    routePath: string;
     limit: number;
     windowSeconds: number;
     strategy: RateLimitStrategy;
@@ -130,8 +67,7 @@ export class RateLimitConfigService {
     const config = await this.deps.db.rateLimitConfig.create({
       data: {
         id: `rlcfg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-        type: data.type,
-        routePath: data.routePath ?? null,
+        routePath: data.routePath,
         limit: data.limit,
         windowSeconds: data.windowSeconds,
         strategy: data.strategy,
@@ -139,13 +75,14 @@ export class RateLimitConfigService {
       },
     });
 
-    await this.invalidateCache();
+    await this.invalidateCache([data.routePath]);
     return config;
   }
 
   async update(
     id: string,
     data: {
+      routePath?: string;
       limit?: number;
       windowSeconds?: number;
       strategy?: RateLimitStrategy;
@@ -153,43 +90,46 @@ export class RateLimitConfigService {
       description?: string;
     },
   ) {
+    const existing = await this.deps.db.rateLimitConfig.findUnique({
+      where: { id },
+      select: { routePath: true },
+    });
+
     const config = await this.deps.db.rateLimitConfig.update({
       where: { id },
       data,
     });
 
-    await this.invalidateCache();
+    const routePaths = [existing?.routePath, data.routePath].filter(
+      Boolean,
+    ) as string[];
+
+    await this.invalidateCache(routePaths);
     return config;
   }
 
   async delete(id: string) {
-    await this.deps.db.rateLimitConfig.delete({
+    const existing = await this.deps.db.rateLimitConfig.delete({
       where: { id },
+      select: { routePath: true },
     });
 
-    await this.invalidateCache();
+    await this.invalidateCache([existing.routePath]);
   }
 
-  async invalidateCache(): Promise<void> {
-    const cacheKeys = [
-      'rate_limit_config:login:default',
-      'rate_limit_config:password_reset:default',
-      'rate_limit_config:email_verification:default',
-      'rate_limit_config:api:default',
-      'rate_limit_config:file_upload:default',
-    ];
-
-    await Promise.all(cacheKeys.map((key) => settingCache.del(key)));
-  }
-
-  private validateStrategy(strategy: string | null): RateLimitStrategy {
-    if (
-      strategy &&
-      Object.values(RateStrategyEnum).includes(strategy as RateLimitStrategy)
-    ) {
-      return strategy as RateLimitStrategy;
+  async invalidateCache(routePaths: string[] = []): Promise<void> {
+    if (!routePaths.length) {
+      return;
     }
-    return RateStrategyEnum.ip;
+    await Promise.all(
+      routePaths.map((routePath) =>
+        rateLimitConfigCache.del(this.buildCacheKey(routePath)),
+      ),
+    );
+  }
+
+  private buildCacheKey(routePath: string) {
+    return `route:${routePath}`;
   }
 }
 

@@ -110,15 +110,6 @@ enum NotificationStatus {
   read
 }
 
-// Rate limit types
-enum RateLimitType {
-  api
-  login
-  password_reset
-  email_verification
-  file_upload
-}
-
 // Rate limit strategies
 enum RateLimitStrategy {
   user
@@ -525,7 +516,7 @@ model Notification {
 model RateLimit {
   id          String         @id
   identifier  String         // userId, IP, email, etc.
-  type        RateLimitType
+  routePath   String         @map("route_path")
   count       Int            @default(0)
   limit       Int
   windowStart DateTime       @map("window_start")
@@ -535,8 +526,8 @@ model RateLimit {
   created     DateTime       @default(now())
   modified    DateTime       @updatedAt
 
-  @@unique([identifier, type, windowStart], name: "rate_limit_unique")
-  @@index([identifier, type], name: "rate_limit_identifier_type_idx")
+  @@unique([identifier, routePath, windowStart], name: "rate_limit_unique")
+  @@index([identifier, routePath], name: "rate_limit_identifier_route_idx")
   @@index([blocked], name: "rate_limit_blocked_idx")
   @@index([windowEnd], name: "rate_limit_windowEnd_idx")
   @@map("rate_limits")
@@ -544,19 +535,18 @@ model RateLimit {
 
 // Rate limit configuration settings
 model RateLimitConfig {
-  id            String         @id
-  type          RateLimitType
-  routePath     String?        @map("route_path")
+  id            String              @id
+  routePath     String              @map("route_path")
   limit         Int
-  windowSeconds Int            @map("window_seconds")
+  windowSeconds Int                 @map("window_seconds")
   strategy      RateLimitStrategy
-  enabled       Boolean        @default(true)
+  enabled       Boolean             @default(true)
   description   String?
-  created       DateTime       @default(now())
-  modified      DateTime       @updatedAt
+  created       DateTime            @default(now())
+  modified      DateTime            @updatedAt
 
-  @@unique([type, routePath], name: "rate_limit_config_unique")
-  @@index([type], name: "rate_limit_config_type_idx")
+  @@unique([routePath], name: "rate_limit_config_unique")
+  @@index([routePath], name: "rate_limit_config_routePath_idx")
   @@index([enabled], name: "rate_limit_config_enabled_idx")
   @@map("rate_limit_configs")
 }

@@ -1,12 +1,11 @@
 import { t } from 'elysia';
-import { RateLimitType } from 'src/generated';
 import { PaginatedDto, PaginationReqDto } from 'src/share';
 
 export const RateLimitListQueryDto = t.Intersect([
   PaginationReqDto,
   t.Object({
     identifier: t.Optional(t.String()),
-    type: t.Optional(t.Enum(RateLimitType)),
+    routePath: t.Optional(t.String()),
     blocked: t.Optional(t.Boolean()),
     created0: t.Optional(
       t.Date({
@@ -26,7 +25,7 @@ export const RateLimitListQueryDto = t.Intersect([
 export const RateLimitItemDto = t.Object({
   id: t.String(),
   identifier: t.String(),
-  type: t.Enum(RateLimitType),
+  routePath: t.String(),
   count: t.Number(),
   limit: t.Number(),
   windowStart: t.Date({ format: 'date-time' }),
@@ -41,11 +40,11 @@ export const RateLimitListResDto = PaginatedDto(RateLimitItemDto);
 
 export const BlockRateLimitDto = t.Object({
   identifier: t.String(),
-  type: t.Enum(RateLimitType),
+  routePath: t.String(),
   blockedUntil: t.Optional(t.Date({ format: 'date-time' })),
 });
 
 export const UnblockRateLimitDto = t.Object({
   identifier: t.String(),
-  type: t.Enum(RateLimitType),
+  routePath: t.String(),
 });

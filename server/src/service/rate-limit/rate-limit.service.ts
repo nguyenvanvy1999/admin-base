@@ -1,6 +1,6 @@
 import { rateLimitCache } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
-import type { RateLimitType, RateLimitWhereInput } from 'src/generated';
+import type { RateLimitWhereInput } from 'src/generated';
 import { SecurityEventSeverity, SecurityEventType } from 'src/generated';
 import { securityEventService } from 'src/service/misc/security-event.service';
 import { getIpAndUa, IdUtil, type PrismaTx } from 'src/share';
@@ -8,7 +8,7 @@ import { DB_PREFIX } from 'src/share/constant/app.constant';
 
 type CheckAndIncrementParams = {
   identifier: string;
-  type: RateLimitType;
+  routePath: string;
   limit: number;
   windowSeconds: number;
   userId?: string;
@@ -19,14 +19,14 @@ type CheckAndIncrementParams = {
 
 type BlockParams = {
   identifier: string;
-  type: RateLimitType;
+  routePath: string;
   blockedUntil?: Date;
   tx?: PrismaTx;
 };
 
 type UnblockParams = {
   identifier: string;
-  type: RateLimitType;
+  routePath: string;
   tx?: PrismaTx;
 };
 
@@ -34,7 +34,7 @@ type ListParams = {
   take?: number;
   skip?: number;
   identifier?: string;
-  type?: RateLimitType;
+  routePath?: string;
   blocked?: boolean;
   created0?: string;
   created1?: string;
@@ -48,7 +48,7 @@ export class RateLimitService {
   ): Promise<{ allowed: boolean; count: number; remaining: number }> {
     const {
       identifier,
-      type,
+      routePath,
       limit,
       windowSeconds,
       userId,
@@ -64,7 +64,7 @@ export class RateLimitService {
     );
     const windowEnd = new Date(windowStart.getTime() + windowSeconds * 1000);
 
-    const cacheKey = `${identifier}:${type}:${windowStart.getTime()}`;
+    const cacheKey = `${identifier}:${routePath}:${windowStart.getTime()}`;
     const cachedCount = await rateLimitCache.get(cacheKey);
 
     let currentCount = cachedCount ?? 0;
@@ -75,7 +75,7 @@ export class RateLimitService {
       where: {
         rate_limit_unique: {
           identifier,
-          type,
+          routePath,
           windowStart,
         },
       },
@@ -84,7 +84,7 @@ export class RateLimitService {
     const blockedRecord = await dbInstance.rateLimit.findFirst({
       where: {
         identifier,
-        type,
+        routePath,
         blocked: true,
         OR: [{ blockedUntil: null }, { blockedUntil: { gt: now } }],
       },
@@ -114,7 +114,7 @@ export class RateLimitService {
         ip: finalIp,
         userAgent: finalUserAgent,
         metadata: {
-          rateLimitType: type,
+          routePath,
           identifier,
           count: currentCount,
           limit,
@@ -149,7 +149,7 @@ export class RateLimitService {
         data: {
           id: IdUtil.dbId(DB_PREFIX.RATE_LIMIT),
           identifier,
-          type,
+          routePath,
           count: newCount,
           limit,
           windowStart,
@@ -167,7 +167,7 @@ export class RateLimitService {
 
   async getCurrentCount(
     identifier: string,
-    type: RateLimitType,
+    routePath: string,
   ): Promise<number> {
     const now = new Date();
     const windowSeconds = 60;
@@ -176,7 +176,7 @@ export class RateLimitService {
         (windowSeconds * 1000),
     );
 
-    const cacheKey = `${identifier}:${type}:${windowStart.getTime()}`;
+    const cacheKey = `${identifier}:${routePath}:${windowStart.getTime()}`;
     const cachedCount = await rateLimitCache.get(cacheKey);
 
     if (cachedCount !== null) {
@@ -187,7 +187,7 @@ export class RateLimitService {
       where: {
         rate_limit_unique: {
           identifier,
-          type,
+          routePath,
           windowStart,
         },
       },
@@ -200,7 +200,7 @@ export class RateLimitService {
   }
 
   async block(params: BlockParams): Promise<void> {
-    const { identifier, type, blockedUntil, tx } = params;
+    const { identifier, routePath, blockedUntil, tx } = params;
 
     const dbInstance = tx || this.deps.db;
     const now = new Date();
@@ -208,7 +208,7 @@ export class RateLimitService {
     await dbInstance.rateLimit.updateMany({
       where: {
         identifier,
-        type,
+        routePath,
         blocked: false,
       },
       data: {
@@ -220,7 +220,7 @@ export class RateLimitService {
   }
 
   async unblock(params: UnblockParams): Promise<void> {
-    const { identifier, type, tx } = params;
+    const { identifier, routePath, tx } = params;
 
     const dbInstance = tx || this.deps.db;
     const now = new Date();
@@ -228,7 +228,7 @@ export class RateLimitService {
     await dbInstance.rateLimit.updateMany({
       where: {
         identifier,
-        type,
+        routePath,
         blocked: true,
       },
       data: {
@@ -244,7 +244,7 @@ export class RateLimitService {
       take = 20,
       skip = 0,
       identifier,
-      type,
+      routePath,
       blocked,
       created0,
       created1,
@@ -258,8 +258,10 @@ export class RateLimitService {
       });
     }
 
-    if (type) {
-      conditions.push({ type });
+    if (routePath) {
+      conditions.push({
+        routePath: { contains: routePath, mode: 'insensitive' },
+      });
     }
 
     if (blocked !== undefined) {
@@ -285,7 +287,7 @@ export class RateLimitService {
         select: {
           id: true,
           identifier: true,
-          type: true,
+          routePath: true,
           count: true,
           limit: true,
           windowStart: true,
