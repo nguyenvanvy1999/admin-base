@@ -1,3 +1,7 @@
+import {
+  type IUserIpWhitelistCache,
+  userIpWhitelistCache,
+} from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import type {
   IpWhitelistListParams,
@@ -18,7 +22,58 @@ const ipWhitelistSelect = {
 } satisfies UserIpWhitelistSelect;
 
 export class UserIpWhitelistService {
-  constructor(private readonly deps: { db: IDb }) {}
+  constructor(
+    private readonly deps: { db: IDb; cache: IUserIpWhitelistCache } = {
+      db,
+      cache: userIpWhitelistCache,
+    },
+  ) {}
+
+  private normalizeIp(ip: string): string {
+    return ip.trim().toLowerCase();
+  }
+
+  private isLocalIp(ip: string): boolean {
+    return ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(ip);
+  }
+
+  private async getUserIps(userId: string): Promise<string[]> {
+    const cached = await this.deps.cache.get(userId);
+    if (cached) {
+      return cached;
+    }
+
+    const ips = await this.deps.db.userIpWhitelist.findMany({
+      where: { userId },
+      select: { ip: true },
+    });
+    const normalized = ips.map((item) => this.normalizeIp(item.ip));
+    await this.deps.cache.set(userId, normalized);
+    return normalized;
+  }
+
+  private invalidateCache(userId: string) {
+    return this.deps.cache.del(userId);
+  }
+
+  async isIpAllowed(userId: string, clientIp: string | null): Promise<boolean> {
+    if (!clientIp) {
+      return false;
+    }
+
+    const normalizedIp = this.normalizeIp(clientIp);
+    if (this.isLocalIp(normalizedIp)) {
+      return true;
+    }
+
+    const allowedIps = await this.getUserIps(userId);
+
+    if (allowedIps.length === 0) {
+      return true;
+    }
+
+    return allowedIps.includes(normalizedIp);
+  }
 
   async list(params: IpWhitelistListParams) {
     const {
@@ -120,7 +175,7 @@ export class UserIpWhitelistService {
 
       const existing = await this.deps.db.userIpWhitelist.findFirst({
         where,
-        select: { id: true },
+        select: { id: true, userId: true },
       });
       if (!existing) {
         throw new NotFoundErr(ErrCode.IPWhitelistNotFound);
@@ -131,6 +186,7 @@ export class UserIpWhitelistService {
         data: { ip, note },
         select: { id: true },
       });
+      await this.invalidateCache(existing.userId);
       return { id: updated.id };
     } else {
       const finalUserId = hasViewPermission ? userId : currentUserId;
@@ -144,6 +200,7 @@ export class UserIpWhitelistService {
         },
         select: { id: true },
       });
+      await this.invalidateCache(finalUserId);
       return { id: created.id };
     }
   }
@@ -164,12 +221,23 @@ export class UserIpWhitelistService {
       where.userId = currentUserId;
     }
 
-    await this.deps.db.userIpWhitelist.deleteMany({
+    const affectedUsers = await this.deps.db.userIpWhitelist.findMany({
       where,
+      select: { userId: true },
     });
+
+    await this.deps.db.userIpWhitelist.deleteMany({ where });
+
+    const uniqueUserIds = [
+      ...new Set(affectedUsers.map((item) => item.userId)),
+    ];
+    await Promise.all(
+      uniqueUserIds.map((userId) => this.invalidateCache(userId)),
+    );
   }
 }
 
 export const userIpWhitelistService = new UserIpWhitelistService({
   db,
+  cache: userIpWhitelistCache,
 });

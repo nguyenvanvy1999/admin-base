@@ -346,6 +346,10 @@ export class SettingService {
     return this.getSetting<boolean>(SETTING.ENB_MFA_REQUIRED);
   }
 
+  enbIpWhitelist(): Promise<boolean> {
+    return this.getSetting<boolean>(SETTING.ENB_IP_WHITELIST);
+  }
+
   async registerRateLimit(): Promise<{
     otpLimit: number;
     max: number;

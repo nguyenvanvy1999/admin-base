@@ -211,6 +211,7 @@ export enum CACHE_NS {
   RATE_LIMIT = 'rate-limit',
   MFA_ATTEMPT = 'mfa-attempt',
   CURRENCY = 'currency',
+  IP_WHITELIST = 'ip-whitelist',
 }
 
 export enum DB_PREFIX {

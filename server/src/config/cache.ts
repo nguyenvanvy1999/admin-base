@@ -157,3 +157,9 @@ export const captchaCache = new RedisCache<string>({
   ttl: FIVE_MINUTES,
 });
 export type ICaptchaCache = typeof captchaCache;
+
+export const userIpWhitelistCache = new RedisCache<string[]>({
+  namespace: CACHE_NS.IP_WHITELIST,
+  ttl: FIVE_MINUTES,
+});
+export type IUserIpWhitelistCache = typeof userIpWhitelistCache;

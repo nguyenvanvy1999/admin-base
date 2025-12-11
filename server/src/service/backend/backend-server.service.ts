@@ -45,6 +45,7 @@ import {
 import { adminAuthMiddleware } from 'src/service/auth/auth.middleware';
 import { gracefulShutdownService } from 'src/service/misc/graceful-shutdown.service';
 import { httpLoggerMiddleware } from 'src/service/misc/http-logger.middleware';
+import { userIpWhitelistMiddleware } from 'src/service/user-ip-whitelist';
 import { APP_ENV } from 'src/share';
 import { reqMeta } from '../../config/request';
 
@@ -103,6 +104,7 @@ export class BackendServerService {
               : []),
           ])
           .use(reqMeta)
+          .use(userIpWhitelistMiddleware())
           .use(authController)
           .use(userAuthController)
           .use(otpController)
