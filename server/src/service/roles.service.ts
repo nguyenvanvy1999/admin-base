@@ -18,6 +18,21 @@ export class RolesService {
     },
   ) {}
 
+  private buildPermissionData(permissionIds: string[]) {
+    return permissionIds.map((permId) => ({
+      id: IdUtil.dbId(),
+      permissionId: permId,
+    }));
+  }
+
+  private buildPlayerData(players: UpsertRoleParams['players']) {
+    return players.map((player) => ({
+      id: IdUtil.dbId(),
+      playerId: player.playerId,
+      expiresAt: player.expiresAt ? new Date(player.expiresAt) : null,
+    }));
+  }
+
   async list(params: RoleListParams) {
     const { userId, search } = params;
     const where: RoleWhereInput = {};
@@ -133,10 +148,7 @@ export class RolesService {
             },
             createMany: {
               skipDuplicates: true,
-              data: permissionIds.map((permId) => ({
-                id: IdUtil.dbId(),
-                permissionId: permId,
-              })),
+              data: this.buildPermissionData(permissionIds),
             },
           },
           players: {
@@ -145,11 +157,7 @@ export class RolesService {
             },
             createMany: {
               skipDuplicates: true,
-              data: players.map((player) => ({
-                id: IdUtil.dbId(),
-                playerId: player.playerId,
-                expiresAt: player.expiresAt ? new Date(player.expiresAt) : null,
-              })),
+              data: this.buildPlayerData(players),
             },
           },
         },
@@ -165,19 +173,12 @@ export class RolesService {
           enabled,
           permissions: {
             createMany: {
-              data: permissionIds.map((permId) => ({
-                id: IdUtil.dbId(),
-                permissionId: permId,
-              })),
+              data: this.buildPermissionData(permissionIds),
             },
           },
           players: {
             createMany: {
-              data: players.map((player) => ({
-                id: IdUtil.dbId(),
-                playerId: player.playerId,
-                expiresAt: player.expiresAt ? new Date(player.expiresAt) : null,
-              })),
+              data: this.buildPlayerData(players),
             },
           },
         },

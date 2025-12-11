@@ -32,6 +32,41 @@ const notificationTemplateSelect = {
 export class NotificationTemplatesService {
   constructor(private readonly deps: { db: IDb }) {}
 
+  private async ensureExists(id: string) {
+    const existing = await this.deps.db.notificationTemplate.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      throw new NotFoundErr(ErrCode.NotificationTemplateNotFound);
+    }
+  }
+
+  private async ensureCodeUnique(code: string, excludeId?: string) {
+    const codeExists = await this.deps.db.notificationTemplate.findFirst({
+      where: { code, ...(excludeId && { id: { not: excludeId } }) },
+      select: { id: true },
+    });
+
+    if (codeExists) {
+      throw new BadReqErr(ErrCode.NotificationTemplateCodeExists);
+    }
+  }
+
+  private buildData(data: UpsertNotificationTemplateParams) {
+    const { code, name, subject, body, type, variables, enabled } = data;
+    return {
+      code,
+      name,
+      subject: subject || null,
+      body,
+      type,
+      variables: variables || null,
+      enabled: enabled ?? true,
+    };
+  }
+
   async list(query: NotificationTemplateListParams) {
     const { type, enabled, search, take = 20, skip = 0 } = query;
     const where: NotificationTemplateWhereInput = {};
@@ -89,69 +124,29 @@ export class NotificationTemplatesService {
   async upsert(
     data: UpsertNotificationTemplateParams,
   ): Promise<{ id: string }> {
-    const { id, code, name, subject, body, type, variables, enabled } = data;
+    const { id, code } = data;
+    const payload = this.buildData(data);
 
     if (id) {
-      const existing = await this.deps.db.notificationTemplate.findUnique({
-        where: { id },
-        select: { id: true },
-      });
-
-      if (!existing) {
-        throw new NotFoundErr(ErrCode.NotificationTemplateNotFound);
-      }
-
-      const codeExists = await this.deps.db.notificationTemplate.findFirst({
-        where: {
-          code,
-          id: { not: id },
-        },
-        select: { id: true },
-      });
-
-      if (codeExists) {
-        throw new BadReqErr(ErrCode.NotificationTemplateCodeExists);
-      }
-
+      await this.ensureExists(id);
+      await this.ensureCodeUnique(code, id);
       const updated = await this.deps.db.notificationTemplate.update({
         where: { id },
-        data: {
-          code,
-          name,
-          subject: subject || null,
-          body,
-          type,
-          variables: variables || null,
-          enabled: enabled ?? true,
-        },
+        data: payload,
         select: { id: true },
       });
       return { id: updated.id };
-    } else {
-      const codeExists = await this.deps.db.notificationTemplate.findUnique({
-        where: { code },
-        select: { id: true },
-      });
-
-      if (codeExists) {
-        throw new BadReqErr(ErrCode.NotificationTemplateCodeExists);
-      }
-
-      const created = await this.deps.db.notificationTemplate.create({
-        data: {
-          id: IdUtil.dbId(DB_PREFIX.NOTIFICATION_TEMPLATE),
-          code,
-          name,
-          subject: subject || null,
-          body,
-          type,
-          variables: variables || null,
-          enabled: enabled ?? true,
-        },
-        select: { id: true },
-      });
-      return { id: created.id };
     }
+
+    await this.ensureCodeUnique(code);
+    const created = await this.deps.db.notificationTemplate.create({
+      data: {
+        id: IdUtil.dbId(DB_PREFIX.NOTIFICATION_TEMPLATE),
+        ...payload,
+      },
+      select: { id: true },
+    });
+    return { id: created.id };
   }
 
   async removeMany(params: IIdsDto) {
