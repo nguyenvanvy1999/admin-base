@@ -23,7 +23,7 @@ export const mfaBackupController = new Elysia({
   .use(authCheck)
   .post(
     '/generate',
-    async ({ body: { otp }, currentUser: { id } }) => {
+    async ({ body: { otp } }) => {
       const result = await mfaBackupService.generateBackupCodes({
         otp,
       });

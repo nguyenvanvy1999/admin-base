@@ -13,7 +13,6 @@ import { httpError } from 'src/config/error';
 import { type ILogger, logger } from 'src/config/logger';
 import { redis } from 'src/config/redis';
 import { swaggerConfig } from 'src/config/swagger';
-import { subscribeInbox } from 'src/config/ws-pubsub';
 import {
   auditLogsAdminController,
   auditLogsUserController,
@@ -55,13 +54,11 @@ export class BackendServerService {
       env: IEnv;
       logger: ILogger;
       redis: RedisClient;
-      subscribeInboxFn: () => Promise<void>;
       processPid: number;
     } = {
       env,
       logger,
       redis,
-      subscribeInboxFn: subscribeInbox,
       processPid: process.pid,
     },
   ) {}
@@ -136,7 +133,6 @@ export class BackendServerService {
     gracefulShutdownService.setupShutdownHandlers();
 
     await this.deps.redis.connect();
-    await this.deps.subscribeInboxFn();
 
     const filteredRoutes = app.routes.filter(
       (r) => !r.path.includes('/queues') && !r.path.includes('/admin/queues'),

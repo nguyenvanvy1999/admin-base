@@ -20,11 +20,6 @@ type BlockParams = {
   blockedUntil?: Date;
 };
 
-type UnblockParams = {
-  identifier: string;
-  routePath: string;
-};
-
 export class RateLimitService {
   private buildWindowKey(
     identifier: string,
@@ -116,28 +111,6 @@ export class RateLimitService {
       remaining: Math.max(0, limit - currentCount),
     };
   }
-
-  async getCurrentCount(
-    identifier: string,
-    routePath: string,
-  ): Promise<number> {
-    const now = new Date();
-    const windowSeconds = 60;
-    const windowStart = new Date(
-      Math.floor(now.getTime() / (windowSeconds * 1000)) *
-        (windowSeconds * 1000),
-    );
-
-    const cacheKey = this.buildWindowKey(
-      identifier,
-      routePath,
-      windowStart.getTime(),
-    );
-    const cachedCount = await redis.get(cacheKey);
-
-    return cachedCount ? Number(cachedCount) : 0;
-  }
-
   async block(params: BlockParams): Promise<void> {
     const { identifier, routePath, blockedUntil } = params;
     const blockKey = this.buildBlockKey(identifier, routePath);
@@ -152,12 +125,6 @@ export class RateLimitService {
     }
 
     await redis.set(blockKey, 'permanent');
-  }
-
-  async unblock(params: UnblockParams): Promise<void> {
-    const { identifier, routePath } = params;
-    const blockKey = this.buildBlockKey(identifier, routePath);
-    await redis.del(blockKey);
   }
 }
 

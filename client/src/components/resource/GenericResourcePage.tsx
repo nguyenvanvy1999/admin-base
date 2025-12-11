@@ -34,7 +34,6 @@ export function GenericResourcePage<
   TListParams extends Record<string, any> = Record<string, any>,
 >({
   resource,
-  scope: scopeProp,
   initialParams = {},
   pageSize = 20,
   customColumns,

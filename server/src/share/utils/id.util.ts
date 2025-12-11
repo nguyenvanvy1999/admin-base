@@ -18,10 +18,6 @@ export class IdUtil {
     return prefix.length ? `${prefix}_${id}` : id;
   }
 
-  static generateP2PUsername(): string {
-    return `user_${IdUtil.i8()}`;
-  }
-
   static token16(prefix = ''): string {
     const id = IdUtil.i16();
     return prefix.length ? `${prefix}_${id}` : id;

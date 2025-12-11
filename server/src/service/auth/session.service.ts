@@ -1,7 +1,6 @@
 import { db, type IDb } from 'src/config/db';
 import type { SessionListParams } from 'src/dtos/session.dto';
 import type { SessionWhereInput } from 'src/generated';
-import { ErrCode, NotFoundErr } from 'src/share';
 
 export class SessionService {
   constructor(private readonly deps: { db: IDb } = { db }) {}
@@ -93,17 +92,6 @@ export class SessionService {
       hasNext,
       nextCursor: hasNext ? sessions[sessions.length - 1]?.id : undefined,
     };
-  }
-
-  async loadSessionById(sessionId: string): Promise<{ createdById: string }> {
-    const session = await this.deps.db.session.findUnique({
-      where: { id: sessionId },
-      select: { createdById: true },
-    });
-    if (!session) {
-      throw new NotFoundErr(ErrCode.ItemNotFound);
-    }
-    return session;
   }
 }
 

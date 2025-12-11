@@ -78,7 +78,6 @@ export const rateLimitConfigCache = new RedisCache<RateLimitConfig>({
   namespace: CACHE_NS.RATE_LIMIT_CONFIG,
   ttl: FIVE_MINUTES,
 });
-export type IRateLimitConfigCache = typeof rateLimitConfigCache;
 
 export const otpCache = new RedisCache<{
   otp: string;
@@ -141,7 +140,6 @@ export const registerOtpLimitCache = new RedisCache<number>({
 export const rateLimitCache = new RedisCache<number>({
   namespace: CACHE_NS.RATE_LIMIT,
 });
-export type IRateLimitCache = typeof rateLimitCache;
 
 export const mfaAttemptCache = new RedisCache<number>({
   namespace: CACHE_NS.MFA_ATTEMPT,

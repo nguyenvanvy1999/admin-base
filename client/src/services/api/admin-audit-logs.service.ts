@@ -1,17 +1,10 @@
 import { apiClient } from 'src/lib/api/client';
-import { createQueryKeys } from 'src/services/api/base.service';
 import type {
   AdminAuditLogListQuery,
   AdminAuditLogListResponse,
 } from 'src/types/admin-audit-logs';
 
 const ADMIN_AUDIT_LOG_BASE_PATH = '/api/admin/audit-logs';
-
-export const adminAuditLogKeys = {
-  ...createQueryKeys('admin-audit-logs'),
-  list: (filters?: Partial<AdminAuditLogListQuery>) =>
-    [...createQueryKeys('admin-audit-logs').lists(), filters] as const,
-};
 
 export const adminAuditLogsService = {
   list(params?: AdminAuditLogListQuery): Promise<AdminAuditLogListResponse> {

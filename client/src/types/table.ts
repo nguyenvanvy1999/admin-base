@@ -1,10 +1,3 @@
-export interface TablePagination {
-  current: number;
-  pageSize: number;
-  total: number;
-  hasNext?: boolean;
-}
-
 export interface TableSearchParams {
   current?: number;
   pageSize?: number;
@@ -43,7 +36,3 @@ export interface CursorBasedPaginationParams {
   cursor?: string | null;
   take: number;
 }
-
-export type PaginationParams =
-  | ServerSidePaginationParams
-  | CursorBasedPaginationParams;

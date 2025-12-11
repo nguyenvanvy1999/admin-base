@@ -38,13 +38,6 @@ export const DtoFields = {
     minItems: 0,
     description: 'Complete list of role ids that should belong to the user.',
   }),
-
-  stringArray: (description?: string) =>
-    t.Array(t.String(), {
-      minItems: 0,
-      ...(description && { description }),
-    }),
-
   password: t.String({
     minLength: 8,
     maxLength: 128,

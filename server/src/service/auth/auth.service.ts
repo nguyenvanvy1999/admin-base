@@ -27,10 +27,6 @@ import {
   auditLogService,
 } from 'src/service/misc/audit-log.service';
 import {
-  type ReferralService,
-  referralService,
-} from 'src/service/misc/referral.service';
-import {
   type SecurityEventService,
   securityEventService,
 } from 'src/service/misc/security-event.service';
@@ -94,7 +90,6 @@ export class AuthService {
       settingService: SettingService;
       auditLogService: AuditLogService;
       securityEventService: SecurityEventService;
-      referralService: ReferralService;
       userUtilService: UserUtilService;
       mfaCache: IMFACache;
       authenticator: typeof authenticator;
@@ -112,7 +107,6 @@ export class AuthService {
       settingService,
       auditLogService,
       securityEventService,
-      referralService,
       userUtilService,
       mfaCache,
       authenticator,
@@ -386,14 +380,8 @@ export class AuthService {
       throw new BadReqErr(ErrCode.UserExisted);
     }
 
-    const createdUserId = await this.deps.db.$transaction(async (tx) => {
-      const userId = await this.createUserWithDefaults(
-        tx,
-        normalizedEmail,
-        password,
-      );
-
-      return userId;
+    const createdUserId = await this.deps.db.$transaction((tx) => {
+      return this.createUserWithDefaults(tx, normalizedEmail, password);
     });
 
     const otpToken = await this.deps.otpService.sendOtp(
@@ -563,14 +551,11 @@ export class AuthService {
     }
 
     await this.deps.db.$transaction(async (tx) => {
-      const user = await tx.user.update({
+      await tx.user.update({
         where: { id: userId, status: UserStatus.inactive },
         data: { status: UserStatus.active },
         select: { id: true },
       });
-      if (user.id) {
-        await this.deps.referralService.activeReferral(tx, user.id);
-      }
     });
 
     await this.deps.auditLogService.push({

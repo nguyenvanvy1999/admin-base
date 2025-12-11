@@ -1,5 +1,4 @@
 import type { Permission, Role, User, UserStatus } from 'src/generated';
-import { ADMIN_USER_ID, SYS_USER_ID } from 'src/share';
 
 export class SeedFixtures {
   static createUser(overrides: Partial<User> = {}): User {
@@ -36,21 +35,6 @@ export class SeedFixtures {
       notificationPreferences: null,
       ...overrides,
     };
-  }
-
-  static createSystemUser(overrides: Partial<User> = {}): User {
-    return this.createUser({
-      id: SYS_USER_ID,
-      ...overrides,
-    });
-  }
-
-  static createAdminUser(overrides: Partial<User> = {}): User {
-    return this.createUser({
-      id: ADMIN_USER_ID,
-
-      ...overrides,
-    });
   }
 
   static createRole(overrides: Partial<Role> = {}): Role {

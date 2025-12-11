@@ -134,11 +134,11 @@ export class SecurityEventService {
     });
   }
 
-  async resolve(params: ResolveSecurityEventParams) {
+  resolve(params: ResolveSecurityEventParams) {
     const { id, resolvedBy, tx } = params;
 
     const dbInstance = tx || this.deps.db;
-    const event = await dbInstance.securityEvent.update({
+    return dbInstance.securityEvent.update({
       where: { id },
       data: {
         resolved: true,
@@ -152,8 +152,6 @@ export class SecurityEventService {
         resolvedBy: true,
       },
     });
-
-    return event;
   }
 
   async list(params: ListSecurityEventsParams) {
@@ -242,52 +240,6 @@ export class SecurityEventService {
       docs: formattedDocs,
       count,
     };
-  }
-
-  async getUnresolved(params: {
-    userId?: string;
-    severity?: SecurityEventSeverity;
-    take?: number;
-  }) {
-    const { userId, severity, take = 50 } = params;
-
-    const conditions: SecurityEventWhereInput[] = [{ resolved: false }];
-
-    if (userId) {
-      conditions.push({ userId });
-    }
-
-    if (severity) {
-      conditions.push({ severity });
-    }
-
-    const where = { AND: conditions };
-
-    const events = await this.deps.db.securityEvent.findMany({
-      where,
-      select: {
-        id: true,
-        userId: true,
-        eventType: true,
-        severity: true,
-        ip: true,
-        userAgent: true,
-        location: true,
-        metadata: true,
-        resolved: true,
-        created: true,
-      },
-      take,
-      orderBy: [{ severity: 'desc' }, { created: 'desc' }],
-    });
-
-    return events.map((event) => ({
-      ...event,
-      description: getSecurityEventDescription(
-        event.eventType,
-        event.metadata as any,
-      ),
-    }));
   }
 }
 

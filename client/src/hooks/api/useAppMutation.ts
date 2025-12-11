@@ -82,7 +82,7 @@ export function useAppMutation<
 
   return useMutation<TData, TError, TVariables>({
     mutationFn,
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables) => {
       // Invalidate queries
       if (invalidateKeys) {
         const keys =
@@ -103,7 +103,7 @@ export function useAppMutation<
       // Call custom onSuccess
       onSuccess?.(data, variables);
     },
-    onError: (error, variables, context) => {
+    onError: (error, variables) => {
       // Handle error message
       if (!skipErrorMessage) {
         let errorMessage = errorMessageDefault;
