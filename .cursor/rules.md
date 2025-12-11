@@ -147,6 +147,7 @@ Dự án này đã bao gồm các tính năng admin portal cơ bản:
 ### 8. Naming & conventions
 
 - Backend controllers: `<name>.controller.ts`; services: `<Name>Service.ts` hoặc `<name>-<domain>.service.ts`; DTO: `<name>.dto.ts`.
+- DTO/schema export: đặt PascalCase + hậu tố `Dto`; type alias PascalCase dùng hậu tố `Params`/`Result`/`Response`; không export DTO ở dạng camelCase.
 - Frontend pages: `<Name>Page.tsx`; hooks: `use<Name>Query.ts` hoặc `use<Name>Mutation.ts`; stores/types lowercase file.
 - Environment constants: uppercase snake case.
 - Commit message: theo Conventional Commits (`feat(admin): ...`, `fix(auth): ...`).

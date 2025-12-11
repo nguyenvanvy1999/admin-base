@@ -1,7 +1,7 @@
 import { Value } from '@sinclair/typebox/value';
 import { db, type IDb } from 'src/config/db';
 import {
-  I18NImportDto,
+  I18nImportDto,
   type I18nImportRow,
   type I18nListParams,
   type I18nUpsertParams,
@@ -100,7 +100,7 @@ export class I18nService {
       for (let colIndex = 0; colIndex < headers.length; colIndex++) {
         rowObject[String(headers[colIndex])] = String(row[colIndex] || '');
       }
-      const result = Value.Check(I18NImportDto, rowObject);
+      const result = Value.Check(I18nImportDto, rowObject);
       if (!result) {
         throw new BadReqErr(ErrCode.ImportDataInvalid);
       }

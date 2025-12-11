@@ -267,7 +267,21 @@ export class AuthService {
     const normalizedEmail = normalizeEmail(email);
     const user = await this.deps.db.user.findUnique({
       where: { email: normalizedEmail },
-      include: { roles: true },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        status: true,
+        passwordAttempt: true,
+        passwordExpired: true,
+        mfaTotpEnabled: true,
+        totpSecret: true,
+        backupCodes: true,
+        backupCodesUsed: true,
+        created: true,
+        modified: true,
+        roles: { select: { roleId: true } },
+      },
     });
 
     if (!user || !user.password) {

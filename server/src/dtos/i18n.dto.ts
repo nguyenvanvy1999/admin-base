@@ -23,7 +23,7 @@ export const I18nUpsertDto = t.Intersect([
   t.Object({ id: t.Optional(t.String()) }),
 ]);
 
-export const I18NImportDto = Type.Object({
+export const I18nImportDto = Type.Object({
   KEY: Type.String(),
   EN: Type.Optional(Type.String()),
   ZH: Type.Optional(Type.String()),
@@ -33,4 +33,4 @@ export const I18NImportDto = Type.Object({
 
 export type I18nListParams = typeof I18nPaginationDto.static;
 export type I18nUpsertParams = typeof I18nUpsertDto.static;
-export type I18nImportRow = typeof I18NImportDto.static;
+export type I18nImportRow = typeof I18nImportDto.static;

@@ -12,6 +12,11 @@ import type {
 } from 'src/dtos/auth.dto';
 import { SecurityEventType, UserStatus } from 'src/generated';
 import {
+  hashBackupCode,
+  parseBackupCodes,
+  parseUsedBackupCodes,
+} from 'src/service/auth/backup-code.util';
+import {
   type AuditLogService,
   auditLogService,
 } from 'src/service/misc/audit-log.service';
@@ -71,6 +76,12 @@ export class MfaVerificationService {
       });
     }
 
+    const cachedData = await this.deps.mfaCache.get(mfaToken);
+    if (!cachedData) {
+      await this.logMfaError('SESSION_EXPIRED');
+      throw new BadReqErr(ErrCode.SessionExpired);
+    }
+
     const attemptKey = `mfa:${mfaToken}`;
     const attempts = (await this.deps.mfaAttemptCache.get(attemptKey)) ?? 0;
 
@@ -84,12 +95,6 @@ export class MfaVerificationService {
       attempts + 1,
       this.MFA_ATTEMPT_TTL,
     );
-
-    const cachedData = await this.deps.mfaCache.get(mfaToken);
-    if (!cachedData) {
-      await this.logMfaError('SESSION_EXPIRED');
-      throw new BadReqErr(ErrCode.SessionExpired);
-    }
 
     const user = await this.deps.db.user.findUnique({
       where: { id: cachedData.userId },
@@ -207,16 +212,9 @@ export class MfaVerificationService {
       return false;
     }
 
-    const backupCodes = JSON.parse(user.backupCodes) as string[];
-    const usedCodes = user.backupCodesUsed
-      ? (JSON.parse(user.backupCodesUsed) as string[])
-      : [];
-
-    const crypto = await import('node:crypto');
-    const hashedCode = crypto
-      .createHash('sha256')
-      .update(backupCode)
-      .digest('hex');
+    const backupCodes = parseBackupCodes(user.backupCodes);
+    const usedCodes = parseUsedBackupCodes(user.backupCodesUsed);
+    const hashedCode = hashBackupCode(backupCode);
 
     if (usedCodes.includes(hashedCode)) {
       throw new BadReqErr(ErrCode.BackupCodeAlreadyUsed);

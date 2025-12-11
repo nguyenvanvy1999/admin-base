@@ -1,6 +1,6 @@
 import { t } from 'elysia';
 
-export const generateCaptchaDto = t.Object({
+export const GenerateCaptchaDto = t.Object({
   type: t.Optional(t.Union([t.Literal('text'), t.Literal('math')])),
   size: t.Optional(t.Number({ minimum: 3, maximum: 8 })),
   width: t.Optional(t.Number({ minimum: 100, maximum: 300 })),
@@ -16,12 +16,12 @@ export const generateCaptchaDto = t.Object({
   ),
 });
 
-export const verifyCaptchaDto = t.Object({
+export const VerifyCaptchaDto = t.Object({
   token: t.String({ minLength: 1 }),
   userInput: t.String({ minLength: 1 }),
 });
 
-export const captchaResponseDto = t.Object({
+export const CaptchaResponseDto = t.Object({
   success: t.Boolean(),
   data: t.Object({
     token: t.String(),
@@ -29,7 +29,7 @@ export const captchaResponseDto = t.Object({
   }),
 });
 
-export const captchaVerifyResponseDto = t.Object({
+export const CaptchaVerifyResponseDto = t.Object({
   success: t.Boolean(),
   data: t.Object({
     isValid: t.Boolean(),

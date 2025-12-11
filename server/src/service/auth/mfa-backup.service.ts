@@ -1,10 +1,15 @@
-import crypto from 'node:crypto';
 import { authenticator } from 'otplib';
 import { db } from 'src/config/db';
 import type {
   ILoginRes,
   VerifyAndCompleteLoginParams,
 } from 'src/dtos/auth.dto';
+import {
+  generateBackupCodes,
+  hashBackupCode,
+  parseBackupCodes,
+  parseUsedBackupCodes,
+} from 'src/service/auth/backup-code.util';
 import { mfaVerificationService } from 'src/service/auth/mfa-verification.service';
 import { auditLogService } from 'src/service/misc/audit-log.service';
 import {
@@ -21,9 +26,6 @@ import {
 } from 'src/share';
 
 export class MfaBackupService {
-  private readonly BACKUP_CODES_COUNT = 10;
-  private readonly BACKUP_CODE_LENGTH = 8;
-
   async generateBackupCodes(
     params: IGenerateBackupCodesParams,
   ): Promise<IBackupCodesData> {
@@ -53,8 +55,8 @@ export class MfaBackupService {
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
 
-    const codes = this.createBackupCodes();
-    const hashedCodes = codes.map((code) => this.hashBackupCode(code));
+    const codes = generateBackupCodes();
+    const hashedCodes = codes.map((code) => hashBackupCode(code));
 
     await db.user.update({
       where: { id: userId },
@@ -89,40 +91,13 @@ export class MfaBackupService {
       return { remaining: 0, total: 0 };
     }
 
-    const backupCodes = JSON.parse(mfaUser.backupCodes) as string[];
-    const usedCodes = mfaUser.backupCodesUsed
-      ? (JSON.parse(mfaUser.backupCodesUsed) as string[])
-      : [];
+    const backupCodes = parseBackupCodes(mfaUser.backupCodes);
+    const usedCodes = parseUsedBackupCodes(mfaUser.backupCodesUsed);
 
     return {
       remaining: backupCodes.length - usedCodes.length,
       total: backupCodes.length,
     };
-  }
-
-  private createBackupCodes(): string[] {
-    const codes: string[] = [];
-
-    for (let i = 0; i < this.BACKUP_CODES_COUNT; i++) {
-      codes.push(this.generateBackupCode());
-    }
-
-    return codes;
-  }
-
-  private generateBackupCode(): string {
-    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let result = '';
-
-    for (let i = 0; i < this.BACKUP_CODE_LENGTH; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-
-    return result;
-  }
-
-  private hashBackupCode(code: string): string {
-    return crypto.createHash('sha256').update(code).digest('hex');
   }
 
   private async findMfaUserById(userId: string): Promise<IUserMFA> {

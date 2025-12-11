@@ -1,9 +1,9 @@
 import { Elysia } from 'elysia';
 import {
-  captchaResponseDto,
-  captchaVerifyResponseDto,
-  generateCaptchaDto,
-  verifyCaptchaDto,
+  CaptchaResponseDto,
+  CaptchaVerifyResponseDto,
+  GenerateCaptchaDto,
+  VerifyCaptchaDto,
 } from 'src/dtos/captcha.dto';
 import { captchaService } from 'src/service/misc/captcha.service';
 
@@ -26,9 +26,9 @@ export const captchaController = new Elysia({ prefix: '/captcha' })
       };
     },
     {
-      query: generateCaptchaDto,
+      query: GenerateCaptchaDto,
       response: {
-        200: captchaResponseDto,
+        200: CaptchaResponseDto,
       },
       detail: {
         summary: 'Generate captcha',
@@ -55,9 +55,9 @@ export const captchaController = new Elysia({ prefix: '/captcha' })
       };
     },
     {
-      body: verifyCaptchaDto,
+      body: VerifyCaptchaDto,
       response: {
-        200: captchaVerifyResponseDto,
+        200: CaptchaVerifyResponseDto,
       },
       detail: {
         summary: 'Verify captcha',
