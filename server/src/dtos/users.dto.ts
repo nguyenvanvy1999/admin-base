@@ -102,3 +102,11 @@ export const AdminUserDetailResDto = t.Intersect([
     passwordExpired: DtoFields.isoDateNullable,
   }),
 ]);
+
+export type AdminUserActionResult = typeof AdminUserActionResDto.static;
+export type AdminUserMfaActionParams = typeof AdminUserMfaActionDto.static;
+export type AdminUserUpdateParams = typeof AdminUserUpdateDto.static;
+export type AdminUserCreateParams = typeof AdminUserCreateDto.static;
+export type AdminUserListParams = typeof AdminUserListQueryDto.static;
+export type AdminUserUpdateRolesParams = typeof AdminUserUpdateRolesDto.static;
+export type AdminUserDetailResult = typeof AdminUserDetailResDto.static;

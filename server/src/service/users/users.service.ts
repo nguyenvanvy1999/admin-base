@@ -1,12 +1,12 @@
 import { db, type IDb } from 'src/config/db';
 import type {
-  AdminUserActionResDto,
-  AdminUserCreateDto,
-  AdminUserDetailResDto,
-  AdminUserListQueryDto,
-  AdminUserMfaActionDto,
-  AdminUserUpdateDto,
-  AdminUserUpdateRolesDto,
+  AdminUserActionResult,
+  AdminUserCreateParams,
+  AdminUserDetailResult,
+  AdminUserListParams,
+  AdminUserMfaActionParams,
+  AdminUserUpdateParams,
+  AdminUserUpdateRolesParams,
 } from 'src/dtos/users.dto';
 import {
   type Prisma,
@@ -47,18 +47,16 @@ import {
   ServiceUtils,
 } from 'src/share';
 
-type UserActionResult = typeof AdminUserActionResDto.static;
 type BaseUserActionParams = {
   targetUserId: string;
   actorId: string;
-} & typeof AdminUserMfaActionDto.static;
-type UpdateUserParams = BaseUserActionParams & typeof AdminUserUpdateDto.static;
-type CreateUserParams = { actorId: string } & typeof AdminUserCreateDto.static;
-type ListUsersParams = typeof AdminUserListQueryDto.static;
+} & AdminUserMfaActionParams;
+type UpdateUserParams = BaseUserActionParams & AdminUserUpdateParams;
+type CreateUserParams = { actorId: string } & AdminUserCreateParams;
 type UpdateUserRolesParams = {
   targetUserId: string;
   actorId: string;
-} & typeof AdminUserUpdateRolesDto.static;
+} & AdminUserUpdateRolesParams;
 
 const baseUserSelect = {
   id: true,
@@ -94,7 +92,7 @@ export class UsersService {
     },
   ) {}
 
-  async createUser(params: CreateUserParams): Promise<UserActionResult> {
+  async createUser(params: CreateUserParams): Promise<AdminUserActionResult> {
     const { actorId, email, password, name, roleIds, status, emailVerified } =
       params;
 
@@ -152,7 +150,7 @@ export class UsersService {
     };
   }
 
-  async listUsers(params: ListUsersParams) {
+  async listUsers(params: AdminUserListParams) {
     const { take = 20, skip = 0, email, search, statuses, roleIds } = params;
 
     const whereClauses: Prisma.UserWhereInput[] = [];
@@ -232,9 +230,7 @@ export class UsersService {
     };
   }
 
-  async getUserDetail(
-    userId: string,
-  ): Promise<typeof AdminUserDetailResDto.static> {
+  async getUserDetail(userId: string): Promise<AdminUserDetailResult> {
     const user = await this.deps.db.user.findUnique({
       where: { id: userId },
       select: {
@@ -265,18 +261,18 @@ export class UsersService {
     };
   }
 
-  resetUserMfa(params: BaseUserActionParams): Promise<UserActionResult> {
+  resetUserMfa(params: BaseUserActionParams): Promise<AdminUserActionResult> {
     return this.performMfaReset(params, 'admin-reset');
   }
 
-  disableUserMfa(params: BaseUserActionParams): Promise<UserActionResult> {
+  disableUserMfa(params: BaseUserActionParams): Promise<AdminUserActionResult> {
     return this.performMfaReset(params, 'admin-disable');
   }
 
   private async performMfaReset(
     params: BaseUserActionParams,
     method: MfaMethod,
-  ): Promise<UserActionResult> {
+  ): Promise<AdminUserActionResult> {
     const { targetUserId, actorId, reason } = params;
     const normalizedReason = ServiceUtils.normalizeReason(reason);
     const user = await this.ensureUserExists(targetUserId);
@@ -300,9 +296,7 @@ export class UsersService {
     return { userId: targetUserId, auditLogId };
   }
 
-  async updateUser(
-    params: UpdateUserParams,
-  ): Promise<typeof AdminUserActionResDto.static> {
+  async updateUser(params: UpdateUserParams): Promise<AdminUserActionResult> {
     const {
       targetUserId,
       actorId,
@@ -410,7 +404,7 @@ export class UsersService {
 
   async updateUserRoles(
     params: UpdateUserRolesParams,
-  ): Promise<UserActionResult> {
+  ): Promise<AdminUserActionResult> {
     const { targetUserId, actorId, roles, reason } = params;
     const normalizedReason = ServiceUtils.normalizeReason(reason);
 

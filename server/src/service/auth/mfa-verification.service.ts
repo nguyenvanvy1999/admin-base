@@ -8,8 +8,7 @@ import {
 import { db, type IDb } from 'src/config/db';
 import type {
   ILoginRes,
-  MfaLoginRequestDto,
-  VerifyBackupCodeRequestDto,
+  VerifyAndCompleteLoginParams,
 } from 'src/dtos/auth.dto';
 import { SecurityEventType, UserStatus } from 'src/generated';
 import {
@@ -34,10 +33,6 @@ import {
   type SecurityMonitorService as SecurityMonitorServiceType,
   securityMonitorService,
 } from './security-monitor.service';
-
-type VerifyAndCompleteLoginParams =
-  | typeof MfaLoginRequestDto.static
-  | typeof VerifyBackupCodeRequestDto.static;
 
 export class MfaVerificationService {
   private readonly MAX_MFA_ATTEMPTS = 5;

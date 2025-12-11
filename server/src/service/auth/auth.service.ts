@@ -13,18 +13,17 @@ import {
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import type {
-  ChangePasswordRequestDto,
-  ConfirmMfaLoginRequestDto,
-  ForgotPasswordRequestDto,
+  ChangePasswordParams,
+  ConfirmMfaLoginParams,
+  ForgotPasswordParams,
   ILoginRes,
   ILoginResponse,
-  LoginMFAResDto,
-  LoginMFASetupResDto,
-  LoginRequestDto,
-  MfaLoginRequestDto,
-  RefreshTokenRequestDto,
-  RegisterRequestDto,
-  VerifyAccountRequestDto,
+  LoginParams,
+  LoginWithMfaParams,
+  LogoutParams,
+  RefreshTokenParams,
+  RegisterParams,
+  VerifyAccountParams,
 } from 'src/dtos/auth.dto';
 import { SecurityEventType, type User, UserStatus } from 'src/generated';
 import {
@@ -84,18 +83,6 @@ import {
   securityMonitorService,
 } from './security-monitor.service';
 import { type SessionService, sessionService } from './session.service';
-
-type LoginParams = typeof LoginRequestDto.static;
-type RegisterParams = typeof RegisterRequestDto.static;
-type ChangePasswordParams = {
-  userId: string;
-} & typeof ChangePasswordRequestDto.static;
-type ForgotPasswordParams = typeof ForgotPasswordRequestDto.static;
-type VerifyAccountParams = typeof VerifyAccountRequestDto.static;
-type RefreshTokenParams = typeof RefreshTokenRequestDto.static;
-type LogoutParams = { id: string; sessionId: string };
-type ConfirmMfaLoginParams = typeof ConfirmMfaLoginRequestDto.static;
-type LoginWithMfaParams = typeof MfaLoginRequestDto.static;
 
 export class AuthService {
   constructor(
@@ -362,7 +349,7 @@ export class AuthService {
     return {
       type: LoginResType.MFA_CONFIRM,
       mfaToken,
-    } as typeof LoginMFAResDto.static;
+    } as ILoginResponse;
   }
 
   private async handleMfaSetupRequired(
@@ -396,7 +383,7 @@ export class AuthService {
     return {
       type: LoginResType.MFA_SETUP,
       setupToken,
-    } as typeof LoginMFASetupResDto.static;
+    } as ILoginResponse;
   }
 
   private validatePasswordAttempts(

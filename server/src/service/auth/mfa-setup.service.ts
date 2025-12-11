@@ -8,9 +8,9 @@ import {
 } from 'src/config/cache';
 import { db } from 'src/config/db';
 import type {
-  ResetMfaRequestDto,
-  SetupMfaConfirmDto,
-  SetupMfaRequestDto,
+  ResetMfaParams,
+  SetupMfaParams,
+  SetupMfaRequestParams,
 } from 'src/dtos/auth.dto';
 import { SecurityEventType } from 'src/generated';
 import { otpService } from 'src/service/auth/otp.service';
@@ -32,10 +32,6 @@ import {
   PurposeVerify,
   type SecurityDeviceInsight,
 } from 'src/share';
-
-type SetupMfaRequestParams = typeof SetupMfaRequestDto.static;
-type SetupMfaParams = typeof SetupMfaConfirmDto.static;
-type ResetMfaParams = typeof ResetMfaRequestDto.static;
 
 export class MfaSetupService {
   setupMfaRequest(params: SetupMfaRequestParams) {

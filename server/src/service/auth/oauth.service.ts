@@ -2,9 +2,9 @@ import { createHash, createHmac } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { db, type IDb } from 'src/config/db';
 import type {
-  GoogleLoginRequestDto,
+  GoogleLoginParams,
   ILoginRes,
-  LinkTelegramRequestDto,
+  LinkTelegramParams,
 } from 'src/dtos/auth.dto';
 import { UserStatus } from 'src/generated';
 import {
@@ -33,12 +33,6 @@ import {
   type PrismaTx,
   UnAuthErr,
 } from 'src/share';
-
-type GoogleLoginParams = typeof GoogleLoginRequestDto.static;
-type LinkTelegramParams = {
-  userId: string;
-  telegramData: typeof LinkTelegramRequestDto.static;
-};
 
 export class OAuthService {
   constructor(

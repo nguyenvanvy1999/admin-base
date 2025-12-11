@@ -1,7 +1,10 @@
 import crypto from 'node:crypto';
 import { authenticator } from 'otplib';
 import { db } from 'src/config/db';
-import type { ILoginRes, VerifyBackupCodeRequestDto } from 'src/dtos/auth.dto';
+import type {
+  ILoginRes,
+  VerifyAndCompleteLoginParams,
+} from 'src/dtos/auth.dto';
 import { mfaVerificationService } from 'src/service/auth/mfa-verification.service';
 import { auditLogService } from 'src/service/misc/audit-log.service';
 import {
@@ -73,9 +76,7 @@ export class MfaBackupService {
     };
   }
 
-  verifyBackupCode(
-    params: typeof VerifyBackupCodeRequestDto.static,
-  ): Promise<ILoginRes> {
+  verifyBackupCode(params: VerifyAndCompleteLoginParams): Promise<ILoginRes> {
     return mfaVerificationService.verifyAndCompleteLogin(params);
   }
 
