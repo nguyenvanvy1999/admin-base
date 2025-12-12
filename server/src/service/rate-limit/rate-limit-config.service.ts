@@ -5,7 +5,7 @@ import {
   type RateLimitConfigWhereInput,
   type RateLimitStrategy,
 } from 'src/generated';
-import type { RateLimitConfig } from './rate-limit.middleware';
+import type { RateLimitConfig } from './auth-rate-limit.config';
 
 const CACHE_TTL = 300;
 

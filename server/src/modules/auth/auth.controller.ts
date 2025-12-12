@@ -15,7 +15,7 @@ import {
 } from 'src/dtos/auth.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authService } from 'src/service/auth/auth.service';
-import { authRateLimitMiddleware } from 'src/service/rate-limit/auth-rate-limit.config';
+import { rateLimit } from 'src/service/rate-limit/auth-rate-limit.config';
 import {
   ACCESS_AUTH,
   authErrors,
@@ -28,7 +28,7 @@ export const authController = new Elysia({
   prefix: '/auth',
   tags: ['auth'],
 })
-  .use(authRateLimitMiddleware())
+  .use(rateLimit())
   .post(
     '/login',
     async ({ body }) => castToRes(await authService.login(body)),
@@ -196,7 +196,7 @@ export const userAuthController = new Elysia({
   prefix: '/auth/user',
   tags: ['user-auth'],
 })
-  .use(authRateLimitMiddleware())
+  .use(rateLimit())
   .post(
     '/register',
     async ({ body }) => castToRes(await authService.register(body)),
