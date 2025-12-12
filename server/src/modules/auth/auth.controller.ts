@@ -24,10 +24,7 @@ import {
   ResWrapper,
 } from 'src/share';
 
-export const authController = new Elysia({
-  prefix: '/auth',
-  tags: ['auth'],
-})
+const authRateLimitedRoutes = new Elysia()
   .use(rateLimit())
   .post(
     '/login',
@@ -96,6 +93,50 @@ export const authController = new Elysia({
       },
     },
   )
+  .post(
+    '/forgot-password',
+    async ({ body }) => {
+      await authService.forgotPassword(body);
+      return castToRes(null);
+    },
+    {
+      body: ForgotPasswordRequestDto,
+      response: {
+        200: ResWrapper(t.Null()),
+        ...authErrors,
+      },
+      detail: {
+        summary: 'Confirm forgot password',
+        description: 'Confirm forgot password',
+        security: ACCESS_AUTH,
+      },
+    },
+  );
+
+const authRateLimitedProtectedRoutes = new Elysia()
+  .use(rateLimit())
+  .use(authCheck)
+  .post(
+    '/change-password',
+    async ({ body, currentUser: { id } }) => {
+      await authService.changePassword({ userId: id, ...body });
+      return castToRes(null);
+    },
+    {
+      body: ChangePasswordRequestDto,
+      response: {
+        200: ResWrapper(t.Null()),
+        ...authErrors,
+      },
+      detail: {
+        summary: 'Change password',
+        description: 'Change password',
+        security: ACCESS_AUTH,
+      },
+    },
+  );
+
+const authProtectedRoutes = new Elysia()
   .use(authCheck)
   .post(
     '/logout',
@@ -152,50 +193,17 @@ export const authController = new Elysia({
         security: ACCESS_AUTH,
       },
     },
-  )
-  .post(
-    '/change-password',
-    async ({ body, currentUser: { id } }) => {
-      await authService.changePassword({ userId: id, ...body });
-      return castToRes(null);
-    },
-    {
-      body: ChangePasswordRequestDto,
-      response: {
-        200: ResWrapper(t.Null()),
-        ...authErrors,
-      },
-      detail: {
-        summary: 'Change password',
-        description: 'Change password',
-        security: ACCESS_AUTH,
-      },
-    },
-  )
-  .post(
-    '/forgot-password',
-    async ({ body }) => {
-      await authService.forgotPassword(body);
-      return castToRes(null);
-    },
-    {
-      body: ForgotPasswordRequestDto,
-      response: {
-        200: ResWrapper(t.Null()),
-        ...authErrors,
-      },
-      detail: {
-        summary: 'Confirm forgot password',
-        description: 'Confirm forgot password',
-        security: ACCESS_AUTH,
-      },
-    },
   );
 
-export const userAuthController = new Elysia({
-  prefix: '/auth/user',
-  tags: ['user-auth'],
+export const authController = new Elysia({
+  prefix: '/auth',
+  tags: ['auth'],
 })
+  .use(authRateLimitedRoutes)
+  .use(authRateLimitedProtectedRoutes)
+  .use(authProtectedRoutes);
+
+const userAuthRateLimitedRoutes = new Elysia()
   .use(rateLimit())
   .post(
     '/register',
@@ -232,3 +240,8 @@ export const userAuthController = new Elysia({
       },
     },
   );
+
+export const userAuthController = new Elysia({
+  prefix: '/auth/user',
+  tags: ['user-auth'],
+}).use(userAuthRateLimitedRoutes);
