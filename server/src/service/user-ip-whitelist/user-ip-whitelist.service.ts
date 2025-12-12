@@ -11,7 +11,14 @@ import type {
   UserIpWhitelistSelect,
   UserIpWhitelistWhereInput,
 } from 'src/generated';
-import { DB_PREFIX, ErrCode, IdUtil, NotFoundErr } from '../../share';
+import {
+  applyPermissionFilter,
+  buildSearchOrCondition,
+  ensureExists,
+  executeListQuery,
+  normalizeSearchTerm,
+} from 'src/service/utils';
+import { DB_PREFIX, ErrCode, IdUtil } from '../../share';
 
 const ipWhitelistSelect = {
   id: true,
@@ -75,55 +82,51 @@ export class UserIpWhitelistService {
     return allowedIps.includes(normalizedIp);
   }
 
-  async list(params: IpWhitelistListParams) {
+  list(params: IpWhitelistListParams) {
     const {
       userIds,
       userId,
       ip,
       search,
-      take = 20,
-      skip = 0,
+      take,
+      skip,
       currentUserId,
       hasViewPermission,
     } = params;
-    const where: UserIpWhitelistWhereInput = {};
+    let where: UserIpWhitelistWhereInput = {};
 
-    if (!hasViewPermission) {
-      where.userId = currentUserId;
-    } else {
-      if (userIds?.length) {
-        where.userId = { in: userIds };
-      } else if (userId) {
-        where.userId = userId;
-      }
-    }
+    where = applyPermissionFilter(where, {
+      currentUserId,
+      hasViewPermission,
+      userIds,
+      userId,
+    });
 
     if (ip) {
       where.ip = { contains: ip, mode: 'insensitive' };
     }
 
-    if (search) {
-      where.OR = [
-        { ip: { contains: search, mode: 'insensitive' } },
-        { note: { contains: search, mode: 'insensitive' } },
-      ];
+    const normalizedSearch = normalizeSearchTerm(search);
+    if (normalizedSearch) {
+      Object.assign(
+        where,
+        buildSearchOrCondition<UserIpWhitelistWhereInput>(
+          ['ip', 'note'],
+          normalizedSearch,
+        ),
+      );
     }
 
-    const [docs, count] = await Promise.all([
-      this.deps.db.userIpWhitelist.findMany({
-        where,
-        orderBy: { created: 'desc' },
-        take,
-        skip,
-        select: ipWhitelistSelect,
-      }),
-      this.deps.db.userIpWhitelist.count({ where }),
-    ]);
-
-    return { docs, count };
+    return executeListQuery(this.deps.db.userIpWhitelist, {
+      where,
+      orderBy: { created: 'desc' },
+      take,
+      skip,
+      select: ipWhitelistSelect,
+    });
   }
 
-  async detail(
+  detail(
     id: string,
     params: {
       currentUserId: string;
@@ -131,15 +134,17 @@ export class UserIpWhitelistService {
     },
   ) {
     const { currentUserId, hasViewPermission } = params;
-    const where: UserIpWhitelistWhereInput = { id };
+    let where: UserIpWhitelistWhereInput = { id };
 
-    if (!hasViewPermission) {
-      where.userId = currentUserId;
-    }
+    where = applyPermissionFilter(where, {
+      currentUserId,
+      hasViewPermission,
+    });
 
-    const doc = await this.deps.db.userIpWhitelist.findFirst({
+    return ensureExists(
+      this.deps.db.userIpWhitelist,
       where,
-      select: {
+      {
         ...ipWhitelistSelect,
         user: {
           select: {
@@ -148,13 +153,8 @@ export class UserIpWhitelistService {
           },
         },
       },
-    });
-
-    if (!doc) {
-      throw new NotFoundErr(ErrCode.IPWhitelistNotFound);
-    }
-
-    return doc;
+      ErrCode.IPWhitelistNotFound,
+    );
   }
 
   async upsert(
@@ -173,13 +173,12 @@ export class UserIpWhitelistService {
         where.userId = currentUserId;
       }
 
-      const existing = await this.deps.db.userIpWhitelist.findFirst({
+      const existing = await ensureExists(
+        this.deps.db.userIpWhitelist,
         where,
-        select: { id: true, userId: true },
-      });
-      if (!existing) {
-        throw new NotFoundErr(ErrCode.IPWhitelistNotFound);
-      }
+        { id: true, userId: true },
+        ErrCode.IPWhitelistNotFound,
+      );
 
       const updated = await this.deps.db.userIpWhitelist.update({
         where: { id },

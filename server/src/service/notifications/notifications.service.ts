@@ -4,7 +4,14 @@ import type {
   NotificationListParams,
 } from 'src/dtos/notification.dto';
 import type { NotificationSelect, NotificationWhereInput } from 'src/generated';
-import { DB_PREFIX, ErrCode, IdUtil, NotFoundErr } from '../../share';
+import {
+  applyPermissionFilter,
+  buildSearchOrCondition,
+  ensureExists,
+  executeListQuery,
+  normalizeSearchTerm,
+} from 'src/service/utils';
+import { DB_PREFIX, ErrCode, IdUtil } from '../../share';
 
 const notificationSelect = {
   id: true,
@@ -25,30 +32,27 @@ const notificationSelect = {
 export class NotificationsService {
   constructor(private readonly deps: { db: IDb }) {}
 
-  async list(params: NotificationListParams) {
+  list(params: NotificationListParams) {
     const {
       userIds,
       userId,
       type,
       status,
       search,
-      take = 20,
-      skip = 0,
+      take,
+      skip,
       currentUserId,
       hasViewPermission,
     } = params;
 
-    const where: NotificationWhereInput = {};
+    let where: NotificationWhereInput = {};
 
-    if (!hasViewPermission) {
-      where.userId = currentUserId;
-    } else {
-      if (userIds?.length) {
-        where.userId = { in: userIds };
-      } else if (userId) {
-        where.userId = userId;
-      }
-    }
+    where = applyPermissionFilter(where, {
+      currentUserId,
+      hasViewPermission,
+      userIds,
+      userId,
+    });
 
     if (type) {
       where.type = type;
@@ -58,28 +62,27 @@ export class NotificationsService {
       where.status = status;
     }
 
-    if (search) {
-      where.OR = [
-        { subject: { contains: search, mode: 'insensitive' } },
-        { content: { contains: search, mode: 'insensitive' } },
-      ];
+    const normalizedSearch = normalizeSearchTerm(search);
+    if (normalizedSearch) {
+      Object.assign(
+        where,
+        buildSearchOrCondition<NotificationWhereInput>(
+          ['subject', 'content'],
+          normalizedSearch,
+        ),
+      );
     }
 
-    const [docs, count] = await Promise.all([
-      this.deps.db.notification.findMany({
-        where,
-        orderBy: { created: 'desc' },
-        take,
-        skip,
-        select: notificationSelect,
-      }),
-      this.deps.db.notification.count({ where }),
-    ]);
-
-    return { docs, count };
+    return executeListQuery(this.deps.db.notification, {
+      where,
+      orderBy: { created: 'desc' },
+      take,
+      skip,
+      select: notificationSelect,
+    });
   }
 
-  async detail(
+  detail(
     id: string,
     params: {
       currentUserId: string;
@@ -87,15 +90,17 @@ export class NotificationsService {
     },
   ) {
     const { currentUserId, hasViewPermission } = params;
-    const where: NotificationWhereInput = { id };
+    let where: NotificationWhereInput = { id };
 
-    if (!hasViewPermission) {
-      where.userId = currentUserId;
-    }
+    where = applyPermissionFilter(where, {
+      currentUserId,
+      hasViewPermission,
+    });
 
-    const doc = await this.deps.db.notification.findFirst({
+    return ensureExists(
+      this.deps.db.notification,
       where,
-      select: {
+      {
         ...notificationSelect,
         user: {
           select: {
@@ -104,13 +109,8 @@ export class NotificationsService {
           },
         },
       },
-    });
-
-    if (!doc) {
-      throw new NotFoundErr(ErrCode.NotificationNotFound);
-    }
-
-    return doc;
+      ErrCode.NotificationNotFound,
+    );
   }
 
   async create(data: CreateNotificationParams): Promise<{ id: string }> {

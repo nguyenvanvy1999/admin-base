@@ -151,7 +151,7 @@ export class UsersService {
   }
 
   async listUsers(params: AdminUserListParams) {
-    const { take = 20, skip = 0, email, search, statuses, roleIds } = params;
+    const { take, skip, email, search, statuses, roleIds } = params;
 
     const whereClauses: Prisma.UserWhereInput[] = [];
     if (email) {

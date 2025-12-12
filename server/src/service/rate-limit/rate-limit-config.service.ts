@@ -43,7 +43,7 @@ export class RateLimitConfigService {
     skip?: number;
     take?: number;
   }) {
-    const { routePath, enabled, skip = 0, take = 20 } = params;
+    const { routePath, enabled, skip, take } = params;
 
     try {
       const where: RateLimitConfigWhereInput | undefined =

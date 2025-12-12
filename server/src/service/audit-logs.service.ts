@@ -1,6 +1,7 @@
 import { db, type IDb } from 'src/config/db';
 import type { AuditLogListParams } from 'src/dtos/audit-logs.dto';
 import type { AuditLogWhereInput } from 'src/generated';
+import { executeListQuery } from 'src/service/utils';
 import { BadReqErr, ErrCode } from 'src/share';
 
 export class AuditLogsService {
@@ -8,8 +9,8 @@ export class AuditLogsService {
 
   async list(params: AuditLogListParams) {
     const {
-      take = 20,
-      skip = 0,
+      take,
+      skip,
       userId,
       sessionId,
       entityType,
@@ -81,33 +82,30 @@ export class AuditLogsService {
 
     const where = conditions.length > 0 ? { AND: conditions } : undefined;
 
-    const [docs, count] = await this.deps.db.$transaction([
-      this.deps.db.auditLog.findMany({
-        where,
-        select: {
-          id: true,
-          payload: true,
-          level: true,
-          logType: true,
-          userId: true,
-          sessionId: true,
-          entityType: true,
-          entityId: true,
-          description: true,
-          ip: true,
-          userAgent: true,
-          requestId: true,
-          traceId: true,
-          correlationId: true,
-          occurredAt: true,
-          created: true,
-        },
-        skip,
-        take,
-        orderBy: { occurredAt: 'desc' },
-      }),
-      this.deps.db.auditLog.count({ where }),
-    ]);
+    const { docs, count } = await executeListQuery(this.deps.db.auditLog, {
+      where,
+      select: {
+        id: true,
+        payload: true,
+        level: true,
+        logType: true,
+        userId: true,
+        sessionId: true,
+        entityType: true,
+        entityId: true,
+        description: true,
+        ip: true,
+        userAgent: true,
+        requestId: true,
+        traceId: true,
+        correlationId: true,
+        occurredAt: true,
+        created: true,
+      },
+      take,
+      skip,
+      orderBy: { occurredAt: 'desc' },
+    });
 
     const formattedDocs = docs.map((doc) => ({
       ...doc,

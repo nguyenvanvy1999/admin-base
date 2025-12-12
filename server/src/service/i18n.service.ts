@@ -7,6 +7,7 @@ import {
   type I18nUpsertParams,
 } from 'src/dtos/i18n.dto';
 import type { I18nWhereInput } from 'src/generated';
+import { executeListQuery } from 'src/service/utils';
 import { BadReqErr, DB_PREFIX, ErrCode, IdUtil, type IIdsDto } from 'src/share';
 import XLSX from 'xlsx';
 
@@ -19,20 +20,16 @@ export class I18nService {
     },
   ) {}
 
-  async list(params: I18nListParams) {
+  list(params: I18nListParams) {
     const { key, take, skip } = params;
     const where: I18nWhereInput = key ? { key: { contains: key } } : {};
-    const [docs, count] = await Promise.all([
-      this.deps.db.i18n.findMany({
-        where,
-        select: { id: true, key: true, en: true, vi: true },
-        orderBy: { key: 'asc' },
-        skip,
-        take,
-      }),
-      this.deps.db.i18n.count({ where }),
-    ]);
-    return { docs, count };
+    return executeListQuery(this.deps.db.i18n, {
+      where,
+      select: { id: true, key: true, en: true, vi: true },
+      orderBy: { key: 'asc' },
+      take,
+      skip,
+    });
   }
 
   async upsert(params: I18nUpsertParams): Promise<{ id: string }> {

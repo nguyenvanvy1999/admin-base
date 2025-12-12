@@ -8,13 +8,12 @@ import type {
   NotificationTemplateWhereInput,
 } from 'src/generated';
 import {
-  BadReqErr,
-  DB_PREFIX,
-  ErrCode,
-  IdUtil,
-  type IIdsDto,
-  NotFoundErr,
-} from 'src/share';
+  buildSearchOrCondition,
+  ensureExists,
+  executeListQuery,
+  normalizeSearchTerm,
+} from 'src/service/utils';
+import { BadReqErr, DB_PREFIX, ErrCode, IdUtil, type IIdsDto } from 'src/share';
 
 const notificationTemplateSelect = {
   id: true,
@@ -31,17 +30,6 @@ const notificationTemplateSelect = {
 
 export class NotificationTemplatesService {
   constructor(private readonly deps: { db: IDb }) {}
-
-  private async ensureExists(id: string) {
-    const existing = await this.deps.db.notificationTemplate.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-
-    if (!existing) {
-      throw new NotFoundErr(ErrCode.NotificationTemplateNotFound);
-    }
-  }
 
   private async ensureCodeUnique(code: string, excludeId?: string) {
     const codeExists = await this.deps.db.notificationTemplate.findFirst({
@@ -67,8 +55,8 @@ export class NotificationTemplatesService {
     };
   }
 
-  async list(query: NotificationTemplateListParams) {
-    const { type, enabled, search, take = 20, skip = 0 } = query;
+  list(query: NotificationTemplateListParams) {
+    const { type, enabled, search, take, skip } = query;
     const where: NotificationTemplateWhereInput = {};
 
     if (type) {
@@ -79,32 +67,31 @@ export class NotificationTemplatesService {
       where.enabled = enabled;
     }
 
-    if (search) {
-      where.OR = [
-        { code: { contains: search, mode: 'insensitive' } },
-        { name: { contains: search, mode: 'insensitive' } },
-        { subject: { contains: search, mode: 'insensitive' } },
-      ];
+    const normalizedSearch = normalizeSearchTerm(search);
+    if (normalizedSearch) {
+      Object.assign(
+        where,
+        buildSearchOrCondition<NotificationTemplateWhereInput>(
+          ['code', 'name', 'subject'],
+          normalizedSearch,
+        ),
+      );
     }
 
-    const [docs, count] = await Promise.all([
-      this.deps.db.notificationTemplate.findMany({
-        where,
-        orderBy: { created: 'desc' },
-        take,
-        skip,
-        select: notificationTemplateSelect,
-      }),
-      this.deps.db.notificationTemplate.count({ where }),
-    ]);
-
-    return { docs, count };
+    return executeListQuery(this.deps.db.notificationTemplate, {
+      where,
+      orderBy: { created: 'desc' },
+      take,
+      skip,
+      select: notificationTemplateSelect,
+    });
   }
 
-  async detail(id: string) {
-    const template = await this.deps.db.notificationTemplate.findUnique({
-      where: { id },
-      select: {
+  detail(id: string) {
+    return ensureExists(
+      this.deps.db.notificationTemplate,
+      { id },
+      {
         ...notificationTemplateSelect,
         _count: {
           select: {
@@ -112,13 +99,8 @@ export class NotificationTemplatesService {
           },
         },
       },
-    });
-
-    if (!template) {
-      throw new NotFoundErr(ErrCode.NotificationTemplateNotFound);
-    }
-
-    return template;
+      ErrCode.NotificationTemplateNotFound,
+    );
   }
 
   async upsert(
@@ -128,7 +110,12 @@ export class NotificationTemplatesService {
     const payload = this.buildData(data);
 
     if (id) {
-      await this.ensureExists(id);
+      await ensureExists(
+        this.deps.db.notificationTemplate,
+        { id },
+        { id: true },
+        ErrCode.NotificationTemplateNotFound,
+      );
       await this.ensureCodeUnique(code, id);
       const updated = await this.deps.db.notificationTemplate.update({
         where: { id },

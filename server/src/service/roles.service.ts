@@ -1,6 +1,7 @@
 import { db, type IDb } from 'src/config/db';
 import type { RoleListParams, UpsertRoleParams } from 'src/dtos/roles.dto';
 import type { RoleWhereInput } from 'src/generated';
+import { ensureExists, normalizeSearchTerm } from 'src/service/utils';
 import {
   BadReqErr,
   DB_PREFIX,
@@ -42,28 +43,26 @@ export class RolesService {
       };
     }
 
-    if (search) {
-      const trimmedSearch = search.trim();
-      if (trimmedSearch.length > 0) {
-        where.AND = [
-          {
-            OR: [
-              {
-                title: {
-                  contains: trimmedSearch,
-                  mode: 'insensitive',
-                },
+    const normalizedSearch = normalizeSearchTerm(search);
+    if (normalizedSearch) {
+      where.AND = [
+        {
+          OR: [
+            {
+              title: {
+                contains: normalizedSearch,
+                mode: 'insensitive',
               },
-              {
-                description: {
-                  contains: trimmedSearch,
-                  mode: 'insensitive',
-                },
+            },
+            {
+              description: {
+                contains: normalizedSearch,
+                mode: 'insensitive',
               },
-            ],
-          },
-        ];
-      }
+            },
+          ],
+        },
+      ];
     }
 
     const roles = await this.deps.db.role.findMany({
@@ -125,13 +124,12 @@ export class RolesService {
     const { id, title, enabled, description, players, permissionIds } = params;
 
     if (id) {
-      const targetRole = await this.deps.db.role.findUnique({
-        where: { id },
-        select: { id: true, protected: true },
-      });
-      if (!targetRole) {
-        throw new NotFoundErr(ErrCode.ItemNotFound);
-      }
+      const targetRole = await ensureExists(
+        this.deps.db.role,
+        { id },
+        { id: true, protected: true },
+        ErrCode.ItemNotFound,
+      );
       if (targetRole.protected) {
         throw new UnAuthErr(ErrCode.PermissionDenied);
       }
@@ -189,32 +187,36 @@ export class RolesService {
   }
 
   async detail(id: string) {
-    const role = await this.deps.db.role.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        protected: true,
-        enabled: true,
-        permissions: { select: { permissionId: true } },
-        players: {
-          select: {
-            expiresAt: true,
-            player: {
-              select: {
-                id: true,
-                email: true,
-              },
+    const select = {
+      id: true,
+      title: true,
+      description: true,
+      protected: true,
+      enabled: true,
+      permissions: { select: { permissionId: true } },
+      players: {
+        select: {
+          expiresAt: true,
+          player: {
+            select: {
+              id: true,
+              email: true,
             },
           },
         },
       },
+    } as const;
+
+    const roleResult = await this.deps.db.role.findUnique({
+      where: { id },
+      select,
     });
 
-    if (!role) {
+    if (!roleResult) {
       throw new NotFoundErr(ErrCode.ItemNotFound);
     }
+
+    const role = roleResult;
 
     return {
       id: role.id,

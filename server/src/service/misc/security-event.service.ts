@@ -156,8 +156,8 @@ export class SecurityEventService {
 
   async list(params: ListSecurityEventsParams) {
     const {
-      take = 20,
-      skip = 0,
+      take,
+      skip,
       userId,
       eventType,
       severity,
