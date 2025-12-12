@@ -552,10 +552,10 @@ Tài liệu này phân tích hệ thống hiện tại và đề xuất các tí
 
 ## 🔗 Tài Liệu Liên Quan
 
-- [Database Analysis](./database-analysis-and-improvements.md) - Phân tích chi tiết database
-- [Database Improvements Summary](./database-improvements-summary-vi.md) - Tóm tắt cải thiện
-- [Schema Improvements Example](./schema-improvements-example.prisma) - Schema mẫu
-- [Resource Management UI Design](./resource-management-ui-design.md) - Thiết kế UI pattern
+- [Database Analysis](../database/analysis.md) - Phân tích chi tiết database
+- [Database Improvements Summary](../database/improvements.md) - Tóm tắt cải thiện
+- [Schema Improvements Example](../database/schema-examples/improvements.prisma) - Schema mẫu
+- [Resource Management UI Design](../ui-design/resource-management.md) - Thiết kế UI pattern
 
 ---
 

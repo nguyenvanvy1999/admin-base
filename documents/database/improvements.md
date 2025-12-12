@@ -191,11 +191,11 @@ Quản lý API keys:
 
 ---
 
-## 📝 Files Đã Tạo
+## 📝 Tài Liệu Liên Quan
 
-1. **`database-analysis-and-improvements.md`** - Phân tích chi tiết (English)
-2. **`schema-improvements-example.prisma`** - Schema mẫu với các cải thiện
-3. **`database-improvements-summary-vi.md`** - Tóm tắt tiếng Việt (file này)
+1. [Database Analysis](./analysis.md) - Phân tích chi tiết (English)
+2. [Schema Improvements Example](./schema-examples/improvements.prisma) - Schema mẫu với các cải thiện
+3. File này - Tóm tắt tiếng Việt
 
 ---
 
@@ -212,5 +212,5 @@ Quản lý API keys:
 
 ## 🔗 Xem Thêm
 
-- Chi tiết đầy đủ: `docs/database-analysis-and-improvements.md`
-- Schema mẫu: `docs/schema-improvements-example.prisma`
+- Chi tiết đầy đủ: [Database Analysis](./analysis.md)
+- Schema mẫu: [Schema Improvements](./schema-examples/improvements.prisma)

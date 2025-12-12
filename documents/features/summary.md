@@ -114,8 +114,8 @@ Sau khi phân tích database, code và tài liệu, hệ thống hiện tại đ
 
 ### Bước 1: Review
 
-- Đọc [Feature Suggestions](./feature-suggestions-vi.md) - Chi tiết đầy đủ
-- Đọc [Feature Roadmap](./feature-roadmap-vi.md) - Kế hoạch triển khai
+- Đọc [Feature Suggestions](./suggestions.md) - Chi tiết đầy đủ
+- Đọc [Feature Roadmap](./roadmap.md) - Kế hoạch triển khai
 
 ### Bước 2: Prioritize
 
@@ -126,8 +126,8 @@ Sau khi phân tích database, code và tài liệu, hệ thống hiện tại đ
 ### Bước 3: Implement
 
 - Bắt đầu với **API Key Management** hoặc **Activity Log**
-- Sử dụng GenericResourcePage pattern (đã có design)
-- Follow database improvements trong `schema-improvements-example.prisma`
+- Sử dụng GenericResourcePage pattern (đã có design trong `../../ui-design/resource-management.md`)
+- Follow database improvements trong `../../database/schema-examples/improvements.prisma`
 
 ---
 
@@ -164,10 +164,10 @@ Sau khi phân tích database, code và tài liệu, hệ thống hiện tại đ
 
 ## 🔗 Tài Liệu Liên Quan
 
-- [Feature Suggestions](./feature-suggestions-vi.md) - Chi tiết 15+ tính năng
-- [Feature Roadmap](./feature-roadmap-vi.md) - Kế hoạch 18 tuần
-- [Database Analysis](./database-analysis-and-improvements.md) - Phân tích database
-- [Resource Management UI Design](./resource-management-ui-design.md) - UI pattern
+- [Feature Suggestions](./suggestions.md) - Chi tiết 15+ tính năng
+- [Feature Roadmap](./roadmap.md) - Kế hoạch 18 tuần
+- [Database Analysis](../database/analysis.md) - Phân tích database
+- [Resource Management UI Design](../ui-design/resource-management.md) - UI pattern
 
 ---
 

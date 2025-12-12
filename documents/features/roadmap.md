@@ -354,9 +354,9 @@ Roadmap này đề xuất kế hoạch triển khai các tính năng mới dựa
 
 ## 🔗 References
 
-- [Feature Suggestions](./feature-suggestions-vi.md) - Chi tiết các tính năng
-- [Database Analysis](./database-analysis-and-improvements.md) - Phân tích database
-- [Resource Management UI Design](./resource-management-ui-design.md) - UI pattern
+- [Feature Suggestions](./suggestions.md) - Chi tiết các tính năng
+- [Database Analysis](../database/analysis.md) - Phân tích database
+- [Resource Management UI Design](../ui-design/resource-management.md) - UI pattern
 
 ---
 
