@@ -5,27 +5,30 @@
 ### Các Model Chính
 
 1. **Authentication & Authorization**
-    - `User` - Quản lý người dùng với MFA, password reset, email verification
-    - `AuthProvider` - OAuth providers (Google, Telegram, etc.)
-    - `UserAuthProvider` - Liên kết user với external auth
-    - `Role` - Vai trò với hierarchical support
-    - `Permission` - Quyền hệ thống
-    - `RolePermission` - Nhiều-nhiều giữa Role và Permission
-    - `RolePlayer` - Gán role cho user với expiration
+
+   - `User` - Quản lý người dùng với MFA, password reset, email verification
+   - `AuthProvider` - OAuth providers (Google, Telegram, etc.)
+   - `UserAuthProvider` - Liên kết user với external auth
+   - `Role` - Vai trò với hierarchical support
+   - `Permission` - Quyền hệ thống
+   - `RolePermission` - Nhiều-nhiều giữa Role và Permission
+   - `RolePlayer` - Gán role cho user với expiration
 
 2. **Security**
-    - `Session` - Quản lý phiên đăng nhập
-    - `SecurityEvent` - Theo dõi sự kiện bảo mật
-    - `UserIpWhitelist` - IP whitelist theo user
-    - `AuditLog` - Audit trail đầy đủ
+
+   - `Session` - Quản lý phiên đăng nhập
+   - `SecurityEvent` - Theo dõi sự kiện bảo mật
+   - `UserIpWhitelist` - IP whitelist theo user
+   - `AuditLog` - Audit trail đầy đủ
 
 3. **System**
-    - `Setting` - Cấu hình ứng dụng
-    - `I18n` - Đa ngôn ngữ
-    - `Proxy` - Cấu hình proxy
+
+   - `Setting` - Cấu hình ứng dụng
+   - `I18n` - Đa ngôn ngữ
+   - `Proxy` - Cấu hình proxy
 
 4. **Business Logic**
-    - `Referral` - Chương trình giới thiệu
+   - `Referral` - Chương trình giới thiệu
 
 ---
 
@@ -55,9 +58,9 @@
 ```prisma
 model User {
   // ... existing fields ...
-  
+
   deletedAt DateTime? @map("deleted_at") // Soft delete
-  
+
   @@index([status], name: "user_status_idx")
   @@index([created], name: "user_created_idx")
   @@index([lastLoginAt], name: "user_lastLoginAt_idx")
@@ -87,13 +90,13 @@ enum SessionType {
 
 model Session {
   // ... existing fields ...
-  
+
   sessionType SessionType @default(web) @map("session_type")
   userAgent   String?     @map("user_agent")
   location    Json?       // { country, city, lat, lng }
   refreshToken String?    @unique @map("refresh_token")
   refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
-  
+
   @@index([sessionType], name: "session_type_idx")
   @@index([refreshToken], name: "session_refreshToken_idx")
 }
@@ -124,13 +127,13 @@ model Referral {
   referredId String         @map("referred_id")
   created    DateTime       @default(now())
   status     ReferralStatus @default(inactive)
-  
+
   // Rewards tracking
   rewardAmount    Decimal?              @map("reward_amount")
   rewardStatus    ReferralRewardStatus? @map("reward_status")
   rewardPaidAt    DateTime?             @map("reward_paid_at")
   level           Int                   @default(1) // Multi-level support
-  
+
   referrer User @relation("UserReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
   referred User @relation("UserReferred", fields: [referredId], references: [id], onDelete: Cascade)
 
@@ -194,12 +197,12 @@ model Notification {
   subject   String?
   content   String
   metadata  Json?
-  
+
   readAt    DateTime?        @map("read_at")
   sentAt    DateTime?        @map("sent_at")
   failedAt  DateTime?        @map("failed_at")
   error     String?
-  
+
   created   DateTime         @default(now())
   modified  DateTime         @updatedAt
 
@@ -309,17 +312,17 @@ model File {
   url         String?
   status      FileStatus @default(active)
   metadata    Json?      // { width, height, duration, etc. }
-  
+
   // Security
   isPublic    Boolean    @default(false) @map("is_public")
   accessToken String?    @unique @map("access_token")
-  
+
   // Versioning
   version     Int        @default(1)
   parentId    String?    @map("parent_id")
   parent      File?      @relation("FileVersions", fields: [parentId], references: [id], onDelete: SetNull)
   versions    File[]     @relation("FileVersions")
-  
+
   created     DateTime   @default(now())
   modified    DateTime   @updatedAt
   deletedAt   DateTime?  @map("deleted_at")
@@ -816,4 +819,3 @@ Khi implement các thay đổi:
 - Sử dụng `onDelete: Cascade` cho các relation phụ thuộc
 - Sử dụng `onDelete: SetNull` cho optional relations
 - Thêm soft delete (`deletedAt`) cho các model quan trọng
-

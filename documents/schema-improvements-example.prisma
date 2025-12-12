@@ -28,7 +28,7 @@ model User {
   modified    DateTime  @updatedAt
   lastLoginAt DateTime? @map("last_login_at")
   refCode     String?   @unique @map("ref_code")
-  
+
   // NEW: Soft delete
   deletedAt DateTime? @map("deleted_at")
 
@@ -59,7 +59,7 @@ model User {
   authProviders  UserAuthProvider[]
   securityEvents SecurityEvent[]
   ipWhitelist    UserIpWhitelist[]
-  
+
   // NEW: Relations
   notifications Notification[]
   activities    Activity[]
@@ -105,11 +105,11 @@ model Session {
 
   lastActivityAt    DateTime? @map("last_activity_at")
   deviceFingerprint String?   @map("device_fingerprint")
-  
+
   // NEW: Additional fields
   sessionType           SessionType @default(web) @map("session_type")
   userAgent             String?     @map("user_agent")
-  location              Json?       // { country, city, lat, lng }
+  location              Json? // { country, city, lat, lng }
   refreshToken          String?     @unique @map("refresh_token")
   refreshTokenExpiresAt DateTime?   @map("refresh_token_expires_at")
 
@@ -145,10 +145,10 @@ model Referral {
   referred User @relation("UserReferred", fields: [referredId], references: [id], onDelete: Cascade)
 
   // NEW: Rewards tracking
-  rewardAmount    Decimal?              @map("reward_amount")
-  rewardStatus    ReferralRewardStatus? @map("reward_status")
-  rewardPaidAt    DateTime?             @map("reward_paid_at")
-  level           Int                   @default(1) // Multi-level support
+  rewardAmount Decimal?              @map("reward_amount")
+  rewardStatus ReferralRewardStatus? @map("reward_status")
+  rewardPaidAt DateTime?             @map("reward_paid_at")
+  level        Int                   @default(1) // Multi-level support
 
   @@unique([referrerId, referredId], name: "referral_unique")
   @@index([referrerId], name: "referral_referrerId_idx")
@@ -177,16 +177,16 @@ enum NotificationStatus {
 }
 
 model NotificationTemplate {
-  id          String           @id
-  code        String           @unique
-  name        String
-  subject     String?
-  body        String
-  type        NotificationType
-  variables   Json?            // Template variables
-  enabled     Boolean          @default(true)
-  created     DateTime         @default(now())
-  modified    DateTime         @updatedAt
+  id        String           @id
+  code      String           @unique
+  name      String
+  subject   String?
+  body      String
+  type      NotificationType
+  variables Json? // Template variables
+  enabled   Boolean          @default(true)
+  created   DateTime         @default(now())
+  modified  DateTime         @updatedAt
 
   notifications Notification[]
 
@@ -194,24 +194,24 @@ model NotificationTemplate {
 }
 
 model Notification {
-  id        String            @id
-  userId    String            @map("user_id")
-  templateId String?          @map("template_id")
-  type      NotificationType
-  status    NotificationStatus @default(pending)
-  subject   String?
-  content   String
-  metadata  Json?
-  
-  readAt    DateTime?        @map("read_at")
-  sentAt    DateTime?        @map("sent_at")
-  failedAt  DateTime?        @map("failed_at")
-  error     String?
-  
-  created   DateTime         @default(now())
-  modified  DateTime         @updatedAt
+  id         String             @id
+  userId     String             @map("user_id")
+  templateId String?            @map("template_id")
+  type       NotificationType
+  status     NotificationStatus @default(pending)
+  subject    String?
+  content    String
+  metadata   Json?
 
-  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt   DateTime? @map("read_at")
+  sentAt   DateTime? @map("sent_at")
+  failedAt DateTime? @map("failed_at")
+  error    String?
+
+  created  DateTime @default(now())
+  modified DateTime @updatedAt
+
+  user     User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   template NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
 
   @@index([userId, status], name: "notification_user_status_idx")
@@ -239,17 +239,17 @@ enum ActivityType {
 }
 
 model Activity {
-  id          String       @id
-  userId      String?      @map("user_id")
-  sessionId   String?      @map("session_id")
+  id           String       @id
+  userId       String?      @map("user_id")
+  sessionId    String?      @map("session_id")
   activityType ActivityType @map("activity_type")
-  entityType  String?      @map("entity_type") // "user", "role", etc.
-  entityId    String?     @map("entity_id")
-  description String
-  metadata    Json?
-  ip          String?
-  userAgent   String?      @map("user_agent")
-  created     DateTime     @default(now())
+  entityType   String?      @map("entity_type") // "user", "role", etc.
+  entityId     String?      @map("entity_id")
+  description  String
+  metadata     Json?
+  ip           String?
+  userAgent    String?      @map("user_agent")
+  created      DateTime     @default(now())
 
   user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
@@ -273,30 +273,30 @@ enum FileStatus {
 }
 
 model File {
-  id          String     @id
-  userId      String?    @map("user_id")
-  filename    String
-  originalName String    @map("original_name")
-  mimeType    String     @map("mime_type")
-  size        BigInt
-  path        String
-  url         String?
-  status      FileStatus @default(active)
-  metadata    Json?      // { width, height, duration, etc. }
-  
+  id           String     @id
+  userId       String?    @map("user_id")
+  filename     String
+  originalName String     @map("original_name")
+  mimeType     String     @map("mime_type")
+  size         BigInt
+  path         String
+  url          String?
+  status       FileStatus @default(active)
+  metadata     Json? // { width, height, duration, etc. }
+
   // Security
-  isPublic    Boolean    @default(false) @map("is_public")
-  accessToken String?    @unique @map("access_token")
-  
+  isPublic    Boolean @default(false) @map("is_public")
+  accessToken String? @unique @map("access_token")
+
   // Versioning
-  version     Int        @default(1)
-  parentId    String?    @map("parent_id")
-  parent      File?      @relation("FileVersions", fields: [parentId], references: [id], onDelete: SetNull)
-  versions    File[]     @relation("FileVersions")
-  
-  created     DateTime   @default(now())
-  modified    DateTime   @updatedAt
-  deletedAt   DateTime?  @map("deleted_at")
+  version  Int     @default(1)
+  parentId String? @map("parent_id")
+  parent   File?   @relation("FileVersions", fields: [parentId], references: [id], onDelete: SetNull)
+  versions File[]  @relation("FileVersions")
+
+  created   DateTime  @default(now())
+  modified  DateTime  @updatedAt
+  deletedAt DateTime? @map("deleted_at")
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
@@ -320,17 +320,17 @@ enum RateLimitType {
 }
 
 model RateLimit {
-  id          String         @id
-  identifier  String         // userId, IP, email, etc.
-  type        RateLimitType
-  count       Int            @default(0)
-  limit       Int
-  windowStart DateTime       @map("window_start")
-  windowEnd   DateTime       @map("window_end")
-  blocked     Boolean        @default(false)
+  id           String        @id
+  identifier   String // userId, IP, email, etc.
+  type         RateLimitType
+  count        Int           @default(0)
+  limit        Int
+  windowStart  DateTime      @map("window_start")
+  windowEnd    DateTime      @map("window_end")
+  blocked      Boolean       @default(false)
   blockedUntil DateTime?     @map("blocked_until")
-  created     DateTime       @default(now())
-  modified    DateTime       @updatedAt
+  created      DateTime      @default(now())
+  modified     DateTime      @updatedAt
 
   @@unique([identifier, type, windowStart], name: "rate_limit_unique")
   @@index([identifier, type], name: "rate_limit_identifier_type_idx")
@@ -350,19 +350,19 @@ enum ApiKeyStatus {
 }
 
 model ApiKey {
-  id          String        @id
-  userId      String        @map("user_id")
+  id          String       @id
+  userId      String       @map("user_id")
   name        String
-  key         String        @unique // Hashed
-  keyPrefix   String        @map("key_prefix") // First 8 chars for display
-  status      ApiKeyStatus  @default(active)
-  lastUsedAt  DateTime?     @map("last_used_at")
-  expiresAt   DateTime?     @map("expires_at")
-  permissions Json?         // Scoped permissions
-  ipWhitelist String[]?     @map("ip_whitelist")
+  key         String       @unique // Hashed
+  keyPrefix   String       @map("key_prefix") // First 8 chars for display
+  status      ApiKeyStatus @default(active)
+  lastUsedAt  DateTime?    @map("last_used_at")
+  expiresAt   DateTime?    @map("expires_at")
+  permissions Json? // Scoped permissions
+  ipWhitelist String[]?    @map("ip_whitelist")
   metadata    Json?
-  created     DateTime      @default(now())
-  modified    DateTime      @updatedAt
+  created     DateTime     @default(now())
+  modified    DateTime     @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -407,18 +407,18 @@ enum SecurityEventType {
 }
 
 model SecurityEvent {
-  id        String                @id
-  userId    String?               @map("user_id")
-  eventType SecurityEventType     @map("event_type")
-  severity  SecurityEventSeverity @default(medium)
-  ip        String?
-  userAgent String?               @map("user_agent")
-  location  Json?                 // GeoIP data
-  metadata  Json?
-  resolved  Boolean               @default(false)
-  resolvedAt DateTime?            @map("resolved_at")
-  resolvedBy String?              @map("resolved_by")
-  created   DateTime              @default(now())
+  id         String                @id
+  userId     String?               @map("user_id")
+  eventType  SecurityEventType     @map("event_type")
+  severity   SecurityEventSeverity @default(medium)
+  ip         String?
+  userAgent  String?               @map("user_agent")
+  location   Json? // GeoIP data
+  metadata   Json?
+  resolved   Boolean               @default(false)
+  resolvedAt DateTime?             @map("resolved_at")
+  resolvedBy String?               @map("resolved_by")
+  created    DateTime              @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
@@ -453,7 +453,7 @@ model DataExport {
   userId      String       @map("user_id")
   format      ExportFormat
   status      ExportStatus
-  filters     Json?        // What data to export
+  filters     Json? // What data to export
   fileId      String?      @map("file_id")
   error       String?
   requestedAt DateTime     @default(now()) @map("requested_at")
@@ -472,19 +472,19 @@ model DataExport {
 // ============================================
 
 model Setting {
-  id          String         @id
-  key         String         @unique
-  value       String
-  description String?
-  category    String?        // "security", "email", "payment", etc.
-  isSecret    Boolean        @default(false) @map("is_secret")
-  type        SettingDataType @default(string)
-  validation  Json?          // Validation rules
-  defaultValue String?       @map("default_value")
-  version     Int            @default(1)
-  modifiedBy  String?        @map("modified_by")
-  created     DateTime       @default(now())
-  modified    DateTime       @updatedAt
+  id           String          @id
+  key          String          @unique
+  value        String
+  description  String?
+  category     String? // "security", "email", "payment", etc.
+  isSecret     Boolean         @default(false) @map("is_secret")
+  type         SettingDataType @default(string)
+  validation   Json? // Validation rules
+  defaultValue String?         @map("default_value")
+  version      Int             @default(1)
+  modifiedBy   String?         @map("modified_by")
+  created      DateTime        @default(now())
+  modified     DateTime        @updatedAt
 
   @@index([key])
   @@index([category], name: "setting_category_idx")
@@ -499,9 +499,9 @@ model I18n {
   id        String  @id
   key       String
   namespace String? @default("common")
-  locale    String  // "en", "vi", "ja", etc.
+  locale    String // "en", "vi", "ja", etc.
   value     String
-  metadata  Json?   // { context, plural, etc. }
+  metadata  Json? // { context, plural, etc. }
 
   @@unique([key, locale, namespace], name: "i18n_unique")
   @@index([key])
@@ -509,4 +509,3 @@ model I18n {
   @@index([namespace], name: "i18n_namespace_idx")
   @@map("i18n")
 }
-
