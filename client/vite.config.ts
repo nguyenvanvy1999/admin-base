@@ -31,5 +31,43 @@ export default defineConfig({
     },
     build: {
         outDir: 'dist',
+        target: 'esnext',
+        minify: 'esbuild',
+        cssMinify: true,
+        sourcemap: false,
+        rollupOptions: {
+            output: {
+                manualChunks: (id) => {
+                    if (id.includes('node_modules')) {
+                        if (id.includes('react') || id.includes('react-dom')) {
+                            return 'react-vendor';
+                        }
+                        if (id.includes('antd') || id.includes('@ant-design/pro-components')) {
+                            return 'antd';
+                        }
+                        if (id.includes('@tanstack/react-query')) {
+                            return 'react-query';
+                        }
+                        if (id.includes('react-router')) {
+                            return 'react-router';
+                        }
+                        if (id.includes('i18next') || id.includes('react-i18next')) {
+                            return 'i18n';
+                        }
+                        if (id.includes('axios')) {
+                            return 'axios';
+                        }
+                        if (id.includes('dayjs')) {
+                            return 'dayjs';
+                        }
+                        if (id.includes('@ant-design/icons')) {
+                            return 'antd-icons';
+                        }
+                        return 'vendor';
+                    }
+                },
+            },
+        },
+        chunkSizeWarningLimit: 1000,
     },
 });
