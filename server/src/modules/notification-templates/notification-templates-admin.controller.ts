@@ -7,7 +7,7 @@ import {
 } from 'src/dtos/notification-templates.dto';
 import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
-import { notificationTemplatesService } from 'src/service/notification-templates.service';
+import { notificationTemplatesService } from 'src/service/notifications/notification-templates.service';
 import {
   authErrors,
   castToRes,

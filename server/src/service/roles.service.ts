@@ -1,6 +1,6 @@
 import { db, type IDb } from 'src/config/db';
 import type { RoleListParams, UpsertRoleParams } from 'src/dtos/roles.dto';
-import type { RoleWhereInput } from 'src/generated';
+import type { PermissionWhereInput, RoleWhereInput } from 'src/generated';
 import { ensureExists, normalizeSearchTerm } from 'src/service/utils';
 import {
   BadReqErr,
@@ -252,6 +252,22 @@ export class RolesService {
     await this.deps.db.role.deleteMany({
       where: {
         id: { in: ids },
+      },
+    });
+  }
+
+  listPermissions(params: { roleId?: string }) {
+    const { roleId } = params;
+    const where: PermissionWhereInput = roleId
+      ? { roles: { some: { roleId } } }
+      : {};
+    return this.deps.db.permission.findMany({
+      where,
+      orderBy: { title: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        description: true,
       },
     });
   }
