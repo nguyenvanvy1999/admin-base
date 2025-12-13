@@ -12,12 +12,26 @@ documents/
 ├── architecture/                      # Kiến trúc hệ thống
 │   └── system-overview.md            # Tổng quan kiến trúc
 ├── features/                         # Tài liệu tính năng
+│   ├── authentication/               # Authentication system
+│   │   ├── overview.md               # Tổng quan
+│   │   └── technical-spec.md        # Spec kỹ thuật
+│   ├── rate-limiting/                # Rate limiting system
+│   │   ├── overview.md               # Tổng quan
+│   │   └── technical-spec.md        # Spec kỹ thuật
+│   ├── ip-whitelist/                 # IP whitelist system
+│   │   ├── overview.md               # Tổng quan
+│   │   └── technical-spec.md        # Spec kỹ thuật
+│   ├── api-key-management/           # API key management
+│   │   ├── overview.md               # Tổng quan
+│   │   ├── technical-spec.md        # Spec kỹ thuật
+│   │   └── api-design.md            # Thiết kế API
 │   ├── file-management/              # Quản lý file
 │   │   ├── overview.md               # Tổng quan
 │   │   ├── technical-spec.md        # Spec kỹ thuật
 │   │   └── api-design.md            # Thiết kế API
 │   ├── roadmap.md                    # Roadmap triển khai
-│   └── suggestions.md               # Đề xuất tính năng
+│   ├── suggestions.md               # Đề xuất tính năng
+│   └── summary.md                   # Tổng quan tính năng
 ├── database/                         # Tài liệu database
 │   ├── analysis.md                   # Phân tích database
 │   ├── improvements.md               # Cải thiện đề xuất
@@ -47,7 +61,7 @@ documents/
 
 1. Xem `features/roadmap.md` để biết kế hoạch triển khai
 2. Đọc `features/suggestions.md` để biết các tính năng đề xuất
-3. Tham khảo `features/file-management/overview.md` cho tính năng file
+3. Tham khảo các module trong `features/` để biết chi tiết từng tính năng
 
 ## 🔄 Cập Nhật
 
