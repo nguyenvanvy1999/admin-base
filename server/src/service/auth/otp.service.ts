@@ -10,17 +10,14 @@ import { db, type IDb } from 'src/config/db';
 import { emailQueue, type IEmailQueue } from 'src/config/queue';
 import { UserStatus } from 'src/generated';
 import {
-  type AuditLogService,
-  auditLogService,
-} from 'src/service/misc/audit-log.service';
+  type AuditLogsService,
+  auditLogsService,
+} from 'src/service/audit-logs/audit-logs.service';
 import {
-  type LockingService,
-  lockingService,
-} from 'src/service/misc/locking.service';
-import {
-  type SettingService,
-  settingService,
-} from 'src/service/misc/setting.service';
+  type SettingsService,
+  settingsService,
+} from 'src/service/settings/settings.service';
+import { type LockingUtil, lockingUtil } from 'src/service/utils/locking.util';
 import { ACTIVITY_TYPE, EmailType, IdUtil, PurposeVerify } from 'src/share';
 
 export class OtpService {
@@ -30,19 +27,19 @@ export class OtpService {
       otpCache: IOTPCache;
       otpRateLimitCache: IOtpRateLimitCache;
       registerOtpLimitCache: RedisCache<number>;
-      lockingService: LockingService;
+      lockingService: LockingUtil;
       emailQueue: IEmailQueue;
-      auditLogService: AuditLogService;
-      settingService: SettingService;
+      auditLogService: AuditLogsService;
+      settingService: SettingsService;
     } = {
       db,
       otpCache,
       otpRateLimitCache,
       registerOtpLimitCache,
-      lockingService,
+      lockingService: lockingUtil,
       emailQueue,
-      auditLogService,
-      settingService,
+      auditLogService: auditLogsService,
+      settingService: settingsService,
     },
   ) {}
 
@@ -236,8 +233,8 @@ export const otpService = new OtpService({
   otpCache,
   otpRateLimitCache,
   registerOtpLimitCache,
-  lockingService,
+  lockingService: lockingUtil,
   emailQueue,
-  auditLogService,
-  settingService,
+  auditLogService: auditLogsService,
+  settingService: settingsService,
 });

@@ -8,13 +8,13 @@ import {
   spyOn,
 } from 'bun:test';
 import { EncryptService } from 'src/service/auth/encrypt.service';
-import { SettingService } from 'src/service/misc/setting.service';
+import { SettingsService } from 'src/service/settings/settings.service';
 import { SETTING } from 'src/share';
 import { SettingFixtures } from 'test/fixtures';
 import { TestLifecycle } from 'test/utils';
 
 describe('settingService', () => {
-  let service: SettingService;
+  let service: SettingsService;
   let mockCache: {
     get: ReturnType<typeof mock>;
     set: ReturnType<typeof mock>;
@@ -47,7 +47,7 @@ describe('settingService', () => {
     decryptSpy = spyOn(EncryptService, 'aes256Decrypt').mockReturnValue(
       'decrypted_encrypted_value',
     );
-    service = new SettingService({
+    service = new SettingsService({
       cache: mockCache,
       db: mockDb,
     } as any);

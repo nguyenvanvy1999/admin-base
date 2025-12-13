@@ -1,5 +1,5 @@
 import { logger } from 'src/config/logger';
-import { auditLogWorkerService } from 'src/service/worker';
+import { auditLogWorkerService } from 'src/service/infrastructure/worker.service';
 
 const auditLogLogger = logger.with({ service: 'audit-log-worker' });
 

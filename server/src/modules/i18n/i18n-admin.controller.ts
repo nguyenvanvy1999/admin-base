@@ -4,8 +4,8 @@ import {
   I18nUpsertDto,
   PaginateI18nResDto,
 } from 'src/dtos/i18n.dto';
-import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
+import { authCheck } from 'src/service/auth/middleware';
 import { i18nService } from 'src/service/i18n.service';
 import {
   authErrors,

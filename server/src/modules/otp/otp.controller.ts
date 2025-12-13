@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
 import { OtpResDto } from 'src/dtos/auth.dto';
-import { otpControllerService } from 'src/service/auth/otp-controller.service';
+import { otpService } from 'src/service/auth/otp.service';
 import {
   castToRes,
   DOC_TAG,
@@ -15,7 +15,7 @@ export const otpController = new Elysia({
 }).post(
   '/',
   async ({ body: { email, purpose } }) => {
-    const result = await otpControllerService.sendOtpWithAudit(email, purpose);
+    const result = await otpService.sendOtpWithAudit(email, purpose);
     return castToRes(result);
   },
   {

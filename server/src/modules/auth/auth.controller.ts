@@ -13,8 +13,8 @@ import {
   UserResDto,
   VerifyAccountRequestDto,
 } from 'src/dtos/auth.dto';
-import { authCheck } from 'src/service/auth/auth.middleware';
 import { authService } from 'src/service/auth/auth.service';
+import { authCheck } from 'src/service/auth/middleware';
 import { rateLimit } from 'src/service/rate-limit/auth-rate-limit.config';
 import {
   ACCESS_AUTH,

@@ -1,6 +1,6 @@
 import type { Elysia } from 'elysia';
 import { getIP } from 'src/config/request';
-import { settingService } from 'src/service/misc/setting.service';
+import { settingsService } from 'src/service/settings/settings.service';
 import { userIpWhitelistService } from 'src/service/user-ip-whitelist';
 import { ErrCode, UnAuthErr } from 'src/share';
 
@@ -19,7 +19,7 @@ export const userIpWhitelistMiddleware = () => (app: Elysia) =>
       return;
     }
 
-    const enabled = await settingService.enbIpWhitelist();
+    const enabled = await settingsService.enbIpWhitelist();
     if (!enabled) {
       return;
     }

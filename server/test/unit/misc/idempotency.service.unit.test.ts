@@ -1,13 +1,13 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'bun:test';
 import type { RedisClient } from 'bun';
-import { IdempotencyService } from 'src/service/misc/idempotency.service';
+import { IdempotencyUtil } from 'src/service/utils/idempotency.util';
 import { IDEMPOTENCY_TTL } from 'src/share';
 import { IdempotencyFixtures } from 'test/fixtures';
 import type { RedisMock } from 'test/utils/mocks/redis';
 
-describe('IdempotencyService', () => {
+describe('IdempotencyUtil', () => {
   let redisSpies: RedisMock;
-  let idempotencyService: IdempotencyService;
+  let idempotencyService: IdempotencyUtil;
 
   beforeAll(async () => {
     const { redis } = await import('src/config/redis');
@@ -15,7 +15,7 @@ describe('IdempotencyService', () => {
   });
 
   beforeEach(() => {
-    idempotencyService = new IdempotencyService(
+    idempotencyService = new IdempotencyUtil(
       redisSpies as unknown as RedisClient,
     );
     redisSpies.send.mockReset();

@@ -15,6 +15,10 @@ import {
   type UserUncheckedUpdateInput,
 } from 'src/generated';
 import {
+  type AuditLogsService,
+  auditLogsService,
+} from 'src/service/audit-logs/audit-logs.service';
+import {
   type UserUtilService,
   userUtilService,
 } from 'src/service/auth/auth-util.service';
@@ -30,10 +34,6 @@ import {
   type SessionService,
   sessionService,
 } from 'src/service/auth/session.service';
-import {
-  type AuditLogService,
-  auditLogService,
-} from 'src/service/misc/audit-log.service';
 import {
   ACTIVITY_TYPE,
   BadReqErr,
@@ -85,7 +85,7 @@ export class UsersService {
     private readonly deps: {
       db: IDb;
       sessionService: SessionService;
-      auditLogService: AuditLogService;
+      auditLogService: AuditLogsService;
       passwordService: PasswordService;
       passwordValidationService: PasswordValidationService;
       userUtilService: UserUtilService;
@@ -617,7 +617,7 @@ export class UsersService {
 export const usersService = new UsersService({
   db,
   sessionService,
-  auditLogService,
+  auditLogService: auditLogsService,
   passwordService,
   passwordValidationService,
   userUtilService,

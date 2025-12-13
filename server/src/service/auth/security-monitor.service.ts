@@ -2,17 +2,17 @@ import crypto from 'node:crypto';
 import { db, type IDb } from 'src/config/db';
 import { SecurityEventType } from 'src/generated';
 import {
-  type AuditLogService,
-  auditLogService,
-} from 'src/service/misc/audit-log.service';
+  type AuditLogsService,
+  auditLogsService,
+} from 'src/service/audit-logs/audit-logs.service';
 import {
-  type SecurityEventService,
-  securityEventService,
-} from 'src/service/misc/security-event.service';
+  type SecurityEventsService,
+  securityEventsService,
+} from 'src/service/security-events/security-events.service';
 import {
-  type SettingService,
-  settingService,
-} from 'src/service/misc/setting.service';
+  type SettingsService,
+  settingsService,
+} from 'src/service/settings/settings.service';
 import {
   ACTIVITY_TYPE,
   getIpAndUa,
@@ -35,10 +35,15 @@ export class SecurityMonitorService {
   constructor(
     private readonly deps: {
       db: IDb;
-      auditLogService: AuditLogService;
-      securityEventService: SecurityEventService;
-      settingService: SettingService;
-    } = { db, auditLogService, securityEventService, settingService },
+      auditLogService: AuditLogsService;
+      securityEventService: SecurityEventsService;
+      settingService: SettingsService;
+    } = {
+      db,
+      auditLogService: auditLogsService,
+      securityEventService: securityEventsService,
+      settingService: settingsService,
+    },
   ) {}
 
   async evaluateLogin(params: EvaluateParams): Promise<SecurityCheckResult> {

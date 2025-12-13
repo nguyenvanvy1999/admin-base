@@ -9,14 +9,14 @@ import {
 } from 'bun:test';
 import type { RedisClient } from 'bun';
 import { logger } from 'src/config/logger';
-import { LockingService } from 'src/service/misc/locking.service';
+import { LockingUtil } from 'src/service/utils/locking.util';
 import { LockFixtures } from 'test/fixtures';
 import { TestLifecycle } from 'test/utils';
 import type { RedisMock } from 'test/utils/mocks/redis';
 
-describe('LockingService', () => {
+describe('LockingUtil', () => {
   let redisSpies: RedisMock;
-  let lockingService: LockingService;
+  let lockingService: LockingUtil;
 
   const mockSendFn = (cmd: string) =>
     cmd === 'SET' ? Promise.resolve('OK') : Promise.resolve(null);
@@ -28,7 +28,7 @@ describe('LockingService', () => {
   });
 
   beforeEach(() => {
-    lockingService = new LockingService(redisSpies as unknown as RedisClient);
+    lockingService = new LockingUtil(redisSpies as unknown as RedisClient);
   });
 
   describe('acquire', () => {
@@ -109,7 +109,7 @@ describe('LockingService', () => {
 
       // Assert
       expect(results).toHaveLength(3);
-      results.forEach((result) => {
+      results.forEach((result: string | null) => {
         expect(result).not.toBeNull();
       });
 
@@ -653,10 +653,12 @@ describe('LockingService', () => {
 
       // Assert
       const successfulAcquisitions = results.filter(
-        (result) => result !== null,
+        (result: string | null) => result !== null,
       );
       expect(successfulAcquisitions).toHaveLength(1);
-      expect(results.filter((result) => result === null)).toHaveLength(2);
+      expect(
+        results.filter((result: string | null) => result === null),
+      ).toHaveLength(2);
     });
 
     it('should handle full lock action workflow with retries', async () => {

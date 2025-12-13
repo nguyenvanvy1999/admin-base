@@ -6,8 +6,8 @@ import {
   SetupMfaConfirmDto,
   SetupMfaRequestDto,
 } from 'src/dtos/auth.dto';
-import { authCheck } from 'src/service/auth/auth.middleware';
-import { mfaSetupService } from 'src/service/auth/mfa-setup.service';
+import { mfaService } from 'src/service/auth/mfa.service';
+import { authCheck } from 'src/service/auth/middleware';
 import {
   ACCESS_AUTH,
   castToRes,
@@ -22,7 +22,7 @@ export const mfaController = new Elysia({
 })
   .post(
     '/setup/request',
-    async ({ body }) => castToRes(await mfaSetupService.setupMfaRequest(body)),
+    async ({ body }) => castToRes(await mfaService.setupMfaRequest(body)),
     {
       body: SetupMfaRequestDto,
       detail: {
@@ -40,7 +40,7 @@ export const mfaController = new Elysia({
   )
   .post(
     '/setup/confirm',
-    async ({ body }) => castToRes(await mfaSetupService.setupMfa(body)),
+    async ({ body }) => castToRes(await mfaService.setupMfa(body)),
     {
       body: SetupMfaConfirmDto,
       detail: {
@@ -59,7 +59,7 @@ export const mfaController = new Elysia({
   .use(authCheck)
   .post(
     '/reset',
-    async ({ body }) => castToRes(await mfaSetupService.resetMfa(body)),
+    async ({ body }) => castToRes(await mfaService.resetMfa(body)),
     {
       body: ResetMfaRequestDto,
       detail: {
@@ -76,7 +76,7 @@ export const mfaController = new Elysia({
   .post(
     '/disable',
     async ({ body, currentUser: { id } }) =>
-      castToRes(await mfaSetupService.disableMfa({ userId: id, ...body })),
+      castToRes(await mfaService.disableMfa({ userId: id, ...body })),
     {
       body: DisableMfaRequestDto,
       detail: {
@@ -94,7 +94,7 @@ export const mfaController = new Elysia({
   .get(
     '/status',
     async ({ currentUser: { id } }) => {
-      const result = await mfaSetupService.getMfaStatus(id);
+      const result = await mfaService.getMfaStatus(id);
       return castToRes(result);
     },
     {

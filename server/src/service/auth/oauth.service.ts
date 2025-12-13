@@ -8,6 +8,10 @@ import type {
 } from 'src/dtos/auth.dto';
 import { UserStatus } from 'src/generated';
 import {
+  type AuditLogsService,
+  auditLogsService,
+} from 'src/service/audit-logs/audit-logs.service';
+import {
   type UserUtilService,
   userUtilService,
 } from 'src/service/auth/auth-util.service';
@@ -15,10 +19,6 @@ import {
   type SecurityMonitorService,
   securityMonitorService,
 } from 'src/service/auth/security-monitor.service';
-import {
-  type AuditLogService,
-  auditLogService,
-} from 'src/service/misc/audit-log.service';
 import {
   ACTIVITY_TYPE,
   type AuditLogEntry,
@@ -40,7 +40,7 @@ export class OAuthService {
       db: IDb;
       oauth2ClientFactory: (clientId: string) => OAuth2Client;
       userUtilService: UserUtilService;
-      auditLogService: AuditLogService;
+      auditLogService: AuditLogsService;
       securityMonitorService: SecurityMonitorService;
       idUtil: typeof IdUtil;
       crypto: {
@@ -51,7 +51,7 @@ export class OAuthService {
       db,
       oauth2ClientFactory: (clientId: string) => new OAuth2Client(clientId),
       userUtilService,
-      auditLogService,
+      auditLogService: auditLogsService,
       securityMonitorService,
       idUtil: IdUtil,
       crypto: { createHash, createHmac },

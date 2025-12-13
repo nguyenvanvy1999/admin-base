@@ -6,8 +6,8 @@ import {
   LoginResDto,
   VerifyBackupCodeRequestDto,
 } from 'src/dtos/auth.dto';
-import { authCheck } from 'src/service/auth/auth.middleware';
-import { mfaBackupService } from 'src/service/auth/mfa-backup.service';
+import { mfaService } from 'src/service/auth/mfa.service';
+import { authCheck } from 'src/service/auth/middleware';
 import {
   ACCESS_AUTH,
   castToRes,
@@ -24,7 +24,7 @@ export const mfaBackupController = new Elysia({
   .post(
     '/generate',
     async ({ body: { otp } }) => {
-      const result = await mfaBackupService.generateBackupCodes({
+      const result = await mfaService.generateBackupCodes({
         otp,
       });
 
@@ -51,7 +51,7 @@ export const mfaBackupController = new Elysia({
   .post(
     '/verify',
     async ({ body: { backupCode, mfaToken } }) => {
-      const loginRes = await mfaBackupService.verifyBackupCode({
+      const loginRes = await mfaService.verifyBackupCode({
         mfaToken,
         backupCode,
       });
@@ -74,7 +74,7 @@ export const mfaBackupController = new Elysia({
   .get(
     '/remaining',
     async ({ currentUser: { id } }) => {
-      const result = await mfaBackupService.getBackupCodesRemaining(id);
+      const result = await mfaService.getBackupCodesRemaining(id);
       return castToRes(result);
     },
     {

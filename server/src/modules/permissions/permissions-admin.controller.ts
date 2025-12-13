@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
-import { permissionsService } from 'src/service/permissions.service';
+import { authCheck } from 'src/service/auth/middleware';
+import { rolesService } from 'src/service/roles.service';
 import { castToRes, DOC_TAG, ResWrapper } from 'src/share';
 
 export const permissionsAdminController = new Elysia({
@@ -12,7 +12,7 @@ export const permissionsAdminController = new Elysia({
   .use(authorize(has('ROLE.VIEW')))
   .get(
     '/',
-    async ({ query }) => castToRes(await permissionsService.list(query)),
+    async ({ query }) => castToRes(await rolesService.listPermissions(query)),
     {
       query: t.Object({ roleId: t.Optional(t.String()) }),
       response: {

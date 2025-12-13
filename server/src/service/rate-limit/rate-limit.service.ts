@@ -1,7 +1,7 @@
 import { rateLimitCache } from 'src/config/cache';
 import { redis } from 'src/config/redis';
 import { SecurityEventSeverity, SecurityEventType } from 'src/generated';
-import { securityEventService } from 'src/service/misc/security-event.service';
+import { securityEventsService } from 'src/service/security-events/security-events.service';
 import { getIpAndUa } from 'src/share';
 
 type CheckAndIncrementParams = {
@@ -83,7 +83,7 @@ export class RateLimitService {
       const finalIp = ip ?? clientIp;
       const finalUserAgent = userAgent ?? ctxUserAgent;
 
-      await securityEventService.create({
+      await securityEventsService.create({
         userId,
         eventType: SecurityEventType.suspicious_activity,
         severity: SecurityEventSeverity.high,

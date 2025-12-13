@@ -5,8 +5,8 @@ import {
   PaginateIpWhitelistResDto,
   UpsertIpWhitelistDto,
 } from 'src/dtos/ip-whitelist.dto';
-import { authCheck } from 'src/service/auth/auth.middleware';
 import { anyOf, authorize, has } from 'src/service/auth/authorization';
+import { authCheck } from 'src/service/auth/middleware';
 import { userIpWhitelistService } from 'src/service/user-ip-whitelist';
 import {
   authErrors,

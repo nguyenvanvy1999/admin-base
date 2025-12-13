@@ -23,17 +23,17 @@ import type {
 } from 'src/dtos/auth.dto';
 import { SecurityEventType, type User, UserStatus } from 'src/generated';
 import {
-  type AuditLogService,
-  auditLogService,
-} from 'src/service/misc/audit-log.service';
+  type AuditLogsService,
+  auditLogsService,
+} from 'src/service/audit-logs/audit-logs.service';
 import {
-  type SecurityEventService,
-  securityEventService,
-} from 'src/service/misc/security-event.service';
+  type SecurityEventsService,
+  securityEventsService,
+} from 'src/service/security-events/security-events.service';
 import {
-  type SettingService,
-  settingService,
-} from 'src/service/misc/setting.service';
+  type SettingsService,
+  settingsService,
+} from 'src/service/settings/settings.service';
 import {
   ACTIVITY_TYPE,
   BadReqErr,
@@ -58,11 +58,7 @@ import {
   type UserUtilService,
   userUtilService,
 } from './auth-util.service';
-import { type MfaUtilService, mfaUtilService } from './mfa-util.service';
-import {
-  type MfaVerificationService,
-  mfaVerificationService,
-} from './mfa-verification.service';
+import { type MfaService, mfaService } from './mfa.service';
 import { type OtpService, otpService } from './otp.service';
 import { type PasswordService, passwordService } from './password.service';
 import {
@@ -84,34 +80,32 @@ export class AuthService {
       passwordService: PasswordService;
       passwordValidationService: PasswordValidationService;
       tokenService: TokenService;
-      mfaUtilService: MfaUtilService;
+      mfaService: MfaService;
       otpService: OtpService;
       sessionService: SessionService;
-      settingService: SettingService;
-      auditLogService: AuditLogService;
-      securityEventService: SecurityEventService;
+      settingService: SettingsService;
+      auditLogService: AuditLogsService;
+      securityEventService: SecurityEventsService;
       userUtilService: UserUtilService;
       mfaCache: IMFACache;
       authenticator: typeof authenticator;
       securityMonitorService: SecurityMonitorService;
-      mfaVerificationService: MfaVerificationService;
     } = {
       db,
       env,
       passwordService,
       passwordValidationService,
       tokenService,
-      mfaUtilService,
+      mfaService,
       otpService,
       sessionService,
-      settingService,
-      auditLogService,
-      securityEventService,
+      settingService: settingsService,
+      auditLogService: auditLogsService,
+      securityEventService: securityEventsService,
       userUtilService,
       mfaCache,
       authenticator,
       securityMonitorService,
-      mfaVerificationService,
     },
   ) {}
 
@@ -284,7 +278,7 @@ export class AuthService {
     security?: SecurityCheckResult,
   ): Promise<ILoginResponse> {
     const loginToken = IdUtil.token16();
-    const mfaToken = await this.deps.mfaUtilService.createSession({
+    const mfaToken = await this.deps.mfaService.createSession({
       loginToken,
       user,
       security,
@@ -667,14 +661,14 @@ export class AuthService {
       throw new BadReqErr(ErrCode.SessionExpired);
     }
 
-    return this.deps.mfaVerificationService.verifyAndCompleteLogin({
+    return this.deps.mfaService.verifyAndCompleteLogin({
       mfaToken,
       otp,
     });
   }
 
   loginWithMfa(params: LoginWithMfaParams): Promise<ILoginRes> {
-    return this.deps.mfaVerificationService.verifyAndCompleteLogin(params);
+    return this.deps.mfaService.verifyAndCompleteLogin(params);
   }
 
   async getProfile(userId: string) {

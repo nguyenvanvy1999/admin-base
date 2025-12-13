@@ -3,9 +3,9 @@ import {
   AuditLogListQueryDto,
   AuditLogListResDto,
 } from 'src/dtos/audit-logs.dto';
-import { auditLogsService } from 'src/service/audit-logs.service';
-import { authCheck } from 'src/service/auth/auth.middleware';
+import { auditLogsService } from 'src/service/audit-logs/audit-logs.service';
 import { authorize, has } from 'src/service/auth/authorization';
+import { authCheck } from 'src/service/auth/middleware';
 import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 
 export const auditLogsAdminController = new Elysia({

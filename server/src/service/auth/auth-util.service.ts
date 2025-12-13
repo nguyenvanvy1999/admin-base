@@ -11,9 +11,9 @@ import {
   sessionService,
 } from 'src/service/auth/session.service';
 import {
-  type SettingService,
-  settingService,
-} from 'src/service/misc/setting.service';
+  type SettingsService,
+  settingsService,
+} from 'src/service/settings/settings.service';
 import {
   ArrayUtil,
   DB_PREFIX,
@@ -99,13 +99,13 @@ export class UserUtilService {
       db: IDb;
       tokenService: TokenService;
       sessionService: SessionService;
-      settingService: SettingService;
+      settingService: SettingsService;
       geoIPQueue: IGeoIPQueue;
     } = {
       db,
       tokenService,
       sessionService,
-      settingService,
+      settingService: settingsService,
       geoIPQueue,
     },
   ) {}

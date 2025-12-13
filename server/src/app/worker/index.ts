@@ -1,5 +1,5 @@
 import { logger } from 'src/config/logger';
-import { workerManagerService } from 'src/service/worker';
+import { workerManagerService } from 'src/service/infrastructure/worker.service';
 
 try {
   logger.info('🚀 Starting queues...');

@@ -4,9 +4,9 @@ import {
   SecurityEventListQueryDto,
   SecurityEventListResDto,
 } from 'src/dtos/security-events.dto';
-import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
-import { securityEventService } from 'src/service/misc/security-event.service';
+import { authCheck } from 'src/service/auth/middleware';
+import { securityEventsService } from 'src/service/security-events/security-events.service';
 import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 
 export const securityEventsAdminController = new Elysia({
@@ -18,7 +18,7 @@ export const securityEventsAdminController = new Elysia({
   .get(
     '/',
     async ({ currentUser, query }) => {
-      const result = await securityEventService.list({
+      const result = await securityEventsService.list({
         ...query,
         created0: query.created0?.toISOString(),
         created1: query.created1?.toISOString(),
@@ -40,7 +40,7 @@ export const securityEventsAdminController = new Elysia({
   .post(
     '/resolve',
     async ({ currentUser, body }) => {
-      await securityEventService.resolve({
+      await securityEventsService.resolve({
         id: body.id,
         resolvedBy: currentUser.id,
       });

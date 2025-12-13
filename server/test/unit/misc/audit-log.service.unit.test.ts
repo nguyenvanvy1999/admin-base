@@ -6,14 +6,14 @@ import {
   expectTypeOf,
   it,
 } from 'bun:test';
-import { AuditLogService } from 'src/service/misc/audit-log.service';
+import { AuditLogsService } from 'src/service/audit-logs/audit-logs.service';
 import { ACTIVITY_TYPE, LOG_LEVEL } from 'src/share';
 import { AuditLogFixtures } from 'test/fixtures';
 import { TestDataGenerator, TestLifecycle } from 'test/utils';
 import type { QueueInstanceMock } from 'test/utils/mocks/bullmq';
 
 describe('auditLogService (BullMQ)', () => {
-  let auditLogService: AuditLogService;
+  let auditLogService: AuditLogsService;
   let queueSpies: QueueInstanceMock;
 
   beforeEach(async () => {
@@ -22,7 +22,10 @@ describe('auditLogService (BullMQ)', () => {
     queueSpies.add.mockReset();
     queueSpies.addBulk.mockReset();
 
-    auditLogService = new AuditLogService(queueSpies as any);
+    auditLogService = new AuditLogsService({
+      db: {} as any,
+      queue: queueSpies as any,
+    });
   });
 
   afterEach(() => {
@@ -226,7 +229,7 @@ describe('auditLogService (BullMQ)', () => {
       const bulkArg = queueSpies.addBulk.mock.calls[0]?.[0];
       expect(Array.isArray(bulkArg)).toBe(true);
       expect(bulkArg).toHaveLength(3);
-      expect(result.every((id) => typeof id === 'string')).toBe(true);
+      expect(result.every((id: string) => typeof id === 'string')).toBe(true);
     });
 
     it('should handle empty batch', async () => {

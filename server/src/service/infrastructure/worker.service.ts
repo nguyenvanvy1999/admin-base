@@ -1,14 +1,34 @@
 import type { Job, Queue } from 'bullmq';
-import { Worker } from 'bullmq';
+import { Worker, type WorkerOptions } from 'bullmq';
 import { SQL } from 'bun';
+import { db, type IDb } from 'src/config/db';
 import { env } from 'src/config/env';
-import { logger } from 'src/config/logger';
+import { type ILogger, logger } from 'src/config/logger';
+import type { GeoIPJobData, SecurityEventJobData } from 'src/config/queue';
 import {
   auditLogQueue,
   batchLogQueue,
   type IAuditLogQueue,
 } from 'src/config/queue';
-import { type AuditLogEntry, LOG_LEVEL, QueueName } from 'src/share';
+import type { AuditLogsService } from 'src/service/audit-logs/audit-logs.service';
+import { auditLogsService } from 'src/service/audit-logs/audit-logs.service';
+import type { EmailService } from 'src/service/mail/email.service';
+import { emailService } from 'src/service/mail/email.service';
+import type { SecurityEventsService } from 'src/service/security-events/security-events.service';
+import { securityEventsService } from 'src/service/security-events/security-events.service';
+import type { GeoIPUtil } from 'src/service/utils/geoip.util';
+import { geoIPUtil } from 'src/service/utils/geoip.util';
+import type { IdempotencyUtil } from 'src/service/utils/idempotency.util';
+import { idempotencyUtil } from 'src/service/utils/idempotency.util';
+import type { LockingUtil } from 'src/service/utils/locking.util';
+import { lockingUtil } from 'src/service/utils/locking.util';
+import {
+  type AuditLogEntry,
+  EmailType,
+  LOG_LEVEL,
+  QueueName,
+  type SendMailMap,
+} from 'src/share';
 
 const WORKER_NAME = 'audit-log-batch-worker';
 const JOB_NAME = 'scheduled-flush';
@@ -30,6 +50,154 @@ interface BufferedLog {
   correlation_id?: string | null;
   occurred_at: Date;
   created: Date;
+}
+
+export class WorkerService {
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      emailService: EmailService;
+      auditLogService: AuditLogsService;
+      geoIPService: GeoIPUtil;
+      lockingService: LockingUtil;
+      idempotencyService: IdempotencyUtil;
+      securityEventService: SecurityEventsService;
+    } = {
+      db,
+      emailService,
+      auditLogService: auditLogsService,
+      geoIPService: geoIPUtil,
+      lockingService: lockingUtil,
+      idempotencyService: idempotencyUtil,
+      securityEventService: securityEventsService,
+    },
+  ) {}
+
+  async handleEmailJob(jobName: string, data: SendMailMap): Promise<void> {
+    switch (jobName) {
+      case EmailType.OTP: {
+        const params = data[EmailType.OTP];
+        await this.deps.emailService.sendEmailOtp(
+          params.email,
+          params.otp,
+          params.purpose,
+        );
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  async handleGeoIPJob(_jobName: string, data: GeoIPJobData): Promise<void> {
+    const { sessionId, ip } = data;
+
+    const location = await this.deps.geoIPService.getLocationByIP(ip);
+
+    if (location) {
+      await this.deps.db.session.update({
+        where: { id: sessionId },
+        data: { location: location as any },
+        select: { id: true },
+      });
+    }
+  }
+
+  async handleSecurityEventJob(
+    jobName: string,
+    data: SecurityEventJobData,
+  ): Promise<void> {
+    if (jobName === 'create') {
+      await this.deps.securityEventService.createDirect({
+        userId: data.userId,
+        eventType: data.eventType as any,
+        severity: data.severity as any,
+        ip: data.ip,
+        userAgent: data.userAgent,
+        location: data.location,
+        metadata: data.metadata,
+      });
+    }
+  }
+}
+
+export interface QueueHandler<T = any> {
+  queue: QueueName;
+  handler: (jobName: string, data: T) => Promise<void>;
+}
+
+export class WorkerManagerService {
+  constructor(
+    private readonly deps: {
+      workerService: WorkerService;
+      redisUri: string;
+      logger: ILogger;
+    } = {
+      workerService: new WorkerService(),
+      redisUri: env.REDIS_URI,
+      logger,
+    },
+  ) {}
+
+  private registerWorkerEvents(name: string, worker: Worker): void {
+    worker.on('completed', () =>
+      this.deps.logger.warning(`${name} worker task completed`),
+    );
+    worker.on('failed', (_, error, prev) => {
+      this.deps.logger.error(`${name} worker failed with error: ${error}`);
+      this.deps.logger.error(prev);
+    });
+    worker.on('error', (err) => {
+      this.deps.logger.error(`${name} worker error ${err}`);
+    });
+  }
+
+  getQueueHandlers(): QueueHandler[] {
+    return [
+      {
+        queue: QueueName.Email,
+        handler: (jobName: string, data: any) =>
+          this.deps.workerService.handleEmailJob(jobName, data),
+      },
+      {
+        queue: QueueName.GeoIP,
+        handler: (jobName: string, data: any) =>
+          this.deps.workerService.handleGeoIPJob(jobName, data),
+      },
+      {
+        queue: QueueName.SecurityEvent,
+        handler: (jobName: string, data: any) =>
+          this.deps.workerService.handleSecurityEventJob(jobName, data),
+      },
+    ];
+  }
+
+  startMessageWorkers(): void {
+    const queueConfig: WorkerOptions = {
+      connection: { url: this.deps.redisUri },
+      removeOnComplete: { count: 100 },
+      removeOnFail: { count: 1000 },
+    };
+
+    const queueHandlers = this.getQueueHandlers();
+
+    queueHandlers.forEach(({ queue, handler }) => {
+      const worker = new Worker(
+        queue,
+        async (job: Job) => {
+          try {
+            await handler(job.name, job.data);
+          } catch (err) {
+            this.deps.logger.error(`Error processing ${queue}: ${err}`);
+          }
+        },
+        queueConfig,
+      );
+
+      this.registerWorkerEvents(queue, worker);
+      this.deps.logger.info(`Starting ${queue} worker`);
+    });
+  }
 }
 
 export class AuditLogWorkerService {
@@ -204,4 +372,6 @@ export class AuditLogWorkerService {
   }
 }
 
+export const workerService = new WorkerService();
+export const workerManagerService = new WorkerManagerService();
 export const auditLogWorkerService = new AuditLogWorkerService();

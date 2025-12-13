@@ -9,8 +9,8 @@ import {
   AdminUserUpdateDto,
   AdminUserUpdateRolesDto,
 } from 'src/dtos/users.dto';
-import { authCheck } from 'src/service/auth/auth.middleware';
 import { authorize, has } from 'src/service/auth/authorization';
+import { authCheck } from 'src/service/auth/middleware';
 import { usersService } from 'src/service/users';
 import {
   authErrors,

@@ -5,8 +5,8 @@ import {
   RolePaginationDto,
   UpsertRoleDto,
 } from 'src/dtos/roles.dto';
-import { authCheck } from 'src/service/auth/auth.middleware';
 import { allOf, authorize, has } from 'src/service/auth/authorization';
+import { authCheck } from 'src/service/auth/middleware';
 import { rolesService } from 'src/service/roles.service';
 import {
   authErrors,
