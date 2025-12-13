@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { Elysia, t } from 'elysia';
 import { env } from 'src/config/env';
-import { miscService } from 'src/service/misc/misc.service';
+import { systemService } from 'src/service/infrastructure/system.service';
 import {
   castToRes,
   DOC_TAG,
@@ -17,7 +17,7 @@ export const miscController = new Elysia({
   .get(
     'health',
     async () => {
-      const result = await miscService.getHealthCheck();
+      const result = await systemService.getHealthCheck();
       return castToRes(result);
     },
     {
@@ -40,7 +40,7 @@ export const miscController = new Elysia({
   .get(
     'system-info',
     async () => {
-      const result = await miscService.getSystemInfo();
+      const result = await systemService.getSystemInfo();
       return castToRes(result);
     },
     {

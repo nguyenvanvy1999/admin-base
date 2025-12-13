@@ -30,7 +30,7 @@ type DiskInfo = {
   usedPercentStr: string;
 };
 
-export class MiscService {
+export class SystemService {
   constructor(
     private readonly deps: {
       cache: IOtpRateLimitCache;
@@ -300,4 +300,4 @@ export class MiscService {
   }
 }
 
-export const miscService = new MiscService();
+export const systemService = new SystemService();

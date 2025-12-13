@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
-import { MiscService } from 'src/service/misc/misc.service';
+import { SystemService } from 'src/service/infrastructure/system.service';
 import { HEALTH_STATE } from 'src/share';
 import { TestLifecycle } from 'test/utils';
 import { createPrismaMock } from 'test/utils/mocks/prisma';
@@ -90,7 +90,7 @@ function makeSpawnNeverResolves(): FakeSpawnProcess {
   } as unknown as FakeSpawnProcess;
 }
 
-describe('MiscService', () => {
+describe('SystemService', () => {
   const originalSetTimeout = globalThis.setTimeout;
   const originalClearTimeout = globalThis.clearTimeout;
 
@@ -105,8 +105,8 @@ describe('MiscService', () => {
   });
 
   function buildService(overrides?: Record<string, unknown>): {
-    svc: MiscService;
-    deps: Required<ConstructorParameters<typeof MiscService>[0]>;
+    svc: SystemService;
+    deps: Required<ConstructorParameters<typeof SystemService>[0]>;
   } {
     const cache = createRedisMock();
     const prisma = createPrismaMock();
@@ -143,8 +143,8 @@ describe('MiscService', () => {
       bun: bun,
       log: log,
       ...overrides,
-    } as unknown as Required<ConstructorParameters<typeof MiscService>[0]>;
-    const svc = new MiscService(deps);
+    } as unknown as Required<ConstructorParameters<typeof SystemService>[0]>;
+    const svc = new SystemService(deps);
     return { svc, deps };
   }
 

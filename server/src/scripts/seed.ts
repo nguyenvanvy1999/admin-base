@@ -1,5 +1,5 @@
 import { logger } from 'src/config/logger';
-import { seedService } from 'src/service/misc/seed.service';
+import { seedService } from 'src/service/dev/seed.service';
 
 async function main() {
   try {

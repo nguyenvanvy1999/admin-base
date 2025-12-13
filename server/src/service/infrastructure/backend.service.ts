@@ -5,7 +5,7 @@ import { serverTiming } from '@elysiajs/server-timing';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-node';
 import type { RedisClient } from 'bun';
-import { type SpawnOptions, spawn } from 'bun';
+import { type Spawn, spawn } from 'bun';
 import { Elysia } from 'elysia';
 import { rateLimit } from 'elysia-rate-limit';
 import { elysiaXSS } from 'elysia-xss';
@@ -44,10 +44,10 @@ import {
   usersAdminController,
 } from 'src/modules';
 import { adminAuthMiddleware } from 'src/service/auth/middleware';
-import { gracefulShutdownService } from 'src/service/misc/graceful-shutdown.service';
-import { httpLoggerMiddleware } from 'src/service/misc/http-logger.middleware';
-import type { SeedService } from 'src/service/misc/seed.service';
-import { seedService } from 'src/service/misc/seed.service';
+import type { SeedService } from 'src/service/dev/seed.service';
+import { seedService } from 'src/service/dev/seed.service';
+import { gracefulShutdownService } from 'src/service/infrastructure/graceful-shutdown.service';
+import { httpLoggerMiddleware } from 'src/service/middleware/http-logger.middleware';
 import { userIpWhitelistMiddleware } from 'src/service/user-ip-whitelist';
 import { APP_ENV } from 'src/share';
 import { reqMeta } from '../../config/request';
@@ -108,11 +108,7 @@ export class BackendClusterService {
 
     const workers = new Array(numCPUs);
 
-    const spawnOptions: SpawnOptions.SpawnOptions<
-      'inherit',
-      'inherit',
-      'inherit'
-    > = {
+    const spawnOptions: Spawn.SpawnOptions<'inherit', 'inherit', 'inherit'> = {
       stdout: 'inherit',
       stderr: 'inherit',
       stdin: 'inherit',
