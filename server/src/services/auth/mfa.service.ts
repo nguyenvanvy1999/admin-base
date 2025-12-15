@@ -244,7 +244,6 @@ export class MfaService {
     });
 
     const loginToken = IdUtil.token16();
-    const { clientIp, userAgent } = getIpAndUa();
 
     await this.deps.mfaCache.set(mfaToken, {
       userId: cachedData.userId,
@@ -261,8 +260,6 @@ export class MfaService {
       this.deps.auditLogService.logSecurityEvent({
         userId: cachedData.userId,
         eventType: SecurityEventType.mfa_enabled,
-        ip: clientIp,
-        userAgent,
         metadata: { method: 'totp' },
       }),
     ]);
@@ -322,8 +319,6 @@ export class MfaService {
       select: { id: true },
     });
 
-    const { clientIp, userAgent } = getIpAndUa();
-
     await sessionService.revoke(userId);
 
     await Promise.all([
@@ -334,8 +329,6 @@ export class MfaService {
       this.deps.auditLogService.logSecurityEvent({
         userId,
         eventType: SecurityEventType.mfa_disabled,
-        ip: clientIp,
-        userAgent,
         metadata: { method: otp ? 'totp' : 'backup_code' },
       }),
     ]);
@@ -371,8 +364,6 @@ export class MfaService {
       select: { id: true },
     });
 
-    const { clientIp, userAgent } = getIpAndUa();
-
     await sessionService.revoke(userId);
     await Promise.all([
       this.deps.auditLogService.push({
@@ -382,8 +373,6 @@ export class MfaService {
       this.deps.auditLogService.logSecurityEvent({
         userId,
         eventType: SecurityEventType.mfa_disabled,
-        ip: clientIp,
-        userAgent,
         metadata: { method: 'reset' },
       }),
     ]);
@@ -485,8 +474,6 @@ export class MfaService {
           this.deps.auditLogService.logSecurityEvent({
             userId: user.id,
             eventType: SecurityEventType.mfa_failed,
-            ip: clientIp,
-            userAgent,
             metadata: { method: 'totp', reason: 'invalid_otp' },
           }),
         ]);
@@ -535,8 +522,6 @@ export class MfaService {
       this.deps.auditLogService.logSecurityEvent({
         userId: user.id,
         eventType: SecurityEventType.mfa_verified,
-        ip: clientIp,
-        userAgent,
         metadata: { method: otp ? 'totp' : 'backup_code' },
       }),
     ]);

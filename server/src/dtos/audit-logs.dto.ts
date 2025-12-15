@@ -48,7 +48,6 @@ export const AuditLogItemDto = t.Object({
   sessionId: t.Nullable(t.String()),
   entityType: t.Nullable(t.String()),
   entityId: t.Nullable(t.String()),
-  description: t.Nullable(t.String()),
   ip: t.Nullable(t.String()),
   userAgent: t.Nullable(t.String()),
   requestId: t.Nullable(t.String()),
@@ -67,3 +66,6 @@ export type AuditLogListParams = typeof AuditLogListQueryDto.static & {
   currentUserId: string;
   hasViewPermission: boolean;
 };
+
+export type AuditLogItem = typeof AuditLogItemDto.static;
+export type AuditLogListRes = typeof AuditLogListResDto.static;

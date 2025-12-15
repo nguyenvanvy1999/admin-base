@@ -1,6 +1,10 @@
 import { db, type IDb } from 'src/config/db';
 import { auditLogQueue, type IAuditLogQueue } from 'src/config/queue';
-import type { AuditLogListParams } from 'src/dtos/audit-logs.dto';
+import type {
+  AuditLogItem,
+  AuditLogListParams,
+  AuditLogListRes,
+} from 'src/dtos/audit-logs.dto';
 import {
   type AuditLogWhereInput,
   LogType,
@@ -16,7 +20,6 @@ import {
   ErrCode,
   extractEntityIdFromPayload,
   generateAuditLogDescription,
-  getIpAndUa,
   getSecurityEventDescription,
   IdUtil,
   inferEntityTypeFromActivityType,
@@ -31,8 +34,6 @@ type CreateSecurityEventParams = {
   userId?: string;
   eventType: SecurityEventType;
   severity?: SecurityEventSeverity;
-  ip?: string;
-  userAgent?: string;
   location?: Record<string, any>;
   metadata?: Record<string, any>;
 };
@@ -109,12 +110,8 @@ export class AuditLogsService {
   }
 
   logSecurityEvent(params: CreateSecurityEventParams): Promise<string> {
-    const { userId, eventType, severity, ip, userAgent, location, metadata } =
-      params;
+    const { userId, eventType, severity, location, metadata } = params;
 
-    const { clientIp, userAgent: ctxUserAgent } = getIpAndUa();
-    const finalIp = ip ?? clientIp;
-    const finalUserAgent = userAgent ?? ctxUserAgent;
     const finalSeverity = severity ?? inferSeverityFromEventType(eventType);
 
     return this.push({
@@ -125,8 +122,6 @@ export class AuditLogsService {
       severity: finalSeverity,
       description: getSecurityEventDescription(eventType, metadata),
       userId,
-      ip: finalIp,
-      userAgent: finalUserAgent,
       resolved: false,
       level: LOG_LEVEL.WARNING,
     });
@@ -183,7 +178,7 @@ export class AuditLogsService {
     });
   }
 
-  async list(params: AuditLogListParams) {
+  async list(params: AuditLogListParams): Promise<AuditLogListRes> {
     const {
       take,
       skip,
@@ -286,7 +281,6 @@ export class AuditLogsService {
         sessionId: true,
         entityType: true,
         entityId: true,
-        description: true,
         ip: true,
         userAgent: true,
         requestId: true,
@@ -303,10 +297,12 @@ export class AuditLogsService {
       orderBy: { occurredAt: 'desc' },
     });
 
-    const formattedDocs = docs.map((doc) => ({
-      ...doc,
-      id: doc.id.toString(),
-    }));
+    const formattedDocs: AuditLogItem[] = docs.map((doc) => {
+      return {
+        ...doc,
+        id: doc.id.toString(),
+      };
+    });
 
     return {
       docs: formattedDocs,

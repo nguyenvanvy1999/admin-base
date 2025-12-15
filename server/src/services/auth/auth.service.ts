@@ -128,8 +128,6 @@ export class AuthService {
         this.deps.auditLogService.logSecurityEvent({
           userId: user.id,
           eventType: SecurityEventType.login_failed,
-          ip: clientIp,
-          userAgent,
           metadata: { method: 'email', reason: 'password_mismatch' },
         }),
       ]);
@@ -162,8 +160,6 @@ export class AuthService {
         this.deps.auditLogService.logSecurityEvent({
           userId: user.id,
           eventType: SecurityEventType.login_failed,
-          ip: clientIp,
-          userAgent,
           metadata: { method: 'email', reason: 'security_blocked' },
         }),
       ]);
@@ -253,8 +249,6 @@ export class AuthService {
       this.deps.auditLogService.logSecurityEvent({
         userId: user.id,
         eventType: SecurityEventType.login_success,
-        ip: clientIp,
-        userAgent,
         metadata: {
           method: 'email',
           isNewDevice: security?.isNewDevice ?? false,
@@ -445,8 +439,6 @@ export class AuthService {
       }
     }
 
-    const { clientIp, userAgent } = getIpAndUa();
-
     await this.deps.db.user.update({
       where: { id: userId },
       data: {
@@ -464,8 +456,6 @@ export class AuthService {
       this.deps.auditLogService.logSecurityEvent({
         userId,
         eventType: SecurityEventType.password_changed,
-        ip: clientIp,
-        userAgent,
       }),
     ]);
   }
@@ -504,8 +494,6 @@ export class AuthService {
       select: { id: true },
     });
 
-    const { clientIp, userAgent } = getIpAndUa();
-
     await this.deps.sessionService.revoke(userId);
 
     await Promise.all([
@@ -516,8 +504,6 @@ export class AuthService {
       this.deps.auditLogService.logSecurityEvent({
         userId: user.id,
         eventType: SecurityEventType.password_reset_completed,
-        ip: clientIp,
-        userAgent,
       }),
     ]);
   }

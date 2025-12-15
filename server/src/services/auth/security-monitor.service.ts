@@ -63,7 +63,6 @@ export class SecurityMonitorService {
     if (isNewDevice && securitySettings.auditWarning) {
       await this.recordUnknownDeviceWarning({
         userId,
-        deviceFingerprint,
         method,
       });
     }
@@ -93,11 +92,9 @@ export class SecurityMonitorService {
 
   private async recordUnknownDeviceWarning(params: {
     userId: string;
-    deviceFingerprint: string;
     method: LoginMethod;
   }): Promise<void> {
     const { userId, method } = params;
-    const { userAgent, clientIp } = getIpAndUa();
 
     await this.deps.auditLogService.push({
       logType: LogType.security,
@@ -107,8 +104,6 @@ export class SecurityMonitorService {
       severity: SecurityEventSeverity.high,
       description: 'Suspicious login from unknown device',
       userId,
-      ip: clientIp,
-      userAgent,
       level: LOG_LEVEL.WARNING,
     });
   }

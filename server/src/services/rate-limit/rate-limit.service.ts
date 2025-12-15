@@ -6,7 +6,7 @@ import {
   SecurityEventType,
 } from 'src/generated';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
-import { ACTIVITY_TYPE, getIpAndUa } from 'src/share';
+import { ACTIVITY_TYPE } from 'src/share';
 
 type CheckAndIncrementParams = {
   identifier: string;
@@ -14,8 +14,6 @@ type CheckAndIncrementParams = {
   limit: number;
   windowSeconds: number;
   userId?: string;
-  ip?: string;
-  userAgent?: string;
 };
 
 type BlockParams = {
@@ -40,15 +38,7 @@ export class RateLimitService {
   async checkAndIncrement(
     params: CheckAndIncrementParams,
   ): Promise<{ allowed: boolean; count: number; remaining: number }> {
-    const {
-      identifier,
-      routePath,
-      limit,
-      windowSeconds,
-      userId,
-      ip,
-      userAgent,
-    } = params;
+    const { identifier, routePath, limit, windowSeconds, userId } = params;
 
     const now = new Date();
     const windowStart = new Date(
@@ -83,10 +73,6 @@ export class RateLimitService {
     await rateLimitCache.set(cacheKey, currentCount, windowSeconds);
 
     if (currentCount > limit) {
-      const { clientIp, userAgent: ctxUserAgent } = getIpAndUa();
-      const finalIp = ip ?? clientIp;
-      const finalUserAgent = userAgent ?? ctxUserAgent;
-
       await auditLogsService.push({
         logType: LogType.rate_limit,
         type: ACTIVITY_TYPE.INTERNAL_ERROR,
@@ -101,8 +87,6 @@ export class RateLimitService {
           windowSeconds,
         },
         userId,
-        ip: finalIp,
-        userAgent: finalUserAgent,
       });
 
       return {
