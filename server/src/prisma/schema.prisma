@@ -114,8 +114,15 @@ enum NotificationStatus {
 enum RateLimitStrategy {
   user
   ip
-  ip_ua 
+  ip_ua
   custom
+}
+
+// API key status
+enum ApiKeyStatus {
+  active
+  revoked
+  expired
 }
 
 // ============================================
@@ -164,16 +171,17 @@ model User {
   lastFailedLoginAt       DateTime? @map("last_failed_login_at")
   suspiciousActivityCount Int       @default(0) @map("suspicious_activity_count")
 
-  roles                RolePlayer[]
-  sessions             Session[]
-  referralMade         Referral[]         @relation("UserReferrer")
-  referralsGot         Referral[]         @relation("UserReferred")
-  authProviders        UserAuthProvider[]
-  securityEvents       SecurityEvent[]
-  ipWhitelist          UserIpWhitelist[]
-  notifications        Notification[]
-  notificationPreferences Json? @map("notification_preferences")
-  auditLogs            AuditLog[]
+  roles                   RolePlayer[]
+  sessions                Session[]
+  referralMade            Referral[]         @relation("UserReferrer")
+  referralsGot            Referral[]         @relation("UserReferred")
+  authProviders           UserAuthProvider[]
+  securityEvents          SecurityEvent[]
+  ipWhitelist             UserIpWhitelist[]
+  notifications           Notification[]
+  notificationPreferences Json?              @map("notification_preferences")
+  auditLogs               AuditLog[]
+  apiKeys                 ApiKey[]
 
   pendingRef Int @default(0) @map("pending_ref")
   activeRef  Int @default(0) @map("active_ref")
@@ -315,7 +323,7 @@ model Session {
   // Session type and additional tracking
   sessionType SessionType @default(web) @map("session_type")
   userAgent   String?     @map("user_agent")
-  location    Json?    
+  location    Json?
   auditLogs   AuditLog[]
 
   @@index([createdById])
@@ -389,18 +397,18 @@ model Proxy {
 
 // Security event tracking for authentication and security operations
 model SecurityEvent {
-  id        String                @id
-  userId    String?               @map("user_id")
-  eventType SecurityEventType     @map("event_type")
-  severity  SecurityEventSeverity @default(medium)
-  ip        String?
-  userAgent String?               @map("user_agent")
-  location  Json?                 // GeoIP data
-  metadata  Json?
-  resolved  Boolean               @default(false)
-  resolvedAt DateTime?            @map("resolved_at")
-  resolvedBy String?              @map("resolved_by")
-  created   DateTime              @default(now())
+  id         String                @id
+  userId     String?               @map("user_id")
+  eventType  SecurityEventType     @map("event_type")
+  severity   SecurityEventSeverity @default(medium)
+  ip         String?
+  userAgent  String?               @map("user_agent")
+  location   Json? // GeoIP data
+  metadata   Json?
+  resolved   Boolean               @default(false)
+  resolvedAt DateTime?             @map("resolved_at")
+  resolvedBy String?               @map("resolved_by")
+  created    DateTime              @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
@@ -468,16 +476,16 @@ model AuditLog {
 
 // Notification templates for reusable notification content
 model NotificationTemplate {
-  id        String   @id
-  code      String   @unique
+  id        String           @id
+  code      String           @unique
   name      String
   subject   String?
   body      String
   type      NotificationType
   variables Json?
-  enabled   Boolean  @default(true)
-  created   DateTime @default(now())
-  modified  DateTime @updatedAt
+  enabled   Boolean          @default(true)
+  created   DateTime         @default(now())
+  modified  DateTime         @updatedAt
 
   notifications Notification[]
 
@@ -488,7 +496,7 @@ model NotificationTemplate {
 model Notification {
   id         String             @id
   userId     String             @map("user_id")
-  templateId String?             @map("template_id")
+  templateId String?            @map("template_id")
   type       NotificationType
   status     NotificationStatus @default(pending)
   subject    String?
@@ -503,7 +511,7 @@ model Notification {
   created  DateTime @default(now())
   modified DateTime @updatedAt
 
-  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   template NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
 
   @@index([userId, status], name: "notification_user_status_idx")
@@ -512,41 +520,45 @@ model Notification {
   @@map("notifications")
 }
 
-// Rate limit tracking for API throttling and DDoS protection
-model RateLimit {
-  id          String         @id
-  identifier  String         // userId, IP, email, etc.
-  routePath   String         @map("route_path")
-  count       Int            @default(0)
-  limit       Int
-  windowStart DateTime       @map("window_start")
-  windowEnd   DateTime       @map("window_end")
-  blocked     Boolean        @default(false)
-  blockedUntil DateTime?     @map("blocked_until")
-  created     DateTime       @default(now())
-  modified    DateTime       @updatedAt
-
-  @@unique([identifier, routePath, windowStart], name: "rate_limit_unique")
-  @@index([identifier, routePath], name: "rate_limit_identifier_route_idx")
-  @@index([blocked], name: "rate_limit_blocked_idx")
-  @@index([windowEnd], name: "rate_limit_windowEnd_idx")
-  @@map("rate_limits")
-}
-
 // Rate limit configuration settings
 model RateLimitConfig {
-  id            String              @id
-  routePath     String              @map("route_path")
+  id            String            @id
+  routePath     String            @map("route_path")
   limit         Int
-  windowSeconds Int                 @map("window_seconds")
+  windowSeconds Int               @map("window_seconds")
   strategy      RateLimitStrategy
-  enabled       Boolean             @default(true)
+  enabled       Boolean           @default(true)
   description   String?
-  created       DateTime            @default(now())
-  modified      DateTime            @updatedAt
+  created       DateTime          @default(now())
+  modified      DateTime          @updatedAt
 
   @@unique([routePath], name: "rate_limit_config_unique")
   @@index([routePath], name: "rate_limit_config_routePath_idx")
   @@index([enabled], name: "rate_limit_config_enabled_idx")
   @@map("rate_limit_configs")
+}
+
+// API key management for third-party integrations
+model ApiKey {
+  id          String       @id
+  userId      String       @map("user_id")
+  name        String
+  key         String       @unique // Hash của (api_key + pepper) với bcrypt
+  keyPrefix   String       @map("key_prefix") // First 16 chars for display and lookup
+  status      ApiKeyStatus @default(active)
+  lastUsedAt  DateTime?    @map("last_used_at")
+  expiresAt   DateTime?    @map("expires_at")
+  permissions Json? // Scoped permissions array
+  ipWhitelist String[]     @default([]) @map("ip_whitelist") // IP addresses whitelist
+  metadata    Json? // Additional metadata
+  created     DateTime     @default(now())
+  modified    DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "api_key_userId_idx")
+  @@index([status], name: "api_key_status_idx")
+  @@index([keyPrefix], name: "api_key_prefix_idx")
+  @@index([expiresAt], name: "api_key_expiresAt_idx")
+  @@map("api_keys")
 }
