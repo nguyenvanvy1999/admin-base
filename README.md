@@ -55,7 +55,7 @@ bun run dev:client
 
 > Vite chạy hoàn toàn bằng Bun CLI giống như tài
 > liệu [bun.com/docs/guides/ecosystem/vite](https://bun.com/docs/guides/ecosystem/vite) nên bạn có thể dùng
-`bun run dev:client`, `bun run build:client` hoặc `bun run preview:client` cho vòng đời FE.
+> `bun run dev:client`, `bun run build:client` hoặc `bun run preview:client` cho vòng đời FE.
 
 6. **Open your browser**
 
@@ -197,6 +197,7 @@ client/src/
 ### ✅ Đã Triển Khai Hoàn Chỉnh
 
 - **Authentication & Authorization**
+
   - User registration, login, logout
   - Multi-factor authentication (MFA/TOTP)
   - OAuth integration (Google)
@@ -205,23 +206,27 @@ client/src/
   - Security events tracking
 
 - **User Management**
+
   - User CRUD operations
   - User status management
   - IP whitelist per user
   - User detail & activity tracking
 
 - **Role & Permission System**
+
   - Role-based access control (RBAC)
   - Permission management
   - Role assignment & management
 
 - **Security Features**
+
   - Rate limiting (IP, User, IP+UA, Custom strategies)
   - IP whitelist management
   - Audit logs
   - Security events monitoring
 
 - **System Management**
+
   - Settings management
   - Internationalization (i18n)
   - Notification system
@@ -247,6 +252,7 @@ MIT License
 ## Contributing
 
 Khi đóng góp code, vui lòng:
+
 - Tuân thủ coding conventions của dự án
 - Chạy `bun run check` trước khi commit
 - Viết tests cho các tính năng mới
