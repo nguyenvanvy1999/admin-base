@@ -1,5 +1,7 @@
 import type { JWTPayload } from 'jose';
 import type {
+  AuditLogCategory,
+  AuditLogVisibility,
   LogType,
   PrismaClient,
   SecurityEventSeverity,
@@ -221,23 +223,26 @@ export type AuditLogEntry<T extends ACTIVITY_TYPE = ACTIVITY_TYPE> = {
   sessionId?: string | null;
   entityType?: string | null;
   entityId?: string | null;
+  entityDisplay?: Record<string, unknown> | null;
+  subjectUserId?: string | null;
   description?: string | null;
   ip?: string | null;
   userAgent?: string | null;
   logType?: LogType;
+  visibility?: AuditLogVisibility;
   eventType?: SecurityEventType;
   severity?: SecurityEventSeverity;
   resolved?: boolean;
   resolvedAt?: Date | null;
   resolvedBy?: string | null;
   type: T;
-  payload: ActivityTypeMap[T];
+  payload: ActivityTypeMap[T] | Record<string, unknown>;
   level?: LOG_LEVEL;
   timestamp?: Date;
   requestId?: string | null;
   traceId?: string | null;
   correlationId?: string | null;
-  category?: AuditEventCategory;
+  category?: AuditEventCategory | AuditLogCategory;
 };
 
 export type EnrichedAuditLogEntry = AuditLogEntry & {

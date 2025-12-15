@@ -10,7 +10,11 @@ import {
   batchLogQueue,
   type IAuditLogQueue,
 } from 'src/config/queue';
-import { LogType } from 'src/generated';
+import {
+  type AuditLogCategory,
+  AuditLogVisibility,
+  LogType,
+} from 'src/generated';
 import type { AuditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import type { EmailService } from 'src/services/mail/email.service';
@@ -35,15 +39,19 @@ const JOB_NAME = 'scheduled-flush';
 interface BufferedLog {
   id: string;
   payload: object;
+  description?: string | null;
   level: string;
   log_type: LogType;
+  category?: AuditLogCategory | null;
+  visibility: AuditLogVisibility;
   event_type?: string | null;
   severity?: string | null;
   user_id?: string | null;
+  subject_user_id?: string | null;
   session_id?: string | null;
   entity_type?: string | null;
   entity_id?: string | null;
-  description?: string | null;
+  entity_display?: object | null;
   ip?: string | null;
   user_agent?: string | null;
   request_id?: string | null;
@@ -213,15 +221,19 @@ export class AuditLogWorkerService {
       return {
         id: jobData.logId,
         payload: jobData.payload,
+        description: jobData.description,
         level: jobData.level ?? LOG_LEVEL.INFO,
         log_type: jobData.logType ?? LogType.audit,
+        category: (jobData.category as AuditLogCategory | undefined) ?? null,
+        visibility: jobData.visibility ?? AuditLogVisibility.actor_only,
         event_type: jobData.eventType ?? null,
         severity: jobData.severity ?? null,
         user_id: jobData.userId,
+        subject_user_id: jobData.subjectUserId ?? null,
         session_id: jobData.sessionId,
         entity_type: jobData.entityType,
         entity_id: jobData.entityId,
-        description: jobData.description,
+        entity_display: jobData.entityDisplay ?? null,
         ip: jobData.ip,
         user_agent: jobData.userAgent,
         request_id: jobData.requestId,

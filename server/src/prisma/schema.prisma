@@ -142,6 +142,21 @@ enum LogLevel {
   critical
 }
 
+enum AuditLogCategory {
+  cud
+  security
+  internal
+  system
+}
+
+enum AuditLogVisibility {
+  admin_only
+  actor_only
+  subject_only
+  actor_and_subject
+  public
+}
+
 // ============================================
 // System/Auth Models
 // ============================================
@@ -433,11 +448,13 @@ model UserIpWhitelist {
 
 // Unified audit log for all system events (audit logs + security events + rate limits)
 model AuditLog {
-  id         BigInt   @id
-  logType    LogType  @map("log_type")
-  level      LogLevel @default(info) @map("level")
-  occurredAt DateTime @default(now()) @map("occurred_at")
-  created    DateTime @default(now())
+  id         BigInt             @id
+  logType    LogType            @map("log_type")
+  level      LogLevel           @default(info) @map("level")
+  category   AuditLogCategory?  @map("category")
+  visibility AuditLogVisibility @default(actor_only) @map("visibility")
+  occurredAt DateTime           @default(now()) @map("occurred_at")
+  created    DateTime           @default(now())
 
   // Core relationships (indexed for fast queries)
   userId    String? @map("user_id")
@@ -463,12 +480,19 @@ model AuditLog {
   // - description: Human-readable description
   // - location: GeoIP data (for security events)
   // - metadata: Event-specific data (rate limit details, API params, etc.)
-  payload Json
+  payload     Json
+  description String?
 
   // Security event resolution (only for security events)
   resolved   Boolean   @default(false)
   resolvedAt DateTime? @map("resolved_at")
   resolvedBy String?   @map("resolved_by")
+
+  // Subject user tracking (user impacted by the event)
+  subjectUserId String? @map("subject_user_id")
+
+  // Optional denormalized entity preview (title, slug, etc.)
+  entityDisplay Json? @map("entity_display")
 
   user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
@@ -476,9 +500,12 @@ model AuditLog {
   @@index([created], map: "audit_log_created_idx")
   @@index([logType], map: "audit_log_type_idx")
   @@index([level], map: "audit_log_level_idx")
+  @@index([category], map: "audit_log_category_idx")
+  @@index([visibility], map: "audit_log_visibility_idx")
   @@index([userId, occurredAt(sort: Desc)], map: "audit_log_user_id_occurred_at_idx")
   @@index([sessionId, occurredAt(sort: Desc)], map: "audit_log_session_id_occurred_at_idx")
   @@index([entityType, entityId], map: "audit_log_entity_idx")
+  @@index([subjectUserId], map: "audit_log_subject_user_id_idx")
   @@index([ip, occurredAt(sort: Desc)], map: "audit_log_ip_occurred_at_idx")
   @@index([eventType], map: "audit_log_eventType_idx")
   @@index([severity], map: "audit_log_severity_idx")

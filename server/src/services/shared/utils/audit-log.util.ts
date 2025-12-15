@@ -1,10 +1,9 @@
+import { isCudPayload } from 'src/services/audit-logs/audit-log.helpers';
 import { ACTIVITY_TYPE } from 'src/services/shared/constants';
-import {
-  type ActivityTypeMap,
-  type AuditChangeSet,
-  AuditEventCategory,
-  type CudPayloadBase,
-  type InternalEventPayload,
+import type {
+  ActivityTypeMap,
+  AuditChangeSet,
+  InternalEventPayload,
 } from 'src/share/type';
 
 export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
@@ -138,16 +137,6 @@ export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
   }
 }
 
-export function isCudPayload(
-  payload: unknown,
-): payload is CudPayloadBase<string, any, any, any> {
-  return (
-    typeof payload === 'object' &&
-    payload !== null &&
-    (payload as { category?: unknown }).category === AuditEventCategory.CUD
-  );
-}
-
 function describeCudPayload(payload: unknown): string | null {
   if (!isCudPayload(payload)) return null;
 
@@ -163,59 +152,4 @@ function summarizeChanges(changes?: AuditChangeSet): string {
   const keys = Object.keys(changes);
   if (keys.length === 0) return '';
   return ` [${keys.join(', ')}]`;
-}
-
-export function inferEntityTypeFromActivityType(
-  type: ACTIVITY_TYPE,
-  payload?: ActivityTypeMap[ACTIVITY_TYPE],
-): string | null {
-  if (isCudPayload(payload)) {
-    return payload.entityType;
-  }
-
-  switch (type) {
-    case ACTIVITY_TYPE.CREATE_USER:
-    case ACTIVITY_TYPE.UPDATE_USER:
-      return 'user';
-
-    case ACTIVITY_TYPE.CREATE_ROLE:
-    case ACTIVITY_TYPE.UPDATE_ROLE:
-    case ACTIVITY_TYPE.DEL_ROLE:
-      return 'role';
-
-    case ACTIVITY_TYPE.CREATE_IP_WHITELIST:
-    case ACTIVITY_TYPE.DEL_IP_WHITELIST:
-      return 'ip_whitelist';
-
-    case ACTIVITY_TYPE.UPDATE_SETTING:
-      return 'setting';
-
-    case ACTIVITY_TYPE.REVOKE_SESSION:
-      return 'session';
-
-    default:
-      return null;
-  }
-}
-
-export function extractEntityIdFromPayload<T extends ACTIVITY_TYPE>(
-  type: T,
-  payload: ActivityTypeMap[T],
-): string | null {
-  if (isCudPayload(payload)) {
-    return payload.entityId;
-  }
-
-  switch (type) {
-    case ACTIVITY_TYPE.CREATE_USER:
-    case ACTIVITY_TYPE.UPDATE_USER:
-    case ACTIVITY_TYPE.CREATE_ROLE:
-    case ACTIVITY_TYPE.UPDATE_ROLE:
-    case ACTIVITY_TYPE.REVOKE_SESSION:
-    case ACTIVITY_TYPE.UPDATE_SETTING:
-      return null;
-
-    default:
-      return null;
-  }
 }
