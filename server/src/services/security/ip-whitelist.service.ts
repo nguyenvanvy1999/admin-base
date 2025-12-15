@@ -11,6 +11,7 @@ import type {
   UserIpWhitelistSelect,
   UserIpWhitelistWhereInput,
 } from 'src/generated';
+import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import { DB_PREFIX } from 'src/services/shared/constants';
 import {
   applyPermissionFilter,
@@ -19,7 +20,8 @@ import {
   executeListQuery,
   normalizeSearchTerm,
 } from 'src/services/shared/utils';
-import { ErrCode, IdUtil } from 'src/share';
+import { ACTIVITY_TYPE, AuditEventCategory, ErrCode, IdUtil } from 'src/share';
+import type { AuditLogsService } from '../audit-logs';
 
 const ipWhitelistSelect = {
   id: true,
@@ -31,9 +33,14 @@ const ipWhitelistSelect = {
 
 export class IpWhitelistService {
   constructor(
-    private readonly deps: { db: IDb; cache: IUserIpWhitelistCache } = {
+    private readonly deps: {
+      db: IDb;
+      cache: IUserIpWhitelistCache;
+      auditLogService: AuditLogsService;
+    } = {
       db,
       cache: userIpWhitelistCache,
+      auditLogService: auditLogsService,
     },
   ) {}
 
@@ -177,7 +184,7 @@ export class IpWhitelistService {
       const existing = await ensureExists(
         this.deps.db.userIpWhitelist,
         where,
-        { id: true, userId: true },
+        { id: true, userId: true, ip: true, note: true },
         ErrCode.IPWhitelistNotFound,
       );
 
@@ -187,6 +194,22 @@ export class IpWhitelistService {
         select: { id: true },
       });
       await this.invalidateCache(existing.userId);
+
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.UPDATE_IP_WHITELIST,
+        userId: currentUserId,
+        payload: {
+          category: AuditEventCategory.CUD,
+          entityType: 'ip_whitelist',
+          entityId: id,
+          action: 'update',
+          changes: {
+            ip: { previous: existing.ip, next: ip },
+            note: { previous: existing.note, next: note },
+          },
+        },
+      });
+
       return { id: updated.id };
     } else {
       const finalUserId = hasViewPermission ? userId : currentUserId;
@@ -201,6 +224,23 @@ export class IpWhitelistService {
         select: { id: true },
       });
       await this.invalidateCache(finalUserId);
+
+      await this.deps.auditLogService.push({
+        type: ACTIVITY_TYPE.CREATE_IP_WHITELIST,
+        userId: currentUserId,
+        payload: {
+          category: AuditEventCategory.CUD,
+          entityType: 'ip_whitelist',
+          entityId: created.id,
+          action: 'create',
+          changes: {
+            ip: { previous: null, next: ip },
+            note: { previous: null, next: note },
+            userId: { previous: null, next: finalUserId },
+          },
+        },
+      });
+
       return { id: created.id };
     }
   }
@@ -223,7 +263,7 @@ export class IpWhitelistService {
 
     const affectedUsers = await this.deps.db.userIpWhitelist.findMany({
       where,
-      select: { userId: true },
+      select: { id: true, userId: true, ip: true },
     });
 
     await this.deps.db.userIpWhitelist.deleteMany({ where });
@@ -234,10 +274,25 @@ export class IpWhitelistService {
     await Promise.all(
       uniqueUserIds.map((userId) => this.invalidateCache(userId)),
     );
+
+    if (affectedUsers.length > 0) {
+      const auditEntries = affectedUsers.map((item) => ({
+        type: ACTIVITY_TYPE.DEL_IP_WHITELIST as const,
+        userId: currentUserId,
+        payload: {
+          category: AuditEventCategory.CUD,
+          entityType: 'ip_whitelist' as const,
+          entityId: item.id,
+          action: 'delete',
+          changes: {
+            ips: { previous: [item.ip], next: [] },
+            userId: { previous: item.userId, next: null },
+          },
+        },
+      }));
+      await this.deps.auditLogService.pushBatch(auditEntries);
+    }
   }
 }
 
-export const ipWhitelistService = new IpWhitelistService({
-  db,
-  cache: userIpWhitelistCache,
-});
+export const ipWhitelistService = new IpWhitelistService();

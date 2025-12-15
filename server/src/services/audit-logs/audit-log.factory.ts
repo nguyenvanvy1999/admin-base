@@ -47,8 +47,6 @@ const defaultSerializer = <T extends AuditEventInput<ACTIVITY_TYPE>>({
   };
 
   if (isCudPayload(payload)) {
-    normalized.before = payload.before;
-    normalized.after = payload.after;
     normalized.changes = payload.changes;
   }
 

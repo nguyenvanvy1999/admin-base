@@ -139,11 +139,10 @@ export class UsersService {
         entityType: 'user',
         entityId: userId,
         action: 'create',
-        after: {
-          id: userId,
-          enabled: nextStatus === UserStatus.active,
-          roleIds: resolvedRoleIds,
-          username: normalizedEmail,
+        changes: {
+          enabled: { previous: null, next: nextStatus === UserStatus.active },
+          roleIds: { previous: [], next: resolvedRoleIds },
+          username: { previous: null, next: normalizedEmail },
         },
       },
       userId: actorId,
@@ -396,23 +395,11 @@ export class UsersService {
         category: AuditEventCategory.CUD,
         entityType: 'user',
         entityId: targetUserId,
-        action: 'update',
-        before: {
-          id: targetUserId,
-          actorId,
-          targetUserId,
-          reason: normalizedReason,
-          action: 'user-update',
-          changes: auditChanges,
-        },
-        after: {
-          id: targetUserId,
-          actorId,
-          targetUserId,
-          reason: normalizedReason,
-          action: 'user-update',
-          changes: auditChanges,
-        },
+        action: 'user-update',
+        id: targetUserId,
+        actorId,
+        targetUserId,
+        reason: normalizedReason,
         changes: auditChanges,
       },
     });
@@ -492,45 +479,11 @@ export class UsersService {
         category: AuditEventCategory.CUD,
         entityType: 'user',
         entityId: targetUserId,
-        action: 'update',
-        before: {
-          id: targetUserId,
-          actorId,
-          targetUserId,
-          reason: normalizedReason,
-          action: 'user-update-roles',
-          changes: {
-            roles: {
-              previous: previousRoleAssignments.map((assignment) => ({
-                roleId: assignment.roleId,
-                expiresAt: assignment.expiresAt,
-              })),
-              next: roles.map((role) => ({
-                roleId: role.roleId,
-                expiresAt: role.expiresAt,
-              })),
-            },
-          },
-        },
-        after: {
-          id: targetUserId,
-          actorId,
-          targetUserId,
-          reason: normalizedReason,
-          action: 'user-update-roles',
-          changes: {
-            roles: {
-              previous: previousRoleAssignments.map((assignment) => ({
-                roleId: assignment.roleId,
-                expiresAt: assignment.expiresAt,
-              })),
-              next: roles.map((role) => ({
-                roleId: role.roleId,
-                expiresAt: role.expiresAt,
-              })),
-            },
-          },
-        },
+        action: 'user-update-roles',
+        id: targetUserId,
+        actorId,
+        targetUserId,
+        reason: normalizedReason,
         changes: {
           roles: {
             previous: previousRoleAssignments.map((assignment) => ({

@@ -9,22 +9,6 @@ type LegacyMeta = {
   entityId?: string | null;
 };
 
-const applyCudLikeFields = (
-  raw: Record<string, unknown>,
-  normalized: NormalizedAuditPayload,
-) => {
-  if (isCudPayload(raw)) {
-    normalized.before = raw.before;
-    normalized.after = raw.after;
-    normalized.changes = raw.changes;
-    return;
-  }
-
-  if ('before' in raw) normalized.before = raw.before as unknown;
-  if ('after' in raw) normalized.after = raw.after as unknown;
-  if ('changes' in raw) normalized.changes = raw.changes as any;
-};
-
 export function normalizeLegacyPayload(
   payload: unknown,
   meta: LegacyMeta,
@@ -65,7 +49,9 @@ export function normalizeLegacyPayload(
     raw,
   };
 
-  applyCudLikeFields(raw, normalized);
+  if (isCudPayload(raw)) {
+    normalized.changes = raw.changes as any;
+  }
 
   if ('metadata' in raw) {
     normalized.meta = raw.metadata as Record<string, unknown>;

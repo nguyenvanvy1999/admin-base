@@ -510,25 +510,8 @@ export class AuthService {
         category: AuditEventCategory.CUD,
         entityType: 'user',
         entityId: userId,
-        action: 'update',
-        before: {
-          id: userId,
-          changes: {
-            status: {
-              previous: UserStatus.inactive,
-              next: UserStatus.active,
-            },
-          },
-        },
-        after: {
-          id: userId,
-          changes: {
-            status: {
-              previous: UserStatus.inactive,
-              next: UserStatus.active,
-            },
-          },
-        },
+        action: 'user-update',
+        id: userId,
         changes: {
           status: { previous: UserStatus.inactive, next: UserStatus.active },
         },
@@ -621,7 +604,7 @@ export class AuthService {
         entityType: 'session',
         entityId: sessionId,
         action: 'delete',
-        before: { sessionId },
+        changes: { sessionId: { previous: sessionId, next: null } },
       },
     });
 

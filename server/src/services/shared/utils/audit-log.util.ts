@@ -6,6 +6,12 @@ import type {
   InternalEventPayload,
 } from 'src/share/type';
 
+const getChangeNext = <T>(changes: AuditChangeSet | undefined, key: string) =>
+  changes?.[key]?.next as T | undefined;
+
+const getChangePrev = <T>(changes: AuditChangeSet | undefined, key: string) =>
+  changes?.[key]?.previous as T | undefined;
+
 export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
   type: T,
   payload: ActivityTypeMap[T],
@@ -61,7 +67,7 @@ export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
     case ACTIVITY_TYPE.CREATE_USER: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_USER];
       const userId = p.entityId;
-      const username = p.after?.username;
+      const username = getChangeNext<string>(p.changes, 'username');
       return `User created: ${username ?? userId} (${userId})`;
     }
 
@@ -73,19 +79,19 @@ export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
 
     case ACTIVITY_TYPE.CREATE_ROLE: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_ROLE];
-      const title = p.after?.title;
+      const title = getChangeNext<string>(p.changes, 'title');
       return `Role created: ${title ?? p.entityId} (${p.entityId})`;
     }
 
     case ACTIVITY_TYPE.UPDATE_ROLE: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.UPDATE_ROLE];
-      const title = p.after?.title;
+      const title = getChangeNext<string>(p.changes, 'title');
       return `Role updated: ${title ?? p.entityId} (${p.entityId})`;
     }
 
     case ACTIVITY_TYPE.DEL_ROLE: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.DEL_ROLE];
-      const ids = p.before?.roleIds ?? [];
+      const ids = getChangePrev<string[]>(p.changes, 'roleIds') ?? [];
       return `Roles deleted: ${ids.length} role(s)`;
     }
 
@@ -106,15 +112,23 @@ export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
     case ACTIVITY_TYPE.CREATE_IP_WHITELIST: {
       const p =
         payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_IP_WHITELIST];
-      const ip = p.after?.ip ?? p.entityId;
-      const note = p.after?.note;
+      const ip = getChangeNext<string>(p.changes, 'ip') ?? p.entityId;
+      const note = getChangeNext<string>(p.changes, 'note');
       return `IP whitelist created: ${ip}${note ? ` (${note})` : ''}`;
+    }
+
+    case ACTIVITY_TYPE.UPDATE_IP_WHITELIST: {
+      const p =
+        payload as ActivityTypeMap[typeof ACTIVITY_TYPE.UPDATE_IP_WHITELIST];
+      const ip = getChangeNext<string>(p.changes, 'ip') ?? p.entityId;
+      const note = getChangeNext<string>(p.changes, 'note');
+      return `IP whitelist updated: ${ip}${note ? ` (${note})` : ''}`;
     }
 
     case ACTIVITY_TYPE.DEL_IP_WHITELIST: {
       const p =
         payload as ActivityTypeMap[typeof ACTIVITY_TYPE.DEL_IP_WHITELIST];
-      const ips = p.before?.ips ?? [];
+      const ips = getChangePrev<string[]>(p.changes, 'ips') ?? [];
       return `IP whitelist deleted: ${ips.length} IP(s)`;
     }
 

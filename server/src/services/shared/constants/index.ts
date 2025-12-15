@@ -67,6 +67,7 @@ export enum ACTIVITY_TYPE {
   RESET_MFA = 'reset-mfa',
 
   CREATE_IP_WHITELIST = 'create-ipwhitelist',
+  UPDATE_IP_WHITELIST = 'update-ipwhitelist',
   DEL_IP_WHITELIST = 'del-ipwhitelist',
 
   UPDATE_SETTING = 'update-setting',

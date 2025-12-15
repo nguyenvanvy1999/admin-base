@@ -152,6 +152,14 @@ export const AUDIT_EVENT_DEFINITIONS: AuditEventRegistry = {
       getSubjectUserId: cudSubject,
     },
   ),
+  [ACTIVITY_TYPE.UPDATE_IP_WHITELIST]: createDefinition(
+    ACTIVITY_TYPE.UPDATE_IP_WHITELIST,
+    {
+      category: AuditLogCategory.cud,
+      visibility: AuditLogVisibility.admin_only,
+      getSubjectUserId: cudSubject,
+    },
+  ),
   [ACTIVITY_TYPE.DEL_IP_WHITELIST]: createDefinition(
     ACTIVITY_TYPE.DEL_IP_WHITELIST,
     {

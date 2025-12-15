@@ -44,7 +44,8 @@ export enum AuditEventCategory {
   INTERNAL = 'internal',
 }
 
-export type CudAction = 'create' | 'update' | 'delete';
+// Allow custom action labels while keeping common defaults
+export type CudAction = 'create' | 'update' | 'delete' | string;
 export type AuditChangeSet = Record<
   string,
   { previous: unknown; next: unknown }
@@ -59,39 +60,22 @@ export type AnyCudPayload =
 export type CudPayloadBase<
   EntityType extends string = string,
   Action extends CudAction | undefined = CudAction | undefined,
-  Before = BaseCudSnapshot | undefined,
-  After = BaseCudSnapshot | undefined,
 > = {
-  category: AuditEventCategory.CUD;
+  category: AuditEventCategory;
   entityType: EntityType;
   entityId: string;
   action?: Action;
-  before?: Before;
-  after?: After;
   changes?: AuditChangeSet;
 };
 
-export type CudCreatePayload<
-  EntityType extends string,
-  After = Record<string, unknown>,
-> = CudPayloadBase<EntityType, 'create' | undefined, undefined, After> & {
-  after?: After;
-};
+export type CudCreatePayload<EntityType extends string> =
+  CudPayloadBase<EntityType>;
 
-export type CudUpdatePayload<
-  EntityType extends string,
-  Snapshot = Record<string, unknown>,
-> = CudPayloadBase<EntityType, 'update', Snapshot, Snapshot> & {
-  before: Snapshot;
-  after: Snapshot;
-};
+export type CudUpdatePayload<EntityType extends string> =
+  CudPayloadBase<EntityType>;
 
-export type CudDeletePayload<
-  EntityType extends string,
-  Before = Record<string, unknown>,
-> = CudPayloadBase<EntityType, 'delete' | undefined, Before, undefined> & {
-  before?: Before;
-};
+export type CudDeletePayload<EntityType extends string> =
+  CudPayloadBase<EntityType>;
 
 export type SecurityEventPayload = {
   category: AuditEventCategory.SECURITY;
@@ -141,34 +125,13 @@ export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
     providerId: string;
   } & BaseErrorPayload;
 
-  [ACTIVITY_TYPE.DEL_ROLE]: CudDeletePayload<'role', { roleIds: string[] }>;
+  [ACTIVITY_TYPE.DEL_ROLE]: CudDeletePayload<'role'>;
 
-  [ACTIVITY_TYPE.CREATE_ROLE]: CudCreatePayload<
-    'role',
-    {
-      id: string;
-      description: string | null;
-      title: string;
-      permissionIds: string[];
-      playerIds: string[];
-    }
-  >;
+  [ACTIVITY_TYPE.CREATE_ROLE]: CudCreatePayload<'role'>;
 
-  [ACTIVITY_TYPE.UPDATE_ROLE]: CudUpdatePayload<
-    'role',
-    {
-      id: string;
-      description: string | null;
-      title: string;
-      permissionIds: string[];
-      playerIds: string[];
-    }
-  >;
+  [ACTIVITY_TYPE.UPDATE_ROLE]: CudUpdatePayload<'role'>;
 
-  [ACTIVITY_TYPE.REVOKE_SESSION]: CudDeletePayload<
-    'session',
-    { sessionId: string }
-  >;
+  [ACTIVITY_TYPE.REVOKE_SESSION]: CudDeletePayload<'session'>;
 
   [ACTIVITY_TYPE.RESET_MFA]: {
     method?: MfaMethod;
@@ -176,42 +139,22 @@ export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
   } & BaseErrorPayload &
     BaseActorActionPayload;
 
-  [ACTIVITY_TYPE.CREATE_IP_WHITELIST]: CudCreatePayload<
-    'ip_whitelist',
-    {
-      ip: string;
-      note?: string;
-    }
-  >;
+  [ACTIVITY_TYPE.CREATE_IP_WHITELIST]: CudCreatePayload<'ip_whitelist'>;
 
-  [ACTIVITY_TYPE.DEL_IP_WHITELIST]: CudDeletePayload<
-    'ip_whitelist',
-    { ips: string[] }
-  >;
+  [ACTIVITY_TYPE.UPDATE_IP_WHITELIST]: CudUpdatePayload<'ip_whitelist'>;
 
-  [ACTIVITY_TYPE.UPDATE_SETTING]: CudUpdatePayload<
-    'setting',
-    { key: string; value: string }
-  >;
+  [ACTIVITY_TYPE.DEL_IP_WHITELIST]: CudDeletePayload<'ip_whitelist'>;
 
-  [ACTIVITY_TYPE.CREATE_USER]: CudCreatePayload<
-    'user',
-    {
-      id: string;
-      enabled: boolean;
-      roleIds: string[];
-      username: string;
-    }
-  >;
+  [ACTIVITY_TYPE.UPDATE_SETTING]: CudUpdatePayload<'setting'>;
 
-  [ACTIVITY_TYPE.UPDATE_USER]: CudUpdatePayload<
-    'user',
-    {
+  [ACTIVITY_TYPE.CREATE_USER]: CudCreatePayload<'user'>;
+
+  [ACTIVITY_TYPE.UPDATE_USER]: CudUpdatePayload<'user'> &
+    BaseActorActionPayload & {
       id: string;
       action?: ActionType;
       changes?: AuditChangeSet;
-    } & BaseActorActionPayload
-  >;
+    };
 
   [ACTIVITY_TYPE.INTERNAL_ERROR]: InternalEventPayload;
 

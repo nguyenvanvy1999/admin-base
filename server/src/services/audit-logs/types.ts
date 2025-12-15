@@ -20,8 +20,6 @@ export type NormalizedAuditPayload = {
   description?: string | null;
   meta?: Record<string, unknown>;
   location?: Record<string, unknown>;
-  before?: unknown;
-  after?: unknown;
   changes?: AuditChangeSet;
   entity?: {
     type?: string | null;

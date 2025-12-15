@@ -48,8 +48,8 @@ export const settingsAdminController = new Elysia({
   .use(authorize(has('SETTING.UPDATE')))
   .post(
     '/import',
-    async ({ body }) => {
-      await settingsService.import(body);
+    async ({ body, currentUser }) => {
+      await settingsService.import(body, currentUser.id);
       return castToRes(null);
     },
     {
@@ -63,8 +63,11 @@ export const settingsAdminController = new Elysia({
   )
   .post(
     '/:id',
-    async ({ body, params: { id } }) => {
-      const result = await settingsService.update({ ...body, id });
+    async ({ body, params: { id }, currentUser }) => {
+      const result = await settingsService.update(
+        { ...body, id },
+        currentUser.id,
+      );
       return castToRes(result);
     },
     {

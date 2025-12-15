@@ -7,7 +7,7 @@ import {
 
 export const isCudPayload = (
   payload: unknown,
-): payload is CudPayloadBase<string, any, any, any> => {
+): payload is CudPayloadBase<string> => {
   return (
     typeof payload === 'object' &&
     payload !== null &&
@@ -34,6 +34,7 @@ export function inferEntityTypeFromActivityType(
       return 'role';
 
     case ACTIVITY_TYPE.CREATE_IP_WHITELIST:
+    case ACTIVITY_TYPE.UPDATE_IP_WHITELIST:
     case ACTIVITY_TYPE.DEL_IP_WHITELIST:
       return 'ip_whitelist';
 
