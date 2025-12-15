@@ -6,7 +6,7 @@ import {
   expectTypeOf,
   it,
 } from 'bun:test';
-import { AuditLogsService } from 'src/service/audit-logs/audit-logs.service';
+import { AuditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import { ACTIVITY_TYPE, LOG_LEVEL } from 'src/share';
 import { AuditLogFixtures } from 'test/fixtures';
 import { TestDataGenerator, TestLifecycle } from 'test/utils';

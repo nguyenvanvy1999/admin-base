@@ -1,6 +1,5 @@
 import type { JWTPayload } from 'jose';
 import type { PrismaClient, User } from 'src/generated';
-import type { Paths } from 'type-fest';
 import {
   ACTIVITY_TYPE,
   EmailType,
@@ -9,7 +8,8 @@ import {
   type OAUTH,
   type PERMISSIONS,
   type PurposeVerify,
-} from '../constant';
+} from 'src/services/shared/constants';
+import type { Paths } from 'type-fest';
 
 export type MfaMethod =
   | 'totp'

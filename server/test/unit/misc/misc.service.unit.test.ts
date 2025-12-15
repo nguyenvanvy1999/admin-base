@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
-import { SystemService } from 'src/service/infrastructure/system.service';
+import { SystemService } from 'src/services/infrastructure/system.service';
 import { HEALTH_STATE } from 'src/share';
 import { TestLifecycle } from 'test/utils';
 import { createPrismaMock } from 'test/utils/mocks/prisma';

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, spyOn } from 'bun:test';
-import { EmailService } from 'src/service/mail/email.service';
+import { EmailService } from 'src/services/mail/email.service';
 import { PurposeVerify } from 'src/share';
 import { createMockMailEnv } from 'test/utils/mocks/env';
 import { createMockLogger } from 'test/utils/mocks/logger';
@@ -15,26 +15,16 @@ describe('EmailService', () => {
   let mockMailer: ReturnType<typeof createMockMailer>;
   const env = createMockMailEnv() as any;
 
-  // capture the last rendered element to inspect props
-  let lastRenderedElement: any = null;
-  const renderEmail = (element: any): Promise<string> => {
-    lastRenderedElement = element;
-    return Promise.resolve('<html>rendered</html>');
-  };
-
   beforeEach(() => {
     mockLogger = createMockLogger();
     mockMailer = createMockMailer();
-    // configure behavior defaults
     mockMailer.createTransport.lastCreateOptions = null;
     mockMailer.transport.sendMail.setBehavior('resolve', {
       messageId: 'mid-1',
     });
-    lastRenderedElement = null;
 
     service = new EmailService({
       createTransport: mockMailer.createTransport,
-      renderEmail,
       logger: mockLogger,
       env,
     });
@@ -88,51 +78,60 @@ describe('EmailService', () => {
   });
 
   describe('sendEmailOtp', () => {
-    it('renders OTP email and sends with correct subject', async () => {
+    it('generates OTP email HTML and sends with correct subject', async () => {
       const spy = spyOn(service, 'sendMail').mockResolvedValue(undefined);
       await service.sendEmailOtp(email, otp, PurposeVerify.REGISTER);
-      expect(lastRenderedElement).not.toBeNull();
-      expect(spy).toHaveBeenCalledWith(
-        email,
-        'Your verify code',
-        '<html>rendered</html>',
-      );
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [calledEmail, calledSubject, calledHtml] = spy.mock.calls[0];
+      expect(calledEmail).toBe(email);
+      expect(calledSubject).toBe('Your verify code');
+      expect(calledHtml).toContain(otp);
+      expect(calledHtml).toContain('verify your email address');
+      expect(calledHtml).toContain('One-Time Password (OTP)');
       spy.mockRestore();
     });
 
     it('maps purpose REGISTER correctly', async () => {
+      const spy = spyOn(service, 'sendMail').mockResolvedValue(undefined);
       await service.sendEmailOtp(email, otp, PurposeVerify.REGISTER);
-      expect(lastRenderedElement.props.purpose).toBe(
-        'verify your email address',
-      );
+
+      const [, , html] = spy.mock.calls[0];
+      expect(html).toContain('verify your email address');
+      expect(html).toContain(otp);
+      spy.mockRestore();
     });
 
     it('maps purpose FORGOT_PASSWORD correctly', async () => {
+      const spy = spyOn(service, 'sendMail').mockResolvedValue(undefined);
       await service.sendEmailOtp(email, otp, PurposeVerify.FORGOT_PASSWORD);
-      expect(lastRenderedElement.props.purpose).toBe('reset your password');
+
+      const [, , html] = spy.mock.calls[0];
+      expect(html).toContain('reset your password');
+      expect(html).toContain(otp);
+      spy.mockRestore();
     });
 
     it('maps purpose RESET_MFA correctly', async () => {
+      const spy = spyOn(service, 'sendMail').mockResolvedValue(undefined);
       await service.sendEmailOtp(email, otp, PurposeVerify.RESET_MFA);
-      expect(lastRenderedElement.props.purpose).toBe('reset your MFA');
+
+      const [, , html] = spy.mock.calls[0];
+      expect(html).toContain('reset your MFA');
+      expect(html).toContain(otp);
+      spy.mockRestore();
     });
 
-    it('rejects when render fails and does not call sendMail', () => {
-      const failingRender = () => {
-        throw new Error('render failed');
-      };
-      service = new EmailService({
-        createTransport: mockMailer.createTransport,
-        renderEmail: failingRender,
-        logger: mockLogger,
-        env,
-      });
-      const spy = spyOn(service, 'sendMail').mockResolvedValue(undefined);
-      expect(
-        service.sendEmailOtp(email, otp, PurposeVerify.REGISTER),
-      ).rejects.toThrow();
-      expect(spy).not.toHaveBeenCalled();
-      spy.mockRestore();
+    it('sends email through sendMail method', async () => {
+      await service.sendEmailOtp(email, otp, PurposeVerify.REGISTER);
+
+      expect(mockMailer.createTransport).toHaveBeenCalledTimes(1);
+      expect(mockMailer.transport.sendMail).toHaveBeenCalledTimes(1);
+      const sendMailCall = mockMailer.transport.sendMail.mock.calls[0][0];
+      expect(sendMailCall.to).toBe(email);
+      expect(sendMailCall.subject).toBe('Your verify code');
+      expect(sendMailCall.html).toContain(otp);
+      expect(sendMailCall.html).toContain('verify your email address');
     });
   });
 });

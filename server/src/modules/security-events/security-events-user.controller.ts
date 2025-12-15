@@ -3,8 +3,8 @@ import {
   SecurityEventListQueryDto,
   SecurityEventListResDto,
 } from 'src/dtos/security-events.dto';
-import { authCheck } from 'src/service/auth/middleware';
-import { securityEventsService } from 'src/service/security-events/security-events.service';
+import { authCheck } from 'src/services/auth';
+import { securityEventsService } from 'src/services/security';
 import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 
 export const securityEventsUserController = new Elysia({

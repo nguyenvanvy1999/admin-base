@@ -9,7 +9,7 @@ import {
 } from 'bun:test';
 import type { RedisClient } from 'bun';
 import { logger } from 'src/config/logger';
-import { LockingUtil } from 'src/service/utils/locking.util';
+import { LockingUtil } from 'src/services/shared/utils/locking.util';
 import { LockFixtures } from 'test/fixtures';
 import { TestLifecycle } from 'test/utils';
 import type { RedisMock } from 'test/utils/mocks/redis';

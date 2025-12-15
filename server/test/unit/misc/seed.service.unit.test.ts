@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import type { IEnv } from 'src/config/env';
 import type { ILogger } from 'src/config/logger';
-import type { PasswordService } from 'src/service/auth/password.service';
-import { SeedService } from 'src/service/dev';
+import type { PasswordService } from 'src/services/auth/password.service';
+import { SeedService } from 'src/services/dev';
 import {
   ADMIN_USER_ID,
   defaultRoles,

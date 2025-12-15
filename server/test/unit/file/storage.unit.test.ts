@@ -4,7 +4,7 @@ import {
   type FileStorageDependencies,
   S3StorageBackend,
   type S3StorageDependencies,
-} from 'src/service/file/storage';
+} from 'src/services/file/storage';
 import { BadReqErr } from 'src/share';
 import { StorageFixtures } from 'test/fixtures';
 
