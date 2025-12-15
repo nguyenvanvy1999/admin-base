@@ -5,8 +5,7 @@ import {
   PaginateNotificationTemplateResDto,
   UpsertNotificationTemplateDto,
 } from 'src/dtos/notification-templates.dto';
-import { authorize, has } from 'src/service/auth/authorization';
-import { authCheck } from 'src/service/auth/middleware';
+import { authCheck, authorize, has } from 'src/service/auth';
 import { notificationTemplatesService } from 'src/service/notifications/notification-templates.service';
 import {
   authErrors,

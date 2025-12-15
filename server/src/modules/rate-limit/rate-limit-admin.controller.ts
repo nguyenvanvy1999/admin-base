@@ -6,8 +6,7 @@ import {
   RateLimitConfigListResDto,
   UpdateRateLimitConfigDto,
 } from 'src/dtos/rate-limit-config.dto';
-import { authorize, has } from 'src/service/auth/authorization';
-import { authCheck } from 'src/service/auth/middleware';
+import { authCheck, authorize, has } from 'src/service/auth';
 import { rateLimitConfigService } from 'src/service/rate-limit/rate-limit-config.service';
 import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 

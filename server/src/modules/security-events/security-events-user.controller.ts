@@ -3,7 +3,7 @@ import {
   SecurityEventListQueryDto,
   SecurityEventListResDto,
 } from 'src/dtos/security-events.dto';
-import { authCheck } from 'src/service/auth/middleware';
+import { authCheck } from 'src/service/auth';
 import { securityEventsService } from 'src/service/security-events/security-events.service';
 import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 

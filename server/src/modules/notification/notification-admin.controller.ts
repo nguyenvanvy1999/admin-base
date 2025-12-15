@@ -6,8 +6,7 @@ import {
   NotificationPaginationDto,
   PaginateNotificationResDto,
 } from 'src/dtos/notification.dto';
-import { authorize, has } from 'src/service/auth/authorization';
-import { authCheck } from 'src/service/auth/middleware';
+import { authCheck, authorize, has } from 'src/service/auth';
 import { notificationsService } from 'src/service/notifications';
 import {
   authErrors,

@@ -6,8 +6,8 @@ import {
   SetupMfaConfirmDto,
   SetupMfaRequestDto,
 } from 'src/dtos/auth.dto';
+import { authCheck } from 'src/service/auth';
 import { mfaService } from 'src/service/auth/mfa.service';
-import { authCheck } from 'src/service/auth/middleware';
 import {
   ACCESS_AUTH,
   castToRes,

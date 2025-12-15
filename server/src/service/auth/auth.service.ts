@@ -60,11 +60,12 @@ import {
 } from './auth-util.service';
 import { type MfaService, mfaService } from './mfa.service';
 import { type OtpService, otpService } from './otp.service';
-import { type PasswordService, passwordService } from './password.service';
 import {
+  type PasswordService,
   type PasswordValidationService,
+  passwordService,
   passwordValidationService,
-} from './password-validation.service';
+} from './password.service';
 import {
   type SecurityCheckResult,
   type SecurityMonitorService,

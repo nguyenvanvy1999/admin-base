@@ -4,7 +4,7 @@ import {
   LinkTelegramRequestDto,
   LoginResponseDto,
 } from 'src/dtos/auth.dto';
-import { authCheck } from 'src/service/auth/middleware';
+import { authCheck } from 'src/service/auth';
 import { oauthService } from 'src/service/auth/oauth.service';
 import {
   ACCESS_AUTH,

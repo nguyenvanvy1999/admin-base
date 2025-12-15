@@ -24,12 +24,10 @@ import {
 } from 'src/service/auth/auth-util.service';
 import {
   type PasswordService,
-  passwordService,
-} from 'src/service/auth/password.service';
-import {
   type PasswordValidationService,
+  passwordService,
   passwordValidationService,
-} from 'src/service/auth/password-validation.service';
+} from 'src/service/auth/password.service';
 import {
   type SessionService,
   sessionService,

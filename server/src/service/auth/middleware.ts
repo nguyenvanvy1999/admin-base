@@ -127,6 +127,4 @@ export const adminAuthMiddleware = async ({
   return;
 };
 
-export * from './authorization/authorize.middleware';
-export * from './authorization/policy-types';
-export * from './authorization/predicates';
+export * from './authorization.service';

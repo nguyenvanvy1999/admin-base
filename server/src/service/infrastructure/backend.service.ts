@@ -43,7 +43,7 @@ import {
   userAuthController,
   usersAdminController,
 } from 'src/modules';
-import { adminAuthMiddleware } from 'src/service/auth/middleware';
+import { adminAuthMiddleware } from 'src/service/auth';
 import type { SeedService } from 'src/service/dev/seed.service';
 import { seedService } from 'src/service/dev/seed.service';
 import { gracefulShutdownService } from 'src/service/infrastructure/graceful-shutdown.service';

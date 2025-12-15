@@ -1,7 +1,6 @@
 import { Elysia, t } from 'elysia';
-import { authorize, has } from 'src/service/auth/authorization';
-import { authCheck } from 'src/service/auth/middleware';
-import { rolesService } from 'src/service/roles.service';
+import { authCheck, authorize, has } from 'src/service/auth';
+import { rolesService } from 'src/service/roles';
 import { castToRes, DOC_TAG, ResWrapper } from 'src/share';
 
 export const permissionsAdminController = new Elysia({
