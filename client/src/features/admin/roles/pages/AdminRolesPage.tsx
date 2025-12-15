@@ -1,6 +1,6 @@
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Modal, Tag, Tooltip } from 'antd';
-import { useRef, useState } from 'react';
+import type { ProColumns } from '@ant-design/pro-components';
+import { App, Button, Modal, Tag, Tooltip } from 'antd';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { AppPage } from 'src/components/common/AppPage';
@@ -11,15 +11,14 @@ import {
 } from 'src/components/common/tableColumns';
 import { useUserSearchSelect } from 'src/features/admin/users/hooks/useUserSearchSelect';
 import { createUserSelectColumn } from 'src/features/admin/users/utils/userSelectColumn';
+import { useAdminTable } from 'src/hooks/admin/useAdminTable';
 import { useDeleteRoles } from 'src/hooks/api/useAdminRoles';
-import { usePermissions } from 'src/hooks/auth/usePermissions';
-import { useNotify } from 'src/hooks/useNotify';
+import { getSearchValue } from 'src/lib/utils/table.utils';
 import {
-  createSkipFromPagination,
-  getSearchValue,
-} from 'src/lib/utils/table.utils';
-import { adminRolesService } from 'src/services/api/admin-roles.service';
-import type { AdminRole } from 'src/types/admin-roles';
+  type AdminRoleListQuery,
+  adminRolesService,
+} from 'src/services/api/admin/roles.service';
+import type { AdminRole } from 'src/types/admin';
 import type { TableParamsWithFilters } from 'src/types/table';
 
 type AdminRoleTableParams = TableParamsWithFilters<{
@@ -29,19 +28,30 @@ type AdminRoleTableParams = TableParamsWithFilters<{
 export default function AdminRolesPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const notify = useNotify();
-  const actionRef = useRef<ActionType | null>(null);
-  const { hasPermission } = usePermissions();
-  const canView = hasPermission('ROLE.VIEW');
-  const canUpdate = hasPermission('ROLE.UPDATE');
-  const canDelete = hasPermission('ROLE.DELETE');
+  const { message } = App.useApp();
+
+  const { actionRef, canView, canUpdate, canDelete, request } = useAdminTable<
+    AdminRole,
+    Omit<AdminRoleListQuery, 'skip' | 'take'>
+  >({
+    service: adminRolesService,
+    permissions: {
+      view: 'ROLE.VIEW',
+      update: 'ROLE.UPDATE',
+      delete: 'ROLE.DELETE',
+    },
+    normalizeParams: (params) => ({
+      userId: getSearchValue(params.userId as string | undefined),
+      search: getSearchValue(params.search),
+    }),
+  });
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingRole, setDeletingRole] = useState<AdminRole | null>(null);
 
   const deleteMutation = useDeleteRoles({
     onSuccess: () => {
-      notify.success(t('common.messages.deleteSuccess'));
+      message.success(t('common.messages.deleteSuccess'));
       setDeleteModalOpen(false);
       setDeletingRole(null);
       actionRef.current?.reload();
@@ -64,91 +74,94 @@ export default function AdminRolesPage() {
     take: 20,
   });
 
-  const columns: ProColumns<AdminRole>[] = [
-    {
-      title: t('common.fields.roleName'),
-      dataIndex: 'title',
-      copyable: true,
-      ellipsis: true,
-      hideInSearch: true,
-    },
-    {
-      title: t('common.fields.description'),
-      dataIndex: 'description',
-      ellipsis: true,
-      hideInSearch: true,
-      render: (_, record) => record.description ?? '-',
-    },
-    {
-      title: t('common.fields.permissionCount'),
-      dataIndex: 'permissionIds',
-      hideInSearch: true,
-      render: (_, record) => (
-        <Tag color="blue">{record.permissionIds.length}</Tag>
-      ),
-    },
-    {
-      title: t('common.fields.userCount'),
-      dataIndex: 'players',
-      hideInSearch: true,
-      render: (_, record) => {
-        const totalCount = record.totalPlayers ?? 0;
-        const activeCount = record.activePlayers ?? 0;
-        const expiredCount =
-          record.expiredPlayers ?? Math.max(totalCount - activeCount, 0);
-
-        return (
-          <Tooltip
-            title={t('adminRolesPage.users.tooltip' as any, {
-              total: totalCount,
-              active: activeCount,
-              expired: expiredCount,
-            })}
-          >
-            <Tag color="green">
-              {totalCount} / {activeCount} / {expiredCount}
-            </Tag>
-          </Tooltip>
-        );
+  const columns: ProColumns<AdminRole>[] = useMemo(
+    () => [
+      {
+        title: t('common.fields.roleName'),
+        dataIndex: 'title',
+        copyable: true,
+        ellipsis: true,
+        hideInSearch: true,
       },
-    },
-    createUserSelectColumn<AdminRole>(userSearchSelect, {
-      title: t('common.filters.user'),
-      dataIndex: 'userId',
-      placeholder: t('common.filters.user'),
-      mode: undefined,
-    }),
-    createSearchColumn<AdminRole>({
-      dataIndex: 'search',
-      placeholder: t('common.search'),
-    }),
-    ...(canView || canUpdate || canDelete
-      ? [
-          createActionColumn<AdminRole>({
-            onView: (record) => {
-              navigate(`/admin/roles/${record.id}`);
-            },
-            onEdit: (record) => {
-              if (canUpdate && !record.protected) {
+      {
+        title: t('common.fields.description'),
+        dataIndex: 'description',
+        ellipsis: true,
+        hideInSearch: true,
+        render: (_, record) => record.description ?? '-',
+      },
+      {
+        title: t('common.fields.permissionCount'),
+        dataIndex: 'permissionIds',
+        hideInSearch: true,
+        render: (_, record) => (
+          <Tag color="blue">{record.permissionIds.length}</Tag>
+        ),
+      },
+      {
+        title: t('common.fields.userCount'),
+        dataIndex: 'players',
+        hideInSearch: true,
+        render: (_, record) => {
+          const totalCount = record.totalPlayers ?? 0;
+          const activeCount = record.activePlayers ?? 0;
+          const expiredCount =
+            record.expiredPlayers ?? Math.max(totalCount - activeCount, 0);
+
+          return (
+            <Tooltip
+              title={t('adminRolesPage.users.tooltip' as any, {
+                total: totalCount,
+                active: activeCount,
+                expired: expiredCount,
+              })}
+            >
+              <Tag color="green">
+                {totalCount} / {activeCount} / {expiredCount}
+              </Tag>
+            </Tooltip>
+          );
+        },
+      },
+      createUserSelectColumn<AdminRole>(userSearchSelect, {
+        title: t('common.filters.user'),
+        dataIndex: 'userId',
+        placeholder: t('common.filters.user'),
+        mode: undefined,
+      }),
+      createSearchColumn<AdminRole>({
+        dataIndex: 'search',
+        placeholder: t('common.search'),
+      }),
+      ...(canView || canUpdate || canDelete
+        ? [
+            createActionColumn<AdminRole>({
+              onView: (record) => {
                 navigate(`/admin/roles/${record.id}`);
-              }
-            },
-            onDelete: (record) => {
-              if (canDelete && !record.protected) {
-                handleDelete(record);
-              }
-            },
-            canView: () => canView,
-            canEdit: (record) => canUpdate && !record.protected,
-            canDelete: (record) => canDelete && !record.protected,
-            viewTooltip: t('common.actions.view'),
-            editTooltip: t('common.actions.edit'),
-            deleteTooltip: t('common.actions.delete'),
-            title: t('common.fields.actions'),
-          }),
-        ]
-      : []),
-  ];
+              },
+              onEdit: (record) => {
+                if (canUpdate && !record.protected) {
+                  navigate(`/admin/roles/${record.id}`);
+                }
+              },
+              onDelete: (record) => {
+                if (canDelete && !record.protected) {
+                  handleDelete(record);
+                }
+              },
+              canView: () => canView,
+              canEdit: (record) => canUpdate && !record.protected,
+              canDelete: (record) => canDelete && !record.protected,
+              viewTooltip: t('common.actions.view'),
+              editTooltip: t('common.actions.edit'),
+              deleteTooltip: t('common.actions.delete'),
+              title: t('common.fields.actions'),
+            }),
+          ]
+        : []),
+    ],
+    [t, canView, canUpdate, canDelete, userSearchSelect, handleDelete],
+  );
 
   if (!canView) {
     return null;
@@ -163,21 +176,7 @@ export default function AdminRolesPage() {
         search={{
           labelWidth: 'auto',
         }}
-        request={async (params) => {
-          const { current = 1, pageSize = 20, userId, search } = params;
-          const skip = createSkipFromPagination(current, pageSize);
-          const response = await adminRolesService.list({
-            skip,
-            take: pageSize,
-            userId: getSearchValue(userId),
-            search: getSearchValue(search),
-          });
-          return {
-            data: response.docs || [],
-            success: true,
-            total: response.count || 0,
-          };
-        }}
+        request={request as any}
         pagination={{
           pageSize: 20,
           showSizeChanger: true,

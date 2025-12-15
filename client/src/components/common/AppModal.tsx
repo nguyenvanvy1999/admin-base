@@ -1,18 +1,13 @@
 import { Modal, type ModalProps } from 'antd';
 import type { ReactNode } from 'react';
 
-export interface AppModalProps extends ModalProps {
-  loading?: boolean;
-  confirmLoading?: boolean;
-}
+export interface AppModalProps extends ModalProps {}
 
 export function AppModal({
   centered = true,
   destroyOnHidden = true,
   maskClosable = false,
   width = 520,
-  loading,
-  confirmLoading,
   ...props
 }: AppModalProps) {
   return (
@@ -21,7 +16,6 @@ export function AppModal({
       destroyOnHidden={destroyOnHidden}
       maskClosable={maskClosable}
       width={width}
-      confirmLoading={confirmLoading ?? loading}
       {...props}
     />
   );

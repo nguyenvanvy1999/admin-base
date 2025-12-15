@@ -1,9 +1,9 @@
-import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AUTH_MFA_CONFIG } from 'src/config/auth';
+import { useAppMutation } from 'src/hooks/api/useMutation';
 import { parseApiError } from 'src/lib/api/errorHandler';
 import { authService } from 'src/services/api/auth.service';
-import type { RegisterPayload } from 'src/types/auth';
+import type { RegisterPayload, RegisterResponse } from 'src/types/auth';
 
 export type RegisterFormValues = RegisterPayload;
 
@@ -59,8 +59,10 @@ export function useRegisterFlow(): UseRegisterFlowResult {
   const [registerLockSeconds, setRegisterLockSeconds] = useState(0);
   const [isResendBlocked, setResendBlocked] = useState(false);
 
-  const registerMutation = useMutation({
+  const registerMutation = useAppMutation({
     mutationFn: (payload: RegisterPayload) => authService.register(payload),
+    skipSuccessMessage: true,
+    skipErrorMessage: true,
     onSuccess: (response) => {
       setErrors((prev) => ({ ...prev, credentials: undefined }));
       setRegisterLockSeconds(0);
@@ -83,9 +85,11 @@ export function useRegisterFlow(): UseRegisterFlowResult {
     },
   });
 
-  const verifyMutation = useMutation({
+  const verifyMutation = useAppMutation({
     mutationFn: (payload: { otpToken: string; otp: string }) =>
       authService.verifyAccount(payload),
+    skipSuccessMessage: true,
+    skipErrorMessage: true,
     onSuccess: () => {
       setErrors((prev) => ({ ...prev, otp: undefined }));
       setStep('success');
@@ -96,9 +100,11 @@ export function useRegisterFlow(): UseRegisterFlowResult {
     },
   });
 
-  const resendMutation = useMutation({
+  const resendMutation = useAppMutation<RegisterResponse | null, Error, void>({
     mutationFn: () =>
       authService.sendRegisterOtp({ email, purpose: 'register' }),
+    skipSuccessMessage: true,
+    skipErrorMessage: true,
     onSuccess: (response) => {
       if (!response?.otpToken) {
         setErrors((prev) => ({ ...prev, resend: undefined }));

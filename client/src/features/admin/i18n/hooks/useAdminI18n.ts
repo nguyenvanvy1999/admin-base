@@ -2,11 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import {
   type MutationCallbacks,
   useAppMutation,
-} from 'src/hooks/api/useAppMutation';
+} from 'src/hooks/api/useMutation';
+import { usePagination } from 'src/hooks/pagination';
 import {
   adminI18nKeys,
   adminI18nService,
-} from '../services/admin-i18n.service';
+} from 'src/services/api/admin/i18n.service';
 import type { I18nListParams, I18nUpsertDto } from '../types';
 
 interface UseAdminI18nListOptions {
@@ -72,4 +73,32 @@ export function useExportI18n(options?: MutationCallbacks) {
     skipSuccessMessage: false,
     ...options,
   });
+}
+
+interface UseAdminI18nPaginationOptions {
+  initialParams?: I18nListParams;
+  pageSize?: number;
+  autoLoad?: boolean;
+}
+
+export function useAdminI18nPagination(options: UseAdminI18nPaginationOptions) {
+  const { initialParams = {}, pageSize = 20, autoLoad = true } = options;
+
+  const pagination = usePagination(useAdminI18nList, {
+    initialParams,
+    pageSize,
+    autoLoad,
+  });
+
+  return {
+    i18nEntries: pagination.data,
+    total: pagination.total,
+    pagination: pagination.pagination,
+    isLoading: pagination.isLoading,
+    isInitialLoading: pagination.isInitialLoading,
+    reload: pagination.reload,
+    goToPage: pagination.goToPage,
+    changePageSize: pagination.changePageSize,
+    updateParams: pagination.updateParams,
+  };
 }

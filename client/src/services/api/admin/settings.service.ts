@@ -1,6 +1,6 @@
 import { apiClient } from 'src/lib/api/client';
-import { createQueryKeys } from 'src/services/api/base.service';
-import type { AdminSetting, UpdateSettingDto } from 'src/types/admin-settings';
+import type { AdminSetting, UpdateSettingDto } from 'src/types/admin';
+import { createQueryKeys } from '../base.service';
 
 const ADMIN_SETTING_BASE_PATH = '/api/admin/settings';
 

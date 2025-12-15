@@ -6,7 +6,7 @@ import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
 import { useAdminPermissions } from 'src/hooks/api/useAdminPermissions';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
-import type { AdminPermission } from 'src/types/admin-roles';
+import type { AdminPermission } from 'src/types/admin';
 import type { TableParamsWithFilters } from 'src/types/table';
 
 type AdminPermissionTableParams = TableParamsWithFilters<{

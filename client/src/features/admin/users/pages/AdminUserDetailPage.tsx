@@ -12,6 +12,7 @@ import {
 } from '@ant-design/pro-components';
 import {
   Alert,
+  App,
   Button,
   Flex,
   Input,
@@ -35,7 +36,7 @@ import {
 import { AppAdminUserStatusSelect } from 'src/components/common/AppAdminUserStatusSelect';
 import { AppPage } from 'src/components/common/AppPage';
 import { SessionsTable } from 'src/features/admin/sessions/components/SessionsTable';
-import { useAdminSessionsPagination } from 'src/features/admin/sessions/hooks/useAdminSessionsPagination';
+import { useAdminSessionsPagination } from 'src/features/admin/sessions/hooks/useAdminSessions';
 import { useSessionDateRange } from 'src/features/admin/sessions/hooks/useSessionDateRange';
 import { getSessionStatus } from 'src/features/admin/sessions/utils/sessionStatus';
 import {
@@ -47,10 +48,8 @@ import {
 } from 'src/features/admin/users/hooks/useAdminUsers';
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
-import { useModal } from 'src/hooks/useModal';
-import { useNotify } from 'src/hooks/useNotify';
 import { toIsoStringOrNull } from 'src/lib/utils/date.utils';
-import { adminSessionsService } from 'src/services/api/admin-sessions.service';
+import { adminSessionsService } from 'src/services/api/admin/sessions.service';
 import type { AdminSession } from 'src/types/admin-sessions';
 import {
   ADMIN_LOCKOUT_REASONS,
@@ -148,8 +147,7 @@ export default function AdminUserDetailPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const notify = useNotify();
-  const modal = useModal();
+  const { modal, notification } = App.useApp();
 
   const isCreateMode = !userId || userId === 'new';
 
@@ -174,8 +172,8 @@ export default function AdminUserDetailPage() {
   );
   const updateMutation = useUpdateAdminUser({
     onSuccess: () => {
-      notify.notification.success({
-        title: t('common.messages.updateSuccess'),
+      notification.success({
+        message: t('common.messages.updateSuccess'),
       });
       navigate('/admin/users');
     },
@@ -183,8 +181,8 @@ export default function AdminUserDetailPage() {
 
   const createMutation = useCreateAdminUser({
     onSuccess: ({ auditLogId }) => {
-      notify.notification.success({
-        title: t('common.messages.createSuccess'),
+      notification.success({
+        message: t('common.messages.createSuccess'),
         description: t('adminUsersPage.create.auditLog', {
           auditId: auditLogId,
         }),
@@ -195,8 +193,8 @@ export default function AdminUserDetailPage() {
 
   const updateRolesMutation = useUpdateAdminUserRoles({
     onSuccess: () => {
-      notify.notification.success({
-        title: t('common.messages.rolesUpdateSuccess'),
+      notification.success({
+        message: t('common.messages.rolesUpdateSuccess'),
       });
       navigate('/admin/users');
     },
@@ -206,8 +204,8 @@ export default function AdminUserDetailPage() {
 
   const resetMfaMutation = useAdminUserMfaAction('reset', {
     onSuccess: ({ auditLogId }) => {
-      notify.notification.success({
-        title: t('common.messages.mfaResetSuccess'),
+      notification.success({
+        message: t('common.messages.mfaResetSuccess'),
         description: t('adminUsersPage.create.auditLog', {
           auditId: auditLogId,
         }),
@@ -217,8 +215,8 @@ export default function AdminUserDetailPage() {
 
   const disableMfaMutation = useAdminUserMfaAction('disable', {
     onSuccess: ({ auditLogId }) => {
-      notify.notification.success({
-        title: t('common.messages.mfaDisableSuccess'),
+      notification.success({
+        message: t('common.messages.mfaDisableSuccess'),
         description: t('adminUsersPage.create.auditLog', {
           auditId: auditLogId,
         }),

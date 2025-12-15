@@ -1,19 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { adminRateLimitService } from 'src/services/api/admin-rate-limit.service';
+import {
+  adminRateLimitKeys,
+  adminRateLimitService,
+} from 'src/services/api/admin/rate-limits.service';
 import type {
   AdminRateLimitListParams,
   AdminRateLimitListResponse,
   BlockRateLimitParams,
   UnblockRateLimitParams,
 } from 'src/types/admin-rate-limit';
-import { type MutationCallbacks, useAppMutation } from './useAppMutation';
-
-export const adminRateLimitKeys = {
-  all: ['admin-rate-limits'] as const,
-  lists: () => [...adminRateLimitKeys.all, 'list'] as const,
-  list: (params?: AdminRateLimitListParams) =>
-    [...adminRateLimitKeys.lists(), params] as const,
-};
+import { type MutationCallbacks, useAppMutation } from './useMutation';
 
 export function useAdminRateLimits(params?: AdminRateLimitListParams) {
   return useQuery<AdminRateLimitListResponse>({

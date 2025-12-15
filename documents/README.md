@@ -37,6 +37,7 @@ documents/
 │   ├── improvements.md               # Cải thiện đề xuất
 │   └── schema-examples/              # Schema mẫu
 │       └── improvements.prisma
+├── refactor/                         # Kế hoạch refactor
 └── ui-design/                        # Thiết kế UI/UX
     └── resource-management.md        # Pattern quản lý resource
 ```
@@ -46,6 +47,7 @@ documents/
 - **Architecture**: Mô tả kiến trúc tổng thể của hệ thống
 - **Features**: Tài liệu chi tiết về các tính năng hiện có và kế hoạch
 - **Database**: Phân tích và đề xuất cải thiện database
+- **Refactor**: Kế hoạch refactor code để cải thiện cấu trúc và maintainability
 - **UI Design**: Thiết kế UI/UX patterns và components
 
 ## 📖 Hướng Dẫn Sử Dụng
@@ -55,7 +57,8 @@ documents/
 1. Đọc `architecture/system-overview.md` để hiểu kiến trúc tổng thể
 2. Xem `features/` để biết các tính năng hiện có và kế hoạch
 3. Tham khảo `database/` khi cần thay đổi schema
-4. Sử dụng `ui-design/` khi thiết kế UI mới
+4. Xem `refactor/` để biết kế hoạch refactor code
+5. Sử dụng `ui-design/` khi thiết kế UI mới
 
 ### Cho Product Managers
 

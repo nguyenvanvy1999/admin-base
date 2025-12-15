@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import {
   adminSettingKeys,
   adminSettingsService,
-} from 'src/services/api/admin-settings.service';
-import type { AdminSetting, UpdateSettingDto } from 'src/types/admin-settings';
-import { type MutationCallbacks, useAppMutation } from './useAppMutation';
+} from 'src/services/api/admin/settings.service';
+import type { AdminSetting, UpdateSettingDto } from 'src/types/admin';
+import { type MutationCallbacks, useAppMutation } from './useMutation';
 
 export function useAdminSettings() {
   return useQuery<AdminSetting[]>({

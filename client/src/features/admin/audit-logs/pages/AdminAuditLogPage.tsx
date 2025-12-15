@@ -1,7 +1,7 @@
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ProColumns } from '@ant-design/pro-components';
 import { Tag, Tooltip } from 'antd';
 import type dayjs from 'dayjs';
-import { useRef } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
@@ -9,13 +9,14 @@ import {
   createDateColumn,
   createSearchColumn,
 } from 'src/components/common/tableColumns';
+import { useAdminTable } from 'src/hooks/admin/useAdminTable';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
-import {
-  createSkipFromPagination,
-  getSearchValue,
-} from 'src/lib/utils/table.utils';
-import { adminAuditLogsService } from 'src/services/api/admin-audit-logs.service';
-import type { AdminAuditLog } from 'src/types/admin-audit-logs';
+import { getSearchValue } from 'src/lib/utils/table.utils';
+import { adminAuditLogsService } from 'src/services/api/admin/audit-logs.service';
+import type {
+  AdminAuditLog,
+  AdminAuditLogListQuery,
+} from 'src/types/admin-audit-logs';
 import type { TableParamsWithFilters } from 'src/types/table';
 
 type AdminAuditLogTableParams = TableParamsWithFilters<{
@@ -40,7 +41,6 @@ const LEVEL_COLORS: Record<string, string> = {
 
 export default function AdminAuditLogPage() {
   const { t } = useTranslation();
-  const actionRef = useRef<ActionType | null>(null);
   const { hasPermission } = usePermissions();
   const canViewAll = hasPermission('AUDIT_LOG.VIEW_ALL');
   const canView = hasPermission(
@@ -48,127 +48,165 @@ export default function AdminAuditLogPage() {
     'any',
   );
 
-  const columns: ProColumns<AdminAuditLog>[] = [
-    createSearchColumn<AdminAuditLog>({
-      dataIndex: 'logType',
-      placeholder: t('common.filters.keyword'),
-    }),
-    {
-      title: t('common.fields.level'),
-      dataIndex: 'level',
-      width: 100,
-      valueType: 'select',
-      valueEnum: {
-        error: { text: 'ERROR' },
-        warn: { text: 'WARN' },
-        info: { text: 'INFO' },
-        debug: { text: 'DEBUG' },
+  const { actionRef, request } = useAdminTable<
+    AdminAuditLog,
+    Omit<AdminAuditLogListQuery, 'skip' | 'take'>
+  >({
+    service: adminAuditLogsService,
+    permissions: {
+      view: ['AUDIT_LOG.VIEW_ALL', 'AUDIT_LOG.VIEW'],
+    },
+    normalizeParams: (params) => {
+      const occurredAtRange = (params as any).occurredAt as
+        | [dayjs.Dayjs, dayjs.Dayjs]
+        | undefined;
+
+      return {
+        logType: getSearchValue(params.logType as string | undefined),
+        level: params.level as string | undefined,
+        userId: canViewAll ? (params.userId as string | undefined) : undefined,
+        sessionId: canViewAll
+          ? (params.sessionId as string | undefined)
+          : undefined,
+        entityType: params.entityType as string | undefined,
+        entityId: params.entityId as string | undefined,
+        ip: params.ip as string | undefined,
+        traceId: params.traceId as string | undefined,
+        correlationId: params.correlationId as string | undefined,
+        ...(occurredAtRange && occurredAtRange.length === 2
+          ? {
+              occurredAt0: occurredAtRange[0]!.toISOString(),
+              occurredAt1: occurredAtRange[1]!.toISOString(),
+            }
+          : {}),
+      };
+    },
+  });
+
+  const columns: ProColumns<AdminAuditLog>[] = useMemo(
+    () => [
+      createSearchColumn<AdminAuditLog>({
+        dataIndex: 'logType',
+        placeholder: t('common.filters.keyword'),
+      }),
+      {
+        title: t('common.fields.level'),
+        dataIndex: 'level',
+        width: 100,
+        valueType: 'select',
+        valueEnum: {
+          error: { text: 'ERROR' },
+          warn: { text: 'WARN' },
+          info: { text: 'INFO' },
+          debug: { text: 'DEBUG' },
+        },
+        render: (_: unknown, record) => (
+          <Tag color={LEVEL_COLORS[record.level] || 'default'}>
+            {record.level.toUpperCase()}
+          </Tag>
+        ),
       },
-      render: (_: unknown, record) => (
-        <Tag color={LEVEL_COLORS[record.level] || 'default'}>
-          {record.level.toUpperCase()}
-        </Tag>
-      ),
-    },
-    {
-      title: t('common.fields.logType'),
-      dataIndex: 'logType',
-      ellipsis: true,
-      hideInSearch: true,
-    },
-    {
-      title: t('common.fields.description'),
-      dataIndex: 'description',
-      ellipsis: true,
-      hideInSearch: true,
-      width: 300,
-    },
-    {
-      title: t('common.fields.entityType'),
-      dataIndex: 'entityType',
-      ellipsis: true,
-      hideInTable: true,
-      copyable: true,
-    },
-    {
-      title: t('common.fields.entityId'),
-      dataIndex: 'entityId',
-      ellipsis: true,
-      hideInTable: true,
-      copyable: true,
-    },
-    {
-      title: t('common.fields.userId'),
-      dataIndex: 'userId',
-      hideInTable: !canViewAll,
-      hideInSearch: !canViewAll,
-      copyable: true,
-      ellipsis: true,
-    },
-    {
-      title: t('common.fields.sessionId'),
-      dataIndex: 'sessionId',
-      hideInTable: true,
-      hideInSearch: !canViewAll,
-      copyable: true,
-      ellipsis: true,
-    },
-    {
-      title: t('common.fields.ip'),
-      dataIndex: 'ip',
-      hideInTable: true,
-      copyable: true,
-      ellipsis: true,
-    },
-    {
-      title: t('common.fields.traceId'),
-      dataIndex: 'traceId',
-      hideInTable: true,
-      copyable: true,
-      ellipsis: true,
-    },
-    {
-      title: t('common.fields.correlationId'),
-      dataIndex: 'correlationId',
-      hideInTable: true,
-      copyable: true,
-      ellipsis: true,
-    },
-    {
-      title: t('common.fields.payload'),
-      dataIndex: 'payload',
-      hideInSearch: true,
-      width: 200,
-      ellipsis: true,
-      hideInTable: true,
-      render: (_: unknown, record) => (
-        <Tooltip title={JSON.stringify(record.payload, null, 2)}>
-          <pre
-            style={{
-              margin: 0,
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-            }}
-          >
-            {JSON.stringify(record.payload)}
-          </pre>
-        </Tooltip>
-      ),
-    },
-    createDateColumn<AdminAuditLog>({
-      dataIndex: 'occurredAt',
-      title: t('common.fields.occurredAt'),
-      format: 'YYYY-MM-DD HH:mm:ss',
-      valueType: 'dateTimeRange',
-      hideInSearch: false,
-    }),
-    createDateColumn<AdminAuditLog>({
-      dataIndex: 'created',
-      title: t('common.fields.createdAt'),
-      format: 'YYYY-MM-DD HH:mm:ss',
-      hideInSearch: true,
-    }),
-  ];
+      {
+        title: t('common.fields.logType'),
+        dataIndex: 'logType',
+        ellipsis: true,
+        hideInSearch: true,
+      },
+      {
+        title: t('common.fields.description'),
+        dataIndex: 'description',
+        ellipsis: true,
+        hideInSearch: true,
+        width: 300,
+      },
+      {
+        title: t('common.fields.entityType'),
+        dataIndex: 'entityType',
+        ellipsis: true,
+        hideInTable: true,
+        copyable: true,
+      },
+      {
+        title: t('common.fields.entityId'),
+        dataIndex: 'entityId',
+        ellipsis: true,
+        hideInTable: true,
+        copyable: true,
+      },
+      {
+        title: t('common.fields.userId'),
+        dataIndex: 'userId',
+        hideInTable: !canViewAll,
+        hideInSearch: !canViewAll,
+        copyable: true,
+        ellipsis: true,
+      },
+      {
+        title: t('common.fields.sessionId'),
+        dataIndex: 'sessionId',
+        hideInTable: true,
+        hideInSearch: !canViewAll,
+        copyable: true,
+        ellipsis: true,
+      },
+      {
+        title: t('common.fields.ip'),
+        dataIndex: 'ip',
+        hideInTable: true,
+        copyable: true,
+        ellipsis: true,
+      },
+      {
+        title: t('common.fields.traceId'),
+        dataIndex: 'traceId',
+        hideInTable: true,
+        copyable: true,
+        ellipsis: true,
+      },
+      {
+        title: t('common.fields.correlationId'),
+        dataIndex: 'correlationId',
+        hideInTable: true,
+        copyable: true,
+        ellipsis: true,
+      },
+      {
+        title: t('common.fields.payload'),
+        dataIndex: 'payload',
+        hideInSearch: true,
+        width: 200,
+        ellipsis: true,
+        hideInTable: true,
+        render: (_: unknown, record) => (
+          <Tooltip title={JSON.stringify(record.payload, null, 2)}>
+            <pre
+              style={{
+                margin: 0,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
+            >
+              {JSON.stringify(record.payload)}
+            </pre>
+          </Tooltip>
+        ),
+      },
+      createDateColumn<AdminAuditLog>({
+        dataIndex: 'occurredAt',
+        title: t('common.fields.occurredAt'),
+        format: 'YYYY-MM-DD HH:mm:ss',
+        valueType: 'dateTimeRange',
+        hideInSearch: false,
+      }),
+      createDateColumn<AdminAuditLog>({
+        dataIndex: 'created',
+        title: t('common.fields.createdAt'),
+        format: 'YYYY-MM-DD HH:mm:ss',
+        hideInSearch: true,
+      }),
+    ],
+    [t, canViewAll],
+  );
 
   if (!canView) {
     return null;
@@ -184,58 +222,7 @@ export default function AdminAuditLogPage() {
           labelWidth: 'auto',
         }}
         manualRequest={false}
-        request={async (params) => {
-          const {
-            current = 1,
-            pageSize = 20,
-            logType,
-            level,
-            userId,
-            sessionId,
-            entityType,
-            entityId,
-            ip,
-            traceId,
-            correlationId,
-            occurredAt,
-          } = params;
-
-          const skip = createSkipFromPagination(current, pageSize);
-          const occurredAtRange = occurredAt as
-            | [dayjs.Dayjs, dayjs.Dayjs]
-            | undefined;
-
-          const requestParams: Parameters<
-            typeof adminAuditLogsService.list
-          >[0] = {
-            skip,
-            take: pageSize,
-            logType: getSearchValue(logType as string | undefined),
-            level: level as string | undefined,
-            userId: canViewAll ? (userId as string | undefined) : undefined,
-            sessionId: canViewAll
-              ? (sessionId as string | undefined)
-              : undefined,
-            entityType: entityType as string | undefined,
-            entityId: entityId as string | undefined,
-            ip: ip as string | undefined,
-            traceId: traceId as string | undefined,
-            correlationId: correlationId as string | undefined,
-            ...(occurredAtRange && occurredAtRange.length === 2
-              ? {
-                  occurredAt0: occurredAtRange[0]!.toISOString(),
-                  occurredAt1: occurredAtRange[1]!.toISOString(),
-                }
-              : {}),
-          };
-
-          const response = await adminAuditLogsService.list(requestParams);
-          return {
-            data: response.docs,
-            success: true,
-            total: response.count,
-          };
-        }}
+        request={request}
       />
     </AppPage>
   );

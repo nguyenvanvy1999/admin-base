@@ -1,5 +1,4 @@
 import { apiClient } from 'src/lib/api/client';
-import { createQueryKeys } from 'src/services/api/base.service';
 import type {
   AdminUserActionResponse,
   AdminUserCreatePayload,
@@ -9,20 +8,21 @@ import type {
   AdminUserMfaPayload,
   AdminUserUpdatePayload,
   AdminUserUpdateRolesPayload,
-} from 'src/types/admin-users';
+} from 'src/types/admin';
+import { createAdminService } from './createAdminService';
 
 const ADMIN_USER_BASE_PATH = '/api/admin/users';
 
-export const adminUserKeys = {
-  ...createQueryKeys('admin-users'),
-  list: (filters?: Partial<AdminUserListQuery>) =>
-    [...createQueryKeys('admin-users').lists(), filters] as const,
-  detail: (id: string) =>
-    [...createQueryKeys('admin-users').details(), id] as const,
-};
-
-export const adminUsersService = {
-  list(params?: AdminUserListQuery): Promise<AdminUserListResponse> {
+const { queryKeys: adminUserKeys, service: baseService } = createAdminService<
+  AdminUserListQuery,
+  AdminUserDetail,
+  AdminUserListResponse,
+  AdminUserCreatePayload,
+  AdminUserUpdatePayload
+>({
+  basePath: ADMIN_USER_BASE_PATH,
+  queryKey: 'admin-users',
+  list: (params?: AdminUserListQuery): Promise<AdminUserListResponse> => {
     let normalizedParams:
       | Omit<AdminUserListQuery, 'roleIds' | 'statuses'>
       | undefined = params;
@@ -43,28 +43,27 @@ export const adminUsersService = {
       params: normalizedParams,
     });
   },
-
-  detail(userId: string): Promise<AdminUserDetail> {
-    return apiClient.get<AdminUserDetail>(`${ADMIN_USER_BASE_PATH}/${userId}`);
-  },
-
-  create(payload: AdminUserCreatePayload): Promise<AdminUserActionResponse> {
+  create: (payload: AdminUserCreatePayload): Promise<void> => {
     return apiClient.post<AdminUserActionResponse>(
       ADMIN_USER_BASE_PATH,
       payload,
-    );
+    ) as unknown as Promise<void>;
   },
-
-  update(
-    userId: string,
-    payload: AdminUserUpdatePayload,
-  ): Promise<AdminUserActionResponse> {
+  update: (id: string, payload: AdminUserUpdatePayload): Promise<void> => {
     return apiClient.patch<AdminUserActionResponse>(
-      `${ADMIN_USER_BASE_PATH}/${userId}`,
+      `${ADMIN_USER_BASE_PATH}/${id}`,
       payload,
-    );
+    ) as unknown as Promise<void>;
   },
+});
 
+export { adminUserKeys };
+
+export const adminUsersService = {
+  list: baseService.list,
+  detail: baseService.detail,
+  create: baseService.create,
+  update: baseService.update,
   updateRoles(
     userId: string,
     payload: AdminUserUpdateRolesPayload,
@@ -74,7 +73,6 @@ export const adminUsersService = {
       payload,
     );
   },
-
   resetMfa(
     userId: string,
     payload: AdminUserMfaPayload,
@@ -84,7 +82,6 @@ export const adminUsersService = {
       payload,
     );
   },
-
   disableMfa(
     userId: string,
     payload: AdminUserMfaPayload,

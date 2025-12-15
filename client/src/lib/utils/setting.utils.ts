@@ -1,4 +1,4 @@
-import { type AdminSetting, SettingDataType } from 'src/types/admin-settings';
+import { type AdminSetting, SettingDataType } from 'src/types/admin';
 
 export const parseSettingValue = (
   setting: AdminSetting,

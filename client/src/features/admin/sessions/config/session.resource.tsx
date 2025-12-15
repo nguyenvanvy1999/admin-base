@@ -1,7 +1,7 @@
 import type { ProColumns } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 import { createDateColumn } from 'src/components/common/tableColumns';
-import { adminSessionsService } from 'src/services/api/admin-sessions.service';
+import { adminSessionsService } from 'src/services/api/admin/sessions.service';
 import type {
   AdminSession,
   AdminSessionListParams,

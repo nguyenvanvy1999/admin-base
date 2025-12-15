@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { useMemo } from 'react';
 import { useCursorPagination } from 'src/hooks/pagination';
-import { adminSessionsService } from 'src/services/api/admin-sessions.service';
+import { adminSessionsService } from 'src/services/api/admin/sessions.service';
 import type {
   AdminSession,
   AdminSessionListParams,

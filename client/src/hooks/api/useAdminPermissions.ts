@@ -3,8 +3,8 @@ import {
   type AdminPermissionListQuery,
   adminPermissionKeys,
   adminPermissionsService,
-} from 'src/services/api/admin-permissions.service';
-import type { AdminPermission } from 'src/types/admin-roles';
+} from 'src/services/api/admin/roles.service';
+import type { AdminPermission } from 'src/types/admin';
 
 export function useAdminPermissions(params?: AdminPermissionListQuery) {
   return useQuery<AdminPermission[]>({
