@@ -25,8 +25,14 @@ import {
   type PrismaTx,
 } from 'src/share';
 import { AuditLogFactory } from './audit-log.factory';
-import { normalizeLegacyPayload } from './legacy-payload.util';
-import type { AuditEventInput } from './types';
+import {
+  type AuditEventInput,
+  CUD_ACTIVITY_TYPES,
+  type CudAuditInput,
+  type OtherAuditInput,
+  SECURITY_ACTIVITY_TYPES,
+  type SecurityAuditInput,
+} from './types';
 
 const JOB_NAME = 'audit-log';
 
@@ -146,6 +152,72 @@ export class AuditLogsService {
     await this.deps.queue.addBulk(enrichedEntries);
 
     return jobIds;
+  }
+
+  pushCud(
+    entry: Omit<CudAuditInput, 'ip' | 'userAgent' | 'requestId'>,
+  ): Promise<string> {
+    if (!CUD_ACTIVITY_TYPES.includes(entry.type)) {
+      throw new BadReqErr(ErrCode.InvalidParams);
+    }
+    return this.push(entry);
+  }
+
+  pushSecurity(
+    entry: Omit<SecurityAuditInput, 'ip' | 'userAgent' | 'requestId'>,
+  ): Promise<string> {
+    if (!SECURITY_ACTIVITY_TYPES.includes(entry.type)) {
+      throw new BadReqErr(ErrCode.InvalidParams);
+    }
+    return this.push(entry);
+  }
+
+  pushOther(
+    entry: Omit<OtherAuditInput, 'ip' | 'userAgent' | 'requestId'>,
+  ): Promise<string> {
+    if (
+      CUD_ACTIVITY_TYPES.includes(entry.type) ||
+      SECURITY_ACTIVITY_TYPES.includes(entry.type)
+    ) {
+      throw new BadReqErr(ErrCode.InvalidParams);
+    }
+    return this.push(entry);
+  }
+
+  pushBatchCud(
+    entries: Omit<CudAuditInput, 'ip' | 'userAgent' | 'requestId'>[],
+  ): Promise<string[]> {
+    entries.forEach((entry) => {
+      if (!CUD_ACTIVITY_TYPES.includes(entry.type)) {
+        throw new BadReqErr(ErrCode.InvalidParams);
+      }
+    });
+    return this.pushBatch(entries);
+  }
+
+  pushBatchSecurity(
+    entries: Omit<SecurityAuditInput, 'ip' | 'userAgent' | 'requestId'>[],
+  ): Promise<string[]> {
+    entries.forEach((entry) => {
+      if (!SECURITY_ACTIVITY_TYPES.includes(entry.type)) {
+        throw new BadReqErr(ErrCode.InvalidParams);
+      }
+    });
+    return this.pushBatch(entries);
+  }
+
+  pushBatchOther(
+    entries: Omit<OtherAuditInput, 'ip' | 'userAgent' | 'requestId'>[],
+  ): Promise<string[]> {
+    entries.forEach((entry) => {
+      if (
+        CUD_ACTIVITY_TYPES.includes(entry.type) ||
+        SECURITY_ACTIVITY_TYPES.includes(entry.type)
+      ) {
+        throw new BadReqErr(ErrCode.InvalidParams);
+      }
+    });
+    return this.pushBatch(entries);
   }
 
   resolve(params: ResolveAuditLogParams) {
@@ -268,23 +340,13 @@ export class AuditLogsService {
       orderBy: { occurredAt: 'desc' },
     });
 
-    const formattedDocs: AuditLogItem[] = docs.map((doc) => {
-      const normalizedPayload = normalizeLegacyPayload(doc.payload, {
-        description: doc.description,
-        userId: doc.userId,
-        subjectUserId: doc.subjectUserId,
-        entityType: doc.entityType,
-        entityId: doc.entityId,
-      });
-
-      return {
-        ...doc,
-        category: doc.category ?? undefined,
-        visibility: doc.visibility ?? AuditLogVisibility.actor_only,
-        payload: normalizedPayload,
-        id: doc.id.toString(),
-      };
-    });
+    const formattedDocs: AuditLogItem[] = docs.map((doc) => ({
+      ...doc,
+      category: doc.category ?? undefined,
+      visibility: doc.visibility ?? AuditLogVisibility.actor_only,
+      payload: doc.payload,
+      id: doc.id.toString(),
+    }));
 
     return {
       docs: formattedDocs,

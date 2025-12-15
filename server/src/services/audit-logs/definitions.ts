@@ -1,4 +1,3 @@
-import { t } from 'elysia';
 import { AuditLogCategory, AuditLogVisibility, LogType } from 'src/generated';
 import { ACTIVITY_TYPE } from 'src/services/shared/constants';
 import {
@@ -12,8 +11,6 @@ import {
   isCudPayload,
 } from './audit-log.helpers';
 import type { AuditEventDefinition, AuditEventRegistry } from './types';
-
-const anyPayloadSchema = t.Any();
 
 const defaultDescribe =
   <T extends ACTIVITY_TYPE>(type: T) =>
@@ -29,9 +26,7 @@ const defaultResolveEntity =
 
 function createDefinition<T extends ACTIVITY_TYPE>(
   type: T,
-  config: Omit<AuditEventDefinition<T>, 'type' | 'payloadSchema'> & {
-    payloadSchema?: AuditEventDefinition<T>['payloadSchema'];
-  },
+  config: Omit<AuditEventDefinition<T>, 'type'>,
 ): AuditEventDefinition<T> {
   return {
     type,
@@ -39,7 +34,6 @@ function createDefinition<T extends ACTIVITY_TYPE>(
     visibility: config.visibility,
     logType: config.logType ?? LogType.audit,
     defaultSeverity: config.defaultSeverity,
-    payloadSchema: config.payloadSchema ?? anyPayloadSchema,
     describe: config.describe ?? defaultDescribe(type),
     resolveEntity: config.resolveEntity ?? defaultResolveEntity(type),
     getSubjectUserId: config.getSubjectUserId,

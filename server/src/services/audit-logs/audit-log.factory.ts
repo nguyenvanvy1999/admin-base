@@ -79,12 +79,10 @@ export class AuditLogFactory {
     const logId = IdUtil.snowflakeId().toString().padStart(20, '0');
     const definition = this.deps.registry[entry.type];
 
-    const maskedPayload = definition?.mask
-      ? definition.mask(entry.payload)
-      : entry.payload;
+    const maskedPayload = definition?.mask?.(entry.payload) ?? entry.payload;
     const eventPayload = maskedPayload as AuditEventInput<T>['payload'];
 
-    const actorId = entry.userId ?? ctx?.userId;
+    const actorId = entry.userId ?? ctx?.userId ?? null;
 
     const resolvedSubject =
       entry.subjectUserId ??
@@ -92,13 +90,21 @@ export class AuditLogFactory {
       (isCudPayload(eventPayload) ? eventPayload.entityId : null) ??
       actorId;
 
-    const resolvedEntity = definition?.resolveEntity?.(eventPayload) ?? {
-      type:
-        entry.entityType ??
-        inferEntityTypeFromActivityType(entry.type, eventPayload),
-      id:
-        entry.entityId ?? extractEntityIdFromPayload(entry.type, eventPayload),
-    };
+    const resolvedEntity =
+      definition?.resolveEntity?.(eventPayload) ??
+      (isCudPayload(eventPayload)
+        ? {
+            type: eventPayload.entityType ?? entry.entityType ?? null,
+            id: eventPayload.entityId ?? entry.entityId ?? null,
+          }
+        : {
+            type:
+              entry.entityType ??
+              inferEntityTypeFromActivityType(entry.type, eventPayload),
+            id:
+              entry.entityId ??
+              extractEntityIdFromPayload(entry.type, eventPayload),
+          });
 
     const description =
       entry.description ??

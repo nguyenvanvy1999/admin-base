@@ -1,20 +1,16 @@
-import type { TSchema } from 'elysia';
 import type {
   AuditLogCategory,
   AuditLogVisibility,
   LogType,
   SecurityEventSeverity,
 } from 'src/generated';
-import type { ACTIVITY_TYPE } from 'src/services/shared/constants';
+import { ACTIVITY_TYPE } from 'src/services/shared/constants';
 import type {
   ActivityTypeMap,
   AuditChangeSet,
   AuditLogEntry,
   EnrichedAuditLogEntry,
 } from 'src/share';
-
-export type AuditLogFactoryPayload<T extends ACTIVITY_TYPE> =
-  ActivityTypeMap[T];
 
 export type NormalizedAuditPayload = {
   description?: string | null;
@@ -50,7 +46,6 @@ export type AuditEventDefinition<T extends ACTIVITY_TYPE> = {
   logType?: LogType;
   defaultSeverity?: SecurityEventSeverity;
   visibility: AuditLogVisibility;
-  payloadSchema: TSchema;
   describe?: (params: {
     payload: ActivityTypeMap[T];
     entry: AuditEventInput<T>;
@@ -87,3 +82,40 @@ export type AuditEventInput<T extends ACTIVITY_TYPE = ACTIVITY_TYPE> = Omit<
 > & {
   payload: ActivityTypeMap[T];
 };
+
+export const CUD_ACTIVITY_TYPES: ACTIVITY_TYPE[] = [
+  ACTIVITY_TYPE.CREATE_USER,
+  ACTIVITY_TYPE.UPDATE_USER,
+  ACTIVITY_TYPE.CREATE_ROLE,
+  ACTIVITY_TYPE.UPDATE_ROLE,
+  ACTIVITY_TYPE.DEL_ROLE,
+  ACTIVITY_TYPE.CREATE_IP_WHITELIST,
+  ACTIVITY_TYPE.UPDATE_IP_WHITELIST,
+  ACTIVITY_TYPE.DEL_IP_WHITELIST,
+] as const;
+
+export const SECURITY_ACTIVITY_TYPES: ACTIVITY_TYPE[] = [
+  ACTIVITY_TYPE.LOGIN,
+  ACTIVITY_TYPE.REGISTER,
+  ACTIVITY_TYPE.LOGOUT,
+  ACTIVITY_TYPE.CHANGE_PASSWORD,
+  ACTIVITY_TYPE.SETUP_MFA,
+  ACTIVITY_TYPE.LINK_OAUTH,
+  ACTIVITY_TYPE.SECURITY_EVENT,
+  ACTIVITY_TYPE.REVOKE_SESSION,
+  ACTIVITY_TYPE.RESET_MFA,
+] as const;
+
+export type CudActivityType = (typeof CUD_ACTIVITY_TYPES)[number];
+export type SecurityActivityType = (typeof SECURITY_ACTIVITY_TYPES)[number];
+
+export type BaseAuditInput<T extends ACTIVITY_TYPE> = Omit<
+  AuditEventInput<T>,
+  'type'
+> & { type: T };
+
+export type CudAuditInput = BaseAuditInput<CudActivityType>;
+export type SecurityAuditInput = BaseAuditInput<SecurityActivityType>;
+export type OtherAuditInput = BaseAuditInput<
+  Exclude<ACTIVITY_TYPE, CudActivityType | SecurityActivityType>
+>;
