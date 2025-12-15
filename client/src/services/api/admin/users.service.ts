@@ -1,5 +1,4 @@
 import { apiClient } from 'src/lib/api/client';
-import { createQueryKeys } from 'src/services/api/base.service';
 import type {
   AdminUserActionResponse,
   AdminUserCreatePayload,
@@ -9,7 +8,8 @@ import type {
   AdminUserMfaPayload,
   AdminUserUpdatePayload,
   AdminUserUpdateRolesPayload,
-} from 'src/types/admin-users';
+} from 'src/types/admin';
+import { createQueryKeys } from '../base.service';
 
 const ADMIN_USER_BASE_PATH = '/api/admin/users';
 

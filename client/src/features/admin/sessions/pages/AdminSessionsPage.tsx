@@ -10,12 +10,12 @@ import { useUserSearchSelect } from 'src/features/admin/users/hooks/useUserSearc
 import { createUserSelectColumn } from 'src/features/admin/users/utils/userSelectColumn';
 import { useAdminSettings } from 'src/hooks/api/useAdminSettings';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
+import type { AdminSetting } from 'src/types/admin';
+import { SettingDataType } from 'src/types/admin';
 import type {
   AdminSession,
   AdminSessionListParams,
 } from 'src/types/admin-sessions';
-import type { AdminSetting } from 'src/types/admin-settings';
-import { SettingDataType } from 'src/types/admin-settings';
 
 function getSettingValue(
   settings: AdminSetting[],

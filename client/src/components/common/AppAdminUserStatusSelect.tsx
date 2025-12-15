@@ -2,8 +2,8 @@ import {
   ADMIN_USER_STATUSES,
   type AdminUserStatus,
 } from 'src/features/admin/users/types';
-import type { AppEnumSelectProps } from './AppEnumSelect';
-import { AppEnumSelect } from './AppEnumSelect';
+import type { AppEnumSelectProps } from './AppSelect';
+import { AppEnumSelect } from './AppSelect';
 
 export const ADMIN_USER_STATUS_COLORS: Record<AdminUserStatus, string> = {
   inactive: 'default',

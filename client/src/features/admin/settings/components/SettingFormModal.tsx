@@ -20,7 +20,7 @@ import {
   type AdminSetting,
   SettingDataType,
   type UpdateSettingDto,
-} from 'src/types/admin-settings';
+} from 'src/types/admin';
 
 interface SettingFormModalProps {
   open: boolean;

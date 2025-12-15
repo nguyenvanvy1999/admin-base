@@ -14,7 +14,7 @@ import {
   createSkipFromPagination,
   getSearchValue,
 } from 'src/lib/utils/table.utils';
-import { adminAuditLogsService } from 'src/services/api/admin-audit-logs.service';
+import { adminAuditLogsService } from 'src/services/api/admin/audit-logs.service';
 import type { AdminAuditLog } from 'src/types/admin-audit-logs';
 import type { TableParamsWithFilters } from 'src/types/table';
 

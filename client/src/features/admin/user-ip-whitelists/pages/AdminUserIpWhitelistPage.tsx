@@ -7,11 +7,11 @@ import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
 import { UserIpWhitelistFormModal } from 'src/features/admin/user-ip-whitelists/components/UserIpWhitelistFormModal';
-import { useAdminUserIpWhitelistPagination } from 'src/features/admin/user-ip-whitelists/hooks/useAdminUserIpWhitelistPagination';
 import {
+  useAdminUserIpWhitelistPagination,
   useDeleteUserIpWhitelists,
   useUpsertUserIpWhitelist,
-} from 'src/hooks/api/useAdminUserIpWhitelist';
+} from 'src/features/admin/user-ip-whitelists/hooks/useAdminUserIpWhitelist';
 import { useAuth } from 'src/hooks/auth/useAuth';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import type { UserIpWhitelist } from 'src/types/admin-user-ip-whitelist';
@@ -46,12 +46,18 @@ export default function AdminUserIpWhitelistPage() {
     [userIdsFilter, ipFilter],
   );
 
-  const { entries, pagination, isLoading, reload, goToPage, changePageSize } =
-    useAdminUserIpWhitelistPagination({
-      initialParams: listParams,
-      pageSize: 20,
-      autoLoad: true,
-    });
+  const {
+    whitelists,
+    pagination,
+    isLoading,
+    reload,
+    goToPage,
+    changePageSize,
+  } = useAdminUserIpWhitelistPagination({
+    initialParams: listParams,
+    pageSize: 20,
+    autoLoad: true,
+  });
 
   const upsertMutation = useUpsertUserIpWhitelist({
     onSuccess: () => {
@@ -151,7 +157,7 @@ export default function AdminUserIpWhitelistPage() {
         rowKey="id"
         columns={columns}
         loading={isLoading}
-        dataSource={entries as UserIpWhitelist[]}
+        dataSource={whitelists as UserIpWhitelist[]}
         search={false}
         rowSelection={rowSelection}
         pagination={{

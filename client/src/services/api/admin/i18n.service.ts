@@ -1,10 +1,10 @@
 import { apiClient, http } from 'src/lib/api/client';
-import { createQueryKeys } from 'src/services/api/base.service';
 import type {
   I18nListParams,
   I18nPaginatedResponse,
   I18nUpsertDto,
 } from 'src/types/admin-i18n';
+import { createQueryKeys } from '../base.service';
 
 const ADMIN_I18N_BASE_PATH = '/api/admin/i18n';
 

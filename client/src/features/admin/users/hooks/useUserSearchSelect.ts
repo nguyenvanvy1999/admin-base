@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { adminUsersService } from '../services/admin-users.service';
+import { adminUsersService } from 'src/services/api/admin/users.service';
 
 export interface UseUserSearchSelectOptions {
   enabled?: boolean;

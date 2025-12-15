@@ -18,8 +18,8 @@ import {
   getSettingCategory,
   parseSettingValue,
 } from 'src/lib/utils/setting.utils';
-import type { AdminSetting } from 'src/types/admin-settings';
-import { SettingDataType } from 'src/types/admin-settings';
+import type { AdminSetting } from 'src/types/admin';
+import { SettingDataType } from 'src/types/admin';
 import type { TableParamsWithFilters } from 'src/types/table';
 
 type AdminSettingTableParams = TableParamsWithFilters<{

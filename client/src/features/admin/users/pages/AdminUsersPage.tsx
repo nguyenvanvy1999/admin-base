@@ -5,8 +5,8 @@ import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ADMIN_USER_STATUS_COLORS } from 'src/components/common/AppAdminUserStatusSelect';
-import { AppEnumMultiSelect } from 'src/components/common/AppEnumMultiSelect';
 import { AppPage } from 'src/components/common/AppPage';
+import { AppEnumMultiSelect } from 'src/components/common/AppSelect';
 import { AppTable } from 'src/components/common/AppTable';
 import {
   createActionColumn,

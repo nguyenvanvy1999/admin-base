@@ -8,7 +8,7 @@ import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
 import { ImportExportActions } from 'src/components/common/ImportExportActions';
 import { I18nFormModal } from 'src/features/admin/i18n/components/I18nFormModal';
-import { useAdminI18nPagination } from 'src/features/admin/i18n/hooks/useAdminI18nPagination';
+import { useAdminI18nPagination } from 'src/features/admin/i18n/hooks/useAdminI18n';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
 import type { TableParamsWithFilters } from 'src/types/table';
 import {

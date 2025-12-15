@@ -2,11 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import {
   type MutationCallbacks,
   useAppMutation,
-} from 'src/hooks/api/useAppMutation';
+} from 'src/hooks/api/useMutation';
 import {
   adminUserKeys,
   adminUsersService,
-} from '../services/admin-users.service';
+} from 'src/services/api/admin/users.service';
 import type {
   AdminUserActionResponse,
   AdminUserCreatePayload,

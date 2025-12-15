@@ -5,8 +5,15 @@ import type {
   BlockRateLimitParams,
   UnblockRateLimitParams,
 } from 'src/types/admin-rate-limit';
+import { createQueryKeys } from '../base.service';
 
 const ADMIN_RATE_LIMIT_BASE_PATH = '/api/admin/rate-limits';
+
+export const adminRateLimitKeys = {
+  ...createQueryKeys('admin-rate-limits'),
+  list: (filters?: Partial<AdminRateLimitListParams>) =>
+    [...createQueryKeys('admin-rate-limits').lists(), filters] as const,
+};
 
 export const adminRateLimitService = {
   list(params: AdminRateLimitListParams): Promise<AdminRateLimitListResponse> {

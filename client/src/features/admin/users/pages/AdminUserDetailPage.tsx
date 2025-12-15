@@ -35,7 +35,7 @@ import {
 import { AppAdminUserStatusSelect } from 'src/components/common/AppAdminUserStatusSelect';
 import { AppPage } from 'src/components/common/AppPage';
 import { SessionsTable } from 'src/features/admin/sessions/components/SessionsTable';
-import { useAdminSessionsPagination } from 'src/features/admin/sessions/hooks/useAdminSessionsPagination';
+import { useAdminSessionsPagination } from 'src/features/admin/sessions/hooks/useAdminSessions';
 import { useSessionDateRange } from 'src/features/admin/sessions/hooks/useSessionDateRange';
 import { getSessionStatus } from 'src/features/admin/sessions/utils/sessionStatus';
 import {
@@ -50,7 +50,7 @@ import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { useModal } from 'src/hooks/useModal';
 import { useNotify } from 'src/hooks/useNotify';
 import { toIsoStringOrNull } from 'src/lib/utils/date.utils';
-import { adminSessionsService } from 'src/services/api/admin-sessions.service';
+import { adminSessionsService } from 'src/services/api/admin/sessions.service';
 import type { AdminSession } from 'src/types/admin-sessions';
 import {
   ADMIN_LOCKOUT_REASONS,

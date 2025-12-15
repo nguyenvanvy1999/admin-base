@@ -5,22 +5,23 @@ import { useTranslation } from 'react-i18next';
 
 export type AppEnumKey = string | number;
 
-export interface AppEnumMultiSelectProps<ValueType extends AppEnumKey = string>
+export interface AppSelectProps<ValueType extends AppEnumKey = string>
   extends Omit<SelectProps<ValueType>, 'options'> {
   keys: ValueType[];
   i18nPrefix: string;
   colorMap?: Record<ValueType, string>;
+  mode?: 'multiple' | 'tags' | undefined;
 }
 
-export function AppEnumMultiSelect<ValueType extends AppEnumKey = string>({
+export function AppSelect<ValueType extends AppEnumKey = string>({
   keys,
   i18nPrefix,
   colorMap,
-  mode = 'multiple',
+  mode,
   allowClear = true,
   showSearch = true,
   ...rest
-}: AppEnumMultiSelectProps<ValueType>) {
+}: AppSelectProps<ValueType>) {
   const { t } = useTranslation();
 
   const options = useMemo(
@@ -59,4 +60,30 @@ export function AppEnumMultiSelect<ValueType extends AppEnumKey = string>({
       {...rest}
     />
   );
+}
+
+export interface AppEnumSelectProps<ValueType extends AppEnumKey = string>
+  extends Omit<SelectProps<ValueType>, 'options' | 'mode'> {
+  keys: ValueType[];
+  i18nPrefix: string;
+  colorMap?: Record<ValueType, string>;
+}
+
+export function AppEnumSelect<ValueType extends AppEnumKey = string>(
+  props: AppEnumSelectProps<ValueType>,
+) {
+  return <AppSelect<ValueType> {...props} />;
+}
+
+export interface AppEnumMultiSelectProps<ValueType extends AppEnumKey = string>
+  extends Omit<SelectProps<ValueType>, 'options'> {
+  keys: ValueType[];
+  i18nPrefix: string;
+  colorMap?: Record<ValueType, string>;
+}
+
+export function AppEnumMultiSelect<ValueType extends AppEnumKey = string>(
+  props: AppEnumMultiSelectProps<ValueType>,
+) {
+  return <AppSelect<ValueType> {...props} mode="multiple" />;
 }

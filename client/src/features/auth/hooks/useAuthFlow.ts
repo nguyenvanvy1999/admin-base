@@ -1,6 +1,6 @@
-import { useMutation } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { REGISTER_EMAIL_KEY } from 'src/constants';
+import { useAppMutation } from 'src/hooks/api/useMutation';
 import { useAuth } from 'src/hooks/auth/useAuth';
 import { parseApiError } from 'src/lib/api/errorHandler';
 import { authService } from 'src/services/api/auth.service';
@@ -111,8 +111,10 @@ export function useAuthFlow(): UseAuthFlowResult {
     [handleSession],
   );
 
-  const loginMutation = useMutation({
+  const loginMutation = useAppMutation({
     mutationFn: (payload: LoginPayload) => authService.login(payload),
+    skipSuccessMessage: true,
+    skipErrorMessage: true,
     onSuccess: (response) => {
       handleLoginResponse(response);
     },
@@ -126,9 +128,11 @@ export function useAuthFlow(): UseAuthFlowResult {
     },
   });
 
-  const setupRequestMutation = useMutation({
+  const setupRequestMutation = useAppMutation({
     mutationFn: (setupToken: string) =>
       authService.requestMfaSetup({ setupToken }),
+    skipSuccessMessage: true,
+    skipErrorMessage: true,
     onSuccess: (data) => {
       setSetupState((prev) =>
         prev
@@ -142,9 +146,11 @@ export function useAuthFlow(): UseAuthFlowResult {
     },
   });
 
-  const setupConfirmMutation = useMutation({
+  const setupConfirmMutation = useAppMutation({
     mutationFn: (payload: { mfaToken: string; otp: string }) =>
       authService.confirmMfaSetup(payload),
+    skipSuccessMessage: true,
+    skipErrorMessage: true,
     onSuccess: ({ mfaToken, loginToken }) => {
       setChallengeState({ mfaToken, loginToken });
       setSetupState(null);
@@ -159,9 +165,11 @@ export function useAuthFlow(): UseAuthFlowResult {
     },
   });
 
-  const loginMfaMutation = useMutation({
+  const loginMfaMutation = useAppMutation({
     mutationFn: (payload: { mfaToken: string; otp: string }) =>
       authService.loginWithMfa(payload),
+    skipSuccessMessage: true,
+    skipErrorMessage: true,
     onSuccess: (session) => {
       handleSession(session);
     },
@@ -176,12 +184,14 @@ export function useAuthFlow(): UseAuthFlowResult {
     },
   });
 
-  const confirmMfaMutation = useMutation({
+  const confirmMfaMutation = useAppMutation({
     mutationFn: (payload: {
       mfaToken: string;
       loginToken: string;
       otp: string;
     }) => authService.confirmMfaLogin(payload),
+    skipSuccessMessage: true,
+    skipErrorMessage: true,
     onSuccess: (session) => {
       handleSession(session);
     },
@@ -196,9 +206,11 @@ export function useAuthFlow(): UseAuthFlowResult {
     },
   });
 
-  const backupMutation = useMutation({
+  const backupMutation = useAppMutation({
     mutationFn: (payload: BackupCodeVerifyPayload) =>
       authService.verifyBackupCode(payload),
+    skipSuccessMessage: true,
+    skipErrorMessage: true,
     onSuccess: (session) => {
       handleSession(session);
     },

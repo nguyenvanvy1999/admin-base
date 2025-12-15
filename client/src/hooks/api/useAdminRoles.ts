@@ -3,13 +3,13 @@ import {
   type AdminRoleListQuery,
   adminRoleKeys,
   adminRolesService,
-} from 'src/services/api/admin-roles.service';
+} from 'src/services/api/admin/roles.service';
 import type {
   AdminRoleDetail,
   AdminRoleListResponse,
   UpsertRoleDto,
-} from 'src/types/admin-roles';
-import { type MutationCallbacks, useAppMutation } from './useAppMutation';
+} from 'src/types/admin';
+import { type MutationCallbacks, useAppMutation } from './useMutation';
 
 export function useAdminRoles(params?: AdminRoleListQuery) {
   return useQuery<AdminRoleListResponse>({

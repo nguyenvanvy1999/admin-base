@@ -18,8 +18,8 @@ import {
   createSkipFromPagination,
   getSearchValue,
 } from 'src/lib/utils/table.utils';
-import { adminRolesService } from 'src/services/api/admin-roles.service';
-import type { AdminRole } from 'src/types/admin-roles';
+import { adminRolesService } from 'src/services/api/admin/roles.service';
+import type { AdminRole } from 'src/types/admin';
 import type { TableParamsWithFilters } from 'src/types/table';
 
 type AdminRoleTableParams = TableParamsWithFilters<{

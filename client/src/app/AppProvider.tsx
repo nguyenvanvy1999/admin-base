@@ -10,8 +10,8 @@ import {
   ThemeModeProvider,
   useThemeMode,
 } from 'src/app/providers/ThemeModeProvider';
+import { FullScreenLoader } from 'src/components/common/AppLoader';
 import { ErrorBoundary } from 'src/components/common/ErrorBoundary';
-import { FullScreenLoader } from 'src/components/common/FullScreenLoader';
 import { getThemeConfig } from 'src/config/theme';
 import { queryClient } from 'src/lib/queryClient';
 import { AppRoutes } from './routes';
