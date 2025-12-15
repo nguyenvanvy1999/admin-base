@@ -252,17 +252,11 @@ export class MfaService {
       security: securityContext,
     });
 
-    await Promise.all([
-      this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.SETUP_MFA,
-        payload: { method: 'totp', stage: 'confirm' },
-      }),
-      this.deps.auditLogService.logSecurityEvent({
-        userId: cachedData.userId,
-        eventType: SecurityEventType.mfa_enabled,
-        metadata: { method: 'totp' },
-      }),
-    ]);
+    await this.deps.auditLogService.logSecurityEvent({
+      userId: cachedData.userId,
+      eventType: SecurityEventType.mfa_enabled,
+      metadata: { method: 'totp' },
+    });
 
     if (cachedData.sessionId) {
       await sessionService.revoke(cachedData.userId, [cachedData.sessionId]);
@@ -321,17 +315,11 @@ export class MfaService {
 
     await sessionService.revoke(userId);
 
-    await Promise.all([
-      this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.RESET_MFA,
-        payload: { method: 'disable' },
-      }),
-      this.deps.auditLogService.logSecurityEvent({
-        userId,
-        eventType: SecurityEventType.mfa_disabled,
-        metadata: { method: otp ? 'totp' : 'backup_code' },
-      }),
-    ]);
+    await this.deps.auditLogService.logSecurityEvent({
+      userId,
+      eventType: SecurityEventType.mfa_disabled,
+      metadata: { method: otp ? 'totp' : 'backup_code' },
+    });
 
     return null;
   }
@@ -365,17 +353,11 @@ export class MfaService {
     });
 
     await sessionService.revoke(userId);
-    await Promise.all([
-      this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.RESET_MFA,
-        payload: { method: 'reset' },
-      }),
-      this.deps.auditLogService.logSecurityEvent({
-        userId,
-        eventType: SecurityEventType.mfa_disabled,
-        metadata: { method: 'reset' },
-      }),
-    ]);
+    await this.deps.auditLogService.logSecurityEvent({
+      userId,
+      eventType: SecurityEventType.mfa_disabled,
+      metadata: { method: 'reset' },
+    });
 
     return null;
   }
@@ -469,14 +451,11 @@ export class MfaService {
       });
 
       if (!isValid) {
-        await Promise.all([
-          this.logMfaError('INVALID_OTP', user.id),
-          this.deps.auditLogService.logSecurityEvent({
-            userId: user.id,
-            eventType: SecurityEventType.mfa_failed,
-            metadata: { method: 'totp', reason: 'invalid_otp' },
-          }),
-        ]);
+        await this.deps.auditLogService.logSecurityEvent({
+          userId: user.id,
+          eventType: SecurityEventType.mfa_failed,
+          metadata: { method: 'totp', reason: 'invalid_otp' },
+        });
         throw new BadReqErr(ErrCode.InvalidOtp);
       }
     } else if (backupCode) {
@@ -514,17 +493,11 @@ export class MfaService {
       securityContext,
     );
 
-    await Promise.all([
-      this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LOGIN,
-        payload: { method: otp ? 'email' : 'backup-code' },
-      }),
-      this.deps.auditLogService.logSecurityEvent({
-        userId: user.id,
-        eventType: SecurityEventType.mfa_verified,
-        metadata: { method: otp ? 'totp' : 'backup_code' },
-      }),
-    ]);
+    await this.deps.auditLogService.logSecurityEvent({
+      userId: user.id,
+      eventType: SecurityEventType.mfa_verified,
+      metadata: { method: otp ? 'totp' : 'backup_code' },
+    });
 
     return loginRes;
   }

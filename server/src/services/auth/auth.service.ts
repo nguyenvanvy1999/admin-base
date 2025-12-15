@@ -120,17 +120,11 @@ export class AuthService {
       user,
     );
     if (!passwordValid) {
-      await Promise.all([
-        this.deps.auditLogService.push({
-          type: ACTIVITY_TYPE.LOGIN,
-          payload: { method: 'email', error: 'password_mismatch' },
-        }),
-        this.deps.auditLogService.logSecurityEvent({
-          userId: user.id,
-          eventType: SecurityEventType.login_failed,
-          metadata: { method: 'email', reason: 'password_mismatch' },
-        }),
-      ]);
+      await this.deps.auditLogService.logSecurityEvent({
+        userId: user.id,
+        eventType: SecurityEventType.login_failed,
+        metadata: { method: 'email', reason: 'password_mismatch' },
+      });
       throw new BadReqErr(ErrCode.PasswordNotMatch);
     }
 
@@ -152,17 +146,11 @@ export class AuthService {
     );
 
     if (securityResult.action === 'block') {
-      await Promise.all([
-        this.deps.auditLogService.push({
-          type: ACTIVITY_TYPE.LOGIN,
-          payload: { method: 'email', error: 'security_blocked' },
-        }),
-        this.deps.auditLogService.logSecurityEvent({
-          userId: user.id,
-          eventType: SecurityEventType.login_failed,
-          metadata: { method: 'email', reason: 'security_blocked' },
-        }),
-      ]);
+      await this.deps.auditLogService.logSecurityEvent({
+        userId: user.id,
+        eventType: SecurityEventType.login_failed,
+        metadata: { method: 'email', reason: 'security_blocked' },
+      });
       throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
     }
 
@@ -241,20 +229,14 @@ export class AuthService {
       security,
     );
 
-    await Promise.all([
-      this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LOGIN,
-        payload: { method: 'email' },
-      }),
-      this.deps.auditLogService.logSecurityEvent({
-        userId: user.id,
-        eventType: SecurityEventType.login_success,
-        metadata: {
-          method: 'email',
-          isNewDevice: security?.isNewDevice ?? false,
-        },
-      }),
-    ]);
+    await this.deps.auditLogService.logSecurityEvent({
+      userId: user.id,
+      eventType: SecurityEventType.login_success,
+      metadata: {
+        method: 'email',
+        isNewDevice: security?.isNewDevice ?? false,
+      },
+    });
 
     return loginRes;
   }
@@ -448,16 +430,10 @@ export class AuthService {
       select: { id: true },
     });
 
-    await Promise.all([
-      this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.CHANGE_PASSWORD,
-        payload: {},
-      }),
-      this.deps.auditLogService.logSecurityEvent({
-        userId,
-        eventType: SecurityEventType.password_changed,
-      }),
-    ]);
+    await this.deps.auditLogService.logSecurityEvent({
+      userId,
+      eventType: SecurityEventType.password_changed,
+    });
   }
 
   async forgotPassword(params: ForgotPasswordParams): Promise<void> {
@@ -496,16 +472,10 @@ export class AuthService {
 
     await this.deps.sessionService.revoke(userId);
 
-    await Promise.all([
-      this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.CHANGE_PASSWORD,
-        payload: {},
-      }),
-      this.deps.auditLogService.logSecurityEvent({
-        userId: user.id,
-        eventType: SecurityEventType.password_reset_completed,
-      }),
-    ]);
+    await this.deps.auditLogService.logSecurityEvent({
+      userId: user.id,
+      eventType: SecurityEventType.password_reset_completed,
+    });
   }
 
   async verifyAccount(params: VerifyAccountParams): Promise<void> {
