@@ -23,10 +23,6 @@ import {
   auditLogsService,
 } from 'src/services/audit-logs/audit-logs.service';
 import {
-  type SecurityEventsService,
-  securityEventsService,
-} from 'src/services/security';
-import {
   ACTIVITY_TYPE,
   BadReqErr,
   ctxStore,
@@ -108,7 +104,6 @@ export class MfaService {
       userUtilService: UserUtilServiceType;
       securityMonitorService: SecurityMonitorServiceType;
       auditLogService: AuditLogsService;
-      securityEventService: SecurityEventsService;
       generateToken: TokenGenerator;
     } = {
       db,
@@ -121,7 +116,6 @@ export class MfaService {
       userUtilService,
       securityMonitorService,
       auditLogService: auditLogsService,
-      securityEventService: securityEventsService,
       generateToken: IdUtil.token16,
     },
   ) {}
@@ -264,7 +258,7 @@ export class MfaService {
         type: ACTIVITY_TYPE.SETUP_MFA,
         payload: { method: 'totp', stage: 'confirm' },
       }),
-      this.deps.securityEventService.create({
+      this.deps.auditLogService.logSecurityEvent({
         userId: cachedData.userId,
         eventType: SecurityEventType.mfa_enabled,
         ip: clientIp,
@@ -337,7 +331,7 @@ export class MfaService {
         type: ACTIVITY_TYPE.RESET_MFA,
         payload: { method: 'disable' },
       }),
-      this.deps.securityEventService.create({
+      this.deps.auditLogService.logSecurityEvent({
         userId,
         eventType: SecurityEventType.mfa_disabled,
         ip: clientIp,
@@ -385,7 +379,7 @@ export class MfaService {
         type: ACTIVITY_TYPE.RESET_MFA,
         payload: { method: 'reset' },
       }),
-      this.deps.securityEventService.create({
+      this.deps.auditLogService.logSecurityEvent({
         userId,
         eventType: SecurityEventType.mfa_disabled,
         ip: clientIp,
@@ -488,7 +482,7 @@ export class MfaService {
       if (!isValid) {
         await Promise.all([
           this.logMfaError('INVALID_OTP', user.id),
-          this.deps.securityEventService.create({
+          this.deps.auditLogService.logSecurityEvent({
             userId: user.id,
             eventType: SecurityEventType.mfa_failed,
             ip: clientIp,
@@ -538,7 +532,7 @@ export class MfaService {
         type: ACTIVITY_TYPE.LOGIN,
         payload: { method: otp ? 'email' : 'backup-code' },
       }),
-      this.deps.securityEventService.create({
+      this.deps.auditLogService.logSecurityEvent({
         userId: user.id,
         eventType: SecurityEventType.mfa_verified,
         ip: clientIp,

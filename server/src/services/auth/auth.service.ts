@@ -27,10 +27,6 @@ import {
   auditLogsService,
 } from 'src/services/audit-logs/audit-logs.service';
 import {
-  type SecurityEventsService,
-  securityEventsService,
-} from 'src/services/security';
-import {
   type SettingsService,
   settingsService,
 } from 'src/services/settings/settings.service';
@@ -86,7 +82,6 @@ export class AuthService {
       sessionService: SessionService;
       settingService: SettingsService;
       auditLogService: AuditLogsService;
-      securityEventService: SecurityEventsService;
       userUtilService: UserUtilService;
       mfaCache: IMFACache;
       authenticator: typeof authenticator;
@@ -102,7 +97,6 @@ export class AuthService {
       sessionService,
       settingService: settingsService,
       auditLogService: auditLogsService,
-      securityEventService: securityEventsService,
       userUtilService,
       mfaCache,
       authenticator,
@@ -131,7 +125,7 @@ export class AuthService {
           type: ACTIVITY_TYPE.LOGIN,
           payload: { method: 'email', error: 'password_mismatch' },
         }),
-        this.deps.securityEventService.create({
+        this.deps.auditLogService.logSecurityEvent({
           userId: user.id,
           eventType: SecurityEventType.login_failed,
           ip: clientIp,
@@ -165,7 +159,7 @@ export class AuthService {
           type: ACTIVITY_TYPE.LOGIN,
           payload: { method: 'email', error: 'security_blocked' },
         }),
-        this.deps.securityEventService.create({
+        this.deps.auditLogService.logSecurityEvent({
           userId: user.id,
           eventType: SecurityEventType.login_failed,
           ip: clientIp,
@@ -256,7 +250,7 @@ export class AuthService {
         type: ACTIVITY_TYPE.LOGIN,
         payload: { method: 'email' },
       }),
-      this.deps.securityEventService.create({
+      this.deps.auditLogService.logSecurityEvent({
         userId: user.id,
         eventType: SecurityEventType.login_success,
         ip: clientIp,
@@ -467,7 +461,7 @@ export class AuthService {
         type: ACTIVITY_TYPE.CHANGE_PASSWORD,
         payload: {},
       }),
-      this.deps.securityEventService.create({
+      this.deps.auditLogService.logSecurityEvent({
         userId,
         eventType: SecurityEventType.password_changed,
         ip: clientIp,
@@ -519,7 +513,7 @@ export class AuthService {
         type: ACTIVITY_TYPE.CHANGE_PASSWORD,
         payload: {},
       }),
-      this.deps.securityEventService.create({
+      this.deps.auditLogService.logSecurityEvent({
         userId: user.id,
         eventType: SecurityEventType.password_reset_completed,
         ip: clientIp,

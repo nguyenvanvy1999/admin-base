@@ -40,8 +40,8 @@ export const AuditLogListQueryDto = t.Intersect([
 export const AuditLogItemDto = t.Object({
   id: t.String(),
   payload: t.Any(),
-  level: t.String(),
-  logType: t.String(),
+  level: t.Enum(LogLevel),
+  logType: t.Enum(LogType),
   eventType: t.Nullable(t.Enum(SecurityEventType)),
   severity: t.Nullable(t.Enum(SecurityEventSeverity)),
   userId: t.Nullable(t.String()),

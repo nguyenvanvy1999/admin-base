@@ -5,23 +5,43 @@ import {
   type AuditLogWhereInput,
   LogType,
   type SecurityEventSeverity,
+  type SecurityEventType,
 } from 'src/generated';
 import { executeListQuery } from 'src/services/shared/utils';
 import {
-  type ACTIVITY_TYPE,
+  ACTIVITY_TYPE,
   type AuditLogEntry,
   BadReqErr,
   ctxStore,
   ErrCode,
   extractEntityIdFromPayload,
   generateAuditLogDescription,
+  getIpAndUa,
+  getSecurityEventDescription,
   IdUtil,
   inferEntityTypeFromActivityType,
   inferSeverityFromEventType,
   LOG_LEVEL,
+  type PrismaTx,
 } from 'src/share';
 
 const JOB_NAME = 'audit-log';
+
+type CreateSecurityEventParams = {
+  userId?: string;
+  eventType: SecurityEventType;
+  severity?: SecurityEventSeverity;
+  ip?: string;
+  userAgent?: string;
+  location?: Record<string, any>;
+  metadata?: Record<string, any>;
+};
+
+type ResolveAuditLogParams = {
+  id: string;
+  resolvedBy?: string;
+  tx?: PrismaTx;
+};
 
 export class AuditLogsService {
   constructor(
@@ -55,7 +75,9 @@ export class AuditLogsService {
       entry.entityId ?? extractEntityIdFromPayload(entry.type, entry.payload);
     const description =
       entry.description ??
-      generateAuditLogDescription(entry.type, entry.payload);
+      (entry.eventType
+        ? getSecurityEventDescription(entry.eventType, entry.payload)
+        : generateAuditLogDescription(entry.type, entry.payload));
 
     const enrichedEntry: AuditLogEntry & {
       logId: string;
@@ -84,6 +106,30 @@ export class AuditLogsService {
     };
 
     return { enrichedEntry, logId };
+  }
+
+  logSecurityEvent(params: CreateSecurityEventParams): Promise<string> {
+    const { userId, eventType, severity, ip, userAgent, location, metadata } =
+      params;
+
+    const { clientIp, userAgent: ctxUserAgent } = getIpAndUa();
+    const finalIp = ip ?? clientIp;
+    const finalUserAgent = userAgent ?? ctxUserAgent;
+    const finalSeverity = severity ?? inferSeverityFromEventType(eventType);
+
+    return this.push({
+      logType: LogType.security,
+      type: ACTIVITY_TYPE.INTERNAL_ERROR as AuditLogEntry['type'],
+      payload: { ...(metadata ?? {}), location },
+      eventType,
+      severity: finalSeverity,
+      description: getSecurityEventDescription(eventType, metadata),
+      userId,
+      ip: finalIp,
+      userAgent: finalUserAgent,
+      resolved: false,
+      level: LOG_LEVEL.WARNING,
+    });
   }
 
   async push<T extends ACTIVITY_TYPE>(
@@ -115,6 +161,26 @@ export class AuditLogsService {
     await this.deps.queue.addBulk(enrichedEntries);
 
     return jobIds;
+  }
+
+  resolve(params: ResolveAuditLogParams) {
+    const { id, resolvedBy, tx } = params;
+    const dbInstance = tx || this.deps.db;
+
+    return dbInstance.auditLog.update({
+      where: { id: BigInt(id) },
+      data: {
+        resolved: true,
+        resolvedAt: new Date(),
+        resolvedBy,
+      },
+      select: {
+        id: true,
+        resolved: true,
+        resolvedAt: true,
+        resolvedBy: true,
+      },
+    });
   }
 
   async list(params: AuditLogListParams) {
