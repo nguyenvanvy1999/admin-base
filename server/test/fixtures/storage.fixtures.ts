@@ -7,7 +7,7 @@ import type {
   IMimeUtil,
   IPathUtil,
   S3StorageDependencies,
-} from 'src/service/file/storage';
+} from 'src/services/file/storage';
 
 export class StorageFixtures {
   static createMockFile(

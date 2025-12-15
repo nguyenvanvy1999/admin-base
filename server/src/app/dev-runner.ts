@@ -1,10 +1,10 @@
 import process from 'node:process';
 import { logger } from 'src/config/logger';
-import { backendAppService } from 'src/service/infrastructure/backend.service';
+import { backendAppService } from 'src/services/infrastructure/backend.service';
 import {
   auditLogWorkerService,
   workerManagerService,
-} from 'src/service/infrastructure/worker.service';
+} from 'src/services/infrastructure/worker.service';
 
 async function startBackendService(): Promise<void> {
   try {

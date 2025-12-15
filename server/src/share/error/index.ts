@@ -1,4 +1,4 @@
-import { HTTP_STATUS } from '../constant';
+import { HTTP_STATUS } from 'src/services/shared/constants';
 import type { ErrCode } from './error-code';
 
 export class CoreErr extends Error {

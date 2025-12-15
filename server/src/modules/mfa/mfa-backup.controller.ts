@@ -6,8 +6,8 @@ import {
   LoginResDto,
   VerifyBackupCodeRequestDto,
 } from 'src/dtos/auth.dto';
-import { authCheck } from 'src/service/auth';
-import { mfaService } from 'src/service/auth/mfa.service';
+import { authCheck } from 'src/services/auth';
+import { mfaService } from 'src/services/auth/mfa.service';
 import {
   ACCESS_AUTH,
   castToRes,

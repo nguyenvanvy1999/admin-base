@@ -1,6 +1,6 @@
 import process from 'node:process';
 import { logger } from 'src/config/logger';
-import { backendServerService } from 'src/service/infrastructure/backend.service';
+import { backendServerService } from 'src/services/infrastructure/backend.service';
 
 logger.info(`🔨 Worker ${process.pid} starting...`);
 

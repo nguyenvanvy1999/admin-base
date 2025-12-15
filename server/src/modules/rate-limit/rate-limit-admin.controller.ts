@@ -6,8 +6,8 @@ import {
   RateLimitConfigListResDto,
   UpdateRateLimitConfigDto,
 } from 'src/dtos/rate-limit-config.dto';
-import { authCheck, authorize, has } from 'src/service/auth';
-import { rateLimitConfigService } from 'src/service/rate-limit/rate-limit-config.service';
+import { authCheck, authorize, has } from 'src/services/auth';
+import { rateLimitConfigService } from 'src/services/rate-limit/rate-limit-config.service';
 import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 
 export const rateLimitAdminController = new Elysia({

@@ -1,6 +1,6 @@
 import process from 'node:process';
 import { logger } from 'src/config/logger';
-import { backendAppService } from 'src/service/infrastructure/backend.service';
+import { backendAppService } from 'src/services/infrastructure/backend.service';
 
 try {
   await backendAppService.start();

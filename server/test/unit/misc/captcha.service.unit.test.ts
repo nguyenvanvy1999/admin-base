@@ -3,7 +3,7 @@ import type { ICaptchaCache } from 'src/config/cache';
 import {
   CaptchaService,
   type SvgCaptchaGenerator,
-} from 'src/service/auth/captcha.service';
+} from 'src/services/auth/captcha.service';
 
 describe('CaptchaService', () => {
   let cache: {

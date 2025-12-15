@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'bun:test';
 import type { RedisClient } from 'bun';
-import { IdempotencyUtil } from 'src/service/utils/idempotency.util';
+import { IdempotencyUtil } from 'src/services/shared/utils/idempotency.util';
 import { IDEMPOTENCY_TTL } from 'src/share';
 import { IdempotencyFixtures } from 'test/fixtures';
 import type { RedisMock } from 'test/utils/mocks/redis';

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, spyOn } from 'bun:test';
-import { EmailService } from 'src/service/mail/email.service';
+import { EmailService } from 'src/services/mail/email.service';
 import { PurposeVerify } from 'src/share';
 import { createMockMailEnv } from 'test/utils/mocks/env';
 import { createMockLogger } from 'test/utils/mocks/logger';

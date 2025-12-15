@@ -4,8 +4,8 @@ import {
   I18nUpsertDto,
   PaginateI18nResDto,
 } from 'src/dtos/i18n.dto';
-import { authCheck, authorize, has } from 'src/service/auth';
-import { i18nService } from 'src/service/i18n';
+import { authCheck, authorize, has } from 'src/services/auth';
+import { i18nService } from 'src/services/i18n';
 import {
   authErrors,
   castToRes,

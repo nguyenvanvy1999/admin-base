@@ -7,8 +7,8 @@ import {
   mock,
   spyOn,
 } from 'bun:test';
-import { EncryptService } from 'src/service/auth/encrypt.service';
-import { SettingsService } from 'src/service/settings/settings.service';
+import { EncryptService } from 'src/services/auth/encrypt.service';
+import { SettingsService } from 'src/services/settings/settings.service';
 import { SETTING } from 'src/share';
 import { SettingFixtures } from 'test/fixtures';
 import { TestLifecycle } from 'test/utils';

@@ -5,8 +5,8 @@ import {
   PaginateIpWhitelistResDto,
   UpsertIpWhitelistDto,
 } from 'src/dtos/ip-whitelist.dto';
-import { anyOf, authCheck, authorize, has } from 'src/service/auth';
-import { userIpWhitelistService } from 'src/service/user-ip-whitelist';
+import { anyOf, authCheck, authorize, has } from 'src/services/auth';
+import { ipWhitelistService } from 'src/services/security';
 import {
   authErrors,
   castToRes,
@@ -27,7 +27,7 @@ export const ipWhitelistAdminController = new Elysia({
     '/',
     async ({ query, currentUser }) => {
       return castToRes(
-        await userIpWhitelistService.list({
+        await ipWhitelistService.list({
           ...query,
           currentUserId: currentUser.id,
           hasViewPermission:
@@ -46,7 +46,7 @@ export const ipWhitelistAdminController = new Elysia({
   .get(
     '/:id',
     async ({ params: { id }, currentUser }) => {
-      const result = await userIpWhitelistService.detail(id, {
+      const result = await ipWhitelistService.detail(id, {
         currentUserId: currentUser.id,
         hasViewPermission: currentUser.permissions.includes('IPWHITELIST.VIEW'),
       });
@@ -66,7 +66,7 @@ export const ipWhitelistAdminController = new Elysia({
   .post(
     '/',
     async ({ body, currentUser }) => {
-      const result = await userIpWhitelistService.upsert(body, {
+      const result = await ipWhitelistService.upsert(body, {
         currentUserId: currentUser.id,
         hasViewPermission:
           currentUser.permissions.includes('IPWHITELIST.CREATE') ||
@@ -87,7 +87,7 @@ export const ipWhitelistAdminController = new Elysia({
   .post(
     '/del',
     async ({ body, currentUser }) => {
-      await userIpWhitelistService.removeMany(body.ids, {
+      await ipWhitelistService.removeMany(body.ids, {
         currentUserId: currentUser.id,
         hasViewPermission:
           currentUser.permissions.includes('IPWHITELIST.DELETE'),

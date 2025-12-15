@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
-import { StorageManager } from 'src/service/file';
-import { FileStorageBackend, S3StorageBackend } from 'src/service/file/storage';
+import { StorageManager } from 'src/services/file';
+import {
+  FileStorageBackend,
+  S3StorageBackend,
+} from 'src/services/file/storage';
 import type { IStorageBackend } from 'src/share';
 import { StorageFixtures } from 'test/fixtures';
 import { createMockFullEnv } from 'test/utils/mocks/env';

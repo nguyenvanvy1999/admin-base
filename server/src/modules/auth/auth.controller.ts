@@ -13,9 +13,9 @@ import {
   UserResDto,
   VerifyAccountRequestDto,
 } from 'src/dtos/auth.dto';
-import { authCheck } from 'src/service/auth';
-import { authService } from 'src/service/auth/auth.service';
-import { rateLimit } from 'src/service/rate-limit/auth-rate-limit.config';
+import { authCheck } from 'src/services/auth';
+import { authService } from 'src/services/auth/auth.service';
+import { rateLimit } from 'src/services/rate-limit/auth-rate-limit.config';
 import {
   ACCESS_AUTH,
   authErrors,

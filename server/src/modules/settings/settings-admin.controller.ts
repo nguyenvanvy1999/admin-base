@@ -4,8 +4,8 @@ import {
   SettingResDto,
   UpdateSettingDto,
 } from 'src/dtos/settings.dto';
-import { authCheck, authorize, has } from 'src/service/auth';
-import { settingsService } from 'src/service/settings/settings.service';
+import { authCheck, authorize, has } from 'src/services/auth';
+import { settingsService } from 'src/services/settings/settings.service';
 import {
   authErrors,
   castToRes,

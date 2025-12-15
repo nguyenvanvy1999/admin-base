@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { SessionPaginateDto, SessionPagingResDto } from 'src/dtos/session.dto';
-import { authCheck } from 'src/service/auth';
-import { sessionService } from 'src/service/auth/session.service';
+import { authCheck } from 'src/services/auth';
+import { sessionService } from 'src/services/auth/session.service';
 import {
   authErrors,
   castToRes,

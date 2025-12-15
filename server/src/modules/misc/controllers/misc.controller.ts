@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { Elysia, t } from 'elysia';
 import { env } from 'src/config/env';
-import { systemService } from 'src/service/infrastructure/system.service';
+import { systemService } from 'src/services/infrastructure/system.service';
 import {
   castToRes,
   DOC_TAG,

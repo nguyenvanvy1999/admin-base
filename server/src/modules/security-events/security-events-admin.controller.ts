@@ -4,8 +4,8 @@ import {
   SecurityEventListQueryDto,
   SecurityEventListResDto,
 } from 'src/dtos/security-events.dto';
-import { authCheck, authorize, has } from 'src/service/auth';
-import { securityEventsService } from 'src/service/security-events/security-events.service';
+import { authCheck, authorize, has } from 'src/services/auth';
+import { securityEventsService } from 'src/services/security';
 import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
 
 export const securityEventsAdminController = new Elysia({

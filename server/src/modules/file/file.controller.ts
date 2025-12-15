@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { fileService } from 'src/service/file/file.service';
+import { fileService } from 'src/services/file/file.service';
 import {
   ACCESS_AUTH,
   castToRes,
