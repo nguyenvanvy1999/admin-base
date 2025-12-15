@@ -6,6 +6,7 @@ import type {
   AuditLogListRes,
 } from 'src/dtos/audit-logs.dto';
 import {
+  type AuditLogSelect,
   AuditLogVisibility,
   type AuditLogWhereInput,
   LogType,
@@ -43,6 +44,40 @@ type ResolveAuditLogParams = {
   tx?: PrismaTx;
 };
 
+const USER_VISIBLE = new Set<AuditLogVisibility>([
+  AuditLogVisibility.actor_only,
+  AuditLogVisibility.actor_and_subject,
+  AuditLogVisibility.public,
+]);
+
+const AUDIT_LOG_LIST_SELECT = {
+  id: true,
+  payload: true,
+  description: true,
+  level: true,
+  logType: true,
+  category: true,
+  visibility: true,
+  eventType: true,
+  severity: true,
+  userId: true,
+  subjectUserId: true,
+  sessionId: true,
+  entityType: true,
+  entityId: true,
+  entityDisplay: true,
+  ip: true,
+  userAgent: true,
+  requestId: true,
+  traceId: true,
+  correlationId: true,
+  resolved: true,
+  resolvedAt: true,
+  resolvedBy: true,
+  occurredAt: true,
+  created: true,
+} satisfies AuditLogSelect;
+
 export class AuditLogsService {
   constructor(
     private readonly deps: {
@@ -76,12 +111,20 @@ export class AuditLogsService {
     });
   }
 
-  async push<T extends ACTIVITY_TYPE>(
+  private buildJob<T extends ACTIVITY_TYPE>(
     entry: Omit<AuditEventInput<T>, 'ip' | 'userAgent' | 'requestId'>,
-  ): Promise<string> {
+  ) {
     const { entry: enrichedEntry, logId } = this.deps.factory.create(
       entry as AuditEventInput<T>,
     );
+
+    return { logId, enrichedEntry };
+  }
+
+  async push<T extends ACTIVITY_TYPE>(
+    entry: Omit<AuditEventInput<T>, 'ip' | 'userAgent' | 'requestId'>,
+  ): Promise<string> {
+    const { enrichedEntry, logId } = this.buildJob(entry);
 
     await this.deps.queue.add(JOB_NAME, enrichedEntry, {
       jobId: logId,
@@ -95,16 +138,10 @@ export class AuditLogsService {
   ): Promise<string[]> {
     if (entries.length === 0) return [];
 
-    const jobIds: string[] = [];
-    const enrichedEntries: { name: string; data: EnrichedAuditLogEntry }[] = [];
-
-    for (const entry of entries) {
-      const { entry: enrichedEntry, logId } = this.deps.factory.create(
-        entry as AuditEventInput<T>,
-      );
-      jobIds.push(logId);
-      enrichedEntries.push({ name: JOB_NAME, data: enrichedEntry });
-    }
+    const jobs = entries.map((entry) => this.buildJob(entry));
+    const jobIds = jobs.map((job) => job.logId);
+    const enrichedEntries: { name: string; data: EnrichedAuditLogEntry }[] =
+      jobs.map((job) => ({ name: JOB_NAME, data: job.enrichedEntry }));
 
     await this.deps.queue.addBulk(enrichedEntries);
 
@@ -158,89 +195,57 @@ export class AuditLogsService {
 
     const conditions: AuditLogWhereInput[] = [];
 
-    if (userId) {
-      if (!hasViewPermission && userId !== currentUserId) {
+    const assertCanView = (targetUserId?: string | null) => {
+      if (!targetUserId) return;
+      if (!hasViewPermission && targetUserId !== currentUserId) {
         throw new BadReqErr(ErrCode.PermissionDenied);
       }
-      conditions.push({ userId });
-    }
+    };
 
-    if (subjectUserId) {
-      if (!hasViewPermission && subjectUserId !== currentUserId) {
+    const pushCondition = <T>(
+      value: T | undefined | null,
+      build: (val: T) => AuditLogWhereInput,
+    ) => {
+      if (value !== undefined && value !== null) {
+        conditions.push(build(value));
+      }
+    };
+
+    assertCanView(userId);
+    assertCanView(subjectUserId);
+
+    pushCondition(userId, (val) => ({ userId: val }));
+    pushCondition(subjectUserId, (val) => ({ subjectUserId: val }));
+    pushCondition(category, (val) => ({ category: val }));
+    pushCondition(visibility, (val) => {
+      if (!hasViewPermission && !USER_VISIBLE.has(val)) {
         throw new BadReqErr(ErrCode.PermissionDenied);
       }
-      conditions.push({ subjectUserId });
-    }
-
-    if (category) {
-      conditions.push({ category });
-    }
-
-    const userVisible = new Set<AuditLogVisibility>([
-      AuditLogVisibility.actor_only,
-      AuditLogVisibility.actor_and_subject,
-      AuditLogVisibility.public,
-    ]);
-
-    if (visibility) {
-      if (!hasViewPermission && !userVisible.has(visibility)) {
-        throw new BadReqErr(ErrCode.PermissionDenied);
-      }
-      conditions.push({ visibility });
-    }
+      return { visibility: val };
+    });
 
     if (!hasViewPermission) {
       conditions.push({
         OR: [{ userId: currentUserId }, { subjectUserId: currentUserId }],
       });
       conditions.push({
-        visibility: { in: Array.from(userVisible) },
+        visibility: { in: Array.from(USER_VISIBLE) },
       });
     }
 
-    if (sessionId) {
-      conditions.push({ sessionId });
-    }
-
-    if (entityType) {
-      conditions.push({ entityType });
-    }
-
-    if (entityId) {
-      conditions.push({ entityId });
-    }
-
-    if (eventType) {
-      conditions.push({ eventType });
-    }
-
-    if (severity) {
-      conditions.push({ severity });
-    }
-
+    pushCondition(sessionId, (val) => ({ sessionId: val }));
+    pushCondition(entityType, (val) => ({ entityType: val }));
+    pushCondition(entityId, (val) => ({ entityId: val }));
+    pushCondition(eventType, (val) => ({ eventType: val }));
+    pushCondition(severity, (val) => ({ severity: val }));
     if (resolved !== undefined) {
       conditions.push({ resolved });
     }
-
-    if (level) {
-      conditions.push({ level: level });
-    }
-
-    if (logType) {
-      conditions.push({ logType: logType });
-    }
-
-    if (ip) {
-      conditions.push({ ip });
-    }
-
-    if (traceId) {
-      conditions.push({ traceId });
-    }
-
-    if (correlationId) {
-      conditions.push({ correlationId });
-    }
+    pushCondition(level, (val) => ({ level: val }));
+    pushCondition(logType, (val) => ({ logType: val }));
+    pushCondition(ip, (val) => ({ ip: val }));
+    pushCondition(traceId, (val) => ({ traceId: val }));
+    pushCondition(correlationId, (val) => ({ correlationId: val }));
 
     if (occurredAt0 || occurredAt1) {
       const dateCondition: AuditLogWhereInput['occurredAt'] = {};
@@ -257,33 +262,7 @@ export class AuditLogsService {
 
     const { docs, count } = await executeListQuery(this.deps.db.auditLog, {
       where,
-      select: {
-        id: true,
-        payload: true,
-        description: true,
-        level: true,
-        logType: true,
-        category: true,
-        visibility: true,
-        eventType: true,
-        severity: true,
-        userId: true,
-        subjectUserId: true,
-        sessionId: true,
-        entityType: true,
-        entityId: true,
-        entityDisplay: true,
-        ip: true,
-        userAgent: true,
-        requestId: true,
-        traceId: true,
-        correlationId: true,
-        resolved: true,
-        resolvedAt: true,
-        resolvedBy: true,
-        occurredAt: true,
-        created: true,
-      },
+      select: AUDIT_LOG_LIST_SELECT,
       take,
       skip,
       orderBy: { occurredAt: 'desc' },
