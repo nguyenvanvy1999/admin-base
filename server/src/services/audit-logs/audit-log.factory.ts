@@ -86,8 +86,7 @@ export class AuditLogFactory {
       : entry.payload;
     const eventPayload = maskedPayload as AuditEventInput<T>['payload'];
 
-    const actorId =
-      entry.userId ?? (ctx?.userId as string | null | undefined) ?? null;
+    const actorId = entry.userId ?? ctx?.userId;
 
     const resolvedSubject =
       entry.subjectUserId ??
@@ -122,14 +121,10 @@ export class AuditLogFactory {
     const category: AuditLogCategory =
       (entry.category as AuditLogCategory) ??
       definition?.category ??
-      (isCudPayload(maskedPayload)
-        ? ('cud' as AuditLogCategory)
-        : ('security' as AuditLogCategory));
+      (isCudPayload(maskedPayload) ? 'cud' : 'security');
 
     const visibility: AuditLogVisibility =
-      entry.visibility ??
-      definition?.visibility ??
-      ('actor_only' as AuditLogVisibility);
+      entry.visibility ?? definition?.visibility ?? 'actor_only';
 
     const payload =
       definition?.serialize?.({
@@ -167,32 +162,24 @@ export class AuditLogFactory {
         category,
         visibility,
         subjectUserId: resolvedSubject,
-        entityType: entry.entityType ?? resolvedEntity?.type ?? null,
-        entityId: entry.entityId ?? resolvedEntity?.id ?? null,
+        entityType: entry.entityType ?? resolvedEntity?.type,
+        entityId: entry.entityId ?? resolvedEntity?.id,
         entityDisplay,
         logId,
         logType,
         level: entry.level ?? LOG_LEVEL.INFO,
         userId: actorId,
-        sessionId:
-          entry.sessionId ??
-          (ctx?.sessionId as string | null | undefined) ??
-          null,
+        sessionId: entry.sessionId ?? ctx?.sessionId,
         timestamp: entry.timestamp ?? new Date(),
-        ip: entry.ip ?? (ctx?.clientIp as string | null | undefined) ?? null,
-        userAgent:
-          entry.userAgent ??
-          (ctx?.userAgent as string | null | undefined) ??
-          null,
-        requestId:
-          entry.requestId ?? (ctx?.id as string | null | undefined) ?? null,
+        ip: entry.ip ?? ctx?.clientIp,
+        userAgent: entry.userAgent ?? ctx?.userAgent,
+        requestId: entry.requestId ?? ctx?.id,
         severity,
         resolved: entry.resolved ?? false,
         resolvedAt: entry.resolvedAt,
-        resolvedBy: entry.resolvedBy ?? (ctx?.userId as string | undefined),
-        traceId: entry.traceId ?? (ctx?.traceId as string | undefined),
-        correlationId:
-          entry.correlationId ?? (ctx?.correlationId as string | undefined),
+        resolvedBy: entry.resolvedBy ?? ctx?.userId,
+        traceId: entry.traceId,
+        correlationId: entry.correlationId,
       },
     };
   }

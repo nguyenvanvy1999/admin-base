@@ -61,7 +61,7 @@ export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
     case ACTIVITY_TYPE.CREATE_USER: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_USER];
       const userId = p.entityId;
-      const username = (p.after as { username?: string } | undefined)?.username;
+      const username = p.after?.username;
       return `User created: ${username ?? userId} (${userId})`;
     }
 
@@ -73,20 +73,19 @@ export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
 
     case ACTIVITY_TYPE.CREATE_ROLE: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_ROLE];
-      const title = (p.after as { title?: string } | undefined)?.title;
+      const title = p.after?.title;
       return `Role created: ${title ?? p.entityId} (${p.entityId})`;
     }
 
     case ACTIVITY_TYPE.UPDATE_ROLE: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.UPDATE_ROLE];
-      const title = (p.after as { title?: string } | undefined)?.title;
+      const title = p.after?.title;
       return `Role updated: ${title ?? p.entityId} (${p.entityId})`;
     }
 
     case ACTIVITY_TYPE.DEL_ROLE: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.DEL_ROLE];
-      const ids =
-        (p.before as { roleIds: string[] } | undefined)?.roleIds ?? [];
+      const ids = p.before?.roleIds ?? [];
       return `Roles deleted: ${ids.length} role(s)`;
     }
 
@@ -107,15 +106,15 @@ export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
     case ACTIVITY_TYPE.CREATE_IP_WHITELIST: {
       const p =
         payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_IP_WHITELIST];
-      const ip = (p.after as { ip?: string } | undefined)?.ip ?? p.entityId;
-      const note = (p.after as { note?: string } | undefined)?.note;
+      const ip = p.after?.ip ?? p.entityId;
+      const note = p.after?.note;
       return `IP whitelist created: ${ip}${note ? ` (${note})` : ''}`;
     }
 
     case ACTIVITY_TYPE.DEL_IP_WHITELIST: {
       const p =
         payload as ActivityTypeMap[typeof ACTIVITY_TYPE.DEL_IP_WHITELIST];
-      const ips = (p.before as { ips: string[] } | undefined)?.ips ?? [];
+      const ips = p.before?.ips ?? [];
       return `IP whitelist deleted: ${ips.length} IP(s)`;
     }
 
