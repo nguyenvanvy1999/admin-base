@@ -60,7 +60,6 @@ export function FormModal<
       onCancel={handleCancel}
       title={title ?? (mode === 'create' ? 'Tạo mới' : 'Chỉnh sửa')}
       width={width}
-      confirmLoading={loading}
       footer={
         <Space>
           <Button onClick={handleCancel} disabled={loading}>

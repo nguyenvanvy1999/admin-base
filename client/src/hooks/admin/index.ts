@@ -1,0 +1,1 @@
+export { useAdminTable } from './useAdminTable';

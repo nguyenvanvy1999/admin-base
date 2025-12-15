@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { adminUsersService } from 'src/services/api/admin/users.service';
+import type { AdminUserSummary } from 'src/types/admin';
 
 export interface UseUserSearchSelectOptions {
   enabled?: boolean;
@@ -51,7 +52,7 @@ export function useUserSearchSelect(
 
         if (!controller.signal.aborted) {
           setUserOptions(
-            result.docs.map((user) => ({
+            result.docs.map((user: AdminUserSummary) => ({
               label: user.email,
               value: user.id,
             })),

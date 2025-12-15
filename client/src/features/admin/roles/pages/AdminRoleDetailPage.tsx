@@ -10,7 +10,17 @@ import {
   ProFormTextArea,
   ProTable,
 } from '@ant-design/pro-components';
-import { Alert, Button, Card, Skeleton, Space, Tabs, Tag, Tooltip } from 'antd';
+import {
+  Alert,
+  App,
+  Button,
+  Card,
+  Skeleton,
+  Space,
+  Tabs,
+  Tag,
+  Tooltip,
+} from 'antd';
 import dayjs from 'dayjs';
 import type { TFunction } from 'i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -25,7 +35,6 @@ import { AppPage } from 'src/components/common/AppPage';
 import { useAdminPermissions } from 'src/hooks/api/useAdminPermissions';
 import { useAdminRoleDetail, useUpsertRole } from 'src/hooks/api/useAdminRoles';
 import { usePermissions } from 'src/hooks/auth/usePermissions';
-import { useNotify } from 'src/hooks/useNotify';
 import { adminUsersService } from 'src/services/api/admin/users.service';
 import type {
   AdminRole,
@@ -229,7 +238,7 @@ export default function AdminRoleDetailPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const notify = useNotify();
+  const { notification } = App.useApp();
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('ROLE.UPDATE');
   const isCreateMode = !roleId || roleId === 'new';
@@ -255,7 +264,9 @@ export default function AdminRoleDetailPage() {
   const formRef = useRef<ProFormInstance<RoleFormValues>>(null);
   const upsertMutation = useUpsertRole({
     onSuccess: () => {
-      notify.success(t('common.messages.saveSuccess'));
+      notification.success({
+        message: t('common.messages.saveSuccess'),
+      });
       if (isCreateMode) {
         navigate('/admin/roles');
       } else {
@@ -466,7 +477,7 @@ export default function AdminRoleDetailPage() {
         });
         setUsers((prev) => {
           const map = new Map(prev.map((u) => [u.value, u]));
-          response.docs.forEach((user) => {
+          response.docs.forEach((user: { id: string; email: string }) => {
             map.set(user.id, { value: user.id, label: user.email });
           });
           return Array.from(map.values());

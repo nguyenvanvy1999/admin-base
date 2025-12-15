@@ -38,8 +38,6 @@ documents/
 │   └── schema-examples/              # Schema mẫu
 │       └── improvements.prisma
 ├── refactor/                         # Kế hoạch refactor
-│   ├── service-refactor-plan.md      # Kế hoạch refactor backend services
-│   └── frontend-refactor-plan.md     # Kế hoạch refactor frontend
 └── ui-design/                        # Thiết kế UI/UX
     └── resource-management.md        # Pattern quản lý resource
 ```

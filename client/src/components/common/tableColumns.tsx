@@ -212,3 +212,74 @@ export function createSearchColumn<T = Record<string, unknown>>(
     },
   };
 }
+
+export interface CreateAdminActionColumnOptions<T> {
+  resource: string;
+  canUpdate?: boolean;
+  canDelete?: boolean;
+  onView?: (record: T) => void;
+  onEdit?: (record: T) => void;
+  onDelete?: (record: T) => void;
+  canView?: (record: T) => boolean;
+  canEdit?: (record: T) => boolean;
+  canDeleteRecord?: (record: T) => boolean;
+  protectedField?: keyof T;
+  viewTooltip?: string;
+  editTooltip?: string;
+  deleteTooltip?: string;
+  width?: number;
+  fixed?: 'left' | 'right';
+  title?: string;
+}
+
+export function createAdminActionColumn<T = Record<string, unknown>>(
+  options: CreateAdminActionColumnOptions<T>,
+): ProColumns<T> {
+  const {
+    canUpdate: canUpdateProp,
+    canDelete: canDeleteProp,
+    onView,
+    onEdit,
+    onDelete,
+    canView: customCanView,
+    canEdit: customCanEdit,
+    canDeleteRecord: customCanDelete,
+    protectedField,
+    viewTooltip,
+    editTooltip,
+    deleteTooltip,
+    width = 120,
+    fixed = 'right',
+    title,
+  } = options;
+
+  const canUpdate = canUpdateProp ?? false;
+  const canDelete = canDeleteProp ?? false;
+
+  return createActionColumn<T>({
+    onView,
+    onEdit: (record) => {
+      if (protectedField && record[protectedField]) return;
+      onEdit?.(record);
+    },
+    onDelete: (record) => {
+      if (protectedField && record[protectedField]) return;
+      onDelete?.(record);
+    },
+    canView: customCanView ?? (() => true),
+    canEdit: (record) => {
+      if (protectedField && record[protectedField]) return false;
+      return canUpdate && (customCanEdit?.(record) ?? true);
+    },
+    canDelete: (record) => {
+      if (protectedField && record[protectedField]) return false;
+      return canDelete && (customCanDelete?.(record) ?? true);
+    },
+    viewTooltip,
+    editTooltip,
+    deleteTooltip,
+    width,
+    fixed,
+    title,
+  });
+}

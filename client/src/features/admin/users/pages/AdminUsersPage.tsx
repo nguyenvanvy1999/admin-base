@@ -1,7 +1,7 @@
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ProColumns } from '@ant-design/pro-components';
 import { Button, Space, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ADMIN_USER_STATUS_COLORS } from 'src/components/common/AppAdminUserStatusSelect';
@@ -13,16 +13,13 @@ import {
   createDateColumn,
   createSearchColumn,
 } from 'src/components/common/tableColumns';
+import { useAdminTable } from 'src/hooks/admin/useAdminTable';
 import { useAdminRoles } from 'src/hooks/api/useAdminRoles';
-import { usePermissions } from 'src/hooks/auth/usePermissions';
-import {
-  createSkipFromPagination,
-  getSearchValue,
-  normalizeIds,
-} from 'src/lib/utils/table.utils';
+import { normalizeIds } from 'src/lib/utils/table.utils';
 import type { TableParamsWithFilters } from 'src/types/table';
 import {
   ADMIN_USER_STATUSES,
+  type AdminUserListQuery,
   type AdminUserRoleRef,
   type AdminUserStatus,
   type AdminUserSummary,
@@ -41,10 +38,32 @@ function formatStatus(status: AdminUserStatus): string {
 export default function AdminUsersPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const actionRef = useRef<ActionType | null>(null);
-  const { hasPermission } = usePermissions();
-  const canUpdate = hasPermission('USER.UPDATE');
   const { data: adminRolesResponse, isLoading: rolesLoading } = useAdminRoles();
+
+  const { actionRef, canUpdate, request } = useAdminTable<
+    AdminUserSummary,
+    Omit<AdminUserListQuery, 'skip' | 'take'>
+  >({
+    service: {
+      list: async (params) => {
+        const response = await adminUsersService.list({
+          ...params,
+          roleIds: params.roleIds,
+          statuses: params.statuses,
+        });
+        return response;
+      },
+    },
+    permissions: {
+      view: 'USER.VIEW',
+      update: 'USER.UPDATE',
+    },
+    normalizeParams: (params) => ({
+      statuses: params.statuses,
+      roleIds: normalizeIds(params.roleIds),
+      search: params.search,
+    }),
+  });
 
   const roleOptions = useMemo(
     () =>
@@ -275,28 +294,7 @@ export default function AdminUsersPage() {
           labelWidth: 'auto',
         }}
         manualRequest={false}
-        request={async (params) => {
-          const {
-            current = 1,
-            pageSize = 20,
-            statuses,
-            roleIds,
-            search: searchParam,
-          } = params;
-          const skip = createSkipFromPagination(current, pageSize);
-          const response = await adminUsersService.list({
-            skip,
-            take: pageSize,
-            statuses,
-            roleIds: normalizeIds(roleIds),
-            search: getSearchValue(searchParam),
-          });
-          return {
-            data: response.docs,
-            success: true,
-            total: response.count,
-          };
-        }}
+        request={request}
         toolBarRender={() =>
           canUpdate
             ? [
