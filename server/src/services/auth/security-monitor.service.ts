@@ -1,14 +1,14 @@
 import crypto from 'node:crypto';
 import { db, type IDb } from 'src/config/db';
-import { SecurityEventType } from 'src/generated';
+import {
+  LogType,
+  SecurityEventSeverity,
+  SecurityEventType,
+} from 'src/generated';
 import {
   type AuditLogsService,
   auditLogsService,
 } from 'src/services/audit-logs/audit-logs.service';
-import {
-  type SecurityEventsService,
-  securityEventsService,
-} from 'src/services/security';
 import {
   type SettingsService,
   settingsService,
@@ -36,12 +36,10 @@ export class SecurityMonitorService {
     private readonly deps: {
       db: IDb;
       auditLogService: AuditLogsService;
-      securityEventService: SecurityEventsService;
       settingService: SettingsService;
     } = {
       db,
       auditLogService: auditLogsService,
-      securityEventService: securityEventsService,
       settingService: settingsService,
     },
   ) {}
@@ -65,7 +63,6 @@ export class SecurityMonitorService {
     if (isNewDevice && securitySettings.auditWarning) {
       await this.recordUnknownDeviceWarning({
         userId,
-        deviceFingerprint,
         method,
       });
     }
@@ -95,27 +92,18 @@ export class SecurityMonitorService {
 
   private async recordUnknownDeviceWarning(params: {
     userId: string;
-    deviceFingerprint: string;
     method: LoginMethod;
   }): Promise<void> {
-    const { userId, deviceFingerprint, method } = params;
-    const { userAgent, clientIp } = getIpAndUa();
-
-    await this.deps.securityEventService.create({
-      userId,
-      eventType: SecurityEventType.suspicious_activity,
-      ip: clientIp,
-      userAgent,
-      metadata: {
-        deviceFingerprint,
-        reason: 'unknown_device',
-        method,
-      },
-    });
+    const { userId, method } = params;
 
     await this.deps.auditLogService.push({
+      logType: LogType.security,
       type: ACTIVITY_TYPE.LOGIN,
       payload: { method, error: 'unknown_device' },
+      eventType: SecurityEventType.suspicious_activity,
+      severity: SecurityEventSeverity.high,
+      description: 'Suspicious login from unknown device',
+      userId,
       level: LOG_LEVEL.WARNING,
     });
   }

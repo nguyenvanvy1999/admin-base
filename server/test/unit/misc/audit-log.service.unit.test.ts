@@ -6,7 +6,7 @@ import {
   expectTypeOf,
   it,
 } from 'bun:test';
-import { AuditLogsService } from 'src/services/audit-logs/audit-logs.service';
+import { AuditLogFactory, AuditLogsService } from 'src/services/audit-logs';
 import { ACTIVITY_TYPE, LOG_LEVEL } from 'src/share';
 import { AuditLogFixtures } from 'test/fixtures';
 import { TestDataGenerator, TestLifecycle } from 'test/utils';
@@ -25,6 +25,7 @@ describe('auditLogService (BullMQ)', () => {
     auditLogService = new AuditLogsService({
       db: {} as any,
       queue: queueSpies as any,
+      factory: new AuditLogFactory(),
     });
   });
 
@@ -49,7 +50,11 @@ describe('auditLogService (BullMQ)', () => {
         'audit-log',
         expect.objectContaining({
           type: ACTIVITY_TYPE.LOGIN,
-          payload: { action: 'login' },
+          payload: expect.objectContaining({
+            raw: { method: 'email' },
+            actor: { userId: 'user-123' },
+            subject: { userId: 'user-123' },
+          }),
           userId: 'user-123',
           level: 'info',
           logId: expect.any(String),
@@ -86,19 +91,21 @@ describe('auditLogService (BullMQ)', () => {
 
       await auditLogService.push(entry);
 
-      expect(queueSpies.add).toHaveBeenCalledWith(
-        'audit-log',
+      const lastCall = queueSpies.add.mock.calls.at(-1);
+      expect(lastCall?.[0]).toBe('audit-log');
+      expect(lastCall?.[1]).toEqual(
         expect.objectContaining({
           level: 'info',
-          userId: undefined,
-          sessionId: undefined,
-          ip: undefined,
-          userAgent: undefined,
-          requestId: undefined,
+          userId: null,
+          sessionId: null,
+          ip: null,
+          userAgent: null,
+          requestId: null,
           traceId: undefined,
           correlationId: undefined,
+          subjectUserId: null,
+          visibility: 'actor_only',
         }),
-        expect.any(Object),
       );
     });
 
@@ -143,22 +150,28 @@ describe('auditLogService (BullMQ)', () => {
     });
   });
 
-  describe('mapData', () => {
-    it('should generate a string logId and embed it into enrichedEntry', () => {
+  describe('audit log factory', () => {
+    let factory: AuditLogFactory;
+
+    beforeEach(() => {
+      factory = new AuditLogFactory();
+    });
+
+    it('should generate a string logId and embed it into enriched entry', () => {
       const entry = AuditLogFixtures.createEntry({ userId: 'user-xyz' });
-      const { enrichedEntry, logId } = auditLogService.mapData(entry);
+      const { entry: enrichedEntry, logId } = factory.create(entry as any);
 
       expect(typeof logId).toBe('string');
       expect(enrichedEntry.logId).toBe(logId);
       expect(enrichedEntry.type).toBe(ACTIVITY_TYPE.LOGIN);
-      expect(enrichedEntry.payload).toEqual({ action: 'login' });
+      expect(enrichedEntry.payload.raw).toEqual({ method: 'email' });
       expect(enrichedEntry.userId).toBe('user-xyz');
     });
 
     it('should set default level to info and timestamp to current time when absent', () => {
       const entry = AuditLogFixtures.createEntry();
       const before = new Date();
-      const { enrichedEntry } = auditLogService.mapData(entry);
+      const { entry: enrichedEntry } = factory.create(entry as any);
       const after = new Date();
 
       expect(enrichedEntry.level).toBe(LOG_LEVEL.INFO);
@@ -171,7 +184,7 @@ describe('auditLogService (BullMQ)', () => {
       );
     });
 
-    it('should preserve provided optional fields exactly (including null/undefined)', () => {
+    it('should preserve provided optional fields exactly', () => {
       const entry = AuditLogFixtures.createEntry({
         userId: null,
         sessionId: undefined,
@@ -182,15 +195,15 @@ describe('auditLogService (BullMQ)', () => {
         correlationId: null,
       });
 
-      const { enrichedEntry } = auditLogService.mapData(entry);
+      const { entry: enrichedEntry } = factory.create(entry as any);
 
       expect(enrichedEntry.userId).toBeNull();
-      expect(enrichedEntry.sessionId).toBeUndefined();
+      expect(enrichedEntry.sessionId).toBeNull();
       expect(enrichedEntry.ip).toBeNull();
-      expect(enrichedEntry.userAgent).toBeUndefined();
+      expect(enrichedEntry.userAgent).toBeNull();
       expect(enrichedEntry.requestId).toBeNull();
       expect(enrichedEntry.traceId).toBeUndefined();
-      expect(enrichedEntry.correlationId).toBeNull();
+      expect(enrichedEntry.correlationId).toBeUndefined();
     });
 
     it('should respect provided level and timestamp when present', () => {
@@ -199,7 +212,7 @@ describe('auditLogService (BullMQ)', () => {
         level: LOG_LEVEL.ERROR,
         timestamp: ts,
       });
-      const { enrichedEntry } = auditLogService.mapData(entry);
+      const { entry: enrichedEntry } = factory.create(entry as any);
 
       expect(enrichedEntry.level).toBe(LOG_LEVEL.ERROR);
       expect(enrichedEntry.timestamp).toBe(ts);
@@ -257,7 +270,7 @@ describe('auditLogService (BullMQ)', () => {
     it('should handle large batch', async () => {
       const entries = Array.from({ length: 100 }, (_, i) =>
         AuditLogFixtures.createEntry({
-          payload: { action: 'login', index: i },
+          payload: { method: 'email' },
           userId: `user-${i}`,
         }),
       );
@@ -310,7 +323,6 @@ describe('auditLogService (BullMQ)', () => {
     it('should have correct type signatures', () => {
       expectTypeOf(auditLogService.push).toBeFunction();
       expectTypeOf(auditLogService.pushBatch).toBeFunction();
-      expectTypeOf(auditLogService.mapData).toBeFunction();
     });
 
     it('should handle all activity types correctly', async () => {
@@ -383,13 +395,9 @@ describe('auditLogService (BullMQ)', () => {
 
       await auditLogService.push(entry);
 
-      expect(queueSpies.add).toHaveBeenCalledWith(
-        'audit-log',
-        expect.objectContaining({
-          payload: complexPayload,
-        }),
-        expect.any(Object),
-      );
+      const lastCall = queueSpies.add.mock.calls.at(-1);
+      expect(lastCall?.[0]).toBe('audit-log');
+      expect(lastCall?.[1]?.payload.raw).toEqual(complexPayload);
     });
 
     it('should handle null and undefined values correctly', async () => {
@@ -405,18 +413,18 @@ describe('auditLogService (BullMQ)', () => {
 
       await auditLogService.push(entry);
 
-      expect(queueSpies.add).toHaveBeenCalledWith(
-        'audit-log',
+      const lastCall = queueSpies.add.mock.calls.at(-1);
+      expect(lastCall?.[0]).toBe('audit-log');
+      expect(lastCall?.[1]).toEqual(
         expect.objectContaining({
           userId: null,
-          sessionId: undefined,
+          sessionId: null,
           ip: null,
-          userAgent: undefined,
+          userAgent: null,
           requestId: null,
           traceId: undefined,
-          correlationId: null,
+          correlationId: undefined,
         }),
-        expect.any(Object),
       );
     });
 

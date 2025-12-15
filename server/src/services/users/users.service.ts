@@ -34,6 +34,7 @@ import {
 } from 'src/services/auth/session.service';
 import {
   ACTIVITY_TYPE,
+  AuditEventCategory,
   BadReqErr,
   DB_PREFIX,
   defaultRoles,
@@ -134,10 +135,16 @@ export class UsersService {
     const auditLogId = await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.CREATE_USER,
       payload: {
-        id: userId,
-        enabled: nextStatus === UserStatus.active,
-        roleIds: resolvedRoleIds,
-        username: normalizedEmail,
+        category: AuditEventCategory.CUD,
+        entityType: 'user',
+        entityId: userId,
+        action: 'create',
+        after: {
+          id: userId,
+          enabled: nextStatus === UserStatus.active,
+          roleIds: resolvedRoleIds,
+          username: normalizedEmail,
+        },
       },
       userId: actorId,
     });
@@ -386,10 +393,26 @@ export class UsersService {
     const auditLogId = await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.UPDATE_USER,
       payload: {
-        id: targetUserId,
-        reason: normalizedReason,
-        actorId,
-        action: 'user-update',
+        category: AuditEventCategory.CUD,
+        entityType: 'user',
+        entityId: targetUserId,
+        action: 'update',
+        before: {
+          id: targetUserId,
+          actorId,
+          targetUserId,
+          reason: normalizedReason,
+          action: 'user-update',
+          changes: auditChanges,
+        },
+        after: {
+          id: targetUserId,
+          actorId,
+          targetUserId,
+          reason: normalizedReason,
+          action: 'user-update',
+          changes: auditChanges,
+        },
         changes: auditChanges,
       },
     });
@@ -466,10 +489,48 @@ export class UsersService {
     const auditLogId = await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.UPDATE_USER,
       payload: {
-        id: targetUserId,
-        reason: normalizedReason,
-        actorId,
-        action: 'user-update-roles',
+        category: AuditEventCategory.CUD,
+        entityType: 'user',
+        entityId: targetUserId,
+        action: 'update',
+        before: {
+          id: targetUserId,
+          actorId,
+          targetUserId,
+          reason: normalizedReason,
+          action: 'user-update-roles',
+          changes: {
+            roles: {
+              previous: previousRoleAssignments.map((assignment) => ({
+                roleId: assignment.roleId,
+                expiresAt: assignment.expiresAt,
+              })),
+              next: roles.map((role) => ({
+                roleId: role.roleId,
+                expiresAt: role.expiresAt,
+              })),
+            },
+          },
+        },
+        after: {
+          id: targetUserId,
+          actorId,
+          targetUserId,
+          reason: normalizedReason,
+          action: 'user-update-roles',
+          changes: {
+            roles: {
+              previous: previousRoleAssignments.map((assignment) => ({
+                roleId: assignment.roleId,
+                expiresAt: assignment.expiresAt,
+              })),
+              next: roles.map((role) => ({
+                roleId: role.roleId,
+                expiresAt: role.expiresAt,
+              })),
+            },
+          },
+        },
         changes: {
           roles: {
             previous: previousRoleAssignments.map((assignment) => ({

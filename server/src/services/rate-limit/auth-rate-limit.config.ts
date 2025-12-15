@@ -95,7 +95,6 @@ export function rateLimit() {
         return;
       }
 
-      const { clientIp, userAgent } = getIpAndUa();
       const userId = context.currentUser?.id;
 
       if (config.strategy === RateLimitStrategy.user && !userId) {
@@ -103,11 +102,7 @@ export function rateLimit() {
       }
 
       try {
-        const {
-          identifier,
-          ip,
-          userAgent: finalUserAgent,
-        } = generateIdentifier(
+        const { identifier } = generateIdentifier(
           config.strategy ?? RateLimitStrategy.ip,
           context,
           config.getIdentifier,
@@ -119,8 +114,6 @@ export function rateLimit() {
           limit: config.limit,
           windowSeconds: config.windowSeconds,
           userId,
-          ip: ip ?? clientIp,
-          userAgent: finalUserAgent ?? userAgent,
         });
 
         if (!result.allowed) {

@@ -35,8 +35,6 @@ import {
   permissionsAdminController,
   rateLimitAdminController,
   rolesAdminController,
-  securityEventsAdminController,
-  securityEventsUserController,
   sessionAdminController,
   sessionUserController,
   settingsAdminController,
@@ -225,8 +223,6 @@ export class BackendServerService {
           .use(permissionsAdminController)
           .use(auditLogsAdminController)
           .use(auditLogsUserController)
-          .use(securityEventsAdminController)
-          .use(securityEventsUserController)
           .use(i18nAdminController)
           .use(settingsAdminController)
           .use(notificationTemplatesAdminController)

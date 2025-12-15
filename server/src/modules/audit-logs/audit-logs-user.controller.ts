@@ -17,7 +17,6 @@ export const auditLogsUserController = new Elysia({
     async ({ currentUser, query }) => {
       const result = await auditLogsService.list({
         ...query,
-        userId: currentUser.id,
         currentUserId: currentUser.id,
         hasViewPermission: false,
       });

@@ -76,6 +76,7 @@ enum SecurityEventType {
   api_key_revoked
   data_exported
   bulk_operation
+  rate_limit_exceeded
 }
 
 // Account lockout reasons
@@ -123,6 +124,37 @@ enum ApiKeyStatus {
   active
   revoked
   expired
+}
+
+// Audit log types
+enum LogType {
+  audit
+  security
+  system
+  api
+  rate_limit
+}
+
+enum LogLevel {
+  info
+  warn
+  error
+  critical
+}
+
+enum AuditLogCategory {
+  cud
+  security
+  internal
+  system
+}
+
+enum AuditLogVisibility {
+  admin_only
+  actor_only
+  subject_only
+  actor_and_subject
+  public
 }
 
 // ============================================
@@ -176,7 +208,6 @@ model User {
   referralMade            Referral[]         @relation("UserReferrer")
   referralsGot            Referral[]         @relation("UserReferred")
   authProviders           UserAuthProvider[]
-  securityEvents          SecurityEvent[]
   ipWhitelist             UserIpWhitelist[]
   notifications           Notification[]
   notificationPreferences Json?              @map("notification_preferences")
@@ -395,30 +426,8 @@ model Proxy {
   @@map("proxies")
 }
 
-// Security event tracking for authentication and security operations
-model SecurityEvent {
-  id         String                @id
-  userId     String?               @map("user_id")
-  eventType  SecurityEventType     @map("event_type")
-  severity   SecurityEventSeverity @default(medium)
-  ip         String?
-  userAgent  String?               @map("user_agent")
-  location   Json? // GeoIP data
-  metadata   Json?
-  resolved   Boolean               @default(false)
-  resolvedAt DateTime?             @map("resolved_at")
-  resolvedBy String?               @map("resolved_by")
-  created    DateTime              @default(now())
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([userId], name: "security_event_userId_idx")
-  @@index([eventType], name: "security_event_eventType_idx")
-  @@index([severity], name: "security_event_severity_idx")
-  @@index([resolved], name: "security_event_resolved_idx")
-  @@index([created], name: "security_event_created_idx")
-  @@map("security_events")
-}
+// Security event tracking merged into AuditLog
+// This model is deprecated - use AuditLog with logType = "security" instead
 
 // Per-user IP whitelist for additional security
 model UserIpWhitelist {
@@ -437,34 +446,70 @@ model UserIpWhitelist {
   @@map("user_ip_whitelist")
 }
 
-// Audit log
+// Unified audit log for all system events (audit logs + security events + rate limits)
 model AuditLog {
-  id            BigInt   @id
-  payload       Json
-  level         String
-  logType       String   @map("log_type")
-  userId        String?  @map("user_id")
-  sessionId     String?  @map("session_id")
-  entityType    String?  @map("entity_type")
-  entityId      String?  @map("entity_id")
-  description   String?
-  ip            String?
-  userAgent     String?  @map("user_agent")
-  requestId     String?  @map("request_id")
-  traceId       String?  @map("trace_id")
-  correlationId String?  @map("correlation_id")
-  occurredAt    DateTime @default(now()) @map("occurred_at")
-  created       DateTime @default(now())
+  id         BigInt             @id
+  logType    LogType            @map("log_type")
+  level      LogLevel           @default(info) @map("level")
+  category   AuditLogCategory?  @map("category")
+  visibility AuditLogVisibility @default(actor_only) @map("visibility")
+  occurredAt DateTime           @default(now()) @map("occurred_at")
+  created    DateTime           @default(now())
+
+  // Core relationships (indexed for fast queries)
+  userId    String? @map("user_id")
+  sessionId String? @map("session_id")
+
+  // Entity tracking (for CRUD operations)
+  entityType String? @map("entity_type")
+  entityId   String? @map("entity_id")
+
+  // Request context (for tracing and debugging)
+  requestId     String? @map("request_id")
+  traceId       String? @map("trace_id")
+  correlationId String? @map("correlation_id")
+
+  // Security/API context (indexed for security queries)
+  eventType SecurityEventType?     @map("event_type")
+  severity  SecurityEventSeverity? @map("severity")
+  ip        String?
+  userAgent String?                @map("user_agent")
+
+  // Flexible data storage (all event-specific data goes here)
+  // Structure: { description?, location?, metadata?, ... }
+  // - description: Human-readable description
+  // - location: GeoIP data (for security events)
+  // - metadata: Event-specific data (rate limit details, API params, etc.)
+  payload     Json
+  description String?
+
+  // Security event resolution (only for security events)
+  resolved   Boolean   @default(false)
+  resolvedAt DateTime? @map("resolved_at")
+  resolvedBy String?   @map("resolved_by")
+
+  // Subject user tracking (user impacted by the event)
+  subjectUserId String? @map("subject_user_id")
+
+  // Optional denormalized entity preview (title, slug, etc.)
+  entityDisplay Json? @map("entity_display")
 
   user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
   @@index([created], map: "audit_log_created_idx")
-  @@index([level], map: "audit_log_level_idx")
   @@index([logType], map: "audit_log_type_idx")
+  @@index([level], map: "audit_log_level_idx")
+  @@index([category], map: "audit_log_category_idx")
+  @@index([visibility], map: "audit_log_visibility_idx")
   @@index([userId, occurredAt(sort: Desc)], map: "audit_log_user_id_occurred_at_idx")
   @@index([sessionId, occurredAt(sort: Desc)], map: "audit_log_session_id_occurred_at_idx")
   @@index([entityType, entityId], map: "audit_log_entity_idx")
+  @@index([subjectUserId], map: "audit_log_subject_user_id_idx")
+  @@index([ip, occurredAt(sort: Desc)], map: "audit_log_ip_occurred_at_idx")
+  @@index([eventType], map: "audit_log_eventType_idx")
+  @@index([severity], map: "audit_log_severity_idx")
+  @@index([resolved], map: "audit_log_resolved_idx")
   @@index([traceId], map: "audit_log_trace_id_idx")
   @@index([correlationId], map: "audit_log_correlation_id_idx")
   @@map("audit_logs")

@@ -1,10 +1,18 @@
+import { isCudPayload } from 'src/services/audit-logs/audit-log.helpers';
 import { ACTIVITY_TYPE } from 'src/services/shared/constants';
-import type { ActivityTypeMap } from 'src/share/type';
+import type {
+  ActivityTypeMap,
+  AuditChangeSet,
+  InternalEventPayload,
+} from 'src/share/type';
 
 export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
   type: T,
   payload: ActivityTypeMap[T],
 ): string {
+  const cudDescription = describeCudPayload(payload);
+  if (cudDescription) return cudDescription;
+
   switch (type) {
     case ACTIVITY_TYPE.LOGIN: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.LOGIN];
@@ -52,33 +60,38 @@ export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
 
     case ACTIVITY_TYPE.CREATE_USER: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_USER];
-      return `User created: ${p.username} (${p.id})`;
+      const userId = p.entityId;
+      const username = p.after?.username;
+      return `User created: ${username ?? userId} (${userId})`;
     }
 
     case ACTIVITY_TYPE.UPDATE_USER: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.UPDATE_USER];
       const action = p.action ? ` (${p.action})` : '';
-      return `User updated: ${p.id}${action}`;
+      return `User updated: ${p.entityId}${action}`;
     }
 
     case ACTIVITY_TYPE.CREATE_ROLE: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_ROLE];
-      return `Role created: ${p.title} (${p.id})`;
+      const title = p.after?.title;
+      return `Role created: ${title ?? p.entityId} (${p.entityId})`;
     }
 
     case ACTIVITY_TYPE.UPDATE_ROLE: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.UPDATE_ROLE];
-      return `Role updated: ${p.title} (${p.id})`;
+      const title = p.after?.title;
+      return `Role updated: ${title ?? p.entityId} (${p.entityId})`;
     }
 
     case ACTIVITY_TYPE.DEL_ROLE: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.DEL_ROLE];
-      return `Roles deleted: ${p.roleIds.length} role(s)`;
+      const ids = p.before?.roleIds ?? [];
+      return `Roles deleted: ${ids.length} role(s)`;
     }
 
     case ACTIVITY_TYPE.REVOKE_SESSION: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.REVOKE_SESSION];
-      return `Session revoked: ${p.sessionId}`;
+      return `Session revoked: ${p.entityId}`;
     }
 
     case ACTIVITY_TYPE.RESET_MFA: {
@@ -93,34 +106,29 @@ export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
     case ACTIVITY_TYPE.CREATE_IP_WHITELIST: {
       const p =
         payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_IP_WHITELIST];
-      return `IP whitelist created: ${p.ip}${p.note ? ` (${p.note})` : ''}`;
+      const ip = p.after?.ip ?? p.entityId;
+      const note = p.after?.note;
+      return `IP whitelist created: ${ip}${note ? ` (${note})` : ''}`;
     }
 
     case ACTIVITY_TYPE.DEL_IP_WHITELIST: {
       const p =
         payload as ActivityTypeMap[typeof ACTIVITY_TYPE.DEL_IP_WHITELIST];
-      return `IP whitelist deleted: ${p.ips.length} IP(s)`;
+      const ips = p.before?.ips ?? [];
+      return `IP whitelist deleted: ${ips.length} IP(s)`;
     }
 
     case ACTIVITY_TYPE.UPDATE_SETTING: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.UPDATE_SETTING];
-      return `Setting updated: ${p.key}`;
+      return `Setting updated: ${p.entityId}`;
     }
 
     case ACTIVITY_TYPE.INTERNAL_ERROR: {
+      const p = payload as InternalEventPayload;
+      if (p.error) {
+        return `Internal error: ${p.error}`;
+      }
       return 'Internal error occurred';
-    }
-
-    case ACTIVITY_TYPE.P2P_ORDER_EXPIRED: {
-      const p =
-        payload as ActivityTypeMap[typeof ACTIVITY_TYPE.P2P_ORDER_EXPIRED];
-      return `P2P order expired: ${p.orderId}`;
-    }
-
-    case ACTIVITY_TYPE.P2P_ORDER_EXPIRE_FAILED: {
-      const p =
-        payload as ActivityTypeMap[typeof ACTIVITY_TYPE.P2P_ORDER_EXPIRE_FAILED];
-      return `P2P order expire failed: ${p.orderId} - ${p.error}`;
     }
 
     default:
@@ -128,62 +136,19 @@ export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
   }
 }
 
-export function inferEntityTypeFromActivityType(
-  type: ACTIVITY_TYPE,
-): string | null {
-  switch (type) {
-    case ACTIVITY_TYPE.CREATE_USER:
-    case ACTIVITY_TYPE.UPDATE_USER:
-      return 'user';
+function describeCudPayload(payload: unknown): string | null {
+  if (!isCudPayload(payload)) return null;
 
-    case ACTIVITY_TYPE.CREATE_ROLE:
-    case ACTIVITY_TYPE.UPDATE_ROLE:
-    case ACTIVITY_TYPE.DEL_ROLE:
-      return 'role';
+  const { entityType, entityId, action, changes } = payload;
+  const changeSummary = summarizeChanges(changes);
+  const actionLabel = action ?? 'change';
 
-    case ACTIVITY_TYPE.CREATE_IP_WHITELIST:
-    case ACTIVITY_TYPE.DEL_IP_WHITELIST:
-      return 'ip_whitelist';
-
-    case ACTIVITY_TYPE.UPDATE_SETTING:
-      return 'setting';
-
-    case ACTIVITY_TYPE.REVOKE_SESSION:
-      return 'session';
-
-    default:
-      return null;
-  }
+  return `${entityType} ${actionLabel} (${entityId})${changeSummary}`;
 }
 
-export function extractEntityIdFromPayload<T extends ACTIVITY_TYPE>(
-  type: T,
-  payload: ActivityTypeMap[T],
-): string | null {
-  switch (type) {
-    case ACTIVITY_TYPE.CREATE_USER:
-    case ACTIVITY_TYPE.UPDATE_USER: {
-      const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_USER];
-      return p.id ?? null;
-    }
-
-    case ACTIVITY_TYPE.CREATE_ROLE:
-    case ACTIVITY_TYPE.UPDATE_ROLE: {
-      const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_ROLE];
-      return p.id ?? null;
-    }
-
-    case ACTIVITY_TYPE.REVOKE_SESSION: {
-      const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.REVOKE_SESSION];
-      return p.sessionId ?? null;
-    }
-
-    case ACTIVITY_TYPE.UPDATE_SETTING: {
-      const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.UPDATE_SETTING];
-      return p.key ?? null;
-    }
-
-    default:
-      return null;
-  }
+function summarizeChanges(changes?: AuditChangeSet): string {
+  if (!changes) return '';
+  const keys = Object.keys(changes);
+  if (keys.length === 0) return '';
+  return ` [${keys.join(', ')}]`;
 }

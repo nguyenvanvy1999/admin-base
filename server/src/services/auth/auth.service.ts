@@ -27,15 +27,12 @@ import {
   auditLogsService,
 } from 'src/services/audit-logs/audit-logs.service';
 import {
-  type SecurityEventsService,
-  securityEventsService,
-} from 'src/services/security';
-import {
   type SettingsService,
   settingsService,
 } from 'src/services/settings/settings.service';
 import {
   ACTIVITY_TYPE,
+  AuditEventCategory,
   BadReqErr,
   DB_PREFIX,
   defaultRoles,
@@ -86,7 +83,6 @@ export class AuthService {
       sessionService: SessionService;
       settingService: SettingsService;
       auditLogService: AuditLogsService;
-      securityEventService: SecurityEventsService;
       userUtilService: UserUtilService;
       mfaCache: IMFACache;
       authenticator: typeof authenticator;
@@ -102,7 +98,6 @@ export class AuthService {
       sessionService,
       settingService: settingsService,
       auditLogService: auditLogsService,
-      securityEventService: securityEventsService,
       userUtilService,
       mfaCache,
       authenticator,
@@ -126,19 +121,11 @@ export class AuthService {
       user,
     );
     if (!passwordValid) {
-      await Promise.all([
-        this.deps.auditLogService.push({
-          type: ACTIVITY_TYPE.LOGIN,
-          payload: { method: 'email', error: 'password_mismatch' },
-        }),
-        this.deps.securityEventService.create({
-          userId: user.id,
-          eventType: SecurityEventType.login_failed,
-          ip: clientIp,
-          userAgent,
-          metadata: { method: 'email', reason: 'password_mismatch' },
-        }),
-      ]);
+      await this.deps.auditLogService.logSecurityEvent({
+        userId: user.id,
+        eventType: SecurityEventType.login_failed,
+        metadata: { method: 'email', reason: 'password_mismatch' },
+      });
       throw new BadReqErr(ErrCode.PasswordNotMatch);
     }
 
@@ -160,19 +147,11 @@ export class AuthService {
     );
 
     if (securityResult.action === 'block') {
-      await Promise.all([
-        this.deps.auditLogService.push({
-          type: ACTIVITY_TYPE.LOGIN,
-          payload: { method: 'email', error: 'security_blocked' },
-        }),
-        this.deps.securityEventService.create({
-          userId: user.id,
-          eventType: SecurityEventType.login_failed,
-          ip: clientIp,
-          userAgent,
-          metadata: { method: 'email', reason: 'security_blocked' },
-        }),
-      ]);
+      await this.deps.auditLogService.logSecurityEvent({
+        userId: user.id,
+        eventType: SecurityEventType.login_failed,
+        metadata: { method: 'email', reason: 'security_blocked' },
+      });
       throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
     }
 
@@ -251,22 +230,14 @@ export class AuthService {
       security,
     );
 
-    await Promise.all([
-      this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LOGIN,
-        payload: { method: 'email' },
-      }),
-      this.deps.securityEventService.create({
-        userId: user.id,
-        eventType: SecurityEventType.login_success,
-        ip: clientIp,
-        userAgent,
-        metadata: {
-          method: 'email',
-          isNewDevice: security?.isNewDevice ?? false,
-        },
-      }),
-    ]);
+    await this.deps.auditLogService.logSecurityEvent({
+      userId: user.id,
+      eventType: SecurityEventType.login_success,
+      metadata: {
+        method: 'email',
+        isNewDevice: security?.isNewDevice ?? false,
+      },
+    });
 
     return loginRes;
   }
@@ -451,8 +422,6 @@ export class AuthService {
       }
     }
 
-    const { clientIp, userAgent } = getIpAndUa();
-
     await this.deps.db.user.update({
       where: { id: userId },
       data: {
@@ -462,18 +431,10 @@ export class AuthService {
       select: { id: true },
     });
 
-    await Promise.all([
-      this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.CHANGE_PASSWORD,
-        payload: {},
-      }),
-      this.deps.securityEventService.create({
-        userId,
-        eventType: SecurityEventType.password_changed,
-        ip: clientIp,
-        userAgent,
-      }),
-    ]);
+    await this.deps.auditLogService.logSecurityEvent({
+      userId,
+      eventType: SecurityEventType.password_changed,
+    });
   }
 
   async forgotPassword(params: ForgotPasswordParams): Promise<void> {
@@ -510,22 +471,12 @@ export class AuthService {
       select: { id: true },
     });
 
-    const { clientIp, userAgent } = getIpAndUa();
-
     await this.deps.sessionService.revoke(userId);
 
-    await Promise.all([
-      this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.CHANGE_PASSWORD,
-        payload: {},
-      }),
-      this.deps.securityEventService.create({
-        userId: user.id,
-        eventType: SecurityEventType.password_reset_completed,
-        ip: clientIp,
-        userAgent,
-      }),
-    ]);
+    await this.deps.auditLogService.logSecurityEvent({
+      userId: user.id,
+      eventType: SecurityEventType.password_reset_completed,
+    });
   }
 
   async verifyAccount(params: VerifyAccountParams): Promise<void> {
@@ -556,7 +507,28 @@ export class AuthService {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.UPDATE_USER,
       payload: {
-        id: userId,
+        category: AuditEventCategory.CUD,
+        entityType: 'user',
+        entityId: userId,
+        action: 'update',
+        before: {
+          id: userId,
+          changes: {
+            status: {
+              previous: UserStatus.inactive,
+              next: UserStatus.active,
+            },
+          },
+        },
+        after: {
+          id: userId,
+          changes: {
+            status: {
+              previous: UserStatus.inactive,
+              next: UserStatus.active,
+            },
+          },
+        },
         changes: {
           status: { previous: UserStatus.inactive, next: UserStatus.active },
         },
@@ -644,7 +616,13 @@ export class AuthService {
 
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.REVOKE_SESSION,
-      payload: { sessionId },
+      payload: {
+        category: AuditEventCategory.CUD,
+        entityType: 'session',
+        entityId: sessionId,
+        action: 'delete',
+        before: { sessionId },
+      },
     });
 
     await this.deps.sessionService.revoke(id);

@@ -54,6 +54,7 @@ export enum ACTIVITY_TYPE {
   CHANGE_PASSWORD = 'change-password',
   SETUP_MFA = 'setup-mfa',
   LINK_OAUTH = 'link-oauth',
+  SECURITY_EVENT = 'security-event',
 
   CREATE_USER = 'create-user',
   UPDATE_USER = 'update-user',
@@ -71,8 +72,6 @@ export enum ACTIVITY_TYPE {
   UPDATE_SETTING = 'update-setting',
 
   INTERNAL_ERROR = 'internal-error',
-  P2P_ORDER_EXPIRED = 'p2p-order-expired',
-  P2P_ORDER_EXPIRE_FAILED = 'p2p-order-expire-failed',
 }
 
 export const defaultRoles: Record<
@@ -182,7 +181,6 @@ export enum QueueName {
   AuditLog = 'AuditLog',
   BatchAuditLog = 'BatchAuditLog',
   GeoIP = 'GeoIP',
-  SecurityEvent = 'SecurityEvent',
 }
 
 export enum SETTING {
