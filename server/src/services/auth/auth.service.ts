@@ -510,8 +510,7 @@ export class AuthService {
         category: AuditEventCategory.CUD,
         entityType: 'user',
         entityId: userId,
-        action: 'user-update',
-        id: userId,
+        action: 'update',
         changes: {
           status: { previous: UserStatus.inactive, next: UserStatus.active },
         },

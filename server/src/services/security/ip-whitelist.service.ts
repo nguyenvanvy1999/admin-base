@@ -20,7 +20,13 @@ import {
   executeListQuery,
   normalizeSearchTerm,
 } from 'src/services/shared/utils';
-import { ACTIVITY_TYPE, AuditEventCategory, ErrCode, IdUtil } from 'src/share';
+import {
+  ACTIVITY_TYPE,
+  AuditEventCategory,
+  type CudDeletePayload,
+  ErrCode,
+  IdUtil,
+} from 'src/share';
 import type { AuditLogsService } from '../audit-logs';
 
 const ipWhitelistSelect = {
@@ -277,18 +283,18 @@ export class IpWhitelistService {
 
     if (affectedUsers.length > 0) {
       const auditEntries = affectedUsers.map((item) => ({
-        type: ACTIVITY_TYPE.DEL_IP_WHITELIST as const,
+        type: ACTIVITY_TYPE.DEL_IP_WHITELIST,
         userId: currentUserId,
         payload: {
           category: AuditEventCategory.CUD,
-          entityType: 'ip_whitelist' as const,
+          entityType: 'ip_whitelist',
           entityId: item.id,
           action: 'delete',
           changes: {
             ips: { previous: [item.ip], next: [] },
             userId: { previous: item.userId, next: null },
           },
-        },
+        } satisfies CudDeletePayload<'ip_whitelist'>,
       }));
       await this.deps.auditLogService.pushBatch(auditEntries);
     }

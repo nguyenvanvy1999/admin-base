@@ -45,7 +45,7 @@ export enum AuditEventCategory {
 }
 
 // Allow custom action labels while keeping common defaults
-export type CudAction = 'create' | 'update' | 'delete' | string;
+export type CudAction = 'create' | 'update' | 'delete';
 export type AuditChangeSet = Record<
   string,
   { previous: unknown; next: unknown }
@@ -149,12 +149,7 @@ export interface ActivityTypeMap extends Record<ACTIVITY_TYPE, object> {
 
   [ACTIVITY_TYPE.CREATE_USER]: CudCreatePayload<'user'>;
 
-  [ACTIVITY_TYPE.UPDATE_USER]: CudUpdatePayload<'user'> &
-    BaseActorActionPayload & {
-      id: string;
-      action?: ActionType;
-      changes?: AuditChangeSet;
-    };
+  [ACTIVITY_TYPE.UPDATE_USER]: CudUpdatePayload<'user'>;
 
   [ACTIVITY_TYPE.INTERNAL_ERROR]: InternalEventPayload;
 

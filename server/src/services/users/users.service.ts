@@ -303,7 +303,6 @@ export class UsersService {
   async updateUser(params: UpdateUserParams): Promise<AdminUserActionResult> {
     const {
       targetUserId,
-      actorId,
       status,
       name,
       lockoutUntil,
@@ -334,8 +333,12 @@ export class UsersService {
 
     const updateData: Record<string, unknown> = {};
     let hasScalarUpdate = false;
-    const auditChanges: Record<string, { previous: unknown; next: unknown }> =
-      {};
+    const auditChanges: Record<string, { previous: unknown; next: unknown }> = {
+      reason: {
+        previous: null,
+        next: normalizedReason,
+      },
+    };
 
     if (status !== undefined) {
       auditChanges.status = {
@@ -395,11 +398,7 @@ export class UsersService {
         category: AuditEventCategory.CUD,
         entityType: 'user',
         entityId: targetUserId,
-        action: 'user-update',
-        id: targetUserId,
-        actorId,
-        targetUserId,
-        reason: normalizedReason,
+        action: 'update',
         changes: auditChanges,
       },
     });
@@ -413,7 +412,7 @@ export class UsersService {
   async updateUserRoles(
     params: UpdateUserRolesParams,
   ): Promise<AdminUserActionResult> {
-    const { targetUserId, actorId, roles, reason } = params;
+    const { targetUserId, roles, reason } = params;
     const normalizedReason = ServiceUtils.normalizeReason(reason);
 
     if (!normalizedReason) {
@@ -479,11 +478,7 @@ export class UsersService {
         category: AuditEventCategory.CUD,
         entityType: 'user',
         entityId: targetUserId,
-        action: 'user-update-roles',
-        id: targetUserId,
-        actorId,
-        targetUserId,
-        reason: normalizedReason,
+        action: 'update',
         changes: {
           roles: {
             previous: previousRoleAssignments.map((assignment) => ({
