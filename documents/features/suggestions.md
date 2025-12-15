@@ -40,6 +40,7 @@ Tài liệu này phân tích hệ thống hiện tại và đề xuất các tí
 - ✅ Captcha - **Hoàn chỉnh**
 
 **Rate Limiting Features:**
+
 - ✅ Dynamic configuration từ database
 - ✅ Multiple strategies (IP, User, IP+UA, Custom)
 - ✅ Redis-based storage
@@ -50,6 +51,7 @@ Tài liệu này phân tích hệ thống hiện tại và đề xuất các tí
 **Tài liệu:** [Rate Limiting Technical Spec](./rate-limiting/technical-spec.md)
 
 **IP Whitelist Features:**
+
 - ✅ User IP whitelist management
 - ✅ Middleware integration
 - ✅ Cache layer
@@ -609,6 +611,7 @@ Hệ thống hiện tại đã có nền tảng tốt với:
 - ✅ **System management tools** - Settings, I18n, notifications đã có
 
 **Các tính năng đã triển khai đầy đủ:**
+
 1. ✅ **Authentication** - Xem [Technical Spec](./authentication/technical-spec.md)
 2. ✅ **Rate Limiting** - Xem [Technical Spec](./rate-limiting/technical-spec.md)
 3. ✅ **IP Whitelist** - Xem [Technical Spec](./ip-whitelist/technical-spec.md)

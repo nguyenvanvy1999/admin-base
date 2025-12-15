@@ -7,15 +7,18 @@ Hệ thống authentication đã được implement đầy đủ với các tín
 ### ✅ Đã Implement
 
 - **Đăng ký tài khoản**: `POST /auth/user/register`
+
   - Tạo user mới với status inactive
   - Gửi OTP qua email để verify
   - Tự động gán role mặc định (user)
 
 - **Xác thực tài khoản**: `POST /auth/user/verify-account`
+
   - Verify OTP và kích hoạt tài khoản
   - Chuyển status từ inactive sang active
 
 - **Đăng nhập**: `POST /auth/login`
+
   - Login với email/password
   - Hỗ trợ MFA (Multi-Factor Authentication)
   - Security monitoring (device recognition, suspicious activity)
@@ -23,24 +26,30 @@ Hệ thống authentication đã được implement đầy đủ với các tín
   - Trả về access token và refresh token
 
 - **MFA Login**: `POST /auth/login/mfa`
+
   - Login với MFA token và OTP
   - Hỗ trợ TOTP và backup codes
 
 - **Refresh token**: `POST /auth/refresh-token`
+
   - Làm mới access token
   - Validate session và user status
 
 - **Đăng xuất**: `POST /auth/logout`
+
   - Revoke session hiện tại
 
 - **Đăng xuất tất cả**: `POST /auth/logout/all`
+
   - Revoke tất cả sessions của user
 
 - **Đổi mật khẩu**: `POST /auth/change-password`
+
   - Đổi mật khẩu với validation
   - Rate limiting
 
 - **Quên mật khẩu**: `POST /auth/forgot-password`
+
   - Reset password với OTP
   - Revoke tất cả sessions sau khi reset
 
@@ -118,12 +127,14 @@ server/src/
 ### Security Layers
 
 1. **Password Security**
+
    - Hashing với Bun.password
    - Pepper từ environment config
    - Password expiration
    - Password attempt limits
 
 2. **Token Security**
+
    - JWT với HS256
    - Encrypted payload (AES-256)
    - Short-lived access tokens
@@ -131,11 +142,13 @@ server/src/
    - Session-based validation
 
 3. **MFA Security**
+
    - TOTP (Time-based One-Time Password)
    - Backup codes
    - MFA setup tokens
 
 4. **Session Security**
+
    - Device fingerprinting
    - IP tracking
    - Session expiration
@@ -161,4 +174,3 @@ Hệ thống authentication đã được implement đầy đủ và đang hoạ
 - [Rate Limit](../rate-limiting/overview.md) - Rate limiting cho auth endpoints
 - [IP Whitelist](../ip-whitelist/overview.md) - IP whitelist cho user access
 - [Feature Summary](../summary.md) - Tổng quan tính năng
-

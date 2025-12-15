@@ -55,6 +55,7 @@ model RateLimitConfig {
 ```
 
 **Fields:**
+
 - `routePath`: Route path để áp dụng rate limit (e.g., `/auth/login`)
 - `limit`: Số lượng requests cho phép trong window
 - `windowSeconds`: Thời gian window (seconds)
@@ -68,6 +69,7 @@ model RateLimitConfig {
 Core rate limiting logic:
 
 - `checkAndIncrement()` - Kiểm tra và tăng counter
+
   - Check block status
   - Increment counter trong Redis
   - Check limit
@@ -82,10 +84,8 @@ Core rate limiting logic:
 
 ```typescript
 // Window key
-`${identifier}:${routePath}:${windowTimestamp}`
-
-// Block key
-`block:${identifier}:${routePath}`
+`${identifier}:${routePath}:${windowTimestamp}`// Block key
+`block:${identifier}:${routePath}`;
 ```
 
 **Algorithm:**
@@ -104,6 +104,7 @@ Core rate limiting logic:
 Config management:
 
 - `getConfig()` - Lấy config cho route path
+
   - Check cache trước
   - Query database nếu không có trong cache
   - Cache result (TTL: 300 seconds)
@@ -125,7 +126,7 @@ Config management:
 ### IP-based Strategy
 
 ```typescript
-identifier = `ip:${clientIp}`
+identifier = `ip:${clientIp}`;
 ```
 
 - Rate limit theo IP address
@@ -135,7 +136,7 @@ identifier = `ip:${clientIp}`
 ### User-based Strategy
 
 ```typescript
-identifier = `user:${userId}`
+identifier = `user:${userId}`;
 ```
 
 - Rate limit theo user ID
@@ -145,8 +146,8 @@ identifier = `user:${userId}`
 ### IP + User Agent Strategy
 
 ```typescript
-uaHash = base64(userAgent).slice(0, 16)
-identifier = `ip+ua:${clientIp}:${uaHash}`
+uaHash = base64(userAgent).slice(0, 16);
+identifier = `ip+ua:${clientIp}:${uaHash}`;
 ```
 
 - Rate limit theo IP và User Agent
@@ -156,7 +157,7 @@ identifier = `ip+ua:${clientIp}:${uaHash}`
 ### Custom Strategy
 
 ```typescript
-identifier = getIdentifier(context)
+identifier = getIdentifier(context);
 ```
 
 - Rate limit theo custom identifier
@@ -173,6 +174,7 @@ identifier = getIdentifier(context)
 - `DELETE /admin/rate-limits/:id` - Delete rate limit config
 
 **Permissions:**
+
 - `RATE_LIMIT.VIEW` - View rate limit configs
 - `RATE_LIMIT.MANAGE` - Create/update/delete configs
 
@@ -181,10 +183,12 @@ identifier = getIdentifier(context)
 ### Rate Limit Bypass Prevention
 
 1. **Multiple Strategies**
+
    - Sử dụng strategy phù hợp với use case
    - Combine strategies nếu cần
 
 2. **Blocking Support**
+
    - Block identifiers vĩnh viễn hoặc tạm thời
    - Prevent abuse sau khi vượt quá limit
 
@@ -195,11 +199,13 @@ identifier = getIdentifier(context)
 ### Performance Optimization
 
 1. **Redis Storage**
+
    - Fast in-memory storage
    - Atomic operations
    - Expiration support
 
 2. **Cache Layer**
+
    - Cache configs để giảm database queries
    - TTL: 300 seconds
    - Invalidate khi có thay đổi
@@ -214,11 +220,13 @@ identifier = getIdentifier(context)
 **Best Practices:**
 
 1. **Authentication Endpoints**
+
    - Strategy: `ip` hoặc `ip_ua`
    - Limit: 5-10 requests per minute
    - Window: 60 seconds
 
 2. **API Endpoints**
+
    - Strategy: `user` (nếu authenticated)
    - Limit: 100-1000 requests per minute
    - Window: 60 seconds
@@ -233,11 +241,13 @@ identifier = getIdentifier(context)
 ### Phase 1: Advanced Features
 
 1. **Distributed Rate Limiting**
+
    - Support multiple Redis instances
    - Consistent hashing
    - Load balancing
 
 2. **Rate Limit Analytics**
+
    - Track rate limit hits
    - Analytics dashboard
    - Usage statistics
@@ -250,11 +260,13 @@ identifier = getIdentifier(context)
 ### Phase 2: Enhanced Strategies
 
 1. **Token-based Rate Limiting**
+
    - Rate limit per API key
    - Token-based quotas
    - Usage tracking
 
 2. **Geographic Rate Limiting**
+
    - Rate limit by country/region
    - IP geolocation
    - Regional limits
@@ -267,11 +279,13 @@ identifier = getIdentifier(context)
 ### Phase 3: Enterprise Features
 
 1. **Rate Limit Policies**
+
    - Policy-based configuration
    - Rule engine
    - Complex conditions
 
 2. **Rate Limit Quotas**
+
    - Monthly/daily quotas
    - Usage tracking
    - Quota management
@@ -287,10 +301,8 @@ identifier = getIdentifier(context)
 
 ```typescript
 // Counter key
-`${identifier}:${routePath}:${windowTimestamp}`
-
-// Block key
-`block:${identifier}:${routePath}`
+`${identifier}:${routePath}:${windowTimestamp}`// Block key
+`block:${identifier}:${routePath}`;
 ```
 
 ### Window Calculation
@@ -298,8 +310,7 @@ identifier = getIdentifier(context)
 ```typescript
 const now = new Date();
 const windowStart = new Date(
-  Math.floor(now.getTime() / (windowSeconds * 1000)) *
-    (windowSeconds * 1000)
+  Math.floor(now.getTime() / (windowSeconds * 1000)) * (windowSeconds * 1000)
 );
 ```
 
@@ -329,4 +340,3 @@ if (blockedValue) {
 - Cache layer được tích hợp để tối ưu performance
 - Security events được log khi vượt quá limit
 - Admin API đã được implement để quản lý configs
-

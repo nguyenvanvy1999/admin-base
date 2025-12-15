@@ -33,14 +33,17 @@ server/src/
 ### 🔧 Rate Limit Strategies
 
 1. **IP-based** (`RateLimitStrategy.ip`)
+
    - Rate limit theo IP address
    - Phù hợp cho public endpoints
 
 2. **User-based** (`RateLimitStrategy.user`)
+
    - Rate limit theo user ID
    - Phù hợp cho authenticated endpoints
 
 3. **IP + User Agent** (`RateLimitStrategy.ip_ua`)
+
    - Rate limit theo IP và User Agent hash
    - Phù hợp cho trường hợp cần phân biệt devices
 
@@ -59,6 +62,7 @@ server/src/
 ### Authentication Endpoints
 
 Rate limiting được áp dụng cho:
+
 - `/auth/login` - Prevent brute force attacks
 - `/auth/register` - Prevent spam registrations
 - `/auth/forgot-password` - Prevent abuse
@@ -81,4 +85,3 @@ Hệ thống rate limiting đã được implement đầy đủ và đang hoạt
 - [Authentication](../authentication/overview.md) - Authentication system
 - [IP Whitelist](../ip-whitelist/overview.md) - IP whitelist system
 - [Feature Summary](../summary.md) - Tổng quan tính năng
-

@@ -29,17 +29,20 @@ server/src/
 ### 🔧 Features
 
 1. **IP Whitelist Management**
+
    - Thêm/xóa IP addresses
    - Update IP và note
    - List IPs với pagination
    - Search và filter
 
 2. **IP Validation**
+
    - Normalize IP addresses
    - Local IP bypass (127.0.0.1, ::1)
    - Case-insensitive comparison
 
 3. **Permission System**
+
    - Users chỉ có thể quản lý IPs của mình
    - Admins có thể quản lý IPs của tất cả users
    - Permission-based access control
@@ -54,6 +57,7 @@ server/src/
 ### Security Enhancement
 
 IP whitelist được sử dụng để:
+
 - Tăng cường bảo mật cho user accounts
 - Giới hạn truy cập từ các IP addresses cụ thể
 - Bảo vệ khỏi unauthorized access
@@ -73,6 +77,7 @@ IP whitelist được sử dụng để:
 Hệ thống IP whitelist đã được implement đầy đủ và đang hoạt động. Tài liệu này mô tả hiện trạng và kiến trúc hiện tại.
 
 **Lưu ý quan trọng:**
+
 - IP whitelist chỉ được kiểm tra khi setting `enbIpWhitelist` được bật
 - Nếu user không có IP whitelist, tất cả IPs đều được cho phép
 - Local IPs (127.0.0.1, ::1) luôn được cho phép
@@ -82,4 +87,3 @@ Hệ thống IP whitelist đã được implement đầy đủ và đang hoạt 
 - [Authentication](../authentication/overview.md) - Authentication system
 - [Rate Limiting](../rate-limiting/overview.md) - Rate limiting system
 - [Feature Summary](../summary.md) - Tổng quan tính năng
-

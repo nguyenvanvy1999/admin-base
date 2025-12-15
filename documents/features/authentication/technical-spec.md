@@ -187,6 +187,7 @@ Security monitoring:
 **Security Checks:**
 
 1. Device Recognition
+
    - Generate device fingerprint từ userAgent + IP
    - Check known devices trong sessions
    - Flag unknown devices
@@ -199,16 +200,19 @@ Security monitoring:
 ### MFA Services
 
 **MfaSetupService:**
+
 - Setup TOTP secret
 - Generate backup codes
 - Verify setup
 
 **MfaVerificationService:**
+
 - Verify TOTP code
 - Verify backup code
 - Complete MFA login
 
 **MfaUtilService:**
+
 - Create MFA session
 - Manage MFA cache
 
@@ -226,6 +230,7 @@ AUTH.VIEW_PROFILE       // View own profile
 ### Security Measures
 
 1. **Password Security**
+
    - Hashing với Bun.password
    - Pepper từ environment config
    - Password expiration (configurable)
@@ -233,6 +238,7 @@ AUTH.VIEW_PROFILE       // View own profile
    - Password strength validation
 
 2. **Token Security**
+
    - JWT với HS256 algorithm
    - Encrypted payload (AES-256)
    - Short-lived access tokens (configurable)
@@ -241,12 +247,14 @@ AUTH.VIEW_PROFILE       // View own profile
    - Token revocation
 
 3. **MFA Security**
+
    - TOTP (RFC 6238)
    - Backup codes (10 codes, one-time use)
    - MFA setup tokens (temporary)
    - MFA session tokens (temporary)
 
 4. **Session Security**
+
    - Device fingerprinting
    - IP tracking
    - Session expiration
@@ -320,15 +328,18 @@ AUTH.VIEW_PROFILE       // View own profile
 ### Password Hashing
 
 **Process:**
+
 1. Combine password với pepper: `password + PASSWORD_PEPPER`
 2. Hash với Bun.password: `Bun.password.hash(combined)`
 3. Store hash trong database
 
 **Verification:**
+
 1. Combine password với pepper: `password + PASSWORD_PEPPER`
 2. Verify với stored hash: `Bun.password.verify(combined, storedHash)`
 
 **Benefits:**
+
 - Pepper không lưu trong database
 - Ngay cả khi database bị leak, attacker không thể recover passwords
 - Tương tự như cách xử lý password với salt/pepper
@@ -336,18 +347,21 @@ AUTH.VIEW_PROFILE       // View own profile
 ### Token Security
 
 **Access Token:**
+
 - Short-lived (configurable, default: 15 minutes)
 - Encrypted payload (AES-256)
 - Session-based validation
 - Revocable
 
 **Refresh Token:**
+
 - Long-lived (configurable, default: 7 days)
 - Stored in database (Session model)
 - Revocable
 - Expiration tracking
 
 **Token Payload Encryption:**
+
 - Encrypt sensitive data (userId, sessionId, etc.)
 - Use AES-256 encryption
 - Decrypt on verification
@@ -355,12 +369,14 @@ AUTH.VIEW_PROFILE       // View own profile
 ### MFA Security
 
 **TOTP:**
+
 - RFC 6238 compliant
 - 6-digit codes
 - 30-second window
 - Secret stored encrypted
 
 **Backup Codes:**
+
 - 10 codes generated
 - One-time use
 - Hashed storage
@@ -369,11 +385,13 @@ AUTH.VIEW_PROFILE       // View own profile
 ### Session Security
 
 **Device Fingerprinting:**
+
 - SHA256 hash của `userAgent + IP`
 - Stored in session
 - Used for device recognition
 
 **Session Management:**
+
 - Expiration tracking
 - Revocation support
 - Single session mode (optional)
@@ -382,12 +400,14 @@ AUTH.VIEW_PROFILE       // View own profile
 ### Security Monitoring
 
 **Device Recognition:**
+
 - Generate fingerprint từ userAgent + IP
 - Check known devices
 - Flag unknown devices
 - Optional blocking
 
 **Security Events:**
+
 - Login success/failed
 - Password changed
 - Password reset
@@ -399,16 +419,19 @@ AUTH.VIEW_PROFILE       // View own profile
 ### Phase 1: Enhanced Security
 
 1. **OAuth Integration**
+
    - Google OAuth
    - GitHub OAuth
    - Social login support
 
 2. **Advanced MFA**
+
    - SMS-based OTP
    - Email-based OTP
    - Hardware tokens (FIDO2/WebAuthn)
 
 3. **Password Policies**
+
    - Password strength requirements
    - Password history (prevent reuse)
    - Password complexity rules
@@ -421,11 +444,13 @@ AUTH.VIEW_PROFILE       // View own profile
 ### Phase 2: User Experience
 
 1. **Remember Me**
+
    - Long-lived sessions
    - Device trust
    - Auto-login
 
 2. **Social Features**
+
    - Profile management
    - Avatar upload
    - Account settings
@@ -438,11 +463,13 @@ AUTH.VIEW_PROFILE       // View own profile
 ### Phase 3: Enterprise Features
 
 1. **SSO (Single Sign-On)**
+
    - SAML support
    - LDAP integration
    - Active Directory integration
 
 2. **Advanced Session Management**
+
    - Concurrent session limits
    - Session timeout policies
    - Session activity monitoring
@@ -458,4 +485,3 @@ AUTH.VIEW_PROFILE       // View own profile
 - Tất cả security measures đã được áp dụng
 - Audit logging và security events đã được tích hợp
 - Rate limiting được áp dụng cho các endpoint quan trọng
-

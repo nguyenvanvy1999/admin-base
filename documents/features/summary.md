@@ -213,14 +213,16 @@ Sau khi phân tích database, code và tài liệu, hệ thống hiện tại đ
 
 ---
 
-**💡 Recommendation:** 
+**💡 Recommendation:**
 
 **Đã hoàn thành:**
+
 - ✅ Authentication System - Xem [Technical Spec](./authentication/technical-spec.md)
 - ✅ Rate Limiting System - Xem [Technical Spec](./rate-limiting/technical-spec.md)
 - ✅ IP Whitelist System - Xem [Technical Spec](./ip-whitelist/technical-spec.md)
 
 **Nên triển khai tiếp theo:**
+
 - **API Key Management** hoặc **Activity Log** vì:
   - Schema đã có sẵn
   - Effort vừa phải (4 tuần)

@@ -51,6 +51,7 @@ model UserIpWhitelist {
 ```
 
 **Fields:**
+
 - `userId`: User ID
 - `ip`: IP address (normalized, case-insensitive)
 - `note`: Optional note/description
@@ -62,6 +63,7 @@ model UserIpWhitelist {
 Core IP whitelist logic:
 
 - `isIpAllowed()` - Kiểm tra IP có được phép không
+
   - Normalize IP
   - Check local IPs (always allowed)
   - Get user IP whitelist (from cache or database)
@@ -69,14 +71,17 @@ Core IP whitelist logic:
   - Return true nếu whitelist rỗng (allow all)
 
 - `list()` - List IP whitelist với filtering
+
   - Permission-based filtering
   - Search support
   - Pagination
 
 - `detail()` - Get IP whitelist detail
+
   - Permission check
 
 - `upsert()` - Create hoặc update IP whitelist
+
   - Permission check
   - Invalidate cache
 
@@ -116,7 +121,7 @@ const ips = await db.userIpWhitelist.findMany({
 });
 
 // Normalize and cache
-const normalized = ips.map(item => normalizeIp(item.ip));
+const normalized = ips.map((item) => normalizeIp(item.ip));
 await cache.set(userId, normalized);
 return normalized;
 ```
@@ -135,10 +140,12 @@ IPWHITELIST.DELETE    // Delete IP whitelist
 ### Access Control
 
 1. **User Access**
+
    - Users chỉ có thể quản lý IPs của mình
    - Không thể xem IPs của users khác
 
 2. **Admin Access**
+
    - Admins có thể quản lý IPs của tất cả users
    - Có thể view/create/update/delete IPs
 
@@ -156,6 +163,7 @@ IPWHITELIST.DELETE    // Delete IP whitelist
 - `POST /admin/user-ip-whitelists/del` - Delete IP whitelist
 
 **Permissions:**
+
 - `IPWHITELIST.VIEW` - View IP whitelist
 - `IPWHITELIST.CREATE` / `IPWHITELIST.UPDATE` - Create/update
 - `IPWHITELIST.DELETE` - Delete
@@ -168,6 +176,7 @@ IPWHITELIST.DELETE    // Delete IP whitelist
 - `POST /user-ip-whitelists/del` - Delete own IP whitelist
 
 **Permissions:**
+
 - Users chỉ có thể quản lý IPs của mình
 
 ## 🔒 Security Considerations
@@ -226,14 +235,17 @@ const clientIp =
 ### Cache Strategy
 
 **Cache Key:**
+
 - Key: `userId`
 - Value: Array of normalized IP addresses
 
 **Cache Invalidation:**
+
 - Invalidate khi create/update/delete IP whitelist
 - Invalidate per user (only affected user)
 
 **Cache Benefits:**
+
 - Fast lookup (O(1) instead of database query)
 - Reduced database load
 - Better performance
@@ -243,11 +255,13 @@ const clientIp =
 ### Phase 1: Enhanced Features
 
 1. **IP Range Support**
+
    - Support CIDR notation (e.g., 192.168.1.0/24)
    - IP range validation
    - Range matching
 
 2. **IPv6 Support**
+
    - Full IPv6 support
    - IPv6 normalization
    - IPv6 range support
@@ -260,11 +274,13 @@ const clientIp =
 ### Phase 2: Advanced Security
 
 1. **IP Blacklist**
+
    - Separate blacklist
    - Block specific IPs
    - Override whitelist
 
 2. **Dynamic IP Management**
+
    - Auto-update IP whitelist
    - IP rotation
    - Temporary IPs
@@ -277,11 +293,13 @@ const clientIp =
 ### Phase 3: Enterprise Features
 
 1. **IP Whitelist Policies**
+
    - Policy-based configuration
    - Rule engine
    - Complex conditions
 
 2. **IP Whitelist Groups**
+
    - Group IPs together
    - Apply groups to users
    - Bulk management
@@ -318,7 +336,7 @@ async isIpAllowed(userId: string, clientIp: string | null): Promise<boolean> {
   }
 
   const normalizedIp = this.normalizeIp(clientIp);
-  
+
   // Always allow local IPs
   if (this.isLocalIp(normalizedIp)) {
     return true;
@@ -353,7 +371,7 @@ const ips = await db.userIpWhitelist.findMany({
 });
 
 // Normalize and cache
-const normalized = ips.map(item => normalizeIp(item.ip));
+const normalized = ips.map((item) => normalizeIp(item.ip));
 await cache.set(userId, normalized);
 return normalized;
 ```
@@ -377,4 +395,3 @@ private invalidateCache(userId: string) {
 - Local IPs luôn được cho phép
 - Empty whitelist cho phép tất cả IPs
 - Middleware tự động kiểm tra IP whitelist cho authenticated users
-

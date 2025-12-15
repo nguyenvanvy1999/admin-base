@@ -13,6 +13,7 @@ Roadmap này đề xuất kế hoạch triển khai các tính năng mới dựa
 **Status:** Hoàn chỉnh và đang hoạt động
 
 **Features đã triển khai:**
+
 - ✅ User registration và account verification
 - ✅ Login với email/password
 - ✅ Multi-Factor Authentication (MFA) với TOTP
@@ -30,6 +31,7 @@ Roadmap này đề xuất kế hoạch triển khai các tính năng mới dựa
 **Status:** Hoàn chỉnh và đang hoạt động
 
 **Features đã triển khai:**
+
 - ✅ Dynamic rate limit configuration từ database
 - ✅ Multiple strategies (IP, User, IP+UA, Custom)
 - ✅ Redis-based storage
@@ -45,6 +47,7 @@ Roadmap này đề xuất kế hoạch triển khai các tính năng mới dựa
 **Status:** Hoàn chỉnh và đang hoạt động
 
 **Features đã triển khai:**
+
 - ✅ User IP whitelist management
 - ✅ Middleware integration
 - ✅ Cache layer cho performance
@@ -64,6 +67,7 @@ Roadmap này đề xuất kế hoạch triển khai các tính năng mới dựa
 **Hiện trạng:** Hoàn chỉnh và đang hoạt động tốt
 
 **Có thể cải thiện:**
+
 - ➕ OAuth providers mới (Facebook, Apple, etc.)
 - ➕ SSO (Single Sign-On) với SAML/LDAP
 - ➕ Device management UI (xem/quản lý devices đã login)
@@ -78,6 +82,7 @@ Roadmap này đề xuất kế hoạch triển khai các tính năng mới dựa
 **Hiện trạng:** Hoàn chỉnh và đang hoạt động tốt
 
 **Có thể cải thiện:**
+
 - ➕ Distributed rate limiting (multiple Redis instances)
 - ➕ Rate limit analytics dashboard
 - ➕ Dynamic limits (adjust based on load)
@@ -92,6 +97,7 @@ Roadmap này đề xuất kế hoạch triển khai các tính năng mới dựa
 **Hiện trạng:** Hoàn chỉnh và đang hoạt động tốt
 
 **Có thể cải thiện:**
+
 - ➕ IP range support (CIDR notation, e.g., 192.168.1.0/24)
 - ➕ Full IPv6 support
 - ➕ IP geolocation integration
@@ -106,6 +112,7 @@ Roadmap này đề xuất kế hoạch triển khai các tính năng mới dựa
 **Hiện trạng:** Cơ bản (upload/download)
 
 **Có thể cải thiện:**
+
 - ➕ File versioning
 - ➕ Access control (public/private)
 - ➕ Metadata tracking
@@ -120,6 +127,7 @@ Roadmap này đề xuất kế hoạch triển khai các tính năng mới dựa
 **Hiện trạng:** Cơ bản (schema và basic system)
 
 **Có thể cải thiện:**
+
 - ➕ Notification preferences UI
 - ➕ Notification scheduling
 - ➕ Notification batching
