@@ -1,10 +1,15 @@
 import { db, type IDb } from 'src/config/db';
 import { auditLogQueue, type IAuditLogQueue } from 'src/config/queue';
 import type { AuditLogListParams } from 'src/dtos/audit-logs.dto';
-import type { AuditLogWhereInput } from 'src/generated';
-import { executeListQuery } from 'src/services/shared/utils';
-import type { ACTIVITY_TYPE, AuditLogEntry } from 'src/share';
 import {
+  type AuditLogWhereInput,
+  LogType,
+  type SecurityEventSeverity,
+} from 'src/generated';
+import { executeListQuery } from 'src/services/shared/utils';
+import {
+  type ACTIVITY_TYPE,
+  type AuditLogEntry,
   BadReqErr,
   ctxStore,
   ErrCode,
@@ -12,6 +17,7 @@ import {
   generateAuditLogDescription,
   IdUtil,
   inferEntityTypeFromActivityType,
+  inferSeverityFromEventType,
   LOG_LEVEL,
 } from 'src/share';
 
@@ -35,6 +41,14 @@ export class AuditLogsService {
     const pickValue = <T>(value: T | undefined | null, fallback?: T) =>
       value !== undefined ? value : fallback;
 
+    const resolvedBy = entry.resolvedBy ?? ctx?.userId ?? undefined;
+    const severity: SecurityEventSeverity | undefined =
+      entry.severity ??
+      (entry.eventType
+        ? inferSeverityFromEventType(entry.eventType)
+        : undefined);
+    const logType: LogType =
+      entry.logType ?? (entry.eventType ? LogType.security : LogType.audit);
     const entityType =
       entry.entityType ?? inferEntityTypeFromActivityType(entry.type);
     const entityId =
@@ -49,6 +63,12 @@ export class AuditLogsService {
     } = {
       ...entry,
       logId: logId,
+      logType,
+      eventType: entry.eventType,
+      severity,
+      resolved: entry.resolved ?? false,
+      resolvedAt: entry.resolvedAt,
+      resolvedBy,
       level: entry.level ?? LOG_LEVEL.INFO,
       timestamp: entry.timestamp ?? new Date(),
       userId: pickValue(entry.userId, ctx?.userId),
@@ -105,6 +125,9 @@ export class AuditLogsService {
       sessionId,
       entityType,
       entityId,
+      eventType,
+      severity,
+      resolved,
       level,
       logType,
       ip,
@@ -139,12 +162,24 @@ export class AuditLogsService {
       conditions.push({ entityId });
     }
 
+    if (eventType) {
+      conditions.push({ eventType });
+    }
+
+    if (severity) {
+      conditions.push({ severity });
+    }
+
+    if (resolved !== undefined) {
+      conditions.push({ resolved });
+    }
+
     if (level) {
-      conditions.push({ level });
+      conditions.push({ level: level });
     }
 
     if (logType) {
-      conditions.push({ logType });
+      conditions.push({ logType: logType });
     }
 
     if (ip) {
@@ -179,6 +214,8 @@ export class AuditLogsService {
         payload: true,
         level: true,
         logType: true,
+        eventType: true,
+        severity: true,
         userId: true,
         sessionId: true,
         entityType: true,
@@ -189,6 +226,9 @@ export class AuditLogsService {
         requestId: true,
         traceId: true,
         correlationId: true,
+        resolved: true,
+        resolvedAt: true,
+        resolvedBy: true,
         occurredAt: true,
         created: true,
       },

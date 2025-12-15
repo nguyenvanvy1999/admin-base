@@ -1,20 +1,23 @@
 import { db, type IDb } from 'src/config/db';
-import { securityEventQueue } from 'src/config/queue';
-import type {
-  SecurityEventSeverity,
-  SecurityEventType,
-  SecurityEventWhereInput,
+import type { AuditLogWhereInput } from 'src/generated';
+import {
+  LogType,
+  type SecurityEventSeverity,
+  type SecurityEventType,
 } from 'src/generated';
 import {
+  ACTIVITY_TYPE,
+  type AuditLogEntry,
   BadReqErr,
   ErrCode,
   getIpAndUa,
   getSecurityEventDescription,
-  IdUtil,
   inferSeverityFromEventType,
+  LOG_LEVEL,
   type PrismaTx,
-  shouldAutoResolve,
 } from 'src/share';
+import { auditLogsService } from '../audit-logs/audit-logs.service';
+import { executeListQuery } from '../shared/utils';
 
 type CreateSecurityEventParams = {
   userId?: string;
@@ -33,104 +36,30 @@ type ResolveSecurityEventParams = {
   tx?: PrismaTx;
 };
 
-type ListSecurityEventsParams = {
-  take?: number;
-  skip?: number;
-  userId?: string;
-  eventType?: SecurityEventType;
-  severity?: SecurityEventSeverity;
-  resolved?: boolean;
-  created0?: string;
-  created1?: string;
-  currentUserId: string;
-  hasViewPermission: boolean;
-};
-
 export class SecurityEventsService {
   constructor(private readonly deps: { db: IDb } = { db }) {}
 
   async create(params: CreateSecurityEventParams): Promise<void> {
-    const {
-      userId,
-      eventType,
-      severity,
-      ip,
-      userAgent,
-      location,
-      metadata,
-      tx,
-    } = params;
+    const { userId, eventType, severity, ip, userAgent, location, metadata } =
+      params;
 
     const { clientIp, userAgent: ctxUserAgent } = getIpAndUa();
     const finalIp = ip ?? clientIp;
     const finalUserAgent = userAgent ?? ctxUserAgent;
-
-    if (tx) {
-      return this.createDirect({
-        userId,
-        eventType,
-        severity,
-        ip: finalIp,
-        userAgent: finalUserAgent,
-        location,
-        metadata,
-        tx,
-      });
-    }
-
-    await securityEventQueue.add('create', {
-      userId,
-      eventType: eventType as string,
-      severity: severity as string | undefined,
-      ip: finalIp,
-      userAgent: finalUserAgent,
-      location,
-      metadata,
-    });
-  }
-
-  async createDirect(params: CreateSecurityEventParams) {
-    const {
-      userId,
-      eventType,
-      severity,
-      ip,
-      userAgent,
-      location,
-      metadata,
-      tx,
-    } = params;
-
-    let finalIp = ip;
-    let finalUserAgent = userAgent;
-    if (!finalIp || !finalUserAgent) {
-      const { clientIp, userAgent: ctxUserAgent } = getIpAndUa();
-      finalIp = finalIp ?? clientIp;
-      finalUserAgent = finalUserAgent ?? ctxUserAgent;
-    }
     const finalSeverity = severity ?? inferSeverityFromEventType(eventType);
-    const autoResolve = shouldAutoResolve(eventType);
 
-    const data = {
-      id: IdUtil.dbId(),
-      userId,
+    await auditLogsService.push({
+      logType: LogType.security,
+      type: ACTIVITY_TYPE.INTERNAL_ERROR as AuditLogEntry['type'],
+      payload: { ...(metadata ?? {}), location },
       eventType,
       severity: finalSeverity,
+      description: getSecurityEventDescription(eventType, metadata),
+      userId,
       ip: finalIp,
       userAgent: finalUserAgent,
-      location: location ? (location as any) : undefined,
-      metadata: metadata ? (metadata as any) : undefined,
-      resolved: autoResolve,
-      resolvedAt: autoResolve ? new Date() : undefined,
-      resolvedBy: autoResolve ? userId : undefined,
-    };
-
-    const dbInstance = tx || this.deps.db;
-    await dbInstance.securityEvent.create({
-      data,
-      select: {
-        id: true,
-      },
+      resolved: false,
+      level: LOG_LEVEL.WARNING,
     });
   }
 
@@ -138,8 +67,8 @@ export class SecurityEventsService {
     const { id, resolvedBy, tx } = params;
 
     const dbInstance = tx || this.deps.db;
-    return dbInstance.securityEvent.update({
-      where: { id },
+    return dbInstance.auditLog.update({
+      where: { id: BigInt(id) },
       data: {
         resolved: true,
         resolvedAt: new Date(),
@@ -168,7 +97,7 @@ export class SecurityEventsService {
       hasViewPermission,
     } = params;
 
-    const conditions: SecurityEventWhereInput[] = [];
+    const conditions: AuditLogWhereInput[] = [{ logType: LogType.security }];
 
     if (userId) {
       if (!hasViewPermission && userId !== currentUserId) {
@@ -192,49 +121,56 @@ export class SecurityEventsService {
     }
 
     if (created0 || created1) {
-      const dateCondition: SecurityEventWhereInput['created'] = {};
+      const dateCondition: AuditLogWhereInput['occurredAt'] = {};
       if (created0) {
         dateCondition.gte = new Date(created0);
       }
       if (created1) {
         dateCondition.lte = new Date(created1);
       }
-      conditions.push({ created: dateCondition });
+      conditions.push({ occurredAt: dateCondition });
     }
 
     const where = conditions.length > 0 ? { AND: conditions } : undefined;
 
-    const [docs, count] = await this.deps.db.$transaction([
-      this.deps.db.securityEvent.findMany({
-        where,
-        select: {
-          id: true,
-          userId: true,
-          eventType: true,
-          severity: true,
-          ip: true,
-          userAgent: true,
-          location: true,
-          metadata: true,
-          resolved: true,
-          resolvedAt: true,
-          resolvedBy: true,
-          created: true,
-        },
-        skip,
-        take,
-        orderBy: { created: 'desc' },
-      }),
-      this.deps.db.securityEvent.count({ where }),
-    ]);
+    const { docs, count } = await executeListQuery(this.deps.db.auditLog, {
+      where,
+      select: {
+        id: true,
+        userId: true,
+        eventType: true,
+        severity: true,
+        ip: true,
+        userAgent: true,
+        payload: true,
+        resolved: true,
+        resolvedAt: true,
+        resolvedBy: true,
+        occurredAt: true,
+        created: true,
+      },
+      skip,
+      take,
+      orderBy: { occurredAt: 'desc' },
+    });
 
-    const formattedDocs = docs.map((doc) => ({
-      ...doc,
-      description: getSecurityEventDescription(
-        doc.eventType,
-        doc.metadata as any,
-      ),
-    }));
+    const formattedDocs = docs.map((doc) => {
+      const payload =
+        doc.payload && typeof doc.payload === 'object'
+          ? (doc.payload as Record<string, any>)
+          : {};
+
+      return {
+        ...doc,
+        id: doc.id.toString(),
+        location: payload.location ?? null,
+        metadata: payload,
+        description: getSecurityEventDescription(
+          doc.eventType as SecurityEventType,
+          payload,
+        ),
+      };
+    });
 
     return {
       docs: formattedDocs,

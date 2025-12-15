@@ -1,5 +1,11 @@
 import type { JWTPayload } from 'jose';
-import type { PrismaClient, User } from 'src/generated';
+import type {
+  LogType,
+  PrismaClient,
+  SecurityEventSeverity,
+  SecurityEventType,
+  User,
+} from 'src/generated';
 import {
   ACTIVITY_TYPE,
   EmailType,
@@ -147,6 +153,12 @@ export type AuditLogEntry<T extends ACTIVITY_TYPE = ACTIVITY_TYPE> = {
   description?: string | null;
   ip?: string | null;
   userAgent?: string | null;
+  logType?: LogType;
+  eventType?: SecurityEventType;
+  severity?: SecurityEventSeverity;
+  resolved?: boolean;
+  resolvedAt?: Date | null;
+  resolvedBy?: string | null;
   type: T;
   payload: ActivityTypeMap[T];
   level?: LOG_LEVEL;

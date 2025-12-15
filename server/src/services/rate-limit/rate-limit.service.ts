@@ -1,8 +1,12 @@
 import { rateLimitCache } from 'src/config/cache';
 import { redis } from 'src/config/redis';
-import { SecurityEventSeverity, SecurityEventType } from 'src/generated';
-import { securityEventsService } from 'src/services/security';
-import { getIpAndUa } from 'src/share';
+import {
+  LogType,
+  SecurityEventSeverity,
+  SecurityEventType,
+} from 'src/generated';
+import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
+import { ACTIVITY_TYPE, getIpAndUa } from 'src/share';
 
 type CheckAndIncrementParams = {
   identifier: string;
@@ -83,19 +87,22 @@ export class RateLimitService {
       const finalIp = ip ?? clientIp;
       const finalUserAgent = userAgent ?? ctxUserAgent;
 
-      await securityEventsService.create({
-        userId,
-        eventType: SecurityEventType.suspicious_activity,
+      await auditLogsService.push({
+        logType: LogType.rate_limit,
+        type: ACTIVITY_TYPE.INTERNAL_ERROR,
+        eventType: SecurityEventType.rate_limit_exceeded,
         severity: SecurityEventSeverity.high,
-        ip: finalIp,
-        userAgent: finalUserAgent,
-        metadata: {
+        description: `Rate limit exceeded on ${routePath}`,
+        payload: {
           routePath,
           identifier,
           count: currentCount,
           limit,
           windowSeconds,
         },
+        userId,
+        ip: finalIp,
+        userAgent: finalUserAgent,
       });
 
       return {

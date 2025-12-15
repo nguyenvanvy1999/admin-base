@@ -4,18 +4,17 @@ import { SQL } from 'bun';
 import { db, type IDb } from 'src/config/db';
 import { env } from 'src/config/env';
 import { type ILogger, logger } from 'src/config/logger';
-import type { GeoIPJobData, SecurityEventJobData } from 'src/config/queue';
+import type { GeoIPJobData } from 'src/config/queue';
 import {
   auditLogQueue,
   batchLogQueue,
   type IAuditLogQueue,
 } from 'src/config/queue';
+import { LogType } from 'src/generated';
 import type { AuditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import type { EmailService } from 'src/services/mail/email.service';
 import { emailService } from 'src/services/mail/email.service';
-import type { SecurityEventsService } from 'src/services/security';
-import { securityEventsService } from 'src/services/security';
 import type { GeoIPUtil } from 'src/services/shared/utils/geoip.util';
 import { geoIPUtil } from 'src/services/shared/utils/geoip.util';
 import type { IdempotencyUtil } from 'src/services/shared/utils/idempotency.util';
@@ -37,7 +36,9 @@ interface BufferedLog {
   id: string;
   payload: object;
   level: string;
-  log_type: string;
+  log_type: LogType;
+  event_type?: string | null;
+  severity?: string | null;
   user_id?: string | null;
   session_id?: string | null;
   entity_type?: string | null;
@@ -48,6 +49,9 @@ interface BufferedLog {
   request_id?: string | null;
   trace_id?: string | null;
   correlation_id?: string | null;
+  resolved?: boolean;
+  resolved_at?: Date | null;
+  resolved_by?: string | null;
   occurred_at: Date;
   created: Date;
 }
@@ -61,7 +65,6 @@ export class WorkerService {
       geoIPService: GeoIPUtil;
       lockingService: LockingUtil;
       idempotencyService: IdempotencyUtil;
-      securityEventService: SecurityEventsService;
     } = {
       db,
       emailService,
@@ -69,7 +72,6 @@ export class WorkerService {
       geoIPService: geoIPUtil,
       lockingService: lockingUtil,
       idempotencyService: idempotencyUtil,
-      securityEventService: securityEventsService,
     },
   ) {}
 
@@ -99,23 +101,6 @@ export class WorkerService {
         where: { id: sessionId },
         data: { location: location as any },
         select: { id: true },
-      });
-    }
-  }
-
-  async handleSecurityEventJob(
-    jobName: string,
-    data: SecurityEventJobData,
-  ): Promise<void> {
-    if (jobName === 'create') {
-      await this.deps.securityEventService.createDirect({
-        userId: data.userId,
-        eventType: data.eventType as any,
-        severity: data.severity as any,
-        ip: data.ip,
-        userAgent: data.userAgent,
-        location: data.location,
-        metadata: data.metadata,
       });
     }
   }
@@ -163,11 +148,6 @@ export class WorkerManagerService {
         queue: QueueName.GeoIP,
         handler: (jobName: string, data: any) =>
           this.deps.workerService.handleGeoIPJob(jobName, data),
-      },
-      {
-        queue: QueueName.SecurityEvent,
-        handler: (jobName: string, data: any) =>
-          this.deps.workerService.handleSecurityEventJob(jobName, data),
       },
     ];
   }
@@ -235,7 +215,9 @@ export class AuditLogWorkerService {
         id: jobData.logId,
         payload: jobData.payload,
         level: jobData.level ?? LOG_LEVEL.INFO,
-        log_type: jobData.type,
+        log_type: jobData.logType ?? LogType.audit,
+        event_type: jobData.eventType ?? null,
+        severity: jobData.severity ?? null,
         user_id: jobData.userId,
         session_id: jobData.sessionId,
         entity_type: jobData.entityType,
@@ -246,6 +228,9 @@ export class AuditLogWorkerService {
         request_id: jobData.requestId,
         trace_id: jobData.traceId,
         correlation_id: jobData.correlationId,
+        resolved: jobData.resolved ?? false,
+        resolved_at: jobData.resolvedAt ?? null,
+        resolved_by: jobData.resolvedBy ?? null,
         occurred_at: jobData.timestamp,
         created: new Date(),
       };
