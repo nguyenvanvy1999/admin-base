@@ -49,7 +49,7 @@ describe('auditLogService (BullMQ)', () => {
         'audit-log',
         expect.objectContaining({
           type: ACTIVITY_TYPE.LOGIN,
-          payload: { action: 'login' },
+          payload: { method: 'email' },
           userId: 'user-123',
           level: 'info',
           logId: expect.any(String),
@@ -151,7 +151,7 @@ describe('auditLogService (BullMQ)', () => {
       expect(typeof logId).toBe('string');
       expect(enrichedEntry.logId).toBe(logId);
       expect(enrichedEntry.type).toBe(ACTIVITY_TYPE.LOGIN);
-      expect(enrichedEntry.payload).toEqual({ action: 'login' });
+      expect(enrichedEntry.payload).toEqual({ method: 'email' });
       expect(enrichedEntry.userId).toBe('user-xyz');
     });
 
@@ -257,7 +257,7 @@ describe('auditLogService (BullMQ)', () => {
     it('should handle large batch', async () => {
       const entries = Array.from({ length: 100 }, (_, i) =>
         AuditLogFixtures.createEntry({
-          payload: { action: 'login', index: i },
+          payload: { method: 'email' },
           userId: `user-${i}`,
         }),
       );

@@ -6,7 +6,7 @@ import {
   SecurityEventType,
 } from 'src/generated';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
-import { ACTIVITY_TYPE } from 'src/share';
+import { ACTIVITY_TYPE, AuditEventCategory } from 'src/share';
 
 type CheckAndIncrementParams = {
   identifier: string;
@@ -80,11 +80,15 @@ export class RateLimitService {
         severity: SecurityEventSeverity.high,
         description: `Rate limit exceeded on ${routePath}`,
         payload: {
-          routePath,
-          identifier,
-          count: currentCount,
-          limit,
-          windowSeconds,
+          category: AuditEventCategory.INTERNAL,
+          error: 'rate_limit_exceeded',
+          detail: {
+            routePath,
+            identifier,
+            count: currentCount,
+            limit,
+            windowSeconds,
+          },
         },
         userId,
       });

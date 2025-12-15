@@ -22,8 +22,8 @@ import { idempotencyUtil } from 'src/services/shared/utils/idempotency.util';
 import type { LockingUtil } from 'src/services/shared/utils/locking.util';
 import { lockingUtil } from 'src/services/shared/utils/locking.util';
 import {
-  type AuditLogEntry,
   EmailType,
+  type EnrichedAuditLogEntry,
   LOG_LEVEL,
   QueueName,
   type SendMailMap,
@@ -203,14 +203,13 @@ export class AuditLogWorkerService {
     this.contextLogger = logger.with({ workerName: WORKER_NAME });
   }
 
-  private async flushBatchToDB(jobs: Job<AuditLogEntry>[]): Promise<void> {
+  private async flushBatchToDB(
+    jobs: Job<EnrichedAuditLogEntry>[],
+  ): Promise<void> {
     if (jobs.length === 0) return;
 
     const data: BufferedLog[] = jobs.map((job) => {
-      const jobData = job.data as AuditLogEntry & {
-        logId: string;
-        timestamp: Date;
-      };
+      const jobData = job.data;
       return {
         id: jobData.logId,
         payload: jobData.payload,

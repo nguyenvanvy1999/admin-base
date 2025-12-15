@@ -32,6 +32,7 @@ import {
 } from 'src/services/settings/settings.service';
 import {
   ACTIVITY_TYPE,
+  AuditEventCategory,
   BadReqErr,
   DB_PREFIX,
   defaultRoles,
@@ -506,7 +507,28 @@ export class AuthService {
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.UPDATE_USER,
       payload: {
-        id: userId,
+        category: AuditEventCategory.CUD,
+        entityType: 'user',
+        entityId: userId,
+        action: 'update',
+        before: {
+          id: userId,
+          changes: {
+            status: {
+              previous: UserStatus.inactive,
+              next: UserStatus.active,
+            },
+          },
+        },
+        after: {
+          id: userId,
+          changes: {
+            status: {
+              previous: UserStatus.inactive,
+              next: UserStatus.active,
+            },
+          },
+        },
         changes: {
           status: { previous: UserStatus.inactive, next: UserStatus.active },
         },
@@ -594,7 +616,13 @@ export class AuthService {
 
     await this.deps.auditLogService.push({
       type: ACTIVITY_TYPE.REVOKE_SESSION,
-      payload: { sessionId },
+      payload: {
+        category: AuditEventCategory.CUD,
+        entityType: 'session',
+        entityId: sessionId,
+        action: 'delete',
+        before: { sessionId },
+      },
     });
 
     await this.deps.sessionService.revoke(id);

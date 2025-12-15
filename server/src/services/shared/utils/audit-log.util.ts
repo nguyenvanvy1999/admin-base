@@ -1,10 +1,19 @@
 import { ACTIVITY_TYPE } from 'src/services/shared/constants';
-import type { ActivityTypeMap } from 'src/share/type';
+import {
+  type ActivityTypeMap,
+  type AuditChangeSet,
+  AuditEventCategory,
+  type CudPayloadBase,
+  type InternalEventPayload,
+} from 'src/share/type';
 
 export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
   type: T,
   payload: ActivityTypeMap[T],
 ): string {
+  const cudDescription = describeCudPayload(payload);
+  if (cudDescription) return cudDescription;
+
   switch (type) {
     case ACTIVITY_TYPE.LOGIN: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.LOGIN];
@@ -52,33 +61,39 @@ export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
 
     case ACTIVITY_TYPE.CREATE_USER: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_USER];
-      return `User created: ${p.username} (${p.id})`;
+      const userId = p.entityId;
+      const username = (p.after as { username?: string } | undefined)?.username;
+      return `User created: ${username ?? userId} (${userId})`;
     }
 
     case ACTIVITY_TYPE.UPDATE_USER: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.UPDATE_USER];
       const action = p.action ? ` (${p.action})` : '';
-      return `User updated: ${p.id}${action}`;
+      return `User updated: ${p.entityId}${action}`;
     }
 
     case ACTIVITY_TYPE.CREATE_ROLE: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_ROLE];
-      return `Role created: ${p.title} (${p.id})`;
+      const title = (p.after as { title?: string } | undefined)?.title;
+      return `Role created: ${title ?? p.entityId} (${p.entityId})`;
     }
 
     case ACTIVITY_TYPE.UPDATE_ROLE: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.UPDATE_ROLE];
-      return `Role updated: ${p.title} (${p.id})`;
+      const title = (p.after as { title?: string } | undefined)?.title;
+      return `Role updated: ${title ?? p.entityId} (${p.entityId})`;
     }
 
     case ACTIVITY_TYPE.DEL_ROLE: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.DEL_ROLE];
-      return `Roles deleted: ${p.roleIds.length} role(s)`;
+      const ids =
+        (p.before as { roleIds: string[] } | undefined)?.roleIds ?? [];
+      return `Roles deleted: ${ids.length} role(s)`;
     }
 
     case ACTIVITY_TYPE.REVOKE_SESSION: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.REVOKE_SESSION];
-      return `Session revoked: ${p.sessionId}`;
+      return `Session revoked: ${p.entityId}`;
     }
 
     case ACTIVITY_TYPE.RESET_MFA: {
@@ -93,34 +108,29 @@ export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
     case ACTIVITY_TYPE.CREATE_IP_WHITELIST: {
       const p =
         payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_IP_WHITELIST];
-      return `IP whitelist created: ${p.ip}${p.note ? ` (${p.note})` : ''}`;
+      const ip = (p.after as { ip?: string } | undefined)?.ip ?? p.entityId;
+      const note = (p.after as { note?: string } | undefined)?.note;
+      return `IP whitelist created: ${ip}${note ? ` (${note})` : ''}`;
     }
 
     case ACTIVITY_TYPE.DEL_IP_WHITELIST: {
       const p =
         payload as ActivityTypeMap[typeof ACTIVITY_TYPE.DEL_IP_WHITELIST];
-      return `IP whitelist deleted: ${p.ips.length} IP(s)`;
+      const ips = (p.before as { ips: string[] } | undefined)?.ips ?? [];
+      return `IP whitelist deleted: ${ips.length} IP(s)`;
     }
 
     case ACTIVITY_TYPE.UPDATE_SETTING: {
       const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.UPDATE_SETTING];
-      return `Setting updated: ${p.key}`;
+      return `Setting updated: ${p.entityId}`;
     }
 
     case ACTIVITY_TYPE.INTERNAL_ERROR: {
+      const p = payload as InternalEventPayload;
+      if (p.error) {
+        return `Internal error: ${p.error}`;
+      }
       return 'Internal error occurred';
-    }
-
-    case ACTIVITY_TYPE.P2P_ORDER_EXPIRED: {
-      const p =
-        payload as ActivityTypeMap[typeof ACTIVITY_TYPE.P2P_ORDER_EXPIRED];
-      return `P2P order expired: ${p.orderId}`;
-    }
-
-    case ACTIVITY_TYPE.P2P_ORDER_EXPIRE_FAILED: {
-      const p =
-        payload as ActivityTypeMap[typeof ACTIVITY_TYPE.P2P_ORDER_EXPIRE_FAILED];
-      return `P2P order expire failed: ${p.orderId} - ${p.error}`;
     }
 
     default:
@@ -128,9 +138,41 @@ export function generateAuditLogDescription<T extends ACTIVITY_TYPE>(
   }
 }
 
+export function isCudPayload(
+  payload: unknown,
+): payload is CudPayloadBase<string, any, any, any> {
+  return (
+    typeof payload === 'object' &&
+    payload !== null &&
+    (payload as { category?: unknown }).category === AuditEventCategory.CUD
+  );
+}
+
+function describeCudPayload(payload: unknown): string | null {
+  if (!isCudPayload(payload)) return null;
+
+  const { entityType, entityId, action, changes } = payload;
+  const changeSummary = summarizeChanges(changes);
+  const actionLabel = action ?? 'change';
+
+  return `${entityType} ${actionLabel} (${entityId})${changeSummary}`;
+}
+
+function summarizeChanges(changes?: AuditChangeSet): string {
+  if (!changes) return '';
+  const keys = Object.keys(changes);
+  if (keys.length === 0) return '';
+  return ` [${keys.join(', ')}]`;
+}
+
 export function inferEntityTypeFromActivityType(
   type: ACTIVITY_TYPE,
+  payload?: ActivityTypeMap[ACTIVITY_TYPE],
 ): string | null {
+  if (isCudPayload(payload)) {
+    return payload.entityType;
+  }
+
   switch (type) {
     case ACTIVITY_TYPE.CREATE_USER:
     case ACTIVITY_TYPE.UPDATE_USER:
@@ -160,28 +202,18 @@ export function extractEntityIdFromPayload<T extends ACTIVITY_TYPE>(
   type: T,
   payload: ActivityTypeMap[T],
 ): string | null {
+  if (isCudPayload(payload)) {
+    return payload.entityId;
+  }
+
   switch (type) {
     case ACTIVITY_TYPE.CREATE_USER:
-    case ACTIVITY_TYPE.UPDATE_USER: {
-      const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_USER];
-      return p.id ?? null;
-    }
-
+    case ACTIVITY_TYPE.UPDATE_USER:
     case ACTIVITY_TYPE.CREATE_ROLE:
-    case ACTIVITY_TYPE.UPDATE_ROLE: {
-      const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.CREATE_ROLE];
-      return p.id ?? null;
-    }
-
-    case ACTIVITY_TYPE.REVOKE_SESSION: {
-      const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.REVOKE_SESSION];
-      return p.sessionId ?? null;
-    }
-
-    case ACTIVITY_TYPE.UPDATE_SETTING: {
-      const p = payload as ActivityTypeMap[typeof ACTIVITY_TYPE.UPDATE_SETTING];
-      return p.key ?? null;
-    }
+    case ACTIVITY_TYPE.UPDATE_ROLE:
+    case ACTIVITY_TYPE.REVOKE_SESSION:
+    case ACTIVITY_TYPE.UPDATE_SETTING:
+      return null;
 
     default:
       return null;

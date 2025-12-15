@@ -14,9 +14,12 @@ import {
 import { executeListQuery } from 'src/services/shared/utils';
 import {
   ACTIVITY_TYPE,
+  AuditEventCategory,
   type AuditLogEntry,
   BadReqErr,
+  type CudPayloadBase,
   ctxStore,
+  type EnrichedAuditLogEntry,
   ErrCode,
   extractEntityIdFromPayload,
   generateAuditLogDescription,
@@ -28,14 +31,24 @@ import {
   type PrismaTx,
 } from 'src/share';
 
+const isCudPayload = (
+  payload: unknown,
+): payload is CudPayloadBase<string, any, any, any> => {
+  return (
+    typeof payload === 'object' &&
+    payload !== null &&
+    (payload as { category?: unknown }).category === AuditEventCategory.CUD
+  );
+};
+
 const JOB_NAME = 'audit-log';
 
 type CreateSecurityEventParams = {
   userId?: string;
   eventType: SecurityEventType;
   severity?: SecurityEventSeverity;
-  location?: Record<string, any>;
-  metadata?: Record<string, any>;
+  location?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 };
 
 type ResolveAuditLogParams = {
@@ -71,7 +84,10 @@ export class AuditLogsService {
     const logType: LogType =
       entry.logType ?? (entry.eventType ? LogType.security : LogType.audit);
     const entityType =
-      entry.entityType ?? inferEntityTypeFromActivityType(entry.type);
+      entry.entityType ??
+      (isCudPayload(entry.payload)
+        ? entry.payload.entityType
+        : inferEntityTypeFromActivityType(entry.type));
     const entityId =
       entry.entityId ?? extractEntityIdFromPayload(entry.type, entry.payload);
     const description =
@@ -79,11 +95,17 @@ export class AuditLogsService {
       (entry.eventType
         ? getSecurityEventDescription(entry.eventType, entry.payload)
         : generateAuditLogDescription(entry.type, entry.payload));
+    const category =
+      entry.category ??
+      (isCudPayload(entry.payload)
+        ? AuditEventCategory.CUD
+        : entry.eventType
+          ? AuditEventCategory.SECURITY
+          : entry.type === ACTIVITY_TYPE.INTERNAL_ERROR
+            ? AuditEventCategory.INTERNAL
+            : (entry.payload as any)?.category);
 
-    const enrichedEntry: AuditLogEntry & {
-      logId: string;
-      timestamp: Date;
-    } = {
+    const enrichedEntry: EnrichedAuditLogEntry = {
       ...entry,
       logId: logId,
       logType,
@@ -99,6 +121,7 @@ export class AuditLogsService {
       entityType,
       entityId,
       description,
+      category,
       ip: pickValue(entry.ip, ctx?.clientIp),
       userAgent: pickValue(entry.userAgent, ctx?.userAgent),
       requestId: pickValue(entry.requestId, ctx?.id),
@@ -112,14 +135,16 @@ export class AuditLogsService {
   logSecurityEvent(params: CreateSecurityEventParams): Promise<string> {
     const { userId, eventType, severity, location, metadata } = params;
 
-    const finalSeverity = severity ?? inferSeverityFromEventType(eventType);
-
-    return this.push({
+    return this.push<ACTIVITY_TYPE.SECURITY_EVENT>({
       logType: LogType.security,
-      type: ACTIVITY_TYPE.INTERNAL_ERROR as AuditLogEntry['type'],
-      payload: { ...(metadata ?? {}), location },
+      type: ACTIVITY_TYPE.SECURITY_EVENT,
+      payload: {
+        category: AuditEventCategory.SECURITY,
+        metadata,
+        location,
+      },
       eventType,
-      severity: finalSeverity,
+      severity,
       description: getSecurityEventDescription(eventType, metadata),
       userId,
       resolved: false,
@@ -145,7 +170,7 @@ export class AuditLogsService {
     if (entries.length === 0) return [];
 
     const jobIds: string[] = [];
-    const enrichedEntries: { name: string; data: AuditLogEntry }[] = [];
+    const enrichedEntries: { name: string; data: EnrichedAuditLogEntry }[] = [];
 
     for (const entry of entries) {
       const { enrichedEntry, logId } = this.mapData(entry);

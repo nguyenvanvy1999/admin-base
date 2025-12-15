@@ -1,8 +1,8 @@
 import { type ConnectionOptions, type DefaultJobOptions, Queue } from 'bullmq';
 import { env } from 'src/config/env';
 import {
-  type AuditLogEntry,
   type EmailType,
+  type EnrichedAuditLogEntry,
   MAX_JOB_KEEP_COUNT,
   MAX_JOB_KEEP_SECONDS,
   QueueName,
@@ -26,24 +26,27 @@ export const emailQueue = new Queue<SendMailMap, void, EmailType>(
 );
 export type IEmailQueue = typeof emailQueue;
 
-export const auditLogQueue = new Queue<AuditLogEntry>(QueueName.AuditLog, {
-  connection: queueConnection,
-  defaultJobOptions: {
-    removeOnComplete: {
-      age: MAX_JOB_KEEP_SECONDS,
-      count: 1000,
-    },
-    removeOnFail: {
-      age: MAX_JOB_KEEP_SECONDS * 2,
-      count: 5000,
-    },
-    attempts: 3,
-    backoff: {
-      type: 'exponential',
-      delay: 2000,
+export const auditLogQueue = new Queue<EnrichedAuditLogEntry>(
+  QueueName.AuditLog,
+  {
+    connection: queueConnection,
+    defaultJobOptions: {
+      removeOnComplete: {
+        age: MAX_JOB_KEEP_SECONDS,
+        count: 1000,
+      },
+      removeOnFail: {
+        age: MAX_JOB_KEEP_SECONDS * 2,
+        count: 5000,
+      },
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
     },
   },
-});
+);
 export type IAuditLogQueue = typeof auditLogQueue;
 
 export const batchLogQueue = new Queue(QueueName.BatchAuditLog, {
