@@ -44,7 +44,6 @@ import {
   usersAdminController,
 } from 'src/modules';
 import { apiKeyUsageLoggerMiddleware } from 'src/services/api-keys';
-import { adminAuthMiddleware } from 'src/services/auth';
 import type { SeedService } from 'src/services/dev/seed.service';
 import { seedService } from 'src/services/dev/seed.service';
 import { gracefulShutdownService } from 'src/services/infrastructure/graceful-shutdown.service';
@@ -185,7 +184,6 @@ export class BackendServerService {
     app
       .use(httpError())
       .use(rateLimit({ max: 300 }))
-      .onBeforeHandle(adminAuthMiddleware)
       .use(bullBoardConfig())
       .use(swaggerConfig())
       .group(this.deps.env.API_PREFIX, (app) =>

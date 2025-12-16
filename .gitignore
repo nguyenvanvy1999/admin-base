@@ -47,5 +47,8 @@ package-lock.json
 .idea
 app_server
 server/src/generated/prisma
-server/app_server
+server/audit_log_server
+server/worker_server
+server/backend_server
 server/node_modules
+server/server

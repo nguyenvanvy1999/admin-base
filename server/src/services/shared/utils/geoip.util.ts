@@ -25,7 +25,7 @@ export class GeoIPUtil {
       logger: ILogger;
     } = {
       apiUrl: 'http://ip-api.com/json',
-      logger,
+      logger: logger,
     },
   ) {}
 

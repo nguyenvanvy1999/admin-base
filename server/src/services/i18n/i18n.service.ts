@@ -9,7 +9,7 @@ import {
 import type { I18nWhereInput } from 'src/generated';
 import { executeListQuery } from 'src/services/shared/utils';
 import { BadReqErr, DB_PREFIX, ErrCode, IdUtil, type IIdsDto } from 'src/share';
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 
 export class I18nService {
   constructor(

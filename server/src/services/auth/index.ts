@@ -4,7 +4,7 @@ export * from './authorization.service';
 export * from './captcha.service';
 export * from './encrypt.service';
 export * from './mfa.service';
-export { adminAuthMiddleware, authCheck } from './middleware';
+export * from './middleware';
 export * from './oauth.service';
 export * from './otp.service';
 export * from './password.service';
