@@ -1,3 +1,4 @@
+import { apiKeyCache, type IApiKeyCache } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import type {
@@ -41,10 +42,12 @@ export class ApiKeyService {
       db: IDb;
       auditLogService: AuditLogsService;
       env: IEnv;
+      cache: IApiKeyCache;
     } = {
       db,
       auditLogService: auditLogsService,
       env: env,
+      cache: apiKeyCache,
     },
   ) {}
 
@@ -145,6 +148,8 @@ export class ApiKeyService {
       },
       select: apiKeySelect,
     });
+
+    await this.deps.cache.del(params.id);
 
     // Audit log
     await this.deps.auditLogService.pushCud({
@@ -310,6 +315,8 @@ export class ApiKeyService {
       },
     });
 
+    await this.deps.cache.delMany(ids);
+
     // Audit log - push for each revoked key
     for (const key of apiKeys) {
       await this.deps.auditLogService.pushCud({
@@ -357,8 +364,13 @@ export class ApiKeyService {
     return { valid: true, apiKeyId: apiKey.id };
   }
 
-  getForValidation(id: string) {
-    return this.deps.db.apiKey.findUnique({
+  async getForValidation(id: string) {
+    const cached = await this.deps.cache.get(id);
+    if (cached) {
+      return cached;
+    }
+
+    const apiKey = await this.deps.db.apiKey.findUnique({
       where: { id },
       select: {
         id: true,
@@ -376,6 +388,12 @@ export class ApiKeyService {
         },
       },
     });
+
+    if (apiKey) {
+      await apiKeyCache.set(id, apiKey);
+    }
+
+    return apiKey;
   }
 }
 

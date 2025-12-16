@@ -211,6 +211,7 @@ export enum CACHE_NS {
   MFA_ATTEMPT = 'mfa-attempt',
   CURRENCY = 'currency',
   IP_WHITELIST = 'ip-whitelist',
+  API_KEY = 'api-key',
 }
 
 export enum DB_PREFIX {

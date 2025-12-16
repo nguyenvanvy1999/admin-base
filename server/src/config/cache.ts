@@ -59,6 +59,10 @@ export class RedisCache<T> {
   async del(key: string): Promise<void> {
     await redis.del(this.key(key));
   }
+
+  async delMany(keys: string[]): Promise<void> {
+    await redis.del(...keys.map((k) => this.key(k)));
+  }
 }
 
 const FIVE_MINUTES = 300;
@@ -158,3 +162,9 @@ export const userIpWhitelistCache = new RedisCache<string[]>({
   ttl: FIVE_MINUTES,
 });
 export type IUserIpWhitelistCache = typeof userIpWhitelistCache;
+
+export const apiKeyCache = new RedisCache<any>({
+  namespace: CACHE_NS.API_KEY,
+  ttl: FIVE_MINUTES,
+});
+export type IApiKeyCache = typeof apiKeyCache;
