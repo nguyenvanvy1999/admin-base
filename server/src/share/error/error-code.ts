@@ -37,4 +37,5 @@ export enum ErrCode {
   NotificationTemplateCodeExists = 'notification-template-code-exists',
   RateLimitExceeded = 'rate-limit-exceeded',
   Forbidden = 'forbidden',
+  InvalidApiKey = 'invalid-api-key',
 }

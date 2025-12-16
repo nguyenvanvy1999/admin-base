@@ -1,7 +1,6 @@
 import { db, type IDb } from 'src/config/db';
 import { ApiKeyStatus, UserStatus } from 'src/generated';
 import { IdUtil } from 'src/share';
-import { type AuditLogsService, auditLogsService } from '../audit-logs';
 import type { ApiKeyService } from './api-key.service';
 import { apiKeyService } from './api-key.service';
 
@@ -25,11 +24,9 @@ export class ApiKeyValidationService {
     private readonly deps: {
       db: IDb;
       apiKeyService: ApiKeyService;
-      auditLogService: AuditLogsService;
     } = {
       db,
       apiKeyService,
-      auditLogService: auditLogsService,
     },
   ) {}
 
@@ -128,40 +125,6 @@ export class ApiKeyValidationService {
     );
   }
 
-  async validateRequest(
-    key: string,
-    clientIp: string | null,
-    requiredPermission?: string,
-  ): Promise<IApiKeyValidationResult> {
-    // Validate key
-    const validation = await this.validate(key);
-    if (!validation.valid) {
-      return validation;
-    }
-
-    const context = validation.context!;
-
-    // Validate IP
-    if (!this.validateIp(clientIp, context.ipWhitelist)) {
-      return {
-        valid: false,
-        error: 'IP address not whitelisted',
-      };
-    }
-
-    // Validate permission if required
-    if (requiredPermission) {
-      if (!this.validatePermission(requiredPermission, context.permissions)) {
-        return {
-          valid: false,
-          error: `Permission '${requiredPermission}' not granted`,
-        };
-      }
-    }
-
-    return { valid: true, context };
-  }
-
   async logUsage(
     apiKeyId: string,
     context: {
@@ -190,22 +153,6 @@ export class ApiKeyValidationService {
         where: { id: apiKeyId },
         data: { lastUsedAt: new Date() },
       });
-    });
-  }
-
-  async auditLogAccess(context: {
-    endpoint: string;
-    method: string;
-    ip: string | null;
-    statusCode: number;
-  }) {
-    await this.deps.auditLogService.pushOther({
-      category: 'internal',
-      eventType: 'api_event',
-      level: 'info',
-      endpoint: context.endpoint,
-      method: context.method,
-      statusCode: context.statusCode,
     });
   }
 }

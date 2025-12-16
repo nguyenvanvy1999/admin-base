@@ -18,38 +18,58 @@ export class ApiKeyUsageService {
   ) {}
 
   async getStats(apiKeyId: string): Promise<IApiKeyUsageStats> {
-    const usages = await this.deps.db.apiKeyUsage.findMany({
-      where: { apiKeyId },
-      select: {
-        method: true,
-        endpoint: true,
-        statusCode: true,
-        timestamp: true,
-      },
-    });
+    const [totalCount, methodStats, endpointStats, statusCodeStats, lastUsage] =
+      await Promise.all([
+        this.deps.db.apiKeyUsage.count({
+          where: { apiKeyId },
+        }),
+        this.deps.db.apiKeyUsage.groupBy({
+          by: ['method'],
+          where: { apiKeyId },
+          _count: true,
+        }),
+        this.deps.db.apiKeyUsage.groupBy({
+          by: ['endpoint'],
+          where: { apiKeyId },
+          _count: true,
+        }),
+        this.deps.db.apiKeyUsage.groupBy({
+          by: ['statusCode'],
+          where: { apiKeyId },
+          _count: true,
+        }),
+        this.deps.db.apiKeyUsage.findFirst({
+          where: { apiKeyId },
+          select: { timestamp: true },
+          orderBy: { timestamp: 'desc' },
+        }),
+      ]);
 
     const stats: IApiKeyUsageStats = {
-      totalRequests: usages.length,
-      lastUsedAt:
-        usages.length > 0 ? usages[usages.length - 1].timestamp : null,
-      requestsByMethod: {},
-      requestsByEndpoint: {},
-      requestsByStatusCode: {},
+      totalRequests: totalCount,
+      lastUsedAt: lastUsage?.timestamp ?? null,
+      requestsByMethod: methodStats.reduce(
+        (acc, item) => {
+          acc[item.method] = item._count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
+      requestsByEndpoint: endpointStats.reduce(
+        (acc, item) => {
+          acc[item.endpoint] = item._count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
+      requestsByStatusCode: statusCodeStats.reduce(
+        (acc, item) => {
+          acc[item.statusCode] = item._count;
+          return acc;
+        },
+        {} as Record<number, number>,
+      ),
     };
-
-    for (const usage of usages) {
-      // Count by method
-      stats.requestsByMethod[usage.method] =
-        (stats.requestsByMethod[usage.method] || 0) + 1;
-
-      // Count by endpoint
-      stats.requestsByEndpoint[usage.endpoint] =
-        (stats.requestsByEndpoint[usage.endpoint] || 0) + 1;
-
-      // Count by status code
-      stats.requestsByStatusCode[usage.statusCode] =
-        (stats.requestsByStatusCode[usage.statusCode] || 0) + 1;
-    }
 
     return stats;
   }
@@ -67,37 +87,78 @@ export class ApiKeyUsageService {
   }
 
   async getUserStats(userId: string): Promise<IApiKeyUsageStats> {
-    const usages = await this.deps.db.apiKeyUsage.findMany({
-      where: {
-        apiKey: {
-          userId,
-        },
-      },
-      select: {
-        method: true,
-        endpoint: true,
-        statusCode: true,
-        timestamp: true,
-      },
-    });
+    const [totalCount, methodStats, endpointStats, statusCodeStats, lastUsage] =
+      await Promise.all([
+        this.deps.db.apiKeyUsage.count({
+          where: {
+            apiKey: {
+              userId,
+            },
+          },
+        }),
+        this.deps.db.apiKeyUsage.groupBy({
+          by: ['method'],
+          where: {
+            apiKey: {
+              userId,
+            },
+          },
+          _count: true,
+        }),
+        this.deps.db.apiKeyUsage.groupBy({
+          by: ['endpoint'],
+          where: {
+            apiKey: {
+              userId,
+            },
+          },
+          _count: true,
+        }),
+        this.deps.db.apiKeyUsage.groupBy({
+          by: ['statusCode'],
+          where: {
+            apiKey: {
+              userId,
+            },
+          },
+          _count: true,
+        }),
+        this.deps.db.apiKeyUsage.findFirst({
+          where: {
+            apiKey: {
+              userId,
+            },
+          },
+          select: { timestamp: true },
+          orderBy: { timestamp: 'desc' },
+        }),
+      ]);
 
     const stats: IApiKeyUsageStats = {
-      totalRequests: usages.length,
-      lastUsedAt:
-        usages.length > 0 ? usages[usages.length - 1].timestamp : null,
-      requestsByMethod: {},
-      requestsByEndpoint: {},
-      requestsByStatusCode: {},
+      totalRequests: totalCount,
+      lastUsedAt: lastUsage?.timestamp ?? null,
+      requestsByMethod: methodStats.reduce(
+        (acc, item) => {
+          acc[item.method] = item._count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
+      requestsByEndpoint: endpointStats.reduce(
+        (acc, item) => {
+          acc[item.endpoint] = item._count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
+      requestsByStatusCode: statusCodeStats.reduce(
+        (acc, item) => {
+          acc[item.statusCode] = item._count;
+          return acc;
+        },
+        {} as Record<number, number>,
+      ),
     };
-
-    for (const usage of usages) {
-      stats.requestsByMethod[usage.method] =
-        (stats.requestsByMethod[usage.method] || 0) + 1;
-      stats.requestsByEndpoint[usage.endpoint] =
-        (stats.requestsByEndpoint[usage.endpoint] || 0) + 1;
-      stats.requestsByStatusCode[usage.statusCode] =
-        (stats.requestsByStatusCode[usage.statusCode] || 0) + 1;
-    }
 
     return stats;
   }
