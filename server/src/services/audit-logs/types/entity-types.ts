@@ -1,23 +1,7 @@
-export type PrismaModelName =
-  | 'User'
-  | 'Role'
-  | 'Session'
-  | 'UserIpWhitelist'
-  | 'Setting'
-  | 'ApiKey'
-  | 'Permission'
-  | 'RolePermission'
-  | 'RolePlayer'
-  | 'Notification'
-  | 'NotificationTemplate'
-  | 'RateLimitConfig'
-  | 'I18n'
-  | 'AuditLog'
-  | 'Referral'
-  | 'AuthProvider'
-  | 'UserAuthProvider';
+import type { Prisma } from 'src/generated';
+export type PrismaModelName = Prisma.ModelName;
 
-export const ENTITY_TYPE_MAP: Record<PrismaModelName, string> = {
+export const ENTITY_TYPE_MAP = {
   User: 'user',
   Role: 'role',
   Session: 'session',
@@ -35,6 +19,7 @@ export const ENTITY_TYPE_MAP: Record<PrismaModelName, string> = {
   Referral: 'referral',
   AuthProvider: 'auth_provider',
   UserAuthProvider: 'user_auth_provider',
-} as const;
+  Proxy: 'proxy',
+} as const satisfies Record<PrismaModelName, string>;
 
 export type EntityType = (typeof ENTITY_TYPE_MAP)[PrismaModelName];

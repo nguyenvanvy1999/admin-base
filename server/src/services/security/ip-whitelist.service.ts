@@ -278,7 +278,7 @@ export class IpWhitelistService {
         type: 'cud' as const,
         payload: {
           category: 'cud' as const,
-          entityType: 'ip_whitelist',
+          entityType: 'ip_whitelist' as const,
           entityId: item.id,
           action: 'delete' as const,
           changes: {
