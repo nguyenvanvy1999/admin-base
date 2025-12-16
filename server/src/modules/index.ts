@@ -1,3 +1,4 @@
+export { apiKeysAdminController, apiKeysUserController } from './api-keys';
 export {
   auditLogsAdminController,
   auditLogsUserController,

@@ -16,6 +16,8 @@ import { type ILogger, logger } from 'src/config/logger';
 import { redis } from 'src/config/redis';
 import { swaggerConfig } from 'src/config/swagger';
 import {
+  apiKeysAdminController,
+  apiKeysUserController,
   auditLogsAdminController,
   auditLogsUserController,
   authController,
@@ -218,6 +220,8 @@ export class BackendServerService {
           .use(notificationUserController)
           .use(ipWhitelistAdminController)
           .use(ipWhitelistUserController)
+          .use(apiKeysAdminController)
+          .use(apiKeysUserController)
           .use(usersAdminController)
           .use(rolesAdminController)
           .use(permissionsAdminController)
