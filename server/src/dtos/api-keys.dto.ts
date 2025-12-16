@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { ApiKeyStatus } from 'src/generated';
 import { DtoFields, PaginationReqDto } from 'src/share';
 
 export const CreateApiKeyDto = t.Object({
@@ -23,7 +24,7 @@ export const ApiKeyListQueryDto = t.Intersect([
   t.Object({
     userId: t.Optional(t.String()),
     userIds: t.Optional(t.Array(t.String())),
-    status: t.Optional(t.String()),
+    status: t.Optional(t.Enum(ApiKeyStatus)),
     search: DtoFields.search,
   }),
 ]);

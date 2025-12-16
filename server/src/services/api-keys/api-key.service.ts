@@ -5,7 +5,11 @@ import type {
   CreateApiKeyParams,
   UpdateApiKeyParams,
 } from 'src/dtos/api-keys.dto';
-import { type ApiKeySelect, ApiKeyStatus } from 'src/generated';
+import {
+  type ApiKeySelect,
+  ApiKeyStatus,
+  type ApiKeyWhereInput,
+} from 'src/generated';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import {
   buildSearchOrCondition,
@@ -85,20 +89,22 @@ export class ApiKeyService {
         keyPrefix,
         status: ApiKeyStatus.active,
         permissions: params.permissions,
-        ipWhitelist: params.ipWhitelist || [],
-        expiresAt: params.expiresAt || null,
-        metadata: params.metadata || null,
+        ipWhitelist: params.ipWhitelist,
+        expiresAt: params.expiresAt,
+        metadata: params.metadata,
       },
       select: apiKeySelect,
     });
 
-    await this.deps.auditLogService.pushOther({
-      category: 'internal',
-      eventType: 'api_event',
-      level: 'info',
-      endpoint: '/api/admin/api-keys',
-      method: 'POST',
-      statusCode: 201,
+    await this.deps.auditLogService.pushCud({
+      category: 'cud',
+      entityType: 'api_key',
+      entityId: apiKey.id,
+      action: 'create',
+      entityDisplay: {
+        name: apiKey.name,
+        userId: apiKey.userId,
+      },
     });
 
     // Return with full key (only on creation)
@@ -141,13 +147,38 @@ export class ApiKeyService {
     });
 
     // Audit log
-    await this.deps.auditLogService.pushOther({
-      category: 'internal',
-      eventType: 'api_event',
-      level: 'info',
-      endpoint: '/api/admin/api-keys/:id',
-      method: 'PUT',
-      statusCode: 200,
+    await this.deps.auditLogService.pushCud({
+      category: 'cud',
+      entityType: 'api_key',
+      entityId: params.id,
+      action: 'update',
+      changes: {
+        ...(params.name !== undefined && {
+          name: { previous: apiKey.name, next: params.name },
+        }),
+        ...(params.expiresAt !== undefined && {
+          expiresAt: { previous: apiKey.expiresAt, next: params.expiresAt },
+        }),
+        ...(params.permissions !== undefined && {
+          permissions: {
+            previous: apiKey.permissions,
+            next: params.permissions,
+          },
+        }),
+        ...(params.ipWhitelist !== undefined && {
+          ipWhitelist: {
+            previous: apiKey.ipWhitelist,
+            next: params.ipWhitelist,
+          },
+        }),
+        ...(params.metadata !== undefined && {
+          metadata: { previous: apiKey.metadata, next: params.metadata },
+        }),
+      },
+      entityDisplay: {
+        name: updated.name,
+        userId: updated.userId,
+      },
     });
 
     return updated;
@@ -167,7 +198,7 @@ export class ApiKeyService {
 
     const normalizedSearch = normalizeSearchTerm(search);
 
-    const where: any = {};
+    const where: ApiKeyWhereInput = {};
 
     // Permission-based filtering
     if (!hasViewPermission) {
@@ -192,7 +223,10 @@ export class ApiKeyService {
 
     // Search filter
     if (normalizedSearch) {
-      where.OR = buildSearchOrCondition(['name'], normalizedSearch);
+      Object.assign(
+        where,
+        buildSearchOrCondition<ApiKeyWhereInput>(['name'], normalizedSearch),
+      );
     }
 
     return executeListQuery(this.deps.db.apiKey, {
@@ -276,15 +310,18 @@ export class ApiKeyService {
       },
     });
 
-    // Audit log
-    await this.deps.auditLogService.pushOther({
-      category: 'internal',
-      eventType: 'api_event',
-      level: 'info',
-      endpoint: '/api/api-keys/del',
-      method: 'POST',
-      statusCode: 200,
-    });
+    // Audit log - push for each revoked key
+    for (const key of apiKeys) {
+      await this.deps.auditLogService.pushCud({
+        category: 'cud',
+        entityType: 'api_key',
+        entityId: key.id,
+        action: 'delete',
+        entityDisplay: {
+          userId: key.userId,
+        },
+      });
+    }
   }
 
   async verifyKey(key: string): Promise<{ valid: boolean; apiKeyId?: string }> {
