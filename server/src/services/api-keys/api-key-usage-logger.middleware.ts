@@ -1,6 +1,6 @@
 import type { Elysia } from 'elysia';
+import { apiKeyUsageQueue } from 'src/config/queue';
 import { ctxStore } from 'src/share';
-import { apiKeyValidationService } from './api-key-validation.service';
 
 export const apiKeyUsageLoggerMiddleware = (app: Elysia) =>
   app.onAfterResponse(async (ctx) => {
@@ -19,11 +19,21 @@ export const apiKeyUsageLoggerMiddleware = (app: Elysia) =>
 
     const statusCode = Number(ctx.set.status) || 200;
 
-    await apiKeyValidationService.logUsage(apiKeyId, {
-      endpoint,
-      method,
-      ip: clientIp,
-      userAgent,
-      statusCode,
-    });
+    // Add job to queue instead of logging directly
+    // This prevents blocking the response
+    await apiKeyUsageQueue.add(
+      'log-usage',
+      {
+        apiKeyId,
+        endpoint,
+        method,
+        ip: clientIp,
+        userAgent,
+        statusCode,
+      },
+      {
+        // Use a job ID based on timestamp to avoid duplicates in quick succession
+        jobId: `${apiKeyId}-${Date.now()}`,
+      },
+    );
   });

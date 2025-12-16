@@ -182,6 +182,7 @@ export enum QueueName {
   AuditLog = 'AuditLog',
   BatchAuditLog = 'BatchAuditLog',
   GeoIP = 'GeoIP',
+  ApiKeyUsage = 'ApiKeyUsage',
 }
 
 export enum SETTING {

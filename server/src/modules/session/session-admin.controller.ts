@@ -24,7 +24,7 @@ export const sessionAdminController = new Elysia({
       const result = await sessionService.list({
         ...query,
         currentUserId: currentUser.id,
-        hasViewPermission: currentUser.permissions.includes('SESSION.VIEW'),
+        hasViewPermission: true,
       });
       return castToRes(result);
     },
@@ -39,7 +39,7 @@ export const sessionAdminController = new Elysia({
   .use(authorize(has('SESSION.REVOKE')))
   .post(
     '/revoke',
-    async ({ body, currentUser }) => {
+    async ({ body }) => {
       const ids = (body as typeof IdsDto.static).ids;
       await sessionService.revokeMany(ids);
       if (ids.length > 0) {

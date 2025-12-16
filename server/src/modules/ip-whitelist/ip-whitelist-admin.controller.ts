@@ -30,8 +30,7 @@ export const ipWhitelistAdminController = new Elysia({
         await ipWhitelistService.list({
           ...query,
           currentUserId: currentUser.id,
-          hasViewPermission:
-            currentUser.permissions.includes('IPWHITELIST.VIEW'),
+          hasViewPermission: true,
         }),
       );
     },
@@ -48,7 +47,7 @@ export const ipWhitelistAdminController = new Elysia({
     async ({ params: { id }, currentUser }) => {
       const result = await ipWhitelistService.detail(id, {
         currentUserId: currentUser.id,
-        hasViewPermission: currentUser.permissions.includes('IPWHITELIST.VIEW'),
+        hasViewPermission: true,
       });
       return castToRes(result);
     },
@@ -68,9 +67,7 @@ export const ipWhitelistAdminController = new Elysia({
     async ({ body, currentUser }) => {
       const result = await ipWhitelistService.upsert(body, {
         currentUserId: currentUser.id,
-        hasViewPermission:
-          currentUser.permissions.includes('IPWHITELIST.CREATE') ||
-          currentUser.permissions.includes('IPWHITELIST.UPDATE'),
+        hasViewPermission: true,
       });
       return castToRes(result);
     },
@@ -89,8 +86,7 @@ export const ipWhitelistAdminController = new Elysia({
     async ({ body, currentUser }) => {
       await ipWhitelistService.removeMany(body.ids, {
         currentUserId: currentUser.id,
-        hasViewPermission:
-          currentUser.permissions.includes('IPWHITELIST.DELETE'),
+        hasViewPermission: true,
       });
       return castToRes(null);
     },
