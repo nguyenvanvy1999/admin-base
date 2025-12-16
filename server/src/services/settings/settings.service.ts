@@ -4,7 +4,7 @@ import { type ISettingCache, settingCache } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import type { UpdateSettingParams } from 'src/dtos/settings.dto';
 import type { Setting, SettingSelect } from 'src/generated';
-import { SettingDataType } from 'src/generated';
+import { AuditLogVisibility, SettingDataType } from 'src/generated';
 import { EncryptService } from 'src/services/auth/encrypt.service';
 import {
   BadReqErr,
@@ -14,6 +14,7 @@ import {
   SETTING,
   ValueUtil,
 } from 'src/share';
+import { type AuditLogsService, auditLogsService } from '../audit-logs';
 
 type JSONValue =
   | string
@@ -73,9 +74,11 @@ export class SettingsService {
     private readonly deps: {
       db: IDb;
       cache: ISettingCache;
+      auditLogService: AuditLogsService;
     } = {
       db,
       cache: settingCache,
+      auditLogService: auditLogsService,
     },
   ) {}
 
@@ -452,12 +455,23 @@ export class SettingsService {
       validateDependencies?: boolean;
       rulesMap?: ValidationRulesMap;
     },
-  ): Promise<{ imported: number; errors: string[] }> {
+  ): Promise<{
+    imported: number;
+    errors: string[];
+    auditEntries: {
+      id: string;
+      key: string;
+      beforeValue: string;
+      afterValue: string;
+      isSecret: boolean;
+      description?: string | null;
+    }[];
+  }> {
     const errors: string[] = [];
     const keys = Object.keys(data);
 
     if (keys.length === 0) {
-      return { imported: 0, errors: [] };
+      return { imported: 0, errors: [], auditEntries: [] };
     }
 
     const existingSettings = await this.deps.db.setting.findMany({
@@ -485,7 +499,7 @@ export class SettingsService {
     }
 
     if (errors.length > 0) {
-      return { imported: 0, errors };
+      return { imported: 0, errors, auditEntries: [] };
     }
 
     if (opts?.validateRules !== false) {
@@ -501,7 +515,7 @@ export class SettingsService {
             setting.isSecret,
           );
           if (!validation.valid) {
-            return { imported: 0, errors: validation.errors };
+            return { imported: 0, errors: validation.errors, auditEntries: [] };
           }
         }
       }
@@ -525,7 +539,7 @@ export class SettingsService {
 
       const validation = this.validateDependencies(settingsRecord);
       if (!validation.valid) {
-        return { imported: 0, errors: validation.errors };
+        return { imported: 0, errors: validation.errors, auditEntries: [] };
       }
     }
 
@@ -552,7 +566,31 @@ export class SettingsService {
       }),
     );
 
-    return { imported: updates.length, errors: [] };
+    const auditEntries = updates.map((update) => {
+      const original = existingSettings.find(
+        (item) => item.key === update.where.key,
+      )!;
+      const beforeValue = original.isSecret
+        ? '***'
+        : this.getValue<string>(original);
+      const afterValue = original.isSecret
+        ? '***'
+        : this.getValue<string>({
+            ...original,
+            value: update.data.value!,
+          });
+
+      return {
+        id: original.id,
+        key: original.key,
+        beforeValue,
+        afterValue,
+        isSecret: original.isSecret,
+        description: original.description,
+      };
+    });
+
+    return { imported: updates.length, errors: [], auditEntries };
   }
 
   async list() {
@@ -570,11 +608,20 @@ export class SettingsService {
     );
   }
 
-  async update(params: UpdateSettingParams): Promise<{ id: string }> {
+  async update(
+    params: UpdateSettingParams,
+    actorId?: string,
+  ): Promise<{ id: string }> {
     const { id, value, isSecret, description } = params;
     const setting = await this.deps.db.setting.findUnique({
       where: { id },
-      select: { value: true, type: true, key: true },
+      select: {
+        value: true,
+        type: true,
+        key: true,
+        isSecret: true,
+        description: true,
+      },
     });
     if (!setting) {
       throw new NotFoundErr(ErrCode.ItemNotFound);
@@ -583,6 +630,12 @@ export class SettingsService {
       throw new BadReqErr(ErrCode.BadRequest);
     }
     const newValue = isSecret ? EncryptService.aes256Encrypt(value) : value;
+    const previousValue = setting.isSecret
+      ? '***'
+      : this.getValue<string>({
+          ...setting,
+          value: setting.value,
+        } as Setting);
     const updated = await this.deps.db.setting.update({
       where: { id },
       data: {
@@ -593,6 +646,26 @@ export class SettingsService {
       select: settingSelect,
     });
     await this.deps.cache.set(updated.key, this.getValue(updated));
+
+    const displayNewValue = isSecret ? '***' : this.getValue<string>(updated);
+
+    await this.deps.auditLogService.pushCud(
+      {
+        category: 'cud',
+        entityType: 'setting',
+        entityId: id,
+        action: 'update',
+        changes: {
+          value: { previous: previousValue, next: displayNewValue },
+          description: {
+            previous: setting.description,
+            next: updated.description,
+          },
+          isSecret: { previous: setting.isSecret, next: updated.isSecret },
+        },
+      },
+      { visibility: AuditLogVisibility.admin_only },
+    );
     return { id: updated.id };
   }
 
@@ -600,16 +673,32 @@ export class SettingsService {
     return this.exportSettings();
   }
 
-  async import(data: Record<string, string>) {
+  async import(data: Record<string, string>, actorId?: string) {
     const result = await this.importSettings(data);
     if (result.errors.length > 0) {
       throw new BadReqErr(ErrCode.BadRequest, { errors: result.errors });
+    }
+
+    if (result.auditEntries.length > 0) {
+      await this.deps.auditLogService.pushBatch(
+        result.auditEntries.map((entry) => ({
+          type: 'cud' as const,
+          payload: {
+            category: 'cud',
+            entityType: 'setting',
+            entityId: entry.id,
+            action: 'update',
+            key: entry.key,
+            description: entry.description,
+            changes: {
+              value: { previous: entry.beforeValue, next: entry.afterValue },
+            },
+          },
+        })),
+      );
     }
     return result;
   }
 }
 
-export const settingsService = new SettingsService({
-  db,
-  cache: settingCache,
-});
+export const settingsService = new SettingsService();

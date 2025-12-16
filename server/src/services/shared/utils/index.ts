@@ -1,5 +1,4 @@
 export * from './amount.util';
-export * from './audit-log.util';
 export * from './common.util';
 export * from './crud-helpers.util';
 export * from './geoip.util';

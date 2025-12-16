@@ -47,8 +47,8 @@ export const rolesAdminController = new Elysia({
   .use(authorize(has('ROLE.UPDATE')))
   .post(
     '/',
-    async ({ body }) => {
-      const result = await rolesService.upsert(body);
+    async ({ body, currentUser }) => {
+      const result = await rolesService.upsert(body, currentUser.id);
       return castToRes(result);
     },
     {
@@ -62,8 +62,8 @@ export const rolesAdminController = new Elysia({
   .use(authorize(allOf(has('ROLE.UPDATE'), has('ROLE.DELETE'))))
   .post(
     '/del',
-    async ({ body }) => {
-      await rolesService.delete(body);
+    async ({ body, currentUser }) => {
+      await rolesService.delete(body, currentUser.id);
       return castToRes(null);
     },
     {

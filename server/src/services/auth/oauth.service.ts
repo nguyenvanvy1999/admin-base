@@ -6,7 +6,12 @@ import type {
   ILoginRes,
   LinkTelegramParams,
 } from 'src/dtos/auth.dto';
-import { UserStatus } from 'src/generated';
+import {
+  AuditLogVisibility,
+  SecurityEventSeverity,
+  SecurityEventType,
+  UserStatus,
+} from 'src/generated';
 import {
   type AuditLogsService,
   auditLogsService,
@@ -20,8 +25,6 @@ import {
   securityMonitorService,
 } from 'src/services/auth/security-monitor.service';
 import {
-  ACTIVITY_TYPE,
-  type AuditLogEntry,
   BadReqErr,
   CoreErr,
   DB_PREFIX,
@@ -69,10 +72,17 @@ export class OAuthService {
 
     const { clientId } = (provider?.config as { clientId?: string }) || {};
     if (!provider || !provider.enabled || !clientId) {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LOGIN,
-        payload: { method: OAUTH.GOOGLE, error: 'provider_not_found' },
-      });
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'oauth',
+          email: '',
+          error: 'provider_not_found',
+        },
+        { visibility: AuditLogVisibility.admin_only },
+      );
       throw new CoreErr(ErrCode.OAuthProviderNotFound);
     }
 
@@ -85,10 +95,17 @@ export class OAuthService {
 
     const payload = ticket.getPayload();
     if (!payload) {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LOGIN,
-        payload: { method: OAUTH.GOOGLE, error: 'invalid_google_account' },
-      });
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'oauth',
+          email: '',
+          error: 'invalid_google_account',
+        },
+        { visibility: AuditLogVisibility.admin_only },
+      );
       throw new UnAuthErr(ErrCode.InvalidGoogleAccount);
     }
 
@@ -96,10 +113,17 @@ export class OAuthService {
     const googleId = payload.sub;
 
     if (!email) {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LOGIN,
-        payload: { method: OAUTH.GOOGLE, error: 'google_account_not_found' },
-      });
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'oauth',
+          email: '',
+          error: 'google_account_not_found',
+        },
+        { visibility: AuditLogVisibility.admin_only },
+      );
       throw new UnAuthErr(ErrCode.GoogleAccountNotFound);
     }
 
@@ -107,8 +131,6 @@ export class OAuthService {
       where: { email },
       include: { roles: true },
     });
-
-    const auditEntries: AuditLogEntry[] = [];
 
     if (user) {
       const authExists = await this.deps.db.userAuthProvider.findFirst({
@@ -127,11 +149,17 @@ export class OAuthService {
           select: { id: true },
         });
 
-        auditEntries.push({
-          type: ACTIVITY_TYPE.LINK_OAUTH,
-          payload: { provider: OAUTH.GOOGLE, providerId: googleId },
-          userId: user.id,
-        });
+        await this.deps.auditLogService.pushSecurity(
+          {
+            category: 'security',
+            eventType: SecurityEventType.login_success,
+            severity: SecurityEventSeverity.low,
+            method: 'oauth',
+            email,
+            metadata: { linked: true },
+          },
+          { subjectUserId: user.id },
+        );
       }
     } else {
       user = await this.deps.db.$transaction(async (tx: PrismaTx) => {
@@ -166,11 +194,17 @@ export class OAuthService {
         return createdUser;
       });
 
-      auditEntries.push({
-        type: ACTIVITY_TYPE.REGISTER,
-        payload: { method: OAUTH.GOOGLE },
-        userId: user.id,
-      });
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_success,
+          severity: SecurityEventSeverity.low,
+          method: 'oauth',
+          email,
+          metadata: { registration: true },
+        },
+        { subjectUserId: user.id },
+      );
     }
 
     const securityResult = await this.deps.securityMonitorService.evaluateLogin(
@@ -181,11 +215,17 @@ export class OAuthService {
     );
 
     if (securityResult.action === 'block') {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LOGIN,
-        payload: { method: OAUTH.GOOGLE, error: 'security_blocked' },
-        userId: user.id,
-      });
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.high,
+          method: 'oauth',
+          email,
+          error: 'security_blocked',
+        },
+        { subjectUserId: user.id },
+      );
       throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
     }
 
@@ -196,15 +236,20 @@ export class OAuthService {
       securityResult,
     );
 
-    auditEntries.push({
-      type: ACTIVITY_TYPE.LOGIN,
-      payload: { method: OAUTH.GOOGLE },
-      userId: user.id,
-      ip: clientIp,
-      userAgent,
-    });
+    const safeEmail = email ?? '';
 
-    await this.deps.auditLogService.pushBatch(auditEntries);
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.login_success,
+        severity: SecurityEventSeverity.low,
+        method: 'oauth',
+        email: safeEmail,
+        isNewDevice: securityResult.isNewDevice ?? false,
+        deviceFingerprint: securityResult.deviceFingerprint ?? undefined,
+      },
+      { subjectUserId: user.id },
+    );
 
     return loginRes;
   }
@@ -219,30 +264,34 @@ export class OAuthService {
 
     const { botToken } = (provider?.config as { botToken?: string }) || {};
     if (!provider || !provider.enabled || !botToken) {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LINK_OAUTH,
-        payload: {
-          provider: OAUTH.TELEGRAM,
-          providerId: telegramData.id,
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'oauth',
+          email: '',
           error: 'provider_not_found',
         },
-        userId,
-      });
+        { subjectUserId: userId, visibility: AuditLogVisibility.admin_only },
+      );
       throw new CoreErr(ErrCode.OAuthProviderNotFound);
     }
 
     const isValid = this.verifyTelegramLogin(telegramData, botToken);
 
     if (!isValid) {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LINK_OAUTH,
-        payload: {
-          provider: OAUTH.TELEGRAM,
-          providerId: telegramData.id,
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'oauth',
+          email: '',
           error: 'invalid_telegram_account',
         },
-        userId,
-      });
+        { subjectUserId: userId, visibility: AuditLogVisibility.admin_only },
+      );
       throw new UnAuthErr(ErrCode.InvalidTelegramAccount);
     }
 
@@ -257,15 +306,17 @@ export class OAuthService {
     });
 
     if (authExists) {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LINK_OAUTH,
-        payload: {
-          provider: OAUTH.TELEGRAM,
-          providerId: telegramData.id,
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'oauth',
+          email: '',
           error: 'account_already_linked',
         },
-        userId,
-      });
+        { subjectUserId: userId, visibility: AuditLogVisibility.admin_only },
+      );
       throw new CoreErr(ErrCode.TelegramAccountWasLinked);
     }
 
@@ -279,10 +330,17 @@ export class OAuthService {
       select: { id: true },
     });
 
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.LINK_OAUTH,
-      payload: { provider: OAUTH.TELEGRAM, providerId: telegramData.id },
-    });
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.login_success,
+        severity: SecurityEventSeverity.low,
+        method: 'oauth',
+        email: '',
+        metadata: { providerId: telegramData.id },
+      },
+      { subjectUserId: userId },
+    );
 
     return null;
   }

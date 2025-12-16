@@ -1,7 +1,6 @@
 import dayjs from 'dayjs';
 import type { UserSelect } from 'src/generated';
 import { SettingDataType } from 'src/generated';
-import type { ActivityTypeMap } from 'src/share/type';
 
 export enum LANG {
   VI = 'vi',
@@ -67,6 +66,7 @@ export enum ACTIVITY_TYPE {
   RESET_MFA = 'reset-mfa',
 
   CREATE_IP_WHITELIST = 'create-ipwhitelist',
+  UPDATE_IP_WHITELIST = 'update-ipwhitelist',
   DEL_IP_WHITELIST = 'del-ipwhitelist',
 
   UPDATE_SETTING = 'update-setting',
@@ -251,7 +251,7 @@ export enum OAUTH {
 
 export const IDEMPOTENCY_TTL = 300;
 
-type LoginErrorPayload = ActivityTypeMap[typeof ACTIVITY_TYPE.LOGIN];
+type LoginErrorPayload = { method: string; error?: string };
 
 export const MFA_ERROR_PAYLOADS = {
   SESSION_EXPIRED: { method: 'email', error: 'mfa_session_expired' },

@@ -21,7 +21,13 @@ import type {
   RegisterParams,
   VerifyAccountParams,
 } from 'src/dtos/auth.dto';
-import { SecurityEventType, type User, UserStatus } from 'src/generated';
+import {
+  AuditLogVisibility,
+  SecurityEventSeverity,
+  SecurityEventType,
+  type User,
+  UserStatus,
+} from 'src/generated';
 import {
   type AuditLogsService,
   auditLogsService,
@@ -31,8 +37,6 @@ import {
   settingsService,
 } from 'src/services/settings/settings.service';
 import {
-  ACTIVITY_TYPE,
-  AuditEventCategory,
   BadReqErr,
   DB_PREFIX,
   defaultRoles,
@@ -121,19 +125,35 @@ export class AuthService {
       user,
     );
     if (!passwordValid) {
-      await this.deps.auditLogService.logSecurityEvent({
-        userId: user.id,
-        eventType: SecurityEventType.login_failed,
-        metadata: { method: 'email', reason: 'password_mismatch' },
-      });
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'email',
+          email: user.email,
+          error: 'password_mismatch',
+        },
+        {
+          subjectUserId: user.id,
+          visibility: AuditLogVisibility.actor_and_subject,
+        },
+      );
       throw new BadReqErr(ErrCode.PasswordNotMatch);
     }
 
     if (user.status !== UserStatus.active) {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LOGIN,
-        payload: { method: 'email', error: 'user_not_active' },
-      });
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'email',
+          email: user.email,
+          error: 'user_not_active',
+        },
+        { subjectUserId: user.id },
+      );
       throw new BadReqErr(ErrCode.UserNotActive);
     }
 
@@ -147,11 +167,17 @@ export class AuthService {
     );
 
     if (securityResult.action === 'block') {
-      await this.deps.auditLogService.logSecurityEvent({
-        userId: user.id,
-        eventType: SecurityEventType.login_failed,
-        metadata: { method: 'email', reason: 'security_blocked' },
-      });
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.high,
+          method: 'email',
+          email: user.email,
+          error: 'security_blocked',
+        },
+        { subjectUserId: user.id },
+      );
       throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
     }
 
@@ -230,14 +256,17 @@ export class AuthService {
       security,
     );
 
-    await this.deps.auditLogService.logSecurityEvent({
-      userId: user.id,
-      eventType: SecurityEventType.login_success,
-      metadata: {
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.login_success,
+        severity: SecurityEventSeverity.low,
         method: 'email',
+        email: user.email ?? '',
         isNewDevice: security?.isNewDevice ?? false,
       },
-    });
+      { subjectUserId: user.id },
+    );
 
     return loginRes;
   }
@@ -256,10 +285,20 @@ export class AuthService {
       security,
     });
 
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.LOGIN,
-      payload: { method: 'email' },
-    });
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.login_success,
+        severity: SecurityEventSeverity.low,
+        method: 'email',
+        email: user.id,
+        isNewDevice: security?.isNewDevice ?? false,
+      },
+      {
+        subjectUserId: user.id,
+        visibility: AuditLogVisibility.actor_and_subject,
+      },
+    );
 
     return {
       type: LoginResType.MFA_CONFIRM,
@@ -290,10 +329,17 @@ export class AuthService {
       security,
     });
 
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.LOGIN,
-      payload: { method: 'email', action: 'mfa_setup_required' },
-    });
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.login_failed,
+        severity: SecurityEventSeverity.medium,
+        method: 'email',
+        email: user.id,
+        error: 'mfa_setup_required',
+      },
+      { subjectUserId: user.id },
+    );
 
     return {
       type: LoginResType.MFA_SETUP,
@@ -339,10 +385,17 @@ export class AuthService {
     });
 
     if (existingUser) {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.REGISTER,
-        payload: { method: 'email', error: 'User already exists' },
-      });
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'email',
+          email: normalizedEmail,
+          error: 'register_user_exists',
+        },
+        { visibility: AuditLogVisibility.admin_only },
+      );
       throw new BadReqErr(ErrCode.UserExisted);
     }
 
@@ -356,10 +409,16 @@ export class AuthService {
       PurposeVerify.REGISTER,
     );
 
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.REGISTER,
-      payload: { method: 'email' },
-    });
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.login_success,
+        severity: SecurityEventSeverity.low,
+        method: 'email',
+        email: normalizedEmail,
+      },
+      { subjectUserId: createdUserId },
+    );
 
     if (otpToken) {
       return { otpToken };
@@ -431,10 +490,15 @@ export class AuthService {
       select: { id: true },
     });
 
-    await this.deps.auditLogService.logSecurityEvent({
-      userId,
-      eventType: SecurityEventType.password_changed,
-    });
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.password_changed,
+        severity: SecurityEventSeverity.medium,
+        changedBy: 'user',
+      },
+      { subjectUserId: userId },
+    );
   }
 
   async forgotPassword(params: ForgotPasswordParams): Promise<void> {
@@ -447,10 +511,15 @@ export class AuthService {
     );
 
     if (!userId) {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.CHANGE_PASSWORD,
-        payload: {},
-      });
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.password_reset_requested,
+          severity: SecurityEventSeverity.medium,
+          email: '',
+        },
+        { visibility: AuditLogVisibility.admin_only },
+      );
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
 
@@ -473,10 +542,15 @@ export class AuthService {
 
     await this.deps.sessionService.revoke(userId);
 
-    await this.deps.auditLogService.logSecurityEvent({
-      userId: user.id,
-      eventType: SecurityEventType.password_reset_completed,
-    });
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.password_reset_completed,
+        severity: SecurityEventSeverity.medium,
+        email: '',
+      },
+      { subjectUserId: user.id },
+    );
   }
 
   async verifyAccount(params: VerifyAccountParams): Promise<void> {
@@ -489,10 +563,17 @@ export class AuthService {
     );
 
     if (!userId) {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.REGISTER,
-        payload: { method: 'email', error: 'invalid_otp' },
-      });
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'email',
+          email: '',
+          error: 'invalid_otp',
+        },
+        { visibility: AuditLogVisibility.admin_only },
+      );
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
 
@@ -504,36 +585,21 @@ export class AuthService {
       });
     });
 
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.UPDATE_USER,
-      payload: {
-        category: AuditEventCategory.CUD,
+    await this.deps.auditLogService.pushCud(
+      {
+        category: 'cud',
         entityType: 'user',
         entityId: userId,
         action: 'update',
-        before: {
-          id: userId,
-          changes: {
-            status: {
-              previous: UserStatus.inactive,
-              next: UserStatus.active,
-            },
-          },
-        },
-        after: {
-          id: userId,
-          changes: {
-            status: {
-              previous: UserStatus.inactive,
-              next: UserStatus.active,
-            },
-          },
-        },
         changes: {
           status: { previous: UserStatus.inactive, next: UserStatus.active },
         },
       },
-    });
+      {
+        subjectUserId: userId,
+        visibility: AuditLogVisibility.actor_and_subject,
+      },
+    );
   }
 
   async refreshToken(params: RefreshTokenParams): Promise<ILoginRes> {
@@ -557,11 +623,17 @@ export class AuthService {
       !session.createdBy ||
       session.createdBy.status !== 'active'
     ) {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LOGIN,
-        payload: { method: 'email', error: 'refresh_token_invalid' },
-        userId: session?.createdBy?.id ?? null,
-      });
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'email',
+          email: session?.createdBy?.email ?? '',
+          error: 'refresh_token_invalid',
+        },
+        { subjectUserId: session?.createdBy?.id },
+      );
       throw new UnAuthErr(ErrCode.ExpiredToken);
     }
 
@@ -583,12 +655,17 @@ export class AuthService {
       ),
     };
 
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.LOGIN,
-      payload: { method: 'email', action: 'refresh_token' },
-      userId: session.createdBy.id,
-      sessionId: session.id,
-    });
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.login_success,
+        severity: SecurityEventSeverity.low,
+        method: 'email',
+        email: session.createdBy.email ?? '',
+        metadata: { action: 'refresh_token' },
+      },
+      { subjectUserId: session.createdBy.id },
+    );
 
     return {
       type: LoginResType.COMPLETED,
@@ -603,10 +680,17 @@ export class AuthService {
   async logout(params: LogoutParams): Promise<void> {
     const { id, sessionId } = params;
 
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.LOGOUT,
-      payload: {},
-    });
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.login_success,
+        severity: SecurityEventSeverity.low,
+        method: 'email',
+        email: '',
+        metadata: { action: 'logout' },
+      },
+      { subjectUserId: id },
+    );
 
     await this.deps.sessionService.revoke(id, [sessionId]);
   }
@@ -614,15 +698,12 @@ export class AuthService {
   async logoutAll(params: LogoutParams): Promise<void> {
     const { id, sessionId } = params;
 
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.REVOKE_SESSION,
-      payload: {
-        category: AuditEventCategory.CUD,
-        entityType: 'session',
-        entityId: sessionId,
-        action: 'delete',
-        before: { sessionId },
-      },
+    await this.deps.auditLogService.pushCud({
+      category: 'cud',
+      entityType: 'session',
+      entityId: sessionId,
+      action: 'delete',
+      changes: { sessionId: { previous: sessionId, next: null } },
     });
 
     await this.deps.sessionService.revoke(id);
@@ -633,10 +714,17 @@ export class AuthService {
 
     const cachedData = await this.deps.mfaCache.get(mfaToken);
     if (!cachedData || cachedData.loginToken !== loginToken) {
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.LOGIN,
-        payload: { method: 'email', error: 'mfa_session_expired' },
-      });
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'email',
+          email: '',
+          error: 'mfa_session_expired',
+        },
+        { visibility: AuditLogVisibility.admin_only },
+      );
       throw new BadReqErr(ErrCode.SessionExpired);
     }
 

@@ -1,7 +1,12 @@
 import { db, type IDb } from 'src/config/db';
 import type { RoleListParams, UpsertRoleParams } from 'src/dtos/roles.dto';
-import type { PermissionWhereInput, RoleWhereInput } from 'src/generated';
-import { ensureExists, normalizeSearchTerm } from 'src/services/shared/utils';
+import {
+  AuditLogVisibility,
+  type PermissionWhereInput,
+  type RoleWhereInput,
+} from 'src/generated';
+import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
+import { normalizeSearchTerm } from 'src/services/shared/utils';
 import {
   BadReqErr,
   DB_PREFIX,
@@ -11,11 +16,13 @@ import {
   NotFoundErr,
   UnAuthErr,
 } from 'src/share';
+import type { AuditLogsService } from '../audit-logs';
 
 export class RolesService {
   constructor(
     private readonly deps: {
       db: IDb;
+      auditLogService: AuditLogsService;
     },
   ) {}
 
@@ -120,19 +127,37 @@ export class RolesService {
     });
   }
 
-  async upsert(params: UpsertRoleParams): Promise<{ id: string }> {
+  async upsert(
+    params: UpsertRoleParams,
+    actorId?: string,
+  ): Promise<{ id: string }> {
     const { id, title, enabled, description, players, permissionIds } = params;
 
     if (id) {
-      const targetRole = await ensureExists(
-        this.deps.db.role,
-        { id },
-        { id: true, protected: true },
-        ErrCode.ItemNotFound,
-      );
+      const targetRole = await this.deps.db.role.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          enabled: true,
+          protected: true,
+          permissions: { select: { permissionId: true } },
+          players: { select: { playerId: true } },
+        },
+      });
+      if (!targetRole) {
+        throw new NotFoundErr(ErrCode.ItemNotFound);
+      }
       if (targetRole.protected) {
         throw new UnAuthErr(ErrCode.PermissionDenied);
       }
+
+      const permissionIdsBefore = targetRole.permissions.map(
+        (p) => p.permissionId,
+      );
+      const playerIdsBefore = targetRole.players.map((p) => p.playerId);
+
       const updated = await this.deps.db.role.update({
         where: { id },
         data: {
@@ -161,11 +186,47 @@ export class RolesService {
         },
         select: { id: true },
       });
+
+      const playerIdsAfter = players.map((p) => p.playerId);
+
+      await this.deps.auditLogService.pushCud(
+        {
+          category: 'cud',
+          entityType: 'role',
+          entityId: id,
+          action: 'update',
+          changes: {
+            title: {
+              previous: targetRole.title,
+              next: title,
+            },
+            description: {
+              previous: targetRole.description,
+              next: description,
+            },
+            enabled: {
+              previous: targetRole.enabled,
+              next: enabled,
+            },
+            permissionIds: {
+              previous: permissionIdsBefore,
+              next: permissionIds,
+            },
+            playerIds: {
+              previous: playerIdsBefore,
+              next: playerIdsAfter,
+            },
+          },
+        },
+        { visibility: AuditLogVisibility.admin_only },
+      );
+
       return { id: updated.id };
     } else {
+      const roleId = IdUtil.dbId(DB_PREFIX.ROLE);
       const created = await this.deps.db.role.create({
         data: {
-          id: IdUtil.dbId(DB_PREFIX.ROLE),
+          id: roleId,
           description,
           title,
           enabled,
@@ -182,6 +243,30 @@ export class RolesService {
         },
         select: { id: true },
       });
+
+      await this.deps.auditLogService.pushCud(
+        {
+          category: 'cud',
+          entityType: 'role',
+          entityId: roleId,
+          action: 'create',
+          changes: {
+            title: { previous: null, next: title },
+            description: { previous: null, next: description },
+            enabled: { previous: null, next: enabled },
+            permissionIds: {
+              previous: [],
+              next: permissionIds,
+            },
+            playerIds: {
+              previous: [],
+              next: players.map((p) => p.playerId),
+            },
+          },
+        },
+        { visibility: AuditLogVisibility.admin_only },
+      );
+
       return { id: created.id };
     }
   }
@@ -233,7 +318,7 @@ export class RolesService {
     };
   }
 
-  async delete(params: IIdsDto): Promise<void> {
+  async delete(params: IIdsDto, actorId?: string): Promise<void> {
     const { ids } = params;
     const protectedRoles = await this.deps.db.role.findMany({
       where: { id: { in: ids }, protected: true },
@@ -254,6 +339,17 @@ export class RolesService {
         id: { in: ids },
       },
     });
+
+    await this.deps.auditLogService.pushCud(
+      {
+        category: 'cud',
+        entityType: 'role',
+        entityId: ids[0] ?? 'bulk',
+        action: 'delete',
+        changes: { roleIds: { previous: ids, next: [] } },
+      },
+      { visibility: AuditLogVisibility.admin_only },
+    );
   }
 
   listPermissions(params: { roleId?: string }) {
@@ -273,4 +369,7 @@ export class RolesService {
   }
 }
 
-export const rolesService = new RolesService({ db });
+export const rolesService = new RolesService({
+  db,
+  auditLogService: auditLogsService,
+});

@@ -1,12 +1,11 @@
 import { rateLimitCache } from 'src/config/cache';
 import { redis } from 'src/config/redis';
 import {
-  LogType,
+  AuditLogVisibility,
   SecurityEventSeverity,
   SecurityEventType,
 } from 'src/generated';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
-import { ACTIVITY_TYPE, AuditEventCategory } from 'src/share';
 
 type CheckAndIncrementParams = {
   identifier: string;
@@ -73,25 +72,21 @@ export class RateLimitService {
     await rateLimitCache.set(cacheKey, currentCount, windowSeconds);
 
     if (currentCount > limit) {
-      await auditLogsService.push({
-        logType: LogType.rate_limit,
-        type: ACTIVITY_TYPE.INTERNAL_ERROR,
-        eventType: SecurityEventType.rate_limit_exceeded,
-        severity: SecurityEventSeverity.high,
-        description: `Rate limit exceeded on ${routePath}`,
-        payload: {
-          category: AuditEventCategory.INTERNAL,
-          error: 'rate_limit_exceeded',
-          detail: {
-            routePath,
-            identifier,
-            count: currentCount,
-            limit,
-            windowSeconds,
-          },
+      await auditLogsService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.rate_limit_exceeded,
+          severity: SecurityEventSeverity.high,
+          routePath,
+          identifier,
+          count: currentCount,
+          limit,
         },
-        userId,
-      });
+        {
+          visibility: AuditLogVisibility.admin_only,
+          subjectUserId: userId,
+        },
+      );
 
       return {
         allowed: false,

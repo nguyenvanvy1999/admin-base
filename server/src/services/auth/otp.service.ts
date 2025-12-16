@@ -8,7 +8,12 @@ import {
 } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import { emailQueue, type IEmailQueue } from 'src/config/queue';
-import { UserStatus } from 'src/generated';
+import {
+  AuditLogVisibility,
+  SecurityEventSeverity,
+  SecurityEventType,
+  UserStatus,
+} from 'src/generated';
 import {
   type AuditLogsService,
   auditLogsService,
@@ -21,7 +26,7 @@ import {
   type LockingUtil,
   lockingUtil,
 } from 'src/services/shared/utils/locking.util';
-import { ACTIVITY_TYPE, EmailType, IdUtil, PurposeVerify } from 'src/share';
+import { EmailType, IdUtil, PurposeVerify } from 'src/share';
 
 export class OtpService {
   constructor(
@@ -151,77 +156,69 @@ export class OtpService {
     });
 
     if (!user) {
-      const activityType =
-        purpose === PurposeVerify.REGISTER
-          ? ACTIVITY_TYPE.REGISTER
-          : ACTIVITY_TYPE.LOGIN;
-      await this.deps.auditLogService.push({
-        type: activityType,
-        payload: {
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
           method: 'email',
+          email,
           error: 'user_not_found',
-          ...(purpose !== PurposeVerify.REGISTER && {
-            action: `otp_${purpose}`,
-          }),
         },
-      });
+        { visibility: AuditLogVisibility.admin_only },
+      );
       return null;
     }
 
     const allowed = await this.checkOtpConditions(user, purpose);
     if (!allowed) {
-      const activityType =
-        purpose === PurposeVerify.REGISTER
-          ? ACTIVITY_TYPE.REGISTER
-          : ACTIVITY_TYPE.LOGIN;
-      await this.deps.auditLogService.push({
-        type: activityType,
-        payload: {
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
           method: 'email',
+          email,
           error: 'otp_conditions_not_met',
-          ...(purpose !== PurposeVerify.REGISTER && {
-            action: `otp_${purpose}`,
-          }),
         },
-        userId: user.id,
-      });
+        { subjectUserId: user.id },
+      );
       return null;
     }
 
     const otpToken = await this.sendOtp(user.id, email, purpose);
     if (!otpToken) {
-      const activityType =
-        purpose === PurposeVerify.REGISTER
-          ? ACTIVITY_TYPE.REGISTER
-          : ACTIVITY_TYPE.LOGIN;
-      await this.deps.auditLogService.push({
-        type: activityType,
-        payload: {
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
           method: 'email',
+          email,
           error: 'otp_send_failed',
-          ...(purpose !== PurposeVerify.REGISTER && {
-            action: `otp_${purpose}`,
-          }),
         },
-        userId: user.id,
-      });
+        { subjectUserId: user.id },
+      );
       return null;
     }
 
-    const activityType =
-      purpose === PurposeVerify.REGISTER
-        ? ACTIVITY_TYPE.REGISTER
-        : ACTIVITY_TYPE.LOGIN;
-    await this.deps.auditLogService.push({
-      type: activityType,
-      payload: {
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType:
+          purpose === PurposeVerify.REGISTER
+            ? SecurityEventType.login_success
+            : SecurityEventType.login_success,
+        severity: SecurityEventSeverity.low,
         method: 'email',
-        ...(purpose !== PurposeVerify.REGISTER && {
-          action: `otp_sent_${purpose}`,
-        }),
+        email,
+        metadata:
+          purpose !== PurposeVerify.REGISTER
+            ? { action: `otp_sent_${purpose}` }
+            : undefined,
       },
-      userId: user.id,
-    });
+      { subjectUserId: user.id },
+    );
 
     if (purpose === PurposeVerify.REGISTER) {
       await this.updateRegisterOtpLimit(user.id);
