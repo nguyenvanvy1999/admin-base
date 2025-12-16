@@ -4,7 +4,7 @@ import { SQL } from 'bun';
 import { db, type IDb } from 'src/config/db';
 import { env } from 'src/config/env';
 import { type ILogger, logger } from 'src/config/logger';
-import type { GeoIPJobData } from 'src/config/queue';
+import type { ApiKeyUsageJobData, GeoIPJobData } from 'src/config/queue';
 import {
   auditLogQueue,
   batchLogQueue,
@@ -32,6 +32,10 @@ import {
   QueueName,
   type SendMailMap,
 } from 'src/share';
+import {
+  type ApiKeyValidationService,
+  apiKeyValidationService,
+} from '../api-keys/api-key-validation.service';
 
 const WORKER_NAME = 'audit-log-batch-worker';
 const JOB_NAME = 'scheduled-flush';
@@ -73,6 +77,7 @@ export class WorkerService {
       geoIPService: GeoIPUtil;
       lockingService: LockingUtil;
       idempotencyService: IdempotencyUtil;
+      apiKeyValidationService: ApiKeyValidationService;
     } = {
       db,
       emailService,
@@ -80,6 +85,7 @@ export class WorkerService {
       geoIPService: geoIPUtil,
       lockingService: lockingUtil,
       idempotencyService: idempotencyUtil,
+      apiKeyValidationService: apiKeyValidationService,
     },
   ) {}
 
@@ -111,6 +117,18 @@ export class WorkerService {
         select: { id: true },
       });
     }
+  }
+
+  async handleApiKeyUsageJob(job: Job<ApiKeyUsageJobData>): Promise<void> {
+    const { apiKeyId, endpoint, method, ip, userAgent, statusCode } = job.data;
+
+    await this.deps.apiKeyValidationService.logUsage(apiKeyId, {
+      endpoint,
+      method,
+      ip,
+      userAgent,
+      statusCode,
+    });
   }
 }
 
@@ -156,6 +174,11 @@ export class WorkerManagerService {
         queue: QueueName.GeoIP,
         handler: (jobName: string, data: any) =>
           this.deps.workerService.handleGeoIPJob(jobName, data),
+      },
+      {
+        queue: QueueName.ApiKeyUsage,
+        handler: (_: string, data: any) =>
+          this.deps.workerService.handleApiKeyUsageJob(data),
       },
     ];
   }

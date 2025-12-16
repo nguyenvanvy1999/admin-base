@@ -31,8 +31,7 @@ export const notificationAdminController = new Elysia({
         await notificationsService.list({
           ...query,
           currentUserId: currentUser.id,
-          hasViewPermission:
-            currentUser.permissions.includes('NOTIFICATION.VIEW'),
+          hasViewPermission: true,
         }),
       );
     },
@@ -49,8 +48,7 @@ export const notificationAdminController = new Elysia({
     async ({ params: { id }, currentUser }) => {
       const result = await notificationsService.detail(id, {
         currentUserId: currentUser.id,
-        hasViewPermission:
-          currentUser.permissions.includes('NOTIFICATION.VIEW'),
+        hasViewPermission: true,
       });
       return castToRes(result);
     },
@@ -86,9 +84,7 @@ export const notificationAdminController = new Elysia({
     async ({ body, currentUser }) => {
       await notificationsService.removeMany(body.ids, {
         currentUserId: currentUser.id,
-        hasViewPermission: currentUser.permissions.includes(
-          'NOTIFICATION.DELETE',
-        ),
+        hasViewPermission: true,
       });
       return castToRes(null);
     },
@@ -107,9 +103,7 @@ export const notificationAdminController = new Elysia({
     async ({ body, currentUser }) => {
       await notificationsService.markAsRead(body.ids, {
         currentUserId: currentUser.id,
-        hasViewPermission: currentUser.permissions.includes(
-          'NOTIFICATION.UPDATE',
-        ),
+        hasViewPermission: true,
       });
       return castToRes(null);
     },

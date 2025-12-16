@@ -149,6 +149,7 @@ export const PERMISSIONS = {
   },
   API_KEY: {
     VIEW: { roles: [defaultRoles.administrator.id] },
+    CREATE: { roles: [defaultRoles.administrator.id] },
     UPDATE: { roles: [defaultRoles.administrator.id] },
     DELETE: { roles: [defaultRoles.administrator.id] },
   },
@@ -181,6 +182,7 @@ export enum QueueName {
   AuditLog = 'AuditLog',
   BatchAuditLog = 'BatchAuditLog',
   GeoIP = 'GeoIP',
+  ApiKeyUsage = 'ApiKeyUsage',
 }
 
 export enum SETTING {
@@ -210,6 +212,7 @@ export enum CACHE_NS {
   MFA_ATTEMPT = 'mfa-attempt',
   CURRENCY = 'currency',
   IP_WHITELIST = 'ip-whitelist',
+  API_KEY = 'api-key',
 }
 
 export enum DB_PREFIX {
@@ -226,6 +229,7 @@ export enum DB_PREFIX {
   NOTIFICATION = 'notif',
   NOTIFICATION_TEMPLATE = 'notif_tpl',
   RATE_LIMIT = 'rate_limit',
+  API_KEY = 'api_key',
 }
 
 export enum EmailType {
@@ -293,6 +297,8 @@ export enum DOC_TAG {
   ADMIN_NOTIFICATION = 'Admin Notification',
   ADMIN_NOTIFICATION_TEMPLATE = 'Admin Notification Template',
   ADMIN_RATE_LIMIT = 'Admin Rate Limit',
+  ADMIN_API_KEY = 'Admin API Key',
+  USER_API_KEY = 'User API Key',
 }
 
 export const ACCESS_AUTH = [{ accessToken: [] }];
@@ -416,6 +422,14 @@ export const DOC_OPTIONS = {
     adminRateLimit: {
       name: DOC_TAG.ADMIN_RATE_LIMIT,
       description: 'Admin rate limit endpoints',
+    },
+    adminApiKey: {
+      name: DOC_TAG.ADMIN_API_KEY,
+      description: 'Admin API key management endpoints',
+    },
+    userApiKey: {
+      name: DOC_TAG.USER_API_KEY,
+      description: 'User API key management endpoints',
     },
   },
 };

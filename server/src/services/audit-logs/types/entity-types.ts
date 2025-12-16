@@ -8,6 +8,7 @@ export const ENTITY_TYPE_MAP = {
   UserIpWhitelist: 'ip_whitelist',
   Setting: 'setting',
   ApiKey: 'api_key',
+  ApiKeyUsage: 'api_key_usage',
   Permission: 'permission',
   RolePermission: 'role_permission',
   RolePlayer: 'role_player',

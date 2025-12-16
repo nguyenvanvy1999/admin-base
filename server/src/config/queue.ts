@@ -71,3 +71,28 @@ export const geoIPQueue = new Queue<GeoIPJobData>(QueueName.GeoIP, {
   },
 });
 export type IGeoIPQueue = typeof geoIPQueue;
+
+export interface ApiKeyUsageJobData {
+  apiKeyId: string;
+  endpoint: string;
+  method: string;
+  ip: string | null;
+  userAgent: string | null;
+  statusCode: number;
+}
+
+export const apiKeyUsageQueue = new Queue<ApiKeyUsageJobData>(
+  QueueName.ApiKeyUsage,
+  {
+    connection: queueConnection,
+    defaultJobOptions: {
+      ...queueJobOptions,
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
+    },
+  },
+);
+export type IApiKeyUsageQueue = typeof apiKeyUsageQueue;

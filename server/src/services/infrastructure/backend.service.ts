@@ -16,6 +16,8 @@ import { type ILogger, logger } from 'src/config/logger';
 import { redis } from 'src/config/redis';
 import { swaggerConfig } from 'src/config/swagger';
 import {
+  apiKeysAdminController,
+  apiKeysUserController,
   auditLogsAdminController,
   auditLogsUserController,
   authController,
@@ -41,6 +43,7 @@ import {
   userAuthController,
   usersAdminController,
 } from 'src/modules';
+import { apiKeyUsageLoggerMiddleware } from 'src/services/api-keys';
 import { adminAuthMiddleware } from 'src/services/auth';
 import type { SeedService } from 'src/services/dev/seed.service';
 import { seedService } from 'src/services/dev/seed.service';
@@ -203,6 +206,7 @@ export class BackendServerService {
           ])
           .use(reqMeta)
           .use(ipWhitelistMiddleware())
+          .use(apiKeyUsageLoggerMiddleware)
           .use(authController)
           .use(userAuthController)
           .use(otpController)
@@ -218,6 +222,8 @@ export class BackendServerService {
           .use(notificationUserController)
           .use(ipWhitelistAdminController)
           .use(ipWhitelistUserController)
+          .use(apiKeysAdminController)
+          .use(apiKeysUserController)
           .use(usersAdminController)
           .use(rolesAdminController)
           .use(permissionsAdminController)

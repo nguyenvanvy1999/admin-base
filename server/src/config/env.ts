@@ -44,6 +44,7 @@ export const envSchema = t.Object({
   SYSTEM_PASSWORD: t.String(),
   ADMIN_PASSWORD: t.String(),
 
+  // Password
   SALT_LENGTH: t.Integer({ minimum: 8, maximum: 20, default: 10 }),
   PASSWORD_MAX_ATTEMPT: t.Integer({ minimum: 1, maximum: 100, default: 5 }),
   PASSWORD_PEPPER: t.String(),
@@ -54,9 +55,15 @@ export const envSchema = t.Object({
   PASSWORD_REQUIRE_NUMBER: t.Boolean({ default: true }),
   PASSWORD_REQUIRE_SPECIAL_CHAR: t.Boolean({ default: true }),
 
+  // Encryption
   ENCRYPT_KEY: t.String(),
   ENCRYPT_IV: t.String(),
 
+  API_KEY_PEPPER: t.String({ default: 'API_KEY_PEPPER' }),
+  API_KEY_LENGTH: t.Integer({ minimum: 1, maximum: 100, default: 32 }),
+  API_KEY_PREFIX: t.String({ default: 'sk_live_' }),
+
+  // S3
   S3_ENDPOINT: t.Optional(t.String()),
   S3_BUCKET: t.Optional(t.String()),
   S3_REGION: t.Optional(t.String()),
@@ -66,6 +73,7 @@ export const envSchema = t.Object({
   ENB_BULL_BOARD: t.Boolean({ default: true }),
   ENB_SWAGGER_UI: t.Boolean({ default: true }),
 
+  // OpenAPI
   AUTHOR_NAME: t.String({ default: 'AUTHOR_NAME' }),
   AUTHOR_URL: t.String({ default: 'https://example.com' }),
   AUTHOR_EMAIL: t.String({ default: 'example@gmail.com' }),
@@ -85,6 +93,7 @@ export const envSchema = t.Object({
     }),
   ),
 
+  // Mail
   MAIL_HOST: t.String({ minLength: 1 }),
   MAIL_PORT: t.Number({ minimum: 0, maximum: 65535, default: 465 }),
   MAIL_USER: t.String({ minLength: 1 }),

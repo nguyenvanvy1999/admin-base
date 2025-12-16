@@ -19,7 +19,7 @@ export const auditLogsAdminController = new Elysia({
       const result = await auditLogsService.list({
         ...query,
         currentUserId: currentUser.id,
-        hasViewPermission: currentUser.permissions.includes('AUDIT_LOG.VIEW'),
+        hasViewPermission: true,
       });
       return castToRes(result);
     },
