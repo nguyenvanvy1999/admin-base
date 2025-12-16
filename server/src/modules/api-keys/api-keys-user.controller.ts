@@ -67,7 +67,7 @@ export const apiKeysUserController = new Elysia({
     async ({ body, currentUser }) => {
       const result = await apiKeyService.create(currentUser.id, body, {
         currentUserId: currentUser.id,
-        hasCreatePermission: false, // User can only create their own keys
+        hasCreatePermission: false,
       });
       return castToRes(result);
     },
@@ -85,7 +85,7 @@ export const apiKeysUserController = new Elysia({
     async ({ body, currentUser }) => {
       const result = await apiKeyService.update(body, {
         currentUserId: currentUser.id,
-        hasUpdatePermission: false, // User can only update their own keys
+        hasUpdatePermission: false,
       });
       return castToRes(result);
     },
@@ -93,28 +93,6 @@ export const apiKeysUserController = new Elysia({
       body: UpdateApiKeyDto,
       response: {
         200: ResWrapper(ApiKeyResponseDto),
-        400: ErrorResDto,
-        404: ErrorResDto,
-        ...authErrors,
-      },
-    },
-  )
-  .post(
-    '/:id/revoke',
-    async ({ params: { id }, currentUser }) => {
-      await apiKeyService.revoke(
-        { id },
-        {
-          currentUserId: currentUser.id,
-          hasDeletePermission: false, // User can only revoke their own keys
-        },
-      );
-      return castToRes(null);
-    },
-    {
-      params: IdDto,
-      response: {
-        200: ResWrapper(t.Null()),
         400: ErrorResDto,
         404: ErrorResDto,
         ...authErrors,

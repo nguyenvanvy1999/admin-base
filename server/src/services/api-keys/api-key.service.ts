@@ -1,10 +1,8 @@
-import { createHash } from 'node:crypto';
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import type {
   ApiKeyListQueryParams,
   CreateApiKeyParams,
-  RevokeApiKeyParams,
   UpdateApiKeyParams,
 } from 'src/dtos/api-keys.dto';
 import { type ApiKeySelect, ApiKeyStatus } from 'src/generated';
@@ -46,19 +44,9 @@ export class ApiKeyService {
     },
   ) {}
 
-  private generateKey(): string {
-    const randomBytes = crypto.getRandomValues(
-      new Uint8Array(this.deps.env.API_KEY_LENGTH),
-    );
-    const randomString = Array.from(randomBytes)
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('');
-    return `${this.deps.env.API_KEY_PREFIX}${randomString}`;
-  }
-
-  private hashKey(key: string): string {
+  private hashKey(key: string): Promise<string> {
     const peppered = `${key}${this.deps.env.API_KEY_PEPPER}`;
-    return createHash('sha256').update(peppered).digest('hex');
+    return Bun.password.hash(peppered);
   }
 
   private getKeyPrefix(key: string): string {
@@ -84,8 +72,8 @@ export class ApiKeyService {
       throw new NotFoundErr(ErrCode.UserNotFound);
     }
 
-    const key = this.generateKey();
-    const hashedKey = this.hashKey(key);
+    const key = `${this.deps.env.API_KEY_PREFIX}${IdUtil.token32()}`;
+    const hashedKey = await this.hashKey(key);
     const keyPrefix = this.getKeyPrefix(key);
 
     const apiKey = await this.deps.db.apiKey.create({
@@ -259,44 +247,6 @@ export class ApiKeyService {
     };
   }
 
-  async revoke(
-    params: RevokeApiKeyParams,
-    context: { currentUserId: string; hasDeletePermission: boolean },
-  ) {
-    const apiKey = await this.deps.db.apiKey.findUnique({
-      where: { id: params.id },
-      select: { userId: true },
-    });
-    if (!apiKey) {
-      throw new NotFoundErr(ErrCode.NotFound);
-    }
-
-    if (
-      apiKey.userId !== context.currentUserId &&
-      !context.hasDeletePermission
-    ) {
-      throw new BadReqErr(ErrCode.Forbidden);
-    }
-
-    await this.deps.db.apiKey.update({
-      where: { id: params.id },
-      data: {
-        status: ApiKeyStatus.revoked,
-      },
-    });
-
-    // Audit log
-    await this.deps.auditLogService.pushCud({
-      category: 'cud',
-      entityType: 'api_key',
-      entityId: params.id,
-      action: 'update',
-      changes: {
-        status: { previous: ApiKeyStatus.active, next: ApiKeyStatus.revoked },
-      },
-    });
-  }
-
   async revokeMany(
     ids: string[],
     context: { currentUserId: string; hasDeletePermission: boolean },
@@ -342,7 +292,7 @@ export class ApiKeyService {
       return { valid: false };
     }
 
-    const hashedKey = this.hashKey(key);
+    const hashedKey = await this.hashKey(key);
 
     const apiKey = await this.deps.db.apiKey.findUnique({
       where: { key: hashedKey },
@@ -387,15 +337,6 @@ export class ApiKeyService {
             status: true,
           },
         },
-      },
-    });
-  }
-
-  async updateLastUsed(id: string) {
-    await this.deps.db.apiKey.update({
-      where: { id },
-      data: {
-        lastUsedAt: new Date(),
       },
     });
   }

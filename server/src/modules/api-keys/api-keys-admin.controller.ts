@@ -32,7 +32,7 @@ export const apiKeysAdminController = new Elysia({
       const result = await apiKeyService.list({
         ...query,
         currentUserId: currentUser.id,
-        hasViewPermission: currentUser.permissions.includes('API_KEY.VIEW'),
+        hasViewPermission: true,
       });
       return castToRes(result);
     },
@@ -49,7 +49,7 @@ export const apiKeysAdminController = new Elysia({
     async ({ params: { id }, currentUser }) => {
       const result = await apiKeyService.detail(id, {
         currentUserId: currentUser.id,
-        hasViewPermission: currentUser.permissions.includes('API_KEY.VIEW'),
+        hasViewPermission: true,
       });
       return castToRes(result);
     },
@@ -69,7 +69,7 @@ export const apiKeysAdminController = new Elysia({
     async ({ body, query: { userId }, currentUser }) => {
       const result = await apiKeyService.create(userId, body, {
         currentUserId: currentUser.id,
-        hasCreatePermission: currentUser.permissions.includes('API_KEY.CREATE'),
+        hasCreatePermission: true,
       });
       return castToRes(result);
     },
@@ -91,7 +91,7 @@ export const apiKeysAdminController = new Elysia({
     async ({ body, currentUser }) => {
       const result = await apiKeyService.update(body, {
         currentUserId: currentUser.id,
-        hasUpdatePermission: currentUser.permissions.includes('API_KEY.UPDATE'),
+        hasUpdatePermission: true,
       });
       return castToRes(result);
     },
@@ -107,34 +107,11 @@ export const apiKeysAdminController = new Elysia({
   )
   .use(authorize(has('API_KEY.DELETE')))
   .post(
-    '/:id/revoke',
-    async ({ params: { id }, currentUser }) => {
-      await apiKeyService.revoke(
-        { id },
-        {
-          currentUserId: currentUser.id,
-          hasDeletePermission:
-            currentUser.permissions.includes('API_KEY.DELETE'),
-        },
-      );
-      return castToRes(null);
-    },
-    {
-      params: IdDto,
-      response: {
-        200: ResWrapper(t.Null()),
-        400: ErrorResDto,
-        404: ErrorResDto,
-        ...authErrors,
-      },
-    },
-  )
-  .post(
     '/del',
     async ({ body, currentUser }) => {
       await apiKeyService.revokeMany(body.ids, {
         currentUserId: currentUser.id,
-        hasDeletePermission: currentUser.permissions.includes('API_KEY.DELETE'),
+        hasDeletePermission: true,
       });
       return castToRes(null);
     },

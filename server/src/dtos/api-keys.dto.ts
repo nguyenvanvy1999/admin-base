@@ -1,10 +1,6 @@
 import { t } from 'elysia';
 import { DtoFields, PaginationReqDto } from 'src/share';
 
-// ============================================
-// Request DTOs
-// ============================================
-
 export const CreateApiKeyDto = t.Object({
   name: t.String({ minLength: 1, maxLength: 255 }),
   expiresAt: t.Optional(t.Date()),
@@ -22,10 +18,6 @@ export const UpdateApiKeyDto = t.Object({
   metadata: t.Optional(t.Any()),
 });
 
-export const RevokeApiKeyDto = t.Object({
-  id: t.String({ minLength: 1 }),
-});
-
 export const ApiKeyListQueryDto = t.Intersect([
   PaginationReqDto,
   t.Object({
@@ -35,10 +27,6 @@ export const ApiKeyListQueryDto = t.Intersect([
     search: DtoFields.search,
   }),
 ]);
-
-// ============================================
-// Response DTOs
-// ============================================
 
 export const ApiKeyResponseDto = t.Object({
   id: t.String(),
@@ -88,13 +76,8 @@ export const ApiKeyCreatedResponseDto = t.Object({
   created: t.Date(),
 });
 
-// ============================================
-// Type Exports
-// ============================================
-
 export type CreateApiKeyParams = typeof CreateApiKeyDto.static;
 export type UpdateApiKeyParams = typeof UpdateApiKeyDto.static;
-export type RevokeApiKeyParams = typeof RevokeApiKeyDto.static;
 export type ApiKeyListQueryParams = typeof ApiKeyListQueryDto.static & {
   currentUserId: string;
   hasViewPermission: boolean;

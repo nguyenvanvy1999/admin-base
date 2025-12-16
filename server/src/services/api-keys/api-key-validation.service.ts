@@ -172,8 +172,8 @@ export class ApiKeyValidationService {
       statusCode: number;
     },
   ) {
-    try {
-      await this.deps.db.apiKeyUsage.create({
+    await this.deps.db.$transaction(async (tx) => {
+      await tx.apiKeyUsage.create({
         data: {
           id: IdUtil.snowflakeId(),
           apiKeyId,
@@ -186,11 +186,11 @@ export class ApiKeyValidationService {
       });
 
       // Update last used timestamp
-      await this.deps.apiKeyService.updateLastUsed(apiKeyId);
-    } catch (error) {
-      // Log error but don't fail the request
-      console.error('Failed to log API key usage:', error);
-    }
+      await tx.apiKey.update({
+        where: { id: apiKeyId },
+        data: { lastUsedAt: new Date() },
+      });
+    });
   }
 
   async auditLogAccess(context: {
@@ -199,19 +199,14 @@ export class ApiKeyValidationService {
     ip: string | null;
     statusCode: number;
   }) {
-    try {
-      await this.deps.auditLogService.pushOther({
-        category: 'internal',
-        eventType: 'api_event',
-        level: 'info',
-        endpoint: context.endpoint,
-        method: context.method,
-        statusCode: context.statusCode,
-      });
-    } catch (error) {
-      // Log error but don't fail the request
-      console.error('Failed to audit log API key access:', error);
-    }
+    await this.deps.auditLogService.pushOther({
+      category: 'internal',
+      eventType: 'api_event',
+      level: 'info',
+      endpoint: context.endpoint,
+      method: context.method,
+      statusCode: context.statusCode,
+    });
   }
 }
 
