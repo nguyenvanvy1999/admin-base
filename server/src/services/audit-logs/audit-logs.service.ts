@@ -261,7 +261,7 @@ export class AuditLogsService {
 
     return {
       logId,
-      type: 'INTERNAL_ERROR' as any,
+      type: `cud-${payload.entityType}-${payload.action}` as const,
       logType: LogType.audit,
       level: LOG_LEVEL.INFO,
       category: AuditLogCategory.cud,
@@ -300,7 +300,7 @@ export class AuditLogsService {
 
     return {
       logId,
-      type: 'SECURITY_EVENT' as any,
+      type: `security-${payload.eventType}` as const,
       logType: LogType.security,
       level: this.mapSeverityToLogLevel(payload.severity),
       category: AuditLogCategory.security,
@@ -340,7 +340,7 @@ export class AuditLogsService {
 
     return {
       logId,
-      type: 'INTERNAL_ERROR' as any,
+      type: `other-${payload.eventType}` as const,
       logType: options?.logType ?? this.getDefaultLogType(payload.eventType),
       level: this.mapLogLevelToLogLevel(payload.level),
       category: payload.category as AuditLogCategory,

@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { db, type IDb } from 'src/config/db';
 import {
-  LogType,
+  AuditLogVisibility,
   SecurityEventSeverity,
   SecurityEventType,
 } from 'src/generated';
@@ -14,9 +14,7 @@ import {
   settingsService,
 } from 'src/services/settings/settings.service';
 import {
-  ACTIVITY_TYPE,
   getIpAndUa,
-  LOG_LEVEL,
   type LoginMethod,
   type SecurityDeviceInsight,
 } from 'src/share';
@@ -96,16 +94,19 @@ export class SecurityMonitorService {
   }): Promise<void> {
     const { userId, method } = params;
 
-    await this.deps.auditLogService.push({
-      logType: LogType.security,
-      type: ACTIVITY_TYPE.LOGIN,
-      payload: { method, error: 'unknown_device' },
-      eventType: SecurityEventType.suspicious_activity,
-      severity: SecurityEventSeverity.high,
-      description: 'Suspicious login from unknown device',
-      userId,
-      level: LOG_LEVEL.WARNING,
-    });
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.suspicious_activity,
+        severity: SecurityEventSeverity.high,
+        activity: 'unknown_device',
+        details: { method },
+      },
+      {
+        subjectUserId: userId,
+        visibility: AuditLogVisibility.actor_and_subject,
+      },
+    );
   }
 }
 

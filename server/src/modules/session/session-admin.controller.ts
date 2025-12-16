@@ -4,8 +4,6 @@ import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import { authCheck, authorize, has } from 'src/services/auth';
 import { sessionService } from 'src/services/auth/session.service';
 import {
-  ACTIVITY_TYPE,
-  AuditEventCategory,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -47,10 +45,9 @@ export const sessionAdminController = new Elysia({
       if (ids.length > 0) {
         await auditLogsService.pushBatch(
           ids.map((sessionId) => ({
-            type: ACTIVITY_TYPE.REVOKE_SESSION as const,
-            userId: currentUser.id,
+            type: 'cud' as const,
             payload: {
-              category: AuditEventCategory.CUD,
+              category: 'cud',
               entityType: 'session',
               entityId: sessionId,
               action: 'delete',

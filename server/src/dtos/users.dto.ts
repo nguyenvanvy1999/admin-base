@@ -44,7 +44,6 @@ export const AdminUserUpdateDto = t.Object({
 
 export const AdminUserActionResDto = t.Object({
   userId: t.String(),
-  auditLogId: t.String(),
 });
 
 export const AdminUserCreateDto = t.Object({

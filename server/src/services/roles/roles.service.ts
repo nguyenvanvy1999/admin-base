@@ -1,11 +1,13 @@
 import { db, type IDb } from 'src/config/db';
 import type { RoleListParams, UpsertRoleParams } from 'src/dtos/roles.dto';
-import type { PermissionWhereInput, RoleWhereInput } from 'src/generated';
+import {
+  AuditLogVisibility,
+  type PermissionWhereInput,
+  type RoleWhereInput,
+} from 'src/generated';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import { normalizeSearchTerm } from 'src/services/shared/utils';
 import {
-  ACTIVITY_TYPE,
-  AuditEventCategory,
   BadReqErr,
   DB_PREFIX,
   ErrCode,
@@ -187,11 +189,9 @@ export class RolesService {
 
       const playerIdsAfter = players.map((p) => p.playerId);
 
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.UPDATE_ROLE,
-        userId: actorId,
-        payload: {
-          category: AuditEventCategory.CUD,
+      await this.deps.auditLogService.pushCud(
+        {
+          category: 'cud',
           entityType: 'role',
           entityId: id,
           action: 'update',
@@ -218,7 +218,8 @@ export class RolesService {
             },
           },
         },
-      });
+        { visibility: AuditLogVisibility.admin_only },
+      );
 
       return { id: updated.id };
     } else {
@@ -243,11 +244,9 @@ export class RolesService {
         select: { id: true },
       });
 
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.CREATE_ROLE,
-        userId: actorId,
-        payload: {
-          category: AuditEventCategory.CUD,
+      await this.deps.auditLogService.pushCud(
+        {
+          category: 'cud',
           entityType: 'role',
           entityId: roleId,
           action: 'create',
@@ -265,7 +264,8 @@ export class RolesService {
             },
           },
         },
-      });
+        { visibility: AuditLogVisibility.admin_only },
+      );
 
       return { id: created.id };
     }
@@ -340,17 +340,16 @@ export class RolesService {
       },
     });
 
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.DEL_ROLE,
-      userId: actorId,
-      payload: {
-        category: AuditEventCategory.CUD,
+    await this.deps.auditLogService.pushCud(
+      {
+        category: 'cud',
         entityType: 'role',
         entityId: ids[0] ?? 'bulk',
         action: 'delete',
         changes: { roleIds: { previous: ids, next: [] } },
       },
-    });
+      { visibility: AuditLogVisibility.admin_only },
+    );
   }
 
   listPermissions(params: { roleId?: string }) {

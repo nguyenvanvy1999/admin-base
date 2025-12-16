@@ -53,10 +53,9 @@ export const usersAdminController = new Elysia({
   .use(authorize(has('USER.UPDATE')))
   .post(
     '/',
-    async ({ body, currentUser }) =>
+    async ({ body }) =>
       castToRes(
         await usersService.createUser({
-          actorId: currentUser.id,
           ...body,
         }),
       ),
@@ -71,11 +70,10 @@ export const usersAdminController = new Elysia({
   )
   .patch(
     '/:id/roles',
-    async ({ params: { id }, currentUser, body }) =>
+    async ({ params: { id }, body }) =>
       castToRes(
         await usersService.updateUserRoles({
           targetUserId: id,
-          actorId: currentUser.id,
           ...body,
         }),
       ),
@@ -91,11 +89,10 @@ export const usersAdminController = new Elysia({
   )
   .patch(
     '/:id',
-    async ({ params: { id }, currentUser, body }) =>
+    async ({ params: { id }, body }) =>
       castToRes(
         await usersService.updateUser({
           targetUserId: id,
-          actorId: currentUser.id,
           ...body,
         }),
       ),
@@ -112,11 +109,10 @@ export const usersAdminController = new Elysia({
   .use(authorize(has('USER.RESET_MFA')))
   .post(
     '/:id/mfa/reset',
-    async ({ params: { id }, currentUser, body }) =>
+    async ({ params: { id }, body }) =>
       castToRes(
         await usersService.resetUserMfa({
           targetUserId: id,
-          actorId: currentUser.id,
           ...body,
         }),
       ),
@@ -132,11 +128,10 @@ export const usersAdminController = new Elysia({
   )
   .post(
     '/:id/mfa/disable',
-    async ({ params: { id }, currentUser, body }) =>
+    async ({ params: { id }, body }) =>
       castToRes(
         await usersService.disableUserMfa({
           targetUserId: id,
-          actorId: currentUser.id,
           ...body,
         }),
       ),

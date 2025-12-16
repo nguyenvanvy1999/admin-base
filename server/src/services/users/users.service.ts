@@ -9,6 +9,7 @@ import type {
   AdminUserUpdateRolesParams,
 } from 'src/dtos/users.dto';
 import {
+  AuditLogVisibility,
   type Prisma,
   type UserSelect,
   UserStatus,
@@ -33,14 +34,12 @@ import {
   sessionService,
 } from 'src/services/auth/session.service';
 import {
-  ACTIVITY_TYPE,
-  AuditEventCategory,
   BadReqErr,
   DB_PREFIX,
   defaultRoles,
   ErrCode,
   IdUtil,
-  type MfaMethod,
+  type MfaChangeMethod,
   NotFoundErr,
   normalizeEmail,
   ServiceUtils,
@@ -48,13 +47,11 @@ import {
 
 type BaseUserActionParams = {
   targetUserId: string;
-  actorId: string;
 } & AdminUserMfaActionParams;
 type UpdateUserParams = BaseUserActionParams & AdminUserUpdateParams;
-type CreateUserParams = { actorId: string } & AdminUserCreateParams;
+
 type UpdateUserRolesParams = {
   targetUserId: string;
-  actorId: string;
 } & AdminUserUpdateRolesParams;
 
 const baseUserSelect = {
@@ -91,9 +88,10 @@ export class UsersService {
     },
   ) {}
 
-  async createUser(params: CreateUserParams): Promise<AdminUserActionResult> {
-    const { actorId, email, password, name, roleIds, status, emailVerified } =
-      params;
+  async createUser(
+    params: AdminUserCreateParams,
+  ): Promise<AdminUserActionResult> {
+    const { email, password, name, roleIds, status, emailVerified } = params;
 
     this.deps.passwordValidationService.validatePasswordOrThrow(password);
     const normalizedEmail = normalizeEmail(email);
@@ -132,10 +130,9 @@ export class UsersService {
       });
     });
 
-    const auditLogId = await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.CREATE_USER,
-      payload: {
-        category: AuditEventCategory.CUD,
+    await this.deps.auditLogService.pushCud(
+      {
+        category: 'cud',
         entityType: 'user',
         entityId: userId,
         action: 'create',
@@ -145,12 +142,15 @@ export class UsersService {
           username: { previous: null, next: normalizedEmail },
         },
       },
-      userId: actorId,
-    });
+      {
+        visibility: AuditLogVisibility.actor_and_subject,
+        subjectUserId: userId,
+        entityDisplay: { email: normalizedEmail },
+      },
+    );
 
     return {
       userId,
-      auditLogId,
     };
   }
 
@@ -275,9 +275,9 @@ export class UsersService {
 
   private async performMfaReset(
     params: BaseUserActionParams,
-    method: MfaMethod,
+    method: MfaChangeMethod,
   ): Promise<AdminUserActionResult> {
-    const { targetUserId, actorId, reason } = params;
+    const { targetUserId, reason } = params;
     const normalizedReason = ServiceUtils.normalizeReason(reason);
     const user = await this.ensureUserExists(targetUserId);
     if (user.protected) {
@@ -286,18 +286,28 @@ export class UsersService {
 
     await this.resetMfaState(targetUserId);
 
-    const auditLogId = await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.RESET_MFA,
-      payload: {
-        method,
-        reason: normalizedReason,
-        actorId,
-        targetUserId,
-        previouslyEnabled: user.mfaTotpEnabled ?? false,
+    await this.deps.auditLogService.pushCud(
+      {
+        category: 'cud',
+        entityType: 'user',
+        entityId: targetUserId,
+        action: 'update',
+        changes: {
+          mfaTotpEnabled: {
+            previous: user.mfaTotpEnabled ?? false,
+            next: false,
+          },
+          reason: { previous: null, next: normalizedReason },
+          method: { previous: null, next: method },
+        },
       },
-    });
+      {
+        visibility: AuditLogVisibility.actor_and_subject,
+        subjectUserId: targetUserId,
+      },
+    );
 
-    return { userId: targetUserId, auditLogId };
+    return { userId: targetUserId };
   }
 
   async updateUser(params: UpdateUserParams): Promise<AdminUserActionResult> {
@@ -392,20 +402,22 @@ export class UsersService {
       await this.deps.sessionService.revoke(targetUserId);
     }
 
-    const auditLogId = await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.UPDATE_USER,
-      payload: {
-        category: AuditEventCategory.CUD,
+    await this.deps.auditLogService.pushCud(
+      {
+        category: 'cud',
         entityType: 'user',
         entityId: targetUserId,
         action: 'update',
         changes: auditChanges,
       },
-    });
+      {
+        visibility: AuditLogVisibility.actor_and_subject,
+        subjectUserId: targetUserId,
+      },
+    );
 
     return {
       userId: targetUserId,
-      auditLogId,
     };
   }
 
@@ -472,10 +484,9 @@ export class UsersService {
       }
     });
 
-    const auditLogId = await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.UPDATE_USER,
-      payload: {
-        category: AuditEventCategory.CUD,
+    await this.deps.auditLogService.pushCud(
+      {
+        category: 'cud',
         entityType: 'user',
         entityId: targetUserId,
         action: 'update',
@@ -492,11 +503,14 @@ export class UsersService {
           },
         },
       },
-    });
+      {
+        visibility: AuditLogVisibility.actor_and_subject,
+        subjectUserId: targetUserId,
+      },
+    );
 
     return {
       userId: targetUserId,
-      auditLogId,
     };
   }
 

@@ -4,11 +4,9 @@ import { type ISettingCache, settingCache } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import type { UpdateSettingParams } from 'src/dtos/settings.dto';
 import type { Setting, SettingSelect } from 'src/generated';
-import { SettingDataType } from 'src/generated';
+import { AuditLogVisibility, SettingDataType } from 'src/generated';
 import { EncryptService } from 'src/services/auth/encrypt.service';
 import {
-  ACTIVITY_TYPE,
-  AuditEventCategory,
   BadReqErr,
   type defaultSettings,
   ErrCode,
@@ -651,11 +649,9 @@ export class SettingsService {
 
     const displayNewValue = isSecret ? '***' : this.getValue<string>(updated);
 
-    await this.deps.auditLogService.push({
-      type: ACTIVITY_TYPE.UPDATE_SETTING,
-      userId: actorId,
-      payload: {
-        category: AuditEventCategory.CUD,
+    await this.deps.auditLogService.pushCud(
+      {
+        category: 'cud',
         entityType: 'setting',
         entityId: id,
         action: 'update',
@@ -668,7 +664,8 @@ export class SettingsService {
           isSecret: { previous: setting.isSecret, next: updated.isSecret },
         },
       },
-    });
+      { visibility: AuditLogVisibility.admin_only },
+    );
     return { id: updated.id };
   }
 
@@ -685,10 +682,9 @@ export class SettingsService {
     if (result.auditEntries.length > 0) {
       await this.deps.auditLogService.pushBatch(
         result.auditEntries.map((entry) => ({
-          type: ACTIVITY_TYPE.UPDATE_SETTING as const,
-          userId: actorId,
+          type: 'cud' as const,
           payload: {
-            category: AuditEventCategory.CUD,
+            category: 'cud',
             entityType: 'setting',
             entityId: entry.id,
             action: 'update',

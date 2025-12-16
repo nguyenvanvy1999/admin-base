@@ -20,13 +20,7 @@ import {
   executeListQuery,
   normalizeSearchTerm,
 } from 'src/services/shared/utils';
-import {
-  ACTIVITY_TYPE,
-  AuditEventCategory,
-  type CudDeletePayload,
-  ErrCode,
-  IdUtil,
-} from 'src/share';
+import { ErrCode, IdUtil } from 'src/share';
 import type { AuditLogsService } from '../audit-logs';
 
 const ipWhitelistSelect = {
@@ -201,11 +195,9 @@ export class IpWhitelistService {
       });
       await this.invalidateCache(existing.userId);
 
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.UPDATE_IP_WHITELIST,
-        userId: currentUserId,
-        payload: {
-          category: AuditEventCategory.CUD,
+      await this.deps.auditLogService.pushCud(
+        {
+          category: 'cud',
           entityType: 'ip_whitelist',
           entityId: id,
           action: 'update',
@@ -214,7 +206,8 @@ export class IpWhitelistService {
             note: { previous: existing.note, next: note },
           },
         },
-      });
+        { subjectUserId: existing.userId },
+      );
 
       return { id: updated.id };
     } else {
@@ -231,11 +224,9 @@ export class IpWhitelistService {
       });
       await this.invalidateCache(finalUserId);
 
-      await this.deps.auditLogService.push({
-        type: ACTIVITY_TYPE.CREATE_IP_WHITELIST,
-        userId: currentUserId,
-        payload: {
-          category: AuditEventCategory.CUD,
+      await this.deps.auditLogService.pushCud(
+        {
+          category: 'cud',
           entityType: 'ip_whitelist',
           entityId: created.id,
           action: 'create',
@@ -245,7 +236,8 @@ export class IpWhitelistService {
             userId: { previous: null, next: finalUserId },
           },
         },
-      });
+        { subjectUserId: finalUserId },
+      );
 
       return { id: created.id };
     }
@@ -283,18 +275,17 @@ export class IpWhitelistService {
 
     if (affectedUsers.length > 0) {
       const auditEntries = affectedUsers.map((item) => ({
-        type: ACTIVITY_TYPE.DEL_IP_WHITELIST,
-        userId: currentUserId,
+        type: 'cud' as const,
         payload: {
-          category: AuditEventCategory.CUD,
+          category: 'cud' as const,
           entityType: 'ip_whitelist',
           entityId: item.id,
-          action: 'delete',
+          action: 'delete' as const,
           changes: {
             ips: { previous: [item.ip], next: [] },
             userId: { previous: item.userId, next: null },
           },
-        } satisfies CudDeletePayload<'ip_whitelist'>,
+        },
       }));
       await this.deps.auditLogService.pushBatch(auditEntries);
     }
