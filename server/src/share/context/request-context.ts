@@ -3,7 +3,7 @@ import { BadReqErr, ErrCode } from '../error';
 import type { IReqMeta } from '../type';
 
 export const ctxStore = new AsyncLocalStorage<
-  IReqMeta & { userId?: string; sessionId?: string }
+  IReqMeta & { userId?: string; sessionId?: string; apiKeyId?: string }
 >();
 
 export function getIpAndUa<T extends boolean = true>(

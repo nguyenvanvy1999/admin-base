@@ -5,6 +5,7 @@ export {
   apiKeyUsageService,
   type IApiKeyUsageStats,
 } from './api-key-usage.service';
+export { apiKeyUsageLoggerMiddleware } from './api-key-usage-logger.middleware';
 export {
   type ApiKeyValidationService,
   apiKeyValidationService,
