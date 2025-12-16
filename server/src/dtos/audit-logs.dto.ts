@@ -48,7 +48,7 @@ export const AuditLogItemDto = t.Object({
   description: t.Nullable(t.String()),
   level: t.Enum(LogLevel),
   logType: t.Enum(LogType),
-  category: t.Optional(t.Enum(AuditLogCategory)),
+  category: t.Nullable(t.Enum(AuditLogCategory)),
   visibility: t.Enum(AuditLogVisibility),
   eventType: t.Nullable(t.Enum(SecurityEventType)),
   severity: t.Nullable(t.Enum(SecurityEventSeverity)),

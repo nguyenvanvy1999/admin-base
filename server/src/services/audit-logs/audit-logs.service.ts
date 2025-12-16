@@ -1,357 +1,452 @@
-import { db, type IDb } from 'src/config/db';
-import { auditLogQueue, type IAuditLogQueue } from 'src/config/queue';
+import { db } from 'src/config/db';
+import { auditLogQueue } from 'src/config/queue';
 import type {
-  AuditLogItem,
   AuditLogListParams,
   AuditLogListRes,
 } from 'src/dtos/audit-logs.dto';
+import type { AuditLogWhereInput } from 'src/generated';
 import {
-  type AuditLogSelect,
+  AuditLogCategory,
   AuditLogVisibility,
-  type AuditLogWhereInput,
+  LogLevel,
   LogType,
-  type SecurityEventSeverity,
-  type SecurityEventType,
+  SecurityEventSeverity,
+  SecurityEventType,
 } from 'src/generated';
-import { executeListQuery } from 'src/services/shared/utils';
-import {
-  ACTIVITY_TYPE,
-  AuditEventCategory,
-  BadReqErr,
-  type EnrichedAuditLogEntry,
-  ErrCode,
-  getSecurityEventDescription,
-  LOG_LEVEL,
-  type PrismaTx,
-} from 'src/share';
-import { AuditLogFactory } from './audit-log.factory';
-import {
-  type AuditEventInput,
-  CUD_ACTIVITY_TYPES,
-  type CudAuditInput,
-  type OtherAuditInput,
-  SECURITY_ACTIVITY_TYPES,
-  type SecurityAuditInput,
-} from './types';
-
-const JOB_NAME = 'audit-log';
-
-type CreateSecurityEventParams = {
-  userId?: string;
-  eventType: SecurityEventType;
-  severity?: SecurityEventSeverity;
-  location?: Record<string, unknown>;
-  metadata?: Record<string, unknown>;
-};
-
-type ResolveAuditLogParams = {
-  id: string;
-  resolvedBy?: string;
-  tx?: PrismaTx;
-};
-
-const USER_VISIBLE = new Set<AuditLogVisibility>([
-  AuditLogVisibility.actor_only,
-  AuditLogVisibility.actor_and_subject,
-  AuditLogVisibility.public,
-]);
-
-const AUDIT_LOG_LIST_SELECT = {
-  id: true,
-  payload: true,
-  description: true,
-  level: true,
-  logType: true,
-  category: true,
-  visibility: true,
-  eventType: true,
-  severity: true,
-  userId: true,
-  subjectUserId: true,
-  sessionId: true,
-  entityType: true,
-  entityId: true,
-  entityDisplay: true,
-  ip: true,
-  userAgent: true,
-  requestId: true,
-  traceId: true,
-  correlationId: true,
-  resolved: true,
-  resolvedAt: true,
-  resolvedBy: true,
-  occurredAt: true,
-  created: true,
-} satisfies AuditLogSelect;
+import { executeListQuery } from 'src/services/shared/utils/list-query.util';
+import { IdUtil, LOG_LEVEL } from 'src/share';
+import { ctxStore, getIpAndUa } from 'src/share/context/request-context';
+import type { EnrichedAuditLogEntry } from 'src/share/type';
+import type { EntityType } from './types';
+import type {
+  CudCreatePayload,
+  CudDeletePayload,
+  CudUpdatePayload,
+} from './types/cud-types';
+import type {
+  InternalEventPayload,
+  InternalEventType,
+} from './types/internal-types';
+import type { SecurityEventPayloadBase } from './types/security-types';
 
 export class AuditLogsService {
-  constructor(
-    private readonly deps: {
-      db: IDb;
-      queue: IAuditLogQueue;
-      factory: AuditLogFactory;
-    } = {
-      db,
-      queue: auditLogQueue,
-      factory: new AuditLogFactory(),
+  async pushCud<
+    TEntityType extends EntityType,
+    TAction extends 'create' | 'update' | 'delete',
+  >(
+    payload: TAction extends 'create'
+      ? CudCreatePayload<TEntityType>
+      : TAction extends 'update'
+        ? CudUpdatePayload<TEntityType>
+        : CudDeletePayload<TEntityType>,
+    options?: {
+      visibility?: AuditLogVisibility;
+      subjectUserId?: string;
+      entityDisplay?: Record<string, unknown>;
     },
-  ) {}
+  ): Promise<void> {
+    const context = this.getContext();
+    const enrichedEntry = this.enrichCudEntry(payload, context, options);
 
-  logSecurityEvent(params: CreateSecurityEventParams): Promise<string> {
-    const { userId, eventType, severity, location, metadata } = params;
-
-    return this.push<ACTIVITY_TYPE.SECURITY_EVENT>({
-      logType: LogType.security,
-      type: ACTIVITY_TYPE.SECURITY_EVENT,
-      payload: {
-        category: AuditEventCategory.SECURITY,
-        metadata,
-        location,
+    await auditLogQueue.add(
+      `cud-${payload.entityType}-${payload.action}`,
+      enrichedEntry,
+      {
+        jobId: enrichedEntry.logId,
       },
-      eventType,
-      severity,
-      description: getSecurityEventDescription(eventType, metadata),
-      userId,
-      resolved: false,
-      level: LOG_LEVEL.WARNING,
-    });
-  }
-
-  private buildJob<T extends ACTIVITY_TYPE>(
-    entry: Omit<AuditEventInput<T>, 'ip' | 'userAgent' | 'requestId'>,
-  ) {
-    const { entry: enrichedEntry, logId } = this.deps.factory.create(
-      entry as AuditEventInput<T>,
     );
-
-    return { logId, enrichedEntry };
   }
 
-  async push<T extends ACTIVITY_TYPE>(
-    entry: Omit<AuditEventInput<T>, 'ip' | 'userAgent' | 'requestId'>,
-  ): Promise<string> {
-    const { enrichedEntry, logId } = this.buildJob(entry);
+  async pushSecurity<TEventType extends SecurityEventType>(
+    payload: SecurityEventPayloadBase<TEventType>,
+    options?: {
+      visibility?: AuditLogVisibility;
+      subjectUserId?: string;
+      resolved?: boolean;
+    },
+  ): Promise<void> {
+    const context = this.getContext();
+    const enrichedEntry = this.enrichSecurityEntry(payload, context, options);
 
-    await this.deps.queue.add(JOB_NAME, enrichedEntry, {
-      jobId: logId,
+    await auditLogQueue.add(`security-${payload.eventType}`, enrichedEntry, {
+      jobId: enrichedEntry.logId,
     });
-
-    return logId;
   }
 
-  async pushBatch<T extends ACTIVITY_TYPE>(
-    entries: Omit<AuditEventInput<T>, 'ip' | 'userAgent' | 'requestId'>[],
-  ): Promise<string[]> {
-    if (entries.length === 0) return [];
+  async pushOther<TEventType extends InternalEventType>(
+    payload: InternalEventPayload<TEventType>,
+    options?: {
+      logType?: LogType;
+      visibility?: AuditLogVisibility;
+      subjectUserId?: string;
+    },
+  ): Promise<void> {
+    const context = this.getContext();
+    const enrichedEntry = this.enrichOtherEntry(payload, context, options);
 
-    const jobs = entries.map((entry) => this.buildJob(entry));
-    const jobIds = jobs.map((job) => job.logId);
-    const enrichedEntries: { name: string; data: EnrichedAuditLogEntry }[] =
-      jobs.map((job) => ({ name: JOB_NAME, data: job.enrichedEntry }));
-
-    await this.deps.queue.addBulk(enrichedEntries);
-
-    return jobIds;
+    await auditLogQueue.add(`other-${payload.eventType}`, enrichedEntry, {
+      jobId: enrichedEntry.logId,
+    });
   }
 
-  pushCud(
-    entry: Omit<CudAuditInput, 'ip' | 'userAgent' | 'requestId'>,
-  ): Promise<string> {
-    if (!CUD_ACTIVITY_TYPES.includes(entry.type)) {
-      throw new BadReqErr(ErrCode.InvalidParams);
-    }
-    return this.push(entry);
-  }
+  async pushBatch(
+    entries: Array<
+      | {
+          type: 'cud';
+          payload:
+            | CudCreatePayload<EntityType>
+            | CudUpdatePayload<EntityType>
+            | CudDeletePayload<EntityType>;
+        }
+      | {
+          type: 'security';
+          payload: SecurityEventPayloadBase<SecurityEventType>;
+        }
+      | { type: 'other'; payload: InternalEventPayload<InternalEventType> }
+    >,
+  ): Promise<void> {
+    const context = this.getContext();
 
-  pushSecurity(
-    entry: Omit<SecurityAuditInput, 'ip' | 'userAgent' | 'requestId'>,
-  ): Promise<string> {
-    if (!SECURITY_ACTIVITY_TYPES.includes(entry.type)) {
-      throw new BadReqErr(ErrCode.InvalidParams);
-    }
-    return this.push(entry);
-  }
-
-  pushOther(
-    entry: Omit<OtherAuditInput, 'ip' | 'userAgent' | 'requestId'>,
-  ): Promise<string> {
-    if (
-      CUD_ACTIVITY_TYPES.includes(entry.type) ||
-      SECURITY_ACTIVITY_TYPES.includes(entry.type)
-    ) {
-      throw new BadReqErr(ErrCode.InvalidParams);
-    }
-    return this.push(entry);
-  }
-
-  pushBatchCud(
-    entries: Omit<CudAuditInput, 'ip' | 'userAgent' | 'requestId'>[],
-  ): Promise<string[]> {
-    entries.forEach((entry) => {
-      if (!CUD_ACTIVITY_TYPES.includes(entry.type)) {
-        throw new BadReqErr(ErrCode.InvalidParams);
+    const enrichedEntries = entries.map((entry) => {
+      if (entry.type === 'cud') {
+        return this.enrichCudEntry(entry.payload, context);
+      } else if (entry.type === 'security') {
+        return this.enrichSecurityEntry(entry.payload, context);
+      } else {
+        return this.enrichOtherEntry(entry.payload, context);
       }
     });
-    return this.pushBatch(entries);
-  }
 
-  pushBatchSecurity(
-    entries: Omit<SecurityAuditInput, 'ip' | 'userAgent' | 'requestId'>[],
-  ): Promise<string[]> {
-    entries.forEach((entry) => {
-      if (!SECURITY_ACTIVITY_TYPES.includes(entry.type)) {
-        throw new BadReqErr(ErrCode.InvalidParams);
-      }
-    });
-    return this.pushBatch(entries);
-  }
-
-  pushBatchOther(
-    entries: Omit<OtherAuditInput, 'ip' | 'userAgent' | 'requestId'>[],
-  ): Promise<string[]> {
-    entries.forEach((entry) => {
-      if (
-        CUD_ACTIVITY_TYPES.includes(entry.type) ||
-        SECURITY_ACTIVITY_TYPES.includes(entry.type)
-      ) {
-        throw new BadReqErr(ErrCode.InvalidParams);
-      }
-    });
-    return this.pushBatch(entries);
-  }
-
-  resolve(params: ResolveAuditLogParams) {
-    const { id, resolvedBy, tx } = params;
-    const dbInstance = tx || this.deps.db;
-
-    return dbInstance.auditLog.update({
-      where: { id: BigInt(id) },
-      data: {
-        resolved: true,
-        resolvedAt: new Date(),
-        resolvedBy,
-      },
-      select: {
-        id: true,
-        resolved: true,
-        resolvedAt: true,
-        resolvedBy: true,
-      },
-    });
+    await Promise.all(
+      enrichedEntries.map((entry) =>
+        auditLogQueue.add(`${entry.type}-${entry.logId}`, entry, {
+          jobId: entry.logId,
+        }),
+      ),
+    );
   }
 
   async list(params: AuditLogListParams): Promise<AuditLogListRes> {
     const {
-      take,
+      currentUserId,
+      hasViewPermission,
       skip,
+      take,
       userId,
-      subjectUserId,
       sessionId,
       entityType,
       entityId,
+      level,
+      logType,
       eventType,
       severity,
       resolved,
-      level,
-      logType,
-      category,
-      visibility,
       ip,
       traceId,
       correlationId,
+      subjectUserId,
+      category,
+      visibility,
       occurredAt0,
       occurredAt1,
-      currentUserId,
-      hasViewPermission,
     } = params;
 
-    const conditions: AuditLogWhereInput[] = [];
-
-    const assertCanView = (targetUserId?: string | null) => {
-      if (!targetUserId) return;
-      if (!hasViewPermission && targetUserId !== currentUserId) {
-        throw new BadReqErr(ErrCode.PermissionDenied);
-      }
+    const where: AuditLogWhereInput = {
+      ...(userId && { userId }),
+      ...(sessionId && { sessionId }),
+      ...(entityType && { entityType }),
+      ...(entityId && { entityId }),
+      ...(level && { level }),
+      ...(logType && { logType }),
+      ...(eventType && { eventType }),
+      ...(severity && { severity }),
+      ...(resolved !== undefined && { resolved }),
+      ...(ip && { ip }),
+      ...(traceId && { traceId }),
+      ...(correlationId && { correlationId }),
+      ...(subjectUserId && { subjectUserId }),
+      ...(category && { category }),
+      ...(visibility && { visibility }),
+      ...(occurredAt0 &&
+        occurredAt1 && {
+          occurredAt: {
+            gte: occurredAt0,
+            lte: occurredAt1,
+          },
+        }),
     };
 
-    const pushCondition = <T>(
-      value: T | undefined | null,
-      build: (val: T) => AuditLogWhereInput,
-    ) => {
-      if (value !== undefined && value !== null) {
-        conditions.push(build(value));
-      }
-    };
-
-    assertCanView(userId);
-    assertCanView(subjectUserId);
-
-    pushCondition(userId, (val) => ({ userId: val }));
-    pushCondition(subjectUserId, (val) => ({ subjectUserId: val }));
-    pushCondition(category, (val) => ({ category: val }));
-    pushCondition(visibility, (val) => {
-      if (!hasViewPermission && !USER_VISIBLE.has(val)) {
-        throw new BadReqErr(ErrCode.PermissionDenied);
-      }
-      return { visibility: val };
-    });
-
-    if (!hasViewPermission) {
-      conditions.push({
-        OR: [{ userId: currentUserId }, { subjectUserId: currentUserId }],
-      });
-      conditions.push({
-        visibility: { in: Array.from(USER_VISIBLE) },
-      });
+    if (hasViewPermission) {
+      where.OR = [
+        { visibility: 'public' },
+        { visibility: 'admin_only' },
+        { visibility: 'actor_only', userId: currentUserId },
+        { visibility: 'subject_only', subjectUserId: currentUserId },
+        {
+          visibility: 'actor_and_subject',
+          OR: [{ userId: currentUserId }, { subjectUserId: currentUserId }],
+        },
+      ];
+    } else {
+      where.OR = [
+        { visibility: 'public' },
+        { visibility: 'actor_only', userId: currentUserId },
+        { visibility: 'subject_only', subjectUserId: currentUserId },
+        {
+          visibility: 'actor_and_subject',
+          OR: [{ userId: currentUserId }, { subjectUserId: currentUserId }],
+        },
+      ];
     }
 
-    pushCondition(sessionId, (val) => ({ sessionId: val }));
-    pushCondition(entityType, (val) => ({ entityType: val }));
-    pushCondition(entityId, (val) => ({ entityId: val }));
-    pushCondition(eventType, (val) => ({ eventType: val }));
-    pushCondition(severity, (val) => ({ severity: val }));
-    if (resolved !== undefined) {
-      conditions.push({ resolved });
-    }
-    pushCondition(level, (val) => ({ level: val }));
-    pushCondition(logType, (val) => ({ logType: val }));
-    pushCondition(ip, (val) => ({ ip: val }));
-    pushCondition(traceId, (val) => ({ traceId: val }));
-    pushCondition(correlationId, (val) => ({ correlationId: val }));
-
-    if (occurredAt0 || occurredAt1) {
-      const dateCondition: AuditLogWhereInput['occurredAt'] = {};
-      if (occurredAt0) {
-        dateCondition.gte = new Date(occurredAt0);
-      }
-      if (occurredAt1) {
-        dateCondition.lte = new Date(occurredAt1);
-      }
-      conditions.push({ occurredAt: dateCondition });
-    }
-
-    const where = conditions.length > 0 ? { AND: conditions } : undefined;
-
-    const { docs, count } = await executeListQuery(this.deps.db.auditLog, {
+    const result = await executeListQuery(db.auditLog, {
       where,
-      select: AUDIT_LOG_LIST_SELECT,
+      orderBy: { occurredAt: 'desc' },
       take,
       skip,
-      orderBy: { occurredAt: 'desc' },
     });
 
-    const formattedDocs: AuditLogItem[] = docs.map((doc) => ({
-      ...doc,
-      category: doc.category ?? undefined,
-      visibility: doc.visibility ?? AuditLogVisibility.actor_only,
-      payload: doc.payload,
-      id: doc.id.toString(),
-    }));
+    return {
+      docs: result.docs.map((doc) => ({
+        ...doc,
+        id: doc.id.toString(),
+      })),
+      count: result.count,
+    };
+  }
+
+  private getContext() {
+    const store = ctxStore.getStore();
+    let ip: string | null = null;
+    let userAgent: string | null = null;
+
+    try {
+      const ipAndUa = getIpAndUa();
+      ip = ipAndUa.clientIp;
+      userAgent = ipAndUa.userAgent;
+    } catch {
+      ip = null;
+      userAgent = null;
+    }
 
     return {
-      docs: formattedDocs,
-      count,
+      userId: store?.userId ?? null,
+      sessionId: store?.sessionId ?? null,
+      ip,
+      userAgent,
+      requestId: store?.id ?? null,
+      traceId: store?.id ?? null,
+      correlationId: store?.id ?? null,
+      timestamp: new Date(),
     };
+  }
+
+  private enrichCudEntry(
+    payload:
+      | CudCreatePayload<EntityType>
+      | CudUpdatePayload<EntityType>
+      | CudDeletePayload<EntityType>,
+    context: ReturnType<typeof this.getContext>,
+    options?: {
+      visibility?: AuditLogVisibility;
+      subjectUserId?: string;
+      entityDisplay?: Record<string, unknown>;
+    },
+  ): EnrichedAuditLogEntry {
+    const logId = IdUtil.snowflakeId().toString();
+    const description = this.generateCudDescription(payload);
+
+    const visibility =
+      options?.visibility ?? this.getDefaultCudVisibility(payload);
+
+    return {
+      logId,
+      type: 'INTERNAL_ERROR' as any,
+      logType: LogType.audit,
+      level: LOG_LEVEL.INFO,
+      category: AuditLogCategory.cud,
+      visibility,
+      userId: context.userId,
+      sessionId: context.sessionId,
+      entityType: payload.entityType,
+      entityId: payload.entityId,
+      entityDisplay: options?.entityDisplay ?? payload.entityDisplay ?? null,
+      subjectUserId: options?.subjectUserId ?? null,
+      ip: context.ip,
+      userAgent: context.userAgent,
+      requestId: context.requestId,
+      traceId: context.traceId,
+      correlationId: context.correlationId,
+      payload: payload as Record<string, unknown>,
+      description,
+      timestamp: context.timestamp,
+    };
+  }
+
+  private enrichSecurityEntry(
+    payload: SecurityEventPayloadBase<SecurityEventType>,
+    context: ReturnType<typeof this.getContext>,
+    options?: {
+      visibility?: AuditLogVisibility;
+      subjectUserId?: string;
+      resolved?: boolean;
+    },
+  ): EnrichedAuditLogEntry {
+    const logId = IdUtil.snowflakeId().toString();
+    const description = this.generateSecurityDescription(payload);
+
+    const visibility =
+      options?.visibility ?? this.getDefaultSecurityVisibility(payload);
+
+    return {
+      logId,
+      type: 'SECURITY_EVENT' as any,
+      logType: LogType.security,
+      level: this.mapSeverityToLogLevel(payload.severity),
+      category: AuditLogCategory.security,
+      visibility,
+      eventType: payload.eventType,
+      severity: payload.severity,
+      userId: context.userId,
+      sessionId: context.sessionId,
+      subjectUserId: options?.subjectUserId ?? context.userId ?? null,
+      ip: context.ip,
+      userAgent: context.userAgent,
+      requestId: context.requestId,
+      traceId: context.traceId,
+      correlationId: context.correlationId,
+      payload: {
+        ...payload,
+        location: payload.location,
+        metadata: payload.metadata,
+      },
+      description,
+      resolved: options?.resolved ?? false,
+      timestamp: context.timestamp,
+    };
+  }
+
+  private enrichOtherEntry(
+    payload: InternalEventPayload<InternalEventType>,
+    context: ReturnType<typeof this.getContext>,
+    options?: {
+      logType?: LogType;
+      visibility?: AuditLogVisibility;
+      subjectUserId?: string;
+    },
+  ): EnrichedAuditLogEntry {
+    const logId = IdUtil.snowflakeId().toString();
+    const description = this.generateOtherDescription(payload);
+
+    return {
+      logId,
+      type: 'INTERNAL_ERROR' as any,
+      logType: options?.logType ?? this.getDefaultLogType(payload.eventType),
+      level: this.mapLogLevelToLogLevel(payload.level),
+      category: payload.category as AuditLogCategory,
+      visibility: options?.visibility ?? AuditLogVisibility.admin_only,
+      userId: context.userId,
+      sessionId: context.sessionId,
+      subjectUserId: options?.subjectUserId ?? null,
+      ip: context.ip,
+      userAgent: context.userAgent,
+      requestId: context.requestId,
+      traceId: context.traceId,
+      correlationId: context.correlationId,
+      payload: payload as Record<string, unknown>,
+      description,
+      timestamp: context.timestamp,
+    };
+  }
+
+  private getDefaultCudVisibility(
+    payload:
+      | CudCreatePayload<EntityType>
+      | CudUpdatePayload<EntityType>
+      | CudDeletePayload<EntityType>,
+  ): AuditLogVisibility {
+    if (payload.entityType === 'user') {
+      return AuditLogVisibility.actor_and_subject;
+    }
+    if (payload.entityType === 'role' || payload.entityType === 'setting') {
+      return AuditLogVisibility.admin_only;
+    }
+    return AuditLogVisibility.actor_only;
+  }
+
+  private getDefaultSecurityVisibility(
+    payload: SecurityEventPayloadBase<SecurityEventType>,
+  ): AuditLogVisibility {
+    const userVisibleEvents: SecurityEventType[] = [
+      SecurityEventType.login_success,
+      SecurityEventType.login_failed,
+      SecurityEventType.password_changed,
+      SecurityEventType.mfa_enabled,
+      SecurityEventType.mfa_disabled,
+    ];
+
+    if (userVisibleEvents.includes(payload.eventType)) {
+      return AuditLogVisibility.actor_and_subject;
+    }
+
+    return AuditLogVisibility.admin_only;
+  }
+
+  private mapSeverityToLogLevel(severity: SecurityEventSeverity): LOG_LEVEL {
+    const map: Record<SecurityEventSeverity, LOG_LEVEL> = {
+      [SecurityEventSeverity.low]: LOG_LEVEL.INFO,
+      [SecurityEventSeverity.medium]: LOG_LEVEL.WARNING,
+      [SecurityEventSeverity.high]: LOG_LEVEL.ERROR,
+      [SecurityEventSeverity.critical]: LOG_LEVEL.FATAL,
+    };
+    return map[severity];
+  }
+
+  private mapLogLevelToLogLevel(level: LogLevel): LOG_LEVEL {
+    const map: Record<LogLevel, LOG_LEVEL> = {
+      [LogLevel.info]: LOG_LEVEL.INFO,
+      [LogLevel.warn]: LOG_LEVEL.WARNING,
+      [LogLevel.error]: LOG_LEVEL.ERROR,
+      [LogLevel.critical]: LOG_LEVEL.FATAL,
+    };
+    return map[level];
+  }
+
+  private getDefaultLogType(eventType: InternalEventType): LogType {
+    if (eventType === 'rate_limit') return LogType.rate_limit;
+    if (eventType === 'api_event') return LogType.api;
+    if (eventType === 'system_event') return LogType.system;
+    return LogType.audit;
+  }
+
+  private generateCudDescription(
+    payload:
+      | CudCreatePayload<EntityType>
+      | CudUpdatePayload<EntityType>
+      | CudDeletePayload<EntityType>,
+  ): string {
+    const { entityType, entityId, action } = payload;
+
+    if (action === 'create') {
+      return `${entityType} created: ${entityId}`;
+    }
+    if (action === 'update') {
+      const changeKeys = Object.keys(payload.changes ?? {});
+      return `${entityType} updated: ${entityId} [${changeKeys.join(', ')}]`;
+    }
+    return `${entityType} deleted: ${entityId}`;
+  }
+
+  private generateSecurityDescription(
+    payload: SecurityEventPayloadBase<SecurityEventType>,
+  ): string {
+    return `Security event: ${payload.eventType}`;
+  }
+
+  private generateOtherDescription(
+    payload: InternalEventPayload<InternalEventType>,
+  ): string {
+    return `Internal event: ${payload.eventType}`;
   }
 }
 
