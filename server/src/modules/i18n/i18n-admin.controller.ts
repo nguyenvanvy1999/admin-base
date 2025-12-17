@@ -32,13 +32,13 @@ export const i18nAdminController = new Elysia({
   .post(
     '/',
     async ({ body }) => {
-      const result = await i18nService.upsert(body);
-      return castToRes(result);
+      await i18nService.upsert(body);
+      return castToRes(null);
     },
     {
       body: I18nUpsertDto,
       response: {
-        200: ResWrapper(t.Object({ id: t.String() })),
+        200: ResWrapper(t.Null()),
         400: ErrorResDto,
         ...authErrors,
       },

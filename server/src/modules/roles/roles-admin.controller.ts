@@ -49,13 +49,13 @@ export const rolesAdminController = new Elysia({
   .post(
     '/',
     async ({ body, currentUser }) => {
-      const result = await rolesService.upsert(body, currentUser.id);
-      return castToRes(result);
+      await rolesService.upsert(body, currentUser.id);
+      return castToRes(null);
     },
     {
       body: UpsertRoleDto,
       response: {
-        200: ResWrapper(t.Object({ id: t.String() })),
+        200: ResWrapper(t.Null()),
         400: ErrorResDto,
         ...authErrors,
       },

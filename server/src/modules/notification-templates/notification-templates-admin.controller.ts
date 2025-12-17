@@ -55,13 +55,13 @@ export const notificationTemplatesAdminController = new Elysia({
   .post(
     '/',
     async ({ body }) => {
-      const result = await notificationTemplatesService.upsert(body);
-      return castToRes(result);
+      await notificationTemplatesService.upsert(body);
+      return castToRes(null);
     },
     {
       body: UpsertNotificationTemplateDto,
       response: {
-        200: ResWrapper(t.Object({ id: t.String() })),
+        200: ResWrapper(t.Null()),
         400: ErrorResDto,
         ...authErrors,
       },

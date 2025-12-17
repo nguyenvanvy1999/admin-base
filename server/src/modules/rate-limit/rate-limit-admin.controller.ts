@@ -1,6 +1,5 @@
 import { Elysia, t } from 'elysia';
 import {
-  RateLimitConfigItemDto,
   RateLimitConfigListQueryDto,
   RateLimitConfigListResDto,
   UpsertRateLimitConfigDto,
@@ -44,13 +43,13 @@ export const rateLimitAdminController = new Elysia({
   .post(
     '/',
     async ({ body }) => {
-      const config = await rateLimitConfigService.upsert(body);
-      return castToRes(config);
+      await rateLimitConfigService.upsert(body);
+      return castToRes(null);
     },
     {
       body: UpsertRateLimitConfigDto,
       response: {
-        200: ResWrapper(RateLimitConfigItemDto),
+        200: ResWrapper(t.Null()),
         400: ErrorResDto,
         404: ErrorResDto,
         ...authErrors,

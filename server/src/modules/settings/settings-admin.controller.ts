@@ -66,17 +66,14 @@ export const settingsAdminController = new Elysia({
   .post(
     '/:id',
     async ({ body, params: { id }, currentUser }) => {
-      const result = await settingsService.update(
-        { ...body, id },
-        currentUser.id,
-      );
-      return castToRes(result);
+      await settingsService.update({ ...body, id }, currentUser.id);
+      return castToRes(null);
     },
     {
       body: UpdateSettingDto,
       params: IdDto,
       response: {
-        200: ResWrapper(t.Object({ id: t.String() })),
+        200: ResWrapper(t.Null()),
         400: ErrorResDto,
         ...authErrors,
       },
