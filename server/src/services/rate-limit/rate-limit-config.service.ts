@@ -1,10 +1,7 @@
 import { rateLimitConfigCache } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
-import {
-  Prisma,
-  type RateLimitConfigWhereInput,
-  type RateLimitStrategy,
-} from 'src/generated';
+import type { IUpsertRateLimitConfig } from 'src/dtos/rate-limit-config.dto';
+import { Prisma, type RateLimitConfigWhereInput } from 'src/generated';
 import type { RateLimitConfig } from './auth-rate-limit.config';
 
 const CACHE_TTL = 300;
@@ -77,64 +74,68 @@ export class RateLimitConfigService {
     }
   }
 
-  async create(data: {
-    routePath: string;
-    limit: number;
-    windowSeconds: number;
-    strategy: RateLimitStrategy;
-    description?: string;
-  }) {
-    const config = await this.deps.db.rateLimitConfig.create({
-      data: {
-        id: `rlcfg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-        routePath: data.routePath,
-        limit: data.limit,
-        windowSeconds: data.windowSeconds,
-        strategy: data.strategy,
-        description: data.description,
-      },
-    });
+  async upsert(data: IUpsertRateLimitConfig) {
+    if (data.id) {
+      // Update existing
+      const existing = await this.deps.db.rateLimitConfig.findUnique({
+        where: { id: data.id },
+        select: { routePath: true },
+      });
 
-    await this.invalidateCache([data.routePath]);
-    return config;
+      if (!existing) {
+        throw new Error('Rate limit config not found');
+      }
+
+      const config = await this.deps.db.rateLimitConfig.update({
+        where: { id: data.id },
+        data: {
+          routePath: data.routePath,
+          limit: data.limit,
+          windowSeconds: data.windowSeconds,
+          strategy: data.strategy,
+          enabled: data.enabled,
+          description: data.description,
+        },
+      });
+
+      const routePaths = [existing.routePath, data.routePath].filter(
+        Boolean,
+      ) as string[];
+      await this.invalidateCache(routePaths);
+      return config;
+    } else {
+      // Create new
+      const config = await this.deps.db.rateLimitConfig.create({
+        data: {
+          id: `rlcfg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+          routePath: data.routePath,
+          limit: data.limit,
+          windowSeconds: data.windowSeconds,
+          strategy: data.strategy,
+          enabled: data.enabled ?? true,
+          description: data.description,
+        },
+      });
+
+      await this.invalidateCache([data.routePath]);
+      return config;
+    }
   }
 
-  async update(
-    id: string,
-    data: {
-      routePath?: string;
-      limit?: number;
-      windowSeconds?: number;
-      strategy?: RateLimitStrategy;
-      enabled?: boolean;
-      description?: string;
-    },
-  ) {
-    const existing = await this.deps.db.rateLimitConfig.findUnique({
-      where: { id },
-      select: { routePath: true },
+  async deleteMany(ids: string[]) {
+    if (ids.length === 0) return;
+
+    const configs = await this.deps.db.rateLimitConfig.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, routePath: true },
     });
 
-    const config = await this.deps.db.rateLimitConfig.update({
-      where: { id },
-      data,
+    await this.deps.db.rateLimitConfig.deleteMany({
+      where: { id: { in: ids } },
     });
 
-    const routePaths = [existing?.routePath, data.routePath].filter(
-      Boolean,
-    ) as string[];
-
+    const routePaths = configs.map((c) => c.routePath);
     await this.invalidateCache(routePaths);
-    return config;
-  }
-
-  async delete(id: string) {
-    const existing = await this.deps.db.rateLimitConfig.delete({
-      where: { id },
-      select: { routePath: true },
-    });
-
-    await this.invalidateCache([existing.routePath]);
   }
 
   async invalidateCache(routePaths: string[] = []): Promise<void> {

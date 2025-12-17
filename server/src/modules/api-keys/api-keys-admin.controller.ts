@@ -5,11 +5,10 @@ import {
   ApiKeyListQueryDto,
   ApiKeyPaginatedResponseDto,
   ApiKeyResponseDto,
-  CreateApiKeyDto,
-  UpdateApiKeyDto,
+  UpsertApiKeyDto,
 } from 'src/dtos/api-keys.dto';
 import { apiKeyService } from 'src/services/api-keys';
-import { anyOf, authCheck, authorize, has } from 'src/services/auth';
+import { authCheck, authorize, has } from 'src/services/auth';
 import {
   authErrors,
   castToRes,
@@ -63,42 +62,33 @@ export const apiKeysAdminController = new Elysia({
       },
     },
   )
-  .use(authorize(has('API_KEY.CREATE')))
+  .use(authorize(has('API_KEY.UPDATE')))
   .post(
     '/',
-    async ({ body, query: { userId }, currentUser }) => {
-      const result = await apiKeyService.create(userId, body, {
-        currentUserId: currentUser.id,
-        hasCreatePermission: true,
-      });
+    async ({ body, query, currentUser }) => {
+      const userId = query?.userId;
+      const result = await apiKeyService.upsert(
+        {
+          ...body,
+          userId: userId || undefined,
+        },
+        {
+          currentUserId: currentUser.id,
+          hasCreatePermission: true,
+          hasUpdatePermission: true,
+        },
+      );
       return castToRes(result);
     },
     {
-      query: t.Object({
-        userId: t.String({ minLength: 1 }),
-      }),
-      body: CreateApiKeyDto,
+      query: t.Optional(
+        t.Object({
+          userId: t.Optional(t.String({ minLength: 1 })),
+        }),
+      ),
+      body: UpsertApiKeyDto,
       response: {
-        200: ResWrapper(ApiKeyCreatedResponseDto),
-        400: ErrorResDto,
-        ...authErrors,
-      },
-    },
-  )
-  .use(authorize(anyOf(has('API_KEY.UPDATE'))))
-  .put(
-    '/:id',
-    async ({ body, currentUser }) => {
-      const result = await apiKeyService.update(body, {
-        currentUserId: currentUser.id,
-        hasUpdatePermission: true,
-      });
-      return castToRes(result);
-    },
-    {
-      body: UpdateApiKeyDto,
-      response: {
-        200: ResWrapper(ApiKeyResponseDto),
+        200: ResWrapper(t.Union([ApiKeyCreatedResponseDto, ApiKeyResponseDto])),
         400: ErrorResDto,
         404: ErrorResDto,
         ...authErrors,

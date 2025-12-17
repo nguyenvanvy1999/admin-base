@@ -25,6 +25,7 @@ export const i18nAdminController = new Elysia({
     query: I18nPaginationDto,
     response: {
       200: ResWrapper(PaginateI18nResDto),
+      ...authErrors,
     },
   })
   .use(authorize(has('I18N.UPDATE')))
@@ -53,7 +54,8 @@ export const i18nAdminController = new Elysia({
       body: IdsDto,
       response: {
         200: ResWrapper(t.Null()),
-        400: ResWrapper(t.Null()),
+        400: ErrorResDto,
+        ...authErrors,
       },
     },
   )
@@ -69,7 +71,8 @@ export const i18nAdminController = new Elysia({
       }),
       response: {
         200: ResWrapper(t.Null()),
-        400: ResWrapper(t.Null()),
+        400: ErrorResDto,
+        ...authErrors,
       },
     },
   )
@@ -80,7 +83,8 @@ export const i18nAdminController = new Elysia({
     },
     {
       response: {
-        400: ResWrapper(t.Null()),
+        400: ErrorResDto,
+        ...authErrors,
       },
     },
   );

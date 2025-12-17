@@ -1,14 +1,20 @@
 import { Elysia, t } from 'elysia';
 import {
-  CreateRateLimitConfigDto,
   RateLimitConfigItemDto,
   RateLimitConfigListQueryDto,
   RateLimitConfigListResDto,
-  UpdateRateLimitConfigDto,
+  UpsertRateLimitConfigDto,
 } from 'src/dtos/rate-limit-config.dto';
 import { authCheck, authorize, has } from 'src/services/auth';
 import { rateLimitConfigService } from 'src/services/rate-limit/rate-limit-config.service';
-import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
+import {
+  authErrors,
+  castToRes,
+  DOC_TAG,
+  ErrorResDto,
+  IdsDto,
+  ResWrapper,
+} from 'src/share';
 
 export const rateLimitAdminController = new Elysia({
   prefix: '/admin/rate-limits',
@@ -34,46 +40,34 @@ export const rateLimitAdminController = new Elysia({
       },
     },
   )
-  .use(authorize(has('RATE_LIMIT.MANAGE')))
+  .use(authorize(has('RATE_LIMIT.UPDATE')))
   .post(
     '/',
     async ({ body }) => {
-      const config = await rateLimitConfigService.create(body);
+      const config = await rateLimitConfigService.upsert(body);
       return castToRes(config);
     },
     {
-      body: CreateRateLimitConfigDto,
+      body: UpsertRateLimitConfigDto,
       response: {
         200: ResWrapper(RateLimitConfigItemDto),
+        400: ErrorResDto,
+        404: ErrorResDto,
         ...authErrors,
       },
     },
   )
   .post(
-    '/:id',
-    async ({ body, params }) => {
-      const config = await rateLimitConfigService.update(params.id, body);
-      return castToRes(config);
+    '/del',
+    async ({ body }) => {
+      await rateLimitConfigService.deleteMany(body.ids);
+      return castToRes(null);
     },
     {
-      body: UpdateRateLimitConfigDto,
-      params: t.Object({ id: t.String() }),
+      body: IdsDto,
       response: {
-        200: ResWrapper(RateLimitConfigItemDto),
-        ...authErrors,
-      },
-    },
-  )
-  .delete(
-    '/:id',
-    async ({ params }) => {
-      await rateLimitConfigService.delete(params.id);
-      return castToRes({ success: true });
-    },
-    {
-      params: t.Object({ id: t.String() }),
-      response: {
-        200: ResWrapper(t.Object({ success: t.Boolean() })),
+        200: ResWrapper(t.Null()),
+        400: ErrorResDto,
         ...authErrors,
       },
     },

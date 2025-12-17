@@ -62,7 +62,7 @@ export const notificationAdminController = new Elysia({
       },
     },
   )
-  .use(authorize(has('NOTIFICATION.CREATE')))
+  .use(authorize(has('NOTIFICATION.UPDATE')))
   .post(
     '/',
     async ({ body }) => {

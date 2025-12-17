@@ -3,8 +3,7 @@ import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import type {
   ApiKeyListQueryParams,
-  CreateApiKeyParams,
-  UpdateApiKeyParams,
+  UpsertApiKeyParams,
 } from 'src/dtos/api-keys.dto';
 import {
   type ApiKeySelect,
@@ -62,11 +61,86 @@ export class ApiKeyService {
     return `${start}...${end}`;
   }
 
-  async create(
-    userId: string,
-    params: CreateApiKeyParams,
-    context: { currentUserId: string; hasCreatePermission: boolean },
+  async upsert(
+    params: UpsertApiKeyParams,
+    context: {
+      currentUserId: string;
+      hasCreatePermission: boolean;
+      hasUpdatePermission: boolean;
+    },
   ) {
+    // If id is provided, it's an update
+    if (params.id) {
+      const apiKey = await this.deps.db.apiKey.findUnique({
+        where: { id: params.id },
+        select: apiKeySelect,
+      });
+      if (!apiKey) {
+        throw new NotFoundErr(ErrCode.NotFound);
+      }
+
+      // Validate ownership or admin permission
+      if (
+        apiKey.userId !== context.currentUserId &&
+        !context.hasUpdatePermission
+      ) {
+        throw new BadReqErr(ErrCode.PermissionDenied);
+      }
+
+      const updated = await this.deps.db.apiKey.update({
+        where: { id: params.id },
+        data: {
+          name: params.name,
+          expiresAt: params.expiresAt,
+          permissions: params.permissions,
+          ipWhitelist: params.ipWhitelist,
+          metadata: params.metadata,
+        },
+        select: apiKeySelect,
+      });
+
+      await this.deps.cache.del(params.id);
+
+      // Audit log
+      await this.deps.auditLogService.pushCud({
+        category: 'cud',
+        entityType: 'api_key',
+        entityId: params.id,
+        action: 'update',
+        changes: {
+          ...(params.name !== undefined && {
+            name: { previous: apiKey.name, next: params.name },
+          }),
+          ...(params.expiresAt !== undefined && {
+            expiresAt: { previous: apiKey.expiresAt, next: params.expiresAt },
+          }),
+          ...(params.permissions !== undefined && {
+            permissions: {
+              previous: apiKey.permissions,
+              next: params.permissions,
+            },
+          }),
+          ...(params.ipWhitelist !== undefined && {
+            ipWhitelist: {
+              previous: apiKey.ipWhitelist,
+              next: params.ipWhitelist,
+            },
+          }),
+          ...(params.metadata !== undefined && {
+            metadata: { previous: apiKey.metadata, next: params.metadata },
+          }),
+        },
+        entityDisplay: {
+          name: updated.name,
+          userId: updated.userId,
+        },
+      });
+
+      return updated;
+    }
+
+    // Otherwise, it's a create
+    const userId = params.userId || context.currentUserId;
     if (userId !== context.currentUserId && !context.hasCreatePermission) {
       throw new BadReqErr(ErrCode.PermissionDenied);
     }
@@ -115,78 +189,6 @@ export class ApiKeyService {
       ...apiKey,
       key,
     };
-  }
-
-  async update(
-    params: UpdateApiKeyParams,
-    context: { currentUserId: string; hasUpdatePermission: boolean },
-  ) {
-    const apiKey = await this.deps.db.apiKey.findUnique({
-      where: { id: params.id },
-      select: apiKeySelect,
-    });
-    if (!apiKey) {
-      throw new NotFoundErr(ErrCode.NotFound);
-    }
-
-    // Validate ownership or admin permission
-    if (
-      apiKey.userId !== context.currentUserId &&
-      !context.hasUpdatePermission
-    ) {
-      throw new BadReqErr(ErrCode.PermissionDenied);
-    }
-
-    const updated = await this.deps.db.apiKey.update({
-      where: { id: params.id },
-      data: {
-        name: params.name,
-        expiresAt: params.expiresAt,
-        permissions: params.permissions,
-        ipWhitelist: params.ipWhitelist,
-        metadata: params.metadata,
-      },
-      select: apiKeySelect,
-    });
-
-    await this.deps.cache.del(params.id);
-
-    // Audit log
-    await this.deps.auditLogService.pushCud({
-      category: 'cud',
-      entityType: 'api_key',
-      entityId: params.id,
-      action: 'update',
-      changes: {
-        ...(params.name !== undefined && {
-          name: { previous: apiKey.name, next: params.name },
-        }),
-        ...(params.expiresAt !== undefined && {
-          expiresAt: { previous: apiKey.expiresAt, next: params.expiresAt },
-        }),
-        ...(params.permissions !== undefined && {
-          permissions: {
-            previous: apiKey.permissions,
-            next: params.permissions,
-          },
-        }),
-        ...(params.ipWhitelist !== undefined && {
-          ipWhitelist: {
-            previous: apiKey.ipWhitelist,
-            next: params.ipWhitelist,
-          },
-        }),
-        ...(params.metadata !== undefined && {
-          metadata: { previous: apiKey.metadata, next: params.metadata },
-        }),
-      },
-      entityDisplay: {
-        name: updated.name,
-        userId: updated.userId,
-      },
-    });
-
-    return updated;
   }
 
   list(params: ApiKeyListQueryParams) {

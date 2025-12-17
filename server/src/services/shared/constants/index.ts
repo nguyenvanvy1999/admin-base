@@ -95,16 +95,12 @@ export const PERMISSIONS = {
   ACTIVITY: {
     VIEW: { roles: [defaultRoles.administrator.id] },
   },
-  CHAT_THREAD: {
-    VIEW: { roles: [defaultRoles.administrator.id] },
-    MANAGE: { roles: [defaultRoles.administrator.id] },
-  },
   FILE: {
     UPLOAD: { roles: [defaultRoles.administrator.id] },
   },
   SESSION: {
     VIEW: { roles: [defaultRoles.administrator.id] },
-    REVOKE: { roles: [defaultRoles.administrator.id] },
+    UPDATE: { roles: [defaultRoles.administrator.id] },
   },
   SETTING: {
     VIEW: { roles: [defaultRoles.administrator.id, defaultRoles.user.id] },
@@ -131,25 +127,8 @@ export const PERMISSIONS = {
     UPDATE: { roles: [defaultRoles.administrator.id] },
     DELETE: { roles: [defaultRoles.administrator.id] },
   },
-  TELE_BOT: {
-    VIEW: { roles: [defaultRoles.administrator.id] },
-    UPDATE: { roles: [defaultRoles.administrator.id] },
-    DELETE: { roles: [defaultRoles.administrator.id] },
-  },
-  TELE_CHAT: {
-    VIEW: { roles: [defaultRoles.administrator.id] },
-    UPDATE: { roles: [defaultRoles.administrator.id] },
-    DELETE: { roles: [defaultRoles.administrator.id] },
-  },
-  TELE_TEMPLATE: {
-    VIEW: { roles: [defaultRoles.administrator.id] },
-    UPDATE: { roles: [defaultRoles.administrator.id] },
-    DELETE: { roles: [defaultRoles.administrator.id] },
-    SEND: { roles: [defaultRoles.administrator.id] },
-  },
   API_KEY: {
     VIEW: { roles: [defaultRoles.administrator.id] },
-    CREATE: { roles: [defaultRoles.administrator.id] },
     UPDATE: { roles: [defaultRoles.administrator.id] },
     DELETE: { roles: [defaultRoles.administrator.id] },
   },
@@ -158,22 +137,22 @@ export const PERMISSIONS = {
   },
   SECURITY_EVENT: {
     VIEW: { roles: [defaultRoles.administrator.id] },
-    RESOLVE: { roles: [defaultRoles.administrator.id] },
+    UPDATE: { roles: [defaultRoles.administrator.id] },
   },
   NOTIFICATION: {
-    CREATE: { roles: [defaultRoles.administrator.id] },
+    VIEW: { roles: [defaultRoles.administrator.id] },
     UPDATE: { roles: [defaultRoles.administrator.id] },
     DELETE: { roles: [defaultRoles.administrator.id] },
-    VIEW: { roles: [defaultRoles.administrator.id] },
   },
   NOTIFICATION_TEMPLATE: {
+    VIEW: { roles: [defaultRoles.administrator.id] },
     UPDATE: { roles: [defaultRoles.administrator.id] },
     DELETE: { roles: [defaultRoles.administrator.id] },
-    VIEW: { roles: [defaultRoles.administrator.id] },
   },
   RATE_LIMIT: {
     VIEW: { roles: [defaultRoles.administrator.id] },
-    MANAGE: { roles: [defaultRoles.administrator.id] },
+    UPDATE: { roles: [defaultRoles.administrator.id] },
+    DELETE: { roles: [defaultRoles.administrator.id] },
   },
 };
 

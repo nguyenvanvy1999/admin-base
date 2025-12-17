@@ -24,19 +24,13 @@ export const RateLimitConfigItemDto = t.Object({
 
 export const RateLimitConfigListResDto = PaginatedDto(RateLimitConfigItemDto);
 
-export const CreateRateLimitConfigDto = t.Object({
+export const UpsertRateLimitConfigDto = t.Object({
+  id: t.Optional(t.String({ minLength: 1 })),
   routePath: t.String(),
   limit: t.Number({ minimum: 1 }),
   windowSeconds: t.Number({ minimum: 1 }),
   strategy: t.Enum(RateLimitStrategy),
-  description: t.Optional(t.String()),
-});
-
-export const UpdateRateLimitConfigDto = t.Object({
-  routePath: t.Optional(t.String()),
-  limit: t.Optional(t.Number({ minimum: 1 })),
-  windowSeconds: t.Optional(t.Number({ minimum: 1 })),
-  strategy: t.Optional(t.Enum(RateLimitStrategy)),
   enabled: t.Optional(t.Boolean()),
   description: t.Optional(t.String()),
 });
+export type IUpsertRateLimitConfig = typeof UpsertRateLimitConfigDto.static;

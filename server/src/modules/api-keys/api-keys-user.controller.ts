@@ -5,8 +5,7 @@ import {
   ApiKeyListQueryDto,
   ApiKeyPaginatedResponseDto,
   ApiKeyResponseDto,
-  CreateApiKeyDto,
-  UpdateApiKeyDto,
+  UpsertApiKeyDto,
 } from 'src/dtos/api-keys.dto';
 import { apiKeyService } from 'src/services/api-keys';
 import { authCheck } from 'src/services/auth';
@@ -65,34 +64,17 @@ export const apiKeysUserController = new Elysia({
   .post(
     '/',
     async ({ body, currentUser }) => {
-      const result = await apiKeyService.create(currentUser.id, body, {
+      const result = await apiKeyService.upsert(body, {
         currentUserId: currentUser.id,
         hasCreatePermission: false,
-      });
-      return castToRes(result);
-    },
-    {
-      body: CreateApiKeyDto,
-      response: {
-        200: ResWrapper(ApiKeyCreatedResponseDto),
-        400: ErrorResDto,
-        ...authErrors,
-      },
-    },
-  )
-  .put(
-    '/:id',
-    async ({ body, currentUser }) => {
-      const result = await apiKeyService.update(body, {
-        currentUserId: currentUser.id,
         hasUpdatePermission: false,
       });
       return castToRes(result);
     },
     {
-      body: UpdateApiKeyDto,
+      body: UpsertApiKeyDto,
       response: {
-        200: ResWrapper(ApiKeyResponseDto),
+        200: ResWrapper(t.Union([ApiKeyCreatedResponseDto, ApiKeyResponseDto])),
         400: ErrorResDto,
         404: ErrorResDto,
         ...authErrors,

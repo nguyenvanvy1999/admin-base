@@ -30,6 +30,7 @@ export const settingsAdminController = new Elysia({
     {
       response: {
         200: ResWrapper(t.Array(SettingResDto)),
+        ...authErrors,
       },
     },
   )
@@ -42,6 +43,7 @@ export const settingsAdminController = new Elysia({
     {
       response: {
         200: ResWrapper(t.Record(t.String(), t.String())),
+        ...authErrors,
       },
     },
   )

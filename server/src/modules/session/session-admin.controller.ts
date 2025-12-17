@@ -36,7 +36,7 @@ export const sessionAdminController = new Elysia({
       },
     },
   )
-  .use(authorize(has('SESSION.REVOKE')))
+  .use(authorize(has('SESSION.UPDATE')))
   .post(
     '/revoke',
     async ({ body }) => {

@@ -27,6 +27,7 @@ export const rolesAdminController = new Elysia({
     query: RolePaginationDto,
     response: {
       200: ResWrapper(PaginateRoleResDto),
+      ...authErrors,
     },
   })
   .get(
@@ -56,6 +57,7 @@ export const rolesAdminController = new Elysia({
       response: {
         200: ResWrapper(t.Object({ id: t.String() })),
         400: ErrorResDto,
+        ...authErrors,
       },
     },
   )
@@ -70,7 +72,8 @@ export const rolesAdminController = new Elysia({
       body: IdsDto,
       response: {
         200: ResWrapper(t.Null()),
-        400: ResWrapper(t.Null()),
+        400: ErrorResDto,
+        ...authErrors,
       },
     },
   );

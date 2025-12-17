@@ -2,17 +2,10 @@ import { t } from 'elysia';
 import { ApiKeyStatus } from 'src/generated';
 import { DtoFields, PaginationReqDto } from 'src/share';
 
-export const CreateApiKeyDto = t.Object({
+export const UpsertApiKeyDto = t.Object({
+  id: t.Optional(t.String({ minLength: 1 })),
+  userId: t.Optional(t.String({ minLength: 1 })),
   name: t.String({ minLength: 1, maxLength: 255 }),
-  expiresAt: t.Optional(t.Date()),
-  permissions: t.Optional(t.Array(t.String())),
-  ipWhitelist: t.Optional(t.Array(t.String())),
-  metadata: t.Optional(t.Any()),
-});
-
-export const UpdateApiKeyDto = t.Object({
-  id: t.String({ minLength: 1 }),
-  name: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
   expiresAt: t.Optional(t.Date()),
   permissions: t.Optional(t.Array(t.String())),
   ipWhitelist: t.Optional(t.Array(t.String())),
@@ -77,8 +70,7 @@ export const ApiKeyCreatedResponseDto = t.Object({
   created: t.Date(),
 });
 
-export type CreateApiKeyParams = typeof CreateApiKeyDto.static;
-export type UpdateApiKeyParams = typeof UpdateApiKeyDto.static;
+export type UpsertApiKeyParams = typeof UpsertApiKeyDto.static;
 export type ApiKeyListQueryParams = typeof ApiKeyListQueryDto.static & {
   currentUserId: string;
   hasViewPermission: boolean;
