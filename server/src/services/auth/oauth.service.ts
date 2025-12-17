@@ -197,11 +197,10 @@ export class OAuthService {
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
-          eventType: SecurityEventType.login_success,
+          eventType: SecurityEventType.register_completed,
           severity: SecurityEventSeverity.low,
           method: 'oauth',
           email,
-          metadata: { registration: true },
         },
         { subjectUserId: user.id, userId: user.id },
       );

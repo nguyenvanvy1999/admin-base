@@ -90,7 +90,13 @@ export class IpWhitelistService {
       return true;
     }
 
-    return allowedIps.includes(normalizedIp);
+    const allowed = allowedIps.includes(normalizedIp);
+
+    // Nếu IP không nằm trong whitelist, đây là hành vi có thể coi là suspicious,
+    // nhưng việc log cụ thể nên được thực hiện ở layer middleware nơi biết rõ context request.
+    // Tại đây chỉ trả về boolean để caller quyết định.
+
+    return allowed;
   }
 
   list(params: IpWhitelistListParams) {

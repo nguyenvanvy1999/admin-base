@@ -1,6 +1,7 @@
 import type { SecurityEventSeverity, SecurityEventType } from 'src/generated';
 
 export interface SecurityEventPayloadMap {
+  // Auth login
   login_failed: {
     method: 'email' | 'oauth' | 'api_key';
     email?: string;
@@ -13,6 +14,18 @@ export interface SecurityEventPayloadMap {
     isNewDevice?: boolean;
     deviceFingerprint?: string;
   };
+
+  // Logout & session
+  logout: {
+    method: 'email' | 'oauth' | 'api_key';
+    sessionId?: string;
+  };
+  logout_all_sessions: {
+    method: 'email' | 'oauth' | 'api_key';
+    revokedSessions: number;
+  };
+
+  // Password lifecycle
   password_changed: {
     changedBy: 'user' | 'admin';
     adminId?: string;
@@ -23,6 +36,27 @@ export interface SecurityEventPayloadMap {
   password_reset_completed: {
     email: string;
   };
+  password_reset_failed: {
+    email?: string;
+    error: string;
+  };
+
+  // Registration & account state
+  register_started: {
+    method: 'email' | 'oauth';
+    email: string;
+  };
+  register_completed: {
+    method: 'email' | 'oauth';
+    email: string;
+  };
+  register_failed: {
+    method: 'email' | 'oauth';
+    email?: string;
+    error: string;
+  };
+
+  // MFA lifecycle
   mfa_enabled: {
     method: 'totp' | 'email';
   };
@@ -38,6 +72,23 @@ export interface SecurityEventPayloadMap {
     method: 'totp' | 'email' | 'backup-code';
     error: string;
   };
+  mfa_setup_started: {
+    method: 'totp';
+    stage: 'request';
+  };
+  mfa_setup_completed: {
+    method: 'totp';
+  };
+  mfa_setup_failed: {
+    method: 'totp';
+    error: string;
+  };
+  mfa_challenge_started: {
+    method: 'totp' | 'email';
+    metadata?: Record<string, unknown>;
+  };
+
+  // Account lockout
   account_locked: {
     reason:
       | 'brute_force'
@@ -50,6 +101,8 @@ export interface SecurityEventPayloadMap {
     unlockedBy: 'admin' | 'system';
     adminId?: string;
   };
+
+  // Security posture & monitoring
   suspicious_activity: {
     activity: string;
     details: Record<string, unknown>;
@@ -66,6 +119,8 @@ export interface SecurityEventPayloadMap {
     previousPermissions: string[];
     newPermissions: string[];
   };
+
+  // API key lifecycle
   api_key_created: {
     keyPrefix: string;
     name: string;
@@ -75,6 +130,12 @@ export interface SecurityEventPayloadMap {
     name: string;
     reason?: string;
   };
+  api_key_usage_blocked: {
+    apiKeyId?: string;
+    reason: string;
+  };
+
+  // Data & bulk operations
   data_exported: {
     exportType: string;
     recordCount: number;
@@ -84,6 +145,29 @@ export interface SecurityEventPayloadMap {
     entityType: string;
     recordCount: number;
   };
+
+  // OTP
+  otp_sent: {
+    email: string;
+    purpose: 'REGISTER' | 'FORGOT_PASSWORD' | 'RESET_MFA';
+  };
+  otp_send_failed: {
+    email?: string;
+    purpose: 'REGISTER' | 'FORGOT_PASSWORD' | 'RESET_MFA';
+    error: string;
+  };
+  otp_invalid: {
+    email?: string;
+    purpose: 'REGISTER' | 'FORGOT_PASSWORD' | 'RESET_MFA';
+    error: string;
+  };
+  otp_rate_limited: {
+    email?: string;
+    purpose: 'REGISTER' | 'FORGOT_PASSWORD' | 'RESET_MFA';
+    limit: number;
+  };
+
+  // Rate limit
   rate_limit_exceeded: {
     routePath: string;
     identifier: string;

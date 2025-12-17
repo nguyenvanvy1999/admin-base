@@ -289,11 +289,10 @@ export class AuthService {
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
-        eventType: SecurityEventType.login_success,
+        eventType: SecurityEventType.mfa_challenge_started,
         severity: SecurityEventSeverity.low,
         method: 'email',
-        email: user.id,
-        isNewDevice: security?.isNewDevice ?? false,
+        metadata: { stage: 'challenge', from: 'login' },
       },
       {
         subjectUserId: user.id,
@@ -334,11 +333,10 @@ export class AuthService {
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
-        eventType: SecurityEventType.login_failed,
-        severity: SecurityEventSeverity.medium,
+        eventType: SecurityEventType.mfa_setup_started,
+        severity: SecurityEventSeverity.low,
         method: 'email',
-        email: user.id,
-        error: 'mfa_setup_required',
+        stage: 'required_before_login',
       },
       { subjectUserId: user.id },
     );
@@ -388,11 +386,11 @@ export class AuthService {
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
-          eventType: SecurityEventType.login_failed,
+          eventType: SecurityEventType.register_failed,
           severity: SecurityEventSeverity.medium,
           method: 'email',
           email: normalizedEmail,
-          error: 'register_user_exists',
+          error: 'user_exists',
         },
         { visibility: AuditLogVisibility.admin_only },
       );
@@ -412,7 +410,7 @@ export class AuthService {
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
-        eventType: SecurityEventType.login_success,
+        eventType: SecurityEventType.register_started,
         severity: SecurityEventSeverity.low,
         method: 'email',
         email: normalizedEmail,
@@ -514,9 +512,10 @@ export class AuthService {
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
-          eventType: SecurityEventType.password_reset_requested,
+          eventType: SecurityEventType.password_reset_failed,
           severity: SecurityEventSeverity.medium,
           email: '',
+          error: 'invalid_otp',
         },
         { visibility: AuditLogVisibility.admin_only },
       );
@@ -566,10 +565,10 @@ export class AuthService {
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
-          eventType: SecurityEventType.login_failed,
+          eventType: SecurityEventType.otp_invalid,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
           email: '',
+          purpose: 'REGISTER',
           error: 'invalid_otp',
         },
         { visibility: AuditLogVisibility.admin_only },
@@ -628,7 +627,7 @@ export class AuthService {
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
-          eventType: SecurityEventType.login_failed,
+          eventType: SecurityEventType.refresh_token_failed,
           severity: SecurityEventSeverity.medium,
           method: 'email',
           email: session?.createdBy?.email ?? '',
@@ -660,11 +659,10 @@ export class AuthService {
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
-        eventType: SecurityEventType.login_success,
+        eventType: SecurityEventType.refresh_token_success,
         severity: SecurityEventSeverity.low,
         method: 'email',
         email: session.createdBy.email ?? '',
-        metadata: { action: 'refresh_token' },
       },
       {
         subjectUserId: session.createdBy.id,
@@ -690,11 +688,11 @@ export class AuthService {
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
-        eventType: SecurityEventType.login_success,
+        eventType: SecurityEventType.logout,
         severity: SecurityEventSeverity.low,
         method: 'email',
         email: '',
-        metadata: { action: 'logout' },
+        sessionId,
       },
       { subjectUserId: id, userId: id, sessionId },
     );

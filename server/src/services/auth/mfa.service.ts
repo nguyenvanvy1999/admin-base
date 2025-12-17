@@ -165,10 +165,10 @@ export class MfaService {
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
-        eventType: SecurityEventType.mfa_enabled,
+        eventType: SecurityEventType.mfa_setup_started,
         severity: SecurityEventSeverity.low,
         method: 'totp',
-        metadata: { stage: 'request' },
+        stage: 'request',
       },
       { subjectUserId: userId },
     );
@@ -203,10 +203,10 @@ export class MfaService {
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
-        eventType: SecurityEventType.mfa_enabled,
+        eventType: SecurityEventType.mfa_setup_started,
         severity: SecurityEventSeverity.low,
         method: 'totp',
-        metadata: { stage: 'request' },
+        stage: 'request',
       },
       { subjectUserId: tokenData.userId },
     );
@@ -271,7 +271,7 @@ export class MfaService {
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
-        eventType: SecurityEventType.mfa_enabled,
+        eventType: SecurityEventType.mfa_setup_completed,
         severity: SecurityEventSeverity.low,
         method: 'totp',
       },
@@ -362,7 +362,7 @@ export class MfaService {
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
-          eventType: SecurityEventType.mfa_failed,
+          eventType: SecurityEventType.mfa_setup_failed,
           severity: SecurityEventSeverity.medium,
           method: 'email',
           error: 'invalid_otp',
@@ -715,7 +715,7 @@ export class MfaService {
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
-        eventType: SecurityEventType.login_failed,
+        eventType: SecurityEventType.mfa_failed,
         severity: SecurityEventSeverity.medium,
         method: 'email',
         error: MFA_ERROR_PAYLOADS[errorType]?.error ?? errorType,

@@ -57,25 +57,60 @@ enum SecurityEventSeverity {
 
 // Security event types for tracking authentication and security events
 enum SecurityEventType {
+  // Auth login
   login_failed
   login_success
+
+  // Logout & session
+  logout
+  logout_all_sessions
+
+  // Refresh token
+  refresh_token_success
+  refresh_token_failed
+
+  // Password lifecycle
   password_changed
   password_reset_requested
   password_reset_completed
+  password_reset_failed
+
+  // Registration & account state
+  register_started
+  register_completed
+  register_failed
+
+  // MFA lifecycle
   mfa_enabled
   mfa_disabled
   mfa_verified
   mfa_failed
+
+  mfa_setup_started
+  mfa_setup_completed
+  mfa_setup_failed
+  mfa_challenge_started
+
+  // Account lockout
   account_locked
   account_unlocked
+
+  // Security posture & monitoring
   suspicious_activity
   ip_changed
   device_changed
   permission_escalation
+
+  // API key
   api_key_created
   api_key_revoked
+  api_key_usage_blocked
+
+  // Data & bulk operations
   data_exported
   bulk_operation
+
+  // Rate limit
   rate_limit_exceeded
 }
 

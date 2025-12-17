@@ -84,7 +84,7 @@ Core rate limiting logic:
 
 ```typescript
 // Window key
-`${identifier}:${routePath}:${windowTimestamp}`// Block key
+`${identifier}:${routePath}:${windowTimestamp}` // Block key
 `block:${identifier}:${routePath}`;
 ```
 
@@ -301,7 +301,7 @@ identifier = getIdentifier(context);
 
 ```typescript
 // Counter key
-`${identifier}:${routePath}:${windowTimestamp}`// Block key
+`${identifier}:${routePath}:${windowTimestamp}` // Block key
 `block:${identifier}:${routePath}`;
 ```
 

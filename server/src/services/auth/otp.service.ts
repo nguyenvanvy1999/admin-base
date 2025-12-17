@@ -157,10 +157,10 @@ export class OtpService {
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
-          eventType: SecurityEventType.login_failed,
+          eventType: SecurityEventType.otp_send_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
           email,
+          purpose,
           error: 'user_not_found',
         },
         { visibility: AuditLogVisibility.admin_only },
@@ -173,10 +173,10 @@ export class OtpService {
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
-          eventType: SecurityEventType.login_failed,
+          eventType: SecurityEventType.otp_send_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
           email,
+          purpose,
           error: 'otp_conditions_not_met',
         },
         { subjectUserId: user.id },
@@ -189,10 +189,10 @@ export class OtpService {
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
-          eventType: SecurityEventType.login_failed,
+          eventType: SecurityEventType.otp_send_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
           email,
+          purpose,
           error: 'otp_send_failed',
         },
         { subjectUserId: user.id },
@@ -203,17 +203,10 @@ export class OtpService {
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
-        eventType:
-          purpose === PurposeVerify.REGISTER
-            ? SecurityEventType.login_success
-            : SecurityEventType.login_success,
+        eventType: SecurityEventType.otp_sent,
         severity: SecurityEventSeverity.low,
-        method: 'email',
         email,
-        metadata:
-          purpose !== PurposeVerify.REGISTER
-            ? { action: `otp_sent_${purpose}` }
-            : undefined,
+        purpose,
       },
       { subjectUserId: user.id },
     );
