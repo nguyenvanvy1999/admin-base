@@ -3,17 +3,23 @@ import type {
   NotificationTemplateListParams,
   UpsertNotificationTemplateParams,
 } from 'src/dtos/notification-templates.dto';
-import type {
-  NotificationTemplateSelect,
-  NotificationTemplateWhereInput,
-} from 'src/generated';
 import {
+  AuditLogVisibility,
+  type NotificationTemplateSelect,
+  type NotificationTemplateWhereInput,
+} from 'src/generated';
+import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
+import {
+  buildCreateChanges,
+  buildDeleteChanges,
   buildSearchOrCondition,
+  buildUpdateChanges,
   ensureExists,
   executeListQuery,
   normalizeSearchTerm,
 } from 'src/services/shared/utils';
 import { BadReqErr, DB_PREFIX, ErrCode, IdUtil, type IIdsDto } from 'src/share';
+import type { AuditLogsService } from '../audit-logs';
 
 const notificationTemplateSelect = {
   id: true,
@@ -29,7 +35,12 @@ const notificationTemplateSelect = {
 } satisfies NotificationTemplateSelect;
 
 export class NotificationTemplatesService {
-  constructor(private readonly deps: { db: IDb }) {}
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      auditLogService: AuditLogsService;
+    },
+  ) {}
 
   private async ensureCodeUnique(code: string, excludeId?: string) {
     const codeExists = await this.deps.db.notificationTemplate.findFirst({
@@ -110,29 +121,85 @@ export class NotificationTemplatesService {
     const payload = this.buildData(data);
 
     if (id) {
-      await ensureExists(
+      const existingTemplate = await ensureExists(
         this.deps.db.notificationTemplate,
         { id },
-        { id: true },
+        {
+          id: true,
+          code: true,
+          name: true,
+          subject: true,
+          body: true,
+          type: true,
+          variables: true,
+          enabled: true,
+        },
         ErrCode.NotificationTemplateNotFound,
       );
+
       await this.ensureCodeUnique(code, id);
       const updated = await this.deps.db.notificationTemplate.update({
         where: { id },
         data: payload,
         select: { id: true },
       });
+
+      const changes = buildUpdateChanges(
+        {
+          code: existingTemplate.code,
+          name: existingTemplate.name,
+          subject: existingTemplate.subject,
+          body: existingTemplate.body,
+          type: existingTemplate.type,
+          variables: existingTemplate.variables,
+          enabled: existingTemplate.enabled,
+        },
+        payload,
+      );
+
+      await this.deps.auditLogService.pushCud(
+        {
+          category: 'cud',
+          entityType: 'notification_template',
+          entityId: id,
+          action: 'update',
+          changes,
+        },
+        {
+          visibility: AuditLogVisibility.admin_only,
+          entityDisplay: { code, name: payload.name },
+        },
+      );
+
       return { id: updated.id };
     }
 
     await this.ensureCodeUnique(code);
+    const templateId = IdUtil.dbId(DB_PREFIX.NOTIFICATION_TEMPLATE);
     const created = await this.deps.db.notificationTemplate.create({
       data: {
-        id: IdUtil.dbId(DB_PREFIX.NOTIFICATION_TEMPLATE),
+        id: templateId,
         ...payload,
       },
       select: { id: true },
     });
+
+    const changes = buildCreateChanges(payload);
+
+    await this.deps.auditLogService.pushCud(
+      {
+        category: 'cud',
+        entityType: 'notification_template',
+        entityId: templateId,
+        action: 'create',
+        changes,
+      },
+      {
+        visibility: AuditLogVisibility.admin_only,
+        entityDisplay: { code, name: payload.name },
+      },
+    );
+
     return { id: created.id };
   }
 
@@ -150,14 +217,55 @@ export class NotificationTemplatesService {
       throw new BadReqErr(ErrCode.ActionNotAllowed);
     }
 
+    const templatesToDelete = await this.deps.db.notificationTemplate.findMany({
+      where: {
+        id: { in: ids },
+      },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        subject: true,
+        body: true,
+        type: true,
+        variables: true,
+        enabled: true,
+      },
+    });
+
     await this.deps.db.notificationTemplate.deleteMany({
       where: {
         id: { in: ids },
       },
     });
+
+    if (templatesToDelete.length > 0) {
+      const auditEntries = templatesToDelete.map((template) => ({
+        type: 'cud' as const,
+        payload: {
+          category: 'cud' as const,
+          entityType: 'notification_template' as const,
+          entityId: template.id,
+          action: 'delete' as const,
+          changes: buildDeleteChanges({
+            code: template.code,
+            name: template.name,
+            subject: template.subject,
+            body: template.body,
+            type: template.type,
+            variables: template.variables,
+            enabled: template.enabled,
+          }),
+          entityDisplay: { code: template.code, name: template.name },
+        },
+      }));
+
+      await this.deps.auditLogService.pushBatch(auditEntries);
+    }
   }
 }
 
 export const notificationTemplatesService = new NotificationTemplatesService({
   db,
+  auditLogService: auditLogsService,
 });

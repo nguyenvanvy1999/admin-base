@@ -3,16 +3,24 @@ import type {
   CreateNotificationParams,
   NotificationListParams,
 } from 'src/dtos/notification.dto';
-import type { NotificationSelect, NotificationWhereInput } from 'src/generated';
+import {
+  AuditLogVisibility,
+  type NotificationSelect,
+  type NotificationWhereInput,
+} from 'src/generated';
+import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import { DB_PREFIX } from 'src/services/shared/constants';
 import {
   applyPermissionFilter,
+  buildCreateChanges,
+  buildDeleteChanges,
   buildSearchOrCondition,
   ensureExists,
   executeListQuery,
   normalizeSearchTerm,
 } from 'src/services/shared/utils';
 import { ErrCode, IdUtil } from 'src/share';
+import type { AuditLogsService } from '../audit-logs';
 
 const notificationSelect = {
   id: true,
@@ -31,7 +39,12 @@ const notificationSelect = {
 } satisfies NotificationSelect;
 
 export class NotificationsService {
-  constructor(private readonly deps: { db: IDb }) {}
+  constructor(
+    private readonly deps: {
+      db: IDb;
+      auditLogService: AuditLogsService;
+    },
+  ) {}
 
   list(params: NotificationListParams) {
     const {
@@ -116,10 +129,11 @@ export class NotificationsService {
 
   async create(data: CreateNotificationParams): Promise<{ id: string }> {
     const { userId, templateId, type, subject, content, metadata } = data;
+    const notificationId = IdUtil.dbId(DB_PREFIX.NOTIFICATION);
 
     const created = await this.deps.db.notification.create({
       data: {
-        id: IdUtil.dbId(DB_PREFIX.NOTIFICATION),
+        id: notificationId,
         userId,
         templateId: templateId || null,
         type,
@@ -130,6 +144,32 @@ export class NotificationsService {
       },
       select: { id: true },
     });
+
+    const changes = buildCreateChanges({
+      userId,
+      templateId: templateId || null,
+      type,
+      status: 'pending',
+      subject: subject || null,
+      content,
+      metadata: metadata || null,
+    });
+
+    await this.deps.auditLogService.pushCud(
+      {
+        category: 'cud',
+        entityType: 'notification',
+        entityId: notificationId,
+        action: 'create',
+        changes,
+      },
+      {
+        visibility: AuditLogVisibility.actor_only,
+        subjectUserId: userId,
+        entityDisplay: { userId, type },
+      },
+    );
+
     return { id: created.id };
   }
 
@@ -149,9 +189,48 @@ export class NotificationsService {
       where.userId = currentUserId;
     }
 
+    const notificationsToDelete = await this.deps.db.notification.findMany({
+      where,
+      select: {
+        id: true,
+        userId: true,
+        type: true,
+        status: true,
+        subject: true,
+        content: true,
+        metadata: true,
+      },
+    });
+
     await this.deps.db.notification.deleteMany({
       where,
     });
+
+    if (notificationsToDelete.length > 0) {
+      const auditEntries = notificationsToDelete.map((notification) => ({
+        type: 'cud' as const,
+        payload: {
+          category: 'cud' as const,
+          entityType: 'notification' as const,
+          entityId: notification.id,
+          action: 'delete' as const,
+          changes: buildDeleteChanges({
+            userId: notification.userId,
+            type: notification.type,
+            status: notification.status,
+            subject: notification.subject,
+            content: notification.content,
+            metadata: notification.metadata,
+          }),
+          entityDisplay: {
+            userId: notification.userId,
+            type: notification.type,
+          },
+        },
+      }));
+
+      await this.deps.auditLogService.pushBatch(auditEntries);
+    }
   }
 
   async markAsRead(
@@ -182,4 +261,5 @@ export class NotificationsService {
 
 export const notificationsService = new NotificationsService({
   db,
+  auditLogService: auditLogsService,
 });
