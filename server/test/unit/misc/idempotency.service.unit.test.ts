@@ -1,13 +1,14 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'bun:test';
 import type { RedisClient } from 'bun';
-import { IdempotencyUtil } from 'src/services/shared/utils/idempotency.util';
+import type { IdempotencyService } from 'src/services/misc/idempotency.service';
+import { createIdempotencyService } from 'src/services/misc/idempotency.service';
 import { IDEMPOTENCY_TTL } from 'src/share';
 import { IdempotencyFixtures } from 'test/fixtures';
 import type { RedisMock } from 'test/utils/mocks/redis';
 
 describe('IdempotencyUtil', () => {
   let redisSpies: RedisMock;
-  let idempotencyService: IdempotencyUtil;
+  let idempotencyService: IdempotencyService;
 
   beforeAll(async () => {
     const { redis } = await import('src/config/redis');
@@ -15,7 +16,7 @@ describe('IdempotencyUtil', () => {
   });
 
   beforeEach(() => {
-    idempotencyService = new IdempotencyUtil(
+    idempotencyService = createIdempotencyService(
       redisSpies as unknown as RedisClient,
     );
     redisSpies.send.mockReset();
@@ -180,98 +181,6 @@ describe('IdempotencyUtil', () => {
 
       // Assert
       expect(key).toBe('idemp::resource-123::idemp-123');
-    });
-  });
-
-  describe('validateP2POperation', () => {
-    it('should return true for valid P2P operation', async () => {
-      // Arrange
-      const orderId = 'order-123';
-      const action = 'confirm';
-      const idempotencyKey = 'idemp-456';
-      const ttl = 7200;
-      redisSpies.send.mockResolvedValue(1 as unknown as never);
-
-      // Act
-      const result = await idempotencyService.validateP2POperation(
-        orderId,
-        action,
-        idempotencyKey,
-        ttl,
-      );
-
-      // Assert
-      expect(result).toBe(true);
-      expect(redisSpies.send).toHaveBeenCalledTimes(1);
-      expect(redisSpies.send).toHaveBeenCalledWith('EVAL', [
-        expect.any(String),
-        '1',
-        'idemp:p2p:order:order-123:confirm:idemp-456',
-        ttl.toString(),
-        '1',
-      ]);
-    });
-
-    it('should return false when P2P operation is duplicate', async () => {
-      // Arrange
-      const orderId = 'order-123';
-      const action = 'confirm';
-      const idempotencyKey = 'idemp-456';
-      redisSpies.send.mockResolvedValue(0 as unknown as never);
-
-      // Act
-      const result = await idempotencyService.validateP2POperation(
-        orderId,
-        action,
-        idempotencyKey,
-      );
-
-      // Assert
-      expect(result).toBe(false);
-    });
-
-    it('should use default TTL when not provided in validateP2POperation', async () => {
-      // Arrange
-      const orderId = 'order-123';
-      const action = 'confirm';
-      const idempotencyKey = 'idemp-456';
-      redisSpies.send.mockResolvedValue(1 as unknown as never);
-
-      // Act
-      await idempotencyService.validateP2POperation(
-        orderId,
-        action,
-        idempotencyKey,
-      );
-
-      // Assert
-      expect(redisSpies.send).toHaveBeenCalledWith('EVAL', [
-        expect.any(String),
-        '1',
-        'idemp:p2p:order:order-123:confirm:idemp-456',
-        IDEMPOTENCY_TTL.toString(),
-        '1',
-      ]);
-    });
-
-    it('should throw error when validateP2POperation fails', () => {
-      // Arrange
-      const orderId = 'order-123';
-      const action = 'confirm';
-      const idempotencyKey = 'idemp-456';
-      const redisError = new Error('Redis error');
-      redisSpies.send.mockRejectedValue(redisError);
-
-      // Act & Assert
-      expect(
-        idempotencyService.validateP2POperation(
-          orderId,
-          action,
-          idempotencyKey,
-        ),
-      ).rejects.toThrow(
-        `Failed to check and set idempotency key idemp:p2p:order:${orderId}:${action}:${idempotencyKey}: ${redisError}`,
-      );
     });
   });
 

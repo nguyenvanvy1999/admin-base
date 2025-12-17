@@ -9,14 +9,15 @@ import {
 } from 'bun:test';
 import type { RedisClient } from 'bun';
 import { logger } from 'src/config/logger';
-import { LockingUtil } from 'src/services/shared/utils/locking.util';
+import type { LockingService } from 'src/services/misc/locking.service';
+import { createLockingService } from 'src/services/misc/locking.service';
 import { LockFixtures } from 'test/fixtures';
 import { TestLifecycle } from 'test/utils';
 import type { RedisMock } from 'test/utils/mocks/redis';
 
 describe('LockingUtil', () => {
   let redisSpies: RedisMock;
-  let lockingService: LockingUtil;
+  let lockingService: LockingService;
 
   const mockSendFn = (cmd: string) =>
     cmd === 'SET' ? Promise.resolve('OK') : Promise.resolve(null);
@@ -28,7 +29,10 @@ describe('LockingUtil', () => {
   });
 
   beforeEach(() => {
-    lockingService = new LockingUtil(redisSpies as unknown as RedisClient);
+    lockingService = createLockingService(
+      redisSpies as unknown as RedisClient,
+      logger,
+    );
   });
 
   describe('acquire', () => {

@@ -1,4 +1,4 @@
-import { type ILogger, logger } from 'src/config/logger';
+import type { ILogger } from 'src/config/logger';
 
 export interface GeoIPData {
   status: string;
@@ -18,20 +18,17 @@ export interface GeoIPData {
   as?: string;
 }
 
-export class GeoIPUtil {
-  constructor(
-    private readonly deps: {
-      apiUrl: string;
-      logger: ILogger;
-    } = {
-      apiUrl: 'http://ip-api.com/json',
-      logger: logger,
-    },
-  ) {}
+export type GeoIPService = {
+  getLocationByIP: (ip: string) => Promise<GeoIPData | null>;
+};
 
-  async getLocationByIP(ip: string): Promise<GeoIPData | null> {
+export const createGeoIPService = (deps: {
+  apiUrl: string;
+  logger: ILogger;
+}): GeoIPService => {
+  const getLocationByIP = async (ip: string): Promise<GeoIPData | null> => {
     try {
-      const response = await fetch(`${this.deps.apiUrl}/${ip}`, {
+      const response = await fetch(`${deps.apiUrl}/${ip}`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -39,7 +36,7 @@ export class GeoIPUtil {
       });
 
       if (!response.ok) {
-        this.deps.logger.warning(
+        deps.logger.warning(
           `GeoIP API request failed for IP ${ip}: ${response.status}`,
         );
         return null;
@@ -49,19 +46,21 @@ export class GeoIPUtil {
 
       if (data.status !== 'success') {
         const message = data.message || 'unknown error';
-        this.deps.logger.warning(
+        deps.logger.warning(
           `GeoIP API returned failure for IP ${ip}: ${message}`,
         );
         return null;
       }
       return data;
     } catch (error) {
-      this.deps.logger.error(`Error fetching GeoIP data for IP ${ip}`, {
+      deps.logger.error(`Error fetching GeoIP data for IP ${ip}`, {
         error,
       });
       return null;
     }
-  }
-}
+  };
 
-export const geoIPUtil = new GeoIPUtil();
+  return {
+    getLocationByIP,
+  };
+};

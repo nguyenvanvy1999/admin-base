@@ -19,12 +19,14 @@ import type { AuditLogsService } from 'src/services/audit-logs/audit-logs.servic
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import type { EmailService } from 'src/services/mail/email.service';
 import { emailService } from 'src/services/mail/email.service';
-import type { GeoIPUtil } from 'src/services/shared/utils/geoip.util';
-import { geoIPUtil } from 'src/services/shared/utils/geoip.util';
-import type { IdempotencyUtil } from 'src/services/shared/utils/idempotency.util';
-import { idempotencyUtil } from 'src/services/shared/utils/idempotency.util';
-import type { LockingUtil } from 'src/services/shared/utils/locking.util';
-import { lockingUtil } from 'src/services/shared/utils/locking.util';
+import {
+  type GeoIPService,
+  geoIPService,
+  type IdempotencyService,
+  idempotencyService,
+  type LockingService,
+  lockingService,
+} from 'src/services/misc';
 import {
   EmailType,
   type EnrichedAuditLogEntry,
@@ -74,17 +76,17 @@ export class WorkerService {
       db: IDb;
       emailService: EmailService;
       auditLogService: AuditLogsService;
-      geoIPService: GeoIPUtil;
-      lockingService: LockingUtil;
-      idempotencyService: IdempotencyUtil;
+      geoIPService: GeoIPService;
+      lockingService: LockingService;
+      idempotencyService: IdempotencyService;
       apiKeyValidationService: ApiKeyValidationService;
     } = {
       db,
       emailService,
       auditLogService: auditLogsService,
-      geoIPService: geoIPUtil,
-      lockingService: lockingUtil,
-      idempotencyService: idempotencyUtil,
+      geoIPService,
+      lockingService,
+      idempotencyService,
       apiKeyValidationService: apiKeyValidationService,
     },
   ) {}

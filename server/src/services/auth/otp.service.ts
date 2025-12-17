@@ -22,11 +22,9 @@ import {
   type SettingsService,
   settingsService,
 } from 'src/services/settings/settings.service';
-import {
-  type LockingUtil,
-  lockingUtil,
-} from 'src/services/shared/utils/locking.util';
 import { EmailType, IdUtil, PurposeVerify } from 'src/share';
+import { lockingService } from '../misc';
+import type { LockingService } from '../misc/locking.service';
 
 export class OtpService {
   constructor(
@@ -35,7 +33,7 @@ export class OtpService {
       otpCache: IOTPCache;
       otpRateLimitCache: IOtpRateLimitCache;
       registerOtpLimitCache: RedisCache<number>;
-      lockingService: LockingUtil;
+      lockingService: LockingService;
       emailQueue: IEmailQueue;
       auditLogService: AuditLogsService;
       settingService: SettingsService;
@@ -44,7 +42,7 @@ export class OtpService {
       otpCache,
       otpRateLimitCache,
       registerOtpLimitCache,
-      lockingService: lockingUtil,
+      lockingService: lockingService,
       emailQueue,
       auditLogService: auditLogsService,
       settingService: settingsService,
@@ -228,13 +226,4 @@ export class OtpService {
   }
 }
 
-export const otpService = new OtpService({
-  db,
-  otpCache,
-  otpRateLimitCache,
-  registerOtpLimitCache,
-  lockingService: lockingUtil,
-  emailQueue,
-  auditLogService: auditLogsService,
-  settingService: settingsService,
-});
+export const otpService = new OtpService();

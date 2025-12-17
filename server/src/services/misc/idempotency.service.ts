@@ -1,14 +1,35 @@
 import type { RedisClient } from 'bun';
-import { redis } from 'src/config/redis';
 import { IDEMPOTENCY_TTL } from 'src/share';
 
-export class IdempotencyUtil {
-  constructor(private readonly r: RedisClient = redis) {}
+export type IdempotencyService = {
+  checkAndSet: (key: string, ttl?: number) => Promise<boolean>;
+  generateP2PKey: (
+    orderId: string,
+    action: string,
+    idempotencyKey: string,
+  ) => string;
+  generateKey: (
+    namespace: string,
+    resourceId: string,
+    action: string,
+    idempotencyKey: string,
+  ) => string;
+  validateOperation: (
+    namespace: string,
+    resourceId: string,
+    action: string,
+    idempotencyKey: string,
+    ttl?: number,
+  ) => Promise<boolean>;
+};
 
-  async checkAndSet(
+export const createIdempotencyService = (
+  redis: RedisClient,
+): IdempotencyService => {
+  const checkAndSet = async (
     key: string,
     ttl: number = IDEMPOTENCY_TTL,
-  ): Promise<boolean> {
+  ): Promise<boolean> => {
     try {
       const luaScript = `
         local key = KEYS[1]
@@ -20,10 +41,10 @@ export class IdempotencyUtil {
         end
 
         redis.call('SET', key, value, 'EX', ttl)
-        return 1  -- Key was set successfully
+        return 1
       `;
 
-      const result = await this.r.send('EVAL', [
+      const result = await redis.send('EVAL', [
         luaScript,
         '1',
         key,
@@ -37,45 +58,40 @@ export class IdempotencyUtil {
         `Failed to check and set idempotency key ${key}: ${error}`,
       );
     }
-  }
+  };
 
-  generateP2PKey(
+  const generateP2PKey = (
     orderId: string,
     action: string,
     idempotencyKey: string,
-  ): string {
+  ): string => {
     return `idemp:p2p:order:${orderId}:${action}:${idempotencyKey}`;
-  }
+  };
 
-  generateKey(
+  const generateKey = (
     namespace: string,
     resourceId: string,
     action: string,
     idempotencyKey: string,
-  ): string {
+  ): string => {
     return `idemp:${namespace}:${resourceId}:${action}:${idempotencyKey}`;
-  }
+  };
 
-  validateP2POperation(
-    orderId: string,
-    action: string,
-    idempotencyKey: string,
-    ttl: number = IDEMPOTENCY_TTL,
-  ): Promise<boolean> {
-    const key = this.generateP2PKey(orderId, action, idempotencyKey);
-    return this.checkAndSet(key, ttl);
-  }
-
-  validateOperation(
+  const validateOperation = (
     namespace: string,
     resourceId: string,
     action: string,
     idempotencyKey: string,
     ttl: number = IDEMPOTENCY_TTL,
-  ): Promise<boolean> {
-    const key = this.generateKey(namespace, resourceId, action, idempotencyKey);
-    return this.checkAndSet(key, ttl);
-  }
-}
+  ): Promise<boolean> => {
+    const key = generateKey(namespace, resourceId, action, idempotencyKey);
+    return checkAndSet(key, ttl);
+  };
 
-export const idempotencyUtil = new IdempotencyUtil();
+  return {
+    checkAndSet,
+    generateP2PKey,
+    generateKey,
+    validateOperation,
+  };
+};

@@ -1,6 +1,5 @@
 import type { RedisClient } from 'bun';
-import { type ILogger, logger } from 'src/config/logger';
-import { redis } from 'src/config/redis';
+import type { ILogger } from 'src/config/logger';
 
 const RELEASE_LOCK_SCRIPT = `
   if redis.call("GET", KEYS[1]) == ARGV[1] then
@@ -10,17 +9,36 @@ const RELEASE_LOCK_SCRIPT = `
   end
 `;
 
-export class LockingUtil {
-  constructor(
-    private readonly r: RedisClient = redis,
-    private readonly l: ILogger = logger,
-  ) {}
+export type LockingService = {
+  acquire: (key: string, ttl?: number) => Promise<string | null>;
+  release: (key: string, lockValue: string) => Promise<boolean>;
+  acquireWithRetry: (
+    key: string,
+    ttl?: number,
+    retryDelay?: number,
+    maxRetries?: number,
+  ) => Promise<string>;
+  lock: <T>(
+    key: string,
+    action: () => Promise<T>,
+    ttl?: number,
+    retryDelay?: number,
+    maxRetries?: number,
+  ) => Promise<T>;
+};
 
-  async acquire(key: string, ttl: number = 10): Promise<string | null> {
+export const createLockingService = (
+  redis: RedisClient,
+  logger: ILogger,
+): LockingService => {
+  const acquire = async (
+    key: string,
+    ttl: number = 10,
+  ): Promise<string | null> => {
     const lockKey = `lock:${key}`;
     const lockValue = `${Date.now()}-${Math.random()}`;
 
-    const result = await this.r.send('SET', [
+    const result = await redis.send('SET', [
       lockKey,
       lockValue,
       'NX',
@@ -28,12 +46,12 @@ export class LockingUtil {
       String(ttl),
     ]);
     return result === 'OK' ? lockValue : null;
-  }
+  };
 
-  async release(key: string, lockValue: string): Promise<boolean> {
+  const release = async (key: string, lockValue: string): Promise<boolean> => {
     const lockKey = `lock:${key}`;
     try {
-      const result = await this.r.send('EVAL', [
+      const result = await redis.send('EVAL', [
         RELEASE_LOCK_SCRIPT,
         '1',
         lockKey,
@@ -43,17 +61,17 @@ export class LockingUtil {
     } catch (error) {
       throw new Error(`Failed to release lock on ${key}: ${error}`);
     }
-  }
+  };
 
-  async acquireWithRetry(
+  const acquireWithRetry = async (
     key: string,
     ttl: number = 10,
     retryDelay: number = 100,
     maxRetries: number = 50,
-  ): Promise<string> {
+  ): Promise<string> => {
     let retries = 0;
     while (retries < maxRetries) {
-      const lockValue = await this.acquire(key, ttl);
+      const lockValue = await acquire(key, ttl);
       if (lockValue) {
         return lockValue;
       }
@@ -65,32 +83,32 @@ export class LockingUtil {
     throw new Error(
       `Failed to acquire lock on ${key} after ${maxRetries} retries`,
     );
-  }
+  };
 
-  async lock<T>(
+  const lock = async <T>(
     key: string,
     action: () => Promise<T>,
     ttl: number = 10,
     retryDelay: number = 100,
     maxRetries: number = 50,
-  ): Promise<T> {
-    const lockValue = await this.acquireWithRetry(
-      key,
-      ttl,
-      retryDelay,
-      maxRetries,
-    );
+  ): Promise<T> => {
+    const lockValue = await acquireWithRetry(key, ttl, retryDelay, maxRetries);
 
     try {
       return await action();
     } finally {
       try {
-        await this.release(key, lockValue);
+        await release(key, lockValue);
       } catch (releaseError) {
-        this.l.error(`Failed to release lock ${key}: ${releaseError}`);
+        logger.error(`Failed to release lock ${key}: ${releaseError}`);
       }
     }
-  }
-}
+  };
 
-export const lockingUtil = new LockingUtil();
+  return {
+    acquire,
+    release,
+    acquireWithRetry,
+    lock,
+  };
+};
