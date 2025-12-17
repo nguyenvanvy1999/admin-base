@@ -38,7 +38,7 @@ CREATE TYPE "ApiKeyStatus" AS ENUM ('active', 'revoked', 'expired');
 CREATE TYPE "LogType" AS ENUM ('audit', 'security', 'system', 'api', 'rate_limit');
 
 -- CreateEnum
-CREATE TYPE "LogLevel" AS ENUM ('info', 'warn', 'error', 'critical');
+CREATE TYPE "LogLevel" AS ENUM ('info', 'warning', 'error', 'critical');
 
 -- CreateEnum
 CREATE TYPE "AuditLogCategory" AS ENUM ('cud', 'security', 'internal', 'system');
@@ -240,7 +240,7 @@ CREATE TABLE "user_ip_whitelist" (
 CREATE TABLE "audit_logs" (
     "id" BIGINT NOT NULL,
     "log_type" "LogType" NOT NULL,
-    "level" "LogLevel" NOT NULL DEFAULT 'info',
+    "level" TEXT NOT NULL,
     "category" "AuditLogCategory",
     "visibility" "AuditLogVisibility" NOT NULL DEFAULT 'actor_only',
     "occurred_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

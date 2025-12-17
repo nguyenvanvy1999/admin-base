@@ -8,7 +8,6 @@ import type { AuditLogWhereInput } from 'src/generated';
 import {
   AuditLogCategory,
   AuditLogVisibility,
-  LogLevel,
   LogType,
   SecurityEventSeverity,
   SecurityEventType,
@@ -342,7 +341,7 @@ export class AuditLogsService {
       logId,
       type: `other-${payload.eventType}` as const,
       logType: options?.logType ?? this.getDefaultLogType(payload.eventType),
-      level: this.mapLogLevelToLogLevel(payload.level),
+      level: payload.level,
       category: payload.category as AuditLogCategory,
       visibility: options?.visibility ?? AuditLogVisibility.admin_only,
       userId: context.userId,
@@ -400,16 +399,6 @@ export class AuditLogsService {
       [SecurityEventSeverity.critical]: LOG_LEVEL.FATAL,
     };
     return map[severity];
-  }
-
-  private mapLogLevelToLogLevel(level: LogLevel): LOG_LEVEL {
-    const map: Record<LogLevel, LOG_LEVEL> = {
-      [LogLevel.info]: LOG_LEVEL.INFO,
-      [LogLevel.warn]: LOG_LEVEL.WARNING,
-      [LogLevel.error]: LOG_LEVEL.ERROR,
-      [LogLevel.critical]: LOG_LEVEL.FATAL,
-    };
-    return map[level];
   }
 
   private getDefaultLogType(eventType: InternalEventType): LogType {

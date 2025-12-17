@@ -79,16 +79,16 @@ export const defaultRoles: Record<
   { id: string; title: string; description: string }
 > = {
   system: {
-    id: 'role_m8jgrcy4y0yf',
+    id: 'role_system_001',
     title: 'System',
     description: 'System role',
   },
   administrator: {
-    id: 'role_x4tu1hzoh13g',
+    id: 'role_admin_001',
     title: 'Administrator',
     description: 'Administrator role',
   },
-  user: { id: 'role_sabb8hc2pqmd', title: 'User', description: 'User role' },
+  user: { id: 'role_user_001', title: 'User', description: 'User role' },
 };
 
 export const PERMISSIONS = {
@@ -224,8 +224,8 @@ export enum PurposeVerify {
   RESET_MFA = 'reset-mfa',
 }
 
-export const SYS_USER_ID = 'user_xs6ua3wp0rtm';
-export const ADMIN_USER_ID = 'user_a8bpd742rslg';
+export const SYS_USER_ID = 'user_system_001';
+export const ADMIN_USER_ID = 'user_admin_001';
 
 export enum OAUTH {
   GOOGLE = 'google',

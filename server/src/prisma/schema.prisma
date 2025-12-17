@@ -135,13 +135,6 @@ enum LogType {
   rate_limit
 }
 
-enum LogLevel {
-  info
-  warn
-  error
-  critical
-}
-
 enum AuditLogCategory {
   cud
   security
@@ -450,9 +443,9 @@ model UserIpWhitelist {
 model AuditLog {
   id         BigInt             @id
   logType    LogType            @map("log_type")
-  level      LogLevel           @default(info) @map("level")
+  level      String
   category   AuditLogCategory?  @map("category")
-  visibility AuditLogVisibility @default(actor_only) @map("visibility")
+  visibility AuditLogVisibility @default(actor_only)
   occurredAt DateTime           @default(now()) @map("occurred_at")
   created    DateTime           @default(now())
 

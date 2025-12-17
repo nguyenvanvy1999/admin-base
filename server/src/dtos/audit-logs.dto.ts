@@ -2,12 +2,11 @@ import { t } from 'elysia';
 import {
   AuditLogCategory,
   AuditLogVisibility,
-  LogLevel,
   LogType,
   SecurityEventSeverity,
   SecurityEventType,
 } from 'src/generated';
-import { PaginatedDto, PaginationReqDto } from 'src/share';
+import { LOG_LEVEL, PaginatedDto, PaginationReqDto } from 'src/share';
 
 export const AuditLogListQueryDto = t.Intersect([
   PaginationReqDto,
@@ -16,7 +15,7 @@ export const AuditLogListQueryDto = t.Intersect([
     sessionId: t.Optional(t.String()),
     entityType: t.Optional(t.String()),
     entityId: t.Optional(t.String()),
-    level: t.Optional(t.Enum(LogLevel)),
+    level: t.Optional(t.Enum(LOG_LEVEL)),
     logType: t.Optional(t.Enum(LogType)),
     eventType: t.Optional(t.Enum(SecurityEventType)),
     severity: t.Optional(t.Enum(SecurityEventSeverity)),
@@ -46,7 +45,7 @@ export const AuditLogItemDto = t.Object({
   id: t.String(),
   payload: t.Any(),
   description: t.Nullable(t.String()),
-  level: t.Enum(LogLevel),
+  level: t.String(),
   logType: t.Enum(LogType),
   category: t.Nullable(t.Enum(AuditLogCategory)),
   visibility: t.Enum(AuditLogVisibility),

@@ -1,4 +1,4 @@
-import type { LogLevel } from 'src/generated';
+import type { LOG_LEVEL } from 'src/share';
 
 export type InternalEventType =
   | 'internal_error'
@@ -35,11 +35,11 @@ export type InternalEventPayload<T extends InternalEventType> =
     ? {
         category: 'internal' | 'system';
         eventType: T;
-        level: LogLevel;
+        level: LOG_LEVEL;
       } & InternalEventPayloadMap[T]
     : {
         category: 'internal' | 'system';
         eventType: T;
-        level: LogLevel;
+        level: LOG_LEVEL;
         detail: Record<string, unknown>;
       };
