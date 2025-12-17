@@ -278,6 +278,8 @@ export enum DOC_TAG {
   ADMIN_RATE_LIMIT = 'Admin Rate Limit',
   ADMIN_API_KEY = 'Admin API Key',
   USER_API_KEY = 'User API Key',
+  ADMIN_API_KEY_USAGE = 'Admin API Key Usage',
+  USER_API_KEY_USAGE = 'User API Key Usage',
 }
 
 export const ACCESS_AUTH = [{ accessToken: [] }];
@@ -409,6 +411,14 @@ export const DOC_OPTIONS = {
     userApiKey: {
       name: DOC_TAG.USER_API_KEY,
       description: 'User API key management endpoints',
+    },
+    adminApiKeyUsage: {
+      name: DOC_TAG.ADMIN_API_KEY_USAGE,
+      description: 'Admin API key usage tracking endpoints',
+    },
+    userApiKeyUsage: {
+      name: DOC_TAG.USER_API_KEY_USAGE,
+      description: 'User API key usage tracking endpoints',
     },
   },
 };

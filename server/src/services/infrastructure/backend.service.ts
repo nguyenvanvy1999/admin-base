@@ -18,6 +18,8 @@ import { swaggerConfig } from 'src/config/swagger';
 import {
   apiKeysAdminController,
   apiKeysUserController,
+  apiKeyUsageAdminController,
+  apiKeyUsageUserController,
   auditLogsAdminController,
   auditLogsUserController,
   authController,
@@ -222,6 +224,8 @@ export class BackendServerService {
           .use(ipWhitelistUserController)
           .use(apiKeysAdminController)
           .use(apiKeysUserController)
+          .use(apiKeyUsageAdminController)
+          .use(apiKeyUsageUserController)
           .use(usersAdminController)
           .use(rolesAdminController)
           .use(permissionsAdminController)
