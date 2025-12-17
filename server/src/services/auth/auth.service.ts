@@ -65,12 +65,7 @@ import {
 } from './auth-util.service';
 import { type MfaService, mfaService } from './mfa.service';
 import { type OtpService, otpService } from './otp.service';
-import {
-  type PasswordService,
-  type PasswordValidationService,
-  passwordService,
-  passwordValidationService,
-} from './password.service';
+import { type PasswordService, passwordService } from './password.service';
 import {
   type SecurityCheckResult,
   type SecurityMonitorService,
@@ -84,7 +79,6 @@ export class AuthService {
       db: IDb;
       env: IEnv;
       passwordService: PasswordService;
-      passwordValidationService: PasswordValidationService;
       tokenService: TokenService;
       mfaService: MfaService;
       otpService: OtpService;
@@ -99,7 +93,6 @@ export class AuthService {
       db,
       env,
       passwordService,
-      passwordValidationService,
       tokenService,
       mfaService,
       otpService,
@@ -383,8 +376,6 @@ export class AuthService {
 
   async register(params: RegisterParams): Promise<{ otpToken: string } | null> {
     const { email, password } = params;
-
-    this.deps.passwordValidationService.validatePasswordOrThrow(password);
 
     const normalizedEmail = normalizeEmail(email);
 

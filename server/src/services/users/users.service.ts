@@ -25,9 +25,7 @@ import {
 } from 'src/services/auth/auth-util.service';
 import {
   type PasswordService,
-  type PasswordValidationService,
   passwordService,
-  passwordValidationService,
 } from 'src/services/auth/password.service';
 import {
   type SessionService,
@@ -87,7 +85,6 @@ export class UsersService {
       sessionService: SessionService;
       auditLogService: AuditLogsService;
       passwordService: PasswordService;
-      passwordValidationService: PasswordValidationService;
       userUtilService: UserUtilService;
     },
   ) {}
@@ -97,7 +94,6 @@ export class UsersService {
   ): Promise<AdminUserActionResult> {
     const { email, password, name, roleIds, status, emailVerified } = params;
 
-    this.deps.passwordValidationService.validatePasswordOrThrow(password);
     const normalizedEmail = normalizeEmail(email);
 
     const existingUser = await this.deps.db.user.findUnique({
@@ -626,6 +622,5 @@ export const usersService = new UsersService({
   sessionService,
   auditLogService: auditLogsService,
   passwordService,
-  passwordValidationService,
   userUtilService,
 });
