@@ -211,6 +211,7 @@ export class UserUtilService {
       exp: expirationTime.getTime(),
       expired: dayjs(expirationTime).format(),
       user: userRes,
+      sessionId,
     };
   }
 }

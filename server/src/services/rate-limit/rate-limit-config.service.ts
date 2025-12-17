@@ -17,7 +17,7 @@ export class RateLimitConfigService {
     }
 
     try {
-      const config = await this.deps.db.rateLimitConfig.findUnique({
+      const config = await this.deps.db.rateLimitConfig.findFirst({
         where: {
           routePath,
         },
@@ -77,7 +77,7 @@ export class RateLimitConfigService {
   async upsert(data: IUpsertRateLimitConfig) {
     if (data.id) {
       // Update existing
-      const existing = await this.deps.db.rateLimitConfig.findUnique({
+      const existing = await this.deps.db.rateLimitConfig.findFirst({
         where: { id: data.id },
         select: { routePath: true },
       });

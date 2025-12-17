@@ -83,7 +83,9 @@ export default function AdminSessionsPage() {
     ];
 
     if (canViewAll) {
-      columns.push(createUserSelectColumn<AdminSession>(userSearchSelect));
+      columns.push(
+        createUserSelectColumn<AdminSession>(userSearchSelect, t as any),
+      );
     }
 
     return columns;

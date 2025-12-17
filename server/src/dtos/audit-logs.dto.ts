@@ -8,38 +8,37 @@ import {
 } from 'src/generated';
 import { LOG_LEVEL, PaginatedDto, PaginationReqDto } from 'src/share';
 
-export const AuditLogListQueryDto = t.Intersect([
-  PaginationReqDto,
-  t.Object({
-    userId: t.Optional(t.String()),
-    sessionId: t.Optional(t.String()),
-    entityType: t.Optional(t.String()),
-    entityId: t.Optional(t.String()),
-    level: t.Optional(t.Enum(LOG_LEVEL)),
-    logType: t.Optional(t.Enum(LogType)),
-    eventType: t.Optional(t.Enum(SecurityEventType)),
-    severity: t.Optional(t.Enum(SecurityEventSeverity)),
-    resolved: t.Optional(t.Boolean()),
-    ip: t.Optional(t.String()),
-    traceId: t.Optional(t.String()),
-    correlationId: t.Optional(t.String()),
-    subjectUserId: t.Optional(t.String()),
-    category: t.Optional(t.Enum(AuditLogCategory)),
-    visibility: t.Optional(t.Enum(AuditLogVisibility)),
-    occurredAt0: t.Optional(
-      t.Date({
-        format: 'date-time',
-        example: '2023-10-01T00:00:00.000Z',
-      }),
-    ),
-    occurredAt1: t.Optional(
-      t.Date({
-        format: 'date-time',
-        example: '2023-10-10T23:59:59.999Z',
-      }),
-    ),
-  }),
-]);
+export const AuditLogListQueryDto = t.Object({
+  take: PaginationReqDto.properties.take,
+  skip: PaginationReqDto.properties.skip,
+  userId: t.Optional(t.String()),
+  sessionId: t.Optional(t.String()),
+  entityType: t.Optional(t.String()),
+  entityId: t.Optional(t.String()),
+  level: t.Optional(t.Enum(LOG_LEVEL)),
+  logType: t.Optional(t.Enum(LogType)),
+  eventType: t.Optional(t.Enum(SecurityEventType)),
+  severity: t.Optional(t.Enum(SecurityEventSeverity)),
+  resolved: t.Optional(t.Boolean()),
+  ip: t.Optional(t.String()),
+  traceId: t.Optional(t.String()),
+  correlationId: t.Optional(t.String()),
+  subjectUserId: t.Optional(t.String()),
+  category: t.Optional(t.Enum(AuditLogCategory)),
+  visibility: t.Optional(t.Enum(AuditLogVisibility)),
+  occurredAt0: t.Optional(
+    t.Date({
+      format: 'date-time',
+      example: '2023-10-01T00:00:00.000Z',
+    }),
+  ),
+  occurredAt1: t.Optional(
+    t.Date({
+      format: 'date-time',
+      example: '2023-10-10T23:59:59.999Z',
+    }),
+  ),
+});
 
 export const AuditLogItemDto = t.Object({
   id: t.String(),

@@ -79,6 +79,7 @@ export const LoginResDto = t.Object({
   exp: t.Number(),
   expired: t.String(),
   user: UserResDto,
+  sessionId: t.String(),
 });
 
 export type ILoginRes = typeof LoginResDto.static;

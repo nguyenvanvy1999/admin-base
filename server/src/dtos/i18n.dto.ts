@@ -11,12 +11,11 @@ export const I18nDto = t.Object({
 
 export const PaginateI18nResDto = PaginatedDto(I18nDto);
 
-export const I18nPaginationDto = t.Intersect([
-  PaginationReqDto,
-  t.Object({
-    key: t.Optional(t.String()),
-  }),
-]);
+export const I18nPaginationDto = t.Object({
+  take: PaginationReqDto.properties.take,
+  skip: PaginationReqDto.properties.skip,
+  key: t.Optional(t.String()),
+});
 
 export const I18nUpsertDto = t.Intersect([
   t.Omit(I18nDto, ['id']),

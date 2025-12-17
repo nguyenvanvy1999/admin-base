@@ -33,15 +33,14 @@ export const IpWhitelistDetailResDto = t.Intersect([
   }),
 ]);
 
-export const IpWhitelistPaginationDto = t.Intersect([
-  PaginationReqDto,
-  t.Object({
-    userId: t.Optional(t.String()),
-    userIds: t.Optional(t.Array(t.String())),
-    ip: t.Optional(t.String()),
-    search: DtoFields.search,
-  }),
-]);
+export const IpWhitelistPaginationDto = t.Object({
+  take: PaginationReqDto.properties.take,
+  skip: PaginationReqDto.properties.skip,
+  userId: t.Optional(t.String()),
+  userIds: t.Optional(t.Array(t.String())),
+  ip: t.Optional(t.String()),
+  search: DtoFields.search,
+});
 
 export type IpWhitelistListParams = typeof IpWhitelistPaginationDto.static & {
   currentUserId: string;

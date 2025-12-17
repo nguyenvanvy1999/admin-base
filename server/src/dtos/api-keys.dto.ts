@@ -12,15 +12,14 @@ export const UpsertApiKeyDto = t.Object({
   metadata: t.Optional(t.Any()),
 });
 
-export const ApiKeyListQueryDto = t.Intersect([
-  PaginationReqDto,
-  t.Object({
-    userId: t.Optional(t.String()),
-    userIds: t.Optional(t.Array(t.String())),
-    status: t.Optional(t.Enum(ApiKeyStatus)),
-    search: DtoFields.search,
-  }),
-]);
+export const ApiKeyListQueryDto = t.Object({
+  take: PaginationReqDto.properties.take,
+  skip: PaginationReqDto.properties.skip,
+  userId: t.Optional(t.String()),
+  userIds: t.Optional(t.Array(t.String())),
+  status: t.Optional(t.Enum(ApiKeyStatus)),
+  search: DtoFields.search,
+});
 
 export const ApiKeyResponseDto = t.Object({
   id: t.String(),

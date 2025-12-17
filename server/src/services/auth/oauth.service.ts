@@ -158,7 +158,7 @@ export class OAuthService {
             email,
             metadata: { linked: true },
           },
-          { subjectUserId: user.id },
+          { subjectUserId: user.id, userId: user.id },
         );
       }
     } else {
@@ -203,7 +203,7 @@ export class OAuthService {
           email,
           metadata: { registration: true },
         },
-        { subjectUserId: user.id },
+        { subjectUserId: user.id, userId: user.id },
       );
     }
 
@@ -224,7 +224,7 @@ export class OAuthService {
           email,
           error: 'security_blocked',
         },
-        { subjectUserId: user.id },
+        { subjectUserId: user.id, userId: user.id },
       );
       throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
     }
@@ -248,7 +248,7 @@ export class OAuthService {
         isNewDevice: securityResult.isNewDevice ?? false,
         deviceFingerprint: securityResult.deviceFingerprint ?? undefined,
       },
-      { subjectUserId: user.id },
+      { subjectUserId: user.id, userId: user.id },
     );
 
     return loginRes;
@@ -339,7 +339,7 @@ export class OAuthService {
         email: '',
         metadata: { providerId: telegramData.id },
       },
-      { subjectUserId: userId },
+      { subjectUserId: userId, userId: userId },
     );
 
     return null;

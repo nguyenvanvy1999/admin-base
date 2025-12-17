@@ -269,7 +269,11 @@ export class AuthService {
         email: user.email ?? '',
         isNewDevice: security?.isNewDevice ?? false,
       },
-      { subjectUserId: user.id },
+      {
+        subjectUserId: user.id,
+        userId: user.id,
+        sessionId: loginRes.sessionId,
+      },
     );
 
     return loginRes;
@@ -300,6 +304,7 @@ export class AuthService {
       },
       {
         subjectUserId: user.id,
+        userId: user.id,
         visibility: AuditLogVisibility.actor_and_subject,
       },
     );
@@ -421,7 +426,7 @@ export class AuthService {
         method: 'email',
         email: normalizedEmail,
       },
-      { subjectUserId: createdUserId },
+      { subjectUserId: createdUserId, userId: createdUserId },
     );
 
     if (otpToken) {
@@ -670,7 +675,11 @@ export class AuthService {
         email: session.createdBy.email ?? '',
         metadata: { action: 'refresh_token' },
       },
-      { subjectUserId: session.createdBy.id },
+      {
+        subjectUserId: session.createdBy.id,
+        userId: session.createdBy.id,
+        sessionId: session.id,
+      },
     );
 
     return {
@@ -680,6 +689,7 @@ export class AuthService {
       exp: expirationTime.getTime(),
       expired: dayjs(expirationTime).format(),
       user,
+      sessionId: session.id,
     };
   }
 
@@ -695,7 +705,7 @@ export class AuthService {
         email: '',
         metadata: { action: 'logout' },
       },
-      { subjectUserId: id },
+      { subjectUserId: id, userId: id, sessionId },
     );
 
     await this.deps.sessionService.revoke(id, [sessionId]);

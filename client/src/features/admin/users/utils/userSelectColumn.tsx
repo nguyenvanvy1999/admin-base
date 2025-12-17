@@ -1,5 +1,5 @@
 import type { ProColumns } from '@ant-design/pro-components';
-import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { UseUserSearchSelectResult } from '../hooks/useUserSearchSelect';
 
 export interface UserSelectColumnOptions {
@@ -12,6 +12,7 @@ export interface UserSelectColumnOptions {
 
 export function createUserSelectColumn<T extends Record<string, any>>(
   hookResult: UseUserSearchSelectResult,
+  t: TFunction,
   options: UserSelectColumnOptions = {},
 ): ProColumns<T> {
   const {
@@ -21,7 +22,6 @@ export function createUserSelectColumn<T extends Record<string, any>>(
     mode = 'multiple',
     minWidth = 240,
   } = options;
-  const { t } = useTranslation();
 
   return {
     title: title ?? t('common.filters.users'),

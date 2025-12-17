@@ -61,6 +61,8 @@ export class AuditLogsService {
     options?: {
       visibility?: AuditLogVisibility;
       subjectUserId?: string;
+      userId?: string | null;
+      sessionId?: string | null;
       resolved?: boolean;
     },
   ): Promise<void> {
@@ -288,6 +290,8 @@ export class AuditLogsService {
     options?: {
       visibility?: AuditLogVisibility;
       subjectUserId?: string;
+      userId?: string | null;
+      sessionId?: string | null;
       resolved?: boolean;
     },
   ): EnrichedAuditLogEntry {
@@ -306,9 +310,10 @@ export class AuditLogsService {
       visibility,
       eventType: payload.eventType,
       severity: payload.severity,
-      userId: context.userId,
-      sessionId: context.sessionId,
-      subjectUserId: options?.subjectUserId ?? context.userId ?? null,
+      userId: options?.userId ?? context.userId,
+      sessionId: options?.sessionId ?? context.sessionId,
+      subjectUserId:
+        options?.subjectUserId ?? options?.userId ?? context.userId ?? null,
       ip: context.ip,
       userAgent: context.userAgent,
       requestId: context.requestId,

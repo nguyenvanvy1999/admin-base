@@ -42,14 +42,13 @@ export const NotificationTemplateDetailResDto = t.Intersect([
   }),
 ]);
 
-export const NotificationTemplatePaginationDto = t.Intersect([
-  PaginationReqDto,
-  t.Object({
-    type: t.Optional(t.Enum(NotificationType)),
-    enabled: t.Optional(t.Boolean()),
-    search: DtoFields.search,
-  }),
-]);
+export const NotificationTemplatePaginationDto = t.Object({
+  take: PaginationReqDto.properties.take,
+  skip: PaginationReqDto.properties.skip,
+  type: t.Optional(t.Enum(NotificationType)),
+  enabled: t.Optional(t.Boolean()),
+  search: DtoFields.search,
+});
 
 export type NotificationTemplateListParams =
   typeof NotificationTemplatePaginationDto.static;

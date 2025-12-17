@@ -1,19 +1,18 @@
 import { t } from 'elysia';
 import { PaginationReqDto } from 'src/share';
 
-export const ApiKeyUsageListQueryDto = t.Intersect([
-  PaginationReqDto,
-  t.Object({
-    apiKeyId: t.Optional(t.String({ minLength: 1 })),
-    userId: t.Optional(t.String({ minLength: 1 })),
-    method: t.Optional(t.String({ minLength: 1 })),
-    endpoint: t.Optional(t.String({ minLength: 1 })),
-    statusCode: t.Optional(t.Integer()),
-    startDate: t.Optional(t.Date({ format: 'date-time' })),
-    endDate: t.Optional(t.Date({ format: 'date-time' })),
-    ip: t.Optional(t.String({ minLength: 1 })),
-  }),
-]);
+export const ApiKeyUsageListQueryDto = t.Object({
+  take: PaginationReqDto.properties.take,
+  skip: PaginationReqDto.properties.skip,
+  apiKeyId: t.Optional(t.String({ minLength: 1 })),
+  userId: t.Optional(t.String({ minLength: 1 })),
+  method: t.Optional(t.String({ minLength: 1 })),
+  endpoint: t.Optional(t.String({ minLength: 1 })),
+  statusCode: t.Optional(t.Integer()),
+  startDate: t.Optional(t.Date({ format: 'date-time' })),
+  endDate: t.Optional(t.Date({ format: 'date-time' })),
+  ip: t.Optional(t.String({ minLength: 1 })),
+});
 
 export const ApiKeyUsageStatsQueryDto = t.Object({
   apiKeyId: t.Optional(t.String({ minLength: 1 })),

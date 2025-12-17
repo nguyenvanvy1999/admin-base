@@ -44,16 +44,15 @@ export const NotificationDetailResDto = t.Intersect([
   }),
 ]);
 
-export const NotificationPaginationDto = t.Intersect([
-  PaginationReqDto,
-  t.Object({
-    userId: t.Optional(t.String()),
-    userIds: t.Optional(t.Array(t.String())),
-    type: t.Optional(t.Enum(NotificationType)),
-    status: t.Optional(t.Enum(NotificationStatus)),
-    search: DtoFields.search,
-  }),
-]);
+export const NotificationPaginationDto = t.Object({
+  take: PaginationReqDto.properties.take,
+  skip: PaginationReqDto.properties.skip,
+  userId: t.Optional(t.String()),
+  userIds: t.Optional(t.Array(t.String())),
+  type: t.Optional(t.Enum(NotificationType)),
+  status: t.Optional(t.Enum(NotificationStatus)),
+  search: DtoFields.search,
+});
 
 export const MarkNotificationReadDto = t.Object({
   ids: t.Array(t.String({ minLength: 1 }), { minItems: 1 }),

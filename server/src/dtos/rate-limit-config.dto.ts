@@ -2,13 +2,12 @@ import { t } from 'elysia';
 import { RateLimitStrategy } from 'src/generated';
 import { PaginatedDto, PaginationReqDto } from 'src/share';
 
-export const RateLimitConfigListQueryDto = t.Intersect([
-  PaginationReqDto,
-  t.Object({
-    routePath: t.Optional(t.String()),
-    enabled: t.Optional(t.Boolean()),
-  }),
-]);
+export const RateLimitConfigListQueryDto = t.Object({
+  take: PaginationReqDto.properties.take,
+  skip: PaginationReqDto.properties.skip,
+  routePath: t.Optional(t.String()),
+  enabled: t.Optional(t.Boolean()),
+});
 
 export const RateLimitConfigItemDto = t.Object({
   id: t.String(),

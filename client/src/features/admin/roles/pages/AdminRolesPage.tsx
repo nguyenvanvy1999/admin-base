@@ -123,7 +123,7 @@ export default function AdminRolesPage() {
           );
         },
       },
-      createUserSelectColumn<AdminRole>(userSearchSelect, {
+      createUserSelectColumn<AdminRole>(userSearchSelect, t, {
         title: t('common.filters.user'),
         dataIndex: 'userId',
         placeholder: t('common.filters.user'),

@@ -55,20 +55,19 @@ export const AdminUserCreateDto = t.Object({
   emailVerified: t.Optional(t.Boolean()),
 });
 
-export const AdminUserListQueryDto = t.Intersect([
-  PaginationReqDto,
-  t.Object({
-    email: t.Optional(
-      t.String({
-        minLength: 1,
-        maxLength: 128,
-      }),
-    ),
-    search: DtoFields.search,
-    statuses: t.Optional(t.Array(t.Enum(UserStatus))),
-    roleIds: t.Optional(t.Array(t.String())),
-  }),
-]);
+export const AdminUserListQueryDto = t.Object({
+  take: PaginationReqDto.properties.take,
+  skip: PaginationReqDto.properties.skip,
+  email: t.Optional(
+    t.String({
+      minLength: 1,
+      maxLength: 128,
+    }),
+  ),
+  search: DtoFields.search,
+  statuses: t.Optional(t.Array(t.Enum(UserStatus))),
+  roleIds: t.Optional(t.Array(t.String())),
+});
 
 const SessionStatsDto = t.Object({
   total: t.Integer(),
