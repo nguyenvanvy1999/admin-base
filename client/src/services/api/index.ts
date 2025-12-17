@@ -1,3 +1,4 @@
+export * from './admin/api-keys.service';
 export * from './admin/audit-logs.service';
 export * from './admin/i18n.service';
 export * from './admin/rate-limits.service';
@@ -6,6 +7,7 @@ export * from './admin/sessions.service';
 export * from './admin/settings.service';
 export * from './admin/user-ip-whitelists.service';
 export * from './admin/users.service';
+export * from './api-keys.service';
 export * from './auth.service';
 export * from './base.service';
 export * from './healthcheck.service';

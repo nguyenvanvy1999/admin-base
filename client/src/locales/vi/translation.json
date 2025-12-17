@@ -39,7 +39,9 @@
       "verify": "Xác nhận",
       "resend": "Gửi lại",
       "block": "Chặn",
-      "unblock": "Bỏ chặn"
+      "unblock": "Bỏ chặn",
+      "copy": "Sao chép",
+      "close": "Đóng"
     },
     "messages": {
       "saveSuccess": "Lưu thành công",
@@ -54,7 +56,10 @@
       "exportError": "Xuất thất bại: {{error}}",
       "rolesUpdateSuccess": "Cập nhật roles cho user thành công",
       "mfaResetSuccess": "Reset MFA thành công",
-      "mfaDisableSuccess": "Vô hiệu hóa MFA thành công"
+      "mfaDisableSuccess": "Vô hiệu hóa MFA thành công",
+      "copiedToClipboard": "Đã sao chép vào clipboard",
+      "confirmDelete": "Xác nhận xóa",
+      "selected": "Đã chọn {{count}} mục"
     },
     "fields": {
       "email": "Email",
@@ -139,7 +144,11 @@
       "translationKey": "Ví dụ: common.actions.save",
       "englishTranslation": "Nhập bản dịch tiếng Anh",
       "vietnameseTranslation": "Nhập bản dịch tiếng Việt",
-      "auditReason": "Nhập lý do để ghi vào audit log"
+      "auditReason": "Nhập lý do để ghi vào audit log",
+      "clickToCopy": "Nhấp để sao chép"
+    },
+    "validation": {
+      "maxLength": "Tối đa {{max}} ký tự"
     }
   },
   "sidebar": {
@@ -152,7 +161,8 @@
     "adminRoles": "Quản lý role",
     "adminPermissions": "Quản lý permission",
     "adminSettings": "Quản lý settings",
-    "adminAuditLogs": "Audit Logs"
+    "adminAuditLogs": "Audit Logs",
+    "adminApiKeys": "Quản lý API Keys"
   },
   "header": {
     "appName": "Admin Portal",
@@ -606,6 +616,103 @@
       "unblockError": "Bỏ chặn rate limit thất bại",
       "cleanupSuccess": "Dọn dẹp rate limit đã hết hạn thành công",
       "cleanupError": "Dọn dẹp rate limit thất bại"
+    }
+  },
+  "adminApiKeysPage": {
+    "title": "Quản lý API Keys",
+    "subtitle": "Tạo, quản lý và theo dõi API keys cho tất cả users.",
+    "fields": {
+      "name": "Tên",
+      "keyPrefix": "Key",
+      "user": "User",
+      "status": "Trạng thái",
+      "expiresAt": "Hết hạn",
+      "lastUsedAt": "Lần sử dụng cuối",
+      "ipWhitelist": "IP Whitelist"
+    },
+    "placeholders": {
+      "selectUser": "Chọn user",
+      "keyName": "Ví dụ: Production API Key",
+      "expiresAt": "Chọn ngày hết hạn (tùy chọn)",
+      "ipWhitelist": "Nhập các IP (mỗi dòng một IP). Để trống để cho phép tất cả."
+    },
+    "tooltips": {
+      "ipWhitelist": "Chỉ cho phép các yêu cầu từ các IP này. Để trống để cho phép tất cả IP."
+    },
+    "actions": {
+      "create": "Tạo API Key",
+      "edit": "Chỉnh sửa",
+      "revoke": "Thu hồi",
+      "regenerate": "Tạo lại"
+    },
+    "messages": {
+      "userRequired": "Vui lòng chọn user",
+      "nameRequired": "Vui lòng nhập tên API key",
+      "createSuccess": "Tạo API key thành công",
+      "createError": "Tạo API key thất bại",
+      "updateSuccess": "Cập nhật API key thành công",
+      "updateError": "Cập nhật API key thất bại",
+      "deleteSuccess": "Xóa API key thành công",
+      "deleteError": "Xóa API key thất bại",
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa API key này?",
+      "revokeTitle": "Thu hồi API Key",
+      "revokeConfirm": "Bạn có chắc chắn muốn thu hồi API key này? Nó sẽ không thể sử dụng được nữa.",
+      "revokeSuccess": "Thu hồi API key thành công",
+      "revokeError": "Thu hồi API key thất bại",
+      "regenerateTitle": "Tạo lại API Key",
+      "regenerateConfirm": "Bạn có chắc chắn muốn tạo lại API key này? Key cũ sẽ bị vô hiệu hóa.",
+      "regenerateSuccess": "Tạo lại API key thành công",
+      "regenerateError": "Tạo lại API key thất bại",
+      "newKeyTitle": "API Key Mới",
+      "newKeyWarning": "⚠️ Lưu ý: Đây là lần duy nhất bạn sẽ thấy key này. Hãy sao chép và lưu trữ nó ở nơi an toàn.",
+      "newKeyDescription": "Key này sẽ không thể hiển thị lại. Nếu bạn mất nó, bạn sẽ cần tạo một key mới."
+    }
+  },
+  "userApiKeysPage": {
+    "title": "API Keys của tôi",
+    "subtitle": "Tạo, quản lý và theo dõi API keys của bạn.",
+    "fields": {
+      "name": "Tên",
+      "keyPrefix": "Key",
+      "status": "Trạng thái",
+      "expiresAt": "Hết hạn",
+      "lastUsedAt": "Lần sử dụng cuối",
+      "ipWhitelist": "IP Whitelist"
+    },
+    "placeholders": {
+      "keyName": "Ví dụ: Production API Key",
+      "expiresAt": "Chọn ngày hết hạn (tùy chọn)",
+      "ipWhitelist": "Nhập các IP (mỗi dòng một IP). Để trống để cho phép tất cả."
+    },
+    "tooltips": {
+      "ipWhitelist": "Chỉ cho phép các yêu cầu từ các IP này. Để trống để cho phép tất cả IP."
+    },
+    "actions": {
+      "create": "Tạo API Key",
+      "edit": "Chỉnh sửa",
+      "revoke": "Thu hồi",
+      "regenerate": "Tạo lại"
+    },
+    "messages": {
+      "nameRequired": "Vui lòng nhập tên API key",
+      "createSuccess": "Tạo API key thành công",
+      "createError": "Tạo API key thất bại",
+      "updateSuccess": "Cập nhật API key thành công",
+      "updateError": "Cập nhật API key thất bại",
+      "deleteSuccess": "Xóa API key thành công",
+      "deleteError": "Xóa API key thất bại",
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa API key này?",
+      "revokeTitle": "Thu hồi API Key",
+      "revokeConfirm": "Bạn có chắc chắn muốn thu hồi API key này? Nó sẽ không thể sử dụng được nữa.",
+      "revokeSuccess": "Thu hồi API key thành công",
+      "revokeError": "Thu hồi API key thất bại",
+      "regenerateTitle": "Tạo lại API Key",
+      "regenerateConfirm": "Bạn có chắc chắn muốn tạo lại API key này? Key cũ sẽ bị vô hiệu hóa.",
+      "regenerateSuccess": "Tạo lại API key thành công",
+      "regenerateError": "Tạo lại API key thất bại",
+      "newKeyTitle": "API Key Mới",
+      "newKeyWarning": "⚠️ Lưu ý: Đây là lần duy nhất bạn sẽ thấy key này. Hãy sao chép và lưu trữ nó ở nơi an toàn.",
+      "newKeyDescription": "Key này sẽ không thể hiển thị lại. Nếu bạn mất nó, bạn sẽ cần tạo một key mới."
     }
   }
 }
