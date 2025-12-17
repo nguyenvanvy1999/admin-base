@@ -1,3 +1,4 @@
+export * from '../../audit-logs/utils/change-tracking.util';
 export * from './amount.util';
 export * from './common.util';
 export * from './crud-helpers.util';

@@ -13,6 +13,7 @@ import {
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import {
   buildSearchOrCondition,
+  buildUpdateChanges,
   executeListQuery,
   normalizeSearchTerm,
 } from 'src/services/shared/utils';
@@ -102,34 +103,22 @@ export class ApiKeyService {
       await this.deps.cache.del(params.id);
 
       // Audit log
+      const changes = buildUpdateChanges(apiKey, updated, {
+        includeFields: [
+          'name',
+          'expiresAt',
+          'permissions',
+          'ipWhitelist',
+          'metadata',
+        ],
+      });
+
       await this.deps.auditLogService.pushCud({
         category: 'cud',
         entityType: 'api_key',
         entityId: params.id,
         action: 'update',
-        changes: {
-          ...(params.name !== undefined && {
-            name: { previous: apiKey.name, next: params.name },
-          }),
-          ...(params.expiresAt !== undefined && {
-            expiresAt: { previous: apiKey.expiresAt, next: params.expiresAt },
-          }),
-          ...(params.permissions !== undefined && {
-            permissions: {
-              previous: apiKey.permissions,
-              next: params.permissions,
-            },
-          }),
-          ...(params.ipWhitelist !== undefined && {
-            ipWhitelist: {
-              previous: apiKey.ipWhitelist,
-              next: params.ipWhitelist,
-            },
-          }),
-          ...(params.metadata !== undefined && {
-            metadata: { previous: apiKey.metadata, next: params.metadata },
-          }),
-        },
+        changes,
         entityDisplay: {
           name: updated.name,
           userId: updated.userId,

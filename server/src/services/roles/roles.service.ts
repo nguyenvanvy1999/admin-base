@@ -6,7 +6,11 @@ import {
   type RoleWhereInput,
 } from 'src/generated';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
-import { normalizeSearchTerm } from 'src/services/shared/utils';
+import {
+  buildCreateChanges,
+  buildUpdateChanges,
+  normalizeSearchTerm,
+} from 'src/services/shared/utils';
 import {
   BadReqErr,
   DB_PREFIX,
@@ -189,34 +193,28 @@ export class RolesService {
 
       const playerIdsAfter = players.map((p) => p.playerId);
 
+      const changes = buildUpdateChanges(
+        {
+          ...targetRole,
+          permissionIds: permissionIdsBefore,
+          playerIds: playerIdsBefore,
+        },
+        {
+          title,
+          description,
+          enabled,
+          permissionIds,
+          playerIds: playerIdsAfter,
+        },
+      );
+
       await this.deps.auditLogService.pushCud(
         {
           category: 'cud',
           entityType: 'role',
           entityId: id,
           action: 'update',
-          changes: {
-            title: {
-              previous: targetRole.title,
-              next: title,
-            },
-            description: {
-              previous: targetRole.description,
-              next: description,
-            },
-            enabled: {
-              previous: targetRole.enabled,
-              next: enabled,
-            },
-            permissionIds: {
-              previous: permissionIdsBefore,
-              next: permissionIds,
-            },
-            playerIds: {
-              previous: playerIdsBefore,
-              next: playerIdsAfter,
-            },
-          },
+          changes,
         },
         { visibility: AuditLogVisibility.admin_only },
       );
@@ -244,25 +242,21 @@ export class RolesService {
         select: { id: true },
       });
 
+      const changes = buildCreateChanges({
+        title,
+        description,
+        enabled,
+        permissionIds,
+        playerIds: players.map((p) => p.playerId),
+      });
+
       await this.deps.auditLogService.pushCud(
         {
           category: 'cud',
           entityType: 'role',
           entityId: roleId,
           action: 'create',
-          changes: {
-            title: { previous: null, next: title },
-            description: { previous: null, next: description },
-            enabled: { previous: null, next: enabled },
-            permissionIds: {
-              previous: [],
-              next: permissionIds,
-            },
-            playerIds: {
-              previous: [],
-              next: players.map((p) => p.playerId),
-            },
-          },
+          changes,
         },
         { visibility: AuditLogVisibility.admin_only },
       );

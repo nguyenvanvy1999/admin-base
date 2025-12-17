@@ -37,6 +37,10 @@ import {
   settingsService,
 } from 'src/services/settings/settings.service';
 import {
+  buildDeleteChanges,
+  buildUpdateChanges,
+} from 'src/services/shared/utils';
+import {
   BadReqErr,
   DB_PREFIX,
   defaultRoles,
@@ -585,15 +589,17 @@ export class AuthService {
       });
     });
 
+    const changes = buildUpdateChanges(
+      { status: UserStatus.inactive },
+      { status: UserStatus.active },
+    );
     await this.deps.auditLogService.pushCud(
       {
         category: 'cud',
         entityType: 'user',
         entityId: userId,
         action: 'update',
-        changes: {
-          status: { previous: UserStatus.inactive, next: UserStatus.active },
-        },
+        changes,
       },
       {
         subjectUserId: userId,
@@ -698,12 +704,13 @@ export class AuthService {
   async logoutAll(params: LogoutParams): Promise<void> {
     const { id, sessionId } = params;
 
+    const changes = buildDeleteChanges({ sessionId });
     await this.deps.auditLogService.pushCud({
       category: 'cud',
       entityType: 'session',
       entityId: sessionId,
       action: 'delete',
-      changes: { sessionId: { previous: sessionId, next: null } },
+      changes,
     });
 
     await this.deps.sessionService.revoke(id);

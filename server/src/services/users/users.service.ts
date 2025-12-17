@@ -34,6 +34,10 @@ import {
   sessionService,
 } from 'src/services/auth/session.service';
 import {
+  buildCreateChanges,
+  buildUpdateChanges,
+} from 'src/services/shared/utils';
+import {
   BadReqErr,
   DB_PREFIX,
   defaultRoles,
@@ -130,17 +134,19 @@ export class UsersService {
       });
     });
 
+    const changes = buildCreateChanges({
+      enabled: nextStatus === UserStatus.active,
+      roleIds: resolvedRoleIds,
+      username: normalizedEmail,
+    });
+
     await this.deps.auditLogService.pushCud(
       {
         category: 'cud',
         entityType: 'user',
         entityId: userId,
         action: 'create',
-        changes: {
-          enabled: { previous: null, next: nextStatus === UserStatus.active },
-          roleIds: { previous: [], next: resolvedRoleIds },
-          username: { previous: null, next: normalizedEmail },
-        },
+        changes,
       },
       {
         visibility: AuditLogVisibility.actor_and_subject,
@@ -286,20 +292,18 @@ export class UsersService {
 
     await this.resetMfaState(targetUserId);
 
+    const changes = buildUpdateChanges(
+      { mfaTotpEnabled: user.mfaTotpEnabled ?? false },
+      { mfaTotpEnabled: false, reason: normalizedReason, method },
+    );
+
     await this.deps.auditLogService.pushCud(
       {
         category: 'cud',
         entityType: 'user',
         entityId: targetUserId,
         action: 'update',
-        changes: {
-          mfaTotpEnabled: {
-            previous: user.mfaTotpEnabled ?? false,
-            next: false,
-          },
-          reason: { previous: null, next: normalizedReason },
-          method: { previous: null, next: method },
-        },
+        changes,
       },
       {
         visibility: AuditLogVisibility.actor_and_subject,
@@ -335,60 +339,21 @@ export class UsersService {
       throw new BadReqErr(ErrCode.PermissionDenied);
     }
 
-    type UserSnapshot = typeof existingUser;
-    type AssignableField = Exclude<
-      keyof UserSnapshot,
-      'id' | 'roles' | 'status' | 'protected'
-    >;
+    const updateData: UserUncheckedUpdateInput = {};
+    if (name !== undefined) updateData.name = name;
+    if (status !== undefined) updateData.status = status;
+    if (lockoutUntil !== undefined) updateData.lockoutUntil = lockoutUntil;
+    if (lockoutReason !== undefined) updateData.lockoutReason = lockoutReason;
+    if (emailVerified !== undefined) updateData.emailVerified = emailVerified;
+    if (passwordAttempt !== undefined)
+      updateData.passwordAttempt = passwordAttempt;
+    if (passwordExpired !== undefined)
+      updateData.passwordExpired = passwordExpired;
 
-    const updateData: Record<string, unknown> = {};
-    let hasScalarUpdate = false;
-    const auditChanges: Record<string, { previous: unknown; next: unknown }> = {
-      reason: {
-        previous: null,
-        next: normalizedReason,
-      },
-    };
-
-    if (status !== undefined) {
-      auditChanges.status = {
-        previous: existingUser.status,
-        next: status,
-      };
-      if (status !== existingUser.status) {
-        updateData.status = status;
-        hasScalarUpdate = true;
-      }
-    }
-
-    const assignIfProvided = <K extends AssignableField>(
-      field: K,
-      nextValue: UserSnapshot[K] | null | undefined,
-    ) => {
-      if (nextValue === undefined) {
-        return;
-      }
-      auditChanges[field as string] = {
-        previous: existingUser[field],
-        next: nextValue,
-      };
-      if (nextValue !== existingUser[field]) {
-        updateData[field as string] = nextValue as never;
-        hasScalarUpdate = true;
-      }
-    };
-
-    assignIfProvided('name', name);
-    assignIfProvided('lockoutUntil', lockoutUntil);
-    assignIfProvided('lockoutReason', lockoutReason);
-    assignIfProvided('emailVerified', emailVerified);
-    assignIfProvided('passwordAttempt', passwordAttempt);
-    assignIfProvided('passwordExpired', passwordExpired);
-
-    if (hasScalarUpdate) {
+    if (Object.keys(updateData).length > 0) {
       await this.deps.db.user.update({
         where: { id: targetUserId },
-        data: updateData as UserUncheckedUpdateInput,
+        data: updateData,
         select: { id: true },
       });
     }
@@ -402,13 +367,30 @@ export class UsersService {
       await this.deps.sessionService.revoke(targetUserId);
     }
 
+    const changes = buildUpdateChanges(
+      existingUser,
+      { ...existingUser, ...updateData, reason: normalizedReason },
+      {
+        includeFields: [
+          'name',
+          'status',
+          'lockoutUntil',
+          'lockoutReason',
+          'emailVerified',
+          'passwordAttempt',
+          'passwordExpired',
+          'reason',
+        ],
+      },
+    );
+
     await this.deps.auditLogService.pushCud(
       {
         category: 'cud',
         entityType: 'user',
         entityId: targetUserId,
         action: 'update',
-        changes: auditChanges,
+        changes,
       },
       {
         visibility: AuditLogVisibility.actor_and_subject,
@@ -484,24 +466,28 @@ export class UsersService {
       }
     });
 
+    const changes = buildUpdateChanges(
+      {
+        roles: previousRoleAssignments.map((assignment) => ({
+          roleId: assignment.roleId,
+          expiresAt: assignment.expiresAt,
+        })),
+      },
+      {
+        roles: roles.map((role) => ({
+          roleId: role.roleId,
+          expiresAt: role.expiresAt,
+        })),
+      },
+    );
+
     await this.deps.auditLogService.pushCud(
       {
         category: 'cud',
         entityType: 'user',
         entityId: targetUserId,
         action: 'update',
-        changes: {
-          roles: {
-            previous: previousRoleAssignments.map((assignment) => ({
-              roleId: assignment.roleId,
-              expiresAt: assignment.expiresAt,
-            })),
-            next: roles.map((role) => ({
-              roleId: role.roleId,
-              expiresAt: role.expiresAt,
-            })),
-          },
-        },
+        changes,
       },
       {
         visibility: AuditLogVisibility.actor_and_subject,

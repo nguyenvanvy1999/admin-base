@@ -15,7 +15,10 @@ import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import { DB_PREFIX } from 'src/services/shared/constants';
 import {
   applyPermissionFilter,
+  buildCreateChanges,
+  buildDeleteChanges,
   buildSearchOrCondition,
+  buildUpdateChanges,
   ensureExists,
   executeListQuery,
   normalizeSearchTerm,
@@ -195,16 +198,15 @@ export class IpWhitelistService {
       });
       await this.invalidateCache(existing.userId);
 
+      const changes = buildUpdateChanges(existing, { ip, note });
+
       await this.deps.auditLogService.pushCud(
         {
           category: 'cud',
           entityType: 'ip_whitelist',
           entityId: id,
           action: 'update',
-          changes: {
-            ip: { previous: existing.ip, next: ip },
-            note: { previous: existing.note, next: note },
-          },
+          changes,
         },
         { subjectUserId: existing.userId },
       );
@@ -224,17 +226,15 @@ export class IpWhitelistService {
       });
       await this.invalidateCache(finalUserId);
 
+      const changes = buildCreateChanges({ ip, note, userId: finalUserId });
+
       await this.deps.auditLogService.pushCud(
         {
           category: 'cud',
           entityType: 'ip_whitelist',
           entityId: created.id,
           action: 'create',
-          changes: {
-            ip: { previous: null, next: ip },
-            note: { previous: null, next: note },
-            userId: { previous: null, next: finalUserId },
-          },
+          changes,
         },
         { subjectUserId: finalUserId },
       );
@@ -281,10 +281,7 @@ export class IpWhitelistService {
           entityType: 'ip_whitelist' as const,
           entityId: item.id,
           action: 'delete' as const,
-          changes: {
-            ips: { previous: [item.ip], next: [] },
-            userId: { previous: item.userId, next: null },
-          },
+          changes: buildDeleteChanges({ ip: item.ip, userId: item.userId }),
         },
       }));
       await this.deps.auditLogService.pushBatch(auditEntries);
