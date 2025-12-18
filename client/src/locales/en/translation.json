@@ -39,7 +39,10 @@
       "verify": "Verify",
       "resend": "Resend",
       "block": "Block",
-      "unblock": "Unblock"
+      "unblock": "Unblock",
+      "copy": "Copy",
+      "close": "Close",
+      "confirm": "Confirm"
     },
     "messages": {
       "saveSuccess": "Saved successfully",
@@ -54,7 +57,10 @@
       "exportError": "Failed to export: {{error}}",
       "rolesUpdateSuccess": "User roles updated successfully",
       "mfaResetSuccess": "MFA reset successfully",
-      "mfaDisableSuccess": "MFA disabled successfully"
+      "mfaDisableSuccess": "MFA disabled successfully",
+      "copiedToClipboard": "Copied to clipboard",
+      "confirmDelete": "Confirm delete",
+      "selected": "Selected {{count}} items"
     },
     "fields": {
       "email": "Email",
@@ -139,7 +145,11 @@
       "translationKey": "e.g. common.actions.save",
       "englishTranslation": "Enter English translation",
       "vietnameseTranslation": "Enter Vietnamese translation",
-      "auditReason": "Provide a reason for the audit log"
+      "auditReason": "Provide a reason for the audit log",
+      "clickToCopy": "Click to copy"
+    },
+    "validation": {
+      "maxLength": "Maximum {{max}} characters"
     }
   },
   "sidebar": {
@@ -607,5 +617,67 @@
       "cleanupSuccess": "Expired rate limits cleaned up successfully",
       "cleanupError": "Failed to cleanup rate limits"
     }
+  },
+  "apiKeysPage": {
+    "fields": {
+      "name": "Name",
+      "keyPrefix": "Key",
+      "status": "Status",
+      "expiresAt": "Expires at",
+      "lastUsedAt": "Last used at",
+      "ipWhitelist": "IP Whitelist"
+    },
+    "placeholders": {
+      "keyName": "e.g. Production API Key",
+      "expiresAt": "Select expiry date (optional)",
+      "ipWhitelist": "Enter IPs (one per line). Leave empty to allow all."
+    },
+    "tooltips": {
+      "ipWhitelist": "Only allow requests from these IPs. Leave empty to allow all IPs."
+    },
+    "actions": {
+      "create": "Create API Key",
+      "edit": "Edit",
+      "revoke": "Revoke",
+      "regenerate": "Regenerate"
+    },
+    "messages": {
+      "nameRequired": "Please enter API key name",
+      "createSuccess": "API key created successfully",
+      "createError": "Failed to create API key",
+      "updateSuccess": "API key updated successfully",
+      "updateError": "Failed to update API key",
+      "deleteSuccess": "API key deleted successfully",
+      "deleteError": "Failed to delete API key",
+      "deleteConfirm": "Are you sure you want to delete this API key?",
+      "revokeTitle": "Revoke API Key",
+      "revokeConfirm": "Are you sure you want to revoke this API key? It will no longer be usable.",
+      "revokeSuccess": "API key revoked successfully",
+      "revokeError": "Failed to revoke API key",
+      "regenerateTitle": "Regenerate API Key",
+      "regenerateConfirm": "Are you sure you want to regenerate this API key? The old key will be disabled.",
+      "regenerateSuccess": "API key regenerated successfully",
+      "regenerateError": "Failed to regenerate API key",
+      "newKeyTitle": "New API Key",
+      "newKeyWarning": "⚠️ Warning: This is the only time you will see this key. Please copy and store it in a safe place.",
+      "newKeyDescription": "This key cannot be displayed again. If you lose it, you will need to create a new key."
+    }
+  },
+  "adminApiKeysPage": {
+    "title": "API Keys Management",
+    "subtitle": "Create, manage and track API keys for all users.",
+    "fields": {
+      "user": "User"
+    },
+    "placeholders": {
+      "selectUser": "Select user"
+    },
+    "messages": {
+      "userRequired": "Please select a user"
+    }
+  },
+  "userApiKeysPage": {
+    "title": "My API Keys",
+    "subtitle": "Create, manage and track your API keys."
   }
 }
