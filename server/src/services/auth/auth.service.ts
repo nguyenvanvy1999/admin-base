@@ -568,7 +568,7 @@ export class AuthService {
           eventType: SecurityEventType.otp_invalid,
           severity: SecurityEventSeverity.medium,
           email: '',
-          purpose: 'REGISTER',
+          purpose: PurposeVerify.REGISTER,
           error: 'invalid_otp',
         },
         { visibility: AuditLogVisibility.admin_only },

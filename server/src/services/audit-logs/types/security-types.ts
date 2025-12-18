@@ -1,4 +1,5 @@
 import type { SecurityEventSeverity, SecurityEventType } from 'src/generated';
+import type { PurposeVerify } from 'src/share';
 
 export interface SecurityEventPayloadMap {
   // Auth login
@@ -18,6 +19,7 @@ export interface SecurityEventPayloadMap {
   // Logout & session
   logout: {
     method: 'email' | 'oauth' | 'api_key';
+    email?: string;
     sessionId?: string;
   };
   logout_all_sessions: {
@@ -73,14 +75,14 @@ export interface SecurityEventPayloadMap {
     error: string;
   };
   mfa_setup_started: {
-    method: 'totp';
-    stage: 'request';
+    method: 'totp' | 'email';
+    stage: 'request' | 'required_before_login';
   };
   mfa_setup_completed: {
     method: 'totp';
   };
   mfa_setup_failed: {
-    method: 'totp';
+    method: 'totp' | 'email';
     error: string;
   };
   mfa_challenge_started: {
@@ -149,21 +151,21 @@ export interface SecurityEventPayloadMap {
   // OTP
   otp_sent: {
     email: string;
-    purpose: 'REGISTER' | 'FORGOT_PASSWORD' | 'RESET_MFA';
+    purpose: PurposeVerify;
   };
   otp_send_failed: {
     email?: string;
-    purpose: 'REGISTER' | 'FORGOT_PASSWORD' | 'RESET_MFA';
+    purpose: PurposeVerify;
     error: string;
   };
   otp_invalid: {
     email?: string;
-    purpose: 'REGISTER' | 'FORGOT_PASSWORD' | 'RESET_MFA';
+    purpose: PurposeVerify;
     error: string;
   };
   otp_rate_limited: {
     email?: string;
-    purpose: 'REGISTER' | 'FORGOT_PASSWORD' | 'RESET_MFA';
+    purpose: PurposeVerify;
     limit: number;
   };
 

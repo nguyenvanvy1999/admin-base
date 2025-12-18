@@ -112,6 +112,12 @@ enum SecurityEventType {
 
   // Rate limit
   rate_limit_exceeded
+
+  // OTP
+  otp_sent
+  otp_send_failed
+  otp_invalid
+  otp_rate_limited
 }
 
 // Account lockout reasons
