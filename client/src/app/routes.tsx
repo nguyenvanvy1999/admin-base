@@ -36,6 +36,7 @@ const AdminRateLimitsPage = lazy(
   () => import('../features/admin/rate-limits/pages/AdminRateLimitsPage'),
 );
 const ApiKeysPage = lazy(() => import('./pages/ApiKeysPage'));
+const ApiKeyUsagePage = lazy(() => import('./pages/ApiKeyUsagePage'));
 const SessionsPage = lazy(() => import('./pages/SessionsPage'));
 
 export function AppRoutes() {
@@ -155,6 +156,17 @@ export function AppRoutes() {
               permissionMode="any"
             >
               <ApiKeysPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="api-key-usage"
+          element={
+            <ProtectedRoute
+              requiredPermissions={['API_KEY.VIEW', 'API_KEY.VIEW_ALL']}
+              permissionMode="any"
+            >
+              <ApiKeyUsagePage />
             </ProtectedRoute>
           }
         />

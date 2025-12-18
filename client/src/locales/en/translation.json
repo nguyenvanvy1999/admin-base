@@ -728,5 +728,32 @@
       "resolveSuccess": "Event resolved successfully",
       "resolveError": "Failed to resolve event"
     }
+  },
+  "apiKeyUsagePage": {
+    "userTitle": "Your API key usage",
+    "userSubtitle": "Review recent API requests made with your API keys to detect unusual activity.",
+    "adminTitle": "API key usage (Admin)",
+    "adminSubtitle": "Monitor and investigate API key usage across the system.",
+    "fields": {
+      "timestamp": "Time",
+      "endpoint": "Endpoint",
+      "method": "Method",
+      "statusCode": "Status code"
+    },
+    "tabs": {
+      "history": "History",
+      "stats": "Statistics"
+    },
+    "stats": {
+      "totalRequests": "Total requests",
+      "totalErrors": "Total errors (4xx/5xx)",
+      "errorRate": "Error rate",
+      "byMethod": "Requests by method",
+      "byStatus": "Requests by status code",
+      "topEndpoints": "Top endpoints",
+      "empty": "No usage data for the selected period.",
+      "error": "Failed to load usage statistics.",
+      "retry": "Retry"
+    }
   }
 }

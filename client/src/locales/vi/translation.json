@@ -729,5 +729,32 @@
       "resolveSuccess": "Giải quyết sự kiện thành công",
       "resolveError": "Giải quyết sự kiện thất bại"
     }
+  },
+  "apiKeyUsagePage": {
+    "userTitle": "Lịch sử sử dụng API key của bạn",
+    "userSubtitle": "Theo dõi các request dùng API key của bạn để phát hiện truy cập bất thường.",
+    "adminTitle": "API key usage (Admin)",
+    "adminSubtitle": "Giám sát và điều tra việc sử dụng API key trên toàn hệ thống.",
+    "fields": {
+      "timestamp": "Thời gian",
+      "endpoint": "Endpoint",
+      "method": "Method",
+      "statusCode": "Mã trạng thái"
+    },
+    "tabs": {
+      "history": "Lịch sử",
+      "stats": "Thống kê"
+    },
+    "stats": {
+      "totalRequests": "Tổng số request",
+      "totalErrors": "Tổng số lỗi (4xx/5xx)",
+      "errorRate": "Tỉ lệ lỗi",
+      "byMethod": "Theo HTTP method",
+      "byStatus": "Theo mã trạng thái",
+      "topEndpoints": "Endpoint được gọi nhiều nhất",
+      "empty": "Không có dữ liệu usage trong khoảng thời gian đã chọn.",
+      "error": "Không thể tải thống kê sử dụng API key.",
+      "retry": "Thử lại"
+    }
   }
 }
