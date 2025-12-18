@@ -8,6 +8,7 @@ export * from './admin/settings.service';
 export * from './admin/user-ip-whitelists.service';
 export * from './admin/users.service';
 export * from './api-keys.service';
+export * from './audit-logs.service';
 export * from './auth.service';
 export * from './base.service';
 export * from './healthcheck.service';

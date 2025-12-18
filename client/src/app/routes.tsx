@@ -52,6 +52,7 @@ const UserApiKeysPage = lazy(
   () => import('../features/settings/api-keys/pages/UserApiKeysPage'),
 );
 const MySessionsPage = lazy(() => import('./pages/MySessionsPage'));
+const MyAuditLogsPage = lazy(() => import('./pages/MyAuditLogsPage'));
 
 export function AppRoutes() {
   return (
@@ -78,6 +79,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route path="me/audit-logs" element={<MyAuditLogsPage />} />
         <Route
           path="admin/users"
           element={

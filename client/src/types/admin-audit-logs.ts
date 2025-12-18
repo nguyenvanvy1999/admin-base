@@ -108,3 +108,7 @@ export interface AdminAuditLogListResponse {
   docs: AdminAuditLog[];
   count: number;
 }
+
+export type UserAuditLog = AdminAuditLog;
+export type UserAuditLogListQuery = AdminAuditLogListQuery;
+export type UserAuditLogListResponse = AdminAuditLogListResponse;
