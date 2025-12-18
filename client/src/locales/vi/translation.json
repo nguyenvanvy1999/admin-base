@@ -680,5 +680,54 @@
   "userApiKeysPage": {
     "title": "API Keys của tôi",
     "subtitle": "Tạo, quản lý và theo dõi API keys của bạn."
+  },
+  "auditLogsPage": {
+    "fields": {
+      "category": "Danh mục",
+      "entity": "Entity",
+      "event": "Sự kiện",
+      "severity": "Mức độ nghiêm trọng",
+      "resolved": "Đã giải quyết",
+      "subjectUserId": "Subject User ID",
+      "entityTitle": "Tiêu đề Entity",
+      "action": "Hành động",
+      "eventType": "Loại sự kiện",
+      "status": "Trạng thái",
+      "resolvedAt": "Giải quyết lúc",
+      "resolvedBy": "Giải quyết bởi",
+      "occurredAt": "Thời điểm xảy ra",
+      "userAgent": "User Agent",
+      "requestId": "Request ID",
+      "country": "Quốc gia",
+      "region": "Vùng",
+      "city": "Thành phố",
+      "coordinates": "Tọa độ"
+    },
+    "sections": {
+      "changes": "Thay đổi",
+      "createdEntity": "Entity đã tạo",
+      "context": "Thông tin ngữ cảnh",
+      "location": "Vị trí",
+      "metadata": "Metadata"
+    },
+    "status": {
+      "resolved": "Đã giải quyết",
+      "unresolved": "Chưa giải quyết"
+    },
+    "actions": {
+      "viewDiff": "Xem Diff",
+      "resolve": "Giải quyết"
+    },
+    "modal": {
+      "title": {
+        "cud": "Chi tiết CUD Audit Log",
+        "security": "Chi tiết Security Event",
+        "internal": "Chi tiết Internal Event"
+      }
+    },
+    "messages": {
+      "resolveSuccess": "Giải quyết sự kiện thành công",
+      "resolveError": "Giải quyết sự kiện thất bại"
+    }
   }
 }

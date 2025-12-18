@@ -679,5 +679,54 @@
   "userApiKeysPage": {
     "title": "My API Keys",
     "subtitle": "Create, manage and track your API keys."
+  },
+  "auditLogsPage": {
+    "fields": {
+      "category": "Category",
+      "entity": "Entity",
+      "event": "Event",
+      "severity": "Severity",
+      "resolved": "Resolved",
+      "subjectUserId": "Subject User ID",
+      "entityTitle": "Entity Title",
+      "action": "Action",
+      "eventType": "Event Type",
+      "status": "Status",
+      "resolvedAt": "Resolved At",
+      "resolvedBy": "Resolved By",
+      "occurredAt": "Occurred At",
+      "userAgent": "User Agent",
+      "requestId": "Request ID",
+      "country": "Country",
+      "region": "Region",
+      "city": "City",
+      "coordinates": "Coordinates"
+    },
+    "sections": {
+      "changes": "Changes",
+      "createdEntity": "Created Entity",
+      "context": "Context Information",
+      "location": "Location",
+      "metadata": "Metadata"
+    },
+    "status": {
+      "resolved": "Resolved",
+      "unresolved": "Unresolved"
+    },
+    "actions": {
+      "viewDiff": "View Diff",
+      "resolve": "Resolve"
+    },
+    "modal": {
+      "title": {
+        "cud": "CUD Audit Log Detail",
+        "security": "Security Event Detail",
+        "internal": "Internal Event Detail"
+      }
+    },
+    "messages": {
+      "resolveSuccess": "Event resolved successfully",
+      "resolveError": "Failed to resolve event"
+    }
   }
 }
