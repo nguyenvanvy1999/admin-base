@@ -119,7 +119,7 @@ export function AdminApiKeyFormModal({
   const handleCopyKey = () => {
     if (newKey) {
       navigator.clipboard.writeText(newKey.key);
-      message.success(t('common.copiedToClipboard'));
+      message.success(t('common.messages.copiedToClipboard'));
     }
   };
 
@@ -136,8 +136,8 @@ export function AdminApiKeyFormModal({
         onCancel={handleCancel}
         title={
           isEditMode
-            ? t('adminApiKeysPage.actions.edit')
-            : t('adminApiKeysPage.actions.create')
+            ? t('apiKeysPage.actions.edit')
+            : t('apiKeysPage.actions.create')
         }
         width={600}
         footer={
@@ -150,7 +150,7 @@ export function AdminApiKeyFormModal({
               onClick={() => form.submit()}
               loading={isLoading}
             >
-              {isEditMode ? t('common.save') : t('common.create')}
+              {isEditMode ? t('common.save') : t('common.actions.create')}
             </Button>
           </Space>
         }
@@ -179,12 +179,12 @@ export function AdminApiKeyFormModal({
 
           <ProFormText
             name="name"
-            label={t('adminApiKeysPage.fields.name')}
-            placeholder={t('adminApiKeysPage.placeholders.keyName')}
+            label={t('apiKeysPage.fields.name')}
+            placeholder={t('apiKeysPage.placeholders.keyName')}
             rules={[
               {
                 required: true,
-                message: t('adminApiKeysPage.messages.nameRequired'),
+                message: t('apiKeysPage.messages.nameRequired'),
               },
               {
                 max: 255,
@@ -195,8 +195,8 @@ export function AdminApiKeyFormModal({
 
           <ProFormDateTimePicker
             name="expiresAt"
-            label={t('adminApiKeysPage.fields.expiresAt')}
-            placeholder={t('adminApiKeysPage.placeholders.expiresAt')}
+            label={t('apiKeysPage.fields.expiresAt')}
+            placeholder={t('apiKeysPage.placeholders.expiresAt')}
             fieldProps={{
               showTime: true,
             }}
@@ -204,12 +204,12 @@ export function AdminApiKeyFormModal({
 
           <ProFormTextArea
             name="ipWhitelist"
-            label={t('adminApiKeysPage.fields.ipWhitelist')}
-            placeholder={t('adminApiKeysPage.placeholders.ipWhitelist')}
+            label={t('apiKeysPage.fields.ipWhitelist')}
+            placeholder={t('apiKeysPage.placeholders.ipWhitelist')}
             fieldProps={{
               rows: 4,
             }}
-            tooltip={t('adminApiKeysPage.tooltips.ipWhitelist')}
+            tooltip={t('apiKeysPage.tooltips.ipWhitelist')}
           />
         </ProForm>
       </AppModal>
@@ -217,19 +217,19 @@ export function AdminApiKeyFormModal({
       {/* Modal hiển thị key mới */}
       <Modal
         open={showKeyModal}
-        title={t('adminApiKeysPage.messages.newKeyTitle')}
+        title={t('apiKeysPage.messages.newKeyTitle')}
         onCancel={handleKeyModalClose}
         footer={[
           <Button key="close" type="primary" onClick={handleKeyModalClose}>
-            {t('common.close')}
+            {t('common.actions.close')}
           </Button>,
         ]}
       >
         <div style={{ marginBottom: '16px' }}>
           <p style={{ color: '#ff4d4f', fontWeight: 'bold' }}>
-            {t('adminApiKeysPage.messages.newKeyWarning')}
+            {t('apiKeysPage.messages.newKeyWarning')}
           </p>
-          <p>{t('adminApiKeysPage.messages.newKeyDescription')}</p>
+          <p>{t('apiKeysPage.messages.newKeyDescription')}</p>
         </div>
 
         <div
@@ -252,7 +252,7 @@ export function AdminApiKeyFormModal({
           onClick={handleCopyKey}
           block
         >
-          {t('common.copy')}
+          {t('common.actions.copy')}
         </Button>
       </Modal>
     </>

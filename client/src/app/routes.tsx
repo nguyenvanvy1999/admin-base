@@ -48,6 +48,9 @@ const AdminRateLimitsPage = lazy(
 const AdminApiKeysPage = lazy(
   () => import('../features/admin/api-keys/pages/AdminApiKeysPage'),
 );
+const UserApiKeysPage = lazy(
+  () => import('../features/settings/api-keys/pages/UserApiKeysPage'),
+);
 const MySessionsPage = lazy(() => import('./pages/MySessionsPage'));
 
 export function AppRoutes() {

@@ -1,18 +1,5 @@
-/**
- * API Key Management Types
- * Định nghĩa các types cho quản lý API keys
- */
-
-// ============================================================================
-// Enums & Constants
-// ============================================================================
-
 export const API_KEY_STATUSES = ['active', 'revoked', 'expired'] as const;
 export type ApiKeyStatus = (typeof API_KEY_STATUSES)[number];
-
-// ============================================================================
-// Admin API Key Types
-// ============================================================================
 
 export interface AdminApiKeySummary {
   id: string;
@@ -86,10 +73,6 @@ export interface AdminApiKeyActionResponse {
   message?: string;
 }
 
-// ============================================================================
-// User API Key Types
-// ============================================================================
-
 export interface UserApiKeySummary {
   id: string;
   name: string;
@@ -150,10 +133,6 @@ export interface UserApiKeyActionResponse {
   message?: string;
 }
 
-// ============================================================================
-// API Key Usage Types
-// ============================================================================
-
 export interface ApiKeyUsageRecord {
   id: string;
   apiKeyId: string;
@@ -195,10 +174,6 @@ export interface AdminApiKeyUsageListResponse {
 export interface AdminApiKeyUsageStatsResponse {
   stats: ApiKeyUsageStats;
 }
-
-// ============================================================================
-// Form Types
-// ============================================================================
 
 export interface ApiKeyFormValues {
   name: string;

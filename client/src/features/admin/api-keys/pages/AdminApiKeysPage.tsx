@@ -8,19 +8,16 @@ import {
 } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import { Button, Modal, message, Space, Tag, Tooltip } from 'antd';
-import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from 'src/components/common/AppPage';
 import { AppTable } from 'src/components/common/AppTable';
 import {
-  createActionColumn,
   createDateColumn,
   createSearchColumn,
 } from 'src/components/common/tableColumns';
 import { useAdminTable } from 'src/hooks/admin/useAdminTable';
 import { useAdminUsers } from 'src/hooks/api/useAdminUsers';
-import { normalizeIds } from 'src/lib/utils/table.utils';
 import { adminApiKeyService } from 'src/services/api/admin/api-keys.service';
 import type {
   AdminApiKeyListQuery,
@@ -30,7 +27,6 @@ import type {
 import type { TableParamsWithFilters } from 'src/types/table';
 import { AdminApiKeyFormModal } from '../components/AdminApiKeyFormModal';
 import {
-  useAdminApiKeyList,
   useDeleteAdminApiKeys,
   useRegenerateAdminApiKey,
   useRevokeAdminApiKey,
@@ -111,9 +107,9 @@ export default function AdminApiKeysPage() {
 
   const handleDeleteApiKeys = (ids: string[]) => {
     Modal.confirm({
-      title: t('common.confirmDelete'),
-      content: t('adminApiKeysPage.messages.deleteConfirm'),
-      okText: t('common.delete'),
+      title: t('common.messages.confirmDelete'),
+      content: t('apiKeysPage.messages.deleteConfirm'),
+      okText: t('common.actions.delete'),
       cancelText: t('common.cancel'),
       okButtonProps: { danger: true },
       onOk: async () => {
@@ -126,9 +122,9 @@ export default function AdminApiKeysPage() {
 
   const handleRevokeApiKey = (record: AdminApiKeySummary) => {
     Modal.confirm({
-      title: t('adminApiKeysPage.messages.revokeTitle'),
-      content: t('adminApiKeysPage.messages.revokeConfirm'),
-      okText: t('common.confirm'),
+      title: t('apiKeysPage.messages.revokeTitle'),
+      content: t('apiKeysPage.messages.revokeConfirm'),
+      okText: t('common.actions.confirm'),
       cancelText: t('common.cancel'),
       okButtonProps: { danger: true },
       onOk: async () => {
@@ -140,18 +136,18 @@ export default function AdminApiKeysPage() {
 
   const handleRegenerateApiKey = (record: AdminApiKeySummary) => {
     Modal.confirm({
-      title: t('adminApiKeysPage.messages.regenerateTitle'),
-      content: t('adminApiKeysPage.messages.regenerateConfirm'),
-      okText: t('common.confirm'),
+      title: t('apiKeysPage.messages.regenerateTitle'),
+      content: t('apiKeysPage.messages.regenerateConfirm'),
+      okText: t('common.actions.confirm'),
       cancelText: t('common.cancel'),
       onOk: async () => {
         const result = await regenerateApiKeyMutation.mutateAsync(record.id);
         // Show the new key in a modal
         Modal.info({
-          title: t('adminApiKeysPage.messages.regenerateSuccess'),
+          title: t('apiKeysPage.messages.regenerateSuccess'),
           content: (
             <div>
-              <p>{t('adminApiKeysPage.messages.newKeyWarning')}</p>
+              <p>{t('apiKeysPage.messages.newKeyWarning')}</p>
               <div
                 style={{
                   background: '#f5f5f5',
@@ -167,11 +163,11 @@ export default function AdminApiKeysPage() {
                 type="primary"
                 onClick={() => {
                   navigator.clipboard.writeText(result.key);
-                  message.success(t('common.copiedToClipboard'));
+                  message.success(t('common.messages.copiedToClipboard'));
                 }}
                 style={{ marginTop: '12px' }}
               >
-                {t('common.copy')}
+                {t('common.actions.copy')}
               </Button>
             </div>
           ),
@@ -183,7 +179,7 @@ export default function AdminApiKeysPage() {
 
   const handleCopyKey = (keyPrefix: string) => {
     navigator.clipboard.writeText(keyPrefix);
-    message.success(t('common.copiedToClipboard'));
+    message.success(t('common.messages.copiedToClipboard'));
   };
 
   const columns: ProColumns<AdminApiKeySummary>[] = [
@@ -192,16 +188,16 @@ export default function AdminApiKeysPage() {
       placeholder: t('common.filters.keyword'),
     }),
     {
-      title: t('adminApiKeysPage.fields.name'),
+      title: t('apiKeysPage.fields.name'),
       dataIndex: 'name',
       ellipsis: true,
       hideInSearch: true,
     },
     {
-      title: t('adminApiKeysPage.fields.keyPrefix'),
+      title: t('apiKeysPage.fields.keyPrefix'),
       dataIndex: 'keyPrefix',
       render: (_, record) => (
-        <Tooltip title={t('common.clickToCopy')}>
+        <Tooltip title={t('common.placeholders.clickToCopy')}>
           <span
             onClick={() => handleCopyKey(record.keyPrefix)}
             style={{ cursor: 'pointer', color: '#1890ff' }}
@@ -223,7 +219,7 @@ export default function AdminApiKeysPage() {
       hideInSearch: true,
     },
     {
-      title: t('adminApiKeysPage.fields.status'),
+      title: t('apiKeysPage.fields.status'),
       dataIndex: 'status',
       valueType: 'select',
       width: 100,
@@ -241,21 +237,26 @@ export default function AdminApiKeysPage() {
     },
     createDateColumn<AdminApiKeySummary>({
       dataIndex: 'expiresAt',
-      title: t('adminApiKeysPage.fields.expiresAt'),
+      title: t('apiKeysPage.fields.expiresAt'),
     }),
     createDateColumn<AdminApiKeySummary>({
       dataIndex: 'lastUsedAt',
-      title: t('adminApiKeysPage.fields.lastUsedAt'),
+      title: t('apiKeysPage.fields.lastUsedAt'),
     }),
     createDateColumn<AdminApiKeySummary>({
       dataIndex: 'created',
       title: t('common.fields.created'),
     }),
-    createActionColumn<AdminApiKeySummary>({
+    {
+      title: t('common.fields.actions'),
+      dataIndex: 'actions',
+      valueType: 'option',
       width: 200,
-      render: (_, record) => (
+      fixed: 'right',
+      hideInSearch: true,
+      render: (_: unknown, record: AdminApiKeySummary) => (
         <Space size="small">
-          <Tooltip title={t('common.edit')}>
+          <Tooltip title={t('common.actions.edit')}>
             <Button
               type="text"
               size="small"
@@ -265,7 +266,7 @@ export default function AdminApiKeysPage() {
             />
           </Tooltip>
           {canRevokeApiKey(record.status) && (
-            <Tooltip title={t('adminApiKeysPage.actions.revoke')}>
+            <Tooltip title={t('apiKeysPage.actions.revoke')}>
               <Button
                 type="text"
                 size="small"
@@ -276,7 +277,7 @@ export default function AdminApiKeysPage() {
             </Tooltip>
           )}
           {canRegenerateApiKey(record.status) && (
-            <Tooltip title={t('adminApiKeysPage.actions.regenerate')}>
+            <Tooltip title={t('apiKeysPage.actions.regenerate')}>
               <Button
                 type="text"
                 size="small"
@@ -286,7 +287,7 @@ export default function AdminApiKeysPage() {
               />
             </Tooltip>
           )}
-          <Tooltip title={t('common.delete')}>
+          <Tooltip title={t('common.actions.delete')}>
             <Button
               type="text"
               size="small"
@@ -298,7 +299,7 @@ export default function AdminApiKeysPage() {
           </Tooltip>
         </Space>
       ),
-    }),
+    } as ProColumns<AdminApiKeySummary>,
   ];
 
   return (
@@ -313,7 +314,7 @@ export default function AdminApiKeysPage() {
             onClick={handleCreateApiKey}
             disabled={!canUpdate}
           >
-            {t('adminApiKeysPage.actions.create')}
+            {t('apiKeysPage.actions.create')}
           </Button>
         </Space>
       }
@@ -325,30 +326,33 @@ export default function AdminApiKeysPage() {
         rowKey="id"
         rowSelection={{
           selectedRowKeys,
-          onChange: setSelectedRowKeys,
+          onChange: (keys) => setSelectedRowKeys(keys as string[]),
         }}
         tableAlertRender={
           selectedRowKeys.length > 0
-            ? {
-                title: t('common.selected', {
-                  count: selectedRowKeys.length,
-                }),
-                option: (
-                  <Space size="small">
-                    <Button
-                      type="link"
-                      size="small"
-                      danger
-                      onClick={() =>
-                        handleDeleteApiKeys(selectedRowKeys as string[])
-                      }
-                    >
-                      {t('common.deleteSelected')}
-                    </Button>
-                  </Space>
-                ),
+            ? ({ onCleanSelected }) => {
+                return {
+                  title: t('common.messages.selected', {
+                    count: selectedRowKeys.length,
+                  }),
+                  option: (
+                    <Space size="small">
+                      <Button
+                        type="link"
+                        size="small"
+                        danger
+                        onClick={() => {
+                          handleDeleteApiKeys(selectedRowKeys);
+                          onCleanSelected();
+                        }}
+                      >
+                        {t('common.actions.deleteSelected')}
+                      </Button>
+                    </Space>
+                  ),
+                } as any;
               }
-            : undefined
+            : false
         }
       />
 

@@ -19,9 +19,6 @@ import type {
   AdminApiKeyUsageStatsResponse,
 } from 'src/types/admin-api-keys';
 
-/**
- * Hook để lấy danh sách API keys (Admin)
- */
 export function useAdminApiKeyList(
   query?: AdminApiKeyListQuery,
   enabled = true,
@@ -33,9 +30,6 @@ export function useAdminApiKeyList(
   });
 }
 
-/**
- * Hook để lấy chi tiết một API key (Admin)
- */
 export function useAdminApiKeyDetail(apiKeyId?: string, enabled = true) {
   return useQuery<AdminApiKeyDetail>({
     queryKey: apiKeyId
@@ -51,9 +45,6 @@ export function useAdminApiKeyDetail(apiKeyId?: string, enabled = true) {
   });
 }
 
-/**
- * Hook để tạo API key mới (Admin)
- */
 export function useCreateAdminApiKey(
   options?: MutationCallbacks<
     AdminApiKeyCreateResponse,
@@ -65,17 +56,14 @@ export function useCreateAdminApiKey(
     mutationFn: (payload: AdminApiKeyCreatePayload) =>
       adminApiKeyService.createWithKey(payload),
     invalidateKeys: [adminApiKeyKeys.lists()],
-    successMessageKey: 'adminApiKeysPage.messages.createSuccess',
+    successMessageKey: 'apiKeysPage.messages.createSuccess',
     successMessageDefault: 'API key created successfully',
-    errorMessageKey: 'adminApiKeysPage.messages.createError',
+    errorMessageKey: 'apiKeysPage.messages.createError',
     errorMessageDefault: 'Failed to create API key',
     ...options,
   });
 }
 
-/**
- * Hook để cập nhật API key (Admin)
- */
 export function useUpdateAdminApiKey(
   options?: MutationCallbacks<
     AdminApiKeyActionResponse,
@@ -95,34 +83,28 @@ export function useUpdateAdminApiKey(
       adminApiKeyKeys.detail(vars.apiKeyId),
       adminApiKeyKeys.lists(),
     ],
-    successMessageKey: 'adminApiKeysPage.messages.updateSuccess',
+    successMessageKey: 'apiKeysPage.messages.updateSuccess',
     successMessageDefault: 'API key updated successfully',
-    errorMessageKey: 'adminApiKeysPage.messages.updateError',
+    errorMessageKey: 'apiKeysPage.messages.updateError',
     errorMessageDefault: 'Failed to update API key',
     ...options,
   });
 }
 
-/**
- * Hook để xóa API keys (Admin)
- */
 export function useDeleteAdminApiKeys(
   options?: MutationCallbacks<AdminApiKeyActionResponse, Error, string[]>,
 ) {
   return useAppMutation({
     mutationFn: (ids: string[]) => adminApiKeyService.delete(ids),
     invalidateKeys: [adminApiKeyKeys.lists()],
-    successMessageKey: 'adminApiKeysPage.messages.deleteSuccess',
+    successMessageKey: 'apiKeysPage.messages.deleteSuccess',
     successMessageDefault: 'API keys deleted successfully',
-    errorMessageKey: 'adminApiKeysPage.messages.deleteError',
+    errorMessageKey: 'apiKeysPage.messages.deleteError',
     errorMessageDefault: 'Failed to delete API keys',
     ...options,
   });
 }
 
-/**
- * Hook để revoke API key (Admin)
- */
 export function useRevokeAdminApiKey(
   options?: MutationCallbacks<AdminApiKeyActionResponse, Error, string>,
 ) {
@@ -132,17 +114,14 @@ export function useRevokeAdminApiKey(
       adminApiKeyKeys.detail(apiKeyId),
       adminApiKeyKeys.lists(),
     ],
-    successMessageKey: 'adminApiKeysPage.messages.revokeSuccess',
+    successMessageKey: 'apiKeysPage.messages.revokeSuccess',
     successMessageDefault: 'API key revoked successfully',
-    errorMessageKey: 'adminApiKeysPage.messages.revokeError',
+    errorMessageKey: 'apiKeysPage.messages.revokeError',
     errorMessageDefault: 'Failed to revoke API key',
     ...options,
   });
 }
 
-/**
- * Hook để regenerate API key (Admin)
- */
 export function useRegenerateAdminApiKey(
   options?: MutationCallbacks<AdminApiKeyCreateResponse, Error, string>,
 ) {
@@ -152,17 +131,14 @@ export function useRegenerateAdminApiKey(
       adminApiKeyKeys.detail(apiKeyId),
       adminApiKeyKeys.lists(),
     ],
-    successMessageKey: 'adminApiKeysPage.messages.regenerateSuccess',
+    successMessageKey: 'apiKeysPage.messages.regenerateSuccess',
     successMessageDefault: 'API key regenerated successfully',
-    errorMessageKey: 'adminApiKeysPage.messages.regenerateError',
+    errorMessageKey: 'apiKeysPage.messages.regenerateError',
     errorMessageDefault: 'Failed to regenerate API key',
     ...options,
   });
 }
 
-/**
- * Hook để lấy danh sách usage của API keys (Admin)
- */
 export function useAdminApiKeyUsageList(
   query?: AdminApiKeyUsageListQuery,
   enabled = true,
@@ -174,9 +150,6 @@ export function useAdminApiKeyUsageList(
   });
 }
 
-/**
- * Hook để lấy thống kê sử dụng API key (Admin)
- */
 export function useAdminApiKeyUsageStats(apiKeyId?: string, enabled = true) {
   return useQuery<AdminApiKeyUsageStatsResponse>({
     queryKey: apiKeyId

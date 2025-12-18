@@ -49,9 +49,9 @@ export function UserApiKeyFormModal({
     mutationFn: (payload: UserApiKeyCreatePayload) =>
       apiKeyService.create(payload),
     invalidateKeys: [],
-    successMessageKey: 'userApiKeysPage.messages.createSuccess',
+    successMessageKey: 'apiKeysPage.messages.createSuccess',
     successMessageDefault: 'API key created successfully',
-    errorMessageKey: 'userApiKeysPage.messages.createError',
+    errorMessageKey: 'apiKeysPage.messages.createError',
     errorMessageDefault: 'Failed to create API key',
   });
 
@@ -64,9 +64,9 @@ export function UserApiKeyFormModal({
       payload: UserApiKeyUpdatePayload;
     }) => apiKeyService.update(apiKeyId, payload),
     invalidateKeys: [],
-    successMessageKey: 'userApiKeysPage.messages.updateSuccess',
+    successMessageKey: 'apiKeysPage.messages.updateSuccess',
     successMessageDefault: 'API key updated successfully',
-    errorMessageKey: 'userApiKeysPage.messages.updateError',
+    errorMessageKey: 'apiKeysPage.messages.updateError',
     errorMessageDefault: 'Failed to update API key',
   });
 
@@ -131,7 +131,7 @@ export function UserApiKeyFormModal({
   const handleCopyKey = () => {
     if (newKey) {
       navigator.clipboard.writeText(newKey.key);
-      message.success(t('common.copiedToClipboard'));
+      message.success(t('common.messages.copiedToClipboard'));
     }
   };
 
@@ -148,8 +148,8 @@ export function UserApiKeyFormModal({
         onCancel={handleCancel}
         title={
           isEditMode
-            ? t('userApiKeysPage.actions.edit')
-            : t('userApiKeysPage.actions.create')
+            ? t('apiKeysPage.actions.edit')
+            : t('apiKeysPage.actions.create')
         }
         width={600}
         footer={
@@ -162,7 +162,7 @@ export function UserApiKeyFormModal({
               onClick={() => form.submit()}
               loading={isLoading}
             >
-              {isEditMode ? t('common.save') : t('common.create')}
+              {isEditMode ? t('common.save') : t('common.actions.create')}
             </Button>
           </Space>
         }
@@ -176,12 +176,12 @@ export function UserApiKeyFormModal({
         >
           <ProFormText
             name="name"
-            label={t('userApiKeysPage.fields.name')}
-            placeholder={t('userApiKeysPage.placeholders.keyName')}
+            label={t('apiKeysPage.fields.name')}
+            placeholder={t('apiKeysPage.placeholders.keyName')}
             rules={[
               {
                 required: true,
-                message: t('userApiKeysPage.messages.nameRequired'),
+                message: t('apiKeysPage.messages.nameRequired'),
               },
               {
                 max: 255,
@@ -192,8 +192,8 @@ export function UserApiKeyFormModal({
 
           <ProFormDateTimePicker
             name="expiresAt"
-            label={t('userApiKeysPage.fields.expiresAt')}
-            placeholder={t('userApiKeysPage.placeholders.expiresAt')}
+            label={t('apiKeysPage.fields.expiresAt')}
+            placeholder={t('apiKeysPage.placeholders.expiresAt')}
             fieldProps={{
               showTime: true,
             }}
@@ -201,12 +201,12 @@ export function UserApiKeyFormModal({
 
           <ProFormTextArea
             name="ipWhitelist"
-            label={t('userApiKeysPage.fields.ipWhitelist')}
-            placeholder={t('userApiKeysPage.placeholders.ipWhitelist')}
+            label={t('apiKeysPage.fields.ipWhitelist')}
+            placeholder={t('apiKeysPage.placeholders.ipWhitelist')}
             fieldProps={{
               rows: 4,
             }}
-            tooltip={t('userApiKeysPage.tooltips.ipWhitelist')}
+            tooltip={t('apiKeysPage.tooltips.ipWhitelist')}
           />
         </ProForm>
       </AppModal>
@@ -214,19 +214,19 @@ export function UserApiKeyFormModal({
       {/* Modal hiển thị key mới */}
       <Modal
         open={showKeyModal}
-        title={t('userApiKeysPage.messages.newKeyTitle')}
+        title={t('apiKeysPage.messages.newKeyTitle')}
         onCancel={handleKeyModalClose}
         footer={[
           <Button key="close" type="primary" onClick={handleKeyModalClose}>
-            {t('common.close')}
+            {t('common.actions.close')}
           </Button>,
         ]}
       >
         <div style={{ marginBottom: '16px' }}>
           <p style={{ color: '#ff4d4f', fontWeight: 'bold' }}>
-            {t('userApiKeysPage.messages.newKeyWarning')}
+            {t('apiKeysPage.messages.newKeyWarning')}
           </p>
-          <p>{t('userApiKeysPage.messages.newKeyDescription')}</p>
+          <p>{t('apiKeysPage.messages.newKeyDescription')}</p>
         </div>
 
         <div
@@ -249,7 +249,7 @@ export function UserApiKeyFormModal({
           onClick={handleCopyKey}
           block
         >
-          {t('common.copy')}
+          {t('common.actions.copy')}
         </Button>
       </Modal>
     </>
