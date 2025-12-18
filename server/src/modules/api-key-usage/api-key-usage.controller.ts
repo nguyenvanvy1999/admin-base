@@ -7,21 +7,33 @@ import {
 } from 'src/dtos/api-key-usage.dto';
 import { apiKeyUsageService } from 'src/services/api-keys';
 import { authCheck } from 'src/services/auth';
-import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
+import {
+  authErrors,
+  castToRes,
+  DOC_TAG,
+  type ICurrentUser,
+  ResWrapper,
+} from 'src/share';
 
-export const apiKeyUsageUserController = new Elysia({
+const canApiKeyView = (user: ICurrentUser) =>
+  user.permissions.includes('API_KEY.VIEW');
+
+export const apiKeyUsageController = new Elysia({
   prefix: '/api-key-usage',
-  tags: [DOC_TAG.USER_API_KEY_USAGE],
+  tags: [DOC_TAG.USER_API_KEY_USAGE, DOC_TAG.ADMIN_API_KEY_USAGE],
 })
   .use(authCheck)
   .get(
     '/',
     async ({ query, currentUser }) => {
+      const hasViewPermission = canApiKeyView(currentUser);
+
       const result = await apiKeyUsageService.list({
         ...query,
         currentUserId: currentUser.id,
-        hasViewPermission: false,
+        hasViewPermission,
       });
+
       return castToRes(result);
     },
     {
@@ -35,11 +47,14 @@ export const apiKeyUsageUserController = new Elysia({
   .get(
     '/stats',
     async ({ query, currentUser }) => {
+      const hasViewPermission = canApiKeyView(currentUser);
+
       const result = await apiKeyUsageService.getStatsWithFilter({
         ...query,
         currentUserId: currentUser.id,
-        hasViewPermission: false,
+        hasViewPermission,
       });
+
       return castToRes(result);
     },
     {

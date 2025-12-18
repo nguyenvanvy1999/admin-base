@@ -5,32 +5,44 @@ import {
   PaginateIpWhitelistResDto,
   UpsertIpWhitelistDto,
 } from 'src/dtos/ip-whitelist.dto';
-import { anyOf, authCheck, authorize, has } from 'src/services/auth';
+import { authCheck } from 'src/services/auth';
 import { ipWhitelistService } from 'src/services/security';
 import {
   authErrors,
   castToRes,
   DOC_TAG,
   ErrorResDto,
+  type ICurrentUser,
   IdDto,
   IdsDto,
   ResWrapper,
 } from 'src/share';
 
-export const ipWhitelistAdminController = new Elysia({
-  prefix: '/admin/user-ip-whitelists',
-  tags: [DOC_TAG.ADMIN_USER_IP_WHITELIST],
+const canIpWhitelistView = (user: ICurrentUser) =>
+  user.permissions.includes('IPWHITELIST.VIEW');
+
+const canIpWhitelistCreateOrUpdate = (user: ICurrentUser) =>
+  user.permissions.includes('IPWHITELIST.CREATE') ||
+  user.permissions.includes('IPWHITELIST.UPDATE');
+
+const canIpWhitelistDelete = (user: ICurrentUser) =>
+  user.permissions.includes('IPWHITELIST.DELETE');
+
+export const ipWhitelistController = new Elysia({
+  prefix: '/user-ip-whitelists',
+  tags: [DOC_TAG.MISC, DOC_TAG.ADMIN_USER_IP_WHITELIST],
 })
   .use(authCheck)
-  .use(authorize(has('IPWHITELIST.VIEW')))
   .get(
     '/',
     async ({ query, currentUser }) => {
+      const hasViewPermission = canIpWhitelistView(currentUser);
+
       return castToRes(
         await ipWhitelistService.list({
           ...query,
           currentUserId: currentUser.id,
-          hasViewPermission: true,
+          hasViewPermission,
         }),
       );
     },
@@ -45,9 +57,11 @@ export const ipWhitelistAdminController = new Elysia({
   .get(
     '/:id',
     async ({ params: { id }, currentUser }) => {
+      const hasViewPermission = canIpWhitelistView(currentUser);
+
       const result = await ipWhitelistService.detail(id, {
         currentUserId: currentUser.id,
-        hasViewPermission: true,
+        hasViewPermission,
       });
       return castToRes(result);
     },
@@ -61,14 +75,18 @@ export const ipWhitelistAdminController = new Elysia({
       },
     },
   )
-  .use(authorize(anyOf(has('IPWHITELIST.CREATE'), has('IPWHITELIST.UPDATE'))))
   .post(
     '/',
     async ({ body, currentUser }) => {
-      await ipWhitelistService.upsert(body, {
-        currentUserId: currentUser.id,
-        hasViewPermission: true,
-      });
+      const hasViewPermission = canIpWhitelistCreateOrUpdate(currentUser);
+
+      await ipWhitelistService.upsert(
+        body as typeof UpsertIpWhitelistDto.static,
+        {
+          currentUserId: currentUser.id,
+          hasViewPermission,
+        },
+      );
       return castToRes(null);
     },
     {
@@ -80,13 +98,14 @@ export const ipWhitelistAdminController = new Elysia({
       },
     },
   )
-  .use(authorize(has('IPWHITELIST.DELETE')))
   .post(
     '/del',
     async ({ body, currentUser }) => {
-      await ipWhitelistService.removeMany(body.ids, {
+      const hasViewPermission = canIpWhitelistDelete(currentUser);
+
+      await ipWhitelistService.removeMany((body as typeof IdsDto.static).ids, {
         currentUserId: currentUser.id,
-        hasViewPermission: true,
+        hasViewPermission,
       });
       return castToRes(null);
     },

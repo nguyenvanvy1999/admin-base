@@ -1,32 +1,20 @@
-export {
-  apiKeyUsageAdminController,
-  apiKeyUsageUserController,
-} from './api-key-usage';
-export { apiKeysAdminController, apiKeysUserController } from './api-keys';
-export {
-  auditLogsAdminController,
-  auditLogsUserController,
-} from './audit-logs';
+export { apiKeyUsageController } from './api-key-usage';
+export { apiKeysController } from './api-keys';
+export { auditLogsController } from './audit-logs';
 export { authController, userAuthController } from './auth';
 export { captchaController } from './captcha';
 export { fileController } from './file';
 export { i18nAdminController } from './i18n';
-export {
-  ipWhitelistAdminController,
-  ipWhitelistUserController,
-} from './ip-whitelist';
+export { ipWhitelistController } from './ip-whitelist';
 export { mfaBackupController, mfaController } from './mfa';
 export { miscController } from './misc/controllers';
-export {
-  notificationAdminController,
-  notificationUserController,
-} from './notification';
+export { notificationController } from './notification';
 export { notificationTemplatesAdminController } from './notification-templates';
 export { oauthController } from './oauth';
 export { otpController } from './otp';
 export { permissionsAdminController } from './permissions';
 export { rateLimitAdminController } from './rate-limit';
 export { rolesAdminController } from './roles';
-export { sessionAdminController, sessionUserController } from './session';
+export { sessionController } from './session';
 export { settingsAdminController } from './settings';
 export { usersAdminController } from './users';

@@ -4,30 +4,38 @@ import {
   AuditLogListResDto,
 } from 'src/dtos/audit-logs.dto';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
-import { authCheck, authorize, has } from 'src/services/auth';
+import { authCheck } from 'src/services/auth';
 import {
   authErrors,
   castToRes,
   DOC_TAG,
+  ErrCode,
   ErrorResDto,
+  type ICurrentUser,
   IdDto,
   ResWrapper,
+  UnAuthErr,
 } from 'src/share';
 
-export const auditLogsAdminController = new Elysia({
-  prefix: '/admin/audit-logs',
-  tags: [DOC_TAG.ADMIN_AUDIT_LOG],
+const canAuditLogView = (user: ICurrentUser) =>
+  user.permissions.includes('AUDIT_LOG.VIEW');
+
+export const auditLogsController = new Elysia({
+  prefix: '/audit-logs',
+  tags: [DOC_TAG.MISC, DOC_TAG.ADMIN_AUDIT_LOG],
 })
   .use(authCheck)
-  .use(authorize(has('AUDIT_LOG.VIEW')))
   .get(
     '/',
     async ({ currentUser, query }) => {
+      const hasViewPermission = canAuditLogView(currentUser);
+
       const result = await auditLogsService.list({
         ...query,
         currentUserId: currentUser.id,
-        hasViewPermission: true,
+        hasViewPermission,
       });
+
       return castToRes(result);
     },
     {
@@ -38,14 +46,22 @@ export const auditLogsAdminController = new Elysia({
       },
     },
   )
-  .use(authorize(has('AUDIT_LOG.VIEW')))
   .post(
     '/:id/resolve',
     async ({ params: { id }, currentUser }) => {
+      if (!canAuditLogView(currentUser)) {
+        throw new UnAuthErr(ErrCode.PermissionDenied);
+      }
+
       const result = await auditLogsService.resolveSecurityEvent(id, {
         currentUserId: currentUser.id,
       });
-      return castToRes(result);
+
+      return castToRes(
+        result ?? {
+          success: true,
+        },
+      );
     },
     {
       params: IdDto,

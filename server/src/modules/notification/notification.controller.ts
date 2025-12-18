@@ -6,32 +6,45 @@ import {
   NotificationPaginationDto,
   PaginateNotificationResDto,
 } from 'src/dtos/notification.dto';
-import { authCheck, authorize, has } from 'src/services/auth';
+import { authCheck } from 'src/services/auth';
 import { notificationsService } from 'src/services/notifications';
 import {
   authErrors,
   castToRes,
   DOC_TAG,
+  ErrCode,
   ErrorResDto,
+  type ICurrentUser,
   IdDto,
   IdsDto,
   ResWrapper,
+  UnAuthErr,
 } from 'src/share';
 
-export const notificationAdminController = new Elysia({
-  prefix: '/admin/notifications',
-  tags: [DOC_TAG.ADMIN_NOTIFICATION],
+const canNotificationView = (user: ICurrentUser) =>
+  user.permissions.includes('NOTIFICATION.VIEW');
+
+const canNotificationUpdate = (user: ICurrentUser) =>
+  user.permissions.includes('NOTIFICATION.UPDATE');
+
+const canNotificationDelete = (user: ICurrentUser) =>
+  user.permissions.includes('NOTIFICATION.DELETE');
+
+export const notificationController = new Elysia({
+  prefix: '/notifications',
+  tags: [DOC_TAG.MISC, DOC_TAG.ADMIN_NOTIFICATION],
 })
   .use(authCheck)
-  .use(authorize(has('NOTIFICATION.VIEW')))
   .get(
     '/',
     async ({ query, currentUser }) => {
+      const hasViewPermission = canNotificationView(currentUser);
+
       return castToRes(
         await notificationsService.list({
           ...query,
           currentUserId: currentUser.id,
-          hasViewPermission: true,
+          hasViewPermission,
         }),
       );
     },
@@ -46,10 +59,13 @@ export const notificationAdminController = new Elysia({
   .get(
     '/:id',
     async ({ params: { id }, currentUser }) => {
+      const hasViewPermission = canNotificationView(currentUser);
+
       const result = await notificationsService.detail(id, {
         currentUserId: currentUser.id,
-        hasViewPermission: true,
+        hasViewPermission,
       });
+
       return castToRes(result);
     },
     {
@@ -62,11 +78,16 @@ export const notificationAdminController = new Elysia({
       },
     },
   )
-  .use(authorize(has('NOTIFICATION.UPDATE')))
   .post(
     '/',
-    async ({ body }) => {
-      await notificationsService.create(body);
+    async ({ body, currentUser }) => {
+      if (!canNotificationUpdate(currentUser)) {
+        throw new UnAuthErr(ErrCode.PermissionDenied);
+      }
+
+      await notificationsService.create(
+        body as typeof CreateNotificationDto.static,
+      );
       return castToRes(null);
     },
     {
@@ -78,14 +99,18 @@ export const notificationAdminController = new Elysia({
       },
     },
   )
-  .use(authorize(has('NOTIFICATION.DELETE')))
   .post(
     '/del',
     async ({ body, currentUser }) => {
-      await notificationsService.removeMany(body.ids, {
-        currentUserId: currentUser.id,
-        hasViewPermission: true,
-      });
+      const hasViewPermission = canNotificationDelete(currentUser);
+
+      await notificationsService.removeMany(
+        (body as typeof IdsDto.static).ids,
+        {
+          currentUserId: currentUser.id,
+          hasViewPermission,
+        },
+      );
       return castToRes(null);
     },
     {
@@ -97,14 +122,18 @@ export const notificationAdminController = new Elysia({
       },
     },
   )
-  .use(authorize(has('NOTIFICATION.UPDATE')))
   .post(
     '/mark-read',
     async ({ body, currentUser }) => {
-      await notificationsService.markAsRead(body.ids, {
-        currentUserId: currentUser.id,
-        hasViewPermission: true,
-      });
+      const hasViewPermission = canNotificationUpdate(currentUser);
+
+      await notificationsService.markAsRead(
+        (body as typeof MarkNotificationReadDto.static).ids,
+        {
+          currentUserId: currentUser.id,
+          hasViewPermission,
+        },
+      );
       return castToRes(null);
     },
     {

@@ -8,31 +8,43 @@ import {
   UpsertApiKeyDto,
 } from 'src/dtos/api-keys.dto';
 import { apiKeyService } from 'src/services/api-keys';
-import { authCheck, authorize, has } from 'src/services/auth';
+import { authCheck } from 'src/services/auth';
 import {
   authErrors,
   castToRes,
   DOC_TAG,
   ErrorResDto,
+  type ICurrentUser,
   IdDto,
   IdsDto,
   ResWrapper,
 } from 'src/share';
 
-export const apiKeysAdminController = new Elysia({
-  prefix: '/admin/api-keys',
-  tags: [DOC_TAG.ADMIN_API_KEY],
+const canApiKeyView = (user: ICurrentUser) =>
+  user.permissions.includes('API_KEY.VIEW');
+
+const canApiKeyUpdate = (user: ICurrentUser) =>
+  user.permissions.includes('API_KEY.UPDATE');
+
+const canApiKeyDelete = (user: ICurrentUser) =>
+  user.permissions.includes('API_KEY.DELETE');
+
+export const apiKeysController = new Elysia({
+  prefix: '/api-keys',
+  tags: [DOC_TAG.USER_API_KEY, DOC_TAG.ADMIN_API_KEY],
 })
   .use(authCheck)
-  .use(authorize(has('API_KEY.VIEW')))
   .get(
     '/',
     async ({ query, currentUser }) => {
+      const hasViewPermission = canApiKeyView(currentUser);
+
       const result = await apiKeyService.list({
         ...query,
         currentUserId: currentUser.id,
-        hasViewPermission: true,
+        hasViewPermission,
       });
+
       return castToRes(result);
     },
     {
@@ -46,10 +58,13 @@ export const apiKeysAdminController = new Elysia({
   .get(
     '/:id',
     async ({ params: { id }, currentUser }) => {
+      const hasViewPermission = canApiKeyView(currentUser);
+
       const result = await apiKeyService.detail(id, {
         currentUserId: currentUser.id,
-        hasViewPermission: true,
+        hasViewPermission,
       });
+
       return castToRes(result);
     },
     {
@@ -62,11 +77,15 @@ export const apiKeysAdminController = new Elysia({
       },
     },
   )
-  .use(authorize(has('API_KEY.UPDATE')))
   .post(
     '/',
     async ({ body, query, currentUser }) => {
-      const userId = query?.userId;
+      const isAdminLike = canApiKeyUpdate(currentUser);
+
+      const userId = isAdminLike
+        ? (query?.userId ?? currentUser.id)
+        : currentUser.id;
+
       const result = await apiKeyService.upsert(
         {
           ...body,
@@ -74,10 +93,11 @@ export const apiKeysAdminController = new Elysia({
         },
         {
           currentUserId: currentUser.id,
-          hasCreatePermission: true,
-          hasUpdatePermission: true,
+          hasCreatePermission: isAdminLike,
+          hasUpdatePermission: isAdminLike,
         },
       );
+
       return castToRes(result);
     },
     {
@@ -95,14 +115,16 @@ export const apiKeysAdminController = new Elysia({
       },
     },
   )
-  .use(authorize(has('API_KEY.DELETE')))
   .post(
     '/del',
     async ({ body, currentUser }) => {
+      const hasDeletePermission = canApiKeyDelete(currentUser);
+
       await apiKeyService.revokeMany(body.ids, {
         currentUserId: currentUser.id,
-        hasDeletePermission: true,
+        hasDeletePermission,
       });
+
       return castToRes(null);
     },
     {

@@ -16,31 +16,25 @@ import { type ILogger, logger } from 'src/config/logger';
 import { redis } from 'src/config/redis';
 import { swaggerConfig } from 'src/config/swagger';
 import {
-  apiKeysAdminController,
-  apiKeysUserController,
-  apiKeyUsageAdminController,
-  apiKeyUsageUserController,
-  auditLogsAdminController,
-  auditLogsUserController,
+  apiKeysController,
+  apiKeyUsageController,
+  auditLogsController,
   authController,
   captchaController,
   fileController,
   i18nAdminController,
-  ipWhitelistAdminController,
-  ipWhitelistUserController,
+  ipWhitelistController,
   mfaBackupController,
   mfaController,
   miscController,
-  notificationAdminController,
+  notificationController,
   notificationTemplatesAdminController,
-  notificationUserController,
   oauthController,
   otpController,
   permissionsAdminController,
   rateLimitAdminController,
   rolesAdminController,
-  sessionAdminController,
-  sessionUserController,
+  sessionController,
   settingsAdminController,
   userAuthController,
   usersAdminController,
@@ -216,21 +210,15 @@ export class BackendServerService {
           .use(oauthController)
           .use(mfaController)
           .use(mfaBackupController)
-          .use(sessionAdminController)
-          .use(sessionUserController)
-          .use(notificationAdminController)
-          .use(notificationUserController)
-          .use(ipWhitelistAdminController)
-          .use(ipWhitelistUserController)
-          .use(apiKeysAdminController)
-          .use(apiKeysUserController)
-          .use(apiKeyUsageAdminController)
-          .use(apiKeyUsageUserController)
+          .use(sessionController)
+          .use(notificationController)
+          .use(ipWhitelistController)
+          .use(apiKeysController)
+          .use(apiKeyUsageController)
           .use(usersAdminController)
           .use(rolesAdminController)
           .use(permissionsAdminController)
-          .use(auditLogsAdminController)
-          .use(auditLogsUserController)
+          .use(auditLogsController)
           .use(i18nAdminController)
           .use(settingsAdminController)
           .use(notificationTemplatesAdminController)
