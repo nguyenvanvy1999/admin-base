@@ -17,12 +17,12 @@ import { usePermissions } from 'src/hooks/auth/usePermissions';
 import type { UserIpWhitelist } from 'src/types/admin-user-ip-whitelist';
 import type { TableParamsWithFilters } from 'src/types/table';
 
-type AdminUserIpWhitelistTableParams = TableParamsWithFilters<{
+type UserIpWhitelistTableParams = TableParamsWithFilters<{
   userIds?: string;
   ip?: string;
 }>;
 
-export default function AdminUserIpWhitelistPage() {
+export default function UserIpWhitelistsPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
@@ -40,10 +40,10 @@ export default function AdminUserIpWhitelistPage() {
 
   const listParams = useMemo(
     () => ({
-      userIds: userIdsFilter,
+      userIds: isAdmin ? userIdsFilter : undefined,
       ip: ipFilter,
     }),
-    [userIdsFilter, ipFilter],
+    [isAdmin, userIdsFilter, ipFilter],
   );
 
   const {
@@ -142,7 +142,7 @@ export default function AdminUserIpWhitelistPage() {
           <Popconfirm
             title={t('adminUserIpWhitelistPage.dialogs.deleteConfirmTitle')}
             description={t('adminUserIpWhitelistPage.dialogs.deleteConfirm')}
-            onConfirm={() => handleDelete(record)}
+            onConfirm={() => void handleDelete(record)}
           >
             <Button type="text" size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>
@@ -153,7 +153,7 @@ export default function AdminUserIpWhitelistPage() {
 
   return (
     <AppPage>
-      <AppTable<UserIpWhitelist, AdminUserIpWhitelistTableParams>
+      <AppTable<UserIpWhitelist, UserIpWhitelistTableParams>
         rowKey="id"
         columns={columns}
         loading={isLoading}
@@ -228,7 +228,7 @@ export default function AdminUserIpWhitelistPage() {
               'adminUserIpWhitelistPage.dialogs.deleteSelectedConfirm',
               { count: selectedRowKeys.length },
             )}
-            onConfirm={handleDeleteSelected}
+            onConfirm={() => void handleDeleteSelected()}
             disabled={selectedRowKeys.length === 0}
           >
             <Button
@@ -252,7 +252,10 @@ export default function AdminUserIpWhitelistPage() {
           setEditingEntry(null);
         }}
         onSubmit={async (data) => {
-          await upsertMutation.mutateAsync(data);
+          await upsertMutation.mutateAsync({
+            ...data,
+            userId: data.userId ?? user?.id ?? '',
+          });
         }}
         loading={upsertMutation.isPending}
         currentUserId={user?.id}

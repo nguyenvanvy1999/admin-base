@@ -30,12 +30,7 @@ const AdminSettingsPage = lazy(
 const AdminI18nPage = lazy(
   () => import('../features/admin/i18n/pages/AdminI18nPage'),
 );
-const AdminUserIpWhitelistPage = lazy(
-  () =>
-    import(
-      '../features/admin/user-ip-whitelists/pages/AdminUserIpWhitelistPage'
-    ),
-);
+const UserIpWhitelistsPage = lazy(() => import('./pages/UserIpWhitelistsPage'));
 const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage'));
 const AdminRateLimitsPage = lazy(
   () => import('../features/admin/rate-limits/pages/AdminRateLimitsPage'),
@@ -136,10 +131,10 @@ export function AppRoutes() {
           }
         />
         <Route
-          path="admin/user-ip-whitelists"
+          path="user-ip-whitelists"
           element={
             <ProtectedRoute requiredPermissions={['IPWHITELIST.VIEW']}>
-              <AdminUserIpWhitelistPage />
+              <UserIpWhitelistsPage />
             </ProtectedRoute>
           }
         />
