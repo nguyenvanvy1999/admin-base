@@ -42,6 +42,7 @@ import {
 } from 'src/services/shared/utils';
 import {
   BadReqErr,
+  ctxStore,
   DB_PREFIX,
   defaultRoles,
   ErrCode,
@@ -133,6 +134,7 @@ export class AuthService {
         },
         {
           subjectUserId: user.id,
+          userId: user.id,
           visibility: AuditLogVisibility.actor_and_subject,
         },
       );
@@ -149,7 +151,7 @@ export class AuthService {
           email: user.email,
           error: 'user_not_active',
         },
-        { subjectUserId: user.id },
+        { subjectUserId: user.id, userId: user.id },
       );
       throw new BadReqErr(ErrCode.UserNotActive);
     }
@@ -173,7 +175,7 @@ export class AuthService {
           email: user.email,
           error: 'security_blocked',
         },
-        { subjectUserId: user.id },
+        { subjectUserId: user.id, userId: user.id },
       );
       throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
     }
@@ -286,6 +288,7 @@ export class AuthService {
       security,
     });
 
+    const { sessionId } = ctxStore.getStore() ?? {};
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
@@ -297,6 +300,7 @@ export class AuthService {
       {
         subjectUserId: user.id,
         userId: user.id,
+        sessionId,
         visibility: AuditLogVisibility.actor_and_subject,
       },
     );
@@ -338,7 +342,10 @@ export class AuthService {
         method: 'email',
         stage: 'required_before_login',
       },
-      { subjectUserId: user.id },
+      {
+        subjectUserId: user.id,
+        userId: user.id,
+      },
     );
 
     return {
@@ -488,6 +495,7 @@ export class AuthService {
       select: { id: true },
     });
 
+    const { sessionId } = ctxStore.getStore() ?? {};
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
@@ -495,7 +503,7 @@ export class AuthService {
         severity: SecurityEventSeverity.medium,
         changedBy: 'user',
       },
-      { subjectUserId: userId },
+      { subjectUserId: userId, userId, sessionId },
     );
   }
 
@@ -548,7 +556,7 @@ export class AuthService {
         severity: SecurityEventSeverity.medium,
         email: '',
       },
-      { subjectUserId: user.id },
+      { subjectUserId: user.id, userId: user.id },
     );
   }
 
@@ -633,7 +641,11 @@ export class AuthService {
           email: session?.createdBy?.email ?? '',
           error: 'refresh_token_invalid',
         },
-        { subjectUserId: session?.createdBy?.id },
+        {
+          subjectUserId: session?.createdBy?.id,
+          userId: session?.createdBy?.id,
+          sessionId: session?.id,
+        },
       );
       throw new UnAuthErr(ErrCode.ExpiredToken);
     }
@@ -720,6 +732,7 @@ export class AuthService {
 
     const cachedData = await this.deps.mfaCache.get(mfaToken);
     if (!cachedData || cachedData.loginToken !== loginToken) {
+      const { userId, sessionId } = ctxStore.getStore() ?? {};
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
@@ -729,7 +742,11 @@ export class AuthService {
           email: '',
           error: 'mfa_session_expired',
         },
-        { visibility: AuditLogVisibility.admin_only },
+        {
+          visibility: AuditLogVisibility.admin_only,
+          userId,
+          sessionId,
+        },
       );
       throw new BadReqErr(ErrCode.SessionExpired);
     }

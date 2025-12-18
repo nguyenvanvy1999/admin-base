@@ -158,7 +158,10 @@ export class OAuthService {
             email,
             metadata: { linked: true },
           },
-          { subjectUserId: user.id, userId: user.id },
+          {
+            subjectUserId: user.id,
+            userId: user.id,
+          },
         );
       }
     } else {
@@ -202,7 +205,10 @@ export class OAuthService {
           method: 'oauth',
           email,
         },
-        { subjectUserId: user.id, userId: user.id },
+        {
+          subjectUserId: user.id,
+          userId: user.id,
+        },
       );
     }
 
@@ -223,7 +229,10 @@ export class OAuthService {
           email,
           error: 'security_blocked',
         },
-        { subjectUserId: user.id, userId: user.id },
+        {
+          subjectUserId: user.id,
+          userId: user.id,
+        },
       );
       throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
     }
@@ -247,7 +256,11 @@ export class OAuthService {
         isNewDevice: securityResult.isNewDevice ?? false,
         deviceFingerprint: securityResult.deviceFingerprint ?? undefined,
       },
-      { subjectUserId: user.id, userId: user.id },
+      {
+        subjectUserId: user.id,
+        userId: user.id,
+        sessionId: loginRes.sessionId,
+      },
     );
 
     return loginRes;
@@ -272,7 +285,11 @@ export class OAuthService {
           email: '',
           error: 'provider_not_found',
         },
-        { subjectUserId: userId, visibility: AuditLogVisibility.admin_only },
+        {
+          subjectUserId: userId,
+          userId,
+          visibility: AuditLogVisibility.admin_only,
+        },
       );
       throw new CoreErr(ErrCode.OAuthProviderNotFound);
     }
@@ -289,7 +306,11 @@ export class OAuthService {
           email: '',
           error: 'invalid_telegram_account',
         },
-        { subjectUserId: userId, visibility: AuditLogVisibility.admin_only },
+        {
+          subjectUserId: userId,
+          userId,
+          visibility: AuditLogVisibility.admin_only,
+        },
       );
       throw new UnAuthErr(ErrCode.InvalidTelegramAccount);
     }
@@ -314,7 +335,11 @@ export class OAuthService {
           email: '',
           error: 'account_already_linked',
         },
-        { subjectUserId: userId, visibility: AuditLogVisibility.admin_only },
+        {
+          subjectUserId: userId,
+          userId,
+          visibility: AuditLogVisibility.admin_only,
+        },
       );
       throw new CoreErr(ErrCode.TelegramAccountWasLinked);
     }
@@ -338,7 +363,10 @@ export class OAuthService {
         email: '',
         metadata: { providerId: telegramData.id },
       },
-      { subjectUserId: userId, userId: userId },
+      {
+        subjectUserId: userId,
+        userId,
+      },
     );
 
     return null;

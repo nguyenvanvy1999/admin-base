@@ -6,6 +6,7 @@ import {
   SecurityEventType,
 } from 'src/generated';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
+import { ctxStore } from 'src/share';
 
 type CheckAndIncrementParams = {
   identifier: string;
@@ -72,6 +73,7 @@ export class RateLimitService {
     await rateLimitCache.set(cacheKey, currentCount, windowSeconds);
 
     if (currentCount > limit) {
+      const { sessionId } = ctxStore.getStore() ?? {};
       await auditLogsService.pushSecurity(
         {
           category: 'security',
@@ -85,6 +87,8 @@ export class RateLimitService {
         {
           visibility: AuditLogVisibility.admin_only,
           subjectUserId: userId,
+          userId,
+          sessionId,
         },
       );
 

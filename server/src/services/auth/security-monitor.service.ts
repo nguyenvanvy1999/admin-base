@@ -14,6 +14,7 @@ import {
   settingsService,
 } from 'src/services/settings/settings.service';
 import {
+  ctxStore,
   getIpAndUa,
   type LoginMethod,
   type SecurityDeviceInsight,
@@ -93,6 +94,7 @@ export class SecurityMonitorService {
     method: LoginMethod;
   }): Promise<void> {
     const { userId, method } = params;
+    const { sessionId } = ctxStore.getStore() ?? {};
 
     await this.deps.auditLogService.pushSecurity(
       {
@@ -104,6 +106,8 @@ export class SecurityMonitorService {
       },
       {
         subjectUserId: userId,
+        userId,
+        sessionId,
         visibility: AuditLogVisibility.actor_and_subject,
       },
     );

@@ -22,7 +22,7 @@ import {
   type SettingsService,
   settingsService,
 } from 'src/services/settings/settings.service';
-import { EmailType, IdUtil, PurposeVerify } from 'src/share';
+import { ctxStore, EmailType, IdUtil, PurposeVerify } from 'src/share';
 import { lockingService } from '../misc';
 import type { LockingService } from '../misc/locking.service';
 
@@ -154,6 +154,7 @@ export class OtpService {
     });
 
     if (!user) {
+      const { userId, sessionId } = ctxStore.getStore() ?? {};
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
@@ -163,13 +164,18 @@ export class OtpService {
           purpose,
           error: 'user_not_found',
         },
-        { visibility: AuditLogVisibility.admin_only },
+        {
+          visibility: AuditLogVisibility.admin_only,
+          userId,
+          sessionId,
+        },
       );
       return null;
     }
 
     const allowed = await this.checkOtpConditions(user, purpose);
     if (!allowed) {
+      const { sessionId } = ctxStore.getStore() ?? {};
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
@@ -179,13 +185,18 @@ export class OtpService {
           purpose,
           error: 'otp_conditions_not_met',
         },
-        { subjectUserId: user.id },
+        {
+          subjectUserId: user.id,
+          userId: user.id,
+          sessionId,
+        },
       );
       return null;
     }
 
     const otpToken = await this.sendOtp(user.id, email, purpose);
     if (!otpToken) {
+      const { sessionId } = ctxStore.getStore() ?? {};
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
@@ -195,11 +206,16 @@ export class OtpService {
           purpose,
           error: 'otp_send_failed',
         },
-        { subjectUserId: user.id },
+        {
+          subjectUserId: user.id,
+          userId: user.id,
+          sessionId,
+        },
       );
       return null;
     }
 
+    const { sessionId } = ctxStore.getStore() ?? {};
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
@@ -208,7 +224,11 @@ export class OtpService {
         email,
         purpose,
       },
-      { subjectUserId: user.id },
+      {
+        subjectUserId: user.id,
+        userId: user.id,
+        sessionId,
+      },
     );
 
     if (purpose === PurposeVerify.REGISTER) {

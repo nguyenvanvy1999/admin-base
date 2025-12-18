@@ -157,7 +157,7 @@ export class MfaService {
     await this.deps.mfaSetupCache.set(mfaToken, {
       totpSecret,
       userId,
-      sessionId: sessionId || '',
+      sessionId: sessionId ?? '',
       setupToken: undefined,
       createdAt: Date.now(),
     });
@@ -170,7 +170,11 @@ export class MfaService {
         method: 'totp',
         stage: 'request',
       },
-      { subjectUserId: userId },
+      {
+        subjectUserId: userId,
+        userId,
+        sessionId,
+      },
     );
 
     return {
@@ -208,7 +212,10 @@ export class MfaService {
         method: 'totp',
         stage: 'request',
       },
-      { subjectUserId: tokenData.userId },
+      {
+        subjectUserId: tokenData.userId,
+        userId: tokenData.userId,
+      },
     );
 
     return {
@@ -275,7 +282,11 @@ export class MfaService {
         severity: SecurityEventSeverity.low,
         method: 'totp',
       },
-      { subjectUserId: cachedData.userId },
+      {
+        subjectUserId: cachedData.userId,
+        userId: cachedData.userId,
+        sessionId: cachedData.sessionId,
+      },
     );
 
     if (cachedData.sessionId) {
@@ -335,6 +346,7 @@ export class MfaService {
 
     await sessionService.revoke(userId);
 
+    const { sessionId } = ctxStore.getStore() ?? {};
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
@@ -343,7 +355,11 @@ export class MfaService {
         method: otp ? 'totp' : 'email',
         disabledBy: 'user',
       },
-      { subjectUserId: userId },
+      {
+        subjectUserId: userId,
+        userId,
+        sessionId,
+      },
     );
 
     return null;
@@ -384,6 +400,7 @@ export class MfaService {
     });
 
     await sessionService.revoke(userId);
+    const { sessionId } = ctxStore.getStore() ?? {};
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
@@ -392,7 +409,11 @@ export class MfaService {
         method: 'email',
         disabledBy: 'admin',
       },
-      { subjectUserId: userId },
+      {
+        subjectUserId: userId,
+        userId,
+        sessionId,
+      },
     );
 
     return null;
@@ -487,6 +508,7 @@ export class MfaService {
       });
 
       if (!isValid) {
+        const { sessionId } = ctxStore.getStore() ?? {};
         await this.deps.auditLogService.pushSecurity(
           {
             category: 'security',
@@ -495,7 +517,11 @@ export class MfaService {
             method: 'totp',
             error: 'invalid_otp',
           },
-          { subjectUserId: user.id },
+          {
+            subjectUserId: user.id,
+            userId: user.id,
+            sessionId,
+          },
         );
         throw new BadReqErr(ErrCode.InvalidOtp);
       }
@@ -541,7 +567,11 @@ export class MfaService {
         severity: SecurityEventSeverity.low,
         method: otp ? 'totp' : 'email',
       },
-      { subjectUserId: user.id },
+      {
+        subjectUserId: user.id,
+        userId: user.id,
+        sessionId: loginRes.sessionId,
+      },
     );
 
     return loginRes;
@@ -588,6 +618,7 @@ export class MfaService {
       select: { id: true },
     });
 
+    const { sessionId } = ctxStore.getStore() ?? {};
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
@@ -595,7 +626,11 @@ export class MfaService {
         severity: SecurityEventSeverity.low,
         method: 'email',
       },
-      { subjectUserId: userId },
+      {
+        subjectUserId: userId,
+        userId,
+        sessionId,
+      },
     );
 
     return {
@@ -712,6 +747,7 @@ export class MfaService {
     errorType: keyof typeof MFA_ERROR_PAYLOADS,
     userId?: string,
   ): Promise<void> {
+    const { sessionId } = ctxStore.getStore() ?? {};
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
@@ -720,7 +756,11 @@ export class MfaService {
         method: 'email',
         error: MFA_ERROR_PAYLOADS[errorType]?.error ?? errorType,
       },
-      { subjectUserId: userId },
+      {
+        subjectUserId: userId,
+        userId,
+        sessionId,
+      },
     );
   }
 

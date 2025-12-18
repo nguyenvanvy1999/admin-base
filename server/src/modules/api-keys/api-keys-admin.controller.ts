@@ -70,7 +70,7 @@ export const apiKeysAdminController = new Elysia({
       const result = await apiKeyService.upsert(
         {
           ...body,
-          userId: userId || undefined,
+          userId,
         },
         {
           currentUserId: currentUser.id,
