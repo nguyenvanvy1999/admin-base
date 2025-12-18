@@ -26,6 +26,6 @@
     "seed": "bun run --cwd server seed"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.9"
+    "@biomejs/biome": "^2.3.10"
   }
 }
