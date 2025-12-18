@@ -16,8 +16,22 @@ import {
   createDateColumn,
   createSearchColumn,
 } from 'src/components/common/tableColumns';
+import { AdminApiKeyFormModal } from 'src/features/admin/api-keys/components/AdminApiKeyFormModal';
+import {
+  useDeleteAdminApiKeys,
+  useRegenerateAdminApiKey,
+  useRevokeAdminApiKey,
+} from 'src/features/admin/api-keys/hooks';
+import {
+  canRegenerateApiKey,
+  canRevokeApiKey,
+  formatKeyPrefix,
+  getApiKeyStatusColor,
+  getApiKeyStatusLabel,
+} from 'src/features/admin/api-keys/utils';
 import { useAdminTable } from 'src/hooks/admin/useAdminTable';
 import { useAdminUsers } from 'src/hooks/api/useAdminUsers';
+import { usePermissions } from 'src/hooks/auth/usePermissions';
 import { adminApiKeyService } from 'src/services/api/admin/api-keys.service';
 import type {
   AdminApiKeyListQuery,
@@ -25,39 +39,30 @@ import type {
   ApiKeyStatus,
 } from 'src/types/admin-api-keys';
 import type { TableParamsWithFilters } from 'src/types/table';
-import { AdminApiKeyFormModal } from '../components/AdminApiKeyFormModal';
-import {
-  useDeleteAdminApiKeys,
-  useRegenerateAdminApiKey,
-  useRevokeAdminApiKey,
-} from '../hooks';
-import {
-  canRegenerateApiKey,
-  canRevokeApiKey,
-  formatKeyPrefix,
-  getApiKeyStatusColor,
-  getApiKeyStatusLabel,
-} from '../utils';
 
-type AdminApiKeyTableParams = TableParamsWithFilters<{
+type ApiKeyTableParams = TableParamsWithFilters<{
   status?: ApiKeyStatus;
   userId?: string;
 }>;
 
 const API_KEY_STATUSES: ApiKeyStatus[] = ['active', 'revoked', 'expired'];
 
-export default function AdminApiKeysPage() {
+export default function ApiKeysPage() {
   const { t } = useTranslation();
+  const { hasPermission } = usePermissions();
   const [isFormModalVisible, setIsFormModalVisible] = useState(false);
   const [selectedApiKey, setSelectedApiKey] =
     useState<AdminApiKeySummary | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
 
+  const canViewAll = hasPermission('API_KEY.VIEW_ALL');
+  const canUpdate = hasPermission('API_KEY.UPDATE');
+
   const { data: usersResponse, isLoading: usersLoading } = useAdminUsers({
     take: 1000,
   });
 
-  const { actionRef, canUpdate, request } = useAdminTable<
+  const { actionRef, request } = useAdminTable<
     AdminApiKeySummary,
     Omit<AdminApiKeyListQuery, 'skip' | 'take'>
   >({
@@ -66,18 +71,18 @@ export default function AdminApiKeysPage() {
         const response = await adminApiKeyService.list({
           ...params,
           status: params.status,
-          userId: params.userId,
+          userId: canViewAll ? params.userId : undefined,
         });
         return response;
       },
     },
     permissions: {
-      view: 'API_KEY.VIEW',
+      view: ['API_KEY.VIEW', 'API_KEY.VIEW_ALL'],
       update: 'API_KEY.UPDATE',
     },
     normalizeParams: (params) => ({
       status: params.status,
-      userId: params.userId,
+      userId: canViewAll ? params.userId : undefined,
       search: params.search,
     }),
   });
@@ -142,7 +147,6 @@ export default function AdminApiKeysPage() {
       cancelText: t('common.cancel'),
       onOk: async () => {
         const result = await regenerateApiKeyMutation.mutateAsync(record.id);
-        // Show the new key in a modal
         Modal.info({
           title: t('apiKeysPage.messages.regenerateSuccess'),
           content: (
@@ -208,16 +212,20 @@ export default function AdminApiKeysPage() {
       ),
       hideInSearch: true,
     },
-    {
-      title: t('adminApiKeysPage.fields.user'),
-      dataIndex: ['user', 'email'],
-      valueType: 'select',
-      fieldProps: {
-        options: userOptions,
-        loading: usersLoading,
-      },
-      hideInSearch: true,
-    },
+    ...(canViewAll
+      ? [
+          {
+            title: t('adminApiKeysPage.fields.user'),
+            dataIndex: ['user', 'email'],
+            valueType: 'select',
+            fieldProps: {
+              options: userOptions,
+              loading: usersLoading,
+            },
+            hideInSearch: true,
+          } as ProColumns<AdminApiKeySummary>,
+        ]
+      : []),
     {
       title: t('apiKeysPage.fields.status'),
       dataIndex: 'status',
@@ -308,18 +316,19 @@ export default function AdminApiKeysPage() {
       subtitle={t('adminApiKeysPage.subtitle')}
       extra={
         <Space>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreateApiKey}
-            disabled={!canUpdate}
-          >
-            {t('apiKeysPage.actions.create')}
-          </Button>
+          {canUpdate && (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleCreateApiKey}
+            >
+              {t('apiKeysPage.actions.create')}
+            </Button>
+          )}
         </Space>
       }
     >
-      <AppTable<AdminApiKeySummary, AdminApiKeyTableParams>
+      <AppTable<AdminApiKeySummary, ApiKeyTableParams>
         actionRef={actionRef}
         columns={columns}
         request={request}

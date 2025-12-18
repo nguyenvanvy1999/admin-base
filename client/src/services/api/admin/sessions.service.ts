@@ -5,7 +5,8 @@ import type {
 } from 'src/types/admin-sessions';
 import { createQueryKeys } from '../base.service';
 
-const ADMIN_SESSION_BASE_PATH = '/api/admin/sessions';
+// Unified controller prefix: /sessions (mounted under /api)
+const SESSION_BASE_PATH = '/api/sessions';
 
 export const adminSessionKeys = {
   ...createQueryKeys('admin-sessions'),
@@ -24,13 +25,13 @@ export const adminSessionsService = {
         : { userIds: undefined }),
     };
 
-    return apiClient.get<AdminSessionPagingResponse>(ADMIN_SESSION_BASE_PATH, {
+    return apiClient.get<AdminSessionPagingResponse>(SESSION_BASE_PATH, {
       params: normalizedParams,
     });
   },
 
   revoke(ids: string[]): Promise<void> {
-    return apiClient.post<void>(`${ADMIN_SESSION_BASE_PATH}/revoke`, {
+    return apiClient.post<void>(`${SESSION_BASE_PATH}/revoke`, {
       ids,
     });
   },

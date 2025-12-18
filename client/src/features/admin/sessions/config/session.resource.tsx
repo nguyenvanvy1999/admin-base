@@ -66,8 +66,9 @@ export function createSessionResource(
       delete: ['SESSION.REVOKE', 'SESSION.REVOKE_ALL'],
     },
     endpoints: {
-      list: '/api/admin/sessions',
-      delete: '/api/admin/sessions/revoke',
+      // Unified controller prefix: /sessions (mounted under /api)
+      list: '/api/sessions',
+      delete: '/api/sessions/revoke',
     },
     dataConfig: {
       idField: 'id',

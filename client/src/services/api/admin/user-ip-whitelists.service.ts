@@ -6,7 +6,8 @@ import type {
 } from 'src/types/admin-user-ip-whitelist';
 import type { ListResponse } from 'src/types/api';
 
-const BASE_URL = '/api/admin/user-ip-whitelists';
+// Unified controller prefix: /user-ip-whitelists (mounted under /api)
+const BASE_URL = '/api/user-ip-whitelists';
 
 export const userIpWhitelistService = {
   list(

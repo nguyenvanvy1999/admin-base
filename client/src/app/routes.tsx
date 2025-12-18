@@ -27,9 +27,6 @@ const AdminPermissionsPage = lazy(
 const AdminSettingsPage = lazy(
   () => import('../features/admin/settings/pages/AdminSettingsPage'),
 );
-const AdminSessionsPage = lazy(
-  () => import('../features/admin/sessions/pages/AdminSessionsPage'),
-);
 const AdminI18nPage = lazy(
   () => import('../features/admin/i18n/pages/AdminI18nPage'),
 );
@@ -39,20 +36,12 @@ const AdminUserIpWhitelistPage = lazy(
       '../features/admin/user-ip-whitelists/pages/AdminUserIpWhitelistPage'
     ),
 );
-const AdminAuditLogPage = lazy(
-  () => import('../features/admin/audit-logs/pages/AdminAuditLogPage'),
-);
+const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage'));
 const AdminRateLimitsPage = lazy(
   () => import('../features/admin/rate-limits/pages/AdminRateLimitsPage'),
 );
-const AdminApiKeysPage = lazy(
-  () => import('../features/admin/api-keys/pages/AdminApiKeysPage'),
-);
-const UserApiKeysPage = lazy(
-  () => import('../features/settings/api-keys/pages/UserApiKeysPage'),
-);
-const MySessionsPage = lazy(() => import('./pages/MySessionsPage'));
-const MyAuditLogsPage = lazy(() => import('./pages/MyAuditLogsPage'));
+const ApiKeysPage = lazy(() => import('./pages/ApiKeysPage'));
+const SessionsPage = lazy(() => import('./pages/SessionsPage'));
 
 export function AppRoutes() {
   return (
@@ -69,17 +58,27 @@ export function AppRoutes() {
       >
         <Route index element={<HomePage />} />
         <Route
-          path="me/sessions"
+          path="sessions"
           element={
             <ProtectedRoute
               requiredPermissions={['SESSION.VIEW', 'SESSION.VIEW_ALL']}
               permissionMode="any"
             >
-              <MySessionsPage />
+              <SessionsPage />
             </ProtectedRoute>
           }
         />
-        <Route path="me/audit-logs" element={<MyAuditLogsPage />} />
+        <Route
+          path="audit-logs"
+          element={
+            <ProtectedRoute
+              requiredPermissions={['AUDIT_LOG.VIEW', 'AUDIT_LOG.VIEW_ALL']}
+              permissionMode="any"
+            >
+              <AuditLogsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="admin/users"
           element={
@@ -129,14 +128,6 @@ export function AppRoutes() {
           }
         />
         <Route
-          path="admin/sessions"
-          element={
-            <ProtectedRoute requiredPermissions={['SESSION.VIEW']}>
-              <AdminSessionsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="admin/i18n"
           element={
             <ProtectedRoute requiredPermissions={['I18N.VIEW']}>
@@ -152,17 +143,7 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="admin/audit-logs"
-          element={
-            <ProtectedRoute
-              requiredPermissions={['AUDIT_LOG.VIEW_ALL', 'AUDIT_LOG.VIEW']}
-              permissionMode="any"
-            >
-              <AdminAuditLogPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* legacy admin/audit-logs route can be redirected to unified /audit-logs if needed */}
         <Route
           path="admin/rate-limits"
           element={
@@ -172,18 +153,13 @@ export function AppRoutes() {
           }
         />
         <Route
-          path="admin/api-keys"
+          path="api-keys"
           element={
-            <ProtectedRoute requiredPermissions={['API_KEY.VIEW_ALL']}>
-              <AdminApiKeysPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="settings/api-keys"
-          element={
-            <ProtectedRoute requiredPermissions={['API_KEY.VIEW']}>
-              <UserApiKeysPage />
+            <ProtectedRoute
+              requiredPermissions={['API_KEY.VIEW', 'API_KEY.VIEW_ALL']}
+              permissionMode="any"
+            >
+              <ApiKeysPage />
             </ProtectedRoute>
           }
         />

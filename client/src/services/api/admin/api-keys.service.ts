@@ -13,8 +13,11 @@ import type {
 } from 'src/types/admin-api-keys';
 import { createAdminService } from './createAdminService';
 
-const ADMIN_API_KEY_BASE_PATH = '/api/admin/api-keys';
-const ADMIN_API_KEY_USAGE_BASE_PATH = '/api/admin/api-key-usage';
+// Unified controllers:
+// - /api-keys
+// - /api-key-usage
+const API_KEY_BASE_PATH = '/api/api-keys';
+const API_KEY_USAGE_BASE_PATH = '/api/api-key-usage';
 
 const { queryKeys: adminApiKeyQueryKeys, service: baseService } =
   createAdminService<
@@ -24,7 +27,7 @@ const { queryKeys: adminApiKeyQueryKeys, service: baseService } =
     AdminApiKeyCreatePayload,
     AdminApiKeyUpdatePayload
   >({
-    basePath: ADMIN_API_KEY_BASE_PATH,
+    basePath: API_KEY_BASE_PATH,
     queryKey: 'admin-api-keys',
     list: (params?: AdminApiKeyListQuery): Promise<AdminApiKeyListResponse> => {
       let normalizedParams: Omit<AdminApiKeyListQuery, 'statuses'> | undefined =
@@ -39,25 +42,25 @@ const { queryKeys: adminApiKeyQueryKeys, service: baseService } =
         };
       }
 
-      return apiClient.get<AdminApiKeyListResponse>(ADMIN_API_KEY_BASE_PATH, {
+      return apiClient.get<AdminApiKeyListResponse>(API_KEY_BASE_PATH, {
         params: normalizedParams,
       });
     },
     create: (payload: AdminApiKeyCreatePayload): Promise<void> => {
       return apiClient.post<AdminApiKeyActionResponse>(
-        ADMIN_API_KEY_BASE_PATH,
+        API_KEY_BASE_PATH,
         payload,
       ) as unknown as Promise<void>;
     },
     update: (id: string, payload: AdminApiKeyUpdatePayload): Promise<void> => {
       return apiClient.post<AdminApiKeyActionResponse>(
-        `${ADMIN_API_KEY_BASE_PATH}/${id}`,
+        `${API_KEY_BASE_PATH}/${id}`,
         payload,
       ) as unknown as Promise<void>;
     },
     delete: (ids: string[]): Promise<void> => {
       return apiClient.post<AdminApiKeyActionResponse>(
-        `${ADMIN_API_KEY_BASE_PATH}/del`,
+        `${API_KEY_BASE_PATH}/del`,
         { ids },
       ) as unknown as Promise<void>;
     },
@@ -86,7 +89,7 @@ export const adminApiKeyService = {
     payload: AdminApiKeyCreatePayload,
   ): Promise<AdminApiKeyCreateResponse> {
     return apiClient.post<AdminApiKeyCreateResponse>(
-      ADMIN_API_KEY_BASE_PATH,
+      API_KEY_BASE_PATH,
       payload,
     );
   },
@@ -100,7 +103,7 @@ export const adminApiKeyService = {
     params: AdminApiKeyUsageListQuery,
   ): Promise<AdminApiKeyUsageListResponse> {
     return apiClient.get<AdminApiKeyUsageListResponse>(
-      ADMIN_API_KEY_USAGE_BASE_PATH,
+      API_KEY_USAGE_BASE_PATH,
       {
         params,
       },
@@ -114,7 +117,7 @@ export const adminApiKeyService = {
    */
   getUsageStats(apiKeyId: string): Promise<AdminApiKeyUsageStatsResponse> {
     return apiClient.get<AdminApiKeyUsageStatsResponse>(
-      `${ADMIN_API_KEY_USAGE_BASE_PATH}/stats`,
+      `${API_KEY_USAGE_BASE_PATH}/stats`,
       {
         params: { apiKeyId },
       },
@@ -128,7 +131,7 @@ export const adminApiKeyService = {
    */
   revoke(id: string): Promise<AdminApiKeyActionResponse> {
     return apiClient.post<AdminApiKeyActionResponse>(
-      `${ADMIN_API_KEY_BASE_PATH}/${id}/revoke`,
+      `${API_KEY_BASE_PATH}/${id}/revoke`,
     );
   },
 
@@ -139,7 +142,7 @@ export const adminApiKeyService = {
    */
   regenerate(id: string): Promise<AdminApiKeyCreateResponse> {
     return apiClient.post<AdminApiKeyCreateResponse>(
-      `${ADMIN_API_KEY_BASE_PATH}/${id}/regenerate`,
+      `${API_KEY_BASE_PATH}/${id}/regenerate`,
     );
   },
 };
