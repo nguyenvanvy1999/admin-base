@@ -29,6 +29,40 @@ import type {
 import type { SecurityEventPayloadBase } from './types/security-types';
 
 export class AuditLogsService {
+  async resolveSecurityEvent(
+    id: string,
+    options: {
+      currentUserId: string;
+    },
+  ): Promise<{ success: boolean }> {
+    const existing = await db.auditLog.findUnique({
+      where: { id: BigInt(id) },
+    });
+
+    if (!existing) {
+      throw new Error('Audit log not found');
+    }
+
+    if (existing.category !== AuditLogCategory.security) {
+      throw new Error('Only security events can be resolved');
+    }
+
+    if (existing.resolved) {
+      return { success: true };
+    }
+
+    await db.auditLog.update({
+      where: { id: existing.id },
+      data: {
+        resolved: true,
+        resolvedAt: new Date(),
+        resolvedBy: options.currentUserId,
+      },
+    });
+
+    return { success: true };
+  }
+
   async pushCud<
     TEntityType extends EntityType,
     TAction extends 'create' | 'update' | 'delete',

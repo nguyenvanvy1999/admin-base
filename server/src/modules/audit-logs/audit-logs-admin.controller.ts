@@ -1,11 +1,18 @@
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
 import {
   AuditLogListQueryDto,
   AuditLogListResDto,
 } from 'src/dtos/audit-logs.dto';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import { authCheck, authorize, has } from 'src/services/auth';
-import { authErrors, castToRes, DOC_TAG, ResWrapper } from 'src/share';
+import {
+  authErrors,
+  castToRes,
+  DOC_TAG,
+  ErrorResDto,
+  IdDto,
+  ResWrapper,
+} from 'src/share';
 
 export const auditLogsAdminController = new Elysia({
   prefix: '/admin/audit-logs',
@@ -27,6 +34,29 @@ export const auditLogsAdminController = new Elysia({
       query: AuditLogListQueryDto,
       response: {
         200: ResWrapper(AuditLogListResDto),
+        ...authErrors,
+      },
+    },
+  )
+  .use(authorize(has('AUDIT_LOG.VIEW')))
+  .post(
+    '/:id/resolve',
+    async ({ params: { id }, currentUser }) => {
+      const result = await auditLogsService.resolveSecurityEvent(id, {
+        currentUserId: currentUser.id,
+      });
+      return castToRes(result);
+    },
+    {
+      params: IdDto,
+      response: {
+        200: ResWrapper(
+          t.Object({
+            success: t.Boolean(),
+          }),
+        ),
+        400: ErrorResDto,
+        404: ErrorResDto,
         ...authErrors,
       },
     },

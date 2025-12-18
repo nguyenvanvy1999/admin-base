@@ -19,4 +19,11 @@ export const adminAuditLogsService = {
       params,
     });
   },
+
+  resolve(id: string): Promise<void> {
+    return apiClient.post<void>(
+      `${ADMIN_AUDIT_LOG_BASE_PATH}/${id}/resolve`,
+      {},
+    );
+  },
 };

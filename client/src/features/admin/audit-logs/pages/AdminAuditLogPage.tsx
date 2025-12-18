@@ -125,7 +125,7 @@ export default function AdminAuditLogPage() {
   };
 
   const handleResolve = async (id: string): Promise<void> => {
-    // TODO: Implement resolve API call when backend is ready
+    await adminAuditLogsService.resolve(id);
     await actionRef.current?.reload();
   };
 
