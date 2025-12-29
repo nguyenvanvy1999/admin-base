@@ -1,6 +1,6 @@
-## Admin Base Portal - Cursor Rules
+## Admin Base Portal - Agent Rules
 
-Tài liệu này cung cấp hướng dẫn để Cursor Agents làm việc nhất quán trong dự án Admin Base Portal. Đây là một base project đầy đủ tính năng được thiết kế để tái sử dụng ở các dự án khác. Luôn đọc toàn bộ file trước khi bắt đầu task.
+Tài liệu này cung cấp hướng dẫn để các AI Agent làm việc nhất quán trong dự án Admin Base Portal. Đây là một base project đầy đủ tính năng được thiết kế để tái sử dụng ở các dự án khác. Luôn đọc toàn bộ file trước khi bắt đầu task.
 
 ### 1. Tổng quan dự án
 
@@ -198,7 +198,7 @@ bun run typecheck        # Type check toàn bộ
 - Quên thêm route vào `app/routes.tsx` → route không hoạt động.
 - Quên thêm permission check trong `ProtectedRoute` → security issue.
 
-### 12. Checklist nhanh cho Cursor Agent
+### 12. Checklist nhanh cho các AI Agent
 
 - [ ] Đọc task & xác nhận file ảnh hưởng.
 - [ ] Tra cứu tính năng tương tự đã có trong codebase để tái sử dụng pattern.
@@ -207,7 +207,7 @@ bun run typecheck        # Type check toàn bộ
 - [ ] Cập nhật docs nếu thay đổi hành vi hoặc thêm tính năng mới.
 - [ ] Ghi chú bước verify trong final response.
 
-### 13. Quy tắc bổ sung cho Cursor Agents
+### 13. Quy tắc bổ sung cho các AI Agent
 
 - Không tạo type, function, biến dư thừa nếu không dùng hoặc không mang lại giá trị rõ ràng.
 - Không tạo các hàm/class wrapper trống hoặc chỉ forward mà không có logic/mục đích cụ thể.
@@ -251,4 +251,4 @@ Khi sử dụng project này làm base cho dự án mới:
 - `README.md`: Hướng dẫn tổng quan, setup, scripts chung.
 - Codebase structure: Tham khảo các module/features hiện có để hiểu pattern.
 
-Luôn cập nhật file này khi quy trình thay đổi đáng kể để Cursor Agents khác nắm được chuẩn mới nhất.
+Luôn cập nhật file này khi quy trình thay đổi đáng kể để các AI Agent khác nắm được chuẩn mới nhất.
