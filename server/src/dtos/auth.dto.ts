@@ -1,6 +1,6 @@
 import { t } from 'elysia';
-import { UserStatus } from 'src/generated';
-import { LoginResType } from 'src/share';
+import { DtoFields, LoginResType } from 'src/share';
+import { BaseUserDto } from './users.dto';
 
 export const OtpResDto = t.Union([
   t.Null(),
@@ -8,13 +8,13 @@ export const OtpResDto = t.Union([
 ]);
 
 export const LoginRequestDto = t.Object({
-  email: t.String({ minLength: 1, format: 'email' }),
+  email: DtoFields.email,
   password: t.String({ minLength: 1 }),
 });
 
 export const RegisterRequestDto = t.Object({
-  email: t.String({ minLength: 1, format: 'email' }),
-  password: t.String({ minLength: 8, maxLength: 128 }),
+  email: DtoFields.email,
+  password: DtoFields.password,
 });
 
 export const ChangePasswordRequestDto = t.Object({
@@ -62,15 +62,13 @@ export const LinkTelegramRequestDto = t.Object({
   hash: t.String(),
 });
 
-export const UserResDto = t.Object({
-  id: t.String(),
-  email: t.String(),
-  mfaTotpEnabled: t.Boolean(),
-  status: t.Enum(UserStatus),
-  created: t.Date({ format: 'date-time' }),
-  modified: t.Date({ format: 'date-time' }),
-  permissions: t.Array(t.String()),
-});
+export const UserResDto = t.Composite([
+  t.Pick(BaseUserDto, ['id', 'email', 'status', 'created', 'modified']),
+  t.Object({
+    mfaTotpEnabled: t.Boolean(),
+    permissions: t.Array(t.String()),
+  }),
+]);
 
 export const LoginResDto = t.Object({
   type: t.Literal(LoginResType.COMPLETED),

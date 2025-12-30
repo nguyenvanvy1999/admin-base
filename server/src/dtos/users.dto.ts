@@ -17,43 +17,65 @@ const userRoleAssignmentDto = t.Object({
   expiresAt: DtoFields.isoDateNullable,
 });
 
-export const AdminUserMfaActionDto = t.Object({
+export const ReasonDto = t.Object({
   reason: DtoFields.reason,
 });
 
-export const AdminUserUpdateRolesDto = t.Object({
-  roles: t.Array(userRoleAssignmentDto, { minItems: 0 }),
+export const ReasonRequiredDto = t.Object({
   reason: DtoFields.reasonRequired,
 });
 
-export const AdminUserUpdateDto = t.Object({
-  status: t.Optional(t.Enum(UserStatus)),
-  name: t.Optional(DtoFields.displayName),
-  lockoutUntil: t.Optional(DtoFields.isoDateNullable),
-  lockoutReason: t.Optional(t.Nullable(t.Enum(LockoutReason))),
-  emailVerified: t.Optional(t.Boolean()),
-  passwordAttempt: t.Optional(
-    t.Integer({
-      minimum: 0,
-      maximum: 100,
-    }),
-  ),
-  passwordExpired: t.Optional(DtoFields.isoDateNullable),
-  reason: DtoFields.reason,
+export const BaseUserDto = t.Object({
+  id: t.String(),
+  email: DtoFields.email, // using DtoFields.email which might include format: 'email'
+  password: DtoFields.password,
+  name: DtoFields.displayName,
+  status: t.Enum(UserStatus),
+  emailVerified: t.Boolean(),
+  lockoutUntil: DtoFields.isoDateNullable,
+  lockoutReason: t.Nullable(t.Enum(LockoutReason)),
+  passwordAttempt: t.Integer({ minimum: 0, maximum: 100 }),
+  passwordExpired: DtoFields.isoDateNullable,
+  created: DtoFields.isoDate,
+  modified: DtoFields.isoDate,
+  protected: t.Boolean(),
 });
+
+export const AdminUserMfaActionDto = ReasonDto;
+
+export const AdminUserUpdateRolesDto = t.Composite([
+  ReasonRequiredDto,
+  t.Object({
+    roles: t.Array(userRoleAssignmentDto, { minItems: 0 }),
+  }),
+]);
+
+export const AdminUserUpdateDto = t.Composite([
+  ReasonDto,
+  t.Partial(
+    t.Pick(BaseUserDto, [
+      'status',
+      'name',
+      'lockoutUntil',
+      'lockoutReason',
+      'emailVerified',
+      'passwordAttempt',
+      'passwordExpired',
+    ]),
+  ),
+]);
 
 export const AdminUserActionResDto = t.Object({
   userId: t.String(),
 });
 
-export const AdminUserCreateDto = t.Object({
-  email: DtoFields.email,
-  password: DtoFields.password,
-  name: t.Optional(DtoFields.displayName),
-  roleIds: t.Optional(DtoFields.roleIds),
-  status: t.Optional(t.Enum(UserStatus)),
-  emailVerified: t.Optional(t.Boolean()),
-});
+export const AdminUserCreateDto = t.Composite([
+  t.Pick(BaseUserDto, ['email', 'password']),
+  t.Partial(t.Pick(BaseUserDto, ['name', 'status', 'emailVerified'])),
+  t.Object({
+    roleIds: t.Optional(DtoFields.roleIds),
+  }),
+]);
 
 export const AdminUserListQueryDto = t.Object({
   take: PaginationReqDto.properties.take,
@@ -76,32 +98,37 @@ const SessionStatsDto = t.Object({
   expired: t.Integer(),
 });
 
-const AdminUserSummaryDto = t.Object({
-  id: t.String(),
-  email: t.String({ format: 'email' }),
-  status: t.Enum(UserStatus),
-  name: DtoFields.displayName,
-  created: DtoFields.isoDate,
-  emailVerified: t.Boolean(),
-  roles: roleListDto,
-  protected: t.Boolean(),
-  sessionStats: SessionStatsDto,
-});
+const AdminUserSummaryDto = t.Composite([
+  t.Pick(BaseUserDto, [
+    'id',
+    'status',
+    'emailVerified',
+    'created',
+    'protected',
+  ]),
+  t.Object({
+    email: t.String({ format: 'email' }), // Explicitly re-defining to ensure string format if needed, or could Pick if BaseUserDto.email matches exactly.
+    name: DtoFields.displayName,
+    roles: roleListDto,
+    sessionStats: SessionStatsDto,
+  }),
+]);
 
 export const AdminUserListResDto = PaginatedDto(AdminUserSummaryDto);
 
 export const AdminUserDetailResDto = t.Intersect([
   AdminUserSummaryDto,
-  t.Object({
-    modified: DtoFields.isoDate,
-    lockoutUntil: DtoFields.isoDateNullable,
-    lockoutReason: t.Nullable(t.Enum(LockoutReason)),
-    passwordAttempt: t.Integer(),
-    passwordExpired: DtoFields.isoDateNullable,
-  }),
+  t.Pick(BaseUserDto, [
+    'modified',
+    'lockoutUntil',
+    'lockoutReason',
+    'passwordAttempt',
+    'passwordExpired',
+  ]),
 ]);
 
 export type AdminUserActionResult = typeof AdminUserActionResDto.static;
+
 export type AdminUserMfaActionParams = typeof AdminUserMfaActionDto.static;
 export type AdminUserUpdateParams = typeof AdminUserUpdateDto.static;
 export type AdminUserCreateParams = typeof AdminUserCreateDto.static;
