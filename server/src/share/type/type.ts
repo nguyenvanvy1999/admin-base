@@ -18,12 +18,6 @@ import type { Paths } from 'type-fest';
 
 export type MfaChangeMethod = 'admin-reset' | 'admin-disable';
 
-export enum AuditEventCategory {
-  SECURITY = 'security',
-  CUD = 'cud',
-  INTERNAL = 'internal',
-}
-
 export type AuditLogEntry = {
   userId?: string | null;
   sessionId?: string | null;
@@ -48,7 +42,7 @@ export type AuditLogEntry = {
   requestId?: string | null;
   traceId?: string | null;
   correlationId?: string | null;
-  category?: AuditEventCategory | AuditLogCategory;
+  category?: AuditLogCategory;
 };
 
 export type EnrichedAuditLogEntry = AuditLogEntry & {

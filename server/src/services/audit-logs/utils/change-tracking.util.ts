@@ -87,18 +87,3 @@ export function buildDeleteChanges<TPrev extends Record<string, unknown>>(
   );
   return computeChanges(previous, next as TPrev, options);
 }
-
-export function extractEntityDisplay<T extends Record<string, unknown>>(
-  entity: T,
-  displayFields: (keyof T)[],
-): Record<string, unknown> {
-  const display: Record<string, unknown> = {};
-
-  for (const field of displayFields) {
-    if (field in entity) {
-      display[String(field)] = entity[field];
-    }
-  }
-
-  return display;
-}

@@ -1,9 +1,7 @@
 import { t } from 'elysia';
 import { PaginationReqDto } from 'src/share';
 
-export const ApiKeyUsageListQueryDto = t.Object({
-  take: PaginationReqDto.properties.take,
-  skip: PaginationReqDto.properties.skip,
+export const ApiKeyUsageFilterDto = t.Object({
   apiKeyId: t.Optional(t.String({ minLength: 1 })),
   userId: t.Optional(t.String({ minLength: 1 })),
   method: t.Optional(t.String({ minLength: 1 })),
@@ -13,17 +11,21 @@ export const ApiKeyUsageListQueryDto = t.Object({
   endDate: t.Optional(t.Date({ format: 'date-time' })),
   ip: t.Optional(t.String({ minLength: 1 })),
 });
-
-export const ApiKeyUsageStatsQueryDto = t.Object({
-  apiKeyId: t.Optional(t.String({ minLength: 1 })),
-  userId: t.Optional(t.String({ minLength: 1 })),
-  method: t.Optional(t.String({ minLength: 1 })),
-  endpoint: t.Optional(t.String({ minLength: 1 })),
-  statusCode: t.Optional(t.Integer()),
-  startDate: t.Optional(t.Date({ format: 'date-time' })),
-  endDate: t.Optional(t.Date({ format: 'date-time' })),
-  ip: t.Optional(t.String({ minLength: 1 })),
-});
+export type IApiKeyUsageFilter = typeof ApiKeyUsageFilterDto.static & {
+  currentUserId: string;
+  hasViewPermission: boolean;
+};
+export const ApiKeyUsageListQueryDto = t.Intersect([
+  t.Object({
+    take: PaginationReqDto.properties.take,
+    skip: PaginationReqDto.properties.skip,
+  }),
+  ApiKeyUsageFilterDto,
+]);
+export type IApiKeyUsageListQuery = typeof ApiKeyUsageListQueryDto.static & {
+  currentUserId: string;
+  hasViewPermission: boolean;
+};
 
 export const ApiKeyUsageResponseDto = t.Object({
   id: t.String(),

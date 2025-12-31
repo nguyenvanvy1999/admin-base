@@ -1,8 +1,8 @@
 import { Elysia } from 'elysia';
 import {
+  ApiKeyUsageFilterDto,
   ApiKeyUsageListQueryDto,
   ApiKeyUsagePaginatedResponseDto,
-  ApiKeyUsageStatsQueryDto,
   ApiKeyUsageStatsResponseDto,
 } from 'src/dtos/api-key-usage.dto';
 import { apiKeyUsageService } from 'src/services/api-keys';
@@ -58,7 +58,7 @@ export const apiKeyUsageController = new Elysia({
       return castToRes(result);
     },
     {
-      query: ApiKeyUsageStatsQueryDto,
+      query: ApiKeyUsageFilterDto,
       response: {
         200: ResWrapper(ApiKeyUsageStatsResponseDto),
         ...authErrors,
