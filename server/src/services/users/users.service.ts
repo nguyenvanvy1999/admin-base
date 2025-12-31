@@ -585,11 +585,11 @@ export class UsersService {
       data: {
         totpSecret: null,
         mfaTotpEnabled: false,
-        backupCodes: null,
-        backupCodesUsed: null,
       },
       select: { id: true },
     });
+
+    await this.deps.db.mfaBackupCode.deleteMany({ where: { userId } });
 
     await this.deps.sessionService.revoke(userId);
   }

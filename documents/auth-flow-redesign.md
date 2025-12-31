@@ -454,7 +454,7 @@ async function enrollStart({ authTxId }, ctx) {
 1. Load tx, check state `CHALLENGE_MFA_ENROLL`
 2. Verify `enrollToken` + OTP against `tempTotpSecret`
 3. Persist secret vào DB (`user.mfaTotpEnabled = true`)
-4. Generate backup codes (nếu policy yêu cầu) và trả **1 lần duy nhất**
+4. Generate một Backup Code (nếu policy yêu cầu) và trả **1 lần duy nhất**
 5. Sau enroll xong: **đề xuất cấp session ngay** (vì vừa chứng minh sở hữu thiết bị TOTP)
 
 **Pseudo-code**:
@@ -463,7 +463,7 @@ async function enrollStart({ authTxId }, ctx) {
 async function enrollConfirm(
   input,
   ctx
-): Promise<AuthResponse & { backupCodes?: string[] }> {
+): Promise<AuthResponse & { backupCodes?: [string] }> {
   const tx = await authTxService.getOrThrow(input.authTxId);
   authTxService.assertBinding(tx, ctx);
 
@@ -483,7 +483,7 @@ async function enrollConfirm(
   }
 
   await mfaService.persistTotpSecret(user.id, tx.enroll.tempTotpSecret);
-  const backupCodes = await mfaService.generateAndStoreBackupCodes(user.id);
+  const backupCode = await mfaService.generateAndStoreBackupCode(user.id);
 
   await audit.log("mfa_enroll_completed", { userId: user.id, ip: ctx.ip });
   await authTxService.delete(tx.id);
@@ -868,27 +868,27 @@ export class AuthFlowService {
 
 #### B. Supporting Features
 
-11. **Password Service** ✅
+1. **Password Service** ✅
 
     - File: `src/services/auth/password.service.ts`
     - Verify and track attempts
     - Password expiration validation
     - Hashing/comparison
 
-12. **Session Service** ✅
+2. **Session Service** ✅
 
     - File: `src/services/auth/session.service.ts`
     - Session creation/revocation
     - Token management
 
-13. **Captcha Service** ✅
+3. **Captcha Service** ✅
 
     - File: `src/services/auth/captcha.service.ts`
     - Text và Math captcha
     - Token-based validation
     - Cache-based storage
 
-14. **Rate Limiting** ✅
+4. **Rate Limiting** ✅
     - Auth rate limit config: `src/services/rate-limit/auth-rate-limit.config.ts`
     - Applied to auth endpoints
 
@@ -1156,7 +1156,7 @@ export class AuthFlowService {
 | **Core Auth Transaction**    | ✅ 100%    | Hoàn chỉnh                             |
 | **Password Login Flow**      | ✅ 100%    | Hoàn chỉnh                             |
 | **MFA TOTP Challenge**       | ✅ 100%    | Hoàn chỉnh                             |
-| **MFA Backup Code**          | ✅ 100%    | Hoàn chỉnh                             |
+| **MFA Backup Code**          | ✅ 100%    | Single-use backup code implemented     |
 | **MFA Enrollment**           | ✅ 100%    | Hoàn chỉnh                             |
 | **OAuth Google Integration** | ✅ 100%    | Hoàn chỉnh                             |
 | **Security Monitoring**      | ✅ 100%    | Risk levels implemented                |
@@ -1183,22 +1183,22 @@ export class AuthFlowService {
 
 #### **P1 - High (Nên làm sớm)**
 
-4. ✅ **Risk-Based MFA** - Adaptive security
-5. ✅ **Backup Code Regeneration** - User recovery
-6. ✅ **Error Code Standardization** - Better error handling
+1. ✅ **Risk-Based MFA** - Adaptive security
+2. ✅ **Backup Code Regeneration** - User recovery
+3. ✅ **Error Code Standardization** - Better error handling
 
 #### **P2 - Medium (Có thể làm sau)**
 
-7. ⚠️ **OAuth Telegram Login** - Nếu có user base Telegram
-8. ⚠️ **Testing Coverage** - Quality assurance
-9. ⚠️ **Documentation** - Developer experience
+1. ⚠️ **OAuth Telegram Login** - Nếu có user base Telegram
+2. ⚠️ **Testing Coverage** - Quality assurance
+3. ⚠️ **Documentation** - Developer experience
 
 #### **P3 - Low (Nice to have)**
 
-10. ⚠️ **Email OTP Challenge** - Alternative MFA method
-11. ⚠️ **Device Verification** - Advanced security
-12. ⚠️ **Step-up Auth** - For sensitive operations
-13. ⚠️ **MFA Recovery Codes** - Edge case recovery
+1. ⚠️ **Email OTP Challenge** - Alternative MFA method
+2. ⚠️ **Device Verification** - Advanced security
+3. ⚠️ **Step-up Auth** - For sensitive operations
+4. ⚠️ **MFA Recovery Codes** - Edge case recovery
 
 ---
 

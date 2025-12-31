@@ -35,13 +35,7 @@ import type { ChallengeDto } from 'src/types/auth.types';
 import { type AuthTxService, authTxService } from './auth-tx.service';
 import { type UserUtilService, userUtilService } from './auth-util.service';
 import { type CaptchaService, captchaService } from './captcha.service';
-import {
-  generateBackupCodes,
-  hashBackupCode,
-  parseBackupCodes,
-  parseUsedBackupCodes,
-  verifyEmailOtp,
-} from './mfa.service';
+import { type MfaService, mfaService } from './mfa.service';
 import { type OtpService, otpService } from './otp.service';
 import { type PasswordService, passwordService } from './password.service';
 import {
@@ -75,6 +69,7 @@ export class AuthFlowService {
       captchaService: CaptchaService;
       sessionService: SessionService;
       otpService: OtpService;
+      mfaService: MfaService;
     } = {
       db,
       env,
@@ -88,6 +83,7 @@ export class AuthFlowService {
       captchaService,
       sessionService,
       otpService,
+      mfaService,
     },
   ) {}
 
@@ -440,8 +436,6 @@ export class AuthFlowService {
         roles: { select: { roleId: true } },
         mfaTotpEnabled: true,
         totpSecret: true,
-        backupCodes: true,
-        backupCodesUsed: true,
       },
     });
 
@@ -461,7 +455,10 @@ export class AuthFlowService {
       ok = await this.consumeBackupCode(user, code);
     } else if (type === 'MFA_EMAIL_OTP') {
       if (!tx.emailOtpToken) throw new BadReqErr(ErrCode.InvalidState); // Not waiting for email otp
-      const verifiedUserId = await verifyEmailOtp(tx.emailOtpToken, code);
+      const verifiedUserId = await this.deps.mfaService.verifyEmailOtp(
+        tx.emailOtpToken,
+        code,
+      );
       ok = verifiedUserId === user.id;
     } else if (type === 'DEVICE_VERIFY') {
       if (!tx.deviceVerifyToken) throw new BadReqErr(ErrCode.InvalidState);
@@ -619,17 +616,15 @@ export class AuthFlowService {
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
 
-    // persist secret + generate backup codes (return once)
-    const codes = generateBackupCodes();
-    const hashedCodes = codes.map((c) => hashBackupCode(c));
+    const code = this.deps.mfaService.generateBackupCode();
+    const hash = await this.deps.mfaService.hashBackupCode(code);
+    await this.deps.mfaService.saveBackupCode(tx.userId, hash);
 
-    const user = await this.deps.db.user.update({
+    const userResult = await this.deps.db.user.update({
       where: { id: tx.userId },
       data: {
         totpSecret: tx.enroll.tempTotpSecret,
         mfaTotpEnabled: true,
-        backupCodes: JSON.stringify(hashedCodes),
-        backupCodesUsed: JSON.stringify([]),
         mfaEnrollRequired: false,
       },
       select: {
@@ -643,7 +638,7 @@ export class AuthFlowService {
       },
     });
 
-    if (user.status !== UserStatus.active) {
+    if (userResult.status !== UserStatus.active) {
       throw new BadReqErr(ErrCode.UserNotActive);
     }
 
@@ -655,53 +650,32 @@ export class AuthFlowService {
         method: 'totp',
       },
       {
-        subjectUserId: user.id,
-        userId: user.id,
+        subjectUserId: userResult.id,
+        userId: userResult.id,
       },
     );
 
     await this.deps.authTxService.delete(authTxId);
 
     const session = await this.deps.userUtilService.completeLogin(
-      user,
+      userResult,
       clientIp,
       userAgent,
       tx.securityResult,
     );
 
-    return { status: 'COMPLETED', session, backupCodes: codes };
+    return { status: 'COMPLETED', session, backupCodes: [code] };
   }
 
-  private async consumeBackupCode(
+  private consumeBackupCode(
     user: {
       id: string;
-      backupCodes: string | null;
-      backupCodesUsed: string | null;
     },
     backupCode: string,
   ): Promise<boolean> {
-    if (!backupCode || backupCode.length !== 8) return false;
-    if (!user.backupCodes) return false;
+    if (!backupCode || backupCode.length !== 8) return Promise.resolve(false);
 
-    const hashed = hashBackupCode(backupCode);
-    const codes = parseBackupCodes(user.backupCodes);
-    const used = parseUsedBackupCodes(user.backupCodesUsed);
-
-    if (used.includes(hashed)) {
-      throw new BadReqErr(ErrCode.BackupCodeAlreadyUsed);
-    }
-
-    if (!codes.includes(hashed)) return false;
-
-    used.push(hashed);
-
-    await this.deps.db.user.update({
-      where: { id: user.id },
-      data: { backupCodesUsed: JSON.stringify(used) },
-      select: { id: true },
-    });
-
-    return true;
+    return this.deps.mfaService.verifyBackupCode(backupCode, user.id);
   }
 
   async regenerateBackupCodes(
@@ -719,17 +693,10 @@ export class AuthFlowService {
     if (!user) throw new NotFoundErr(ErrCode.UserNotFound);
     if (!user.mfaTotpEnabled) throw new BadReqErr(ErrCode.ActionNotAllowed);
 
-    const codes = generateBackupCodes();
-    const hashedCodes = codes.map((c) => hashBackupCode(c));
+    const code = this.deps.mfaService.generateBackupCode();
+    const hashedCode = await this.deps.mfaService.hashBackupCode(code);
 
-    await this.deps.db.user.update({
-      where: { id: userId },
-      data: {
-        backupCodes: JSON.stringify(hashedCodes),
-        backupCodesUsed: JSON.stringify([]),
-      },
-      select: { id: true },
-    });
+    await this.deps.mfaService.saveBackupCode(userId, hashedCode);
 
     await this.deps.auditLogService.pushSecurity(
       {
@@ -745,7 +712,7 @@ export class AuthFlowService {
       },
     );
 
-    return { backupCodes: codes };
+    return { backupCodes: [code] };
   }
 
   async disableMfa(
@@ -818,8 +785,6 @@ export class AuthFlowService {
       data: {
         mfaTotpEnabled: false,
         totpSecret: null,
-        backupCodes: null,
-        backupCodesUsed: null,
       },
       select: { id: true },
     });

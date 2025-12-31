@@ -243,8 +243,6 @@ export class UserUtilService {
         passwordExpired: true,
         mfaTotpEnabled: true,
         totpSecret: true,
-        backupCodes: true,
-        backupCodesUsed: true,
         created: true,
         modified: true,
         roles: { select: { roleId: true } },
