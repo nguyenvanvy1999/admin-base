@@ -1,254 +1,214 @@
-## Admin Base Portal - Agent Rules
+# Admin Base Portal - Agent Rules
 
-Tài liệu này cung cấp hướng dẫn để các AI Agent làm việc nhất quán trong dự án Admin Base Portal. Đây là một base project đầy đủ tính năng được thiết kế để tái sử dụng ở các dự án khác. Luôn đọc toàn bộ file trước khi bắt đầu task.
+Tài liệu này cung cấp hướng dẫn cốt lõi để các AI Agent làm việc nhất quán trong dự án Admin Base Portal. **Luôn đọc toàn bộ file này và các tài liệu tham khảo trước khi bắt đầu task.**
 
-### 1. Tổng quan dự án
+## 📚 Tài Liệu Tham Khảo Bắt Buộc
 
-- **Mục tiêu**: Admin Base Portal - một base project đầy đủ tính năng quản trị để tái sử dụng ở nhiều dự án khác.
-- **Kiến trúc**: Monorepo `admin-base-monorepo` gồm `server` (Bun + Elysia) và `client` (React + Vite).
-- **Ngôn ngữ**: TypeScript toàn bộ stack, comment/code bắt buộc tiếng Anh.
-- **Type Safety**: Ưu tiên type-safety tuyệt đối (Prisma, Eden Treaty, Zod/TypeBox).
+Trước khi bắt đầu bất kỳ task nào, AI Agent **PHẢI** đọc các tài liệu sau:
 
-### 2. Tech stack chính
+1. **[Project Introduction](./project-introduction.md)** - Tổng quan dự án, tech stack, cấu trúc codebase, tính năng core
+2. **[Coding Standards](./coding-standards.md)** - Quy tắc code clean, tái sử dụng code, naming conventions, best practices
+3. **[Development Workflow](./development-workflow.md)** - Workflow phát triển, commands, schema lifecycle
 
-- **Runtime**: Bun (bunfig + scripts trong `package.json` từng app).
-- **Backend**: Elysia.js, Prisma ORM, PostgreSQL, JWT auth, policy-based authorization, Logtape logging, BullMQ/Redis.
-- **Frontend**: React 19 + Vite, Ant Design 5 + @ant-design/pro-components, TanStack Query, i18next.
-- **State Management**: 
-  - Server data: TanStack Query (caching, invalidation).
-  - Local UI state: React useState.
-  - Global preferences: React Context (AuthProvider, ThemeModeProvider).
-- **Tooling**: Biome (formatter/linter), TypeScript strict mode, Swagger docs.
+## 🎯 Nguyên Tắc Cốt Lõi
 
-### 3. Cấu trúc codebase bắt buộc
+### 1. Tái Sử Dụng Code (Bắt Buộc)
 
-#### Backend (`server/src/`)
+**Trước khi tạo bất kỳ code mới nào:**
 
-- `modules/*`: Controllers, DTOs, index theo domain (admin, auth, misc).
-- `service/*`: Business services; file pattern `[area].service.ts` hoặc `[area]-[domain].service.ts`.
-- `config/*`: Bootstrap config (db, env, logger, pubsub, queue, swagger, error handling).
-- `share/*`: Constants, errors, utils, types dùng chung.
-- `prisma/`: Schema và migrations.
-- `app/backend/`: Entry point cho backend server.
-- `app/worker/`: Entry point cho background workers.
+1. ✅ Tìm kiếm components/services/hooks/utilities tương tự đã có trong codebase
+2. ✅ Xem xét extend hoặc compose từ code hiện có
+3. ✅ Chỉ tạo mới khi không thể tái sử dụng hoặc không phù hợp
 
-#### Frontend (`client/src/`)
+**Ưu tiên tái sử dụng:**
 
-- `app/*`: Providers, routes, layouts (MainLayout, AuthLayout).
-- `components/*`: Chia `business`, `common`, `ui`. Common components là wrappers cho Ant Design.
-- `features/*`: Domain-specific logic (admin, auth, dashboard, settings).
-- `services/api/*`: API service modules.
-- `hooks/api/*`: Query hooks wrap services.
-- `hooks/auth/*`: Authentication hooks.
-- `lib/*`: Axios instance, React Query client, utilities.
-- `locales/*`: i18n resources (en, vi).
-- `types/*`: TypeScript type definitions.
-- `store/*`: Global stores (authStore).
+- Common components từ `components/common/` (AppTable, AppForm, AppModal, AppDrawer, etc.)
+- Service patterns từ `services/api/` (createAdminService, etc.)
+- Hook patterns từ `hooks/api/`
+- Utility functions từ `lib/utils/` hoặc `share/utils/`
+- Type definitions từ `types/` hoặc `share/types/`
 
-### 4. Tính năng core đã có sẵn
+### 2. Code Clean & Readable
 
-Dự án này đã bao gồm các tính năng admin portal cơ bản:
+- **Tự đọc hiểu**: Code phải tự giải thích, tránh comment không cần thiết
+- **Đơn giản**: Ưu tiên giải pháp đơn giản, dễ hiểu hơn là tối ưu phức tạp
+- **Consistent**: Tuân thủ patterns đã có trong codebase
+- **DRY**: Không duplicate logic, extract common logic thành shared utilities
 
-#### Authentication & Authorization
-- ✅ User registration & login
-- ✅ JWT-based authentication
-- ✅ Multi-factor authentication (MFA) với TOTP
-- ✅ OTP verification
-- ✅ OAuth integration (Google)
-- ✅ Password reset & recovery
-- ✅ Session management
-- ✅ Policy-based authorization (roles & permissions)
+### 3. Type Safety Tuyệt Đối
 
-#### User Management
-- ✅ User CRUD operations
-- ✅ User status management (active, inactive, suspended, banned)
-- ✅ User detail view
-- ✅ IP whitelist management
+- **Tránh `any`**: Chỉ dùng khi thực sự cần và có lý do rõ ràng
+- **Ưu tiên `satisfies`**: Thay vì type assertion
+- **Types từ Prisma/Eden Treaty**: Sử dụng khi có thể
+- **DTO từ schema `.static`**: Backend DTOs lấy type từ TypeBox schema
 
-#### Role & Permission System
-- ✅ Role management (CRUD)
-- ✅ Permission management
-- ✅ Role-permission assignment
-- ✅ Permission-based route protection
+### 4. Không Được Làm
 
-#### System Management
-- ✅ Settings management (key-value với data types: string, number, boolean, date, json)
-- ✅ Audit logs (tracking user actions)
-- ✅ Session tracking & management
-- ✅ Internationalization (i18n) management
+1. ❌ Không tạo type/function/biến dư thừa nếu không dùng hoặc không mang lại giá trị
+2. ❌ Không tạo wrapper trống hoặc chỉ forward mà không có logic/mục đích
+3. ❌ Không duplicate code - extract thành shared utilities
+4. ❌ Không tối ưu vi mô gây khó maintain
+5. ❌ Không disable linter rules trừ khi có lý do rõ ràng
+6. ❌ Không dùng `any` trừ khi thực sự cần và có lý do
+7. ❌ Không tạo components/services mới nếu có thể tái sử dụng
+8. ❌ Không quên invalidate query sau mutation (TanStack Query)
 
-#### Infrastructure
-- ✅ File upload/download service
-- ✅ Email service (React Email templates)
-- ✅ Background job processing (BullMQ)
-- ✅ Redis caching
-- ✅ Database migrations (Prisma)
-- ✅ API documentation (Swagger)
+## 🔍 Checklist Bắt Buộc Trước Khi Code
 
-### 5. Quy tắc phát triển
+Khi nhận task, AI Agent **PHẢI** thực hiện:
 
-1. **Router Hash**: Frontend bắt buộc dùng `createHashRouter`. Nghiêm cấm BrowserRouter.
+- [ ] **Đọc task kỹ** và xác nhận file/area ảnh hưởng
+- [ ] **Tra cứu codebase** để tìm tính năng/components/services tương tự đã có
+- [ ] **Xác định pattern** cần follow (xem các file tương tự)
+- [ ] **Kiểm tra tái sử dụng**: Có thể dùng lại code nào không?
+- [ ] **Xác định vị trí code**: Đúng folder structure chưa?
 
-2. **Schema lifecycle**: 
-   - Mọi thay đổi DB phải cập nhật `server/src/prisma/schema.prisma`.
-   - Chạy `bun run db:migrate` + `bun run db:generate`.
-   - Không chỉnh tay `generated/`.
+## 📝 Quy Tắc Phát Triển Cốt Lõi
 
-3. **Auth guard**: 
-   - Backend routes cần `checkAuth` + `detail.security`.
-   - Frontend sử dụng `ProtectedRoute` và token injection trong `lib/api/client.ts`.
+### Router & Routing
 
-4. **State phân định**:
-   - Server data: TanStack Query (invalidate sau mutation).
-   - Local UI state: React useState.
-   - Global preferences: React Context.
+- **Frontend**: Bắt buộc dùng `createHashRouter`. Nghiêm cấm BrowserRouter.
+- **Protected Routes**: Sử dụng `ProtectedRoute` với permission check nếu cần auth
 
-5. **Code style**: 
-   - Chạy `bun run check` trước commit/PR.
-   - Biome format/lint duy nhất.
-   - Không disable rule trừ khi có lý do rõ.
+### Database & Schema
 
-6. **Type safety**: 
-   - Tránh `any`.
-   - Ưu tiên `satisfies` và types từ Prisma/Eden Treaty.
-   - DTO lấy type từ schema `.static`.
+- **Schema lifecycle**: Mọi thay đổi DB phải cập nhật `server/src/prisma/schema.prisma`
+- **Migration**: Chạy `bun run db:migrate` + `bun run db:generate`
+- **Không chỉnh tay**: Không chỉnh tay `generated/`
 
-7. **Comment**: Chỉ khi cần thiết, tiếng Anh, ngắn gọn giải thích intent.
+### Authentication & Authorization
 
-8. **Error handling**: 
-   - Backend throw Error để middleware chuẩn hóa.
-   - Frontend luôn kiểm tra `response.error` và dùng `useNotify` để hiển thị.
+- **Backend**: Routes cần `checkAuth` + `detail.security`
+- **Frontend**: Sử dụng `ProtectedRoute` và token injection trong `lib/api/client.ts`
 
-9. **Security**: 
-   - Password dùng `Bun.password.hash` (bcrypt).
-   - JWT qua header `Authorization: Bearer`.
-   - XSS protection (elysia-xss).
-   - Rate limiting (elysia-rate-limit).
+### State Management
 
-### 6. Workflow chuẩn khi tạo feature backend
+- **Server data**: TanStack Query (với invalidation sau mutation)
+- **Local UI state**: React useState
+- **Global preferences**: React Context (AuthProvider, ThemeModeProvider)
+- **Không dùng**: Redux/Zustand cho server state
 
-1. Tạo DTO trong `modules/<domain>/dtos`.
-2. Viết service logic (`service/<domain>` hoặc `service/<domain>/<name>.service.ts`).
-3. Tạo controller group (`modules/<domain>/controllers`), apply macro auth, schema.
-4. Đăng ký module trong `modules/index.ts` hoặc entrypoint tương ứng.
-5. Cập nhật Swagger tags nếu cần (config swagger).
-6. Viết test (unit + fixtures khi user yêu cầu rõ ràng).
+### Code Quality
 
-### 7. Workflow chuẩn khi tạo feature frontend
+- **Format & Lint**: Chạy `bun run check` trước commit/PR
+- **Biome**: Format/lint duy nhất, không disable rule trừ khi có lý do rõ
+- **Type Check**: Chạy `bun run typecheck` trước commit/PR
+- **Comments**: Chỉ khi cần thiết, tiếng Anh, ngắn gọn giải thích intent
 
-1. Khai báo types trong `client/src/types` hoặc trong chính module nếu chỉ dùng cục bộ.
-2. Viết service gọi API tại `client/src/services/api/*.ts`.
-3. Wrap service bằng hook trong `client/src/hooks/api` sử dụng TanStack Query.
-4. Page/component đặt trong `features/<domain>/pages` hoặc `features/<domain>/components`.
-5. Route mới: cập nhật `app/routes.tsx` (hash router) + bảo vệ bằng `ProtectedRoute` nếu yêu cầu auth.
-6. UI dùng Ant Design Pro Components (`ProTable`, `ProForm`, `ProDrawer`, `PageHeader`...).
-7. Sử dụng common components từ `components/common` (AppTable, AppForm, AppModal, AppDrawer...).
+### Error Handling
 
-### 8. Naming & conventions
+- **Backend**: Throw Error để middleware chuẩn hóa
+- **Frontend**: Luôn kiểm tra `response.error` và dùng `useNotify` để hiển thị
 
-- Backend controllers: `<name>.controller.ts`; services: `<Name>Service.ts` hoặc `<name>-<domain>.service.ts`; DTO: `<name>.dto.ts`.
-- DTO/schema export: đặt PascalCase + hậu tố `Dto`; type alias PascalCase dùng hậu tố `Params`/`Result`/`Response`; không export DTO ở dạng camelCase.
-- Frontend pages: `<Name>Page.tsx`; hooks: `use<Name>Query.ts` hoặc `use<Name>Mutation.ts`; stores/types lowercase file.
-- Environment constants: uppercase snake case.
-- Commit message: theo Conventional Commits (`feat(admin): ...`, `fix(auth): ...`).
+### Security
 
-### 9. Commands quan trọng
+- **Password**: Dùng `Bun.password.hash` (bcrypt)
+- **JWT**: Qua header `Authorization: Bearer`
+- **XSS**: Protection (elysia-xss)
+- **Rate Limiting**: elysia-rate-limit
 
-```bash
-# Root
-bun install              # Cài deps cho cả workspace
+## 🚀 Workflow Tổng Quan
 
-# Server
-cd server
-bun run start:server:dev # Chạy backend dev
-bun run db:migrate       # Tạo migration
-bun run db:generate      # Generate Prisma client
-bun run db:deploy        # Deploy migrations
-bun run check            # Format + lint
-bun run test             # Chạy tests
-bun run seed             # Seed database
+### Backend Feature
 
-# Client
-cd client
-bun run dev              # Chạy frontend dev
-bun run build            # Build production
-bun run preview          # Preview production build
-bun run typecheck        # Type check
+1. Tạo DTO trong `modules/<domain>/dtos`
+2. Viết service logic (`services/<domain>` hoặc `services/<domain>/<name>.service.ts`)
+3. Tạo controller (`modules/<domain>/controllers`), apply auth, schema
+4. Đăng ký module trong `modules/index.ts` hoặc entrypoint
+5. Cập nhật Swagger tags nếu cần
+6. Viết test (khi user yêu cầu rõ ràng)
 
-# Root scripts
-bun run dev:server       # Chạy server từ root
-bun run dev:client       # Chạy client từ root
-bun run check            # Format + lint toàn bộ
-bun run typecheck        # Type check toàn bộ
+**Chi tiết**: Xem [Development Workflow](./development-workflow.md#workflow-phát-triển-feature-backend)
+
+### Frontend Feature
+
+1. Khai báo types trong `client/src/types` hoặc trong module nếu chỉ dùng cục bộ
+2. Viết service gọi API tại `client/src/services/api/*.ts`
+3. Wrap service bằng hook trong `client/src/hooks/api` sử dụng TanStack Query
+4. Page/component đặt trong `features/<domain>/pages` hoặc `features/<domain>/components`
+5. Route mới: cập nhật `app/routes.tsx` (hash router) + bảo vệ bằng `ProtectedRoute` nếu cần
+6. UI dùng Ant Design Pro Components (`ProTable`, `ProForm`, `ProDrawer`, `PageHeader`...)
+7. Sử dụng common components từ `components/common` (AppTable, AppForm, AppModal, AppDrawer...)
+
+**Chi tiết**: Xem [Development Workflow](./development-workflow.md#workflow-phát-triển-feature-frontend)
+
+## 📋 Naming Conventions
+
+### Backend
+
+- **Controllers**: `<name>.controller.ts`
+- **Services**: `<Name>Service.ts` hoặc `<name>-<domain>.service.ts`
+- **DTOs**: `<name>.dto.ts`, export PascalCase + hậu tố `Dto`
+- **Types**: PascalCase với hậu tố `Params`/`Result`/`Response`
+- **Functions**: camelCase
+- **Constants**: UPPER_SNAKE_CASE
+
+### Frontend
+
+- **Pages**: `<Name>Page.tsx`
+- **Components**: PascalCase, file name match component name
+- **Hooks**: `use<Name>Query.ts` hoặc `use<Name>Mutation.ts`
+- **Services**: camelCase, file name `<name>.service.ts`
+- **Types**: PascalCase, file name lowercase
+- **Constants**: UPPER_SNAKE_CASE hoặc camelCase tùy context
+
+### Commit Messages
+
+Sử dụng Conventional Commits:
+
+```
+feat(admin): add user management page
+fix(auth): resolve login redirect issue
+refactor(services): extract common service pattern
+docs(readme): update setup instructions
 ```
 
-### 10. Quy định review & PR
+**Chi tiết**: Xem [Coding Standards](./coding-standards.md#naming-conventions)
 
-- PR phải đính kèm mô tả rõ ràng về thay đổi.
-- Checklist bắt buộc: format (Biome), test pass, docs cập nhật nếu cần.
-- Không merge khi còn TODO/tạm code. Sử dụng `FIXME`/`TODO` khi cần nhưng phải tạo issue liên quan.
-- Đảm bảo backward compatibility khi thay đổi API hoặc schema.
+## ⚠️ Common Pitfalls
 
-### 11. Common pitfalls
+1. **Quên invalidate query** sau mutation (TanStack Query) → UI không cập nhật
+2. **Prisma model đổi** nhưng không regenerate → type mismatch
+3. **Tạo wrappers/hàm không có logic** → tăng độ phức tạp, khó review
+4. **Quên thêm route** vào `app/routes.tsx` → route không hoạt động
+5. **Quên permission check** trong `ProtectedRoute` → security issue
+6. **Tạo component mới** thay vì tái sử dụng AppTable/AppForm → duplicate code
 
-- Quên invalidate query sau mutation (TanStack Query) → UI không cập nhật.
-- Prisma model đổi nhưng không regenerate → type mismatch.
-- Không bật strict mode trong TS config (đã bật sẵn, không chỉnh).
-- Tạo thêm wrappers/hàm không có logic → tăng độ phức tạp, khó review.
-- Quên thêm route vào `app/routes.tsx` → route không hoạt động.
-- Quên thêm permission check trong `ProtectedRoute` → security issue.
+**Chi tiết**: Xem [Development Workflow](./development-workflow.md#common-pitfalls--solutions)
 
-### 12. Checklist nhanh cho các AI Agent
+## ✅ Checklist Hoàn Thành Task
 
-- [ ] Đọc task & xác nhận file ảnh hưởng.
-- [ ] Tra cứu tính năng tương tự đã có trong codebase để tái sử dụng pattern.
-- [ ] Viết code tuân thủ quy tắc sections 4-7.
-- [ ] Chạy test/lint liên quan.
-- [ ] Cập nhật docs nếu thay đổi hành vi hoặc thêm tính năng mới.
-- [ ] Ghi chú bước verify trong final response.
+Khi hoàn thành task, AI Agent **PHẢI**:
 
-### 13. Quy tắc bổ sung cho các AI Agent
+- [ ] Code tuân thủ [Coding Standards](./coding-standards.md)
+- [ ] Đã tái sử dụng components/services/hooks có sẵn
+- [ ] Không có duplicate code
+- [ ] Type safety (không có `any` không cần thiết)
+- [ ] Error handling đầy đủ
+- [ ] State management đúng pattern
+- [ ] Đã chạy `bun run check` và pass
+- [ ] Đã chạy `bun run typecheck` và pass
+- [ ] Đã invalidate query sau mutation (nếu có)
+- [ ] Đã thêm route (nếu tạo page mới)
+- [ ] Đã thêm permission check (nếu cần)
+- [ ] Ghi chú bước verify trong final response
 
-- Không tạo type, function, biến dư thừa nếu không dùng hoặc không mang lại giá trị rõ ràng.
-- Không tạo các hàm/class wrapper trống hoặc chỉ forward mà không có logic/mục đích cụ thể.
-- Không viết comment khi không thực sự cần; ưu tiên làm code tự đọc hiểu.
-- Luôn giữ code clean, dễ hiểu, tránh tối ưu vi mô gây khó maintain.
-- Không tách nhỏ hàm đến mức gây phân mảnh; chỉ tách khi có logic độc lập, tái sử dụng hoặc cần test riêng.
-- Khi thêm tính năng mới, ưu tiên tái sử dụng components/services đã có thay vì tạo mới.
+## 📖 Tài Liệu Bổ Sung
 
-### 14. Hướng dẫn tái sử dụng project
+- **[README.md](../../README.md)**: Hướng dẫn setup, commands chung
+- **[System Overview](../../documents/architecture/system-overview.md)**: Chi tiết kiến trúc hệ thống
+- **[Features Documentation](../../documents/features/)**: Tài liệu chi tiết các tính năng
+- **[Biome Configuration](../../biome.json)**: Linter/Formatter config
 
-Khi sử dụng project này làm base cho dự án mới:
+## 🔄 Cập Nhật Tài Liệu
 
-1. **Clone & Setup**:
-   - Clone repository.
-   - Cập nhật tên project trong `package.json` (root, server, client).
-   - Setup environment variables từ `.env.example`.
+Luôn cập nhật các tài liệu này khi:
 
-2. **Database**:
-   - Tạo database mới.
-   - Cập nhật `DATABASE_URL` trong `.env`.
-   - Chạy `bun run db:migrate` và `bun run db:generate`.
-   - Chạy `bun run seed` để tạo dữ liệu mẫu.
+- Quy trình thay đổi đáng kể
+- Thêm pattern/convention mới
+- Phát hiện pitfall mới
+- Có thay đổi về architecture
 
-3. **Customization**:
-   - Cập nhật branding (logo, favicon, theme colors).
-   - Cập nhật i18n translations trong `client/src/locales`.
-   - Tùy chỉnh theme trong `client/src/config/theme.ts`.
-   - Thêm/tùy chỉnh routes trong `client/src/app/routes.tsx`.
+---
 
-4. **Extend Features**:
-   - Thêm modules mới theo pattern hiện có.
-   - Tái sử dụng common components và services.
-   - Thêm permissions mới vào hệ thống nếu cần.
-
-5. **Remove Unused**:
-   - Xóa các tính năng không cần thiết (nếu có).
-   - Cleanup unused dependencies.
-
-### 15. Tài liệu tham khảo
-
-- `README.md`: Hướng dẫn tổng quan, setup, scripts chung.
-- Codebase structure: Tham khảo các module/features hiện có để hiểu pattern.
-
-Luôn cập nhật file này khi quy trình thay đổi đáng kể để các AI Agent khác nắm được chuẩn mới nhất.
+**Lưu ý**: File này chỉ chứa các quy tắc cốt lõi. Chi tiết về project, coding standards, và workflow xem các tài liệu tham khảo ở trên.
