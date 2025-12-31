@@ -10,7 +10,6 @@ import {
   buildCreateChanges,
   buildUpdateChanges,
 } from 'src/services/audit-logs/utils';
-import { normalizeSearchTerm } from 'src/services/shared/utils';
 import {
   BadReqErr,
   DB_PREFIX,
@@ -18,6 +17,7 @@ import {
   IdUtil,
   type IIdsDto,
   NotFoundErr,
+  normalizeSearchTerm,
   UnAuthErr,
 } from 'src/share';
 import type { AuditLogsService } from '../audit-logs';

@@ -4,7 +4,7 @@ import type {
   IApiKeyUsageListQuery,
 } from 'src/dtos/api-key-usage.dto';
 import type { ApiKeyUsageWhereInput } from 'src/generated';
-import { executeListQuery } from 'src/services/shared/utils';
+import { executeListQuery } from 'src/share';
 
 export interface IApiKeyUsageStats {
   totalRequests: number;

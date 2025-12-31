@@ -13,15 +13,16 @@ import {
   buildCreateChanges,
   buildDeleteChanges,
 } from 'src/services/audit-logs/utils';
-import { DB_PREFIX } from 'src/services/shared/constants';
 import {
   applyPermissionFilter,
   buildSearchOrCondition,
+  DB_PREFIX,
+  ErrCode,
   ensureExists,
   executeListQuery,
+  IdUtil,
   normalizeSearchTerm,
-} from 'src/services/shared/utils';
-import { ErrCode, IdUtil } from 'src/share';
+} from 'src/share';
 import type { AuditLogsService } from '../audit-logs';
 
 const notificationSelect = {

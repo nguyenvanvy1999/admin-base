@@ -15,12 +15,16 @@ import {
   buildUpdateChanges,
 } from 'src/services/audit-logs/utils';
 import {
+  BadReqErr,
   buildSearchOrCondition,
+  DB_PREFIX,
+  ErrCode,
   ensureExists,
   executeListQuery,
+  IdUtil,
+  type IIdsDto,
   normalizeSearchTerm,
-} from 'src/services/shared/utils';
-import { BadReqErr, DB_PREFIX, ErrCode, IdUtil, type IIdsDto } from 'src/share';
+} from 'src/share';
 import type { AuditLogsService } from '../audit-logs';
 
 const notificationTemplateSelect = {

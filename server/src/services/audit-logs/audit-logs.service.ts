@@ -12,8 +12,7 @@ import {
   SecurityEventSeverity,
   SecurityEventType,
 } from 'src/generated';
-import { executeListQuery } from 'src/services/shared/utils/list-query.util';
-import { IdUtil, LOG_LEVEL } from 'src/share';
+import { executeListQuery, IdUtil, LOG_LEVEL } from 'src/share';
 import { ctxStore, getIpAndUa } from 'src/share/context/request-context';
 import type { EnrichedAuditLogEntry } from 'src/share/type';
 import type {

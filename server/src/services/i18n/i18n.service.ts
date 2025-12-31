@@ -7,8 +7,14 @@ import {
   type I18nUpsertParams,
 } from 'src/dtos/i18n.dto';
 import type { I18nWhereInput } from 'src/generated';
-import { executeListQuery } from 'src/services/shared/utils';
-import { BadReqErr, DB_PREFIX, ErrCode, IdUtil, type IIdsDto } from 'src/share';
+import {
+  BadReqErr,
+  DB_PREFIX,
+  ErrCode,
+  executeListQuery,
+  IdUtil,
+  type IIdsDto,
+} from 'src/share';
 import * as XLSX from 'xlsx';
 
 export class I18nService {

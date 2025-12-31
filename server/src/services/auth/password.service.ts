@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { db } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
-import { timeStringToSeconds } from 'src/services/shared/utils/common.util';
+import { timeStringToSeconds } from 'src/share';
 
 export class BunPasswordHasher {
   hash(password: string): Promise<string> {

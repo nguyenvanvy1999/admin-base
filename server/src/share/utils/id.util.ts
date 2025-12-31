@@ -1,6 +1,6 @@
 import { init } from '@paralleldrive/cuid2';
 import { DiscordSnowflake } from '@sapphire/snowflake';
-import type { DB_PREFIX } from 'src/services/shared/constants';
+import type { DB_PREFIX } from 'src/share/constants';
 
 export class IdUtil {
   private static readonly i16 = init({ length: 16 });

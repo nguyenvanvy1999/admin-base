@@ -13,11 +13,15 @@ import {
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import { buildUpdateChanges } from 'src/services/audit-logs/utils';
 import {
+  BadReqErr,
   buildSearchOrCondition,
+  DB_PREFIX,
+  ErrCode,
   executeListQuery,
+  IdUtil,
+  NotFoundErr,
   normalizeSearchTerm,
-} from 'src/services/shared/utils';
-import { BadReqErr, DB_PREFIX, ErrCode, IdUtil, NotFoundErr } from 'src/share';
+} from 'src/share';
 import type { AuditLogsService } from '../audit-logs';
 
 const apiKeySelect = {

@@ -13,7 +13,7 @@ import {
   type LOG_LEVEL,
   type PERMISSIONS,
   type PurposeVerify,
-} from 'src/services/shared/constants';
+} from 'src/share/constants';
 import type { Paths } from 'type-fest';
 
 export type MfaChangeMethod = 'admin-reset' | 'admin-disable';

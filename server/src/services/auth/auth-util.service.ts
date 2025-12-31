@@ -14,17 +14,17 @@ import {
   type SettingsService,
   settingsService,
 } from 'src/services/settings/settings.service';
-import { timeStringToSeconds } from 'src/services/shared/utils/common.util';
-import { detectSessionType } from 'src/services/shared/utils/session.util';
 import {
   ArrayUtil,
   DB_PREFIX,
+  detectSessionType,
   ErrCode,
   IdUtil,
   type IJwtVerified,
   type ITokenPayload,
   LoginResType,
   type SecurityDeviceInsight,
+  timeStringToSeconds,
   UnAuthErr,
   type UPermission,
 } from 'src/share';
