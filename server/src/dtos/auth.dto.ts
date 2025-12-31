@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { AuthChallengeType, AuthStatus } from 'src/services/auth/constants';
 import { DtoFields } from 'src/share';
 import { BaseUserDto } from './users.dto';
 
@@ -66,7 +67,7 @@ export const UserResDto = t.Composite([
 ]);
 
 export const LoginResDto = t.Object({
-  type: t.Literal('COMPLETED'),
+  type: t.Literal(AuthStatus.COMPLETED),
   accessToken: t.String(),
   refreshToken: t.String(),
   exp: t.Number(),
@@ -94,16 +95,19 @@ export type LinkTelegramParams = {
 };
 
 export const ChallengeDto = t.Union([
-  t.Object({ type: t.Literal('MFA_TOTP'), allowBackupCode: t.Literal(true) }),
-  t.Object({ type: t.Literal('MFA_BACKUP_CODE') }),
-  t.Object({ type: t.Literal('MFA_EMAIL_OTP') }),
   t.Object({
-    type: t.Literal('MFA_ENROLL'),
+    type: t.Literal(AuthChallengeType.MFA_TOTP),
+    allowBackupCode: t.Literal(true),
+  }),
+  t.Object({ type: t.Literal(AuthChallengeType.MFA_BACKUP_CODE) }),
+  t.Object({ type: t.Literal(AuthChallengeType.MFA_EMAIL_OTP) }),
+  t.Object({
+    type: t.Literal(AuthChallengeType.MFA_ENROLL),
     methods: t.Array(t.Literal('totp')),
     backupCodesWillBeGenerated: t.Boolean(),
   }),
   t.Object({
-    type: t.Literal('DEVICE_VERIFY'),
+    type: t.Literal(AuthChallengeType.DEVICE_VERIFY),
     media: t.Literal('email'),
     destination: t.String(),
   }),
@@ -116,7 +120,7 @@ export const AuthCompletedResponseDto = t.Object({
 });
 
 export const AuthChallengeResponseDto = t.Object({
-  status: t.Literal('CHALLENGE'),
+  status: t.Literal(AuthStatus.CHALLENGE),
   authTxId: t.String(),
   challenge: ChallengeDto,
 });
@@ -131,10 +135,10 @@ export type IAuthResponse = typeof AuthResponseDto.static;
 export const AuthChallengeRequestDto = t.Object({
   authTxId: t.String({ minLength: 1 }),
   type: t.Union([
-    t.Literal('MFA_TOTP'),
-    t.Literal('MFA_BACKUP_CODE'),
-    t.Literal('MFA_EMAIL_OTP'),
-    t.Literal('DEVICE_VERIFY'),
+    t.Literal(AuthChallengeType.MFA_TOTP),
+    t.Literal(AuthChallengeType.MFA_BACKUP_CODE),
+    t.Literal(AuthChallengeType.MFA_EMAIL_OTP),
+    t.Literal(AuthChallengeType.DEVICE_VERIFY),
   ]),
   code: t.String({ minLength: 1 }),
 });

@@ -7,6 +7,7 @@ import type {
   AuthEnrollConfirmRequestParams,
   AuthEnrollStartRequestParams,
   DisableMfaRequestParams,
+  IAuthResponse,
   LoginParams,
   RegenerateBackupCodesResponse,
 } from 'src/dtos/auth.dto';
@@ -30,11 +31,18 @@ import {
   getIpAndUa,
   NotFoundErr,
   PurposeVerify,
+  userResSelect,
 } from 'src/share';
-import type { ChallengeDto } from 'src/types/auth.types';
 import { type AuthTxService, authTxService } from './auth-tx.service';
 import { type UserUtilService, userUtilService } from './auth-util.service';
 import { type CaptchaService, captchaService } from './captcha.service';
+import {
+  AuthChallengeType,
+  AuthMethod,
+  AuthNextStepKind,
+  AuthStatus,
+  AuthTxState,
+} from './constants';
 import { type MfaService, mfaService } from './mfa.service';
 import { type OtpService, otpService } from './otp.service';
 import { type PasswordService, passwordService } from './password.service';
@@ -44,15 +52,13 @@ import {
 } from './security-monitor.service';
 import { type SessionService, sessionService } from './session.service';
 
-export type AuthResponse =
-  | { status: 'COMPLETED'; session: any }
-  | { status: 'CHALLENGE'; authTxId: string; challenge: ChallengeDto };
+export type AuthResponse = IAuthResponse;
 
 type NextStep =
-  | { kind: 'COMPLETE' }
-  | { kind: 'MFA_CHALLENGE' }
-  | { kind: 'ENROLL_MFA' }
-  | { kind: 'DEVICE_VERIFY' };
+  | { kind: AuthNextStepKind.COMPLETE }
+  | { kind: AuthNextStepKind.MFA_CHALLENGE }
+  | { kind: AuthNextStepKind.ENROLL_MFA }
+  | { kind: AuthNextStepKind.DEVICE_VERIFY };
 
 export class AuthFlowService {
   constructor(
@@ -106,28 +112,21 @@ export class AuthFlowService {
       mfaEnrollRequired,
     } = input;
 
-    // Device Verification (highest priority after MFA required?)
-    // Logic: If device is new AND verification enabled AND MFA not already enforced/enabled?
-    // Actually, if MFA is enabled (TOTP), we might trust that sufficient.
-    // But usually Device Verification is for "New Device" check.
-    // Design decision: If MFA is enabled, we rely on TOTP.
-    // If MFA is NOT enabled, and it's a new device, we challenge Email OTP.
     if (!user.mfaTotpEnabled && isNewDevice && deviceVerificationEnabled) {
-      return { kind: 'DEVICE_VERIFY' };
+      return { kind: AuthNextStepKind.DEVICE_VERIFY };
     }
 
     if ((mfaRequired || mfaEnrollRequired) && !user.mfaTotpEnabled)
-      return { kind: 'ENROLL_MFA' };
-    if (user.mfaTotpEnabled) return { kind: 'MFA_CHALLENGE' };
+      return { kind: AuthNextStepKind.ENROLL_MFA };
+    if (user.mfaTotpEnabled) return { kind: AuthNextStepKind.MFA_CHALLENGE };
 
-    // Risk-based MFA
     if (riskBased && (risk === 'MEDIUM' || risk === 'HIGH')) {
       return user.mfaTotpEnabled
-        ? { kind: 'MFA_CHALLENGE' }
-        : { kind: 'ENROLL_MFA' };
+        ? { kind: AuthNextStepKind.MFA_CHALLENGE }
+        : { kind: AuthNextStepKind.ENROLL_MFA };
     }
 
-    return { kind: 'COMPLETE' };
+    return { kind: AuthNextStepKind.COMPLETE };
   }
 
   async startLogin(params: LoginParams): Promise<AuthResponse> {
@@ -136,7 +135,6 @@ export class AuthFlowService {
 
     const user = await this.deps.userUtilService.findUserForLogin(email);
 
-    // Captcha validation
     const captchaRequired = await this.deps.settingService.enbCaptchaRequired();
 
     if (captchaRequired && !captcha) {
@@ -145,7 +143,7 @@ export class AuthFlowService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: user.email,
           error: 'captcha_required',
         },
@@ -170,7 +168,7 @@ export class AuthFlowService {
             category: 'security',
             eventType: SecurityEventType.login_failed,
             severity: SecurityEventSeverity.medium,
-            method: 'email',
+            method: AuthMethod.EMAIL,
             email: user.email,
             error: 'invalid_captcha',
           },
@@ -205,7 +203,7 @@ export class AuthFlowService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: user.email,
           error: 'password_mismatch',
         },
@@ -224,7 +222,7 @@ export class AuthFlowService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: user.email,
           error: 'user_not_active',
         },
@@ -250,7 +248,7 @@ export class AuthFlowService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.high,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: user.email,
           error: 'security_blocked',
         },
@@ -261,7 +259,7 @@ export class AuthFlowService {
 
     const authTx = await this.deps.authTxService.create(
       user.id,
-      'PASSWORD_VERIFIED',
+      AuthTxState.PASSWORD_VERIFIED,
       { ip: clientIp, ua: userAgent },
       securityResult,
     );
@@ -280,7 +278,7 @@ export class AuthFlowService {
       mfaEnrollRequired: user.mfaEnrollRequired,
     });
 
-    if (next.kind === 'COMPLETE') {
+    if (next.kind === AuthNextStepKind.COMPLETE) {
       await this.deps.authTxService.delete(authTx.id);
       const session = await this.deps.userUtilService.completeLogin(
         user,
@@ -293,7 +291,7 @@ export class AuthFlowService {
           category: 'security',
           eventType: SecurityEventType.login_success,
           severity: SecurityEventSeverity.low,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: user.email ?? '',
           isNewDevice: securityResult?.isNewDevice ?? false,
         },
@@ -303,7 +301,7 @@ export class AuthFlowService {
           sessionId: session.sessionId,
         },
       );
-      return { status: 'COMPLETED', session };
+      return { status: AuthStatus.COMPLETED, session };
     }
 
     if (next.kind === 'DEVICE_VERIFY') {
@@ -315,7 +313,7 @@ export class AuthFlowService {
 
       await this.deps.authTxService.update(authTx.id, {
         deviceVerifyToken: res.otpToken,
-        state: 'CHALLENGE_DEVICE_VERIFY',
+        state: AuthTxState.CHALLENGE_DEVICE_VERIFY,
       });
 
       // Mask email for response
@@ -325,10 +323,10 @@ export class AuthFlowService {
       );
 
       return {
-        status: 'CHALLENGE',
+        status: AuthStatus.CHALLENGE,
         authTxId: authTx.id,
         challenge: {
-          type: 'DEVICE_VERIFY',
+          type: AuthChallengeType.DEVICE_VERIFY,
           media: 'email',
           destination: maskedEmail,
         },
@@ -336,17 +334,6 @@ export class AuthFlowService {
     }
 
     if (next.kind === 'ENROLL_MFA') {
-      // If risk based and no TOTP, maybe we want to force Email OTP as a fallback challenge instead of Enroll?
-      // For now, let's keep it simple. If we wanted to support "Email OTP Challenge" instead of Enroll,
-      // we would check policy here.
-      // Let's assume for this task we want to support Email OTP if it's explicitly requested
-      // or if we decide to use it as a fallback.
-      // Since the requirement is "Email OTP Challenge", let's hook it if risk is HIGH and NO TOTP?
-      // Or just standard "If policy says Email OTP".
-      // NOTE: "documents/auth-flow-redesign.md" does NOT specify when to use Email OTP vs Enroll.
-      // I will add a hypothetical check for now to demonstrate implementation.
-      // If (risk === 'HIGH' && !user.mfaTotpEnabled) -> Email OTP Challenge
-
       if (riskBased && securityResult.risk === 'HIGH' && !user.mfaTotpEnabled) {
         const res = await this.deps.otpService.sendOtpWithAudit(
           user.email,
@@ -356,36 +343,42 @@ export class AuthFlowService {
 
         await this.deps.authTxService.update(authTx.id, {
           emailOtpToken: res.otpToken,
-          state: 'CHALLENGE_MFA_REQUIRED',
+          state: AuthTxState.CHALLENGE_MFA_REQUIRED,
         });
 
         return {
-          status: 'CHALLENGE',
+          status: AuthStatus.CHALLENGE,
           authTxId: authTx.id,
-          challenge: { type: 'MFA_EMAIL_OTP' },
+          challenge: { type: AuthChallengeType.MFA_EMAIL_OTP },
         };
       }
 
-      await this.deps.authTxService.setState(authTx.id, 'CHALLENGE_MFA_ENROLL');
+      await this.deps.authTxService.setState(
+        authTx.id,
+        AuthTxState.CHALLENGE_MFA_ENROLL,
+      );
       return {
-        status: 'CHALLENGE',
+        status: AuthStatus.CHALLENGE,
         authTxId: authTx.id,
         challenge: {
-          type: 'MFA_ENROLL',
+          type: AuthChallengeType.MFA_ENROLL,
           methods: ['totp'],
           backupCodesWillBeGenerated: true,
         },
       };
     }
 
-    await this.deps.authTxService.setState(authTx.id, 'CHALLENGE_MFA_REQUIRED');
+    await this.deps.authTxService.setState(
+      authTx.id,
+      AuthTxState.CHALLENGE_MFA_REQUIRED,
+    );
 
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
         eventType: SecurityEventType.mfa_challenge_started,
         severity: SecurityEventSeverity.low,
-        method: 'email',
+        method: AuthMethod.EMAIL,
         metadata: { stage: 'challenge', from: 'login' },
       },
       {
@@ -396,9 +389,9 @@ export class AuthFlowService {
     );
 
     return {
-      status: 'CHALLENGE',
+      status: AuthStatus.CHALLENGE,
       authTxId: authTx.id,
-      challenge: { type: 'MFA_TOTP', allowBackupCode: true },
+      challenge: { type: AuthChallengeType.MFA_TOTP, allowBackupCode: true },
     };
   }
 
@@ -409,14 +402,11 @@ export class AuthFlowService {
     const { clientIp, userAgent } = getIpAndUa();
 
     const tx = await this.deps.authTxService.getOrThrow(authTxId);
-    this.deps.authTxService.assertBinding(tx, {
-      ip: clientIp,
-      ua: userAgent,
-    });
+    this.deps.authTxService.assertBinding(tx, { ip: clientIp, ua: userAgent });
 
     if (
-      tx.state !== 'CHALLENGE_MFA_REQUIRED' &&
-      tx.state !== 'CHALLENGE_DEVICE_VERIFY'
+      tx.state !== AuthTxState.CHALLENGE_MFA_REQUIRED &&
+      tx.state !== AuthTxState.CHALLENGE_DEVICE_VERIFY
     ) {
       throw new BadReqErr(ErrCode.ValidationError, {
         errors: 'Invalid auth transaction state',
@@ -427,16 +417,7 @@ export class AuthFlowService {
 
     const user = await this.deps.db.user.findUnique({
       where: { id: tx.userId },
-      select: {
-        id: true,
-        email: true,
-        status: true,
-        created: true,
-        modified: true,
-        roles: { select: { roleId: true } },
-        mfaTotpEnabled: true,
-        totpSecret: true,
-      },
+      select: userResSelect,
     });
 
     if (!user) throw new NotFoundErr(ErrCode.UserNotFound);
@@ -445,22 +426,22 @@ export class AuthFlowService {
 
     let ok = false;
 
-    if (type === 'MFA_TOTP') {
+    if (type === AuthChallengeType.MFA_TOTP) {
       if (!user.totpSecret) throw new BadReqErr(ErrCode.MfaBroken);
       ok = this.deps.authenticator.verify({
         secret: user.totpSecret,
         token: code,
       });
-    } else if (type === 'MFA_BACKUP_CODE') {
+    } else if (type === AuthChallengeType.MFA_BACKUP_CODE) {
       ok = await this.consumeBackupCode(user, code);
-    } else if (type === 'MFA_EMAIL_OTP') {
+    } else if (type === AuthChallengeType.MFA_EMAIL_OTP) {
       if (!tx.emailOtpToken) throw new BadReqErr(ErrCode.InvalidState); // Not waiting for email otp
       const verifiedUserId = await this.deps.mfaService.verifyEmailOtp(
         tx.emailOtpToken,
         code,
       );
       ok = verifiedUserId === user.id;
-    } else if (type === 'DEVICE_VERIFY') {
+    } else if (type === AuthChallengeType.DEVICE_VERIFY) {
       if (!tx.deviceVerifyToken) throw new BadReqErr(ErrCode.InvalidState);
       const verifiedUserId = await this.deps.otpService.verifyOtp(
         tx.deviceVerifyToken,
@@ -477,7 +458,10 @@ export class AuthFlowService {
           category: 'security',
           eventType: SecurityEventType.mfa_failed,
           severity: SecurityEventSeverity.medium,
-          method: type === 'MFA_TOTP' ? 'totp' : 'email',
+          method:
+            type === AuthChallengeType.MFA_TOTP
+              ? AuthMethod.TOTP
+              : AuthMethod.EMAIL,
           error: 'invalid_mfa_code',
         },
         {
@@ -486,7 +470,8 @@ export class AuthFlowService {
         },
       );
       throw new BadReqErr(
-        type === 'MFA_TOTP' || type === 'MFA_EMAIL_OTP'
+        type === AuthChallengeType.MFA_TOTP ||
+          type === AuthChallengeType.MFA_EMAIL_OTP
           ? ErrCode.InvalidOtp
           : ErrCode.InvalidBackupCode,
       );
@@ -509,11 +494,12 @@ export class AuthFlowService {
         eventType: SecurityEventType.mfa_verified,
         severity: SecurityEventSeverity.low,
         method:
-          type === 'MFA_TOTP'
-            ? 'totp'
-            : type === 'DEVICE_VERIFY' || type === 'MFA_EMAIL_OTP'
-              ? 'email'
-              : 'backup-code',
+          type === AuthChallengeType.MFA_TOTP
+            ? AuthMethod.TOTP
+            : type === AuthChallengeType.DEVICE_VERIFY ||
+                type === AuthChallengeType.MFA_EMAIL_OTP
+              ? AuthMethod.EMAIL
+              : AuthMethod.BACKUP_CODE,
       },
       {
         subjectUserId: user.id,
@@ -522,7 +508,7 @@ export class AuthFlowService {
       },
     );
 
-    return { status: 'COMPLETED', session };
+    return { status: AuthStatus.COMPLETED, session };
   }
 
   async enrollStart(params: AuthEnrollStartRequestParams) {
@@ -530,12 +516,9 @@ export class AuthFlowService {
     const { clientIp, userAgent } = getIpAndUa();
 
     const tx = await this.deps.authTxService.getOrThrow(authTxId);
-    this.deps.authTxService.assertBinding(tx, {
-      ip: clientIp,
-      ua: userAgent,
-    });
+    this.deps.authTxService.assertBinding(tx, { ip: clientIp, ua: userAgent });
 
-    if (tx.state !== 'CHALLENGE_MFA_ENROLL') {
+    if (tx.state !== AuthTxState.CHALLENGE_MFA_ENROLL) {
       throw new BadReqErr(ErrCode.ValidationError, {
         errors: 'Invalid auth transaction state',
       });
@@ -568,7 +551,7 @@ export class AuthFlowService {
         category: 'security',
         eventType: SecurityEventType.mfa_setup_started,
         severity: SecurityEventSeverity.low,
-        method: 'totp',
+        method: AuthMethod.TOTP,
         stage: 'request',
       },
       {
@@ -587,12 +570,9 @@ export class AuthFlowService {
     const { clientIp, userAgent } = getIpAndUa();
 
     const tx = await this.deps.authTxService.getOrThrow(authTxId);
-    this.deps.authTxService.assertBinding(tx, {
-      ip: clientIp,
-      ua: userAgent,
-    });
+    this.deps.authTxService.assertBinding(tx, { ip: clientIp, ua: userAgent });
 
-    if (tx.state !== 'CHALLENGE_MFA_ENROLL') {
+    if (tx.state !== AuthTxState.CHALLENGE_MFA_ENROLL) {
       throw new BadReqErr(ErrCode.ValidationError, {
         errors: 'Invalid auth transaction state',
       });
@@ -627,15 +607,7 @@ export class AuthFlowService {
         mfaTotpEnabled: true,
         mfaEnrollRequired: false,
       },
-      select: {
-        id: true,
-        email: true,
-        status: true,
-        created: true,
-        modified: true,
-        roles: { select: { roleId: true } },
-        mfaTotpEnabled: true,
-      },
+      select: userResSelect,
     });
 
     if (userResult.status !== UserStatus.active) {
@@ -647,7 +619,7 @@ export class AuthFlowService {
         category: 'security',
         eventType: SecurityEventType.mfa_setup_completed,
         severity: SecurityEventSeverity.low,
-        method: 'totp',
+        method: AuthMethod.TOTP,
       },
       {
         subjectUserId: userResult.id,
@@ -664,7 +636,7 @@ export class AuthFlowService {
       tx.securityResult,
     );
 
-    return { status: 'COMPLETED', session, backupCodes: [code] };
+    return { status: AuthStatus.COMPLETED, session, backupCodes: [code] };
   }
 
   private consumeBackupCode(
@@ -703,7 +675,7 @@ export class AuthFlowService {
         category: 'security',
         eventType: SecurityEventType.mfa_backup_codes_regenerated,
         severity: SecurityEventSeverity.medium,
-        method: 'totp',
+        method: AuthMethod.TOTP,
       },
       {
         subjectUserId: user.id,
@@ -723,14 +695,10 @@ export class AuthFlowService {
     const user = await this.deps.db.user.findUnique({
       where: { id: userId },
       select: {
-        id: true,
-        email: true,
-        mfaTotpEnabled: true,
-        totpSecret: true,
+        ...userResSelect,
         password: true,
         passwordAttempt: true,
         passwordExpired: true,
-        status: true,
       },
     });
 
@@ -749,7 +717,7 @@ export class AuthFlowService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: user.email,
           error: 'password_verification_failed_during_disable_mfa',
         },
@@ -772,7 +740,7 @@ export class AuthFlowService {
           category: 'security',
           eventType: SecurityEventType.mfa_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'totp',
+          method: AuthMethod.TOTP,
           error: 'invalid_otp_during_disable_mfa',
         },
         { subjectUserId: user.id, userId: user.id },

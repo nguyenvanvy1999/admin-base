@@ -34,6 +34,7 @@ import {
   UnAuthErr,
   type UPermission,
 } from 'src/share';
+import { AuthStatus } from './constants';
 import { type PasswordService, passwordService } from './password.service';
 
 export class TokenService {
@@ -210,22 +211,17 @@ export class UserUtilService {
     });
 
     const userRes = {
-      id: user.id,
-      mfaTotpEnabled: user.mfaTotpEnabled,
-      created: user.created,
-      email: user.email,
-      status: user.status,
-      modified: user.modified,
+      ...user,
       permissions: await this.getPermissions(user),
     };
 
     return {
-      type: 'COMPLETED',
+      type: AuthStatus.COMPLETED,
       accessToken,
       refreshToken,
       exp: expirationTime.getTime(),
       expired: dayjs(expirationTime).format(),
-      user: userRes,
+      user: userRes as any,
       sessionId,
     };
   }

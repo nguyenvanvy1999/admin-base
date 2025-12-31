@@ -40,6 +40,13 @@ import {
 } from 'src/share';
 import { authFlowService } from './auth-flow.service';
 import { authTxService } from './auth-tx.service';
+import {
+  AuthChallengeType,
+  AuthMethod,
+  AuthNextStepKind,
+  AuthStatus,
+  AuthTxState,
+} from './constants';
 
 export class OAuthService {
   constructor(
@@ -114,7 +121,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: '',
           error: 'invalid_google_account',
         },
@@ -132,7 +139,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: '',
           error: 'google_account_not_found',
         },
@@ -170,7 +177,7 @@ export class OAuthService {
             category: 'security',
             eventType: SecurityEventType.login_success,
             severity: SecurityEventSeverity.low,
-            method: 'email',
+            method: AuthMethod.EMAIL,
             email,
             metadata: { linked: true },
           },
@@ -216,7 +223,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.register_completed,
           severity: SecurityEventSeverity.low,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email,
         },
         { subjectUserId: user.id, userId: user.id },
@@ -242,7 +249,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.high,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: email || '',
           error: 'security_blocked',
         },
@@ -254,7 +261,7 @@ export class OAuthService {
     // 5. Create auth transaction
     const authTx = await authTxService.create(
       user.id,
-      'PASSWORD_VERIFIED',
+      AuthTxState.PASSWORD_VERIFIED,
       { ip, ua: userAgent },
       securityResult,
     );
@@ -267,7 +274,7 @@ export class OAuthService {
     });
 
     // 7. Handle next step
-    if (next.kind === 'COMPLETE') {
+    if (next.kind === AuthNextStepKind.COMPLETE) {
       await authTxService.delete(authTx.id);
       const session = await this.deps.userUtilService.completeLogin(
         user,
@@ -281,7 +288,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_success,
           severity: SecurityEventSeverity.low,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: email || '',
           isNewDevice: securityResult.isNewDevice ?? false,
         },
@@ -292,16 +299,16 @@ export class OAuthService {
         },
       );
 
-      return { status: 'COMPLETED', session };
+      return { status: AuthStatus.COMPLETED, session };
     }
 
-    if (next.kind === 'ENROLL_MFA') {
-      await authTxService.setState(authTx.id, 'CHALLENGE_MFA_ENROLL');
+    if (next.kind === AuthNextStepKind.ENROLL_MFA) {
+      await authTxService.setState(authTx.id, AuthTxState.CHALLENGE_MFA_ENROLL);
       return {
-        status: 'CHALLENGE',
+        status: AuthStatus.CHALLENGE,
         authTxId: authTx.id,
         challenge: {
-          type: 'MFA_ENROLL',
+          type: AuthChallengeType.MFA_ENROLL,
           methods: ['totp'],
           backupCodesWillBeGenerated: true,
         },
@@ -309,14 +316,14 @@ export class OAuthService {
     }
 
     // MFA challenge required
-    await authTxService.setState(authTx.id, 'CHALLENGE_MFA_REQUIRED');
+    await authTxService.setState(authTx.id, AuthTxState.CHALLENGE_MFA_REQUIRED);
 
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
         eventType: SecurityEventType.mfa_challenge_started,
         severity: SecurityEventSeverity.low,
-        method: 'email',
+        method: AuthMethod.EMAIL,
         metadata: { stage: 'challenge', from: 'login' },
       },
       {
@@ -327,9 +334,9 @@ export class OAuthService {
     );
 
     return {
-      status: 'CHALLENGE',
+      status: AuthStatus.CHALLENGE,
       authTxId: authTx.id,
-      challenge: { type: 'MFA_TOTP', allowBackupCode: true },
+      challenge: { type: AuthChallengeType.MFA_TOTP, allowBackupCode: true },
     };
   }
 
@@ -348,7 +355,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: '',
           error: 'provider_not_found',
         },
@@ -369,7 +376,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: '',
           error: 'invalid_telegram_account',
         },
@@ -398,7 +405,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: '',
           error: 'account_already_linked',
         },
@@ -426,7 +433,7 @@ export class OAuthService {
         category: 'security',
         eventType: SecurityEventType.login_success,
         severity: SecurityEventSeverity.low,
-        method: 'email',
+        method: AuthMethod.EMAIL,
         email: '',
         metadata: { providerId: telegramData.id },
       },

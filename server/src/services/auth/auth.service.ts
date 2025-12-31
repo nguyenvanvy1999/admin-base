@@ -48,6 +48,7 @@ import {
   type UserUtilService,
   userUtilService,
 } from './auth-util.service';
+import { AuthMethod, AuthStatus } from './constants';
 
 import { type OtpService, otpService } from './otp.service';
 import { type PasswordService, passwordService } from './password.service';
@@ -100,7 +101,7 @@ export class AuthService {
           category: 'security',
           eventType: SecurityEventType.register_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: normalizedEmail,
           error: 'user_exists',
         },
@@ -125,7 +126,7 @@ export class AuthService {
         category: 'security',
         eventType: SecurityEventType.register_started,
         severity: SecurityEventSeverity.low,
-        method: 'email',
+        method: AuthMethod.EMAIL,
         email: normalizedEmail,
       },
       { subjectUserId: createdUserId, userId: createdUserId },
@@ -305,14 +306,14 @@ export class AuthService {
       session.revoked ||
       isExpired(session.expired) ||
       !session.createdBy ||
-      session.createdBy.status !== 'active'
+      session.createdBy.status !== UserStatus.active
     ) {
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
           eventType: SecurityEventType.refresh_token_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'email',
+          method: AuthMethod.EMAIL,
           email: session?.createdBy?.email ?? '',
           error: 'refresh_token_invalid',
         },
@@ -348,7 +349,7 @@ export class AuthService {
         category: 'security',
         eventType: SecurityEventType.refresh_token_success,
         severity: SecurityEventSeverity.low,
-        method: 'email',
+        method: AuthMethod.EMAIL,
         email: session.createdBy.email ?? '',
       },
       {
@@ -359,7 +360,7 @@ export class AuthService {
     );
 
     return {
-      type: 'COMPLETED',
+      type: AuthStatus.COMPLETED,
       accessToken,
       refreshToken: token,
       exp: expirationTime.getTime(),
@@ -377,7 +378,7 @@ export class AuthService {
         category: 'security',
         eventType: SecurityEventType.logout,
         severity: SecurityEventSeverity.low,
-        method: 'email',
+        method: AuthMethod.EMAIL,
         email: '',
         sessionId,
       },
