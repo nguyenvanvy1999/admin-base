@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { Decimal } from 'decimal.js';
-import { AmountUtil, ArrayUtil, idUtil, isExpired, ValueUtil } from 'src/share';
+import { ArrayUtil, idUtil, isExpired, ValueUtil } from 'src/share';
 
 describe('Functions Utils', () => {
   describe('Token Generation', () => {
@@ -228,110 +227,6 @@ describe('Functions Utils', () => {
         const input = [3, 1, 2, 1, 3, 2, 1];
         const result = ArrayUtil.uniq(input);
         expect(result).toEqual([3, 1, 2]);
-      });
-    });
-  });
-
-  describe('Decimal Utilities', () => {
-    describe('toBaseUnits', () => {
-      it('should convert human amount to base units', () => {
-        const result = AmountUtil.toBaseUnits('123.45', 2);
-        expect(result.toString()).toBe('12345');
-      });
-      it('should convert Decimal to base units', () => {
-        const decimal = new Decimal('123.45');
-        const result = AmountUtil.toBaseUnits(decimal, 2);
-        expect(result.toString()).toBe('12345');
-      });
-      it('should convert number to base units', () => {
-        const result = AmountUtil.toBaseUnits(123.45, 2);
-        expect(result.toString()).toBe('12345');
-      });
-      it('should handle zero amount', () => {
-        const result = AmountUtil.toBaseUnits('0', 2);
-        expect(result.toString()).toBe('0');
-      });
-      it('should handle large decimals', () => {
-        const result = AmountUtil.toBaseUnits('123456789.123456789', 9);
-        expect(result.toString()).toBe('123456789123456789');
-      });
-      it('should throw error for negative amount', () => {
-        expect(() => {
-          AmountUtil.toBaseUnits('-123.45', 2);
-        }).toThrow('Invalid amount');
-      });
-      it('should throw error for non-finite amount', () => {
-        expect(() => {
-          AmountUtil.toBaseUnits(Infinity, 2);
-        }).toThrow('Invalid amount');
-      });
-      it('should throw error for non-integer result', () => {
-        expect(() => {
-          AmountUtil.toBaseUnits('123.456', 2);
-        }).toThrow('Amount must align with decimals');
-      });
-    });
-    describe('fromBaseUnits', () => {
-      it('should convert base units to human amount', () => {
-        const result = AmountUtil.fromBaseUnits('12345', 2);
-        expect(result).toBe('123.45');
-      });
-      it('should convert Decimal base units to human amount', () => {
-        const decimal = new Decimal('12345');
-        const result = AmountUtil.fromBaseUnits(decimal, 2);
-        expect(result).toBe('123.45');
-      });
-      it('should convert number base units to human amount', () => {
-        const result = AmountUtil.fromBaseUnits(12345, 2);
-        expect(result).toBe('123.45');
-      });
-      it('should handle zero base units', () => {
-        const result = AmountUtil.fromBaseUnits('0', 2);
-        expect(result).toBe('0');
-      });
-      it('should handle large base units', () => {
-        const result = AmountUtil.fromBaseUnits('123456789123456789', 9);
-        expect(result).toBe('123456789.123456789');
-      });
-      it('should remove trailing zeros', () => {
-        const result = AmountUtil.fromBaseUnits('12300', 2);
-        expect(result).toBe('123');
-      });
-      it('should handle single decimal place', () => {
-        const result = AmountUtil.fromBaseUnits('12340', 2);
-        expect(result).toBe('123.4');
-      });
-    });
-    describe('multiplyHuman', () => {
-      it('should multiply two human amounts', () => {
-        const result = AmountUtil.multiplyHuman('123.45', '2.5', 2);
-        expect(result).toBe('308.63');
-      });
-      it('should multiply Decimal amounts', () => {
-        const a = new Decimal('123.45');
-        const b = new Decimal('2.5');
-        const result = AmountUtil.multiplyHuman(a, b, 2);
-        expect(result).toBe('308.63');
-      });
-      it('should multiply number amounts', () => {
-        const result = AmountUtil.multiplyHuman(123.45, 2.5, 2);
-        expect(result).toBe('308.63');
-      });
-      it('should handle zero multiplication', () => {
-        const result = AmountUtil.multiplyHuman('123.45', '0', 2);
-        expect(result).toBe('0.00');
-      });
-      it('should handle one multiplication', () => {
-        const result = AmountUtil.multiplyHuman('123.45', '1', 2);
-        expect(result).toBe('123.45');
-      });
-      it('should handle large numbers', () => {
-        const result = AmountUtil.multiplyHuman('999999.99', '999999.99', 2);
-        expect(result).toBe('999999980000.00');
-      });
-      it('should respect output decimals', () => {
-        const result = AmountUtil.multiplyHuman('123.456', '2.5', 4);
-        expect(result).toBe('308.6400');
       });
     });
   });

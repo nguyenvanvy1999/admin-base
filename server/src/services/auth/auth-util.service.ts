@@ -5,7 +5,10 @@ import { env, type IEnv } from 'src/config/env';
 import { geoIPQueue, type IGeoIPQueue } from 'src/config/queue';
 import type { ILoginRes } from 'src/dtos/auth.dto';
 import { type User, UserStatus } from 'src/generated';
-import { EncryptService } from 'src/services/auth/encrypt.service';
+import {
+  type EncryptService,
+  encryptService,
+} from 'src/services/auth/encrypt.service';
 import {
   type SessionService,
   sessionService,
@@ -37,6 +40,7 @@ export class TokenService {
   constructor(
     private readonly e: IEnv = env,
     private readonly idGen: IdUtil = idUtil,
+    private readonly encryptSvc: EncryptService = encryptService,
   ) {}
 
   signJwt(payload: Record<string, any>): Promise<string> {
@@ -76,7 +80,7 @@ export class TokenService {
   async createAccessToken(
     payload: ITokenPayload,
   ): Promise<{ accessToken: string; expirationTime: Date }> {
-    const data = EncryptService.aes256Encrypt(payload);
+    const data = this.encryptSvc.aes256Encrypt(payload);
     const accessToken = await this.signJwt({ data });
     return {
       accessToken,
@@ -93,7 +97,7 @@ export class TokenService {
     if (!res) {
       throw new UnAuthErr(ErrCode.InvalidToken);
     }
-    const data = EncryptService.aes256Decrypt<ITokenPayload>(res.data);
+    const data = this.encryptSvc.aes256Decrypt<ITokenPayload>(res.data);
     return { ...res, data };
   }
 }
