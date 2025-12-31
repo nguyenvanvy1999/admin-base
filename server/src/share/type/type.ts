@@ -138,11 +138,6 @@ export type PrismaTx = Omit<
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'
 >;
 
-export type IUserMFA = Pick<
-  User,
-  'id' | 'mfaTotpEnabled' | 'totpSecret' | 'backupCodes' | 'backupCodesUsed'
->;
-
 export type SecurityDeviceInsight = {
   deviceFingerprint?: string | null;
   isNewDevice: boolean;

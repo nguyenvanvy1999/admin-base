@@ -25,7 +25,6 @@ export enum ErrCode {
   InvalidTelegramAccount = 'invalid-telegram-account',
   TelegramAccountWasLinked = 'telegram-account-was-linked',
   MFAHasBeenSetup = 'mfa-has-been-setup',
-  MFANotEnabled = 'mfa-not-enabled',
   InvalidBackupCode = 'invalid-backup-code',
   BackupCodeAlreadyUsed = 'backup-code-already-used',
   ActionNotAllowed = 'action-not-allowed',

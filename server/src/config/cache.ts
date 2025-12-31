@@ -109,7 +109,6 @@ export const mfaCache = new RedisCache<{
   namespace: CACHE_NS.MFA,
   ttl: FIVE_MINUTES,
 });
-export type IMFACache = typeof mfaCache;
 
 export const otpRateLimitCache = new RedisCache<boolean>({
   namespace: CACHE_NS.OTP_RATE_LIMIT,
@@ -128,7 +127,7 @@ export const mfaSetupCache = new RedisCache<{
   ttl: FIVE_MINUTES,
 });
 
-export const mfaSetupTokenCache = new RedisCache<{
+new RedisCache<{
   userId: string;
   clientIp: string;
   userAgent: string;
@@ -139,7 +138,7 @@ export const mfaSetupTokenCache = new RedisCache<{
   ttl: FIVE_MINUTES,
 });
 
-export const mfaSetupTokenByUserCache = new RedisCache<string>({
+new RedisCache<string>({
   namespace: `${CACHE_NS.MFA_SETUP_TOKEN}:by-user`,
   ttl: FIVE_MINUTES,
 });
@@ -156,7 +155,6 @@ export const mfaAttemptCache = new RedisCache<number>({
   namespace: CACHE_NS.MFA_ATTEMPT,
   ttl: FIVE_MINUTES,
 });
-export type IMfaAttemptCache = typeof mfaAttemptCache;
 
 export const captchaCache = new RedisCache<string>({
   namespace: 'captcha',
