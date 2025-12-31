@@ -9,11 +9,13 @@ import {
   type NotificationWhereInput,
 } from 'src/generated';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
+import {
+  buildCreateChanges,
+  buildDeleteChanges,
+} from 'src/services/audit-logs/utils';
 import { DB_PREFIX } from 'src/services/shared/constants';
 import {
   applyPermissionFilter,
-  buildCreateChanges,
-  buildDeleteChanges,
   buildSearchOrCondition,
   ensureExists,
   executeListQuery,

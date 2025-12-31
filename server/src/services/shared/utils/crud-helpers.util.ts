@@ -1,4 +1,4 @@
-import { BadReqErr, type ErrCode, NotFoundErr } from 'src/share';
+import { type ErrCode, NotFoundErr } from 'src/share';
 
 export async function ensureExists<
   TDelegate extends { findUnique: (args: any) => Promise<any | null> },
@@ -28,14 +28,4 @@ export async function ensureExists<
     throw new NotFoundErr(errorCode);
   }
   return result as any;
-}
-
-export async function checkUniqueness<
-  TDelegate extends { findFirst: (args: any) => Promise<any | null> },
-  TWhere,
->(delegate: TDelegate, where: TWhere, errorCode: ErrCode): Promise<void> {
-  const existing = await delegate.findFirst({ where });
-  if (existing) {
-    throw new BadReqErr(errorCode);
-  }
 }

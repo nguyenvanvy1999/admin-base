@@ -608,10 +608,7 @@ export class SettingsService {
     );
   }
 
-  async update(
-    params: UpdateSettingParams,
-    actorId?: string,
-  ): Promise<{ id: string }> {
+  async update(params: UpdateSettingParams): Promise<{ id: string }> {
     const { id, value, isSecret, description } = params;
     const setting = await this.deps.db.setting.findUnique({
       where: { id },
@@ -673,7 +670,7 @@ export class SettingsService {
     return this.exportSettings();
   }
 
-  async import(data: Record<string, string>, actorId?: string) {
+  async import(data: Record<string, string>) {
     const result = await this.importSettings(data);
     if (result.errors.length > 0) {
       throw new BadReqErr(ErrCode.BadRequest, { errors: result.errors });

@@ -95,4 +95,3 @@ export const apiKeyUsageQueue = new Queue<ApiKeyUsageJobData>(
     },
   },
 );
-export type IApiKeyUsageQueue = typeof apiKeyUsageQueue;

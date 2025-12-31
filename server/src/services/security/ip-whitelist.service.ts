@@ -12,13 +12,15 @@ import type {
   UserIpWhitelistWhereInput,
 } from 'src/generated';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
+import {
+  buildCreateChanges,
+  buildDeleteChanges,
+  buildUpdateChanges,
+} from 'src/services/audit-logs/utils';
 import { DB_PREFIX } from 'src/services/shared/constants';
 import {
   applyPermissionFilter,
-  buildCreateChanges,
-  buildDeleteChanges,
   buildSearchOrCondition,
-  buildUpdateChanges,
   ensureExists,
   executeListQuery,
   normalizeSearchTerm,

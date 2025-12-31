@@ -49,7 +49,7 @@ export const rolesAdminController = new Elysia({
   .post(
     '/',
     async ({ body, currentUser }) => {
-      await rolesService.upsert(body, currentUser.id);
+      await rolesService.upsert(body);
       return castToRes(null);
     },
     {
@@ -65,7 +65,7 @@ export const rolesAdminController = new Elysia({
   .post(
     '/del',
     async ({ body, currentUser }) => {
-      await rolesService.delete(body, currentUser.id);
+      await rolesService.delete(body);
       return castToRes(null);
     },
     {

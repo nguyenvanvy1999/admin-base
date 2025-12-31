@@ -27,51 +27,22 @@ export enum LOG_LEVEL {
 export const REGEX_TIME =
   /^\d+\s*(seconds?|minutes?|hours?|days?|weeks?|months?|years?)$/i;
 
-export enum HTTP_METHOD {
-  GET = 'GET',
-  POST = 'POST',
-  PUT = 'PUT',
-  PATCH = 'PATCH',
-  DELETE = 'DELETE',
-  OPTIONS = 'OPTIONS',
-  HEAD = 'HEAD',
-}
-
-export const REGEX_HTTP_METHOD = `^(${Object.values(HTTP_METHOD).join('|')})(,(${Object.values(HTTP_METHOD).join('|')}))*$`;
+const HTTP_METHODS = [
+  'GET',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+  'OPTIONS',
+  'HEAD',
+];
+export const REGEX_HTTP_METHOD = `^(${HTTP_METHODS.join('|')})(,(${HTTP_METHODS.join('|')}))*$`;
 
 export enum HTTP_STATUS {
   HTTP_400_BAD_REQUEST = 400,
   HTTP_401_UNAUTHORIZED = 401,
   HTTP_404_NOT_FOUND = 404,
   HTTP_500_INTERNAL_SERVER_ERROR = 500,
-}
-
-export enum ACTIVITY_TYPE {
-  LOGIN = 'login',
-  REGISTER = 'register',
-  LOGOUT = 'logout',
-  CHANGE_PASSWORD = 'change-password',
-  SETUP_MFA = 'setup-mfa',
-  LINK_OAUTH = 'link-oauth',
-  SECURITY_EVENT = 'security-event',
-
-  CREATE_USER = 'create-user',
-  UPDATE_USER = 'update-user',
-
-  CREATE_ROLE = 'create-role',
-  UPDATE_ROLE = 'update-role',
-  DEL_ROLE = 'del-role',
-
-  REVOKE_SESSION = 'revoke-session',
-  RESET_MFA = 'reset-mfa',
-
-  CREATE_IP_WHITELIST = 'create-ipwhitelist',
-  UPDATE_IP_WHITELIST = 'update-ipwhitelist',
-  DEL_IP_WHITELIST = 'del-ipwhitelist',
-
-  UPDATE_SETTING = 'update-setting',
-
-  INTERNAL_ERROR = 'internal-error',
 }
 
 export const defaultRoles: Record<
@@ -189,7 +160,6 @@ export enum CACHE_NS {
   RATE_LIMIT = 'rate-limit',
   RATE_LIMIT_CONFIG = 'rate-limit-config',
   MFA_ATTEMPT = 'mfa-attempt',
-  CURRENCY = 'currency',
   IP_WHITELIST = 'ip-whitelist',
   API_KEY = 'api-key',
 }
@@ -201,7 +171,6 @@ export enum DB_PREFIX {
   PERMISSION = 'perm',
   USER_AUTH_PROVIDER = 'user_oauth',
   AUTH_PROVIDER = 'auth_prov',
-  REFERRAL = 'ref',
   I18N = 'i18n',
   ROLE = 'role',
   IP_WHITELIST = 'ip_wh',

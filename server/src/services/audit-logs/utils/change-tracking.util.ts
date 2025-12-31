@@ -1,4 +1,4 @@
-import type { AuditChangeSet } from '../types/cud-types';
+import type { AuditChangeSet } from '../types';
 
 export function computeChanges<
   TPrev extends Record<string, unknown>,

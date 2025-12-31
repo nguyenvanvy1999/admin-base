@@ -5,7 +5,6 @@ try {
   logger.info('🚀 Starting queues...');
   workerManagerService.startMessageWorkers();
 } catch (e) {
-  const { logger } = await import('src/config/logger');
   logger.error('💥 Worker start failed!');
   logger.error(`Error details: ${e}`);
   logger.error(

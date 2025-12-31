@@ -11,9 +11,9 @@ import {
   type ApiKeyWhereInput,
 } from 'src/generated';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
+import { buildUpdateChanges } from 'src/services/audit-logs/utils';
 import {
   buildSearchOrCondition,
-  buildUpdateChanges,
   executeListQuery,
   normalizeSearchTerm,
 } from 'src/services/shared/utils';

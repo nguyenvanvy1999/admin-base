@@ -5,10 +5,6 @@ export type AuditChangeSet<T = unknown> = Record<
   { previous: T; next: T }
 >;
 
-export type TypedAuditChangeSet<T extends Record<string, unknown>> = {
-  [K in keyof T]?: { previous: T[K]; next: T[K] };
-};
-
 export type CudPayloadBase<
   TEntityType extends string = string,
   TAction extends CudAction = CudAction,

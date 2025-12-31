@@ -9,8 +9,8 @@ import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import {
   buildCreateChanges,
   buildUpdateChanges,
-  normalizeSearchTerm,
-} from 'src/services/shared/utils';
+} from 'src/services/audit-logs/utils';
+import { normalizeSearchTerm } from 'src/services/shared/utils';
 import {
   BadReqErr,
   DB_PREFIX,
@@ -131,10 +131,7 @@ export class RolesService {
     });
   }
 
-  async upsert(
-    params: UpsertRoleParams,
-    actorId?: string,
-  ): Promise<{ id: string }> {
+  async upsert(params: UpsertRoleParams): Promise<{ id: string }> {
     const { id, title, enabled, description, players, permissionIds } = params;
 
     if (id) {
@@ -312,7 +309,7 @@ export class RolesService {
     };
   }
 
-  async delete(params: IIdsDto, actorId?: string): Promise<void> {
+  async delete(params: IIdsDto): Promise<void> {
     const { ids } = params;
     const protectedRoles = await this.deps.db.role.findMany({
       where: { id: { in: ids }, protected: true },

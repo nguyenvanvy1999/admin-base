@@ -252,8 +252,8 @@ export class AuditLogsService {
 
   private getContext() {
     const store = ctxStore.getStore();
-    let ip: string | null = null;
-    let userAgent: string | null = null;
+    let ip: string | null;
+    let userAgent: string | null;
 
     try {
       const ipAndUa = getIpAndUa();

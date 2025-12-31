@@ -33,13 +33,13 @@ import {
   auditLogsService,
 } from 'src/services/audit-logs/audit-logs.service';
 import {
+  buildDeleteChanges,
+  buildUpdateChanges,
+} from 'src/services/audit-logs/utils';
+import {
   type SettingsService,
   settingsService,
 } from 'src/services/settings/settings.service';
-import {
-  buildDeleteChanges,
-  buildUpdateChanges,
-} from 'src/services/shared/utils';
 import {
   BadReqErr,
   ctxStore,

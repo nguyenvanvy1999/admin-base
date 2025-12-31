@@ -37,7 +37,7 @@ import {
 import {
   type ApiKeyValidationService,
   apiKeyValidationService,
-} from '../api-keys/api-key-validation.service';
+} from '../api-keys';
 
 const WORKER_NAME = 'audit-log-batch-worker';
 const JOB_NAME = 'scheduled-flush';
@@ -393,6 +393,5 @@ export class AuditLogWorkerService {
   }
 }
 
-export const workerService = new WorkerService();
 export const workerManagerService = new WorkerManagerService();
 export const auditLogWorkerService = new AuditLogWorkerService();

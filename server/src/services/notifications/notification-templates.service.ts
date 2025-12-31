@@ -12,8 +12,10 @@ import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import {
   buildCreateChanges,
   buildDeleteChanges,
-  buildSearchOrCondition,
   buildUpdateChanges,
+} from 'src/services/audit-logs/utils';
+import {
+  buildSearchOrCondition,
   ensureExists,
   executeListQuery,
   normalizeSearchTerm,

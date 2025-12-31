@@ -20,6 +20,10 @@ import {
   auditLogsService,
 } from 'src/services/audit-logs/audit-logs.service';
 import {
+  buildCreateChanges,
+  buildUpdateChanges,
+} from 'src/services/audit-logs/utils';
+import {
   type UserUtilService,
   userUtilService,
 } from 'src/services/auth/auth-util.service';
@@ -31,10 +35,6 @@ import {
   type SessionService,
   sessionService,
 } from 'src/services/auth/session.service';
-import {
-  buildCreateChanges,
-  buildUpdateChanges,
-} from 'src/services/shared/utils';
 import {
   BadReqErr,
   DB_PREFIX,

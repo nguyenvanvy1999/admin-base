@@ -53,46 +53,43 @@ export const apiKeyMiddleware = (app: Elysia) =>
   });
 
 export const requiredApiKeyMiddleware = (app: Elysia) =>
-  app
-    .guard({ as: 'scoped' })
-    .resolve({ as: 'local' }, async ({ headers, request }) => {
-      const xApiKey = headers['x-api-key'];
-      const authHeader = headers['authorization'];
+  app.guard({ as: 'scoped' }).resolve({ as: 'local' }, async ({ headers }) => {
+    const xApiKey = headers['x-api-key'];
+    const authHeader = headers['authorization'];
 
-      let apiKey: string | undefined;
+    let apiKey: string | undefined;
 
-      if (xApiKey) {
-        apiKey = xApiKey;
-      } else if (authHeader) {
-        apiKey = authHeader;
-      }
+    if (xApiKey) {
+      apiKey = xApiKey;
+    } else if (authHeader) {
+      apiKey = authHeader;
+    }
 
-      if (!apiKey) {
-        throw new UnAuthErr(ErrCode.InvalidApiKey);
-      }
+    if (!apiKey) {
+      throw new UnAuthErr(ErrCode.InvalidApiKey);
+    }
 
-      const validation =
-        await apiKeyValidationService.validateFromHeader(apiKey);
+    const validation = await apiKeyValidationService.validateFromHeader(apiKey);
 
-      if (!validation.valid || !validation.context) {
-        throw new UnAuthErr(ErrCode.InvalidApiKey, {
-          errors: validation.error,
-        });
-      }
+    if (!validation.valid || !validation.context) {
+      throw new UnAuthErr(ErrCode.InvalidApiKey, {
+        errors: validation.error,
+      });
+    }
 
-      const context = validation.context;
+    const context = validation.context;
 
-      const current = ctxStore.getStore();
-      if (current) {
-        current.userId = context.userId;
-        current.apiKeyId = context.apiKeyId;
-      }
+    const current = ctxStore.getStore();
+    if (current) {
+      current.userId = context.userId;
+      current.apiKeyId = context.apiKeyId;
+    }
 
-      return {
-        apiKeyContext: {
-          apiKeyId: context.apiKeyId,
-          userId: context.userId,
-          permissions: context.permissions,
-        } satisfies IApiKeyContext,
-      };
-    });
+    return {
+      apiKeyContext: {
+        apiKeyId: context.apiKeyId,
+        userId: context.userId,
+        permissions: context.permissions,
+      } satisfies IApiKeyContext,
+    };
+  });
