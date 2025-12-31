@@ -109,6 +109,5 @@ export interface AdminAuditLogListResponse {
   count: number;
 }
 
-export type UserAuditLog = AdminAuditLog;
 export type UserAuditLogListQuery = AdminAuditLogListQuery;
 export type UserAuditLogListResponse = AdminAuditLogListResponse;

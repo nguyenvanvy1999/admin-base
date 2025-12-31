@@ -144,15 +144,6 @@ class ApiClient {
     return response.data.data ?? (response.data as unknown as T);
   }
 
-  async put<T = unknown>(
-    url: string,
-    data?: unknown,
-    config?: AxiosRequestConfig,
-  ): Promise<T> {
-    const response = await this.instance.put<ApiResponse<T>>(url, data, config);
-    return response.data.data ?? (response.data as unknown as T);
-  }
-
   async patch<T = unknown>(
     url: string,
     data?: unknown,

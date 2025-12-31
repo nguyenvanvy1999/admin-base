@@ -91,7 +91,7 @@ export function ApiKeyUsagePageBase(props: ApiKeyUsagePageBaseProps) {
 
   const header = (
     <Card size="small">
-      <Space direction="vertical" size="small" style={{ width: '100%' }}>
+      <Space orientation="vertical" size="small" style={{ width: '100%' }}>
         <Typography.Title level={4} style={{ margin: 0 }}>
           {title}
         </Typography.Title>

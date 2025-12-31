@@ -121,7 +121,7 @@ export function ApiKeyUsageStats({ params }: ApiKeyUsageStatsProps) {
       <Col xs={24} md={12}>
         <Card
           title={t('apiKeyUsagePage.stats.byMethod')}
-          bodyStyle={{ padding: 0 }}
+          styles={{ body: { padding: 0 } }}
         >
           <Table
             size="small"
@@ -147,7 +147,7 @@ export function ApiKeyUsageStats({ params }: ApiKeyUsageStatsProps) {
       <Col xs={24} md={12}>
         <Card
           title={t('apiKeyUsagePage.stats.byStatus')}
-          bodyStyle={{ padding: 0 }}
+          styles={{ body: { padding: 0 } }}
         >
           <Table
             size="small"
@@ -172,7 +172,7 @@ export function ApiKeyUsageStats({ params }: ApiKeyUsageStatsProps) {
       <Col span={24}>
         <Card
           title={t('apiKeyUsagePage.stats.topEndpoints')}
-          bodyStyle={{ padding: 0 }}
+          styles={{ body: { padding: 0 } }}
         >
           <Table
             size="small"

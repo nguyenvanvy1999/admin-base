@@ -3,16 +3,9 @@ import type {
   AdminSessionListParams,
   AdminSessionPagingResponse,
 } from 'src/types/admin-sessions';
-import { createQueryKeys } from '../base.service';
 
 // Unified controller prefix: /sessions (mounted under /api)
 const SESSION_BASE_PATH = '/api/sessions';
-
-export const adminSessionKeys = {
-  ...createQueryKeys('admin-sessions'),
-  list: (filters?: Partial<AdminSessionListParams>) =>
-    [...createQueryKeys('admin-sessions').lists(), filters] as const,
-};
 
 export const adminSessionsService = {
   list(params: AdminSessionListParams): Promise<AdminSessionPagingResponse> {

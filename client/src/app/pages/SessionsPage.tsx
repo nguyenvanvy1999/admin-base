@@ -136,7 +136,7 @@ export default function SessionsPage() {
   const headerForUser = useMemo(
     () => (
       <Card size="small">
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
           <Typography.Title level={4} style={{ margin: 0 }}>
             {t('adminSessionsPage.title')}
           </Typography.Title>

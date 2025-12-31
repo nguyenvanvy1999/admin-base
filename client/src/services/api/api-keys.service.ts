@@ -8,19 +8,8 @@ import type {
   UserApiKeyListResponse,
   UserApiKeyUpdatePayload,
 } from 'src/types/admin-api-keys';
-import { createQueryKeys } from './base.service';
 
 const USER_API_KEY_BASE_PATH = '/api/api-keys';
-
-const queryKeys = {
-  ...createQueryKeys('api-keys'),
-  list: (filters?: Partial<UserApiKeyListQuery>) =>
-    [...createQueryKeys('api-keys').lists(), filters] as const,
-  detail: (id: string) =>
-    [...createQueryKeys('api-keys').details(), id] as const,
-};
-
-export const apiKeyKeys = queryKeys;
 
 export const apiKeyService = {
   /**

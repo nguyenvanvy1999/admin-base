@@ -1,5 +1,4 @@
 import { apiClient } from 'src/lib/api/client';
-import { createQueryKeys } from 'src/services/api/base.service';
 import type {
   AdminUserActionResponse,
   AdminUserCreatePayload,
@@ -12,14 +11,6 @@ import type {
 } from '../types';
 
 const ADMIN_USER_BASE_PATH = '/api/admin/users';
-
-export const adminUserKeys = {
-  ...createQueryKeys('admin-users'),
-  list: (filters?: Partial<AdminUserListQuery>) =>
-    [...createQueryKeys('admin-users').lists(), filters] as const,
-  detail: (id: string) =>
-    [...createQueryKeys('admin-users').details(), id] as const,
-};
 
 export const adminUsersService = {
   list(params?: AdminUserListQuery): Promise<AdminUserListResponse> {

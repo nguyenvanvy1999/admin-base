@@ -2,9 +2,6 @@ import { AUTH_ENDPOINTS } from 'src/config/auth';
 import { apiClient } from 'src/lib/api/client';
 import type {
   AuthUser,
-  BackupCodesGeneratePayload,
-  BackupCodesGenerateResponse,
-  BackupCodesRemainingResponse,
   BackupCodeVerifyPayload,
   ConfirmMfaLoginPayload,
   LoginMfaPayload,
@@ -15,7 +12,6 @@ import type {
   MfaSetupConfirmResponse,
   MfaSetupRequestPayload,
   MfaSetupRequestResponse,
-  MfaStatusResponse,
   RegisterPayload,
   RegisterResponse,
   SendOtpPayload,
@@ -87,25 +83,6 @@ export const authService = {
       AUTH_ENDPOINTS.backupCodesVerify,
       payload,
     );
-  },
-
-  generateBackupCodes(
-    payload: BackupCodesGeneratePayload,
-  ): Promise<BackupCodesGenerateResponse> {
-    return apiClient.post<BackupCodesGenerateResponse>(
-      AUTH_ENDPOINTS.backupCodesGenerate,
-      payload,
-    );
-  },
-
-  getBackupCodesRemaining(): Promise<BackupCodesRemainingResponse> {
-    return apiClient.get<BackupCodesRemainingResponse>(
-      AUTH_ENDPOINTS.backupCodesRemaining,
-    );
-  },
-
-  getMfaStatus(): Promise<MfaStatusResponse> {
-    return apiClient.get<MfaStatusResponse>(AUTH_ENDPOINTS.mfaStatus);
   },
 
   getCurrentUser(): Promise<AuthUser> {

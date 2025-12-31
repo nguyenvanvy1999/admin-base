@@ -181,7 +181,3 @@ export interface ApiKeyFormValues {
   permissions?: string[];
   ipWhitelist?: string[];
 }
-
-export interface AdminApiKeyFormValues extends ApiKeyFormValues {
-  userId?: string;
-}

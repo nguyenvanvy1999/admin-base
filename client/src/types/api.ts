@@ -14,33 +14,8 @@ export interface ApiErrorResponse {
   timestamp?: string;
 }
 
-export interface PaginationParams {
-  page?: number;
-  pageSize?: number;
-  total?: number;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
 // Generic list response with items and total count
 export interface ListResponse<T> {
   docs: T[];
   count: number;
-}
-
-export interface ApiListResponse<T> extends ApiResponse<T[]> {
-  pagination?: {
-    page: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-  };
 }

@@ -49,7 +49,7 @@ export function AuditLogDetailModal({
       title={getTitle()}
       width={800}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       {renderDetailView()}
     </AppModal>
