@@ -220,7 +220,7 @@ export class UserUtilService {
     };
 
     return {
-      type: 'completed',
+      type: 'COMPLETED',
       accessToken,
       refreshToken,
       exp: expirationTime.getTime(),

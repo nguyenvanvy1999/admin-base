@@ -359,7 +359,7 @@ export class AuthService {
     );
 
     return {
-      type: 'completed',
+      type: 'COMPLETED',
       accessToken,
       refreshToken: token,
       exp: expirationTime.getTime(),

@@ -66,7 +66,7 @@ export const UserResDto = t.Composite([
 ]);
 
 export const LoginResDto = t.Object({
-  type: t.Literal('completed'),
+  type: t.Literal('COMPLETED'),
   accessToken: t.String(),
   refreshToken: t.String(),
   exp: t.Number(),
