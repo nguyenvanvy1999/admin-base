@@ -33,6 +33,7 @@ export class SeedFixtures {
       lastFailedLoginAt: null,
       suspiciousActivityCount: 0,
       notificationPreferences: null,
+      mfaEnrollRequired: false,
       ...overrides,
     };
   }

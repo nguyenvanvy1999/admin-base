@@ -221,6 +221,7 @@ model User {
   totpSecret      String? @map("totp_secret")
   backupCodes     String? @map("backup_codes")
   backupCodesUsed String? @map("backup_codes_used")
+  mfaEnrollRequired Boolean @default(false) @map("mfa_enroll_required")
 
   // Email verification
   emailVerified          Boolean @default(false) @map("email_verified")

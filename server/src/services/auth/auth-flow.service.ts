@@ -98,6 +98,7 @@ export class AuthFlowService {
     risk?: 'LOW' | 'MEDIUM' | 'HIGH';
     isNewDevice?: boolean;
     deviceVerificationEnabled?: boolean;
+    mfaEnrollRequired?: boolean;
   }): NextStep {
     const {
       user,
@@ -106,6 +107,7 @@ export class AuthFlowService {
       risk,
       isNewDevice,
       deviceVerificationEnabled,
+      mfaEnrollRequired,
     } = input;
 
     // Device Verification (highest priority after MFA required?)
@@ -118,7 +120,8 @@ export class AuthFlowService {
       return { kind: 'DEVICE_VERIFY' };
     }
 
-    if (mfaRequired && !user.mfaTotpEnabled) return { kind: 'ENROLL_MFA' };
+    if ((mfaRequired || mfaEnrollRequired) && !user.mfaTotpEnabled)
+      return { kind: 'ENROLL_MFA' };
     if (user.mfaTotpEnabled) return { kind: 'MFA_CHALLENGE' };
 
     // Risk-based MFA
@@ -278,6 +281,7 @@ export class AuthFlowService {
       risk: securityResult.risk,
       isNewDevice: securityResult.isNewDevice,
       deviceVerificationEnabled,
+      mfaEnrollRequired: user.mfaEnrollRequired,
     });
 
     if (next.kind === 'COMPLETE') {
@@ -626,6 +630,7 @@ export class AuthFlowService {
         mfaTotpEnabled: true,
         backupCodes: JSON.stringify(hashedCodes),
         backupCodesUsed: JSON.stringify([]),
+        mfaEnrollRequired: false,
       },
       select: {
         id: true,

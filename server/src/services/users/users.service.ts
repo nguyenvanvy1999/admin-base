@@ -277,6 +277,47 @@ export class UsersService {
     return this.performMfaReset(params, 'admin-disable');
   }
 
+  async forceUserMfaEnroll(
+    params: BaseUserActionParams,
+  ): Promise<AdminUserActionResult> {
+    const { targetUserId, reason } = params;
+    const normalizedReason = ServiceUtils.normalizeReason(reason);
+    const user = await this.ensureUserExists(targetUserId);
+
+    if (user.protected) {
+      throw new BadReqErr(ErrCode.PermissionDenied);
+    }
+
+    await this.deps.db.user.update({
+      where: { id: targetUserId },
+      data: { mfaEnrollRequired: true },
+      select: { id: true },
+    });
+
+    await this.deps.sessionService.revoke(targetUserId);
+
+    const changes = buildUpdateChanges(
+      { mfaEnrollRequired: false },
+      { mfaEnrollRequired: true, reason: normalizedReason },
+    );
+
+    await this.deps.auditLogService.pushCud(
+      {
+        category: 'cud',
+        entityType: 'user',
+        entityId: targetUserId,
+        action: 'update',
+        changes,
+      },
+      {
+        visibility: AuditLogVisibility.actor_and_subject,
+        subjectUserId: targetUserId,
+      },
+    );
+
+    return { userId: targetUserId };
+  }
+
   private async performMfaReset(
     params: BaseUserActionParams,
     method: MfaChangeMethod,

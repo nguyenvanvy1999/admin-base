@@ -127,6 +127,7 @@ export interface ICurrentUser
     | 'pendingRef'
     | 'activeRef'
     | 'refCode'
+    | 'mfaEnrollRequired'
   > {
   permissions: UPermission[];
   sessionId: string;

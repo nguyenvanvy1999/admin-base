@@ -248,6 +248,7 @@ export class UserUtilService {
         created: true,
         modified: true,
         roles: { select: { roleId: true } },
+        mfaEnrollRequired: true,
       },
     });
 

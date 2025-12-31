@@ -144,4 +144,23 @@ export const usersAdminController = new Elysia({
         ...authErrors,
       },
     },
+  )
+  .post(
+    '/:id/mfa/enroll-force',
+    async ({ params: { id }, body }) =>
+      castToRes(
+        await usersService.forceUserMfaEnroll({
+          targetUserId: id,
+          ...body,
+        }),
+      ),
+    {
+      params: IdDto,
+      body: AdminUserMfaActionDto,
+      response: {
+        200: ResWrapper(AdminUserActionResDto),
+        400: ErrorResDto,
+        ...authErrors,
+      },
+    },
   );
