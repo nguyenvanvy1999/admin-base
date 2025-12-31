@@ -26,6 +26,7 @@ import { BadReqErr, ErrCode, getIpAndUa, NotFoundErr } from 'src/share';
 import type { ChallengeDto } from 'src/types/auth.types';
 import { type AuthTxService, authTxService } from './auth-tx.service';
 import { type UserUtilService, userUtilService } from './auth-util.service';
+import { type CaptchaService, captchaService } from './captcha.service';
 import {
   generateBackupCodes,
   hashBackupCode,
@@ -59,6 +60,7 @@ export class AuthFlowService {
       settingService: SettingsService;
       auditLogService: AuditLogsService;
       authenticator: typeof authenticator;
+      captchaService: CaptchaService;
     } = {
       db,
       env,
@@ -69,6 +71,7 @@ export class AuthFlowService {
       settingService: settingsService,
       auditLogService: auditLogsService,
       authenticator,
+      captchaService,
     },
   ) {}
 
@@ -84,10 +87,58 @@ export class AuthFlowService {
   }
 
   async startLogin(params: LoginParams): Promise<AuthResponse> {
-    const { email, password } = params;
+    const { email, password, captcha } = params;
     const { clientIp, userAgent } = getIpAndUa();
 
     const user = await this.deps.userUtilService.findUserForLogin(email);
+
+    // Captcha validation
+    const captchaRequired = await this.deps.settingService.enbCaptchaRequired();
+
+    if (captchaRequired && !captcha) {
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'email',
+          email: user.email,
+          error: 'captcha_required',
+        },
+        {
+          subjectUserId: user.id,
+          userId: user.id,
+          visibility: AuditLogVisibility.actor_and_subject,
+        },
+      );
+      throw new BadReqErr(ErrCode.CaptchaRequired);
+    }
+
+    if (captcha) {
+      const captchaValid = await this.deps.captchaService.validateCaptcha({
+        token: captcha.token,
+        userInput: captcha.userInput,
+      });
+
+      if (!captchaValid) {
+        await this.deps.auditLogService.pushSecurity(
+          {
+            category: 'security',
+            eventType: SecurityEventType.login_failed,
+            severity: SecurityEventSeverity.medium,
+            method: 'email',
+            email: user.email,
+            error: 'invalid_captcha',
+          },
+          {
+            subjectUserId: user.id,
+            userId: user.id,
+            visibility: AuditLogVisibility.actor_and_subject,
+          },
+        );
+        throw new BadReqErr(ErrCode.InvalidCaptcha);
+      }
+    }
 
     const { enbAttempt, enbExpired } =
       await this.deps.settingService.password();

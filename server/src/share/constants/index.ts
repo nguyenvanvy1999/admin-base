@@ -146,6 +146,7 @@ export enum SETTING {
   ENB_SECURITY_DEVICE_RECOGNITION = 'ENB_SECURITY_DEVICE_RECOGNITION',
   ENB_SECURITY_BLOCK_UNKNOWN_DEVICE = 'ENB_SECURITY_BLOCK_UNKNOWN_DEVICE',
   ENB_SECURITY_AUDIT_WARNING = 'ENB_SECURITY_AUDIT_WARNING',
+  ENB_CAPTCHA_REQUIRED = 'ENB_CAPTCHA_REQUIRED',
 }
 
 export enum CACHE_NS {
@@ -426,6 +427,10 @@ export const defaultSettings = {
   [SETTING.ENB_SECURITY_AUDIT_WARNING]: {
     type: SettingDataType.boolean,
     value: 'true',
+  },
+  [SETTING.ENB_CAPTCHA_REQUIRED]: {
+    type: SettingDataType.boolean,
+    value: 'false',
   },
 } satisfies Record<SETTING, { value: string; type: SettingDataType }>;
 

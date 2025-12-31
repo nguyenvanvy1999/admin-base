@@ -10,6 +10,12 @@ export const OtpResDto = t.Union([
 export const LoginRequestDto = t.Object({
   email: DtoFields.email,
   password: t.String({ minLength: 1 }),
+  captcha: t.Optional(
+    t.Object({
+      token: t.String({ minLength: 1 }),
+      userInput: t.String({ minLength: 1 }),
+    }),
+  ),
 });
 
 export const RegisterRequestDto = t.Object({

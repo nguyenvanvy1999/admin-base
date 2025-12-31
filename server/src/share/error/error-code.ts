@@ -38,4 +38,6 @@ export enum ErrCode {
   Forbidden = 'forbidden',
   InvalidApiKey = 'invalid-api-key',
   InvalidRequest = 'invalid-request',
+  CaptchaRequired = 'captcha-required',
+  InvalidCaptcha = 'invalid-captcha',
 }

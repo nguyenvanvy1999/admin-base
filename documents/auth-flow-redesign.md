@@ -777,3 +777,548 @@ export class AuthFlowService {
 ## Commit message gợi ý (English)
 
 `refactor(auth): redesign login flow using auth transaction and unified MFA challenges`
+
+---
+
+## 11) So sánh Implementation hiện tại với Thiết kế
+
+### ✅ ĐÃ TRIỂN KHAI (Implemented)
+
+#### A. Core Infrastructure
+
+1. **AuthTx Service** ✅
+
+   - File: `src/services/auth/auth-tx.service.ts`
+   - Đã implement đầy đủ: create, get, update, delete, setState, attachEnroll
+   - Có binding IP/UA hash
+   - Có challenge attempts tracking
+   - TTL: 300s (5 phút)
+   - Cache: Redis-based (`authTxCache`)
+
+2. **Auth Types** ✅
+
+   - File: `src/types/auth.types.ts`
+   - Đã định nghĩa: `AuthTxState`, `AuthTx`, `ChallengeDto`
+   - States: `PASSWORD_VERIFIED`, `CHALLENGE_MFA_REQUIRED`, `CHALLENGE_MFA_ENROLL`, `COMPLETED`
+
+3. **AuthFlow Service** ✅
+
+   - File: `src/services/auth/auth-flow.service.ts`
+   - Đã implement:
+     - `startLogin()` - Password verification + decision logic
+     - `completeChallenge()` - MFA TOTP/Backup code verification
+     - `enrollStart()` - Start MFA enrollment
+     - `enrollConfirm()` - Confirm MFA enrollment with backup codes
+     - `resolveNextStep()` - Decision function
+
+4. **AuthFlow Controller** ✅
+
+   - File: `src/modules/auth/auth-flow.controller.ts`
+   - Endpoints:
+     - `POST /auth2/login`
+     - `POST /auth2/login/challenge`
+     - `POST /auth2/mfa/enroll/start`
+     - `POST /auth2/mfa/enroll/confirm`
+
+5. **MFA Service** ✅
+
+   - File: `src/services/auth/mfa.service.ts`
+   - Backup codes: generation, hashing, parsing
+   - Integrated vào `auth-flow.service.ts` (TOTP verify, backup code consume)
+
+6. **Security Monitor** ✅
+
+   - File: `src/services/auth/security-monitor.service.ts`
+   - Device fingerprinting
+   - Unknown device detection
+   - Risk evaluation (allow/block)
+   - Audit logging for suspicious activity
+
+7. **OAuth Integration** ✅
+
+   - File: `src/services/auth/oauth.service.ts`
+   - Google OAuth đã tích hợp với AuthTx flow
+   - Sử dụng `resolveNextStep()` chung
+   - Trả về `AuthResponse` chuẩn (COMPLETED/CHALLENGE)
+   - Hỗ trợ MFA challenge/enroll sau OAuth login
+
+8. **DTOs** ✅
+
+   - File: `src/dtos/auth.dto.ts`
+   - `AuthResponseDto` (union of COMPLETED/CHALLENGE)
+   - `ChallengeDto`
+   - Request/Response DTOs cho tất cả endpoints
+
+9. **Audit Logging** ✅
+
+   - Đầy đủ security events:
+     - `login_failed`, `login_success`
+     - `mfa_challenge_started`, `mfa_verified`, `mfa_failed`
+     - `mfa_setup_started`, `mfa_setup_completed`
+     - `suspicious_activity`
+   - Integrated vào `AuditLog` model với `SecurityEventType` enum
+
+10. **Database Schema** ✅
+    - User model có đầy đủ MFA fields:
+      - `mfaTotpEnabled`, `totpSecret`
+      - `backupCodes`, `backupCodesUsed`
+    - Session tracking với device fingerprint
+    - Security event types trong enum
+    - Account lockout support
+
+#### B. Supporting Features
+
+11. **Password Service** ✅
+
+    - File: `src/services/auth/password.service.ts`
+    - Verify and track attempts
+    - Password expiration validation
+    - Hashing/comparison
+
+12. **Session Service** ✅
+
+    - File: `src/services/auth/session.service.ts`
+    - Session creation/revocation
+    - Token management
+
+13. **Captcha Service** ✅
+
+    - File: `src/services/auth/captcha.service.ts`
+    - Text và Math captcha
+    - Token-based validation
+    - Cache-based storage
+
+14. **Rate Limiting** ✅
+    - Auth rate limit config: `src/services/rate-limit/auth-rate-limit.config.ts`
+    - Applied to auth endpoints
+
+---
+
+### ⚠️ CẦN CẢI THIỆN (Needs Improvement)
+
+#### 1. **Captcha Integration vào Login Flow** ⚠️
+
+**Hiện trạng:**
+
+- Captcha service đã có (`captchaService`)
+- Endpoint riêng: `GET /captcha/generate`, `POST /captcha/verify`
+- **CHƯA** tích hợp vào `POST /auth2/login`
+
+**Cần làm:**
+
+- [ ] Thêm optional field `captcha` vào `LoginRequestDto`:
+  ```ts
+  {
+    email: string;
+    password: string;
+    captcha?: { token: string; userInput: string };
+  }
+  ```
+- [ ] Trong `authFlowService.startLogin()`, validate captcha nếu policy yêu cầu:
+  ```ts
+  const captchaRequired = await settingsService.captchaRequired();
+  if (captchaRequired && !params.captcha) {
+    throw new BadReqErr(ErrCode.CaptchaRequired);
+  }
+  if (params.captcha) {
+    const valid = await captchaService.validateCaptcha(params.captcha);
+    if (!valid) throw new BadReqErr(ErrCode.InvalidCaptcha);
+  }
+  ```
+- [ ] Thêm setting `CAPTCHA_REQUIRED` vào `Setting` model
+- [ ] Update design doc section 3.1 để mention captcha
+
+**Lý do quan trọng:**
+
+- Thiết kế doc đề cập: "tuỳ policy có thể kèm captcha" (line 244)
+- Chống brute-force login attempts
+
+---
+
+#### 2. **Risk-Based MFA** ⚠️
+
+**Hiện trạng:**
+
+- `securityMonitorService.evaluateLogin()` đã có
+- Trả về `SecurityCheckResult` với `action: 'allow' | 'block'`
+- **CHƯA** implement logic "risk-based MFA" như trong design (section 3.1, line 330-335)
+
+**Cần làm:**
+
+- [ ] Mở rộng `SecurityCheckResult` để có `risk: 'LOW' | 'MEDIUM' | 'HIGH'`
+- [ ] Update `resolveNextStep()` để xử lý risk-based MFA:
+  ```ts
+  // Nếu risk MEDIUM/HIGH → bắt buộc MFA challenge
+  if (securityResult?.risk === "MEDIUM" || securityResult?.risk === "HIGH") {
+    if (!user.mfaTotpEnabled) return { kind: "ENROLL_MFA" };
+    return { kind: "MFA_CHALLENGE" };
+  }
+  ```
+- [ ] Thêm setting `MFA_RISK_BASED_ENABLED` vào Settings
+- [ ] Cải thiện `securityMonitorService` để đánh giá risk level (không chỉ allow/block)
+
+**Ví dụ risk factors:**
+
+- Unknown device → MEDIUM
+- Unknown IP + unknown device → HIGH
+- Multiple failed attempts → HIGH
+
+---
+
+#### 3. **Backup Code Regeneration** ⚠️
+
+**Hiện trạng:**
+
+- Backup codes được generate khi enroll MFA
+- **CHƯA** có endpoint để user regenerate backup codes (khi đã dùng hết hoặc mất)
+
+**Cần làm:**
+
+- [ ] Thêm endpoint `POST /auth/mfa/backup-codes/regenerate` (requires auth + MFA verify)
+- [ ] Service method:
+  ```ts
+  async regenerateBackupCodes(userId: string): Promise<string[]> {
+    // Verify user đã enable MFA
+    // Generate new codes
+    // Update DB
+    // Return codes (1 lần duy nhất)
+    // Audit log
+  }
+  ```
+- [ ] Yêu cầu verify TOTP trước khi regenerate (security)
+- [ ] Audit log: `backup_codes_regenerated`
+
+---
+
+#### 4. **MFA Disable Flow** ⚠️
+
+**Hiện trạng:**
+
+- Có thể enable MFA (enroll flow)
+- **CHƯA** có flow để disable MFA
+
+**Cần làm:**
+
+- [ ] Endpoint `POST /auth/mfa/disable` (requires auth)
+- [ ] Yêu cầu verify password + TOTP code trước khi disable
+- [ ] Update user: `mfaTotpEnabled = false`, clear `totpSecret`, `backupCodes`
+- [ ] Audit log: `mfa_disabled`
+- [ ] Notification: email cảnh báo user về việc disable MFA
+
+---
+
+#### 5. **Session Hygiene - Revoke on Security Changes** ⚠️
+
+**Hiện trạng:**
+
+- `sessionService.revoke()` đã có
+- Được gọi khi forgot password
+- **CHƯA** được gọi khi:
+  - User disable MFA
+  - User change password (trong `auth.service.ts` line 168-175 không revoke session)
+  - Admin force password reset
+
+**Cần làm:**
+
+- [ ] Trong `changePassword()`: thêm `await sessionService.revoke(userId)` sau update password
+- [ ] Trong MFA disable: revoke all sessions
+- [ ] Trong admin force password reset: revoke all sessions
+- [ ] Setting: `REVOKE_SESSIONS_ON_PASSWORD_CHANGE` (optional, default true)
+
+---
+
+#### 6. **AuthTx Cleanup Job** ⚠️
+
+**Hiện trạng:**
+
+- AuthTx có TTL 300s trong Redis
+- Redis tự động expire
+- **CHƯA** có monitoring/cleanup job cho orphaned transactions
+
+**Cần làm:**
+
+- [ ] (Optional) Background job để log expired transactions (analytics)
+- [ ] Metrics: track số lượng transactions created vs completed
+- [ ] Alert nếu completion rate thấp (có thể do UX issue)
+
+---
+
+#### 7. **OAuth Telegram Login** ⚠️
+
+**Hiện trạng:**
+
+- Telegram chỉ có `linkTelegram()` (link account sau khi đã login)
+- **CHƯA** có Telegram login flow (như Google)
+
+**Cần làm:**
+
+- [ ] Implement `telegramLogin()` tương tự `googleLogin()`
+- [ ] Endpoint: `POST /auth/oauth/telegram`
+- [ ] Sử dụng chung `authTx` flow
+- [ ] Trả về `AuthResponse` chuẩn
+
+---
+
+#### 8. **Error Code Standardization** ⚠️
+
+**Hiện trạng:**
+
+- Đã có `ErrCode` enum
+- Các error codes được sử dụng: `PasswordNotMatch`, `InvalidOtp`, `InvalidBackupCode`, etc.
+- **CHƯA** có error codes cho một số case mới:
+  - `CaptchaRequired`
+  - `InvalidCaptcha`
+  - `BackupCodesExhausted` (khi user đã dùng hết backup codes)
+
+**Cần làm:**
+
+- [ ] Thêm error codes vào `ErrCode` enum
+- [ ] Đảm bảo error messages không leak thông tin (vd: "Invalid credentials" thay vì "User not found")
+
+---
+
+#### 9. **Documentation & API Spec** ⚠️
+
+**Hiện trạng:**
+
+- Swagger docs có cho `/auth2/*` endpoints
+- **CHƯA** có:
+  - Sequence diagrams cho các flows
+  - Postman collection
+  - Client integration guide
+
+**Cần làm:**
+
+- [ ] Tạo sequence diagrams:
+  - Password login → MFA challenge → Complete
+  - Password login → MFA enroll → Complete
+  - OAuth login → MFA challenge
+- [ ] Postman collection với examples
+- [ ] Client SDK/helper functions (nếu có frontend codebase)
+
+---
+
+#### 10. **Testing Coverage** ⚠️
+
+**Hiện trạng:**
+
+- Có test folder: `server/test/`
+- **CHƯA** rõ coverage cho auth flow mới
+
+**Cần làm:**
+
+- [ ] Unit tests cho `AuthFlowService`:
+  - `startLogin()` với các scenarios
+  - `completeChallenge()` TOTP/backup code
+  - `enrollStart()` và `enrollConfirm()`
+  - `resolveNextStep()` decision logic
+- [ ] Integration tests:
+  - Full login flow (password → MFA → complete)
+  - OAuth → MFA flow
+  - Enroll flow
+- [ ] Security tests:
+  - Brute-force protection
+  - AuthTx binding (IP/UA mismatch)
+  - Expired authTx
+  - Invalid backup codes
+
+---
+
+### ❌ THIẾU HOÀN TOÀN (Missing)
+
+#### 1. **Email OTP Challenge** ❌
+
+**Thiết kế đề cập:**
+
+- Section 2.1.B: "Sau này có thể mở rộng: `EMAIL_OTP`, `CAPTCHA`, `DEVICE_VERIFY`..."
+
+**Hiện trạng:**
+
+- Có `otpService` cho register/forgot password
+- **CHƯA** có Email OTP như một MFA challenge method (thay thế TOTP)
+
+**Cần làm (nếu muốn):**
+
+- [ ] Extend `ChallengeDto` để có `EMAIL_OTP` type
+- [ ] Trong `resolveNextStep()`: cho phép chọn Email OTP thay TOTP
+- [ ] `POST /auth/login/challenge` accept `type: 'EMAIL_OTP'`
+- [ ] Send OTP qua email khi challenge started
+- [ ] Verify OTP code
+
+**Lưu ý:** Đây là optional feature, không critical cho MVP.
+
+---
+
+#### 2. **Device Verification Challenge** ❌
+
+**Thiết kế đề cập:**
+
+- Section 2.1.B: "DEVICE_VERIFY"
+
+**Hiện trạng:**
+
+- Có device fingerprinting trong `securityMonitorService`
+- **CHƯA** có flow "verify device" (vd: gửi link verify qua email khi login từ device mới)
+
+**Cần làm (nếu muốn):**
+
+- [ ] Challenge type: `DEVICE_VERIFY`
+- [ ] Khi unknown device → tạo verify token → gửi email
+- [ ] User click link → verify device → complete login
+- [ ] Store verified devices per user
+
+**Lưu ý:** Advanced feature, không cần thiết cho MVP.
+
+---
+
+#### 3. **Step-up Authentication** ❌
+
+**Thiết kế đề cập:**
+
+- Section 1: "step-up cho action nhạy cảm"
+
+**Hiện trạng:**
+
+- Auth flow chỉ dùng cho login
+- **CHƯA** có mechanism để yêu cầu re-authenticate cho sensitive actions (vd: change password, delete account, transfer funds)
+
+**Cần làm (nếu muốn):**
+
+- [ ] Middleware `requireStepUp(action)`
+- [ ] Tạo authTx cho step-up (không phải login)
+- [ ] Challenge user với TOTP/password
+- [ ] Cache "step-up verified" trong session (TTL ngắn: 5-10 phút)
+
+**Lưu ý:** Advanced security feature.
+
+---
+
+#### 4. **Admin Force MFA Enrollment** ❌
+
+**Hiện trạng:**
+
+- MFA enrollment được trigger bởi setting `MFA_REQUIRED`
+- **CHƯA** có admin UI/API để force specific users enroll MFA
+
+**Cần làm (nếu muốn):**
+
+- [ ] Admin endpoint: `POST /admin/users/:id/force-mfa-enroll`
+- [ ] Set flag trên user: `mfaEnrollRequired: true`
+- [ ] Login flow check flag này (ngoài global setting)
+- [ ] User bắt buộc enroll MFA ngay lần login tiếp theo
+
+---
+
+#### 5. **MFA Recovery Codes (khác Backup Codes)** ❌
+
+**Hiện trạng:**
+
+- Có backup codes (one-time use)
+- **CHƯA** có "recovery codes" (dùng để disable MFA khi mất device)
+
+**Phân biệt:**
+
+- **Backup codes**: dùng thay TOTP để login (tiêu hao sau khi dùng)
+- **Recovery codes**: dùng để disable MFA hoàn toàn (khi mất authenticator app)
+
+**Cần làm (nếu muốn):**
+
+- [ ] Generate recovery code khi enroll MFA (1 code duy nhất, dài hơn backup code)
+- [ ] Endpoint: `POST /auth/mfa/recover` (public, không cần auth)
+  - Input: email + recovery code
+  - Action: disable MFA cho user
+  - Audit log + email notification
+- [ ] Store recovery code hash trong DB
+
+---
+
+### 📊 Tổng kết Implementation Status
+
+| Hạng mục                     | Trạng thái | Ghi chú                                |
+| ---------------------------- | ---------- | -------------------------------------- |
+| **Core Auth Transaction**    | ✅ 100%    | Hoàn chỉnh                             |
+| **Password Login Flow**      | ✅ 100%    | Hoàn chỉnh                             |
+| **MFA TOTP Challenge**       | ✅ 100%    | Hoàn chỉnh                             |
+| **MFA Backup Code**          | ✅ 100%    | Hoàn chỉnh                             |
+| **MFA Enrollment**           | ✅ 100%    | Hoàn chỉnh                             |
+| **OAuth Google Integration** | ✅ 100%    | Hoàn chỉnh                             |
+| **Security Monitoring**      | ✅ 90%     | Thiếu risk levels                      |
+| **Audit Logging**            | ✅ 100%    | Hoàn chỉnh                             |
+| **Captcha Integration**      | ⚠️ 50%     | Service có, chưa integrate vào login   |
+| **Risk-Based MFA**           | ⚠️ 30%     | Cơ sở hạ tầng có, chưa implement logic |
+| **MFA Management**           | ⚠️ 60%     | Thiếu disable, regenerate backup codes |
+| **Session Hygiene**          | ⚠️ 70%     | Thiếu revoke on security changes       |
+| **OAuth Telegram Login**     | ❌ 0%      | Chỉ có link account                    |
+| **Email OTP Challenge**      | ❌ 0%      | Chưa implement                         |
+| **Device Verification**      | ❌ 0%      | Chưa implement                         |
+| **Step-up Auth**             | ❌ 0%      | Chưa implement                         |
+
+---
+
+### 🎯 Khuyến nghị Ưu tiên (Priority Recommendations)
+
+#### **P0 - Critical (Cần làm ngay)**
+
+1. ✅ **Captcha Integration** - Chống brute-force
+2. ✅ **Session Revoke on Password Change** - Security hygiene
+3. ✅ **MFA Disable Flow** - User experience
+
+#### **P1 - High (Nên làm sớm)**
+
+4. ✅ **Risk-Based MFA** - Adaptive security
+5. ✅ **Backup Code Regeneration** - User recovery
+6. ✅ **Error Code Standardization** - Better error handling
+
+#### **P2 - Medium (Có thể làm sau)**
+
+7. ⚠️ **OAuth Telegram Login** - Nếu có user base Telegram
+8. ⚠️ **Testing Coverage** - Quality assurance
+9. ⚠️ **Documentation** - Developer experience
+
+#### **P3 - Low (Nice to have)**
+
+10. ⚠️ **Email OTP Challenge** - Alternative MFA method
+11. ⚠️ **Device Verification** - Advanced security
+12. ⚠️ **Step-up Auth** - For sensitive operations
+13. ⚠️ **MFA Recovery Codes** - Edge case recovery
+
+---
+
+### 📝 Action Items Summary
+
+**Để hoàn thiện hệ thống theo thiết kế, cần:**
+
+**Backend:**
+
+- [ ] Integrate captcha vào login endpoint
+- [ ] Implement risk-based MFA logic
+- [ ] Add MFA disable endpoint
+- [ ] Add backup code regeneration endpoint
+- [ ] Revoke sessions on security changes
+- [ ] Add missing error codes
+- [ ] Improve security monitor risk levels
+
+**Database:**
+
+- [ ] Add settings: `CAPTCHA_REQUIRED`, `MFA_RISK_BASED_ENABLED`, `REVOKE_SESSIONS_ON_PASSWORD_CHANGE`
+- [ ] (Optional) Add `mfaEnrollRequired` field to User model
+
+**Testing:**
+
+- [ ] Unit tests cho AuthFlowService
+- [ ] Integration tests cho full flows
+- [ ] Security tests
+
+**Documentation:**
+
+- [ ] Sequence diagrams
+- [ ] Postman collection
+- [ ] Client integration guide
+
+**Optional (Future):**
+
+- [ ] OAuth Telegram login
+- [ ] Email OTP challenge
+- [ ] Device verification
+- [ ] Step-up authentication
+- [ ] MFA recovery codes

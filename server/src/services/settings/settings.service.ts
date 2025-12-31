@@ -359,6 +359,10 @@ export class SettingsService {
     return this.getSetting<boolean>(SETTING.ENB_IP_WHITELIST);
   }
 
+  enbCaptchaRequired(): Promise<boolean> {
+    return this.getSetting<boolean>(SETTING.ENB_CAPTCHA_REQUIRED);
+  }
+
   registerOtpLimit(): Promise<number> {
     return this.getSetting<number>(SETTING.REGISTER_OTP_LIMIT);
   }
