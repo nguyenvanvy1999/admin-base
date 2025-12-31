@@ -25,7 +25,6 @@ import {
 
 const authRateLimitedRoutes = new Elysia()
   .use(rateLimit())
-
   .post(
     '/refresh-token',
     async ({ body }) => castToRes(await authService.refreshToken(body)),

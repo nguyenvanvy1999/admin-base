@@ -151,7 +151,7 @@ export const rateLimitCache = new RedisCache<number>({
   namespace: CACHE_NS.RATE_LIMIT,
 });
 
-export const mfaAttemptCache = new RedisCache<number>({
+new RedisCache<number>({
   namespace: CACHE_NS.MFA_ATTEMPT,
   ttl: FIVE_MINUTES,
 });

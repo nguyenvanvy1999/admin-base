@@ -12,7 +12,7 @@ import { rateLimit } from 'src/services/rate-limit/auth-rate-limit.config';
 import { castToRes, ErrorResDto, ResWrapper } from 'src/share';
 
 export const authFlowController = new Elysia({
-  prefix: '/auth2',
+  prefix: '/auth',
   tags: ['auth'],
 })
   .use(rateLimit())

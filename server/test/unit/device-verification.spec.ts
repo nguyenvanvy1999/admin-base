@@ -164,14 +164,14 @@ describe('AuthFlowService - Device Verification', () => {
     expect(mockDeps.userUtilService.completeLogin).toHaveBeenCalled();
   });
 
-  it('should fail DEVICE_VERIFY if state is invalid', async () => {
+  it('should fail DEVICE_VERIFY if state is invalid', () => {
     mockDeps.authTxService.getOrThrow.mockResolvedValue({
       id: 'tx-1',
       state: 'CHALLENGE_MFA_REQUIRED', // Wrong state
     });
 
-    await ctxStore.run(mockContext, async () => {
-      await expect(
+    ctxStore.run(mockContext, () => {
+      expect(
         service.completeChallenge({
           authTxId: 'tx-1',
           type: 'DEVICE_VERIFY',
