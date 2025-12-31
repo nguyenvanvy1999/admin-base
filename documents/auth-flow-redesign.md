@@ -638,10 +638,10 @@ Bạn đang có:
 
 ### D. MFA service adjustments
 
-- [ ] verify TOTP
-- [ ] verify + consume backup code (atomic)
-- [ ] generate temp secret + persist secret
-- [ ] generate backup codes và chỉ trả 1 lần
+- [x] verify TOTP
+- [x] verify + consume backup code (atomic)
+- [x] generate temp secret + persist secret
+- [x] generate backup codes và chỉ trả 1 lần
 
 ### E. Controller/API wiring
 
@@ -896,97 +896,40 @@ export class AuthFlowService {
 
 ### ⚠️ CẦN CẢI THIỆN (Needs Improvement)
 
-#### 1. **Captcha Integration vào Login Flow** ⚠️
+#### 1. **Captcha Integration vào Login Flow** ✅
 
 **Hiện trạng:**
 
 - Captcha service đã có (`captchaService`)
-- Endpoint riêng: `GET /captcha/generate`, `POST /captcha/verify`
-- **CHƯA** tích hợp vào `POST /auth2/login`
+- Đã được tích hợp vào `authFlowService.startLogin()`
+- Có optional field `captcha` trong `LoginRequestDto`
+- Validate captcha token hợp lệ trước khi verify password
 
-**Cần làm:**
-
-- [ ] Thêm optional field `captcha` vào `LoginRequestDto`:
-  ```ts
-  {
-    email: string;
-    password: string;
-    captcha?: { token: string; userInput: string };
-  }
-  ```
-- [ ] Trong `authFlowService.startLogin()`, validate captcha nếu policy yêu cầu:
-  ```ts
-  const captchaRequired = await settingsService.captchaRequired();
-  if (captchaRequired && !params.captcha) {
-    throw new BadReqErr(ErrCode.CaptchaRequired);
-  }
-  if (params.captcha) {
-    const valid = await captchaService.validateCaptcha(params.captcha);
-    if (!valid) throw new BadReqErr(ErrCode.InvalidCaptcha);
-  }
-  ```
-- [ ] Thêm setting `CAPTCHA_REQUIRED` vào `Setting` model
-- [ ] Update design doc section 3.1 để mention captcha
-
-**Lý do quan trọng:**
-
-- Thiết kế doc đề cập: "tuỳ policy có thể kèm captcha" (line 244)
-- Chống brute-force login attempts
+**Trạng thái:** ✅ Đã hoàn thành (Implemented)
 
 ---
 
-#### 2. **Risk-Based MFA** ⚠️
+#### 2. **Risk-Based MFA** ✅
 
 **Hiện trạng:**
 
-- `securityMonitorService.evaluateLogin()` đã có
-- Trả về `SecurityCheckResult` với `action: 'allow' | 'block'`
-- **CHƯA** implement logic "risk-based MFA" như trong design (section 3.1, line 330-335)
+- `securityMonitorService.evaluateLogin()` trả về risk level (`LOW`, `MEDIUM`, `HIGH`)
+- `resolveNextStep()` đã xử lý logic: nếu Risk >= MEDIUM → yêu cầu MFA
+- Nếu Risk = HIGH và chưa setup TOTP → fallback sang Email OTP (hoặc block tuỳ configuration)
 
-**Cần làm:**
-
-- [ ] Mở rộng `SecurityCheckResult` để có `risk: 'LOW' | 'MEDIUM' | 'HIGH'`
-- [ ] Update `resolveNextStep()` để xử lý risk-based MFA:
-  ```ts
-  // Nếu risk MEDIUM/HIGH → bắt buộc MFA challenge
-  if (securityResult?.risk === "MEDIUM" || securityResult?.risk === "HIGH") {
-    if (!user.mfaTotpEnabled) return { kind: "ENROLL_MFA" };
-    return { kind: "MFA_CHALLENGE" };
-  }
-  ```
-- [ ] Thêm setting `MFA_RISK_BASED_ENABLED` vào Settings
-- [ ] Cải thiện `securityMonitorService` để đánh giá risk level (không chỉ allow/block)
-
-**Ví dụ risk factors:**
-
-- Unknown device → MEDIUM
-- Unknown IP + unknown device → HIGH
-- Multiple failed attempts → HIGH
+**Trạng thái:** ✅ Đã hoàn thành (Implemented)
 
 ---
 
-#### 3. **Backup Code Regeneration** ⚠️
+#### 3. **Backup Code Regeneration** ✅
 
 **Hiện trạng:**
 
-- Backup codes được generate khi enroll MFA
-- **CHƯA** có endpoint để user regenerate backup codes (khi đã dùng hết hoặc mất)
+- Đã có endpoint `POST /auth/mfa/backup-codes/regenerate`
+- Logic `regenerateBackupCodes` trong `AuthFlowService` yêu cầu user đang active và đã bật MFA
+- Audit log đầy đủ
 
-**Cần làm:**
-
-- [ ] Thêm endpoint `POST /auth/mfa/backup-codes/regenerate` (requires auth + MFA verify)
-- [ ] Service method:
-  ```ts
-  async regenerateBackupCodes(userId: string): Promise<string[]> {
-    // Verify user đã enable MFA
-    // Generate new codes
-    // Update DB
-    // Return codes (1 lần duy nhất)
-    // Audit log
-  }
-  ```
-- [ ] Yêu cầu verify TOTP trước khi regenerate (security)
-- [ ] Audit log: `backup_codes_regenerated`
+**Trạng thái:** ✅ Đã hoàn thành (Implemented)
 
 ---
 
@@ -1126,48 +1069,26 @@ export class AuthFlowService {
 
 ### ❌ THIẾU HOÀN TOÀN (Missing)
 
-#### 1. **Email OTP Challenge** ❌
-
-**Thiết kế đề cập:**
-
-- Section 2.1.B: "Sau này có thể mở rộng: `EMAIL_OTP`, `CAPTCHA`, `DEVICE_VERIFY`..."
+#### 1. **Email OTP Challenge** ✅
 
 **Hiện trạng:**
 
-- Có `otpService` cho register/forgot password
-- **CHƯA** có Email OTP như một MFA challenge method (thay thế TOTP)
+- Đã implement như một fallback option trong `startLogin` khi Risk = HIGH và user chưa có TOTP.
+- Đã support verify `MFA_EMAIL_OTP` trong `completeChallenge`.
 
-**Cần làm (nếu muốn):**
-
-- [ ] Extend `ChallengeDto` để có `EMAIL_OTP` type
-- [ ] Trong `resolveNextStep()`: cho phép chọn Email OTP thay TOTP
-- [ ] `POST /auth/login/challenge` accept `type: 'EMAIL_OTP'`
-- [ ] Send OTP qua email khi challenge started
-- [ ] Verify OTP code
-
-**Lưu ý:** Đây là optional feature, không critical cho MVP.
+**Trạng thái:** ✅ Đã hoàn thành (Implemented)
 
 ---
 
-#### 2. **Device Verification Challenge** ❌
-
-**Thiết kế đề cập:**
-
-- Section 2.1.B: "DEVICE_VERIFY"
+#### 2. **Device Verification Challenge** ✅
 
 **Hiện trạng:**
 
-- Có device fingerprinting trong `securityMonitorService`
-- **CHƯA** có flow "verify device" (vd: gửi link verify qua email khi login từ device mới)
+- `AuthFlowService` xử lý `DEVICE_VERIFY` step (send OTP).
+- `completeChallenge` verify OTP với purpose `DEVICE_VERIFY`.
+- Tích hợp với `securityMonitor` để detect new device.
 
-**Cần làm (nếu muốn):**
-
-- [ ] Challenge type: `DEVICE_VERIFY`
-- [ ] Khi unknown device → tạo verify token → gửi email
-- [ ] User click link → verify device → complete login
-- [ ] Store verified devices per user
-
-**Lưu ý:** Advanced feature, không cần thiết cho MVP.
+**Trạng thái:** ✅ Đã hoàn thành (Implemented)
 
 ---
 
@@ -1193,19 +1114,15 @@ export class AuthFlowService {
 
 ---
 
-#### 4. **Admin Force MFA Enrollment** ❌
+#### 4. **Admin Force MFA Enrollment** ✅
 
 **Hiện trạng:**
 
-- MFA enrollment được trigger bởi setting `MFA_REQUIRED`
-- **CHƯA** có admin UI/API để force specific users enroll MFA
+- Đã thêm `mfaEnrollRequired` vào User model.
+- Admin endpoint `POST /admin/users/:id/mfa/enroll-force`.
+- `resolveNextStep` check flag này để enforce `ENROLL_MFA`.
 
-**Cần làm (nếu muốn):**
-
-- [ ] Admin endpoint: `POST /admin/users/:id/force-mfa-enroll`
-- [ ] Set flag trên user: `mfaEnrollRequired: true`
-- [ ] Login flow check flag này (ngoài global setting)
-- [ ] User bắt buộc enroll MFA ngay lần login tiếp theo
+**Trạng thái:** ✅ Đã hoàn thành (Implemented)
 
 ---
 
@@ -1242,15 +1159,16 @@ export class AuthFlowService {
 | **MFA Backup Code**          | ✅ 100%    | Hoàn chỉnh                             |
 | **MFA Enrollment**           | ✅ 100%    | Hoàn chỉnh                             |
 | **OAuth Google Integration** | ✅ 100%    | Hoàn chỉnh                             |
-| **Security Monitoring**      | ✅ 90%     | Thiếu risk levels                      |
+| **Security Monitoring**      | ✅ 100%    | Risk levels implemented                |
 | **Audit Logging**            | ✅ 100%    | Hoàn chỉnh                             |
-| **Captcha Integration**      | ⚠️ 50%     | Service có, chưa integrate vào login   |
-| **Risk-Based MFA**           | ⚠️ 30%     | Cơ sở hạ tầng có, chưa implement logic |
-| **MFA Management**           | ✅ 90%     | Disable implemented, missing regenerate |
+| **Captcha Integration**      | ✅ 100%    | Tích hợp vào login flow                |
+| **Risk-Based MFA**           | ✅ 100%    | Actionable risk logic                  |
+| **MFA Management**           | ✅ 100%    | Disable + Regenerate backup codes      |
 | **Session Hygiene**          | ✅ 100%    | Revoke on security changes implemented |
 | **OAuth Telegram Login**     | ❌ 0%      | Chỉ có link account                    |
-| **Email OTP Challenge**      | ❌ 0%      | Chưa implement                         |
-| **Device Verification**      | ❌ 0%      | Chưa implement                         |
+| **Email OTP Challenge**      | ✅ 100%    | Fallback & high risk                   |
+| **Device Verification**      | ✅ 100%    | Implemented                            |
+| **Admin Force Enroll**       | ✅ 100%    | Implemented                            |
 | **Step-up Auth**             | ❌ 0%      | Chưa implement                         |
 
 ---
@@ -1290,19 +1208,21 @@ export class AuthFlowService {
 
 **Backend:**
 
-- [ ] Integrate captcha vào login endpoint
-- [ ] Implement risk-based MFA logic
+- [x] Integrate captcha vào login endpoint
+- [x] Implement risk-based MFA logic
 - [x] Add MFA disable endpoint
 - [x] Add backup code regeneration endpoint
 - [x] Revoke sessions on security changes
+- [x] Implement device verification flow
+- [x] Implement admin force MFA enroll
 - [ ] Add missing error codes
-- [ ] Improve security monitor risk levels
+- [x] Improve security monitor risk levels
 
 **Database:**
 
 - [x] Add settings: `REVOKE_SESSIONS_ON_PASSWORD_CHANGE`
-- [ ] Add settings: `CAPTCHA_REQUIRED`, `MFA_RISK_BASED_ENABLED`
-- [ ] (Optional) Add `mfaEnrollRequired` field to User model
+- [x] Add settings: `CAPTCHA_REQUIRED`, `MFA_RISK_BASED_ENABLED`
+- [x] Add `mfaEnrollRequired` field to User model
 
 **Testing:**
 
