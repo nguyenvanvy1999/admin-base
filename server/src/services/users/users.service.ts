@@ -40,7 +40,8 @@ import {
   DB_PREFIX,
   defaultRoles,
   ErrCode,
-  IdUtil,
+  type IdUtil,
+  idUtil,
   type MfaChangeMethod,
   NotFoundErr,
   normalizeEmail,
@@ -86,6 +87,7 @@ export class UsersService {
       auditLogService: AuditLogsService;
       passwordService: PasswordService;
       userUtilService: UserUtilService;
+      idUtil: IdUtil;
     },
   ) {}
 
@@ -105,7 +107,7 @@ export class UsersService {
     }
 
     const resolvedRoleIds = await this.resolveRoleIds(roleIds);
-    const userId = IdUtil.dbId(DB_PREFIX.USER);
+    const userId = this.deps.idUtil.dbId(DB_PREFIX.USER);
     const trimmedName = ServiceUtils.trimOrNull(name);
     const nextStatus = status ?? UserStatus.active;
     const shouldVerifyEmail = emailVerified ?? nextStatus === UserStatus.active;
@@ -121,7 +123,7 @@ export class UsersService {
           ...(await this.deps.passwordService.createPassword(password)),
           roles: {
             create: resolvedRoleIds.map((roleId) => ({
-              id: IdUtil.dbId(),
+              id: this.deps.idUtil.dbId(),
               roleId,
             })),
           },
@@ -452,7 +454,7 @@ export class UsersService {
       if (roles.length > 0) {
         await tx.rolePlayer.createMany({
           data: roles.map((role) => ({
-            id: IdUtil.dbId(),
+            id: this.deps.idUtil.dbId(),
             playerId: targetUserId,
             roleId: role.roleId,
             expiresAt: role.expiresAt ?? null,
@@ -623,4 +625,5 @@ export const usersService = new UsersService({
   auditLogService: auditLogsService,
   passwordService,
   userUtilService,
+  idUtil,
 });

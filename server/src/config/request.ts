@@ -1,9 +1,9 @@
 import type { Elysia } from 'elysia';
 import {
   DEFAULT_LANGUAGE,
-  IdUtil,
   type IPHeaders,
   type IReqMeta,
+  idUtil,
   LANG,
 } from 'src/share';
 import { ctxStore } from 'src/share/context/request-context';
@@ -45,7 +45,7 @@ export const reqMeta = (app: Elysia) =>
   app.derive({ as: 'local' }, ({ request, set, server }) => {
     const headers = request.headers;
 
-    const requestId = headers.get('x-request-id') ?? IdUtil.token12();
+    const requestId = headers.get('x-request-id') ?? idUtil.token12();
     const timezone =
       headers.get('x-timezone') ??
       Intl.DateTimeFormat().resolvedOptions().timeZone;

@@ -11,7 +11,8 @@ import {
   DB_PREFIX,
   defaultRoles,
   defaultSettings,
-  IdUtil,
+  type IdUtil,
+  idUtil,
   OAUTH,
   PERMISSIONS,
   SETTING,
@@ -112,11 +113,13 @@ export class SeedService {
       env: IEnv;
       logger: ILogger;
       passwordService: PasswordService;
+      idUtil: IdUtil;
     } = {
       db,
       env,
       logger,
       passwordService,
+      idUtil,
     },
   ) {}
 
@@ -161,7 +164,7 @@ export class SeedService {
       await this.deps.db.authProvider.upsert({
         where: { code: OAUTH.GOOGLE },
         create: {
-          id: IdUtil.dbId(DB_PREFIX.AUTH_PROVIDER),
+          id: this.deps.idUtil.dbId(DB_PREFIX.AUTH_PROVIDER),
           code: OAUTH.GOOGLE,
           name: 'Google',
           enabled: true,
@@ -178,7 +181,7 @@ export class SeedService {
       await this.deps.db.authProvider.upsert({
         where: { code: OAUTH.TELEGRAM },
         create: {
-          id: IdUtil.dbId(DB_PREFIX.AUTH_PROVIDER),
+          id: this.deps.idUtil.dbId(DB_PREFIX.AUTH_PROVIDER),
           code: OAUTH.TELEGRAM,
           name: 'Telegram',
           enabled: true,
@@ -202,7 +205,7 @@ export class SeedService {
       });
       await this.deps.db.setting.createMany({
         data: Object.values(SETTING).map((key) => ({
-          id: IdUtil.dbId(DB_PREFIX.SETTING),
+          id: this.deps.idUtil.dbId(DB_PREFIX.SETTING),
           key,
           ...defaultSettings[key],
         })),
@@ -233,7 +236,7 @@ export class SeedService {
           const per = perms[category]?.[action];
           if (per) {
             permissionData.push({
-              id: IdUtil.dbId(DB_PREFIX.PERMISSION),
+              id: this.deps.idUtil.dbId(DB_PREFIX.PERMISSION),
               title: `${category}.${action}`,
               description: per.description,
               roles: per.roles,
@@ -288,7 +291,7 @@ export class SeedService {
           if (permissionId) {
             permission.roles.forEach((roleId) => {
               rolePermissionData.push({
-                id: IdUtil.dbId(),
+                id: this.deps.idUtil.dbId(),
                 roleId,
                 permissionId,
               });
@@ -314,7 +317,7 @@ export class SeedService {
     try {
       await this.deps.db.$transaction(async (tx) => {
         const data = authRateLimitSeeds.map((config) => ({
-          id: IdUtil.dbId(DB_PREFIX.RATE_LIMIT),
+          id: this.deps.idUtil.dbId(DB_PREFIX.RATE_LIMIT),
           routePath: config.routePath,
           limit: config.limit,
           windowSeconds: config.windowSeconds,
@@ -375,7 +378,7 @@ export class SeedService {
         ...passwordPayload,
         roles: {
           create: {
-            id: IdUtil.dbId(),
+            id: this.deps.idUtil.dbId(),
             roleId: params.roleId,
           },
         },
@@ -394,7 +397,7 @@ export class SeedService {
               },
             },
             create: {
-              id: IdUtil.dbId(),
+              id: this.deps.idUtil.dbId(),
               roleId: params.roleId,
             },
           },

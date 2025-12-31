@@ -32,7 +32,8 @@ import {
   DB_PREFIX,
   defaultRoles,
   ErrCode,
-  IdUtil,
+  type IdUtil,
+  idUtil,
   OAUTH,
   type PrismaTx,
   UnAuthErr,
@@ -48,7 +49,7 @@ export class OAuthService {
       userUtilService: UserUtilService;
       auditLogService: AuditLogsService;
       securityMonitorService: SecurityMonitorService;
-      idUtil: typeof IdUtil;
+      idUtil: IdUtil;
       crypto: {
         createHash: typeof createHash;
         createHmac: typeof createHmac;
@@ -62,7 +63,7 @@ export class OAuthService {
       userUtilService,
       auditLogService: auditLogsService,
       securityMonitorService,
-      idUtil: IdUtil,
+      idUtil: idUtil,
       crypto: { createHash, createHmac, randomBytes, randomUUID },
       authenticator,
     },

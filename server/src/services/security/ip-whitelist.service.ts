@@ -24,7 +24,8 @@ import {
   ErrCode,
   ensureExists,
   executeListQuery,
-  IdUtil,
+  type IdUtil,
+  idUtil,
   normalizeSearchTerm,
 } from 'src/share';
 import type { AuditLogsService } from '../audit-logs';
@@ -43,10 +44,12 @@ export class IpWhitelistService {
       db: IDb;
       cache: IUserIpWhitelistCache;
       auditLogService: AuditLogsService;
+      idUtil: IdUtil;
     } = {
       db,
       cache: userIpWhitelistCache,
       auditLogService: auditLogsService,
+      idUtil,
     },
   ) {}
 
@@ -220,7 +223,7 @@ export class IpWhitelistService {
 
       const created = await this.deps.db.userIpWhitelist.create({
         data: {
-          id: IdUtil.dbId(DB_PREFIX.IP_WHITELIST),
+          id: this.deps.idUtil.dbId(DB_PREFIX.IP_WHITELIST),
           userId: finalUserId,
           ip,
           note,

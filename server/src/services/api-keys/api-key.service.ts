@@ -18,7 +18,8 @@ import {
   DB_PREFIX,
   ErrCode,
   executeListQuery,
-  IdUtil,
+  type IdUtil,
+  idUtil,
   NotFoundErr,
   normalizeSearchTerm,
 } from 'src/share';
@@ -47,11 +48,13 @@ export class ApiKeyService {
       auditLogService: AuditLogsService;
       env: IEnv;
       cache: IApiKeyCache;
+      idUtil: IdUtil;
     } = {
       db,
       auditLogService: auditLogsService,
       env: env,
       cache: apiKeyCache,
+      idUtil,
     },
   ) {}
 
@@ -146,13 +149,13 @@ export class ApiKeyService {
       throw new NotFoundErr(ErrCode.UserNotFound);
     }
 
-    const key = `${this.deps.env.API_KEY_PREFIX}${IdUtil.token32()}`;
+    const key = `${this.deps.env.API_KEY_PREFIX}${this.deps.idUtil.token32()}`;
     const hashedKey = await this.hashKey(key);
     const keyPrefix = this.getKeyPrefix(key);
 
     const apiKey = await this.deps.db.apiKey.create({
       data: {
-        id: IdUtil.dbId(DB_PREFIX.API_KEY),
+        id: this.deps.idUtil.dbId(DB_PREFIX.API_KEY),
         userId,
         name: params.name,
         key: hashedKey,

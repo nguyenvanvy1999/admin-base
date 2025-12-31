@@ -12,8 +12,9 @@ import {
   DB_PREFIX,
   ErrCode,
   executeListQuery,
-  IdUtil,
+  type IdUtil,
   type IIdsDto,
+  idUtil,
 } from 'src/share';
 import * as XLSX from 'xlsx';
 
@@ -21,8 +22,10 @@ export class I18nService {
   constructor(
     private readonly deps: {
       db: IDb;
+      idUtil: IdUtil;
     } = {
       db,
+      idUtil,
     },
   ) {}
 
@@ -60,7 +63,7 @@ export class I18nService {
       return { id: updated.id };
     } else {
       const created = await this.deps.db.i18n.create({
-        data: { ...params, id: IdUtil.dbId(DB_PREFIX.I18N) },
+        data: { ...params, id: this.deps.idUtil.dbId(DB_PREFIX.I18N) },
         select: { id: true },
       });
       return { id: created.id };
@@ -120,7 +123,7 @@ export class I18nService {
       this.deps.db.i18n.deleteMany({ where: { key: { in: keys } } }),
       this.deps.db.i18n.createMany({
         data: validatedData.map((data) => ({
-          id: IdUtil.dbId(DB_PREFIX.I18N),
+          id: this.deps.idUtil.dbId(DB_PREFIX.I18N),
           key: data.KEY,
           en: data.EN,
           zh: data.ZH,

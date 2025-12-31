@@ -12,7 +12,7 @@ import {
   SecurityEventSeverity,
   SecurityEventType,
 } from 'src/generated';
-import { executeListQuery, IdUtil, LOG_LEVEL } from 'src/share';
+import { executeListQuery, type IdUtil, idUtil, LOG_LEVEL } from 'src/share';
 import { ctxStore, getIpAndUa } from 'src/share/context/request-context';
 import type { EnrichedAuditLogEntry } from 'src/share/type';
 import type {
@@ -26,6 +26,14 @@ import type {
 } from './types';
 
 export class AuditLogsService {
+  constructor(
+    private readonly deps: {
+      idUtil: IdUtil;
+    } = {
+      idUtil,
+    },
+  ) {}
+
   async resolveSecurityEvent(
     id: string,
     options: {
@@ -269,7 +277,7 @@ export class AuditLogsService {
       entityDisplay?: Record<string, unknown>;
     },
   ): EnrichedAuditLogEntry {
-    const logId = IdUtil.snowflakeId().toString();
+    const logId = this.deps.idUtil.snowflakeId().toString();
     const description = this.generateCudDescription(payload);
 
     const visibility =
@@ -310,7 +318,7 @@ export class AuditLogsService {
       resolved?: boolean;
     },
   ): EnrichedAuditLogEntry {
-    const logId = IdUtil.snowflakeId().toString();
+    const logId = this.deps.idUtil.snowflakeId().toString();
     const description = this.generateSecurityDescription(payload);
 
     const visibility =
@@ -354,7 +362,7 @@ export class AuditLogsService {
       subjectUserId?: string;
     },
   ): EnrichedAuditLogEntry {
-    const logId = IdUtil.snowflakeId().toString();
+    const logId = this.deps.idUtil.snowflakeId().toString();
     const description = this.generateOtherDescription(payload);
 
     return {

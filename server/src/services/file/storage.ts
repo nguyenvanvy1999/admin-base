@@ -8,8 +8,8 @@ import {
   BadReqErr,
   ErrCode,
   type IDownloadRes,
-  IdUtil,
   type IStorageBackend,
+  idUtil,
 } from 'src/share';
 
 const sharedDeps = {
@@ -22,7 +22,7 @@ const sharedDeps = {
     extension,
   },
   idGenerator: {
-    token16: IdUtil.token16,
+    token16: (prefix?: string) => idUtil.token16(prefix),
   },
 } as const;
 

@@ -20,9 +20,10 @@ import {
   defaultRoles,
   detectSessionType,
   ErrCode,
-  IdUtil,
+  type IdUtil,
   type IJwtVerified,
   type ITokenPayload,
+  idUtil,
   NotFoundErr,
   normalizeEmail,
   type SecurityDeviceInsight,
@@ -33,7 +34,10 @@ import {
 import { type PasswordService, passwordService } from './password.service';
 
 export class TokenService {
-  constructor(private readonly e: IEnv = env) {}
+  constructor(
+    private readonly e: IEnv = env,
+    private readonly idGen: IdUtil = idUtil,
+  ) {}
 
   signJwt(payload: Record<string, any>): Promise<string> {
     return new SignJWT(payload)
@@ -64,7 +68,7 @@ export class TokenService {
       .add(timeStringToSeconds(this.e.JWT_REFRESH_TOKEN_EXPIRED), 's')
       .toDate();
     return {
-      refreshToken: IdUtil.token32(),
+      refreshToken: this.idGen.token32(),
       expirationTime: expiredAt,
     };
   }
@@ -105,6 +109,7 @@ export class UserUtilService {
       settingService: SettingsService;
       geoIPQueue: IGeoIPQueue;
       passwordService: PasswordService;
+      idUtil: IdUtil;
     } = {
       db,
       tokenService,
@@ -112,6 +117,7 @@ export class UserUtilService {
       settingService: settingsService,
       geoIPQueue,
       passwordService,
+      idUtil,
     },
   ) {}
 
@@ -154,7 +160,7 @@ export class UserUtilService {
     if (await this.deps.settingService.enbOnlyOneSession()) {
       await this.deps.sessionService.revoke(user.id);
     }
-    const sessionId = IdUtil.dbId(DB_PREFIX.SESSION);
+    const sessionId = this.deps.idUtil.dbId(DB_PREFIX.SESSION);
     const payload: ITokenPayload = {
       userId: user.id,
       timestamp: Date.now(),
@@ -248,7 +254,7 @@ export class UserUtilService {
   }
 
   async createUser(email: string, password: string): Promise<string> {
-    const userId = IdUtil.dbId(DB_PREFIX.USER);
+    const userId = this.deps.idUtil.dbId(DB_PREFIX.USER);
     await this.deps.db.user.create({
       data: {
         id: userId,
@@ -257,11 +263,11 @@ export class UserUtilService {
         ...(await this.deps.passwordService.createPassword(password)),
         roles: {
           create: {
-            id: IdUtil.dbId(),
+            id: this.deps.idUtil.dbId(),
             roleId: defaultRoles.user.id,
           },
         },
-        refCode: IdUtil.token8().toUpperCase(),
+        refCode: this.deps.idUtil.token8().toUpperCase(),
       },
       select: { id: true },
     });
