@@ -39,5 +39,11 @@ export enum ErrCode {
   InvalidApiKey = 'invalid-api-key',
   InvalidRequest = 'invalid-request',
   CaptchaRequired = 'captcha-required',
+  InvalidCredentials = 'invalid-credentials',
+  InvalidState = 'invalid-state',
+  AuthTxExpired = 'auth-tx-expired',
+  AuthTxBindingMismatch = 'auth-tx-binding-mismatch',
+  LoginBlocked = 'login-blocked',
+  EmailOtpRequired = 'email-otp-required',
   InvalidCaptcha = 'invalid-captcha',
 }

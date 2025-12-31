@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia';
 import {
   ChangePasswordRequestDto,
+  DisableMfaRequestDto, // Added
   ForgotPasswordRequestDto,
   LoginResDto,
   OtpResDto,
@@ -158,6 +159,29 @@ const authProtectedRoutes = new Elysia()
         summary: 'Regenerate MFA backup codes',
         description:
           'Invalidates old backup codes and returns a new set. Requires MFA to be enabled.',
+        security: ACCESS_AUTH,
+      },
+    },
+  )
+  .post(
+    '/mfa/disable',
+    async ({ body, currentUser }) => {
+      await authFlowService.disableMfa({
+        userId: currentUser.id,
+        ...body,
+      });
+      return castToRes(null);
+    },
+    {
+      body: DisableMfaRequestDto,
+      response: {
+        200: ResWrapper(t.Null()),
+        ...authErrors,
+      },
+      detail: {
+        summary: 'Disable MFA',
+        description:
+          'Disable MFA for the current user. Requires password and TOTP code.',
         security: ACCESS_AUTH,
       },
     },

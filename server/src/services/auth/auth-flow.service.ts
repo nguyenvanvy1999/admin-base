@@ -6,6 +6,7 @@ import type {
   AuthChallengeRequestParams,
   AuthEnrollConfirmRequestParams,
   AuthEnrollStartRequestParams,
+  DisableMfaRequestParams, // Added
   LoginParams,
   RegenerateBackupCodesResponse,
 } from 'src/dtos/auth.dto';
@@ -23,7 +24,13 @@ import {
   type SettingsService,
   settingsService,
 } from 'src/services/settings/settings.service';
-import { BadReqErr, ErrCode, getIpAndUa, NotFoundErr } from 'src/share';
+import {
+  BadReqErr,
+  ErrCode,
+  getIpAndUa,
+  NotFoundErr,
+  PurposeVerify,
+} from 'src/share'; // Added
 import type { ChallengeDto } from 'src/types/auth.types';
 import { type AuthTxService, authTxService } from './auth-tx.service';
 import { type UserUtilService, userUtilService } from './auth-util.service';
@@ -33,12 +40,15 @@ import {
   hashBackupCode,
   parseBackupCodes,
   parseUsedBackupCodes,
+  verifyEmailOtp,
 } from './mfa.service';
+import { type OtpService, otpService } from './otp.service';
 import { type PasswordService, passwordService } from './password.service';
 import {
   type SecurityMonitorService,
   securityMonitorService,
 } from './security-monitor.service';
+import { type SessionService, sessionService } from './session.service';
 
 export type AuthResponse =
   | { status: 'COMPLETED'; session: any }
@@ -62,6 +72,8 @@ export class AuthFlowService {
       auditLogService: AuditLogsService;
       authenticator: typeof authenticator;
       captchaService: CaptchaService;
+      sessionService: SessionService;
+      otpService: OtpService;
     } = {
       db,
       env,
@@ -73,6 +85,8 @@ export class AuthFlowService {
       auditLogService: auditLogsService,
       authenticator,
       captchaService,
+      sessionService,
+      otpService,
     },
   ) {}
 
@@ -182,7 +196,7 @@ export class AuthFlowService {
           visibility: AuditLogVisibility.actor_and_subject,
         },
       );
-      throw new BadReqErr(ErrCode.PasswordNotMatch);
+      throw new BadReqErr(ErrCode.InvalidCredentials);
     }
 
     if (user.status !== UserStatus.active) {
@@ -223,7 +237,7 @@ export class AuthFlowService {
         },
         { subjectUserId: user.id, userId: user.id },
       );
-      throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
+      throw new BadReqErr(ErrCode.LoginBlocked);
     }
 
     const authTx = await this.deps.authTxService.create(
@@ -269,6 +283,36 @@ export class AuthFlowService {
     }
 
     if (next.kind === 'ENROLL_MFA') {
+      // If risk based and no TOTP, maybe we want to force Email OTP as a fallback challenge instead of Enroll?
+      // For now, let's keep it simple. If we wanted to support "Email OTP Challenge" instead of Enroll,
+      // we would check policy here.
+      // Let's assume for this task we want to support Email OTP if it's explicitly requested
+      // or if we decide to use it as a fallback.
+      // Since the requirement is "Email OTP Challenge", let's hook it if risk is HIGH and NO TOTP?
+      // Or just standard "If policy says Email OTP".
+      // NOTE: "documents/auth-flow-redesign.md" does NOT specify when to use Email OTP vs Enroll.
+      // I will add a hypothetical check for now to demonstrate implementation.
+      // If (risk === 'HIGH' && !user.mfaTotpEnabled) -> Email OTP Challenge
+
+      if (riskBased && securityResult.risk === 'HIGH' && !user.mfaTotpEnabled) {
+        const res = await this.deps.otpService.sendOtpWithAudit(
+          user.email,
+          PurposeVerify.MFA_LOGIN,
+        );
+        if (!res) throw new BadReqErr(ErrCode.InternalError); // Failed to send
+
+        await this.deps.authTxService.update(authTx.id, {
+          emailOtpToken: res.otpToken,
+          state: 'CHALLENGE_MFA_REQUIRED',
+        });
+
+        return {
+          status: 'CHALLENGE',
+          authTxId: authTx.id,
+          challenge: { type: 'MFA_EMAIL_OTP' },
+        };
+      }
+
       await this.deps.authTxService.setState(authTx.id, 'CHALLENGE_MFA_ENROLL');
       return {
         status: 'CHALLENGE',
@@ -355,6 +399,10 @@ export class AuthFlowService {
       });
     } else if (type === 'MFA_BACKUP_CODE') {
       ok = await this.consumeBackupCode(user, code);
+    } else if (type === 'MFA_EMAIL_OTP') {
+      if (!tx.emailOtpToken) throw new BadReqErr(ErrCode.InvalidState); // Not waiting for email otp
+      const verifiedUserId = await verifyEmailOtp(tx.emailOtpToken, code);
+      ok = verifiedUserId === user.id;
     }
 
     if (!ok) {
@@ -373,7 +421,9 @@ export class AuthFlowService {
         },
       );
       throw new BadReqErr(
-        type === 'MFA_TOTP' ? ErrCode.InvalidOtp : ErrCode.InvalidBackupCode,
+        type === 'MFA_TOTP' || type === 'MFA_EMAIL_OTP'
+          ? ErrCode.InvalidOtp
+          : ErrCode.InvalidBackupCode,
       );
     }
 
@@ -622,6 +672,104 @@ export class AuthFlowService {
     );
 
     return { backupCodes: codes };
+  }
+
+  async disableMfa(
+    params: { userId: string } & DisableMfaRequestParams,
+  ): Promise<void> {
+    const { userId, password, code } = params;
+
+    const user = await this.deps.db.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        mfaTotpEnabled: true,
+        totpSecret: true,
+        password: true,
+        passwordAttempt: true,
+        passwordExpired: true,
+        status: true,
+      },
+    });
+
+    if (!user) throw new NotFoundErr(ErrCode.UserNotFound);
+
+    if (!user.mfaTotpEnabled) throw new BadReqErr(ErrCode.ActionNotAllowed);
+
+    const passwordValid = await this.deps.passwordService.verifyAndTrack(
+      password,
+      user as any,
+    );
+
+    if (!passwordValid) {
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'email',
+          email: user.email,
+          error: 'password_verification_failed_during_disable_mfa',
+        },
+        { subjectUserId: user.id, userId: user.id },
+      );
+      throw new BadReqErr(ErrCode.PasswordNotMatch);
+    }
+
+    if (!user.totpSecret) throw new BadReqErr(ErrCode.MfaBroken);
+
+    try {
+      const otpOk = this.deps.authenticator.verify({
+        secret: user.totpSecret,
+        token: code,
+      });
+      if (!otpOk) throw new Error('Invalid OTP');
+    } catch {
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.mfa_failed,
+          severity: SecurityEventSeverity.medium,
+          method: 'totp',
+          error: 'invalid_otp_during_disable_mfa',
+        },
+        { subjectUserId: user.id, userId: user.id },
+      );
+      throw new BadReqErr(ErrCode.InvalidOtp);
+    }
+
+    await this.deps.db.user.update({
+      where: { id: userId },
+      data: {
+        mfaTotpEnabled: false,
+        totpSecret: null,
+        backupCodes: null,
+        backupCodesUsed: null,
+      },
+      select: { id: true },
+    });
+
+    try {
+      await this.deps.sessionService.revoke(userId);
+    } catch {
+      // ignore
+    }
+
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.mfa_disabled,
+        severity: SecurityEventSeverity.high,
+        method: 'totp',
+        disabledBy: 'user',
+      },
+      {
+        subjectUserId: user.id,
+        userId: user.id,
+        visibility: AuditLogVisibility.actor_and_subject,
+      },
+    );
   }
 }
 

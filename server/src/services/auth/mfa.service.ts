@@ -32,3 +32,14 @@ export function generateBackupCodes(
 
   return codes;
 }
+
+import { PurposeVerify } from 'src/share';
+import { otpService } from './otp.service';
+
+export function verifyEmailOtp(
+  otpToken: string,
+  code: string,
+): Promise<string | null> {
+  // Returns userId if verified, null otherwise
+  return otpService.verifyOtp(otpToken, PurposeVerify.MFA_LOGIN, code);
+}

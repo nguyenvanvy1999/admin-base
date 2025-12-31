@@ -174,6 +174,10 @@ export class AuthService {
       select: { id: true },
     });
 
+    if (await this.deps.settingService.revokeSessionsOnPasswordChange()) {
+      await this.deps.sessionService.revoke(userId);
+    }
+
     const { sessionId } = ctxStore.getStore() ?? {};
     await this.deps.auditLogService.pushSecurity(
       {

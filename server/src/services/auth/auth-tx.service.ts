@@ -37,7 +37,7 @@ export class AuthTxService {
   async getOrThrow(id: string): Promise<AuthTx> {
     const tx = await this.get(id);
     if (!tx) {
-      throw new UnAuthErr(ErrCode.SessionExpired);
+      throw new UnAuthErr(ErrCode.AuthTxExpired);
     }
     return tx;
   }
@@ -60,13 +60,13 @@ export class AuthTxService {
 
   assertBinding(tx: AuthTx, ctx: { ip: string; ua?: string }): void {
     if (tx.ipHash && tx.ipHash !== this.hashIp(ctx.ip)) {
-      throw new BadReqErr(ErrCode.InvalidRequest, {
+      throw new BadReqErr(ErrCode.AuthTxBindingMismatch, {
         errors: 'Session binding mismatch',
       });
     }
 
     if (tx.uaHash && ctx.ua && tx.uaHash !== this.hashUa(ctx.ua)) {
-      throw new BadReqErr(ErrCode.InvalidRequest, {
+      throw new BadReqErr(ErrCode.AuthTxBindingMismatch, {
         errors: 'Session binding mismatch',
       });
     }

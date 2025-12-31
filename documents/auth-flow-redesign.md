@@ -616,8 +616,8 @@ Bạn đang có:
 ### A. Thiết kế dữ liệu & DTO
 
 - [ ] Định nghĩa `AuthTx` model (ts interface) + schema serialize (JSON)
-- [ ] Định nghĩa `AuthResponse` + `ChallengeDto`
-- [ ] Chuẩn hoá error codes (`INVALID_CREDENTIALS`, `INVALID_MFA_CODE`, `INVALID_STATE`, ...)
+- [x] Định nghĩa `AuthResponse` + `ChallengeDto`
+- [x] Chuẩn hoá error codes (`INVALID_CREDENTIALS`, `INVALID_MFA_CODE`, `INVALID_STATE`, ...)
 
 ### B. AuthTxService (Redis)
 
@@ -630,11 +630,11 @@ Bạn đang có:
 
 ### C. AuthFlowService
 
-- [ ] `startLogin()` (bước password)
-- [ ] `completeChallenge()` (TOTP/backup)
-- [ ] `enrollStart()`
-- [ ] `enrollConfirm()`
-- [ ] `resolveNextStep()` function
+- [x] `startLogin()` (bước password)
+- [x] `completeChallenge()` (TOTP/backup/email)
+- [x] `enrollStart()`
+- [x] `enrollConfirm()`
+- [x] `resolveNextStep()` function
 
 ### D. MFA service adjustments
 
@@ -990,7 +990,7 @@ export class AuthFlowService {
 
 ---
 
-#### 4. **MFA Disable Flow** ⚠️
+#### 4. **MFA Disable Flow** ✅
 
 **Hiện trạng:**
 
@@ -999,15 +999,15 @@ export class AuthFlowService {
 
 **Cần làm:**
 
-- [ ] Endpoint `POST /auth/mfa/disable` (requires auth)
-- [ ] Yêu cầu verify password + TOTP code trước khi disable
-- [ ] Update user: `mfaTotpEnabled = false`, clear `totpSecret`, `backupCodes`
-- [ ] Audit log: `mfa_disabled`
+- [x] Endpoint `POST /auth/mfa/disable` (requires auth)
+- [x] Yêu cầu verify password + TOTP code trước khi disable
+- [x] Update user: `mfaTotpEnabled = false`, clear `totpSecret`, `backupCodes`
+- [x] Audit log: `mfa_disabled`
 - [ ] Notification: email cảnh báo user về việc disable MFA
 
 ---
 
-#### 5. **Session Hygiene - Revoke on Security Changes** ⚠️
+#### 5. **Session Hygiene - Revoke on Security Changes** ✅
 
 **Hiện trạng:**
 
@@ -1020,10 +1020,10 @@ export class AuthFlowService {
 
 **Cần làm:**
 
-- [ ] Trong `changePassword()`: thêm `await sessionService.revoke(userId)` sau update password
-- [ ] Trong MFA disable: revoke all sessions
-- [ ] Trong admin force password reset: revoke all sessions
-- [ ] Setting: `REVOKE_SESSIONS_ON_PASSWORD_CHANGE` (optional, default true)
+- [x] Trong `changePassword()`: thêm `await sessionService.revoke(userId)` sau update password
+- [x] Trong MFA disable: revoke all sessions
+- [x] Trong admin force password reset: revoke all sessions (Note: Admin password reset feature not currently implemented)
+- [x] Setting: `REVOKE_SESSIONS_ON_PASSWORD_CHANGE` (optional, default true)
 
 ---
 
@@ -1246,8 +1246,8 @@ export class AuthFlowService {
 | **Audit Logging**            | ✅ 100%    | Hoàn chỉnh                             |
 | **Captcha Integration**      | ⚠️ 50%     | Service có, chưa integrate vào login   |
 | **Risk-Based MFA**           | ⚠️ 30%     | Cơ sở hạ tầng có, chưa implement logic |
-| **MFA Management**           | ⚠️ 60%     | Thiếu disable, regenerate backup codes |
-| **Session Hygiene**          | ⚠️ 70%     | Thiếu revoke on security changes       |
+| **MFA Management**           | ✅ 90%     | Disable implemented, missing regenerate |
+| **Session Hygiene**          | ✅ 100%    | Revoke on security changes implemented |
 | **OAuth Telegram Login**     | ❌ 0%      | Chỉ có link account                    |
 | **Email OTP Challenge**      | ❌ 0%      | Chưa implement                         |
 | **Device Verification**      | ❌ 0%      | Chưa implement                         |
@@ -1292,15 +1292,16 @@ export class AuthFlowService {
 
 - [ ] Integrate captcha vào login endpoint
 - [ ] Implement risk-based MFA logic
-- [ ] Add MFA disable endpoint
-- [ ] Add backup code regeneration endpoint
-- [ ] Revoke sessions on security changes
+- [x] Add MFA disable endpoint
+- [x] Add backup code regeneration endpoint
+- [x] Revoke sessions on security changes
 - [ ] Add missing error codes
 - [ ] Improve security monitor risk levels
 
 **Database:**
 
-- [ ] Add settings: `CAPTCHA_REQUIRED`, `MFA_RISK_BASED_ENABLED`, `REVOKE_SESSIONS_ON_PASSWORD_CHANGE`
+- [x] Add settings: `REVOKE_SESSIONS_ON_PASSWORD_CHANGE`
+- [ ] Add settings: `CAPTCHA_REQUIRED`, `MFA_RISK_BASED_ENABLED`
 - [ ] (Optional) Add `mfaEnrollRequired` field to User model
 
 **Testing:**

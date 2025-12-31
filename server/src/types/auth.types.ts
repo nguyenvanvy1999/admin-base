@@ -28,11 +28,15 @@ export interface AuthTx {
     tempTotpSecret: string;
     startedAt: number;
   };
+
+  // context for email otp
+  emailOtpToken?: string;
 }
 
 export type ChallengeDto =
   | { type: 'MFA_TOTP'; allowBackupCode: true }
   | { type: 'MFA_BACKUP_CODE' }
+  | { type: 'MFA_EMAIL_OTP' }
   | {
       type: 'MFA_ENROLL';
       methods: Array<'totp'>;

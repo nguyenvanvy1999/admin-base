@@ -96,6 +96,7 @@ export type LinkTelegramParams = {
 export const ChallengeDto = t.Union([
   t.Object({ type: t.Literal('MFA_TOTP'), allowBackupCode: t.Literal(true) }),
   t.Object({ type: t.Literal('MFA_BACKUP_CODE') }),
+  t.Object({ type: t.Literal('MFA_EMAIL_OTP') }),
   t.Object({
     type: t.Literal('MFA_ENROLL'),
     methods: t.Array(t.Literal('totp')),
@@ -124,7 +125,11 @@ export type IAuthResponse = typeof AuthResponseDto.static;
 
 export const AuthChallengeRequestDto = t.Object({
   authTxId: t.String({ minLength: 1 }),
-  type: t.Union([t.Literal('MFA_TOTP'), t.Literal('MFA_BACKUP_CODE')]),
+  type: t.Union([
+    t.Literal('MFA_TOTP'),
+    t.Literal('MFA_BACKUP_CODE'),
+    t.Literal('MFA_EMAIL_OTP'),
+  ]),
   code: t.String({ minLength: 1 }),
 });
 export type AuthChallengeRequestParams = typeof AuthChallengeRequestDto.static;
@@ -155,3 +160,10 @@ export const RegenerateBackupCodesResponseDto = t.Object({
 
 export type RegenerateBackupCodesResponse =
   typeof RegenerateBackupCodesResponseDto.static;
+
+export const DisableMfaRequestDto = t.Object({
+  password: t.String({ minLength: 1 }),
+  code: t.String({ minLength: 6, maxLength: 6 }),
+});
+
+export type DisableMfaRequestParams = typeof DisableMfaRequestDto.static;
