@@ -78,11 +78,21 @@ export class AuthFlowService {
   resolveNextStep(input: {
     user: { mfaTotpEnabled: boolean };
     mfaRequired: boolean;
+    riskBased?: boolean;
+    risk?: 'LOW' | 'MEDIUM' | 'HIGH';
   }): NextStep {
-    const { user, mfaRequired } = input;
+    const { user, mfaRequired, riskBased, risk } = input;
 
     if (mfaRequired && !user.mfaTotpEnabled) return { kind: 'ENROLL_MFA' };
     if (user.mfaTotpEnabled) return { kind: 'MFA_CHALLENGE' };
+
+    // Risk-based MFA
+    if (riskBased && (risk === 'MEDIUM' || risk === 'HIGH')) {
+      return user.mfaTotpEnabled
+        ? { kind: 'MFA_CHALLENGE' }
+        : { kind: 'ENROLL_MFA' };
+    }
+
     return { kind: 'COMPLETE' };
   }
 
@@ -223,9 +233,12 @@ export class AuthFlowService {
     );
 
     const mfaRequired = await this.deps.settingService.enbMfaRequired();
+    const riskBased = await this.deps.settingService.enbMfaRiskBased();
     const next = this.resolveNextStep({
       user: { mfaTotpEnabled: user.mfaTotpEnabled },
       mfaRequired,
+      riskBased,
+      risk: securityResult.risk,
     });
 
     if (next.kind === 'COMPLETE') {

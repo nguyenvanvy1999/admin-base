@@ -363,6 +363,10 @@ export class SettingsService {
     return this.getSetting<boolean>(SETTING.ENB_CAPTCHA_REQUIRED);
   }
 
+  enbMfaRiskBased(): Promise<boolean> {
+    return this.getSetting<boolean>(SETTING.ENB_MFA_RISK_BASED);
+  }
+
   registerOtpLimit(): Promise<number> {
     return this.getSetting<number>(SETTING.REGISTER_OTP_LIMIT);
   }

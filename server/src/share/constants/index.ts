@@ -147,6 +147,7 @@ export enum SETTING {
   ENB_SECURITY_BLOCK_UNKNOWN_DEVICE = 'ENB_SECURITY_BLOCK_UNKNOWN_DEVICE',
   ENB_SECURITY_AUDIT_WARNING = 'ENB_SECURITY_AUDIT_WARNING',
   ENB_CAPTCHA_REQUIRED = 'ENB_CAPTCHA_REQUIRED',
+  ENB_MFA_RISK_BASED = 'ENB_MFA_RISK_BASED',
 }
 
 export enum CACHE_NS {
@@ -429,6 +430,10 @@ export const defaultSettings = {
     value: 'true',
   },
   [SETTING.ENB_CAPTCHA_REQUIRED]: {
+    type: SettingDataType.boolean,
+    value: 'false',
+  },
+  [SETTING.ENB_MFA_RISK_BASED]: {
     type: SettingDataType.boolean,
     value: 'false',
   },

@@ -23,6 +23,7 @@ import {
 export type SecurityCheckResult = SecurityDeviceInsight & {
   action: 'allow' | 'block';
   reason?: 'unknown_device';
+  risk: 'LOW' | 'MEDIUM' | 'HIGH';
 };
 
 type EvaluateParams = {
@@ -48,7 +49,12 @@ export class SecurityMonitorService {
     const securitySettings = await this.deps.settingService.loginSecurity();
 
     if (!securitySettings.deviceRecognition) {
-      return { action: 'allow', deviceFingerprint: null, isNewDevice: false };
+      return {
+        action: 'allow',
+        deviceFingerprint: null,
+        isNewDevice: false,
+        risk: 'LOW',
+      };
     }
     const { userAgent, clientIp } = getIpAndUa();
     const deviceFingerprint = this.generateFingerprint(userAgent, clientIp);
@@ -72,6 +78,7 @@ export class SecurityMonitorService {
         reason: 'unknown_device',
         deviceFingerprint,
         isNewDevice: true,
+        risk: 'HIGH',
       };
     }
 
@@ -79,6 +86,7 @@ export class SecurityMonitorService {
       action: 'allow',
       deviceFingerprint,
       isNewDevice,
+      risk: isNewDevice ? 'MEDIUM' : 'LOW',
     };
   }
 
