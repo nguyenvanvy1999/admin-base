@@ -89,6 +89,7 @@ enum SecurityEventType {
   mfa_setup_started
   mfa_setup_completed
   mfa_setup_failed
+  mfa_backup_codes_regenerated
   mfa_challenge_started
 
   // Account lockout

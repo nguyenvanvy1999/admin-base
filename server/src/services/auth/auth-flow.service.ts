@@ -7,6 +7,7 @@ import type {
   AuthEnrollConfirmRequestParams,
   AuthEnrollStartRequestParams,
   LoginParams,
+  RegenerateBackupCodesResponse,
 } from 'src/dtos/auth.dto';
 import {
   AuditLogVisibility,
@@ -577,6 +578,50 @@ export class AuthFlowService {
     });
 
     return true;
+  }
+
+  async regenerateBackupCodes(
+    userId: string,
+  ): Promise<RegenerateBackupCodesResponse> {
+    const user = await this.deps.db.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        mfaTotpEnabled: true,
+      },
+    });
+
+    if (!user) throw new NotFoundErr(ErrCode.UserNotFound);
+    if (!user.mfaTotpEnabled) throw new BadReqErr(ErrCode.ActionNotAllowed);
+
+    const codes = generateBackupCodes();
+    const hashedCodes = codes.map((c) => hashBackupCode(c));
+
+    await this.deps.db.user.update({
+      where: { id: userId },
+      data: {
+        backupCodes: JSON.stringify(hashedCodes),
+        backupCodesUsed: JSON.stringify([]),
+      },
+      select: { id: true },
+    });
+
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.mfa_backup_codes_regenerated,
+        severity: SecurityEventSeverity.medium,
+        method: 'totp',
+      },
+      {
+        subjectUserId: user.id,
+        userId: user.id,
+        visibility: AuditLogVisibility.actor_only,
+      },
+    );
+
+    return { backupCodes: codes };
   }
 }
 

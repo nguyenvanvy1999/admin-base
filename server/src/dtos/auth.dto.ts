@@ -148,3 +148,10 @@ export const AuthEnrollConfirmRequestDto = t.Object({
 });
 export type AuthEnrollConfirmRequestParams =
   typeof AuthEnrollConfirmRequestDto.static;
+
+export const RegenerateBackupCodesResponseDto = t.Object({
+  backupCodes: t.Array(t.String()),
+});
+
+export type RegenerateBackupCodesResponse =
+  typeof RegenerateBackupCodesResponseDto.static;

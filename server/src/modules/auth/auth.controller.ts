@@ -5,12 +5,14 @@ import {
   LoginResDto,
   OtpResDto,
   RefreshTokenRequestDto,
+  RegenerateBackupCodesResponseDto,
   RegisterRequestDto,
   UserResDto,
   VerifyAccountRequestDto,
 } from 'src/dtos/auth.dto';
 import { authCheck } from 'src/services/auth';
 import { authService } from 'src/services/auth/auth.service';
+import { authFlowService } from 'src/services/auth/auth-flow.service';
 import { rateLimit } from 'src/services/rate-limit/auth-rate-limit.config';
 import {
   ACCESS_AUTH,
@@ -136,6 +138,26 @@ const authProtectedRoutes = new Elysia()
         summary: 'Get current user profile',
         description:
           'Retrieves the profile information of the currently authenticated user.',
+        security: ACCESS_AUTH,
+      },
+    },
+  )
+  .post(
+    '/mfa/backup-codes/regenerate',
+    async ({ currentUser }) => {
+      return castToRes(
+        await authFlowService.regenerateBackupCodes(currentUser.id),
+      );
+    },
+    {
+      response: {
+        200: ResWrapper(RegenerateBackupCodesResponseDto),
+        ...authErrors,
+      },
+      detail: {
+        summary: 'Regenerate MFA backup codes',
+        description:
+          'Invalidates old backup codes and returns a new set. Requires MFA to be enabled.',
         security: ACCESS_AUTH,
       },
     },
