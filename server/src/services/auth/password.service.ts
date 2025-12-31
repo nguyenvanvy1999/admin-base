@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { db } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
-import { timeStringToSeconds } from 'src/share';
+import { BadReqErr, ErrCode, timeStringToSeconds } from 'src/share';
 
 export class BunPasswordHasher {
   hash(password: string): Promise<string> {
@@ -59,6 +59,35 @@ export class PasswordService {
   comparePassword(password: string, passwordHash: string): Promise<boolean> {
     const passwordWithPepper = password + this.env.PASSWORD_PEPPER;
     return this.passwordHasher.verify(passwordWithPepper, passwordHash);
+  }
+
+  validateAttempt(
+    user: { passwordAttempt: number },
+    maxAttempts: number,
+  ): void {
+    if (user.passwordAttempt >= maxAttempts) {
+      throw new BadReqErr(ErrCode.PasswordMaxAttempt);
+    }
+  }
+
+  validateExpiration(user: { passwordExpired: Date | null }): void {
+    if (user.passwordExpired && new Date() > new Date(user.passwordExpired)) {
+      throw new BadReqErr(ErrCode.PasswordExpired);
+    }
+  }
+
+  async verifyAndTrack(
+    password: string,
+    user: { id: string; password: string },
+  ): Promise<boolean> {
+    const match = await this.comparePassword(password, user.password);
+
+    if (!match) {
+      await this.increasePasswordAttempt(user.id);
+      return false;
+    }
+
+    return true;
   }
 }
 

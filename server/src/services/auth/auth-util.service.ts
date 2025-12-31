@@ -4,7 +4,7 @@ import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import { geoIPQueue, type IGeoIPQueue } from 'src/config/queue';
 import type { ILoginRes } from 'src/dtos/auth.dto';
-import type { User } from 'src/generated';
+import { type User, UserStatus } from 'src/generated';
 import { EncryptService } from 'src/services/auth/encrypt.service';
 import {
   type SessionService,
@@ -17,17 +17,21 @@ import {
 import {
   ArrayUtil,
   DB_PREFIX,
+  defaultRoles,
   detectSessionType,
   ErrCode,
   IdUtil,
   type IJwtVerified,
   type ITokenPayload,
   LoginResType,
+  NotFoundErr,
+  normalizeEmail,
   type SecurityDeviceInsight,
   timeStringToSeconds,
   UnAuthErr,
   type UPermission,
 } from 'src/share';
+import { type PasswordService, passwordService } from './password.service';
 
 export class TokenService {
   constructor(private readonly e: IEnv = env) {}
@@ -101,12 +105,14 @@ export class UserUtilService {
       sessionService: SessionService;
       settingService: SettingsService;
       geoIPQueue: IGeoIPQueue;
+      passwordService: PasswordService;
     } = {
       db,
       tokenService,
       sessionService,
       settingService: settingsService,
       geoIPQueue,
+      passwordService,
     },
   ) {}
 
@@ -213,6 +219,54 @@ export class UserUtilService {
       user: userRes,
       sessionId,
     };
+  }
+
+  async findUserForLogin(email: string) {
+    const normalizedEmail = normalizeEmail(email);
+    const user = await this.deps.db.user.findUnique({
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        status: true,
+        passwordAttempt: true,
+        passwordExpired: true,
+        mfaTotpEnabled: true,
+        totpSecret: true,
+        backupCodes: true,
+        backupCodesUsed: true,
+        created: true,
+        modified: true,
+        roles: { select: { roleId: true } },
+      },
+    });
+
+    if (!user || !user.password) {
+      throw new NotFoundErr(ErrCode.UserNotFound);
+    }
+    return user;
+  }
+
+  async createUser(email: string, password: string): Promise<string> {
+    const userId = IdUtil.dbId(DB_PREFIX.USER);
+    await this.deps.db.user.create({
+      data: {
+        id: userId,
+        email,
+        status: UserStatus.inactive,
+        ...(await this.deps.passwordService.createPassword(password)),
+        roles: {
+          create: {
+            id: IdUtil.dbId(),
+            roleId: defaultRoles.user.id,
+          },
+        },
+        refCode: IdUtil.token8().toUpperCase(),
+      },
+      select: { id: true },
+    });
+    return userId;
   }
 }
 

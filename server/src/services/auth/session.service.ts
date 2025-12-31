@@ -1,6 +1,7 @@
 import { db, type IDb } from 'src/config/db';
 import type { SessionListParams } from 'src/dtos/session.dto';
 import type { SessionWhereInput } from 'src/generated';
+import { userResSelect } from 'src/share';
 
 export class SessionService {
   constructor(private readonly deps: { db: IDb } = { db }) {}
@@ -15,6 +16,18 @@ export class SessionService {
     await this.deps.db.session.updateMany({
       where: whereCondition,
       data: { revoked: true },
+    });
+  }
+
+  findByToken(token: string) {
+    return this.deps.db.session.findFirst({
+      where: { token },
+      select: {
+        revoked: true,
+        id: true,
+        expired: true,
+        createdBy: { select: userResSelect },
+      },
     });
   }
 

@@ -43,8 +43,6 @@ import {
 import {
   BadReqErr,
   ctxStore,
-  DB_PREFIX,
-  defaultRoles,
   ErrCode,
   getIpAndUa,
   IdUtil,
@@ -53,7 +51,6 @@ import {
   LoginResType,
   NotFoundErr,
   normalizeEmail,
-  type PrismaTx,
   PurposeVerify,
   UnAuthErr,
   userResSelect,
@@ -111,17 +108,23 @@ export class AuthService {
     const { email, password } = params;
     const { clientIp, userAgent } = getIpAndUa();
 
-    const user = await this.findAndValidateUser(email);
+    const user = await this.deps.userUtilService.findUserForLogin(email);
 
     const { enbAttempt, enbExpired } =
       await this.deps.settingService.password();
 
-    this.validatePasswordAttempts(user, enbAttempt);
+    if (enbAttempt) {
+      this.deps.passwordService.validateAttempt(
+        user,
+        this.deps.env.PASSWORD_MAX_ATTEMPT,
+      );
+    }
 
-    const passwordValid = await this.validatePasswordAndAttempts(
+    const passwordValid = await this.deps.passwordService.verifyAndTrack(
       password,
       user,
     );
+
     if (!passwordValid) {
       await this.deps.auditLogService.pushSecurity(
         {
@@ -156,7 +159,9 @@ export class AuthService {
       throw new BadReqErr(ErrCode.UserNotActive);
     }
 
-    this.validatePasswordExpiration(user, enbExpired);
+    if (enbExpired) {
+      this.deps.passwordService.validateExpiration(user);
+    }
 
     const securityResult = await this.deps.securityMonitorService.evaluateLogin(
       {
@@ -195,51 +200,6 @@ export class AuthService {
       userAgent,
       securityResult,
     );
-  }
-
-  private async findAndValidateUser(email: string) {
-    const normalizedEmail = normalizeEmail(email);
-    const user = await this.deps.db.user.findUnique({
-      where: { email: normalizedEmail },
-      select: {
-        id: true,
-        email: true,
-        password: true,
-        status: true,
-        passwordAttempt: true,
-        passwordExpired: true,
-        mfaTotpEnabled: true,
-        totpSecret: true,
-        backupCodes: true,
-        backupCodesUsed: true,
-        created: true,
-        modified: true,
-        roles: { select: { roleId: true } },
-      },
-    });
-
-    if (!user || !user.password) {
-      throw new NotFoundErr(ErrCode.UserNotFound);
-    }
-
-    return user;
-  }
-
-  private async validatePasswordAndAttempts(
-    password: string,
-    user: { id: string; password: string },
-  ): Promise<boolean> {
-    const match = await this.deps.passwordService.comparePassword(
-      password,
-      user.password,
-    );
-
-    if (!match) {
-      await this.deps.passwordService.increasePasswordAttempt(user.id);
-      return false;
-    }
-
-    return true;
   }
 
   private async handleSuccessfulLogin(
@@ -354,31 +314,6 @@ export class AuthService {
     } as ILoginResponse;
   }
 
-  private validatePasswordAttempts(
-    user: { passwordAttempt: number },
-    enbAttempt: boolean,
-  ): void {
-    if (
-      enbAttempt &&
-      user.passwordAttempt >= this.deps.env.PASSWORD_MAX_ATTEMPT
-    ) {
-      throw new BadReqErr(ErrCode.PasswordMaxAttempt);
-    }
-  }
-
-  private validatePasswordExpiration(
-    user: { passwordExpired: Date | null },
-    enbExpired: boolean,
-  ): void {
-    if (
-      user.passwordExpired &&
-      enbExpired &&
-      new Date() > new Date(user.passwordExpired)
-    ) {
-      throw new BadReqErr(ErrCode.PasswordExpired);
-    }
-  }
-
   async register(params: RegisterParams): Promise<{ otpToken: string } | null> {
     const { email, password } = params;
 
@@ -404,9 +339,10 @@ export class AuthService {
       throw new BadReqErr(ErrCode.UserExisted);
     }
 
-    const createdUserId = await this.deps.db.$transaction((tx) => {
-      return this.createUserWithDefaults(tx, normalizedEmail, password);
-    });
+    const createdUserId = await this.deps.userUtilService.createUser(
+      normalizedEmail,
+      password,
+    );
 
     const otpToken = await this.deps.otpService.sendOtp(
       createdUserId,
@@ -429,33 +365,6 @@ export class AuthService {
       return { otpToken };
     }
     return null;
-  }
-
-  private async createUserWithDefaults(
-    tx: PrismaTx,
-    email: string,
-    password: string,
-  ): Promise<string> {
-    const userId = IdUtil.dbId(DB_PREFIX.USER);
-
-    await tx.user.create({
-      data: {
-        id: userId,
-        email,
-        status: UserStatus.inactive,
-        ...(await this.deps.passwordService.createPassword(password)),
-        roles: {
-          create: {
-            id: IdUtil.dbId(),
-            roleId: defaultRoles.user.id,
-          },
-        },
-        refCode: IdUtil.token8().toUpperCase(),
-      },
-      select: { id: true },
-    });
-
-    return userId;
   }
 
   async changePassword(params: ChangePasswordParams): Promise<void> {
@@ -615,15 +524,7 @@ export class AuthService {
     const { token } = params;
     const { clientIp, userAgent } = getIpAndUa();
 
-    const session = await this.deps.db.session.findFirst({
-      where: { token },
-      select: {
-        revoked: true,
-        id: true,
-        expired: true,
-        createdBy: { select: userResSelect },
-      },
-    });
+    const session = await this.deps.sessionService.findByToken(token);
 
     if (
       !session ||
