@@ -204,18 +204,6 @@ export enum OAUTH {
 
 export const IDEMPOTENCY_TTL = 300;
 
-type LoginErrorPayload = { method: string; error?: string };
-
-export const MFA_ERROR_PAYLOADS = {
-  SESSION_EXPIRED: { method: 'email', error: 'mfa_session_expired' },
-  INVALID_OTP: { method: 'email', error: 'mfa_invalid_otp' },
-  USER_NOT_FOUND: { method: 'email', error: 'mfa_user_not_found' },
-  USER_NOT_ACTIVE: { method: 'email', error: 'user_not_active' },
-  INVALID_BACKUP_CODE: { method: 'backup-code', error: 'invalid_backup_code' },
-  SECURITY_BLOCKED: { method: 'email', error: 'security_blocked' },
-  TOO_MANY_ATTEMPTS: { method: 'email', error: 'too_many_attempts' },
-} as const satisfies Record<string, LoginErrorPayload>;
-
 export enum DOC_TAG {
   AUTH = 'Base Auth',
   OAUTH = 'OAuth',
@@ -440,12 +428,6 @@ export const defaultSettings = {
     value: 'true',
   },
 } satisfies Record<SETTING, { value: string; type: SettingDataType }>;
-
-export enum LoginResType {
-  COMPLETED = 'completed',
-  MFA_SETUP = 'mfa-setup',
-  MFA_CONFIRM = 'mfa-confirm',
-}
 
 export const userResSelect = {
   id: true,

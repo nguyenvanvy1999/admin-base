@@ -36,7 +36,6 @@ import {
   getIpAndUa,
   type ITokenPayload,
   isExpired,
-  LoginResType,
   NotFoundErr,
   normalizeEmail,
   PurposeVerify,
@@ -356,7 +355,7 @@ export class AuthService {
     );
 
     return {
-      type: LoginResType.COMPLETED,
+      type: 'completed',
       accessToken,
       refreshToken: token,
       exp: expirationTime.getTime(),

@@ -23,7 +23,6 @@ import {
   IdUtil,
   type IJwtVerified,
   type ITokenPayload,
-  LoginResType,
   NotFoundErr,
   normalizeEmail,
   type SecurityDeviceInsight,
@@ -211,7 +210,7 @@ export class UserUtilService {
     };
 
     return {
-      type: LoginResType.COMPLETED,
+      type: 'completed',
       accessToken,
       refreshToken,
       exp: expirationTime.getTime(),

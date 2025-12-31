@@ -1,5 +1,5 @@
 import { t } from 'elysia';
-import { DtoFields, LoginResType } from 'src/share';
+import { DtoFields } from 'src/share';
 import { BaseUserDto } from './users.dto';
 
 export const OtpResDto = t.Union([
@@ -60,7 +60,7 @@ export const UserResDto = t.Composite([
 ]);
 
 export const LoginResDto = t.Object({
-  type: t.Literal(LoginResType.COMPLETED),
+  type: t.Literal('completed'),
   accessToken: t.String(),
   refreshToken: t.String(),
   exp: t.Number(),

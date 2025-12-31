@@ -13,12 +13,6 @@ export interface IGenerateBackupCodesParams {
   otp: string;
 }
 
-export interface IDisableMfaParams {
-  userId: string;
-  otp?: string;
-  backupCode?: string;
-}
-
 export interface IBackupCodesRemaining {
   remaining: number;
   total: number;

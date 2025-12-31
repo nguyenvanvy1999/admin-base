@@ -247,7 +247,7 @@ export class AuthFlowService {
     const { clientIp, userAgent } = getIpAndUa();
 
     const tx = await this.deps.authTxService.getOrThrow(authTxId);
-    await this.deps.authTxService.assertBinding(tx, {
+    this.deps.authTxService.assertBinding(tx, {
       ip: clientIp,
       ua: userAgent,
     });
@@ -258,7 +258,7 @@ export class AuthFlowService {
       });
     }
 
-    await this.deps.authTxService.assertChallengeAttemptsAllowed(tx);
+    this.deps.authTxService.assertChallengeAttemptsAllowed(tx);
 
     const user = await this.deps.db.user.findUnique({
       where: { id: tx.userId },
@@ -345,7 +345,7 @@ export class AuthFlowService {
     const { clientIp, userAgent } = getIpAndUa();
 
     const tx = await this.deps.authTxService.getOrThrow(authTxId);
-    await this.deps.authTxService.assertBinding(tx, {
+    this.deps.authTxService.assertBinding(tx, {
       ip: clientIp,
       ua: userAgent,
     });
@@ -402,7 +402,7 @@ export class AuthFlowService {
     const { clientIp, userAgent } = getIpAndUa();
 
     const tx = await this.deps.authTxService.getOrThrow(authTxId);
-    await this.deps.authTxService.assertBinding(tx, {
+    this.deps.authTxService.assertBinding(tx, {
       ip: clientIp,
       ua: userAgent,
     });
@@ -419,7 +419,7 @@ export class AuthFlowService {
       });
     }
 
-    await this.deps.authTxService.assertChallengeAttemptsAllowed(tx);
+    this.deps.authTxService.assertChallengeAttemptsAllowed(tx);
 
     const otpOk = this.deps.authenticator.verify({
       secret: tx.enroll.tempTotpSecret,
