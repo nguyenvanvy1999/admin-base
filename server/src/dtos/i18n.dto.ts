@@ -1,6 +1,6 @@
 import { Type } from '@sinclair/typebox';
 import { t } from 'elysia';
-import { PaginatedDto, PaginationReqDto } from 'src/share';
+import { PaginatedDto, PaginationReqDto, UpsertBaseDto } from 'src/share';
 
 export const I18nDto = t.Object({
   id: t.String(),
@@ -11,15 +11,16 @@ export const I18nDto = t.Object({
 
 export const PaginateI18nResDto = PaginatedDto(I18nDto);
 
-export const I18nPaginationDto = t.Object({
-  take: PaginationReqDto.properties.take,
-  skip: PaginationReqDto.properties.skip,
-  key: t.Optional(t.String()),
-});
+export const I18nPaginationDto = t.Intersect([
+  PaginationReqDto,
+  t.Object({
+    key: t.Optional(t.String()),
+  }),
+]);
 
 export const I18nUpsertDto = t.Intersect([
   t.Omit(I18nDto, ['id']),
-  t.Object({ id: t.Optional(t.String()) }),
+  UpsertBaseDto,
 ]);
 
 export const I18nImportDto = Type.Object({

@@ -1,25 +1,35 @@
 import { t } from 'elysia';
 import { ApiKeyStatus } from 'src/generated';
-import { DtoFields, PaginationReqDto } from 'src/share';
+import {
+  DtoFields,
+  PaginatedDto,
+  PaginationReqDto,
+  UpsertBaseDto,
+  UserFilterDto,
+  UserInfoDto,
+  type WithPermissionContext,
+} from 'src/share';
 
-export const UpsertApiKeyDto = t.Object({
-  id: t.Optional(t.String({ minLength: 1 })),
-  userId: t.Optional(t.String({ minLength: 1 })),
-  name: t.String({ minLength: 1, maxLength: 255 }),
-  expiresAt: t.Optional(t.Date()),
-  permissions: t.Optional(t.Array(t.String())),
-  ipWhitelist: t.Optional(t.Array(t.String())),
-  metadata: t.Optional(t.Any()),
-});
+export const UpsertApiKeyDto = t.Intersect([
+  UpsertBaseDto,
+  t.Object({
+    userId: t.Optional(t.String({ minLength: 1 })),
+    name: t.String({ minLength: 1, maxLength: 255 }),
+    expiresAt: t.Optional(t.Date()),
+    permissions: t.Optional(t.Array(t.String())),
+    ipWhitelist: t.Optional(t.Array(t.String())),
+    metadata: t.Optional(t.Any()),
+  }),
+]);
 
-export const ApiKeyListQueryDto = t.Object({
-  take: PaginationReqDto.properties.take,
-  skip: PaginationReqDto.properties.skip,
-  userId: t.Optional(t.String()),
-  userIds: t.Optional(t.Array(t.String())),
-  status: t.Optional(t.Enum(ApiKeyStatus)),
-  search: DtoFields.search,
-});
+export const ApiKeyListQueryDto = t.Intersect([
+  PaginationReqDto,
+  UserFilterDto,
+  t.Object({
+    status: t.Optional(t.Enum(ApiKeyStatus)),
+    search: DtoFields.search,
+  }),
+]);
 
 export const ApiKeyResponseDto = t.Object({
   id: t.String(),
@@ -38,13 +48,7 @@ export const ApiKeyResponseDto = t.Object({
 export const ApiKeyDetailResponseDto = t.Intersect([
   ApiKeyResponseDto,
   t.Object({
-    user: t.Optional(
-      t.Object({
-        id: t.String(),
-        email: t.String(),
-        name: t.Nullable(t.String()),
-      }),
-    ),
+    user: t.Optional(UserInfoDto),
     metadata: t.Nullable(t.Any()),
     usage: t.Optional(
       t.Object({
@@ -55,10 +59,7 @@ export const ApiKeyDetailResponseDto = t.Intersect([
   }),
 ]);
 
-export const ApiKeyPaginatedResponseDto = t.Object({
-  docs: t.Array(ApiKeyResponseDto),
-  count: t.Number(),
-});
+export const ApiKeyPaginatedResponseDto = PaginatedDto(ApiKeyResponseDto);
 
 export const ApiKeyCreatedResponseDto = t.Object({
   id: t.String(),
@@ -70,7 +71,6 @@ export const ApiKeyCreatedResponseDto = t.Object({
 });
 
 export type UpsertApiKeyParams = typeof UpsertApiKeyDto.static;
-export type ApiKeyListQueryParams = typeof ApiKeyListQueryDto.static & {
-  currentUserId: string;
-  hasViewPermission: boolean;
-};
+export type ApiKeyListQueryParams = WithPermissionContext<
+  typeof ApiKeyListQueryDto.static
+>;

@@ -1,6 +1,13 @@
 import { t } from 'elysia';
 import { NotificationStatus, NotificationType } from 'src/generated';
-import { DtoFields, PaginationReqDto } from 'src/share';
+import {
+  DtoFields,
+  PaginatedDto,
+  PaginationReqDto,
+  UserFilterDto,
+  UserInfoDto,
+  type WithPermissionContext,
+} from 'src/share';
 
 export const CreateNotificationDto = t.Object({
   userId: t.String({ minLength: 1 }),
@@ -27,40 +34,31 @@ export const NotificationItemDto = t.Object({
   created: t.Date(),
 });
 
-export const PaginateNotificationResDto = t.Object({
-  docs: t.Array(NotificationItemDto),
-  count: t.Number(),
-});
+export const PaginateNotificationResDto = PaginatedDto(NotificationItemDto);
 
 export const NotificationDetailResDto = t.Intersect([
   NotificationItemDto,
   t.Object({
-    user: t.Optional(
-      t.Object({
-        id: t.String(),
-        email: t.String(),
-      }),
-    ),
+    user: t.Optional(t.Pick(UserInfoDto, ['id', 'email'])),
   }),
 ]);
 
-export const NotificationPaginationDto = t.Object({
-  take: PaginationReqDto.properties.take,
-  skip: PaginationReqDto.properties.skip,
-  userId: t.Optional(t.String()),
-  userIds: t.Optional(t.Array(t.String())),
-  type: t.Optional(t.Enum(NotificationType)),
-  status: t.Optional(t.Enum(NotificationStatus)),
-  search: DtoFields.search,
-});
+export const NotificationPaginationDto = t.Intersect([
+  PaginationReqDto,
+  UserFilterDto,
+  t.Object({
+    type: t.Optional(t.Enum(NotificationType)),
+    status: t.Optional(t.Enum(NotificationStatus)),
+    search: DtoFields.search,
+  }),
+]);
 
 export const MarkNotificationReadDto = t.Object({
   ids: t.Array(t.String({ minLength: 1 }), { minItems: 1 }),
 });
 
-export type NotificationListParams = typeof NotificationPaginationDto.static & {
-  currentUserId: string;
-  hasViewPermission: boolean;
-};
+export type NotificationListParams = WithPermissionContext<
+  typeof NotificationPaginationDto.static
+>;
 
 export type CreateNotificationParams = typeof CreateNotificationDto.static;

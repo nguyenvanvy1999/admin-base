@@ -1,19 +1,21 @@
 import { t } from 'elysia';
-import { DtoFields } from 'src/share';
+import { DtoFields, UpsertBaseDto } from 'src/share';
 
 export const RolePlayerDto = t.Object({
   playerId: t.String(),
   expiresAt: t.Nullable(t.String()),
 });
 
-export const UpsertRoleDto = t.Object({
-  id: t.Optional(t.String()),
-  enabled: t.Boolean({ default: true }),
-  title: t.String({ minLength: 3 }),
-  description: t.Nullable(t.Optional(t.String())),
-  permissionIds: t.Array(t.String(), { minItems: 1 }),
-  players: t.Array(RolePlayerDto, { minItems: 0 }),
-});
+export const UpsertRoleDto = t.Intersect([
+  UpsertBaseDto,
+  t.Object({
+    enabled: t.Boolean({ default: true }),
+    title: t.String({ minLength: 3 }),
+    description: t.Nullable(t.Optional(t.String())),
+    permissionIds: t.Array(t.String(), { minItems: 1 }),
+    players: t.Array(RolePlayerDto, { minItems: 0 }),
+  }),
+]);
 
 export const PaginateRoleResDto = t.Array(
   t.Intersect([

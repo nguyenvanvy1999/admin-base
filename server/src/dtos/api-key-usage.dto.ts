@@ -1,31 +1,35 @@
 import { t } from 'elysia';
-import { PaginationReqDto } from 'src/share';
+import {
+  DateRangeStartEndDto,
+  PaginatedDto,
+  PaginationReqDto,
+  type WithPermissionContext,
+} from 'src/share';
 
-export const ApiKeyUsageFilterDto = t.Object({
-  apiKeyId: t.Optional(t.String({ minLength: 1 })),
-  userId: t.Optional(t.String({ minLength: 1 })),
-  method: t.Optional(t.String({ minLength: 1 })),
-  endpoint: t.Optional(t.String({ minLength: 1 })),
-  statusCode: t.Optional(t.Integer()),
-  startDate: t.Optional(t.Date({ format: 'date-time' })),
-  endDate: t.Optional(t.Date({ format: 'date-time' })),
-  ip: t.Optional(t.String({ minLength: 1 })),
-});
-export type IApiKeyUsageFilter = typeof ApiKeyUsageFilterDto.static & {
-  currentUserId: string;
-  hasViewPermission: boolean;
-};
-export const ApiKeyUsageListQueryDto = t.Intersect([
+export const ApiKeyUsageFilterDto = t.Intersect([
   t.Object({
-    take: PaginationReqDto.properties.take,
-    skip: PaginationReqDto.properties.skip,
+    apiKeyId: t.Optional(t.String({ minLength: 1 })),
+    userId: t.Optional(t.String({ minLength: 1 })),
+    method: t.Optional(t.String({ minLength: 1 })),
+    endpoint: t.Optional(t.String({ minLength: 1 })),
+    statusCode: t.Optional(t.Integer()),
+    ip: t.Optional(t.String({ minLength: 1 })),
   }),
+  DateRangeStartEndDto,
+]);
+
+export type IApiKeyUsageFilter = WithPermissionContext<
+  typeof ApiKeyUsageFilterDto.static
+>;
+
+export const ApiKeyUsageListQueryDto = t.Intersect([
+  PaginationReqDto,
   ApiKeyUsageFilterDto,
 ]);
-export type IApiKeyUsageListQuery = typeof ApiKeyUsageListQueryDto.static & {
-  currentUserId: string;
-  hasViewPermission: boolean;
-};
+
+export type IApiKeyUsageListQuery = WithPermissionContext<
+  typeof ApiKeyUsageListQueryDto.static
+>;
 
 export const ApiKeyUsageResponseDto = t.Object({
   id: t.String(),
@@ -38,10 +42,9 @@ export const ApiKeyUsageResponseDto = t.Object({
   timestamp: t.Date(),
 });
 
-export const ApiKeyUsagePaginatedResponseDto = t.Object({
-  docs: t.Array(ApiKeyUsageResponseDto),
-  count: t.Number(),
-});
+export const ApiKeyUsagePaginatedResponseDto = PaginatedDto(
+  ApiKeyUsageResponseDto,
+);
 
 export const ApiKeyUsageStatsResponseDto = t.Object({
   totalRequests: t.Number(),

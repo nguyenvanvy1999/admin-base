@@ -52,3 +52,54 @@ export const DtoFields = {
     }),
   ),
 };
+
+export const UpsertBaseDto = t.Object({
+  id: t.Optional(t.String({ minLength: 1 })),
+});
+
+export const UserInfoDto = t.Object({
+  id: t.String(),
+  email: t.String(),
+  name: t.Nullable(t.String()),
+});
+
+export const UserFilterDto = t.Object({
+  userId: t.Optional(t.String()),
+  userIds: t.Optional(t.Array(t.String())),
+});
+
+export const DateRangeStartEndDto = t.Object({
+  startDate: t.Optional(t.Date({ format: 'date-time' })),
+  endDate: t.Optional(t.Date({ format: 'date-time' })),
+});
+
+export const DateRangeOccurredAtDto = t.Object({
+  occurredAt0: t.Optional(
+    t.Date({
+      format: 'date-time',
+      example: '2023-10-01T00:00:00.000Z',
+    }),
+  ),
+  occurredAt1: t.Optional(
+    t.Date({
+      format: 'date-time',
+      example: '2023-10-10T23:59:59.999Z',
+    }),
+  ),
+});
+
+export const DateRangeCreatedDto = t.Object({
+  created0: t.Date({
+    format: 'date-time',
+    example: '2023-10-01T00:00:00.000Z',
+  }),
+  created1: t.Date({
+    format: 'date-time',
+    example: '2023-10-10T23:59:59.999Z',
+  }),
+});
+
+export type WithPermissionContext<T> = T & {
+  currentUserId: string;
+  hasViewPermission: boolean;
+};

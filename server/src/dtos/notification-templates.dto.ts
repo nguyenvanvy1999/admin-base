@@ -1,17 +1,24 @@
 import { t } from 'elysia';
 import { NotificationType } from 'src/generated';
-import { DtoFields, PaginationReqDto } from 'src/share';
+import {
+  DtoFields,
+  PaginatedDto,
+  PaginationReqDto,
+  UpsertBaseDto,
+} from 'src/share';
 
-export const UpsertNotificationTemplateDto = t.Object({
-  id: t.Optional(t.String()),
-  code: t.String({ minLength: 1 }),
-  name: t.String({ minLength: 1 }),
-  subject: t.Optional(t.String()),
-  body: t.String({ minLength: 1 }),
-  type: t.Enum(NotificationType),
-  variables: t.Optional(t.Any()),
-  enabled: t.Optional(t.Boolean()),
-});
+export const UpsertNotificationTemplateDto = t.Intersect([
+  UpsertBaseDto,
+  t.Object({
+    code: t.String({ minLength: 1 }),
+    name: t.String({ minLength: 1 }),
+    subject: t.Optional(t.String()),
+    body: t.String({ minLength: 1 }),
+    type: t.Enum(NotificationType),
+    variables: t.Optional(t.Any()),
+    enabled: t.Optional(t.Boolean()),
+  }),
+]);
 
 export const NotificationTemplateItemDto = t.Object({
   id: t.String(),
@@ -26,10 +33,9 @@ export const NotificationTemplateItemDto = t.Object({
   modified: t.Date(),
 });
 
-export const PaginateNotificationTemplateResDto = t.Object({
-  docs: t.Array(NotificationTemplateItemDto),
-  count: t.Number(),
-});
+export const PaginateNotificationTemplateResDto = PaginatedDto(
+  NotificationTemplateItemDto,
+);
 
 export const NotificationTemplateDetailResDto = t.Intersect([
   NotificationTemplateItemDto,
@@ -42,13 +48,14 @@ export const NotificationTemplateDetailResDto = t.Intersect([
   }),
 ]);
 
-export const NotificationTemplatePaginationDto = t.Object({
-  take: PaginationReqDto.properties.take,
-  skip: PaginationReqDto.properties.skip,
-  type: t.Optional(t.Enum(NotificationType)),
-  enabled: t.Optional(t.Boolean()),
-  search: DtoFields.search,
-});
+export const NotificationTemplatePaginationDto = t.Intersect([
+  PaginationReqDto,
+  t.Object({
+    type: t.Optional(t.Enum(NotificationType)),
+    enabled: t.Optional(t.Boolean()),
+    search: DtoFields.search,
+  }),
+]);
 
 export type NotificationTemplateListParams =
   typeof NotificationTemplatePaginationDto.static;

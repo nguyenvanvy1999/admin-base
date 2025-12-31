@@ -1,26 +1,22 @@
 import { t } from 'elysia';
+import { DateRangeCreatedDto, type WithPermissionContext } from 'src/share';
 
-export const SessionPaginateDto = t.Object({
-  take: t.Integer({ minimum: 1, example: 20 }),
-  cursor: t.Optional(t.String({ example: '123' })),
-  revoked: t.Optional(t.Boolean()),
-  ip: t.Optional(t.String()),
-  userIds: t.Optional(
-    t.Array(t.String(), {
-      minItems: 1,
-      maxItems: 100,
-      description: 'Filter by any of the provided user ids.',
-    }),
-  ),
-  created0: t.Date({
-    format: 'date-time',
-    example: '2023-10-01T00:00:00.000Z',
+export const SessionPaginateDto = t.Intersect([
+  t.Object({
+    take: t.Integer({ minimum: 1, example: 20 }),
+    cursor: t.Optional(t.String({ example: '123' })),
+    revoked: t.Optional(t.Boolean()),
+    ip: t.Optional(t.String()),
+    userIds: t.Optional(
+      t.Array(t.String(), {
+        minItems: 1,
+        maxItems: 100,
+        description: 'Filter by any of the provided user ids.',
+      }),
+    ),
   }),
-  created1: t.Date({
-    format: 'date-time',
-    example: '2023-10-10T23:59:59.999Z',
-  }),
-});
+  DateRangeCreatedDto,
+]);
 
 export const SessionPagingResDto = t.Object({
   docs: t.Array(
@@ -43,7 +39,6 @@ export const SessionPagingResDto = t.Object({
   nextCursor: t.Optional(t.String()),
 });
 
-export type SessionListParams = typeof SessionPaginateDto.static & {
-  currentUserId: string;
-  hasViewPermission: boolean;
-};
+export type SessionListParams = WithPermissionContext<
+  typeof SessionPaginateDto.static
+>;
