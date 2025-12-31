@@ -75,5 +75,4 @@ export type AuditLogListParams = typeof AuditLogListQueryDto.static & {
   hasViewPermission: boolean;
 };
 
-export type AuditLogItem = typeof AuditLogItemDto.static;
 export type AuditLogListRes = typeof AuditLogListResDto.static;

@@ -16,17 +16,15 @@ import { executeListQuery } from 'src/services/shared/utils/list-query.util';
 import { IdUtil, LOG_LEVEL } from 'src/share';
 import { ctxStore, getIpAndUa } from 'src/share/context/request-context';
 import type { EnrichedAuditLogEntry } from 'src/share/type';
-import type { EntityType } from './types';
 import type {
   CudCreatePayload,
   CudDeletePayload,
   CudUpdatePayload,
-} from './types/cud-types';
-import type {
+  EntityType,
   InternalEventPayload,
   InternalEventType,
-} from './types/internal-types';
-import type { SecurityEventPayloadBase } from './types/security-types';
+  SecurityEventPayloadBase,
+} from './types';
 
 export class AuditLogsService {
   async resolveSecurityEvent(
@@ -108,22 +106,6 @@ export class AuditLogsService {
     });
   }
 
-  async pushOther<TEventType extends InternalEventType>(
-    payload: InternalEventPayload<TEventType>,
-    options?: {
-      logType?: LogType;
-      visibility?: AuditLogVisibility;
-      subjectUserId?: string;
-    },
-  ): Promise<void> {
-    const context = this.getContext();
-    const enrichedEntry = this.enrichOtherEntry(payload, context, options);
-
-    await auditLogQueue.add(`other-${payload.eventType}`, enrichedEntry, {
-      jobId: enrichedEntry.logId,
-    });
-  }
-
   async pushBatch(
     entries: Array<
       | {
@@ -135,7 +117,7 @@ export class AuditLogsService {
         }
       | {
           type: 'security';
-          payload: SecurityEventPayloadBase<SecurityEventType>;
+          payload: SecurityEventPayloadBase;
         }
       | { type: 'other'; payload: InternalEventPayload<InternalEventType> }
     >,
@@ -319,7 +301,7 @@ export class AuditLogsService {
   }
 
   private enrichSecurityEntry(
-    payload: SecurityEventPayloadBase<SecurityEventType>,
+    payload: SecurityEventPayloadBase,
     context: ReturnType<typeof this.getContext>,
     options?: {
       visibility?: AuditLogVisibility;
@@ -413,7 +395,7 @@ export class AuditLogsService {
   }
 
   private getDefaultSecurityVisibility(
-    payload: SecurityEventPayloadBase<SecurityEventType>,
+    payload: SecurityEventPayloadBase,
   ): AuditLogVisibility {
     const userVisibleEvents: SecurityEventType[] = [
       SecurityEventType.login_success,
@@ -466,7 +448,7 @@ export class AuditLogsService {
   }
 
   private generateSecurityDescription(
-    payload: SecurityEventPayloadBase<SecurityEventType>,
+    payload: SecurityEventPayloadBase,
   ): string {
     return `Security event: ${payload.eventType}`;
   }

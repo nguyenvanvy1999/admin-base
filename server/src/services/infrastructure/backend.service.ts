@@ -287,7 +287,5 @@ export class BackendAppService {
   }
 }
 
-export const backendInitService = new BackendInitService();
-export const backendClusterService = new BackendClusterService();
 export const backendServerService = new BackendServerService();
 export const backendAppService = new BackendAppService();

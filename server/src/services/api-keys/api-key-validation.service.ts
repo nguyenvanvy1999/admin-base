@@ -95,36 +95,6 @@ export class ApiKeyValidationService {
     return { valid: true, context };
   }
 
-  validateIp(ip: string | null, whitelist: string[] | null): boolean {
-    if (!ip) {
-      return false;
-    }
-
-    // If no whitelist, allow all IPs
-    if (!whitelist || whitelist.length === 0) {
-      return true;
-    }
-
-    // Check if IP is in whitelist (simple check, can be enhanced with CIDR support)
-    return whitelist.includes(ip);
-  }
-
-  validatePermission(
-    requiredPermission: string,
-    grantedPermissions: string[] | null,
-  ): boolean {
-    // If no permissions specified, allow all
-    if (!grantedPermissions || grantedPermissions.length === 0) {
-      return true;
-    }
-
-    // Check exact match or wildcard
-    return (
-      grantedPermissions.includes(requiredPermission) ||
-      grantedPermissions.includes('*')
-    );
-  }
-
   async logUsage(
     apiKeyId: string,
     context: {

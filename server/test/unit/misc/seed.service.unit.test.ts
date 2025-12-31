@@ -64,7 +64,7 @@ describe('SeedService', () => {
         return await cb(mockDb);
       }
       if (callback) {
-        return await callback(mockDb);
+        return callback(mockDb);
       }
       return mockDb;
     });

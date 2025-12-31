@@ -48,15 +48,3 @@ export const ApiKeyUsageStatsResponseDto = t.Object({
   requestsByEndpoint: t.Record(t.String(), t.Number()),
   requestsByStatusCode: t.Record(t.Number(), t.Number()),
 });
-
-export type ApiKeyUsageListQueryParams =
-  typeof ApiKeyUsageListQueryDto.static & {
-    currentUserId: string;
-    hasViewPermission: boolean;
-  };
-
-export type ApiKeyUsageStatsQueryParams =
-  typeof ApiKeyUsageStatsQueryDto.static & {
-    currentUserId: string;
-    hasViewPermission: boolean;
-  };

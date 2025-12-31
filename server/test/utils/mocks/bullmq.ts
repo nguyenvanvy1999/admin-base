@@ -38,17 +38,3 @@ export function createBullmqMock(): BullmqMock {
 }
 
 export const bullmqMock: BullmqMock = createBullmqMock();
-
-export interface QueueInstanceMock {
-  add: ReturnType<typeof mock>;
-  addBulk: ReturnType<typeof mock>;
-  getWaiting: ReturnType<typeof mock>;
-  getJobs: ReturnType<typeof mock>;
-  getJob: ReturnType<typeof mock>;
-  remove: ReturnType<typeof mock>;
-  close: ReturnType<typeof mock>;
-  pause: ReturnType<typeof mock>;
-  resume: ReturnType<typeof mock>;
-  name: string;
-  opts: unknown;
-}

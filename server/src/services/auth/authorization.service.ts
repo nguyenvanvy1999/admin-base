@@ -44,11 +44,6 @@ export interface AuthorizeOptions<TResource> {
   onDeny?: (args: { ctx: PolicyCtx<TResource> }) => void | Promise<void>;
 }
 
-export type PermissionKey<
-  TDomain extends string = string,
-  TAction extends string = string,
-> = Extract<UPermission, `${TDomain}.${TAction}`>;
-
 export function has<T extends UPermission>(key: T): Predicate<any> {
   return Object.assign(
     (ctx: PolicyCtx): boolean => ctx.currentUser.permissions.includes(key),

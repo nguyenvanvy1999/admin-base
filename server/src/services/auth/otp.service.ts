@@ -23,8 +23,8 @@ import {
   settingsService,
 } from 'src/services/settings/settings.service';
 import { ctxStore, EmailType, IdUtil, PurposeVerify } from 'src/share';
+import type { LockingService } from '../misc';
 import { lockingService } from '../misc';
-import type { LockingService } from '../misc/locking.service';
 
 export class OtpService {
   constructor(
