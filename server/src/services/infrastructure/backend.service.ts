@@ -24,8 +24,6 @@ import {
   fileController,
   i18nAdminController,
   ipWhitelistController,
-  mfaBackupController,
-  mfaController,
   miscController,
   notificationController,
   notificationTemplatesAdminController,
@@ -208,8 +206,6 @@ export class BackendServerService {
           .use(captchaController)
           .use(fileController)
           .use(oauthController)
-          .use(mfaController)
-          .use(mfaBackupController)
           .use(sessionController)
           .use(notificationController)
           .use(ipWhitelistController)

@@ -6,7 +6,6 @@ export { captchaController } from './captcha';
 export { fileController } from './file';
 export { i18nAdminController } from './i18n';
 export { ipWhitelistController } from './ip-whitelist';
-export { mfaBackupController, mfaController } from './mfa';
 export { miscController } from './misc/controllers';
 export { notificationController } from './notification';
 export { notificationTemplatesAdminController } from './notification-templates';

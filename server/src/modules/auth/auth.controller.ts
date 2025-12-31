@@ -1,12 +1,8 @@
 import { Elysia, t } from 'elysia';
 import {
   ChangePasswordRequestDto,
-  ConfirmMfaLoginRequestDto,
   ForgotPasswordRequestDto,
-  LoginRequestDto,
   LoginResDto,
-  LoginResponseDto,
-  MfaLoginRequestDto,
   OtpResDto,
   RefreshTokenRequestDto,
   RegisterRequestDto,
@@ -26,57 +22,7 @@ import {
 
 const authRateLimitedRoutes = new Elysia()
   .use(rateLimit())
-  .post(
-    '/login',
-    async ({ body }) => castToRes(await authService.login(body)),
-    {
-      body: LoginRequestDto,
-      detail: {
-        description: 'Login with email and password',
-        summary: 'Login a user',
-      },
-      response: {
-        200: ResWrapper(LoginResponseDto),
-        400: ErrorResDto,
-        404: ErrorResDto,
-        500: ErrorResDto,
-      },
-    },
-  )
-  .post(
-    '/login/mfa/confirm',
-    async ({ body }) => castToRes(await authService.confirmMfaLogin(body)),
-    {
-      body: ConfirmMfaLoginRequestDto,
-      detail: {
-        description: 'Confirm MFA login with OTP (legacy API)',
-        summary: 'Confirm MFA login',
-      },
-      response: {
-        200: ResWrapper(LoginResDto),
-        400: ErrorResDto,
-        404: ErrorResDto,
-        500: ErrorResDto,
-      },
-    },
-  )
-  .post(
-    '/login/mfa',
-    async ({ body }) => castToRes(await authService.loginWithMfa(body)),
-    {
-      body: MfaLoginRequestDto,
-      detail: {
-        description: 'Login with MFA token and OTP',
-        summary: 'Login with MFA',
-      },
-      response: {
-        200: ResWrapper(LoginResDto),
-        400: ErrorResDto,
-        404: ErrorResDto,
-        500: ErrorResDto,
-      },
-    },
-  )
+
   .post(
     '/refresh-token',
     async ({ body }) => castToRes(await authService.refreshToken(body)),

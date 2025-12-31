@@ -1,21 +1,11 @@
 import dayjs from 'dayjs';
-import { authenticator } from 'otplib';
-import {
-  type IMFACache,
-  mfaCache,
-  mfaSetupTokenByUserCache,
-  mfaSetupTokenCache,
-} from 'src/config/cache';
+
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import type {
   ChangePasswordParams,
-  ConfirmMfaLoginParams,
   ForgotPasswordParams,
   ILoginRes,
-  ILoginResponse,
-  LoginParams,
-  LoginWithMfaParams,
   LogoutParams,
   RefreshTokenParams,
   RegisterParams,
@@ -25,7 +15,6 @@ import {
   AuditLogVisibility,
   SecurityEventSeverity,
   SecurityEventType,
-  type User,
   UserStatus,
 } from 'src/generated';
 import {
@@ -45,7 +34,6 @@ import {
   ctxStore,
   ErrCode,
   getIpAndUa,
-  IdUtil,
   type ITokenPayload,
   isExpired,
   LoginResType,
@@ -61,11 +49,10 @@ import {
   type UserUtilService,
   userUtilService,
 } from './auth-util.service';
-import { type MfaService, mfaService } from './mfa.service';
+
 import { type OtpService, otpService } from './otp.service';
 import { type PasswordService, passwordService } from './password.service';
 import {
-  type SecurityCheckResult,
   type SecurityMonitorService,
   securityMonitorService,
 } from './security-monitor.service';
@@ -78,241 +65,25 @@ export class AuthService {
       env: IEnv;
       passwordService: PasswordService;
       tokenService: TokenService;
-      mfaService: MfaService;
       otpService: OtpService;
       sessionService: SessionService;
       settingService: SettingsService;
       auditLogService: AuditLogsService;
       userUtilService: UserUtilService;
-      mfaCache: IMFACache;
-      authenticator: typeof authenticator;
       securityMonitorService: SecurityMonitorService;
     } = {
       db,
       env,
       passwordService,
       tokenService,
-      mfaService,
       otpService,
       sessionService,
       settingService: settingsService,
       auditLogService: auditLogsService,
       userUtilService,
-      mfaCache,
-      authenticator,
       securityMonitorService,
     },
   ) {}
-
-  async login(params: LoginParams): Promise<ILoginResponse> {
-    const { email, password } = params;
-    const { clientIp, userAgent } = getIpAndUa();
-
-    const user = await this.deps.userUtilService.findUserForLogin(email);
-
-    const { enbAttempt, enbExpired } =
-      await this.deps.settingService.password();
-
-    if (enbAttempt) {
-      this.deps.passwordService.validateAttempt(
-        user,
-        this.deps.env.PASSWORD_MAX_ATTEMPT,
-      );
-    }
-
-    const passwordValid = await this.deps.passwordService.verifyAndTrack(
-      password,
-      user,
-    );
-
-    if (!passwordValid) {
-      await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.medium,
-          method: 'email',
-          email: user.email,
-          error: 'password_mismatch',
-        },
-        {
-          subjectUserId: user.id,
-          userId: user.id,
-          visibility: AuditLogVisibility.actor_and_subject,
-        },
-      );
-      throw new BadReqErr(ErrCode.PasswordNotMatch);
-    }
-
-    if (user.status !== UserStatus.active) {
-      await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.medium,
-          method: 'email',
-          email: user.email,
-          error: 'user_not_active',
-        },
-        { subjectUserId: user.id, userId: user.id },
-      );
-      throw new BadReqErr(ErrCode.UserNotActive);
-    }
-
-    if (enbExpired) {
-      this.deps.passwordService.validateExpiration(user);
-    }
-
-    const securityResult = await this.deps.securityMonitorService.evaluateLogin(
-      {
-        userId: user.id,
-        method: 'email',
-      },
-    );
-
-    if (securityResult.action === 'block') {
-      await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.high,
-          method: 'email',
-          email: user.email,
-          error: 'security_blocked',
-        },
-        { subjectUserId: user.id, userId: user.id },
-      );
-      throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
-    }
-
-    if (!user.mfaTotpEnabled) {
-      const mfaRequired = await this.deps.settingService.enbMfaRequired();
-      if (mfaRequired) {
-        return this.handleMfaSetupRequired(user, securityResult);
-      }
-    } else {
-      return this.handleMfaLogin(user, securityResult);
-    }
-
-    return this.handleSuccessfulLogin(
-      user,
-      clientIp,
-      userAgent,
-      securityResult,
-    );
-  }
-
-  private async handleSuccessfulLogin(
-    user: Parameters<typeof this.deps.userUtilService.completeLogin>[0],
-    clientIp: string,
-    userAgent: string,
-    security?: SecurityCheckResult,
-  ): Promise<ILoginResponse> {
-    const loginRes = await this.deps.userUtilService.completeLogin(
-      user,
-      clientIp,
-      userAgent,
-      security,
-    );
-
-    await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.login_success,
-        severity: SecurityEventSeverity.low,
-        method: 'email',
-        email: user.email ?? '',
-        isNewDevice: security?.isNewDevice ?? false,
-      },
-      {
-        subjectUserId: user.id,
-        userId: user.id,
-        sessionId: loginRes.sessionId,
-      },
-    );
-
-    return loginRes;
-  }
-
-  private async handleMfaLogin(
-    user: Pick<
-      User,
-      'id' | 'mfaTotpEnabled' | 'totpSecret' | 'backupCodes' | 'backupCodesUsed'
-    >,
-    security?: SecurityCheckResult,
-  ): Promise<ILoginResponse> {
-    const loginToken = IdUtil.token16();
-    const mfaToken = await this.deps.mfaService.createSession({
-      loginToken,
-      user,
-      security,
-    });
-
-    const { sessionId } = ctxStore.getStore() ?? {};
-    await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.mfa_challenge_started,
-        severity: SecurityEventSeverity.low,
-        method: 'email',
-        metadata: { stage: 'challenge', from: 'login' },
-      },
-      {
-        subjectUserId: user.id,
-        userId: user.id,
-        sessionId,
-        visibility: AuditLogVisibility.actor_and_subject,
-      },
-    );
-
-    return {
-      type: LoginResType.MFA_CONFIRM,
-      mfaToken,
-    } as ILoginResponse;
-  }
-
-  private async handleMfaSetupRequired(
-    user: { id: string },
-    security?: SecurityCheckResult,
-  ): Promise<ILoginResponse> {
-    const { clientIp, userAgent } = getIpAndUa();
-
-    const setupToken = IdUtil.token16();
-    const createdAt = Date.now();
-
-    const oldToken = await mfaSetupTokenByUserCache.get(user.id);
-    if (oldToken) {
-      await mfaSetupTokenCache.del(oldToken);
-    }
-
-    await mfaSetupTokenByUserCache.set(user.id, setupToken);
-    await mfaSetupTokenCache.set(setupToken, {
-      userId: user.id,
-      clientIp,
-      userAgent,
-      createdAt,
-      security,
-    });
-
-    await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.mfa_setup_started,
-        severity: SecurityEventSeverity.low,
-        method: 'email',
-        stage: 'required_before_login',
-      },
-      {
-        subjectUserId: user.id,
-        userId: user.id,
-      },
-    );
-
-    return {
-      type: LoginResType.MFA_SETUP,
-      setupToken,
-    } as ILoginResponse;
-  }
 
   async register(params: RegisterParams): Promise<{ otpToken: string } | null> {
     const { email, password } = params;
@@ -626,40 +397,6 @@ export class AuthService {
     });
 
     await this.deps.sessionService.revoke(id);
-  }
-
-  async confirmMfaLogin(params: ConfirmMfaLoginParams): Promise<ILoginRes> {
-    const { mfaToken, loginToken, otp } = params;
-
-    const cachedData = await this.deps.mfaCache.get(mfaToken);
-    if (!cachedData || cachedData.loginToken !== loginToken) {
-      const { userId, sessionId } = ctxStore.getStore() ?? {};
-      await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.medium,
-          method: 'email',
-          email: '',
-          error: 'mfa_session_expired',
-        },
-        {
-          visibility: AuditLogVisibility.admin_only,
-          userId,
-          sessionId,
-        },
-      );
-      throw new BadReqErr(ErrCode.SessionExpired);
-    }
-
-    return this.deps.mfaService.verifyAndCompleteLogin({
-      mfaToken,
-      otp,
-    });
-  }
-
-  loginWithMfa(params: LoginWithMfaParams): Promise<ILoginRes> {
-    return this.deps.mfaService.verifyAndCompleteLogin(params);
   }
 
   async getProfile(userId: string) {

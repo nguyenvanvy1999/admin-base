@@ -1,9 +1,11 @@
-import { createHash, createHmac } from 'crypto';
+import { createHash, createHmac, randomBytes, randomUUID } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
+import { authenticator } from 'otplib';
 import { db, type IDb } from 'src/config/db';
 import type {
+  AuthChallengeRequestParams,
   GoogleLoginParams,
-  ILoginRes,
+  IAuthResponse,
   LinkTelegramParams,
 } from 'src/dtos/auth.dto';
 import {
@@ -24,18 +26,26 @@ import {
   type SecurityMonitorService,
   securityMonitorService,
 } from 'src/services/auth/security-monitor.service';
+import { settingsService } from 'src/services/settings/settings.service';
 import {
   BadReqErr,
   CoreErr,
   DB_PREFIX,
   defaultRoles,
   ErrCode,
-  getIpAndUa,
   IdUtil,
+  NotFoundErr,
   OAUTH,
   type PrismaTx,
   UnAuthErr,
 } from 'src/share';
+import { authFlowService } from './auth-flow.service';
+import { authTxService } from './auth-tx.service';
+import {
+  hashBackupCode,
+  parseBackupCodes,
+  parseUsedBackupCodes,
+} from './mfa.service';
 
 export class OAuthService {
   constructor(
@@ -49,7 +59,10 @@ export class OAuthService {
       crypto: {
         createHash: typeof createHash;
         createHmac: typeof createHmac;
+        randomBytes: typeof randomBytes;
+        randomUUID: typeof randomUUID;
       };
+      authenticator: typeof authenticator;
     } = {
       db,
       oauth2ClientFactory: (clientId: string) => new OAuth2Client(clientId),
@@ -57,14 +70,22 @@ export class OAuthService {
       auditLogService: auditLogsService,
       securityMonitorService,
       idUtil: IdUtil,
-      crypto: { createHash, createHmac },
+      crypto: { createHash, createHmac, randomBytes, randomUUID },
+      authenticator,
     },
   ) {}
 
-  async googleLogin(params: GoogleLoginParams): Promise<ILoginRes> {
-    const { idToken } = params;
-    const { clientIp, userAgent } = getIpAndUa();
+  async googleLogin(
+    params: GoogleLoginParams & { ip?: string; userAgent?: string },
+  ): Promise<IAuthResponse> {
+    if (!params?.idToken) {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'idToken is required',
+      });
+    }
+    const { idToken, ip = '', userAgent = '' } = params;
 
+    // 1. Verify Google ID token and get user info
     const provider = await this.deps.db.authProvider.findUnique({
       where: { code: OAUTH.GOOGLE },
       select: { id: true, enabled: true, config: true },
@@ -77,7 +98,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'oauth',
+          method: 'email',
           email: '',
           error: 'provider_not_found',
         },
@@ -87,20 +108,19 @@ export class OAuthService {
     }
 
     const googleClient = this.deps.oauth2ClientFactory(clientId);
-
     const ticket = await googleClient.verifyIdToken({
       idToken,
       audience: clientId,
     });
-
     const payload = ticket.getPayload();
+
     if (!payload) {
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'oauth',
+          method: 'email',
           email: '',
           error: 'invalid_google_account',
         },
@@ -118,7 +138,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'oauth',
+          method: 'email',
           email: '',
           error: 'google_account_not_found',
         },
@@ -127,12 +147,14 @@ export class OAuthService {
       throw new UnAuthErr(ErrCode.GoogleAccountNotFound);
     }
 
+    // 2. Find or create user
     let user = await this.deps.db.user.findUnique({
       where: { email },
       include: { roles: true },
     });
 
     if (user) {
+      // Link Google account if not already linked
       const authExists = await this.deps.db.userAuthProvider.findFirst({
         where: { providerCode: OAUTH.GOOGLE, providerId: googleId },
         select: { id: true },
@@ -154,17 +176,15 @@ export class OAuthService {
             category: 'security',
             eventType: SecurityEventType.login_success,
             severity: SecurityEventSeverity.low,
-            method: 'oauth',
+            method: 'email',
             email,
             metadata: { linked: true },
           },
-          {
-            subjectUserId: user.id,
-            userId: user.id,
-          },
+          { subjectUserId: user.id, userId: user.id },
         );
       }
     } else {
+      // Create new user with Google OAuth
       user = await this.deps.db.$transaction(async (tx: PrismaTx) => {
         const userId = this.deps.idUtil.dbId(DB_PREFIX.USER);
         const createdUser = await tx.user.create({
@@ -202,16 +222,19 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.register_completed,
           severity: SecurityEventSeverity.low,
-          method: 'oauth',
+          method: 'email',
           email,
         },
-        {
-          subjectUserId: user.id,
-          userId: user.id,
-        },
+        { subjectUserId: user.id, userId: user.id },
       );
     }
 
+    // 3. Check user status
+    if (user.status !== UserStatus.active) {
+      throw new BadReqErr(ErrCode.UserNotActive);
+    }
+
+    // 4. Evaluate security risk
     const securityResult = await this.deps.securityMonitorService.evaluateLogin(
       {
         userId: user.id,
@@ -225,45 +248,373 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.high,
-          method: 'oauth',
-          email,
+          method: 'email',
+          email: email || '',
           error: 'security_blocked',
+        },
+        { subjectUserId: user.id, userId: user.id },
+      );
+      throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
+    }
+
+    // 5. Create auth transaction
+    const authTx = await authTxService.create(
+      user.id,
+      'PASSWORD_VERIFIED',
+      { ip, ua: userAgent },
+      securityResult,
+    );
+
+    // 6. Determine next step (MFA challenge/enroll or complete login)
+    const mfaRequired = await settingsService.enbMfaRequired();
+    const next = authFlowService.resolveNextStep({
+      user: { mfaTotpEnabled: user.mfaTotpEnabled },
+      mfaRequired,
+    });
+
+    // 7. Handle next step
+    if (next.kind === 'COMPLETE') {
+      await authTxService.delete(authTx.id);
+      const session = await this.deps.userUtilService.completeLogin(
+        user,
+        ip,
+        userAgent,
+        securityResult,
+      );
+
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_success,
+          severity: SecurityEventSeverity.low,
+          method: 'email',
+          email: email || '',
+          isNewDevice: securityResult.isNewDevice ?? false,
+        },
+        {
+          subjectUserId: user.id,
+          userId: user.id,
+          sessionId: session.sessionId,
+        },
+      );
+
+      return { status: 'COMPLETED', session };
+    }
+
+    if (next.kind === 'ENROLL_MFA') {
+      await authTxService.setState(authTx.id, 'CHALLENGE_MFA_ENROLL');
+      return {
+        status: 'CHALLENGE',
+        authTxId: authTx.id,
+        challenge: {
+          type: 'MFA_ENROLL',
+          methods: ['totp'],
+          backupCodesWillBeGenerated: true,
+        },
+      };
+    }
+
+    // MFA challenge required
+    await authTxService.setState(authTx.id, 'CHALLENGE_MFA_REQUIRED');
+
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.mfa_challenge_started,
+        severity: SecurityEventSeverity.low,
+        method: 'email',
+        metadata: { stage: 'challenge', from: 'login' },
+      },
+      {
+        subjectUserId: user.id,
+        userId: user.id,
+        visibility: AuditLogVisibility.actor_and_subject,
+      },
+    );
+
+    return {
+      status: 'CHALLENGE',
+      authTxId: authTx.id,
+      challenge: { type: 'MFA_TOTP', allowBackupCode: true },
+    };
+  }
+
+  async completeChallenge(
+    params: AuthChallengeRequestParams & { ip?: string; userAgent?: string },
+  ): Promise<IAuthResponse> {
+    const { authTxId, type, code, ip = '', userAgent = '' } = params;
+
+    const tx = await authTxService.getOrThrow(authTxId);
+    authTxService.assertBinding(tx, { ip, ua: userAgent });
+
+    if (tx.state !== 'CHALLENGE_MFA_REQUIRED') {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'Invalid auth transaction state',
+      });
+    }
+
+    authTxService.assertChallengeAttemptsAllowed(tx);
+
+    const user = await this.deps.db.user.findUnique({
+      where: { id: tx.userId },
+      select: {
+        id: true,
+        email: true,
+        status: true,
+        created: true,
+        modified: true,
+        roles: { select: { roleId: true } },
+        mfaTotpEnabled: true,
+        totpSecret: true,
+        backupCodes: true,
+        backupCodesUsed: true,
+      },
+    });
+
+    if (!user) throw new NotFoundErr(ErrCode.UserNotFound);
+    if (user.status !== UserStatus.active) {
+      throw new BadReqErr(ErrCode.UserNotActive);
+    }
+
+    let ok = false;
+
+    if (type === 'MFA_TOTP') {
+      if (!user.totpSecret) throw new BadReqErr(ErrCode.MfaBroken);
+      ok = this.deps.authenticator.verify({
+        secret: user.totpSecret,
+        token: code,
+      });
+    } else if (type === 'MFA_BACKUP_CODE') {
+      ok = await this.consumeBackupCode(user, code);
+    }
+
+    if (!ok) {
+      await authTxService.incrementChallengeAttempts(authTxId);
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.mfa_failed,
+          severity: SecurityEventSeverity.medium,
+          method: type === 'MFA_TOTP' ? 'totp' : 'email',
+          error: 'invalid_mfa_code',
         },
         {
           subjectUserId: user.id,
           userId: user.id,
         },
       );
-      throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
+      throw new BadReqErr(
+        type === 'MFA_TOTP' ? ErrCode.InvalidOtp : ErrCode.InvalidBackupCode,
+      );
     }
 
-    const loginRes = await this.deps.userUtilService.completeLogin(
-      user,
-      clientIp ?? '',
-      userAgent ?? '',
-      securityResult,
-    );
+    await authTxService.delete(authTxId);
 
-    const safeEmail = email ?? '';
+    const session = await this.deps.userUtilService.completeLogin(
+      user,
+      ip,
+      userAgent,
+      tx.securityResult,
+    );
 
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
-        eventType: SecurityEventType.login_success,
+        eventType: SecurityEventType.mfa_verified,
         severity: SecurityEventSeverity.low,
-        method: 'oauth',
-        email: safeEmail,
-        isNewDevice: securityResult.isNewDevice ?? false,
-        deviceFingerprint: securityResult.deviceFingerprint ?? undefined,
+        method: type === 'MFA_TOTP' ? 'totp' : 'email',
       },
       {
         subjectUserId: user.id,
         userId: user.id,
-        sessionId: loginRes.sessionId,
+        sessionId: session.sessionId,
       },
     );
 
-    return loginRes;
+    return { status: 'COMPLETED', session };
+  }
+
+  async enrollStart(params: {
+    authTxId: string;
+  }): Promise<{ authTxId: string; enrollToken: string; otpauthUrl: string }> {
+    const { authTxId } = params;
+    const tx = await authTxService.getOrThrow(authTxId);
+
+    if (tx.state !== 'CHALLENGE_MFA_ENROLL') {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'Invalid auth transaction state',
+      });
+    }
+
+    const user = await this.deps.db.user.findUnique({
+      where: { id: tx.userId },
+      select: { id: true, email: true, mfaTotpEnabled: true },
+    });
+
+    if (!user) throw new NotFoundErr(ErrCode.UserNotFound);
+    if (user.mfaTotpEnabled) throw new BadReqErr(ErrCode.MFAHasBeenSetup);
+
+    const tempSecret = this.deps.authenticator.generateSecret().toUpperCase();
+    const otpauthUrl = this.deps.authenticator.keyuri(
+      user.email ?? user.id,
+      'Your App Name',
+      tempSecret,
+    );
+
+    const enrollToken = randomUUID();
+
+    await authTxService.attachEnroll(authTxId, {
+      enrollToken,
+      tempTotpSecret: tempSecret,
+      startedAt: Date.now(),
+    });
+
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.mfa_setup_started,
+        severity: SecurityEventSeverity.low,
+        method: 'totp',
+        stage: 'request',
+      },
+      {
+        subjectUserId: user.id,
+        userId: user.id,
+      },
+    );
+
+    return { authTxId, enrollToken, otpauthUrl };
+  }
+
+  async enrollConfirm(params: {
+    authTxId: string;
+    enrollToken: string;
+    otp: string;
+  }): Promise<IAuthResponse & { backupCodes?: string[] }> {
+    const { authTxId, enrollToken, otp } = params;
+    const tx = await authTxService.getOrThrow(authTxId);
+
+    if (tx.state !== 'CHALLENGE_MFA_ENROLL' || !tx.enroll) {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'Invalid auth transaction state',
+      });
+    }
+
+    if (tx.enroll.enrollToken !== enrollToken) {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'Invalid enroll token',
+      });
+    }
+
+    authTxService.assertChallengeAttemptsAllowed(tx);
+
+    const otpOk = this.deps.authenticator.verify({
+      secret: tx.enroll.tempTotpSecret,
+      token: otp,
+    });
+
+    if (!otpOk) {
+      await authTxService.incrementChallengeAttempts(authTxId);
+      throw new BadReqErr(ErrCode.InvalidOtp);
+    }
+
+    // Generate backup codes
+    const backupCodes = Array.from(
+      { length: 8 },
+      () =>
+        this.deps.crypto
+          .randomBytes(4)
+          .toString('hex')
+          .toUpperCase()
+          .match(/.{1,4}/g)
+          ?.join('-') || '',
+    );
+
+    const hashedCodes = backupCodes.map((code) =>
+      this.deps.crypto.createHash('sha256').update(code).digest('hex'),
+    );
+
+    const user = await this.deps.db.user.update({
+      where: { id: tx.userId },
+      data: {
+        totpSecret: tx.enroll.tempTotpSecret,
+        mfaTotpEnabled: true,
+        backupCodes: JSON.stringify(hashedCodes),
+        backupCodesUsed: '[]',
+      },
+      select: {
+        id: true,
+        email: true,
+        status: true,
+        created: true,
+        modified: true,
+        roles: { select: { roleId: true } },
+        mfaTotpEnabled: true,
+      },
+    });
+
+    if (user.status !== UserStatus.active) {
+      throw new BadReqErr(ErrCode.UserNotActive);
+    }
+
+    await this.deps.auditLogService.pushSecurity(
+      {
+        category: 'security',
+        eventType: SecurityEventType.mfa_setup_completed,
+        severity: SecurityEventSeverity.low,
+        method: 'totp',
+      },
+      {
+        subjectUserId: user.id,
+        userId: user.id,
+      },
+    );
+
+    await authTxService.delete(authTxId);
+
+    const session = await this.deps.userUtilService.completeLogin(
+      user,
+      '', // IP from security context
+      '', // UA from security context
+      tx.securityResult,
+    );
+
+    return {
+      status: 'COMPLETED',
+      session,
+      backupCodes,
+    };
+  }
+
+  private async consumeBackupCode(
+    user: {
+      id: string;
+      backupCodes: string | null;
+      backupCodesUsed: string | null;
+    },
+    code: string,
+  ): Promise<boolean> {
+    if (!code || code.length !== 8) return false;
+    if (!user.backupCodes) return false;
+
+    const hashed = hashBackupCode(code);
+    const codes = parseBackupCodes(user.backupCodes);
+    const used = parseUsedBackupCodes(user.backupCodesUsed || '[]');
+
+    if (used.includes(hashed)) {
+      throw new BadReqErr(ErrCode.BackupCodeAlreadyUsed);
+    }
+
+    if (!codes.includes(hashed)) return false;
+
+    used.push(hashed);
+
+    await this.deps.db.user.update({
+      where: { id: user.id },
+      data: { backupCodesUsed: JSON.stringify(used) },
+    });
+
+    return true;
   }
 
   async linkTelegram(params: LinkTelegramParams) {
@@ -281,7 +632,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'oauth',
+          method: 'email',
           email: '',
           error: 'provider_not_found',
         },
@@ -302,7 +653,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'oauth',
+          method: 'email',
           email: '',
           error: 'invalid_telegram_account',
         },
@@ -331,7 +682,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'oauth',
+          method: 'email',
           email: '',
           error: 'account_already_linked',
         },
@@ -359,7 +710,7 @@ export class OAuthService {
         category: 'security',
         eventType: SecurityEventType.login_success,
         severity: SecurityEventSeverity.low,
-        method: 'oauth',
+        method: 'email',
         email: '',
         metadata: { providerId: telegramData.id },
       },

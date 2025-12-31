@@ -6,6 +6,115 @@
 
 ---
 
+## 0) Bổ sung: OAuth flow (đồng bộ với auth mới)
+
+Tài liệu này trước đây tập trung vào **Password + MFA**. Sau refactor auth, cần mô tả thêm **OAuth (Google)** như một "điểm vào" (entrypoint) khác của AuthFlow và đảm bảo response/behavior thống nhất.
+
+### 0.1. Mục tiêu của OAuth refactor
+
+- Chuẩn hoá OAuth login để trả về cùng kiểu kết quả với login mới:
+  - `COMPLETED`: cấp session/tokens
+  - `CHALLENGE`: yêu cầu bước tiếp theo (MFA challenge hoặc MFA enroll)
+- Dùng lại **decision function** (`resolveNextStep`) và **Auth Transaction** (`authTx`) thay vì viết logic rẽ nhánh riêng cho OAuth.
+- Đảm bảo OAuth cũng tuân thủ policy bảo mật giống password login: enforce MFA, risk-based MFA, binding ip/ua, attempt limits, audit log.
+
+### 0.2. Endpoints hiện tại (tham chiếu code)
+
+Trong code hiện có:
+
+- `POST /auth/oauth/google` (public)
+- `POST /auth/oauth/link-telegram` (requires auth)
+
+File: `@server/src/modules/oauth/oauth.controller.ts`
+
+> Ghi chú: `link-telegram` là luồng "link account" sau khi user đã login, không thuộc phần "đăng nhập" (issuance session). Phần refactor OAuth trong tài liệu này tập trung vào `/auth/oauth/google`.
+
+### 0.3. OAuth Google login: luồng logic mong muốn
+
+#### Input
+
+`POST /auth/oauth/google`
+
+- Nhận dữ liệu từ client để xác minh với Google (tuỳ implementation thực tế): `code` (authorization code) hoặc `idToken`.
+
+#### Steps (logic tổng quát)
+
+1. **Verify Google credential**
+   - Validate `idToken` hoặc exchange `code` → lấy `googleProfile`.
+   - Bắt lỗi các case: token invalid/expired/aud mismatch.
+2. **Resolve user mapping**
+   - Tìm user theo `provider=google` + `providerSubject` (google sub).
+   - Nếu chưa có mapping:
+     - Nếu hệ thống cho phép auto-create → tạo user + tạo oauthIdentity.
+     - Nếu không auto-create → trả lỗi (hoặc yêu cầu user liên kết theo flow khác).
+3. **User policy checks**
+   - `assertCanLogin(user)` (active/blocked/...) giống password.
+4. **Security / risk evaluation** (nếu có)
+   - Evaluate risk theo IP/device; risk HIGH → block.
+5. **Create authTx**
+   - `state = PASSWORD_VERIFIED` (hoặc state trung tính kiểu `PRIMARY_AUTH_VERIFIED` nếu bạn muốn rename).
+   - Bind `ipHash/uaHash`.
+6. **Resolve next step** (dùng chung):
+   - Nếu cần MFA enroll → trả `CHALLENGE: MFA_ENROLL`.
+   - Nếu user đã bật MFA → trả `CHALLENGE: MFA_TOTP` (allow backup code).
+   - Nếu không cần MFA → cấp session ngay → `COMPLETED`.
+
+#### Output (chuẩn hoá)
+
+- Nếu hoàn tất:
+
+```json
+{
+  "status": "COMPLETED",
+  "session": {
+    "accessToken": "...",
+    "refreshToken": "...",
+    "expiresIn": 3600,
+    "sessionId": "...",
+    "user": { "...": "..." }
+  }
+}
+```
+
+- Nếu cần bước tiếp theo:
+
+```json
+{
+  "status": "CHALLENGE",
+  "authTxId": "...",
+  "challenge": {
+    "type": "MFA_TOTP",
+    "allowBackupCode": true
+  }
+}
+```
+
+> Quan trọng: OAuth login không được "bỏ qua" enforce MFA. Nếu policy yêu cầu enroll hoặc challenge thì OAuth cũng phải trả về `CHALLENGE` giống password login.
+
+### 0.4. Các bước refactor OAuth (step-by-step)
+
+1. **Đổi response của `oauthService.googleLogin()`**
+   - Từ `LoginResponseDto` hiện tại sang `AuthResponse` chuẩn hoá (`COMPLETED | CHALLENGE`).
+   - Hoặc nếu cần backward compatible: giữ `LoginResponseDto` nhưng bọc thêm field `status` và dần migrate client.
+2. **Trích xuất phần quyết định MFA thành nguồn chân lý chung**
+   - Tái sử dụng `resolveNextStep(user, policy, securityResult)` đang dùng cho password.
+3. **Tạo authTx trong OAuth flow**
+   - Sau khi verify Google & resolve user, tạo `authTx` tương tự `POST /auth/login`.
+4. **Đồng bộ controller swagger/DTO**
+   - Update `oauth.controller.ts` response schema:
+     - 200: `ResWrapper(AuthResponseDto)` (thay vì chỉ `LoginResponseDto`)
+   - Đảm bảo mô tả endpoint ghi rõ có thể trả `CHALLENGE`.
+5. **Audit log chuẩn hoá**
+   - Thêm event: `oauth_login_started`, `oauth_login_failed`, `oauth_login_success`, và reuse `mfa_challenge_*` / `mfa_enroll_*`.
+
+### 0.5. Mapping sang state machine hiện tại
+
+- OAuth Google tương đương với bước "primary authentication verified" (thay password verify).
+- Sau đó đi chung pipeline với password login:
+  - `resolveNextStep` → `CHALLENGE_MFA_REQUIRED` / `CHALLENGE_MFA_ENROLL` / `COMPLETED`.
+
+---
+
 ## 1) Hiện trạng & vấn đề
 
 Trong `auth.service.ts` hiện tại, hàm đăng nhập đang trộn nhiều trách nhiệm:

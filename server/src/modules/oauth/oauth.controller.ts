@@ -1,8 +1,8 @@
 import { Elysia, t } from 'elysia';
 import {
+  AuthResponseDto,
   GoogleLoginRequestDto,
   LinkTelegramRequestDto,
-  LoginResponseDto,
 } from 'src/dtos/auth.dto';
 import { authCheck } from 'src/services/auth';
 import { oauthService } from 'src/services/auth/oauth.service';
@@ -31,7 +31,7 @@ export const oauthController = new Elysia({
         summary: 'Login with Google OAuth',
       },
       response: {
-        200: ResWrapper(LoginResponseDto),
+        200: ResWrapper(AuthResponseDto),
         400: ErrorResDto,
         404: ErrorResDto,
         500: ErrorResDto,
