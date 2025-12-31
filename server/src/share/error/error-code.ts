@@ -38,4 +38,5 @@ export enum ErrCode {
   RateLimitExceeded = 'rate-limit-exceeded',
   Forbidden = 'forbidden',
   InvalidApiKey = 'invalid-api-key',
+  InvalidRequest = 'invalid-request',
 }

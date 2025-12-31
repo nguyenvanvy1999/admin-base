@@ -153,6 +153,7 @@ export enum CACHE_NS {
   MFA_SETUP = 'mfa-setup',
   MFA_SETUP_TOKEN = 'mfa-setup-token',
   MFA = 'mfa',
+  AUTH_TX = 'auth-tx',
   CURRENT_USER = 'currency-user',
   OTP = 'otp',
   OTP_RATE_LIMIT = 'otp-rate-limit',

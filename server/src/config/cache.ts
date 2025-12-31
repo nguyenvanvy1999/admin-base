@@ -6,6 +6,7 @@ import {
   type PurposeVerify,
   type SecurityDeviceInsight,
 } from 'src/share';
+import type { AuthTx } from 'src/types/auth.types';
 import superjson from 'superjson';
 
 export class RedisCache<T> {
@@ -92,6 +93,12 @@ export const otpCache = new RedisCache<{
   ttl: FIVE_MINUTES,
 });
 export type IOTPCache = typeof otpCache;
+
+export const authTxCache = new RedisCache<AuthTx>({
+  namespace: CACHE_NS.AUTH_TX,
+  ttl: FIVE_MINUTES,
+});
+export type IAuthTxCache = typeof authTxCache;
 
 export const mfaCache = new RedisCache<{
   userId: string;

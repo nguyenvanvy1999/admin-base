@@ -1,7 +1,7 @@
 export { apiKeyUsageController } from './api-key-usage';
 export { apiKeysController } from './api-keys';
 export { auditLogsController } from './audit-logs';
-export { authController, userAuthController } from './auth';
+export { authController, authFlowController, userAuthController } from './auth';
 export { captchaController } from './captcha';
 export { fileController } from './file';
 export { i18nAdminController } from './i18n';

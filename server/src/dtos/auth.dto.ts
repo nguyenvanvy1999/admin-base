@@ -166,3 +166,59 @@ export type LinkTelegramParams = {
 export type VerifyAndCompleteLoginParams =
   | typeof MfaLoginRequestDto.static
   | typeof VerifyBackupCodeRequestDto.static;
+
+export const ChallengeDto = t.Union([
+  t.Object({ type: t.Literal('MFA_TOTP'), allowBackupCode: t.Literal(true) }),
+  t.Object({ type: t.Literal('MFA_BACKUP_CODE') }),
+  t.Object({
+    type: t.Literal('MFA_ENROLL'),
+    methods: t.Array(t.Literal('totp')),
+    backupCodesWillBeGenerated: t.Boolean(),
+  }),
+]);
+
+export const AuthCompletedResponseDto = t.Object({
+  status: t.Literal('COMPLETED'),
+  session: LoginResDto,
+  backupCodes: t.Optional(t.Array(t.String())),
+});
+
+export const AuthChallengeResponseDto = t.Object({
+  status: t.Literal('CHALLENGE'),
+  authTxId: t.String(),
+  challenge: ChallengeDto,
+});
+
+export const AuthResponseDto = t.Union([
+  AuthCompletedResponseDto,
+  AuthChallengeResponseDto,
+]);
+
+export type IAuthResponse = typeof AuthResponseDto.static;
+
+export const AuthChallengeRequestDto = t.Object({
+  authTxId: t.String({ minLength: 1 }),
+  type: t.Union([t.Literal('MFA_TOTP'), t.Literal('MFA_BACKUP_CODE')]),
+  code: t.String({ minLength: 1 }),
+});
+export type AuthChallengeRequestParams = typeof AuthChallengeRequestDto.static;
+
+export const AuthEnrollStartRequestDto = t.Object({
+  authTxId: t.String({ minLength: 1 }),
+});
+export type AuthEnrollStartRequestParams =
+  typeof AuthEnrollStartRequestDto.static;
+
+export const AuthEnrollStartResponseDto = t.Object({
+  authTxId: t.String(),
+  enrollToken: t.String(),
+  otpauthUrl: t.String(),
+});
+
+export const AuthEnrollConfirmRequestDto = t.Object({
+  authTxId: t.String({ minLength: 1 }),
+  enrollToken: t.String({ minLength: 1 }),
+  otp: t.String({ minLength: 6, maxLength: 6 }),
+});
+export type AuthEnrollConfirmRequestParams =
+  typeof AuthEnrollConfirmRequestDto.static;
