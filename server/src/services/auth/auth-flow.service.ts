@@ -6,7 +6,7 @@ import type {
   AuthChallengeRequestParams,
   AuthEnrollConfirmRequestParams,
   AuthEnrollStartRequestParams,
-  DisableMfaRequestParams, // Added
+  DisableMfaRequestParams,
   LoginParams,
   RegenerateBackupCodesResponse,
 } from 'src/dtos/auth.dto';
@@ -30,7 +30,7 @@ import {
   getIpAndUa,
   NotFoundErr,
   PurposeVerify,
-} from 'src/share'; // Added
+} from 'src/share';
 import type { ChallengeDto } from 'src/types/auth.types';
 import { type AuthTxService, authTxService } from './auth-tx.service';
 import { type UserUtilService, userUtilService } from './auth-util.service';

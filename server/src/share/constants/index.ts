@@ -155,7 +155,6 @@ export enum SETTING {
 export enum CACHE_NS {
   SETTING = 'setting',
   MFA_SETUP = 'mfa-setup',
-  MFA_SETUP_TOKEN = 'mfa-setup-token',
   MFA = 'mfa',
   AUTH_TX = 'auth-tx',
   CURRENT_USER = 'currency-user',
@@ -164,7 +163,6 @@ export enum CACHE_NS {
   REGISTER_OTP_LIMIT = 'register-otp-limit',
   RATE_LIMIT = 'rate-limit',
   RATE_LIMIT_CONFIG = 'rate-limit-config',
-  MFA_ATTEMPT = 'mfa-attempt',
   IP_WHITELIST = 'ip-whitelist',
   API_KEY = 'api-key',
 }

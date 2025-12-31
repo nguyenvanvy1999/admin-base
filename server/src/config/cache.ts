@@ -127,33 +127,12 @@ export const mfaSetupCache = new RedisCache<{
   ttl: FIVE_MINUTES,
 });
 
-new RedisCache<{
-  userId: string;
-  clientIp: string;
-  userAgent: string;
-  createdAt: number;
-  security?: SecurityDeviceInsight;
-}>({
-  namespace: CACHE_NS.MFA_SETUP_TOKEN,
-  ttl: FIVE_MINUTES,
-});
-
-new RedisCache<string>({
-  namespace: `${CACHE_NS.MFA_SETUP_TOKEN}:by-user`,
-  ttl: FIVE_MINUTES,
-});
-
 export const registerOtpLimitCache = new RedisCache<number>({
   namespace: CACHE_NS.REGISTER_OTP_LIMIT,
 });
 
 export const rateLimitCache = new RedisCache<number>({
   namespace: CACHE_NS.RATE_LIMIT,
-});
-
-new RedisCache<number>({
-  namespace: CACHE_NS.MFA_ATTEMPT,
-  ttl: FIVE_MINUTES,
 });
 
 export const captchaCache = new RedisCache<string>({

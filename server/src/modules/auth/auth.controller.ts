@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
 import {
   ChangePasswordRequestDto,
-  DisableMfaRequestDto, // Added
+  DisableMfaRequestDto,
   ForgotPasswordRequestDto,
   LoginResDto,
   OtpResDto,
