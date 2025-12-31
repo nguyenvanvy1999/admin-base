@@ -102,6 +102,11 @@ export const ChallengeDto = t.Union([
     methods: t.Array(t.Literal('totp')),
     backupCodesWillBeGenerated: t.Boolean(),
   }),
+  t.Object({
+    type: t.Literal('DEVICE_VERIFY'),
+    media: t.Literal('email'),
+    destination: t.String(),
+  }),
 ]);
 
 export const AuthCompletedResponseDto = t.Object({
@@ -129,6 +134,7 @@ export const AuthChallengeRequestDto = t.Object({
     t.Literal('MFA_TOTP'),
     t.Literal('MFA_BACKUP_CODE'),
     t.Literal('MFA_EMAIL_OTP'),
+    t.Literal('DEVICE_VERIFY'),
   ]),
   code: t.String({ minLength: 1 }),
 });

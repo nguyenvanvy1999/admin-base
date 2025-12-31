@@ -148,6 +148,7 @@ export enum SETTING {
   ENB_SECURITY_AUDIT_WARNING = 'ENB_SECURITY_AUDIT_WARNING',
   ENB_CAPTCHA_REQUIRED = 'ENB_CAPTCHA_REQUIRED',
   ENB_MFA_RISK_BASED = 'ENB_MFA_RISK_BASED',
+  ENB_DEVICE_VERIFICATION = 'ENB_DEVICE_VERIFICATION',
   REVOKE_SESSIONS_ON_PASSWORD_CHANGE = 'REVOKE_SESSIONS_ON_PASSWORD_CHANGE',
 }
 
@@ -196,6 +197,7 @@ export enum PurposeVerify {
   FORGOT_PASSWORD = 'forgot-password',
   RESET_MFA = 'reset-mfa',
   MFA_LOGIN = 'mfa-login',
+  DEVICE_VERIFY = 'device-verify',
 }
 
 export const SYS_USER_ID = 'user_system_001';
@@ -436,6 +438,10 @@ export const defaultSettings = {
     value: 'false',
   },
   [SETTING.ENB_MFA_RISK_BASED]: {
+    type: SettingDataType.boolean,
+    value: 'false',
+  },
+  [SETTING.ENB_DEVICE_VERIFICATION]: {
     type: SettingDataType.boolean,
     value: 'false',
   },

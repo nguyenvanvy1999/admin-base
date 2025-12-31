@@ -139,7 +139,8 @@ export class OtpService {
         return user.mfaTotpEnabled;
       }
 
-      case PurposeVerify.MFA_LOGIN: {
+      case PurposeVerify.MFA_LOGIN:
+      case PurposeVerify.DEVICE_VERIFY: {
         return user.status === UserStatus.active;
       }
 

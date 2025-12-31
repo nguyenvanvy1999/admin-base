@@ -57,7 +57,8 @@ export type AuthResponse =
 type NextStep =
   | { kind: 'COMPLETE' }
   | { kind: 'MFA_CHALLENGE' }
-  | { kind: 'ENROLL_MFA' };
+  | { kind: 'ENROLL_MFA' }
+  | { kind: 'DEVICE_VERIFY' };
 
 export class AuthFlowService {
   constructor(
@@ -95,8 +96,27 @@ export class AuthFlowService {
     mfaRequired: boolean;
     riskBased?: boolean;
     risk?: 'LOW' | 'MEDIUM' | 'HIGH';
+    isNewDevice?: boolean;
+    deviceVerificationEnabled?: boolean;
   }): NextStep {
-    const { user, mfaRequired, riskBased, risk } = input;
+    const {
+      user,
+      mfaRequired,
+      riskBased,
+      risk,
+      isNewDevice,
+      deviceVerificationEnabled,
+    } = input;
+
+    // Device Verification (highest priority after MFA required?)
+    // Logic: If device is new AND verification enabled AND MFA not already enforced/enabled?
+    // Actually, if MFA is enabled (TOTP), we might trust that sufficient.
+    // But usually Device Verification is for "New Device" check.
+    // Design decision: If MFA is enabled, we rely on TOTP.
+    // If MFA is NOT enabled, and it's a new device, we challenge Email OTP.
+    if (!user.mfaTotpEnabled && isNewDevice && deviceVerificationEnabled) {
+      return { kind: 'DEVICE_VERIFY' };
+    }
 
     if (mfaRequired && !user.mfaTotpEnabled) return { kind: 'ENROLL_MFA' };
     if (user.mfaTotpEnabled) return { kind: 'MFA_CHALLENGE' };
@@ -249,11 +269,15 @@ export class AuthFlowService {
 
     const mfaRequired = await this.deps.settingService.enbMfaRequired();
     const riskBased = await this.deps.settingService.enbMfaRiskBased();
+    const deviceVerificationEnabled =
+      await this.deps.settingService.enbDeviceVerification();
     const next = this.resolveNextStep({
       user: { mfaTotpEnabled: user.mfaTotpEnabled },
       mfaRequired,
       riskBased,
       risk: securityResult.risk,
+      isNewDevice: securityResult.isNewDevice,
+      deviceVerificationEnabled,
     });
 
     if (next.kind === 'COMPLETE') {
@@ -280,6 +304,35 @@ export class AuthFlowService {
         },
       );
       return { status: 'COMPLETED', session };
+    }
+
+    if (next.kind === 'DEVICE_VERIFY') {
+      const res = await this.deps.otpService.sendOtpWithAudit(
+        user.email,
+        PurposeVerify.DEVICE_VERIFY,
+      );
+      if (!res) throw new BadReqErr(ErrCode.InternalError);
+
+      await this.deps.authTxService.update(authTx.id, {
+        deviceVerifyToken: res.otpToken,
+        state: 'CHALLENGE_DEVICE_VERIFY',
+      });
+
+      // Mask email for response
+      const maskedEmail = user.email.replace(
+        /^(.{2})(.*)(@.*)$/,
+        (_, a, b, c) => `${a}${'*'.repeat(b.length)}${c}`,
+      );
+
+      return {
+        status: 'CHALLENGE',
+        authTxId: authTx.id,
+        challenge: {
+          type: 'DEVICE_VERIFY',
+          media: 'email',
+          destination: maskedEmail,
+        },
+      };
     }
 
     if (next.kind === 'ENROLL_MFA') {
@@ -361,7 +414,10 @@ export class AuthFlowService {
       ua: userAgent,
     });
 
-    if (tx.state !== 'CHALLENGE_MFA_REQUIRED') {
+    if (
+      tx.state !== 'CHALLENGE_MFA_REQUIRED' &&
+      tx.state !== 'CHALLENGE_DEVICE_VERIFY'
+    ) {
       throw new BadReqErr(ErrCode.ValidationError, {
         errors: 'Invalid auth transaction state',
       });
@@ -403,6 +459,14 @@ export class AuthFlowService {
       if (!tx.emailOtpToken) throw new BadReqErr(ErrCode.InvalidState); // Not waiting for email otp
       const verifiedUserId = await verifyEmailOtp(tx.emailOtpToken, code);
       ok = verifiedUserId === user.id;
+    } else if (type === 'DEVICE_VERIFY') {
+      if (!tx.deviceVerifyToken) throw new BadReqErr(ErrCode.InvalidState);
+      const verifiedUserId = await this.deps.otpService.verifyOtp(
+        tx.deviceVerifyToken,
+        PurposeVerify.DEVICE_VERIFY,
+        code,
+      );
+      ok = verifiedUserId === user.id;
     }
 
     if (!ok) {
@@ -443,7 +507,12 @@ export class AuthFlowService {
         category: 'security',
         eventType: SecurityEventType.mfa_verified,
         severity: SecurityEventSeverity.low,
-        method: type === 'MFA_TOTP' ? 'totp' : 'email',
+        method:
+          type === 'MFA_TOTP'
+            ? 'totp'
+            : type === 'DEVICE_VERIFY' || type === 'MFA_EMAIL_OTP'
+              ? 'email'
+              : 'backup-code',
       },
       {
         subjectUserId: user.id,
