@@ -11,6 +11,8 @@ const EMAIL_OTP_PURPOSE: Record<PurposeVerify, string> = {
   [PurposeVerify.REGISTER]: 'verify your email address',
   [PurposeVerify.FORGOT_PASSWORD]: 'reset your password',
   [PurposeVerify.RESET_MFA]: 'reset your MFA',
+  [PurposeVerify.MFA_LOGIN]: 'verify your login',
+  [PurposeVerify.DEVICE_VERIFY]: 'verify your device',
 };
 
 type CreateTransportFn = (options: Record<string, any>) => Transporter;

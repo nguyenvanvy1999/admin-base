@@ -1,20 +1,20 @@
 import { Elysia, t } from 'elysia';
 import {
   ChangePasswordRequestDto,
-  ConfirmMfaLoginRequestDto,
+  DisableMfaRequestDto,
   ForgotPasswordRequestDto,
-  LoginRequestDto,
   LoginResDto,
-  LoginResponseDto,
-  MfaLoginRequestDto,
   OtpResDto,
   RefreshTokenRequestDto,
+  RegenerateBackupCodesResponseDto,
   RegisterRequestDto,
   UserResDto,
   VerifyAccountRequestDto,
 } from 'src/dtos/auth.dto';
 import { authCheck } from 'src/services/auth';
 import { authService } from 'src/services/auth/auth.service';
+import { authFlowService } from 'src/services/auth/auth-flow.service';
+import { authUserService } from 'src/services/auth/auth-user.service';
 import { rateLimit } from 'src/services/rate-limit/auth-rate-limit.config';
 import {
   ACCESS_AUTH,
@@ -26,57 +26,6 @@ import {
 
 const authRateLimitedRoutes = new Elysia()
   .use(rateLimit())
-  .post(
-    '/login',
-    async ({ body }) => castToRes(await authService.login(body)),
-    {
-      body: LoginRequestDto,
-      detail: {
-        description: 'Login with email and password',
-        summary: 'Login a user',
-      },
-      response: {
-        200: ResWrapper(LoginResponseDto),
-        400: ErrorResDto,
-        404: ErrorResDto,
-        500: ErrorResDto,
-      },
-    },
-  )
-  .post(
-    '/login/mfa/confirm',
-    async ({ body }) => castToRes(await authService.confirmMfaLogin(body)),
-    {
-      body: ConfirmMfaLoginRequestDto,
-      detail: {
-        description: 'Confirm MFA login with OTP (legacy API)',
-        summary: 'Confirm MFA login',
-      },
-      response: {
-        200: ResWrapper(LoginResDto),
-        400: ErrorResDto,
-        404: ErrorResDto,
-        500: ErrorResDto,
-      },
-    },
-  )
-  .post(
-    '/login/mfa',
-    async ({ body }) => castToRes(await authService.loginWithMfa(body)),
-    {
-      body: MfaLoginRequestDto,
-      detail: {
-        description: 'Login with MFA token and OTP',
-        summary: 'Login with MFA',
-      },
-      response: {
-        200: ResWrapper(LoginResDto),
-        400: ErrorResDto,
-        404: ErrorResDto,
-        500: ErrorResDto,
-      },
-    },
-  )
   .post(
     '/refresh-token',
     async ({ body }) => castToRes(await authService.refreshToken(body)),
@@ -178,7 +127,9 @@ const authProtectedRoutes = new Elysia()
   .get(
     '/me',
     async ({ currentUser }) => {
-      const user = await authService.getProfile(currentUser.id);
+      const user = await authUserService.loadUserWithPermissions(
+        currentUser.id,
+      );
       return castToRes(user);
     },
     {
@@ -190,6 +141,49 @@ const authProtectedRoutes = new Elysia()
         summary: 'Get current user profile',
         description:
           'Retrieves the profile information of the currently authenticated user.',
+        security: ACCESS_AUTH,
+      },
+    },
+  )
+  .post(
+    '/mfa/backup-codes/regenerate',
+    async ({ currentUser }) => {
+      return castToRes(
+        await authFlowService.regenerateBackupCodes(currentUser.id),
+      );
+    },
+    {
+      response: {
+        200: ResWrapper(RegenerateBackupCodesResponseDto),
+        ...authErrors,
+      },
+      detail: {
+        summary: 'Regenerate MFA backup codes',
+        description:
+          'Invalidates old backup codes and returns a new set. Requires MFA to be enabled.',
+        security: ACCESS_AUTH,
+      },
+    },
+  )
+  .post(
+    '/mfa/disable',
+    async ({ body, currentUser }) => {
+      await authFlowService.disableMfa({
+        userId: currentUser.id,
+        ...body,
+      });
+      return castToRes(null);
+    },
+    {
+      body: DisableMfaRequestDto,
+      response: {
+        200: ResWrapper(t.Null()),
+        ...authErrors,
+      },
+      detail: {
+        summary: 'Disable MFA',
+        description:
+          'Disable MFA for the current user. Requires password and TOTP code.',
         security: ACCESS_AUTH,
       },
     },

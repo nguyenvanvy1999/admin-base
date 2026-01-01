@@ -20,7 +20,8 @@ import {
   ErrCode,
   ensureExists,
   executeListQuery,
-  IdUtil,
+  type IdUtil,
+  idUtil,
   normalizeSearchTerm,
 } from 'src/share';
 import type { AuditLogsService } from '../audit-logs';
@@ -46,6 +47,7 @@ export class NotificationsService {
     private readonly deps: {
       db: IDb;
       auditLogService: AuditLogsService;
+      idUtil: IdUtil;
     },
   ) {}
 
@@ -132,7 +134,7 @@ export class NotificationsService {
 
   async create(data: CreateNotificationParams): Promise<{ id: string }> {
     const { userId, templateId, type, subject, content, metadata } = data;
-    const notificationId = IdUtil.dbId(DB_PREFIX.NOTIFICATION);
+    const notificationId = this.deps.idUtil.dbId(DB_PREFIX.NOTIFICATION);
 
     const created = await this.deps.db.notification.create({
       data: {
@@ -265,4 +267,5 @@ export class NotificationsService {
 export const notificationsService = new NotificationsService({
   db,
   auditLogService: auditLogsService,
+  idUtil,
 });

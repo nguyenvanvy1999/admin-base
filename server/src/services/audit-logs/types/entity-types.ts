@@ -21,6 +21,7 @@ export const ENTITY_TYPE_MAP = {
   AuthProvider: 'auth_provider',
   UserAuthProvider: 'user_auth_provider',
   Proxy: 'proxy',
+  MfaBackupCode: 'mfa_backup_code',
 } as const satisfies Record<PrismaModelName, string>;
 
 export type EntityType = (typeof ENTITY_TYPE_MAP)[PrismaModelName];

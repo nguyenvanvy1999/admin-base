@@ -1,5 +1,5 @@
 import { captchaCache, type ICaptchaCache } from 'src/config/cache';
-import { IdUtil } from 'src/share';
+import { type IdUtil, idUtil } from 'src/share';
 import svgCaptcha from 'svg-captcha';
 
 export interface CaptchaOptions {
@@ -33,9 +33,11 @@ export class CaptchaService {
     private readonly deps: {
       cache: ICaptchaCache;
       svg: SvgCaptchaGenerator;
+      idUtil: IdUtil;
     } = {
       cache: captchaCache,
       svg: svgCaptcha,
+      idUtil,
     },
   ) {}
 
@@ -52,7 +54,7 @@ export class CaptchaService {
       ...options,
     };
     const captcha = this.deps.svg.create(defaultOptions);
-    const token = IdUtil.token16('captcha');
+    const token = this.deps.idUtil.token16('captcha');
     await this.deps.cache.set(token, captcha.text);
     return { token, data: captcha.data, text: captcha.text };
   }
@@ -79,7 +81,7 @@ export class CaptchaService {
       ...options,
     };
     const captcha = this.deps.svg.createMathExpr(defaultOptions);
-    const token = IdUtil.token16('captcha');
+    const token = this.deps.idUtil.token16('captcha');
     await this.deps.cache.set(token, captcha.text);
     return { token, data: captcha.data, text: captcha.text };
   }

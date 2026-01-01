@@ -146,20 +146,23 @@ export enum SETTING {
   ENB_SECURITY_DEVICE_RECOGNITION = 'ENB_SECURITY_DEVICE_RECOGNITION',
   ENB_SECURITY_BLOCK_UNKNOWN_DEVICE = 'ENB_SECURITY_BLOCK_UNKNOWN_DEVICE',
   ENB_SECURITY_AUDIT_WARNING = 'ENB_SECURITY_AUDIT_WARNING',
+  ENB_CAPTCHA_REQUIRED = 'ENB_CAPTCHA_REQUIRED',
+  ENB_MFA_RISK_BASED = 'ENB_MFA_RISK_BASED',
+  ENB_DEVICE_VERIFICATION = 'ENB_DEVICE_VERIFICATION',
+  REVOKE_SESSIONS_ON_PASSWORD_CHANGE = 'REVOKE_SESSIONS_ON_PASSWORD_CHANGE',
 }
 
 export enum CACHE_NS {
   SETTING = 'setting',
   MFA_SETUP = 'mfa-setup',
-  MFA_SETUP_TOKEN = 'mfa-setup-token',
   MFA = 'mfa',
+  AUTH_TX = 'auth-tx',
   CURRENT_USER = 'currency-user',
   OTP = 'otp',
   OTP_RATE_LIMIT = 'otp-rate-limit',
   REGISTER_OTP_LIMIT = 'register-otp-limit',
   RATE_LIMIT = 'rate-limit',
   RATE_LIMIT_CONFIG = 'rate-limit-config',
-  MFA_ATTEMPT = 'mfa-attempt',
   IP_WHITELIST = 'ip-whitelist',
   API_KEY = 'api-key',
 }
@@ -191,6 +194,8 @@ export enum PurposeVerify {
   REGISTER = 'register',
   FORGOT_PASSWORD = 'forgot-password',
   RESET_MFA = 'reset-mfa',
+  MFA_LOGIN = 'mfa-login',
+  DEVICE_VERIFY = 'device-verify',
 }
 
 export const SYS_USER_ID = 'user_system_001';
@@ -202,18 +207,6 @@ export enum OAUTH {
 }
 
 export const IDEMPOTENCY_TTL = 300;
-
-type LoginErrorPayload = { method: string; error?: string };
-
-export const MFA_ERROR_PAYLOADS = {
-  SESSION_EXPIRED: { method: 'email', error: 'mfa_session_expired' },
-  INVALID_OTP: { method: 'email', error: 'mfa_invalid_otp' },
-  USER_NOT_FOUND: { method: 'email', error: 'mfa_user_not_found' },
-  USER_NOT_ACTIVE: { method: 'email', error: 'user_not_active' },
-  INVALID_BACKUP_CODE: { method: 'backup-code', error: 'invalid_backup_code' },
-  SECURITY_BLOCKED: { method: 'email', error: 'security_blocked' },
-  TOO_MANY_ATTEMPTS: { method: 'email', error: 'too_many_attempts' },
-} as const satisfies Record<string, LoginErrorPayload>;
 
 export enum DOC_TAG {
   AUTH = 'Base Auth',
@@ -438,13 +431,23 @@ export const defaultSettings = {
     type: SettingDataType.boolean,
     value: 'true',
   },
+  [SETTING.ENB_CAPTCHA_REQUIRED]: {
+    type: SettingDataType.boolean,
+    value: 'false',
+  },
+  [SETTING.ENB_MFA_RISK_BASED]: {
+    type: SettingDataType.boolean,
+    value: 'false',
+  },
+  [SETTING.ENB_DEVICE_VERIFICATION]: {
+    type: SettingDataType.boolean,
+    value: 'false',
+  },
+  [SETTING.REVOKE_SESSIONS_ON_PASSWORD_CHANGE]: {
+    type: SettingDataType.boolean,
+    value: 'true',
+  },
 } satisfies Record<SETTING, { value: string; type: SettingDataType }>;
-
-export enum LoginResType {
-  COMPLETED = 'completed',
-  MFA_SETUP = 'mfa-setup',
-  MFA_CONFIRM = 'mfa-confirm',
-}
 
 export const userResSelect = {
   id: true,

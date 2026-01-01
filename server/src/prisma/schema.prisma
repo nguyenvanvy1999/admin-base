@@ -89,6 +89,7 @@ enum SecurityEventType {
   mfa_setup_started
   mfa_setup_completed
   mfa_setup_failed
+  mfa_backup_codes_regenerated
   mfa_challenge_started
 
   // Account lockout
@@ -218,8 +219,8 @@ model User {
 
   mfaTotpEnabled  Boolean @default(false) @map("mfa_totp_enabled")
   totpSecret      String? @map("totp_secret")
-  backupCodes     String? @map("backup_codes")
-  backupCodesUsed String? @map("backup_codes_used")
+  mfaEnrollRequired Boolean @default(false) @map("mfa_enroll_required")
+  backupCode        MfaBackupCode?
 
   // Email verification
   emailVerified          Boolean @default(false) @map("email_verified")
@@ -258,6 +259,19 @@ model User {
   @@index([refCode], name: "user_refCode_idx")
   @@index([emailVerified], name: "user_emailVerified_idx")
   @@map("users")
+}
+
+model MfaBackupCode {
+  id       String    @id @default(uuid(7))
+  userId   String    @unique @map("user_id")
+  codeHash String    @map("code_hash")
+  usedAt   DateTime? @map("used_at")
+  created  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("mfa_backup_codes")
 }
 
 // Authentication provider configuration (Google, Telegram, etc.)

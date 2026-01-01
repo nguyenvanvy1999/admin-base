@@ -20,8 +20,6 @@ export class SeedFixtures {
       pendingRef: 0,
       mfaTotpEnabled: false,
       totpSecret: null,
-      backupCodes: null,
-      backupCodesUsed: null,
       lastLoginAt: null,
       refCode: null,
       emailVerified: false,
@@ -33,6 +31,7 @@ export class SeedFixtures {
       lastFailedLoginAt: null,
       suspiciousActivityCount: 0,
       notificationPreferences: null,
+      mfaEnrollRequired: false,
       ...overrides,
     };
   }

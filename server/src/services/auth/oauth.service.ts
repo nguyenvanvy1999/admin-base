@@ -1,9 +1,10 @@
-import { createHash, createHmac } from 'crypto';
+import { createHash, createHmac, randomBytes, randomUUID } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
+import { authenticator } from 'otplib';
 import { db, type IDb } from 'src/config/db';
 import type {
   GoogleLoginParams,
-  ILoginRes,
+  IAuthResponse,
   LinkTelegramParams,
 } from 'src/dtos/auth.dto';
 import {
@@ -24,18 +25,28 @@ import {
   type SecurityMonitorService,
   securityMonitorService,
 } from 'src/services/auth/security-monitor.service';
+import { settingsService } from 'src/services/settings/settings.service';
 import {
   BadReqErr,
   CoreErr,
   DB_PREFIX,
   defaultRoles,
   ErrCode,
-  getIpAndUa,
-  IdUtil,
+  type IdUtil,
+  idUtil,
   OAUTH,
   type PrismaTx,
   UnAuthErr,
 } from 'src/share';
+import { authFlowService } from './auth-flow.service';
+import { authTxService } from './auth-tx.service';
+import {
+  AuthChallengeType,
+  AuthMethod,
+  AuthNextStepKind,
+  AuthStatus,
+  AuthTxState,
+} from './constants';
 
 export class OAuthService {
   constructor(
@@ -45,26 +56,37 @@ export class OAuthService {
       userUtilService: UserUtilService;
       auditLogService: AuditLogsService;
       securityMonitorService: SecurityMonitorService;
-      idUtil: typeof IdUtil;
+      idUtil: IdUtil;
       crypto: {
         createHash: typeof createHash;
         createHmac: typeof createHmac;
+        randomBytes: typeof randomBytes;
+        randomUUID: typeof randomUUID;
       };
+      authenticator: typeof authenticator;
     } = {
       db,
       oauth2ClientFactory: (clientId: string) => new OAuth2Client(clientId),
       userUtilService,
       auditLogService: auditLogsService,
       securityMonitorService,
-      idUtil: IdUtil,
-      crypto: { createHash, createHmac },
+      idUtil: idUtil,
+      crypto: { createHash, createHmac, randomBytes, randomUUID },
+      authenticator,
     },
   ) {}
 
-  async googleLogin(params: GoogleLoginParams): Promise<ILoginRes> {
-    const { idToken } = params;
-    const { clientIp, userAgent } = getIpAndUa();
+  async googleLogin(
+    params: GoogleLoginParams & { ip?: string; userAgent?: string },
+  ): Promise<IAuthResponse> {
+    if (!params?.idToken) {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'idToken is required',
+      });
+    }
+    const { idToken, ip = '', userAgent = '' } = params;
 
+    // 1. Verify Google ID token and get user info
     const provider = await this.deps.db.authProvider.findUnique({
       where: { code: OAUTH.GOOGLE },
       select: { id: true, enabled: true, config: true },
@@ -77,7 +99,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'oauth',
+          method: 'email',
           email: '',
           error: 'provider_not_found',
         },
@@ -87,20 +109,19 @@ export class OAuthService {
     }
 
     const googleClient = this.deps.oauth2ClientFactory(clientId);
-
     const ticket = await googleClient.verifyIdToken({
       idToken,
       audience: clientId,
     });
-
     const payload = ticket.getPayload();
+
     if (!payload) {
       await this.deps.auditLogService.pushSecurity(
         {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'oauth',
+          method: AuthMethod.EMAIL,
           email: '',
           error: 'invalid_google_account',
         },
@@ -118,7 +139,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'oauth',
+          method: AuthMethod.EMAIL,
           email: '',
           error: 'google_account_not_found',
         },
@@ -127,12 +148,14 @@ export class OAuthService {
       throw new UnAuthErr(ErrCode.GoogleAccountNotFound);
     }
 
+    // 2. Find or create user
     let user = await this.deps.db.user.findUnique({
       where: { email },
       include: { roles: true },
     });
 
     if (user) {
+      // Link Google account if not already linked
       const authExists = await this.deps.db.userAuthProvider.findFirst({
         where: { providerCode: OAUTH.GOOGLE, providerId: googleId },
         select: { id: true },
@@ -154,17 +177,15 @@ export class OAuthService {
             category: 'security',
             eventType: SecurityEventType.login_success,
             severity: SecurityEventSeverity.low,
-            method: 'oauth',
+            method: AuthMethod.EMAIL,
             email,
             metadata: { linked: true },
           },
-          {
-            subjectUserId: user.id,
-            userId: user.id,
-          },
+          { subjectUserId: user.id, userId: user.id },
         );
       }
     } else {
+      // Create new user with Google OAuth
       user = await this.deps.db.$transaction(async (tx: PrismaTx) => {
         const userId = this.deps.idUtil.dbId(DB_PREFIX.USER);
         const createdUser = await tx.user.create({
@@ -202,16 +223,19 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.register_completed,
           severity: SecurityEventSeverity.low,
-          method: 'oauth',
+          method: AuthMethod.EMAIL,
           email,
         },
-        {
-          subjectUserId: user.id,
-          userId: user.id,
-        },
+        { subjectUserId: user.id, userId: user.id },
       );
     }
 
+    // 3. Check user status
+    if (user.status !== UserStatus.active) {
+      throw new BadReqErr(ErrCode.UserNotActive);
+    }
+
+    // 4. Evaluate security risk
     const securityResult = await this.deps.securityMonitorService.evaluateLogin(
       {
         userId: user.id,
@@ -225,45 +249,95 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.high,
-          method: 'oauth',
-          email,
+          method: AuthMethod.EMAIL,
+          email: email || '',
           error: 'security_blocked',
         },
-        {
-          subjectUserId: user.id,
-          userId: user.id,
-        },
+        { subjectUserId: user.id, userId: user.id },
       );
       throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
     }
 
-    const loginRes = await this.deps.userUtilService.completeLogin(
-      user,
-      clientIp ?? '',
-      userAgent ?? '',
+    // 5. Create auth transaction
+    const authTx = await authTxService.create(
+      user.id,
+      AuthTxState.PASSWORD_VERIFIED,
+      { ip, ua: userAgent },
       securityResult,
     );
 
-    const safeEmail = email ?? '';
+    // 6. Determine next step (MFA challenge/enroll or complete login)
+    const mfaRequired = await settingsService.enbMfaRequired();
+    const next = authFlowService.resolveNextStep({
+      user: { mfaTotpEnabled: user.mfaTotpEnabled },
+      mfaRequired,
+    });
+
+    // 7. Handle next step
+    if (next.kind === AuthNextStepKind.COMPLETE) {
+      await authTxService.delete(authTx.id);
+      const session = await this.deps.userUtilService.completeLogin(
+        user,
+        ip,
+        userAgent,
+        securityResult,
+      );
+
+      await this.deps.auditLogService.pushSecurity(
+        {
+          category: 'security',
+          eventType: SecurityEventType.login_success,
+          severity: SecurityEventSeverity.low,
+          method: AuthMethod.EMAIL,
+          email: email || '',
+          isNewDevice: securityResult.isNewDevice ?? false,
+        },
+        {
+          subjectUserId: user.id,
+          userId: user.id,
+          sessionId: session.sessionId,
+        },
+      );
+
+      return { status: AuthStatus.COMPLETED, session };
+    }
+
+    if (next.kind === AuthNextStepKind.ENROLL_MFA) {
+      await authTxService.setState(authTx.id, AuthTxState.CHALLENGE_MFA_ENROLL);
+      return {
+        status: AuthStatus.CHALLENGE,
+        authTxId: authTx.id,
+        challenge: {
+          type: AuthChallengeType.MFA_ENROLL,
+          methods: ['totp'],
+          backupCodesWillBeGenerated: true,
+        },
+      };
+    }
+
+    // MFA challenge required
+    await authTxService.setState(authTx.id, AuthTxState.CHALLENGE_MFA_REQUIRED);
 
     await this.deps.auditLogService.pushSecurity(
       {
         category: 'security',
-        eventType: SecurityEventType.login_success,
+        eventType: SecurityEventType.mfa_challenge_started,
         severity: SecurityEventSeverity.low,
-        method: 'oauth',
-        email: safeEmail,
-        isNewDevice: securityResult.isNewDevice ?? false,
-        deviceFingerprint: securityResult.deviceFingerprint ?? undefined,
+        method: AuthMethod.EMAIL,
+        metadata: { stage: 'challenge', from: 'login' },
       },
       {
         subjectUserId: user.id,
         userId: user.id,
-        sessionId: loginRes.sessionId,
+        visibility: AuditLogVisibility.actor_and_subject,
       },
     );
 
-    return loginRes;
+    return {
+      status: AuthStatus.CHALLENGE,
+      authTxId: authTx.id,
+      challenge: { type: AuthChallengeType.MFA_TOTP, allowBackupCode: true },
+    };
   }
 
   async linkTelegram(params: LinkTelegramParams) {
@@ -281,7 +355,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'oauth',
+          method: AuthMethod.EMAIL,
           email: '',
           error: 'provider_not_found',
         },
@@ -302,7 +376,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'oauth',
+          method: AuthMethod.EMAIL,
           email: '',
           error: 'invalid_telegram_account',
         },
@@ -331,7 +405,7 @@ export class OAuthService {
           category: 'security',
           eventType: SecurityEventType.login_failed,
           severity: SecurityEventSeverity.medium,
-          method: 'oauth',
+          method: AuthMethod.EMAIL,
           email: '',
           error: 'account_already_linked',
         },
@@ -359,7 +433,7 @@ export class OAuthService {
         category: 'security',
         eventType: SecurityEventType.login_success,
         severity: SecurityEventSeverity.low,
-        method: 'oauth',
+        method: AuthMethod.EMAIL,
         email: '',
         metadata: { providerId: telegramData.id },
       },

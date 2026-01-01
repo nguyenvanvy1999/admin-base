@@ -1,6 +1,6 @@
 import { db, type IDb } from 'src/config/db';
 import { ApiKeyStatus, UserStatus } from 'src/generated';
-import { IdUtil } from 'src/share';
+import { type IdUtil, idUtil } from 'src/share';
 import type { ApiKeyService } from './api-key.service';
 import { apiKeyService } from './api-key.service';
 
@@ -24,9 +24,11 @@ export class ApiKeyValidationService {
     private readonly deps: {
       db: IDb;
       apiKeyService: ApiKeyService;
+      idUtil: IdUtil;
     } = {
       db,
       apiKeyService,
+      idUtil,
     },
   ) {}
 
@@ -108,7 +110,7 @@ export class ApiKeyValidationService {
     await this.deps.db.$transaction(async (tx) => {
       await tx.apiKeyUsage.create({
         data: {
-          id: IdUtil.snowflakeId(),
+          id: this.deps.idUtil.snowflakeId(),
           apiKeyId,
           endpoint: context.endpoint,
           method: context.method,

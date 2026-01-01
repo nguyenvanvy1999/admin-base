@@ -21,8 +21,9 @@ import {
   ErrCode,
   ensureExists,
   executeListQuery,
-  IdUtil,
+  type IdUtil,
   type IIdsDto,
+  idUtil,
   normalizeSearchTerm,
 } from 'src/share';
 import type { AuditLogsService } from '../audit-logs';
@@ -45,6 +46,7 @@ export class NotificationTemplatesService {
     private readonly deps: {
       db: IDb;
       auditLogService: AuditLogsService;
+      idUtil: IdUtil;
     },
   ) {}
 
@@ -181,7 +183,7 @@ export class NotificationTemplatesService {
     }
 
     await this.ensureCodeUnique(code);
-    const templateId = IdUtil.dbId(DB_PREFIX.NOTIFICATION_TEMPLATE);
+    const templateId = this.deps.idUtil.dbId(DB_PREFIX.NOTIFICATION_TEMPLATE);
     const created = await this.deps.db.notificationTemplate.create({
       data: {
         id: templateId,
@@ -274,4 +276,5 @@ export class NotificationTemplatesService {
 export const notificationTemplatesService = new NotificationTemplatesService({
   db,
   auditLogService: auditLogsService,
+  idUtil,
 });

@@ -6,6 +6,7 @@ import {
   type PurposeVerify,
   type SecurityDeviceInsight,
 } from 'src/share';
+import type { AuthTx } from 'src/types/auth.types';
 import superjson from 'superjson';
 
 export class RedisCache<T> {
@@ -93,6 +94,12 @@ export const otpCache = new RedisCache<{
 });
 export type IOTPCache = typeof otpCache;
 
+export const authTxCache = new RedisCache<AuthTx>({
+  namespace: CACHE_NS.AUTH_TX,
+  ttl: FIVE_MINUTES,
+});
+export type IAuthTxCache = typeof authTxCache;
+
 export const mfaCache = new RedisCache<{
   userId: string;
   security?: SecurityDeviceInsight;
@@ -102,7 +109,6 @@ export const mfaCache = new RedisCache<{
   namespace: CACHE_NS.MFA,
   ttl: FIVE_MINUTES,
 });
-export type IMFACache = typeof mfaCache;
 
 export const otpRateLimitCache = new RedisCache<boolean>({
   namespace: CACHE_NS.OTP_RATE_LIMIT,
@@ -121,22 +127,6 @@ export const mfaSetupCache = new RedisCache<{
   ttl: FIVE_MINUTES,
 });
 
-export const mfaSetupTokenCache = new RedisCache<{
-  userId: string;
-  clientIp: string;
-  userAgent: string;
-  createdAt: number;
-  security?: SecurityDeviceInsight;
-}>({
-  namespace: CACHE_NS.MFA_SETUP_TOKEN,
-  ttl: FIVE_MINUTES,
-});
-
-export const mfaSetupTokenByUserCache = new RedisCache<string>({
-  namespace: `${CACHE_NS.MFA_SETUP_TOKEN}:by-user`,
-  ttl: FIVE_MINUTES,
-});
-
 export const registerOtpLimitCache = new RedisCache<number>({
   namespace: CACHE_NS.REGISTER_OTP_LIMIT,
 });
@@ -144,12 +134,6 @@ export const registerOtpLimitCache = new RedisCache<number>({
 export const rateLimitCache = new RedisCache<number>({
   namespace: CACHE_NS.RATE_LIMIT,
 });
-
-export const mfaAttemptCache = new RedisCache<number>({
-  namespace: CACHE_NS.MFA_ATTEMPT,
-  ttl: FIVE_MINUTES,
-});
-export type IMfaAttemptCache = typeof mfaAttemptCache;
 
 export const captchaCache = new RedisCache<string>({
   namespace: 'captcha',

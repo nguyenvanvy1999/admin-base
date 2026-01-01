@@ -22,7 +22,13 @@ import {
   type SettingsService,
   settingsService,
 } from 'src/services/settings/settings.service';
-import { ctxStore, EmailType, IdUtil, PurposeVerify } from 'src/share';
+import {
+  ctxStore,
+  EmailType,
+  type IdUtil,
+  idUtil,
+  PurposeVerify,
+} from 'src/share';
 import type { LockingService } from '../misc';
 import { lockingService } from '../misc';
 
@@ -37,6 +43,7 @@ export class OtpService {
       emailQueue: IEmailQueue;
       auditLogService: AuditLogsService;
       settingService: SettingsService;
+      idUtil: IdUtil;
     } = {
       db,
       otpCache,
@@ -46,6 +53,7 @@ export class OtpService {
       emailQueue,
       auditLogService: auditLogsService,
       settingService: settingsService,
+      idUtil,
     },
   ) {}
 
@@ -88,7 +96,7 @@ export class OtpService {
       if (isRateLimited) {
         return null;
       }
-      const otpToken = IdUtil.token16();
+      const otpToken = this.deps.idUtil.token16();
       const otp = await this.generateOtp(otpToken, purpose, userId);
       await this.deps.emailQueue.add(EmailType.OTP, {
         [EmailType.OTP]: { email, otp, purpose },
@@ -129,6 +137,11 @@ export class OtpService {
 
       case PurposeVerify.RESET_MFA: {
         return user.mfaTotpEnabled;
+      }
+
+      case PurposeVerify.MFA_LOGIN:
+      case PurposeVerify.DEVICE_VERIFY: {
+        return user.status === UserStatus.active;
       }
 
       default:

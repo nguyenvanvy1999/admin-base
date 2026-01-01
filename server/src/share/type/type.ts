@@ -117,8 +117,6 @@ export interface ICurrentUser
     User,
     | 'passwordExpired'
     | 'totpSecret'
-    | 'backupCodes'
-    | 'backupCodesUsed'
     | 'password'
     | 'passwordCreated'
     | 'passwordAttempt'
@@ -127,6 +125,7 @@ export interface ICurrentUser
     | 'pendingRef'
     | 'activeRef'
     | 'refCode'
+    | 'mfaEnrollRequired'
   > {
   permissions: UPermission[];
   sessionId: string;
@@ -136,11 +135,6 @@ export interface ICurrentUser
 export type PrismaTx = Omit<
   PrismaClient<never, never>,
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'
->;
-
-export type IUserMFA = Pick<
-  User,
-  'id' | 'mfaTotpEnabled' | 'totpSecret' | 'backupCodes' | 'backupCodesUsed'
 >;
 
 export type SecurityDeviceInsight = {

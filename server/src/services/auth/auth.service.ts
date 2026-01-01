@@ -1,21 +1,11 @@
 import dayjs from 'dayjs';
-import { authenticator } from 'otplib';
-import {
-  type IMFACache,
-  mfaCache,
-  mfaSetupTokenByUserCache,
-  mfaSetupTokenCache,
-} from 'src/config/cache';
+
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import type {
   ChangePasswordParams,
-  ConfirmMfaLoginParams,
   ForgotPasswordParams,
   ILoginRes,
-  ILoginResponse,
-  LoginParams,
-  LoginWithMfaParams,
   LogoutParams,
   RefreshTokenParams,
   RegisterParams,
@@ -25,7 +15,6 @@ import {
   AuditLogVisibility,
   SecurityEventSeverity,
   SecurityEventType,
-  type User,
   UserStatus,
 } from 'src/generated';
 import {
@@ -45,27 +34,26 @@ import {
   ctxStore,
   ErrCode,
   getIpAndUa,
-  IdUtil,
   type ITokenPayload,
   isExpired,
-  LoginResType,
-  NotFoundErr,
   normalizeEmail,
   PurposeVerify,
   UnAuthErr,
-  userResSelect,
 } from 'src/share';
+import { createAuditContext, createSecurityAuditLog } from './auth-audit.util';
+import { assertUserActiveOrBadReq, assertUserExists } from './auth-errors.util';
+import { type AuthUserService, authUserService } from './auth-user.service';
 import {
   type TokenService,
   tokenService,
   type UserUtilService,
   userUtilService,
 } from './auth-util.service';
-import { type MfaService, mfaService } from './mfa.service';
+import { AuthMethod, AuthStatus } from './constants';
+
 import { type OtpService, otpService } from './otp.service';
 import { type PasswordService, passwordService } from './password.service';
 import {
-  type SecurityCheckResult,
   type SecurityMonitorService,
   securityMonitorService,
 } from './security-monitor.service';
@@ -78,241 +66,27 @@ export class AuthService {
       env: IEnv;
       passwordService: PasswordService;
       tokenService: TokenService;
-      mfaService: MfaService;
       otpService: OtpService;
       sessionService: SessionService;
       settingService: SettingsService;
       auditLogService: AuditLogsService;
       userUtilService: UserUtilService;
-      mfaCache: IMFACache;
-      authenticator: typeof authenticator;
+      authUserService: AuthUserService;
       securityMonitorService: SecurityMonitorService;
     } = {
       db,
       env,
       passwordService,
       tokenService,
-      mfaService,
       otpService,
       sessionService,
       settingService: settingsService,
       auditLogService: auditLogsService,
       userUtilService,
-      mfaCache,
-      authenticator,
+      authUserService,
       securityMonitorService,
     },
   ) {}
-
-  async login(params: LoginParams): Promise<ILoginResponse> {
-    const { email, password } = params;
-    const { clientIp, userAgent } = getIpAndUa();
-
-    const user = await this.deps.userUtilService.findUserForLogin(email);
-
-    const { enbAttempt, enbExpired } =
-      await this.deps.settingService.password();
-
-    if (enbAttempt) {
-      this.deps.passwordService.validateAttempt(
-        user,
-        this.deps.env.PASSWORD_MAX_ATTEMPT,
-      );
-    }
-
-    const passwordValid = await this.deps.passwordService.verifyAndTrack(
-      password,
-      user,
-    );
-
-    if (!passwordValid) {
-      await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.medium,
-          method: 'email',
-          email: user.email,
-          error: 'password_mismatch',
-        },
-        {
-          subjectUserId: user.id,
-          userId: user.id,
-          visibility: AuditLogVisibility.actor_and_subject,
-        },
-      );
-      throw new BadReqErr(ErrCode.PasswordNotMatch);
-    }
-
-    if (user.status !== UserStatus.active) {
-      await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.medium,
-          method: 'email',
-          email: user.email,
-          error: 'user_not_active',
-        },
-        { subjectUserId: user.id, userId: user.id },
-      );
-      throw new BadReqErr(ErrCode.UserNotActive);
-    }
-
-    if (enbExpired) {
-      this.deps.passwordService.validateExpiration(user);
-    }
-
-    const securityResult = await this.deps.securityMonitorService.evaluateLogin(
-      {
-        userId: user.id,
-        method: 'email',
-      },
-    );
-
-    if (securityResult.action === 'block') {
-      await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.high,
-          method: 'email',
-          email: user.email,
-          error: 'security_blocked',
-        },
-        { subjectUserId: user.id, userId: user.id },
-      );
-      throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
-    }
-
-    if (!user.mfaTotpEnabled) {
-      const mfaRequired = await this.deps.settingService.enbMfaRequired();
-      if (mfaRequired) {
-        return this.handleMfaSetupRequired(user, securityResult);
-      }
-    } else {
-      return this.handleMfaLogin(user, securityResult);
-    }
-
-    return this.handleSuccessfulLogin(
-      user,
-      clientIp,
-      userAgent,
-      securityResult,
-    );
-  }
-
-  private async handleSuccessfulLogin(
-    user: Parameters<typeof this.deps.userUtilService.completeLogin>[0],
-    clientIp: string,
-    userAgent: string,
-    security?: SecurityCheckResult,
-  ): Promise<ILoginResponse> {
-    const loginRes = await this.deps.userUtilService.completeLogin(
-      user,
-      clientIp,
-      userAgent,
-      security,
-    );
-
-    await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.login_success,
-        severity: SecurityEventSeverity.low,
-        method: 'email',
-        email: user.email ?? '',
-        isNewDevice: security?.isNewDevice ?? false,
-      },
-      {
-        subjectUserId: user.id,
-        userId: user.id,
-        sessionId: loginRes.sessionId,
-      },
-    );
-
-    return loginRes;
-  }
-
-  private async handleMfaLogin(
-    user: Pick<
-      User,
-      'id' | 'mfaTotpEnabled' | 'totpSecret' | 'backupCodes' | 'backupCodesUsed'
-    >,
-    security?: SecurityCheckResult,
-  ): Promise<ILoginResponse> {
-    const loginToken = IdUtil.token16();
-    const mfaToken = await this.deps.mfaService.createSession({
-      loginToken,
-      user,
-      security,
-    });
-
-    const { sessionId } = ctxStore.getStore() ?? {};
-    await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.mfa_challenge_started,
-        severity: SecurityEventSeverity.low,
-        method: 'email',
-        metadata: { stage: 'challenge', from: 'login' },
-      },
-      {
-        subjectUserId: user.id,
-        userId: user.id,
-        sessionId,
-        visibility: AuditLogVisibility.actor_and_subject,
-      },
-    );
-
-    return {
-      type: LoginResType.MFA_CONFIRM,
-      mfaToken,
-    } as ILoginResponse;
-  }
-
-  private async handleMfaSetupRequired(
-    user: { id: string },
-    security?: SecurityCheckResult,
-  ): Promise<ILoginResponse> {
-    const { clientIp, userAgent } = getIpAndUa();
-
-    const setupToken = IdUtil.token16();
-    const createdAt = Date.now();
-
-    const oldToken = await mfaSetupTokenByUserCache.get(user.id);
-    if (oldToken) {
-      await mfaSetupTokenCache.del(oldToken);
-    }
-
-    await mfaSetupTokenByUserCache.set(user.id, setupToken);
-    await mfaSetupTokenCache.set(setupToken, {
-      userId: user.id,
-      clientIp,
-      userAgent,
-      createdAt,
-      security,
-    });
-
-    await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.mfa_setup_started,
-        severity: SecurityEventSeverity.low,
-        method: 'email',
-        stage: 'required_before_login',
-      },
-      {
-        subjectUserId: user.id,
-        userId: user.id,
-      },
-    );
-
-    return {
-      type: LoginResType.MFA_SETUP,
-      setupToken,
-    } as ILoginResponse;
-  }
 
   async register(params: RegisterParams): Promise<{ otpToken: string } | null> {
     const { email, password } = params;
@@ -326,14 +100,13 @@ export class AuthService {
 
     if (existingUser) {
       await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.register_failed,
-          severity: SecurityEventSeverity.medium,
-          method: 'email',
-          email: normalizedEmail,
-          error: 'user_exists',
-        },
+        createSecurityAuditLog(
+          SecurityEventType.register_failed,
+          SecurityEventSeverity.medium,
+          AuthMethod.EMAIL,
+          { id: '', email: normalizedEmail },
+          { error: 'user_exists' },
+        ),
         { visibility: AuditLogVisibility.admin_only },
       );
       throw new BadReqErr(ErrCode.UserExisted);
@@ -351,14 +124,13 @@ export class AuthService {
     );
 
     await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.register_started,
-        severity: SecurityEventSeverity.low,
-        method: 'email',
-        email: normalizedEmail,
-      },
-      { subjectUserId: createdUserId, userId: createdUserId },
+      createSecurityAuditLog(
+        SecurityEventType.register_started,
+        SecurityEventSeverity.low,
+        AuthMethod.EMAIL,
+        { id: createdUserId, email: normalizedEmail },
+      ),
+      createAuditContext(createdUserId),
     );
 
     if (otpToken) {
@@ -372,15 +144,10 @@ export class AuthService {
 
     const user = await this.deps.db.user.findUnique({
       where: { id: userId },
-      select: { password: true, status: true, email: true },
+      select: { id: true, password: true, status: true, email: true },
     });
-    if (!user) {
-      throw new NotFoundErr(ErrCode.UserNotFound);
-    }
-
-    if (user.status !== UserStatus.active) {
-      throw new BadReqErr(ErrCode.UserNotActive);
-    }
+    assertUserExists(user);
+    assertUserActiveOrBadReq(user);
 
     if (user.password) {
       if (!oldPassword) {
@@ -404,15 +171,20 @@ export class AuthService {
       select: { id: true },
     });
 
+    if (await this.deps.settingService.revokeSessionsOnPasswordChange()) {
+      await this.deps.sessionService.revoke(userId);
+    }
+
     const { sessionId } = ctxStore.getStore() ?? {};
     await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.password_changed,
-        severity: SecurityEventSeverity.medium,
-        changedBy: 'user',
-      },
-      { subjectUserId: userId, userId, sessionId },
+      createSecurityAuditLog(
+        SecurityEventType.password_changed,
+        SecurityEventSeverity.medium,
+        AuthMethod.EMAIL,
+        { id: userId, email: user.email },
+        { changedBy: 'user' },
+      ),
+      createAuditContext(userId, { sessionId }),
     );
   }
 
@@ -427,13 +199,13 @@ export class AuthService {
 
     if (!userId) {
       await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.password_reset_failed,
-          severity: SecurityEventSeverity.medium,
-          email: '',
-          error: 'invalid_otp',
-        },
+        createSecurityAuditLog(
+          SecurityEventType.password_reset_failed,
+          SecurityEventSeverity.medium,
+          AuthMethod.EMAIL,
+          { id: '', email: '' },
+          { error: 'invalid_otp' },
+        ),
         { visibility: AuditLogVisibility.admin_only },
       );
       throw new BadReqErr(ErrCode.InvalidOtp);
@@ -443,9 +215,7 @@ export class AuthService {
       where: { id: userId },
       select: { id: true, status: true },
     });
-    if (!user) {
-      throw new NotFoundErr(ErrCode.UserNotFound);
-    }
+    assertUserExists(user);
 
     await this.deps.db.user.update({
       where: { id: user.id },
@@ -459,13 +229,13 @@ export class AuthService {
     await this.deps.sessionService.revoke(userId);
 
     await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.password_reset_completed,
-        severity: SecurityEventSeverity.medium,
-        email: '',
-      },
-      { subjectUserId: user.id, userId: user.id },
+      createSecurityAuditLog(
+        SecurityEventType.password_reset_completed,
+        SecurityEventSeverity.medium,
+        AuthMethod.EMAIL,
+        { id: user.id, email: '' },
+      ),
+      createAuditContext(user.id),
     );
   }
 
@@ -480,14 +250,13 @@ export class AuthService {
 
     if (!userId) {
       await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.otp_invalid,
-          severity: SecurityEventSeverity.medium,
-          email: '',
-          purpose: PurposeVerify.REGISTER,
-          error: 'invalid_otp',
-        },
+        createSecurityAuditLog(
+          SecurityEventType.otp_invalid,
+          SecurityEventSeverity.medium,
+          AuthMethod.EMAIL,
+          { id: '', email: '' },
+          { purpose: PurposeVerify.REGISTER, error: 'invalid_otp' },
+        ),
         { visibility: AuditLogVisibility.admin_only },
       );
       throw new BadReqErr(ErrCode.InvalidOtp);
@@ -531,22 +300,22 @@ export class AuthService {
       session.revoked ||
       isExpired(session.expired) ||
       !session.createdBy ||
-      session.createdBy.status !== 'active'
+      session.createdBy.status !== UserStatus.active
     ) {
       await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.refresh_token_failed,
-          severity: SecurityEventSeverity.medium,
-          method: 'email',
-          email: session?.createdBy?.email ?? '',
-          error: 'refresh_token_invalid',
-        },
-        {
-          subjectUserId: session?.createdBy?.id,
-          userId: session?.createdBy?.id,
+        createSecurityAuditLog(
+          SecurityEventType.refresh_token_failed,
+          SecurityEventSeverity.medium,
+          AuthMethod.EMAIL,
+          {
+            id: session?.createdBy?.id ?? '',
+            email: session?.createdBy?.email ?? '',
+          },
+          { error: 'refresh_token_invalid' },
+        ),
+        createAuditContext(session?.createdBy?.id ?? '', {
           sessionId: session?.id,
-        },
+        }),
       );
       throw new UnAuthErr(ErrCode.ExpiredToken);
     }
@@ -562,30 +331,29 @@ export class AuthService {
     const { accessToken, expirationTime } =
       await this.deps.tokenService.createAccessToken(payload);
 
+    const userWithPermissions =
+      await this.deps.authUserService.loadUserWithPermissions(
+        session.createdBy.id,
+        { checkStatus: false },
+      );
+
     const user = {
-      ...session.createdBy,
-      permissions: await this.deps.userUtilService.getPermissions(
-        session.createdBy,
-      ),
+      ...userWithPermissions,
+      sessionId: session.id,
     };
 
     await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.refresh_token_success,
-        severity: SecurityEventSeverity.low,
-        method: 'email',
-        email: session.createdBy.email ?? '',
-      },
-      {
-        subjectUserId: session.createdBy.id,
-        userId: session.createdBy.id,
-        sessionId: session.id,
-      },
+      createSecurityAuditLog(
+        SecurityEventType.refresh_token_success,
+        SecurityEventSeverity.low,
+        AuthMethod.EMAIL,
+        { id: session.createdBy.id, email: session.createdBy.email },
+      ),
+      createAuditContext(session.createdBy.id, { sessionId: session.id }),
     );
 
     return {
-      type: LoginResType.COMPLETED,
+      type: AuthStatus.COMPLETED,
       accessToken,
       refreshToken: token,
       exp: expirationTime.getTime(),
@@ -599,15 +367,13 @@ export class AuthService {
     const { id, sessionId } = params;
 
     await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.logout,
-        severity: SecurityEventSeverity.low,
-        method: 'email',
-        email: '',
-        sessionId,
-      },
-      { subjectUserId: id, userId: id, sessionId },
+      createSecurityAuditLog(
+        SecurityEventType.logout,
+        SecurityEventSeverity.low,
+        AuthMethod.EMAIL,
+        { id, email: '' },
+      ),
+      createAuditContext(id, { sessionId }),
     );
 
     await this.deps.sessionService.revoke(id, [sessionId]);
@@ -626,58 +392,6 @@ export class AuthService {
     });
 
     await this.deps.sessionService.revoke(id);
-  }
-
-  async confirmMfaLogin(params: ConfirmMfaLoginParams): Promise<ILoginRes> {
-    const { mfaToken, loginToken, otp } = params;
-
-    const cachedData = await this.deps.mfaCache.get(mfaToken);
-    if (!cachedData || cachedData.loginToken !== loginToken) {
-      const { userId, sessionId } = ctxStore.getStore() ?? {};
-      await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.medium,
-          method: 'email',
-          email: '',
-          error: 'mfa_session_expired',
-        },
-        {
-          visibility: AuditLogVisibility.admin_only,
-          userId,
-          sessionId,
-        },
-      );
-      throw new BadReqErr(ErrCode.SessionExpired);
-    }
-
-    return this.deps.mfaService.verifyAndCompleteLogin({
-      mfaToken,
-      otp,
-    });
-  }
-
-  loginWithMfa(params: LoginWithMfaParams): Promise<ILoginRes> {
-    return this.deps.mfaService.verifyAndCompleteLogin(params);
-  }
-
-  async getProfile(userId: string) {
-    const user = await this.deps.db.user.findUnique({
-      where: { id: userId },
-      select: userResSelect,
-    });
-
-    if (!user) {
-      throw new NotFoundErr(ErrCode.UserNotFound);
-    }
-
-    const permissions = await this.deps.userUtilService.getPermissions(user);
-
-    return {
-      ...user,
-      permissions,
-    };
   }
 }
 

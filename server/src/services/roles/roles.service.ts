@@ -14,8 +14,9 @@ import {
   BadReqErr,
   DB_PREFIX,
   ErrCode,
-  IdUtil,
+  type IdUtil,
   type IIdsDto,
+  idUtil,
   NotFoundErr,
   normalizeSearchTerm,
   UnAuthErr,
@@ -27,19 +28,20 @@ export class RolesService {
     private readonly deps: {
       db: IDb;
       auditLogService: AuditLogsService;
+      idUtil: IdUtil;
     },
   ) {}
 
   private buildPermissionData(permissionIds: string[]) {
     return permissionIds.map((permId) => ({
-      id: IdUtil.dbId(),
+      id: this.deps.idUtil.dbId(),
       permissionId: permId,
     }));
   }
 
   private buildPlayerData(players: UpsertRoleParams['players']) {
     return players.map((player) => ({
-      id: IdUtil.dbId(),
+      id: this.deps.idUtil.dbId(),
       playerId: player.playerId,
       expiresAt: player.expiresAt ? new Date(player.expiresAt) : null,
     }));
@@ -218,7 +220,7 @@ export class RolesService {
 
       return { id: updated.id };
     } else {
-      const roleId = IdUtil.dbId(DB_PREFIX.ROLE);
+      const roleId = this.deps.idUtil.dbId(DB_PREFIX.ROLE);
       const created = await this.deps.db.role.create({
         data: {
           id: roleId,
@@ -363,4 +365,5 @@ export class RolesService {
 export const rolesService = new RolesService({
   db,
   auditLogService: auditLogsService,
+  idUtil,
 });

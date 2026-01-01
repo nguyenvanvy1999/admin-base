@@ -7,7 +7,7 @@ import {
   mock,
   spyOn,
 } from 'bun:test';
-import { EncryptService } from 'src/services/auth/encrypt.service';
+import { encryptService } from 'src/services/auth/encrypt.service';
 import { SettingsService } from 'src/services/settings/settings.service';
 import { SETTING } from 'src/share';
 import { SettingFixtures } from 'test/fixtures';
@@ -44,12 +44,13 @@ describe('settingService', () => {
         update: mock(() => Promise.resolve(null)),
       },
     } as any;
-    decryptSpy = spyOn(EncryptService, 'aes256Decrypt').mockReturnValue(
+    decryptSpy = spyOn(encryptService, 'aes256Decrypt').mockReturnValue(
       'decrypted_encrypted_value',
     );
     service = new SettingsService({
       cache: mockCache,
       db: mockDb,
+      encryptService,
     } as any);
   });
 
@@ -518,7 +519,7 @@ describe('settingService', () => {
       ];
       mockDb.setting.findMany.mockResolvedValueOnce(dbSettings);
 
-      const decSpy = spyOn(EncryptService, 'aes256Decrypt').mockReturnValue(
+      const decSpy = spyOn(encryptService, 'aes256Decrypt').mockReturnValue(
         'true',
       );
 
@@ -699,7 +700,7 @@ describe('settingService', () => {
         true,
       );
       mockDb.setting.findMany.mockResolvedValue([existingSetting]);
-      spyOn(EncryptService, 'aes256Encrypt').mockReturnValue('encrypted_new');
+      spyOn(encryptService, 'aes256Encrypt').mockReturnValue('encrypted_new');
 
       const result = await service.importSettings(importData);
 

@@ -18,7 +18,7 @@ export class ValueUtil {
   }
 
   static notNil<T>(value: T): value is NonNullable<T> {
-    return !ValueUtil.isNil(value);
+    return value !== null && value !== undefined;
   }
 }
 

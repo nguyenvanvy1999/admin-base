@@ -4,6 +4,7 @@ import {
   CaptchaService,
   type SvgCaptchaGenerator,
 } from 'src/services/auth/captcha.service';
+import { idUtil } from 'src/share';
 
 describe('CaptchaService', () => {
   let cache: {
@@ -34,6 +35,7 @@ describe('CaptchaService', () => {
     service = new CaptchaService({
       cache,
       svg,
+      idUtil,
     });
   });
 
@@ -99,6 +101,7 @@ describe('CaptchaService', () => {
       const svc = new CaptchaService({
         cache: cache as unknown as ICaptchaCache,
         svg,
+        idUtil,
       });
       expect(svc.generateCaptcha()).rejects.toThrow('set failed');
       expect(svg.create).toHaveBeenCalledTimes(1);
@@ -174,6 +177,7 @@ describe('CaptchaService', () => {
       const svc = new CaptchaService({
         cache: cache as unknown as ICaptchaCache,
         svg,
+        idUtil,
       });
       expect(svc.generateMathCaptcha()).rejects.toThrow('set failed');
       expect(svg.createMathExpr).toHaveBeenCalledTimes(1);
@@ -228,6 +232,7 @@ describe('CaptchaService', () => {
       const svc = new CaptchaService({
         cache: cache as unknown as ICaptchaCache,
         svg,
+        idUtil,
       });
       expect(
         svc.validateCaptcha({ token: 't', userInput: 'abc' }),

@@ -5,7 +5,10 @@ import { db, type IDb } from 'src/config/db';
 import type { UpdateSettingParams } from 'src/dtos/settings.dto';
 import type { Setting, SettingSelect } from 'src/generated';
 import { AuditLogVisibility, SettingDataType } from 'src/generated';
-import { EncryptService } from 'src/services/auth/encrypt.service';
+import {
+  type EncryptService,
+  encryptService,
+} from 'src/services/auth/encrypt.service';
 import {
   BadReqErr,
   type defaultSettings,
@@ -75,10 +78,12 @@ export class SettingsService {
       db: IDb;
       cache: ISettingCache;
       auditLogService: AuditLogsService;
+      encryptService: EncryptService;
     } = {
       db,
       cache: settingCache,
       auditLogService: auditLogsService,
+      encryptService,
     },
   ) {}
 
@@ -107,7 +112,7 @@ export class SettingsService {
   getValue<T>(setting: Setting, raw = false): T {
     let value = setting.value;
     if (setting.isSecret) {
-      value = EncryptService.aes256Decrypt(value);
+      value = this.deps.encryptService.aes256Decrypt(value);
     }
     if (raw) {
       return value as T;
@@ -138,7 +143,7 @@ export class SettingsService {
     let decryptedValue = value;
     if (isSecret) {
       try {
-        decryptedValue = EncryptService.aes256Decrypt(value);
+        decryptedValue = this.deps.encryptService.aes256Decrypt(value);
       } catch {
         decryptedValue = value;
       }
@@ -354,6 +359,22 @@ export class SettingsService {
     return this.getSetting<boolean>(SETTING.ENB_IP_WHITELIST);
   }
 
+  enbCaptchaRequired(): Promise<boolean> {
+    return this.getSetting<boolean>(SETTING.ENB_CAPTCHA_REQUIRED);
+  }
+
+  enbMfaRiskBased(): Promise<boolean> {
+    return this.getSetting<boolean>(SETTING.ENB_MFA_RISK_BASED);
+  }
+
+  enbDeviceVerification(): Promise<boolean> {
+    return this.getSetting<boolean>(SETTING.ENB_DEVICE_VERIFICATION);
+  }
+
+  revokeSessionsOnPasswordChange(): Promise<boolean> {
+    return this.getSetting<boolean>(SETTING.REVOKE_SESSIONS_ON_PASSWORD_CHANGE);
+  }
+
   registerOtpLimit(): Promise<number> {
     return this.getSetting<number>(SETTING.REGISTER_OTP_LIMIT);
   }
@@ -439,7 +460,7 @@ export class SettingsService {
     for (const setting of settings) {
       let value = setting.value;
       if (setting.isSecret) {
-        value = EncryptService.aes256Decrypt(value);
+        value = this.deps.encryptService.aes256Decrypt(value);
       }
       result[setting.key] = value;
     }
@@ -548,7 +569,7 @@ export class SettingsService {
       .map((setting) => {
         let value = data[setting.key]!;
         if (setting.isSecret) {
-          value = EncryptService.aes256Encrypt(value);
+          value = this.deps.encryptService.aes256Encrypt(value);
         }
         return {
           where: { key: setting.key },
@@ -626,7 +647,9 @@ export class SettingsService {
     if (!this.validateSetting(setting.key, value, setting.type).valid) {
       throw new BadReqErr(ErrCode.BadRequest);
     }
-    const newValue = isSecret ? EncryptService.aes256Encrypt(value) : value;
+    const newValue = isSecret
+      ? this.deps.encryptService.aes256Encrypt(value)
+      : value;
     const previousValue = setting.isSecret
       ? '***'
       : this.getValue<string>({

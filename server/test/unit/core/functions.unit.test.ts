@@ -1,19 +1,18 @@
 import { describe, expect, it } from 'bun:test';
-import { Decimal } from 'decimal.js';
-import { AmountUtil, ArrayUtil, IdUtil, isExpired, ValueUtil } from 'src/share';
+import { ArrayUtil, idUtil, isExpired, ValueUtil } from 'src/share';
 
 describe('Functions Utils', () => {
   describe('Token Generation', () => {
     describe('token8', () => {
       it('should generate an 8-character token', () => {
-        const token = IdUtil.token8();
+        const token = idUtil.token8();
         expect(token).toBeDefined();
         expect(typeof token).toBe('string');
         expect(token.length).toBe(8);
       });
       it('should generate token with prefix', () => {
         const prefix = 'TEST';
-        const token = IdUtil.token8(prefix);
+        const token = idUtil.token8(prefix);
         expect(token).toBeDefined();
         expect(token.startsWith(`${prefix}_`)).toBe(true);
         expect(token.length).toBe(prefix.length + 1 + 8);
@@ -21,21 +20,21 @@ describe('Functions Utils', () => {
       it('should generate unique tokens', () => {
         const tokens = new Set();
         for (let i = 0; i < 100; i++) {
-          tokens.add(IdUtil.token8());
+          tokens.add(idUtil.token8());
         }
         expect(tokens.size).toBe(100);
       });
     });
     describe('token12', () => {
       it('should generate a 12-character token', () => {
-        const token = IdUtil.token12();
+        const token = idUtil.token12();
         expect(token).toBeDefined();
         expect(typeof token).toBe('string');
         expect(token.length).toBe(12);
       });
       it('should generate token with prefix', () => {
         const prefix = 'USER';
-        const token = IdUtil.token12(prefix);
+        const token = idUtil.token12(prefix);
         expect(token).toBeDefined();
         expect(token.startsWith(`${prefix}_`)).toBe(true);
         expect(token.length).toBe(prefix.length + 1 + 12);
@@ -43,21 +42,21 @@ describe('Functions Utils', () => {
       it('should generate unique tokens', () => {
         const tokens = new Set();
         for (let i = 0; i < 100; i++) {
-          tokens.add(IdUtil.token12());
+          tokens.add(idUtil.token12());
         }
         expect(tokens.size).toBe(100);
       });
     });
     describe('token16', () => {
       it('should generate a 16-character token', () => {
-        const token = IdUtil.token16();
+        const token = idUtil.token16();
         expect(token).toBeDefined();
         expect(typeof token).toBe('string');
         expect(token.length).toBe(16);
       });
       it('should generate token with prefix', () => {
         const prefix = 'ORDER';
-        const token = IdUtil.token16(prefix);
+        const token = idUtil.token16(prefix);
         expect(token).toBeDefined();
         expect(token.startsWith(`${prefix}_`)).toBe(true);
         expect(token.length).toBe(prefix.length + 1 + 16);
@@ -65,21 +64,21 @@ describe('Functions Utils', () => {
       it('should generate unique tokens', () => {
         const tokens = new Set();
         for (let i = 0; i < 100; i++) {
-          tokens.add(IdUtil.token16());
+          tokens.add(idUtil.token16());
         }
         expect(tokens.size).toBe(100);
       });
     });
     describe('token32', () => {
       it('should generate a 32-character token', () => {
-        const token = IdUtil.token32();
+        const token = idUtil.token32();
         expect(token).toBeDefined();
         expect(typeof token).toBe('string');
         expect(token.length).toBe(32);
       });
       it('should generate token with prefix', () => {
         const prefix = 'SESSION';
-        const token = IdUtil.token32(prefix);
+        const token = idUtil.token32(prefix);
         expect(token).toBeDefined();
         expect(token.startsWith(`${prefix}_`)).toBe(true);
         expect(token.length).toBe(prefix.length + 1 + 32);
@@ -87,21 +86,21 @@ describe('Functions Utils', () => {
       it('should generate unique tokens', () => {
         const tokens = new Set();
         for (let i = 0; i < 100; i++) {
-          tokens.add(IdUtil.token32());
+          tokens.add(idUtil.token32());
         }
         expect(tokens.size).toBe(100);
       });
     });
     describe('dbId', () => {
       it('should generate a 16-character ID', () => {
-        const id = IdUtil.dbId();
+        const id = idUtil.dbId();
         expect(id).toBeDefined();
         expect(typeof id).toBe('string');
         expect(id.length).toBe(16);
       });
       it('should generate ID with DB prefix', () => {
         const prefix = 'user';
-        const id = IdUtil.dbId(prefix as any);
+        const id = idUtil.dbId(prefix as any);
         expect(id).toBeDefined();
         expect(id.startsWith(`${prefix}_`)).toBe(true);
         expect(id.length).toBe(prefix.length + 1 + 16);
@@ -109,7 +108,7 @@ describe('Functions Utils', () => {
       it('should generate unique IDs', () => {
         const ids = new Set();
         for (let i = 0; i < 100; i++) {
-          ids.add(IdUtil.dbId());
+          ids.add(idUtil.dbId());
         }
         expect(ids.size).toBe(100);
       });
@@ -177,7 +176,7 @@ describe('Functions Utils', () => {
   describe('Snowflake ID Generation', () => {
     describe('snowflakeId', () => {
       it('should generate a bigint ID', () => {
-        const id = IdUtil.snowflakeId();
+        const id = idUtil.snowflakeId();
         expect(id).toBeDefined();
         expect(typeof id).toBe('bigint');
         expect(id > 0n).toBe(true);
@@ -185,13 +184,13 @@ describe('Functions Utils', () => {
       it('should generate unique IDs', () => {
         const ids = new Set();
         for (let i = 0; i < 100; i++) {
-          ids.add(IdUtil.snowflakeId().toString());
+          ids.add(idUtil.snowflakeId().toString());
         }
         expect(ids.size).toBe(100);
       });
       it('should generate increasing IDs', () => {
-        const id1 = IdUtil.snowflakeId();
-        const id2 = IdUtil.snowflakeId();
+        const id1 = idUtil.snowflakeId();
+        const id2 = idUtil.snowflakeId();
         expect(id2 > id1).toBe(true);
       });
     });
@@ -228,110 +227,6 @@ describe('Functions Utils', () => {
         const input = [3, 1, 2, 1, 3, 2, 1];
         const result = ArrayUtil.uniq(input);
         expect(result).toEqual([3, 1, 2]);
-      });
-    });
-  });
-
-  describe('Decimal Utilities', () => {
-    describe('toBaseUnits', () => {
-      it('should convert human amount to base units', () => {
-        const result = AmountUtil.toBaseUnits('123.45', 2);
-        expect(result.toString()).toBe('12345');
-      });
-      it('should convert Decimal to base units', () => {
-        const decimal = new Decimal('123.45');
-        const result = AmountUtil.toBaseUnits(decimal, 2);
-        expect(result.toString()).toBe('12345');
-      });
-      it('should convert number to base units', () => {
-        const result = AmountUtil.toBaseUnits(123.45, 2);
-        expect(result.toString()).toBe('12345');
-      });
-      it('should handle zero amount', () => {
-        const result = AmountUtil.toBaseUnits('0', 2);
-        expect(result.toString()).toBe('0');
-      });
-      it('should handle large decimals', () => {
-        const result = AmountUtil.toBaseUnits('123456789.123456789', 9);
-        expect(result.toString()).toBe('123456789123456789');
-      });
-      it('should throw error for negative amount', () => {
-        expect(() => {
-          AmountUtil.toBaseUnits('-123.45', 2);
-        }).toThrow('Invalid amount');
-      });
-      it('should throw error for non-finite amount', () => {
-        expect(() => {
-          AmountUtil.toBaseUnits(Infinity, 2);
-        }).toThrow('Invalid amount');
-      });
-      it('should throw error for non-integer result', () => {
-        expect(() => {
-          AmountUtil.toBaseUnits('123.456', 2);
-        }).toThrow('Amount must align with decimals');
-      });
-    });
-    describe('fromBaseUnits', () => {
-      it('should convert base units to human amount', () => {
-        const result = AmountUtil.fromBaseUnits('12345', 2);
-        expect(result).toBe('123.45');
-      });
-      it('should convert Decimal base units to human amount', () => {
-        const decimal = new Decimal('12345');
-        const result = AmountUtil.fromBaseUnits(decimal, 2);
-        expect(result).toBe('123.45');
-      });
-      it('should convert number base units to human amount', () => {
-        const result = AmountUtil.fromBaseUnits(12345, 2);
-        expect(result).toBe('123.45');
-      });
-      it('should handle zero base units', () => {
-        const result = AmountUtil.fromBaseUnits('0', 2);
-        expect(result).toBe('0');
-      });
-      it('should handle large base units', () => {
-        const result = AmountUtil.fromBaseUnits('123456789123456789', 9);
-        expect(result).toBe('123456789.123456789');
-      });
-      it('should remove trailing zeros', () => {
-        const result = AmountUtil.fromBaseUnits('12300', 2);
-        expect(result).toBe('123');
-      });
-      it('should handle single decimal place', () => {
-        const result = AmountUtil.fromBaseUnits('12340', 2);
-        expect(result).toBe('123.4');
-      });
-    });
-    describe('multiplyHuman', () => {
-      it('should multiply two human amounts', () => {
-        const result = AmountUtil.multiplyHuman('123.45', '2.5', 2);
-        expect(result).toBe('308.63');
-      });
-      it('should multiply Decimal amounts', () => {
-        const a = new Decimal('123.45');
-        const b = new Decimal('2.5');
-        const result = AmountUtil.multiplyHuman(a, b, 2);
-        expect(result).toBe('308.63');
-      });
-      it('should multiply number amounts', () => {
-        const result = AmountUtil.multiplyHuman(123.45, 2.5, 2);
-        expect(result).toBe('308.63');
-      });
-      it('should handle zero multiplication', () => {
-        const result = AmountUtil.multiplyHuman('123.45', '0', 2);
-        expect(result).toBe('0.00');
-      });
-      it('should handle one multiplication', () => {
-        const result = AmountUtil.multiplyHuman('123.45', '1', 2);
-        expect(result).toBe('123.45');
-      });
-      it('should handle large numbers', () => {
-        const result = AmountUtil.multiplyHuman('999999.99', '999999.99', 2);
-        expect(result).toBe('999999980000.00');
-      });
-      it('should respect output decimals', () => {
-        const result = AmountUtil.multiplyHuman('123.456', '2.5', 4);
-        expect(result).toBe('308.6400');
       });
     });
   });

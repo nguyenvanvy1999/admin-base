@@ -40,7 +40,8 @@ import {
   DB_PREFIX,
   defaultRoles,
   ErrCode,
-  IdUtil,
+  type IdUtil,
+  idUtil,
   type MfaChangeMethod,
   NotFoundErr,
   normalizeEmail,
@@ -86,6 +87,7 @@ export class UsersService {
       auditLogService: AuditLogsService;
       passwordService: PasswordService;
       userUtilService: UserUtilService;
+      idUtil: IdUtil;
     },
   ) {}
 
@@ -105,7 +107,7 @@ export class UsersService {
     }
 
     const resolvedRoleIds = await this.resolveRoleIds(roleIds);
-    const userId = IdUtil.dbId(DB_PREFIX.USER);
+    const userId = this.deps.idUtil.dbId(DB_PREFIX.USER);
     const trimmedName = ServiceUtils.trimOrNull(name);
     const nextStatus = status ?? UserStatus.active;
     const shouldVerifyEmail = emailVerified ?? nextStatus === UserStatus.active;
@@ -121,7 +123,7 @@ export class UsersService {
           ...(await this.deps.passwordService.createPassword(password)),
           roles: {
             create: resolvedRoleIds.map((roleId) => ({
-              id: IdUtil.dbId(),
+              id: this.deps.idUtil.dbId(),
               roleId,
             })),
           },
@@ -273,6 +275,47 @@ export class UsersService {
 
   disableUserMfa(params: BaseUserActionParams): Promise<AdminUserActionResult> {
     return this.performMfaReset(params, 'admin-disable');
+  }
+
+  async forceUserMfaEnroll(
+    params: BaseUserActionParams,
+  ): Promise<AdminUserActionResult> {
+    const { targetUserId, reason } = params;
+    const normalizedReason = ServiceUtils.normalizeReason(reason);
+    const user = await this.ensureUserExists(targetUserId);
+
+    if (user.protected) {
+      throw new BadReqErr(ErrCode.PermissionDenied);
+    }
+
+    await this.deps.db.user.update({
+      where: { id: targetUserId },
+      data: { mfaEnrollRequired: true },
+      select: { id: true },
+    });
+
+    await this.deps.sessionService.revoke(targetUserId);
+
+    const changes = buildUpdateChanges(
+      { mfaEnrollRequired: false },
+      { mfaEnrollRequired: true, reason: normalizedReason },
+    );
+
+    await this.deps.auditLogService.pushCud(
+      {
+        category: 'cud',
+        entityType: 'user',
+        entityId: targetUserId,
+        action: 'update',
+        changes,
+      },
+      {
+        visibility: AuditLogVisibility.actor_and_subject,
+        subjectUserId: targetUserId,
+      },
+    );
+
+    return { userId: targetUserId };
   }
 
   private async performMfaReset(
@@ -452,7 +495,7 @@ export class UsersService {
       if (roles.length > 0) {
         await tx.rolePlayer.createMany({
           data: roles.map((role) => ({
-            id: IdUtil.dbId(),
+            id: this.deps.idUtil.dbId(),
             playerId: targetUserId,
             roleId: role.roleId,
             expiresAt: role.expiresAt ?? null,
@@ -542,11 +585,11 @@ export class UsersService {
       data: {
         totpSecret: null,
         mfaTotpEnabled: false,
-        backupCodes: null,
-        backupCodesUsed: null,
       },
       select: { id: true },
     });
+
+    await this.deps.db.mfaBackupCode.deleteMany({ where: { userId } });
 
     await this.deps.sessionService.revoke(userId);
   }
@@ -623,4 +666,5 @@ export const usersService = new UsersService({
   auditLogService: auditLogsService,
   passwordService,
   userUtilService,
+  idUtil,
 });
