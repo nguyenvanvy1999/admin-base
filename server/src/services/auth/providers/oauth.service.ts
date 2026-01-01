@@ -17,6 +17,23 @@ import {
   type AuditLogsService,
   auditLogsService,
 } from 'src/services/audit-logs/audit-logs.service';
+import { authFlowService } from 'src/services/auth/core/auth-flow.service';
+import { authTxService } from 'src/services/auth/core/auth-tx.service';
+import {
+  type SecurityMonitorService,
+  securityMonitorService,
+} from 'src/services/auth/security/security-monitor.service';
+import {
+  AuthChallengeType,
+  AuthMethod,
+  AuthNextStepKind,
+  AuthStatus,
+  AuthTxState,
+} from 'src/services/auth/types/constants';
+import {
+  type UserUtilService,
+  userUtilService,
+} from 'src/services/auth/utils/auth-util.service';
 import { settingsService } from 'src/services/settings/settings.service';
 import {
   BadReqErr,
@@ -30,23 +47,6 @@ import {
   type PrismaTx,
   UnAuthErr,
 } from 'src/share';
-import { authFlowService } from '../core/auth-flow.service';
-import { authTxService } from '../core/auth-tx.service';
-import {
-  type SecurityMonitorService,
-  securityMonitorService,
-} from '../security/security-monitor.service';
-import {
-  AuthChallengeType,
-  AuthMethod,
-  AuthNextStepKind,
-  AuthStatus,
-  AuthTxState,
-} from '../types/constants';
-import {
-  type UserUtilService,
-  userUtilService,
-} from '../utils/auth-util.service';
 
 export class OAuthService {
   constructor(

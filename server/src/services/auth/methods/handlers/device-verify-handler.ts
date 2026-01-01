@@ -1,11 +1,14 @@
-import { BadReqErr, ErrCode, PurposeVerify } from 'src/share';
+import type { OtpService } from 'src/services/auth/methods/otp.service';
 import type {
   AuthMethodContext,
   AuthMethodResult,
   IAuthMethodHandler,
-} from '../../types/auth-method-handler.interface';
-import { AuthChallengeType, AuthMethod } from '../../types/constants';
-import type { OtpService } from '../otp.service';
+} from 'src/services/auth/types/auth-method-handler.interface';
+import {
+  AuthChallengeType,
+  AuthMethod,
+} from 'src/services/auth/types/constants';
+import { BadReqErr, ErrCode, PurposeVerify } from 'src/share';
 
 export class DeviceVerifyHandler implements IAuthMethodHandler {
   readonly type = AuthChallengeType.DEVICE_VERIFY;

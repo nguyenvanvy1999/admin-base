@@ -6,6 +6,19 @@ import { geoIPQueue, type IGeoIPQueue } from 'src/config/queue';
 import type { ILoginRes } from 'src/dtos/auth.dto';
 import { type User, UserStatus } from 'src/generated';
 import {
+  type PasswordService,
+  passwordService,
+} from 'src/services/auth/methods/password.service';
+import {
+  type EncryptService,
+  encryptService,
+} from 'src/services/auth/security/encrypt.service';
+import {
+  type SessionService,
+  sessionService,
+} from 'src/services/auth/session.service';
+import { AuthStatus } from 'src/services/auth/types/constants';
+import {
   type SettingsService,
   settingsService,
 } from 'src/services/settings/settings.service';
@@ -26,16 +39,6 @@ import {
   UnAuthErr,
   type UPermission,
 } from 'src/share';
-import {
-  type PasswordService,
-  passwordService,
-} from '../methods/password.service';
-import {
-  type EncryptService,
-  encryptService,
-} from '../security/encrypt.service';
-import { type SessionService, sessionService } from '../session.service';
-import { AuthStatus } from '../types/constants';
 
 export class TokenService {
   constructor(

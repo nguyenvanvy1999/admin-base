@@ -18,6 +18,8 @@ import {
   type AuditLogsService,
   auditLogsService,
 } from 'src/services/audit-logs/audit-logs.service';
+import type { LockingService } from 'src/services/misc';
+import { lockingService } from 'src/services/misc';
 import {
   type SettingsService,
   settingsService,
@@ -29,8 +31,6 @@ import {
   idUtil,
   PurposeVerify,
 } from 'src/share';
-import type { LockingService } from '../../misc';
-import { lockingService } from '../../misc';
 
 export class OtpService {
   constructor(

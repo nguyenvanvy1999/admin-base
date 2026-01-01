@@ -1,9 +1,9 @@
 import { currentUserCache } from 'src/config/cache';
-import { ctxStore, type ICurrentUser } from 'src/share';
 import {
   type AuthUserService,
   authUserService,
-} from '../core/auth-user.service';
+} from 'src/services/auth/core/auth-user.service';
+import { ctxStore, type ICurrentUser } from 'src/share';
 import { type TokenService, tokenService } from './auth-util.service';
 
 export class AuthMiddlewareService {

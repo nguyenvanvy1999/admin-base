@@ -1,12 +1,15 @@
-import { BadReqErr, ErrCode } from 'src/share';
+import type { MfaService } from 'src/services/auth/methods/mfa.service';
+import type { OtpService } from 'src/services/auth/methods/otp.service';
 import type {
   AuthMethodContext,
   AuthMethodResult,
   IAuthMethodHandler,
-} from '../../types/auth-method-handler.interface';
-import { AuthChallengeType, AuthMethod } from '../../types/constants';
-import type { MfaService } from '../mfa.service';
-import type { OtpService } from '../otp.service';
+} from 'src/services/auth/types/auth-method-handler.interface';
+import {
+  AuthChallengeType,
+  AuthMethod,
+} from 'src/services/auth/types/constants';
+import { BadReqErr, ErrCode } from 'src/share';
 
 export class EmailOtpHandler implements IAuthMethodHandler {
   readonly type = AuthChallengeType.MFA_EMAIL_OTP;

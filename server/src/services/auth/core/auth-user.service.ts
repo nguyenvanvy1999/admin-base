@@ -1,10 +1,13 @@
 import { db, type IDb } from 'src/config/db';
-import { type ICurrentUser, userResSelect } from 'src/share';
-import { assertUserActive, assertUserExists } from '../utils/auth-errors.util';
+import {
+  assertUserActive,
+  assertUserExists,
+} from 'src/services/auth/utils/auth-errors.util';
 import {
   type UserUtilService,
   userUtilService,
-} from '../utils/auth-util.service';
+} from 'src/services/auth/utils/auth-util.service';
+import { type ICurrentUser, userResSelect } from 'src/share';
 
 export class AuthUserService {
   constructor(

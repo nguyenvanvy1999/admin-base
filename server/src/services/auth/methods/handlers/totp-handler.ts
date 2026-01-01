@@ -1,12 +1,15 @@
 import type { authenticator } from 'otplib';
-import { BadReqErr, ErrCode } from 'src/share';
-import type { AuthUserService } from '../../core/auth-user.service';
+import type { AuthUserService } from 'src/services/auth/core/auth-user.service';
 import type {
   AuthMethodContext,
   AuthMethodResult,
   IAuthMethodHandler,
-} from '../../types/auth-method-handler.interface';
-import { AuthChallengeType, AuthMethod } from '../../types/constants';
+} from 'src/services/auth/types/auth-method-handler.interface';
+import {
+  AuthChallengeType,
+  AuthMethod,
+} from 'src/services/auth/types/constants';
+import { BadReqErr, ErrCode } from 'src/share';
 
 export class TotpHandler implements IAuthMethodHandler {
   readonly type = AuthChallengeType.MFA_TOTP;

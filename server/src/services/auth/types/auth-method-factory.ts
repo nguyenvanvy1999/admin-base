@@ -1,12 +1,12 @@
 import { authenticator } from 'otplib';
+import { authUserService } from 'src/services/auth/core/auth-user.service';
+import { BackupCodeHandler } from 'src/services/auth/methods/handlers/backup-code-handler';
+import { DeviceVerifyHandler } from 'src/services/auth/methods/handlers/device-verify-handler';
+import { EmailOtpHandler } from 'src/services/auth/methods/handlers/email-otp-handler';
+import { TotpHandler } from 'src/services/auth/methods/handlers/totp-handler';
+import { mfaService } from 'src/services/auth/methods/mfa.service';
+import { otpService } from 'src/services/auth/methods/otp.service';
 import { BadReqErr, ErrCode } from 'src/share';
-import { authUserService } from '../core/auth-user.service';
-import { BackupCodeHandler } from '../methods/handlers/backup-code-handler';
-import { DeviceVerifyHandler } from '../methods/handlers/device-verify-handler';
-import { EmailOtpHandler } from '../methods/handlers/email-otp-handler';
-import { TotpHandler } from '../methods/handlers/totp-handler';
-import { mfaService } from '../methods/mfa.service';
-import { otpService } from '../methods/otp.service';
 import type { IAuthMethodHandler } from './auth-method-handler.interface';
 import { AuthChallengeType } from './constants';
 

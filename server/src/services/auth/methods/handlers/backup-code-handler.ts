@@ -1,11 +1,14 @@
-import { ErrCode } from 'src/share';
+import type { MfaService } from 'src/services/auth/methods/mfa.service';
 import type {
   AuthMethodContext,
   AuthMethodResult,
   IAuthMethodHandler,
-} from '../../types/auth-method-handler.interface';
-import { AuthChallengeType, AuthMethod } from '../../types/constants';
-import type { MfaService } from '../mfa.service';
+} from 'src/services/auth/types/auth-method-handler.interface';
+import {
+  AuthChallengeType,
+  AuthMethod,
+} from 'src/services/auth/types/constants';
+import { ErrCode } from 'src/share';
 
 export class BackupCodeHandler implements IAuthMethodHandler {
   readonly type = AuthChallengeType.MFA_BACKUP_CODE;

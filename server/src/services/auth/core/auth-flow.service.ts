@@ -22,6 +22,48 @@ import {
   auditLogsService,
 } from 'src/services/audit-logs/audit-logs.service';
 import {
+  type MfaService,
+  mfaService,
+} from 'src/services/auth/methods/mfa.service';
+import {
+  type OtpService,
+  otpService,
+} from 'src/services/auth/methods/otp.service';
+import {
+  type PasswordService,
+  passwordService,
+} from 'src/services/auth/methods/password.service';
+import {
+  type CaptchaService,
+  captchaService,
+} from 'src/services/auth/security/captcha.service';
+import {
+  type SecurityMonitorService,
+  securityMonitorService,
+} from 'src/services/auth/security/security-monitor.service';
+import {
+  type SessionService,
+  sessionService,
+} from 'src/services/auth/session.service';
+import { authMethodFactory } from 'src/services/auth/types/auth-method-factory';
+import type { AuthMethodContext } from 'src/services/auth/types/auth-method-handler.interface';
+import {
+  AuthChallengeType,
+  AuthMethod,
+  AuthNextStepKind,
+  AuthStatus,
+  AuthTxState,
+} from 'src/services/auth/types/constants';
+import {
+  createAuditContext,
+  createSecurityAuditLog,
+} from 'src/services/auth/utils/auth-audit.util';
+import { assertUserExists } from 'src/services/auth/utils/auth-errors.util';
+import {
+  type UserUtilService,
+  userUtilService,
+} from 'src/services/auth/utils/auth-util.service';
+import {
   type SettingsService,
   settingsService,
 } from 'src/services/settings/settings.service';
@@ -32,39 +74,6 @@ import {
   PurposeVerify,
   userResSelect,
 } from 'src/share';
-import { type MfaService, mfaService } from '../methods/mfa.service';
-import { type OtpService, otpService } from '../methods/otp.service';
-import {
-  type PasswordService,
-  passwordService,
-} from '../methods/password.service';
-import {
-  type CaptchaService,
-  captchaService,
-} from '../security/captcha.service';
-import {
-  type SecurityMonitorService,
-  securityMonitorService,
-} from '../security/security-monitor.service';
-import { type SessionService, sessionService } from '../session.service';
-import { authMethodFactory } from '../types/auth-method-factory';
-import type { AuthMethodContext } from '../types/auth-method-handler.interface';
-import {
-  AuthChallengeType,
-  AuthMethod,
-  AuthNextStepKind,
-  AuthStatus,
-  AuthTxState,
-} from '../types/constants';
-import {
-  createAuditContext,
-  createSecurityAuditLog,
-} from '../utils/auth-audit.util';
-import { assertUserExists } from '../utils/auth-errors.util';
-import {
-  type UserUtilService,
-  userUtilService,
-} from '../utils/auth-util.service';
 import { type AuthTxService, authTxService } from './auth-tx.service';
 import { type AuthUserService, authUserService } from './auth-user.service';
 
