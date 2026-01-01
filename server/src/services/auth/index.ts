@@ -1,4 +1,7 @@
 export * from './auth.service';
+export * from './auth-errors.util';
+export * from './auth-middleware.service';
+export * from './auth-user.service';
 export * from './auth-util.service';
 export * from './authorization.service';
 export * from './captcha.service';

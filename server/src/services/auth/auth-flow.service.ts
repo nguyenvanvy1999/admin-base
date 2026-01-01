@@ -33,7 +33,9 @@ import {
   PurposeVerify,
   userResSelect,
 } from 'src/share';
+import { assertUserExists } from './auth-errors.util';
 import { type AuthTxService, authTxService } from './auth-tx.service';
+import { type AuthUserService, authUserService } from './auth-user.service';
 import { type UserUtilService, userUtilService } from './auth-util.service';
 import { type CaptchaService, captchaService } from './captcha.service';
 import {
@@ -67,6 +69,7 @@ export class AuthFlowService {
       env: IEnv;
       passwordService: PasswordService;
       userUtilService: UserUtilService;
+      authUserService: AuthUserService;
       authTxService: AuthTxService;
       securityMonitorService: SecurityMonitorService;
       settingService: SettingsService;
@@ -81,6 +84,7 @@ export class AuthFlowService {
       env,
       passwordService,
       userUtilService,
+      authUserService,
       authTxService,
       securityMonitorService,
       settingService: settingsService,
@@ -415,14 +419,7 @@ export class AuthFlowService {
 
     this.deps.authTxService.assertChallengeAttemptsAllowed(tx);
 
-    const user = await this.deps.db.user.findUnique({
-      where: { id: tx.userId },
-      select: userResSelect,
-    });
-
-    if (!user) throw new NotFoundErr(ErrCode.UserNotFound);
-    if (user.status !== UserStatus.active)
-      throw new BadReqErr(ErrCode.UserNotActive);
+    const user = await this.deps.authUserService.loadUserForAuth(tx.userId);
 
     let ok = false;
 
@@ -702,7 +699,7 @@ export class AuthFlowService {
       },
     });
 
-    if (!user) throw new NotFoundErr(ErrCode.UserNotFound);
+    assertUserExists(user);
 
     if (!user.mfaTotpEnabled) throw new BadReqErr(ErrCode.ActionNotAllowed);
 

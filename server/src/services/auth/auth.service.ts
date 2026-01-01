@@ -36,12 +36,12 @@ import {
   getIpAndUa,
   type ITokenPayload,
   isExpired,
-  NotFoundErr,
   normalizeEmail,
   PurposeVerify,
   UnAuthErr,
-  userResSelect,
 } from 'src/share';
+import { assertUserActiveOrBadReq, assertUserExists } from './auth-errors.util';
+import { type AuthUserService, authUserService } from './auth-user.service';
 import {
   type TokenService,
   tokenService,
@@ -70,6 +70,7 @@ export class AuthService {
       settingService: SettingsService;
       auditLogService: AuditLogsService;
       userUtilService: UserUtilService;
+      authUserService: AuthUserService;
       securityMonitorService: SecurityMonitorService;
     } = {
       db,
@@ -81,6 +82,7 @@ export class AuthService {
       settingService: settingsService,
       auditLogService: auditLogsService,
       userUtilService,
+      authUserService,
       securityMonitorService,
     },
   ) {}
@@ -143,15 +145,10 @@ export class AuthService {
 
     const user = await this.deps.db.user.findUnique({
       where: { id: userId },
-      select: { password: true, status: true, email: true },
+      select: { id: true, password: true, status: true, email: true },
     });
-    if (!user) {
-      throw new NotFoundErr(ErrCode.UserNotFound);
-    }
-
-    if (user.status !== UserStatus.active) {
-      throw new BadReqErr(ErrCode.UserNotActive);
-    }
+    assertUserExists(user);
+    assertUserActiveOrBadReq(user);
 
     if (user.password) {
       if (!oldPassword) {
@@ -218,9 +215,7 @@ export class AuthService {
       where: { id: userId },
       select: { id: true, status: true },
     });
-    if (!user) {
-      throw new NotFoundErr(ErrCode.UserNotFound);
-    }
+    assertUserExists(user);
 
     await this.deps.db.user.update({
       where: { id: user.id },
@@ -404,21 +399,7 @@ export class AuthService {
   }
 
   async getProfile(userId: string) {
-    const user = await this.deps.db.user.findUnique({
-      where: { id: userId },
-      select: userResSelect,
-    });
-
-    if (!user) {
-      throw new NotFoundErr(ErrCode.UserNotFound);
-    }
-
-    const permissions = await this.deps.userUtilService.getPermissions(user);
-
-    return {
-      ...user,
-      permissions,
-    };
+    return await this.deps.authUserService.loadUserWithPermissions(userId);
   }
 }
 
