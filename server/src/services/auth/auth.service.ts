@@ -40,6 +40,7 @@ import {
   PurposeVerify,
   UnAuthErr,
 } from 'src/share';
+import { createAuditContext, createSecurityAuditLog } from './auth-audit.util';
 import { assertUserActiveOrBadReq, assertUserExists } from './auth-errors.util';
 import { type AuthUserService, authUserService } from './auth-user.service';
 import {
@@ -99,14 +100,13 @@ export class AuthService {
 
     if (existingUser) {
       await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.register_failed,
-          severity: SecurityEventSeverity.medium,
-          method: AuthMethod.EMAIL,
-          email: normalizedEmail,
-          error: 'user_exists',
-        },
+        createSecurityAuditLog(
+          SecurityEventType.register_failed,
+          SecurityEventSeverity.medium,
+          AuthMethod.EMAIL,
+          { id: '', email: normalizedEmail },
+          { error: 'user_exists' },
+        ),
         { visibility: AuditLogVisibility.admin_only },
       );
       throw new BadReqErr(ErrCode.UserExisted);
@@ -124,14 +124,13 @@ export class AuthService {
     );
 
     await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.register_started,
-        severity: SecurityEventSeverity.low,
-        method: AuthMethod.EMAIL,
-        email: normalizedEmail,
-      },
-      { subjectUserId: createdUserId, userId: createdUserId },
+      createSecurityAuditLog(
+        SecurityEventType.register_started,
+        SecurityEventSeverity.low,
+        AuthMethod.EMAIL,
+        { id: createdUserId, email: normalizedEmail },
+      ),
+      createAuditContext(createdUserId),
     );
 
     if (otpToken) {
@@ -178,13 +177,14 @@ export class AuthService {
 
     const { sessionId } = ctxStore.getStore() ?? {};
     await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.password_changed,
-        severity: SecurityEventSeverity.medium,
-        changedBy: 'user',
-      },
-      { subjectUserId: userId, userId, sessionId },
+      createSecurityAuditLog(
+        SecurityEventType.password_changed,
+        SecurityEventSeverity.medium,
+        AuthMethod.EMAIL,
+        { id: userId, email: user.email },
+        { changedBy: 'user' },
+      ),
+      createAuditContext(userId, { sessionId }),
     );
   }
 
@@ -199,13 +199,13 @@ export class AuthService {
 
     if (!userId) {
       await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.password_reset_failed,
-          severity: SecurityEventSeverity.medium,
-          email: '',
-          error: 'invalid_otp',
-        },
+        createSecurityAuditLog(
+          SecurityEventType.password_reset_failed,
+          SecurityEventSeverity.medium,
+          AuthMethod.EMAIL,
+          { id: '', email: '' },
+          { error: 'invalid_otp' },
+        ),
         { visibility: AuditLogVisibility.admin_only },
       );
       throw new BadReqErr(ErrCode.InvalidOtp);
@@ -229,13 +229,13 @@ export class AuthService {
     await this.deps.sessionService.revoke(userId);
 
     await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.password_reset_completed,
-        severity: SecurityEventSeverity.medium,
-        email: '',
-      },
-      { subjectUserId: user.id, userId: user.id },
+      createSecurityAuditLog(
+        SecurityEventType.password_reset_completed,
+        SecurityEventSeverity.medium,
+        AuthMethod.EMAIL,
+        { id: user.id, email: '' },
+      ),
+      createAuditContext(user.id),
     );
   }
 
@@ -250,14 +250,13 @@ export class AuthService {
 
     if (!userId) {
       await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.otp_invalid,
-          severity: SecurityEventSeverity.medium,
-          email: '',
-          purpose: PurposeVerify.REGISTER,
-          error: 'invalid_otp',
-        },
+        createSecurityAuditLog(
+          SecurityEventType.otp_invalid,
+          SecurityEventSeverity.medium,
+          AuthMethod.EMAIL,
+          { id: '', email: '' },
+          { purpose: PurposeVerify.REGISTER, error: 'invalid_otp' },
+        ),
         { visibility: AuditLogVisibility.admin_only },
       );
       throw new BadReqErr(ErrCode.InvalidOtp);
@@ -304,19 +303,19 @@ export class AuthService {
       session.createdBy.status !== UserStatus.active
     ) {
       await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.refresh_token_failed,
-          severity: SecurityEventSeverity.medium,
-          method: AuthMethod.EMAIL,
-          email: session?.createdBy?.email ?? '',
-          error: 'refresh_token_invalid',
-        },
-        {
-          subjectUserId: session?.createdBy?.id,
-          userId: session?.createdBy?.id,
+        createSecurityAuditLog(
+          SecurityEventType.refresh_token_failed,
+          SecurityEventSeverity.medium,
+          AuthMethod.EMAIL,
+          {
+            id: session?.createdBy?.id ?? '',
+            email: session?.createdBy?.email ?? '',
+          },
+          { error: 'refresh_token_invalid' },
+        ),
+        createAuditContext(session?.createdBy?.id ?? '', {
           sessionId: session?.id,
-        },
+        }),
       );
       throw new UnAuthErr(ErrCode.ExpiredToken);
     }
@@ -332,26 +331,25 @@ export class AuthService {
     const { accessToken, expirationTime } =
       await this.deps.tokenService.createAccessToken(payload);
 
+    const userWithPermissions =
+      await this.deps.authUserService.loadUserWithPermissions(
+        session.createdBy.id,
+        { checkStatus: false },
+      );
+
     const user = {
-      ...session.createdBy,
-      permissions: await this.deps.userUtilService.getPermissions(
-        session.createdBy,
-      ),
+      ...userWithPermissions,
+      sessionId: session.id,
     };
 
     await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.refresh_token_success,
-        severity: SecurityEventSeverity.low,
-        method: AuthMethod.EMAIL,
-        email: session.createdBy.email ?? '',
-      },
-      {
-        subjectUserId: session.createdBy.id,
-        userId: session.createdBy.id,
-        sessionId: session.id,
-      },
+      createSecurityAuditLog(
+        SecurityEventType.refresh_token_success,
+        SecurityEventSeverity.low,
+        AuthMethod.EMAIL,
+        { id: session.createdBy.id, email: session.createdBy.email },
+      ),
+      createAuditContext(session.createdBy.id, { sessionId: session.id }),
     );
 
     return {
@@ -369,15 +367,13 @@ export class AuthService {
     const { id, sessionId } = params;
 
     await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.logout,
-        severity: SecurityEventSeverity.low,
-        method: AuthMethod.EMAIL,
-        email: '',
-        sessionId,
-      },
-      { subjectUserId: id, userId: id, sessionId },
+      createSecurityAuditLog(
+        SecurityEventType.logout,
+        SecurityEventSeverity.low,
+        AuthMethod.EMAIL,
+        { id, email: '' },
+      ),
+      createAuditContext(id, { sessionId }),
     );
 
     await this.deps.sessionService.revoke(id, [sessionId]);
@@ -396,10 +392,6 @@ export class AuthService {
     });
 
     await this.deps.sessionService.revoke(id);
-  }
-
-  async getProfile(userId: string) {
-    return await this.deps.authUserService.loadUserWithPermissions(userId);
   }
 }
 

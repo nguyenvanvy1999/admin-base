@@ -14,6 +14,7 @@ import {
 import { authCheck } from 'src/services/auth';
 import { authService } from 'src/services/auth/auth.service';
 import { authFlowService } from 'src/services/auth/auth-flow.service';
+import { authUserService } from 'src/services/auth/auth-user.service';
 import { rateLimit } from 'src/services/rate-limit/auth-rate-limit.config';
 import {
   ACCESS_AUTH,
@@ -126,7 +127,9 @@ const authProtectedRoutes = new Elysia()
   .get(
     '/me',
     async ({ currentUser }) => {
-      const user = await authService.getProfile(currentUser.id);
+      const user = await authUserService.loadUserWithPermissions(
+        currentUser.id,
+      );
       return castToRes(user);
     },
     {

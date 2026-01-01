@@ -1,4 +1,5 @@
 export * from './auth.service';
+export * from './auth-audit.util';
 export * from './auth-errors.util';
 export * from './auth-middleware.service';
 export * from './auth-user.service';
