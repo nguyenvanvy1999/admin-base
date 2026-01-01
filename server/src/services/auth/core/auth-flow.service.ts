@@ -72,6 +72,7 @@ import {
   ErrCode,
   getIpAndUa,
   PurposeVerify,
+  SETTING,
   userResSelect,
 } from 'src/share';
 import { type AuthTxService, authTxService } from './auth-tx.service';
@@ -162,7 +163,21 @@ export class AuthFlowService {
 
     const user = await this.deps.userUtilService.findUserForLogin(email);
 
-    const captchaRequired = await this.deps.settingService.enbCaptchaRequired();
+    const [
+      captchaRequired,
+      enbAttempt,
+      enbExpired,
+      mfaRequired,
+      mfaRiskBased,
+      deviceVerificationEnabled,
+    ] = await this.deps.settingService.getManySettings([
+      SETTING.ENB_CAPTCHA_REQUIRED,
+      SETTING.ENB_PASSWORD_ATTEMPT,
+      SETTING.ENB_PASSWORD_EXPIRED,
+      SETTING.ENB_MFA_REQUIRED,
+      SETTING.ENB_MFA_RISK_BASED,
+      SETTING.ENB_DEVICE_VERIFICATION,
+    ]);
 
     if (captchaRequired && !captcha) {
       await this.deps.auditLogService.pushSecurity(
@@ -202,9 +217,6 @@ export class AuthFlowService {
         throw new BadReqErr(ErrCode.InvalidCaptcha);
       }
     }
-
-    const { enbAttempt, enbExpired } =
-      await this.deps.settingService.password();
 
     if (enbAttempt) {
       this.deps.passwordService.validateAttempt(
@@ -280,14 +292,10 @@ export class AuthFlowService {
       securityResult,
     );
 
-    const mfaRequired = await this.deps.settingService.enbMfaRequired();
-    const riskBased = await this.deps.settingService.enbMfaRiskBased();
-    const deviceVerificationEnabled =
-      await this.deps.settingService.enbDeviceVerification();
     const next = this.resolveNextStep({
       user: { mfaTotpEnabled: user.mfaTotpEnabled },
       mfaRequired,
-      riskBased,
+      riskBased: mfaRiskBased,
       risk: securityResult.risk,
       isNewDevice: securityResult.isNewDevice,
       deviceVerificationEnabled,
@@ -345,7 +353,11 @@ export class AuthFlowService {
     }
 
     if (next.kind === 'ENROLL_MFA') {
-      if (riskBased && securityResult.risk === 'HIGH' && !user.mfaTotpEnabled) {
+      if (
+        mfaRiskBased &&
+        securityResult.risk === 'HIGH' &&
+        !user.mfaTotpEnabled
+      ) {
         const res = await this.deps.otpService.sendOtpWithAudit(
           user.email,
           PurposeVerify.MFA_LOGIN,

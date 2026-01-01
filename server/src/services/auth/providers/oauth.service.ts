@@ -34,7 +34,10 @@ import {
   type UserUtilService,
   userUtilService,
 } from 'src/services/auth/utils/auth-util.service';
-import { settingsService } from 'src/services/settings/settings.service';
+import {
+  type SettingsService,
+  settingsService,
+} from 'src/services/settings/settings.service';
 import {
   BadReqErr,
   CoreErr,
@@ -54,7 +57,7 @@ export class OAuthService {
       db: IDb;
       oauth2ClientFactory: (clientId: string) => OAuth2Client;
       userUtilService: UserUtilService;
-      auditLogService: AuditLogsService;
+      auditLogsService: AuditLogsService;
       securityMonitorService: SecurityMonitorService;
       idUtil: IdUtil;
       crypto: {
@@ -64,15 +67,17 @@ export class OAuthService {
         randomUUID: typeof randomUUID;
       };
       authenticator: typeof authenticator;
+      settingsService: SettingsService;
     } = {
       db,
       oauth2ClientFactory: (clientId: string) => new OAuth2Client(clientId),
       userUtilService,
-      auditLogService: auditLogsService,
+      auditLogsService,
       securityMonitorService,
       idUtil: idUtil,
       crypto: { createHash, createHmac, randomBytes, randomUUID },
       authenticator,
+      settingsService,
     },
   ) {}
 
@@ -94,7 +99,7 @@ export class OAuthService {
 
     const { clientId } = (provider?.config as { clientId?: string }) || {};
     if (!provider || !provider.enabled || !clientId) {
-      await this.deps.auditLogService.pushSecurity(
+      await this.deps.auditLogsService.pushSecurity(
         {
           category: 'security',
           eventType: SecurityEventType.login_failed,
@@ -116,7 +121,7 @@ export class OAuthService {
     const payload = ticket.getPayload();
 
     if (!payload) {
-      await this.deps.auditLogService.pushSecurity(
+      await this.deps.auditLogsService.pushSecurity(
         {
           category: 'security',
           eventType: SecurityEventType.login_failed,
@@ -134,7 +139,7 @@ export class OAuthService {
     const googleId = payload.sub;
 
     if (!email) {
-      await this.deps.auditLogService.pushSecurity(
+      await this.deps.auditLogsService.pushSecurity(
         {
           category: 'security',
           eventType: SecurityEventType.login_failed,
@@ -172,7 +177,7 @@ export class OAuthService {
           select: { id: true },
         });
 
-        await this.deps.auditLogService.pushSecurity(
+        await this.deps.auditLogsService.pushSecurity(
           {
             category: 'security',
             eventType: SecurityEventType.login_success,
@@ -218,7 +223,7 @@ export class OAuthService {
         return createdUser;
       });
 
-      await this.deps.auditLogService.pushSecurity(
+      await this.deps.auditLogsService.pushSecurity(
         {
           category: 'security',
           eventType: SecurityEventType.register_completed,
@@ -244,7 +249,7 @@ export class OAuthService {
     );
 
     if (securityResult.action === 'block') {
-      await this.deps.auditLogService.pushSecurity(
+      await this.deps.auditLogsService.pushSecurity(
         {
           category: 'security',
           eventType: SecurityEventType.login_failed,
@@ -267,7 +272,7 @@ export class OAuthService {
     );
 
     // 6. Determine next step (MFA challenge/enroll or complete login)
-    const mfaRequired = await settingsService.enbMfaRequired();
+    const mfaRequired = await this.deps.settingsService.enbMfaRequired();
     const next = authFlowService.resolveNextStep({
       user: { mfaTotpEnabled: user.mfaTotpEnabled },
       mfaRequired,
@@ -283,7 +288,7 @@ export class OAuthService {
         securityResult,
       );
 
-      await this.deps.auditLogService.pushSecurity(
+      await this.deps.auditLogsService.pushSecurity(
         {
           category: 'security',
           eventType: SecurityEventType.login_success,
@@ -318,7 +323,7 @@ export class OAuthService {
     // MFA challenge required
     await authTxService.setState(authTx.id, AuthTxState.CHALLENGE_MFA_REQUIRED);
 
-    await this.deps.auditLogService.pushSecurity(
+    await this.deps.auditLogsService.pushSecurity(
       {
         category: 'security',
         eventType: SecurityEventType.mfa_challenge_started,
@@ -350,7 +355,7 @@ export class OAuthService {
 
     const { botToken } = (provider?.config as { botToken?: string }) || {};
     if (!provider || !provider.enabled || !botToken) {
-      await this.deps.auditLogService.pushSecurity(
+      await this.deps.auditLogsService.pushSecurity(
         {
           category: 'security',
           eventType: SecurityEventType.login_failed,
@@ -371,7 +376,7 @@ export class OAuthService {
     const isValid = this.verifyTelegramLogin(telegramData, botToken);
 
     if (!isValid) {
-      await this.deps.auditLogService.pushSecurity(
+      await this.deps.auditLogsService.pushSecurity(
         {
           category: 'security',
           eventType: SecurityEventType.login_failed,
@@ -400,7 +405,7 @@ export class OAuthService {
     });
 
     if (authExists) {
-      await this.deps.auditLogService.pushSecurity(
+      await this.deps.auditLogsService.pushSecurity(
         {
           category: 'security',
           eventType: SecurityEventType.login_failed,
@@ -428,7 +433,7 @@ export class OAuthService {
       select: { id: true },
     });
 
-    await this.deps.auditLogService.pushSecurity(
+    await this.deps.auditLogsService.pushSecurity(
       {
         category: 'security',
         eventType: SecurityEventType.login_success,
