@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
 import { OtpResDto } from 'src/dtos/auth.dto';
-import { otpService } from 'src/services/auth/otp.service';
+import { otpService } from 'src/services/auth/methods/otp.service';
 import {
   castToRes,
   DOC_TAG,

@@ -32,29 +32,41 @@ import {
   PurposeVerify,
   userResSelect,
 } from 'src/share';
-import { createAuditContext, createSecurityAuditLog } from './auth-audit.util';
-import { assertUserExists } from './auth-errors.util';
-import { authMethodFactory } from './auth-method-factory';
-import type { AuthMethodContext } from './auth-method-handler.interface';
-import { type AuthTxService, authTxService } from './auth-tx.service';
-import { type AuthUserService, authUserService } from './auth-user.service';
-import { type UserUtilService, userUtilService } from './auth-util.service';
-import { type CaptchaService, captchaService } from './captcha.service';
+import { type MfaService, mfaService } from '../methods/mfa.service';
+import { type OtpService, otpService } from '../methods/otp.service';
+import {
+  type PasswordService,
+  passwordService,
+} from '../methods/password.service';
+import {
+  type CaptchaService,
+  captchaService,
+} from '../security/captcha.service';
+import {
+  type SecurityMonitorService,
+  securityMonitorService,
+} from '../security/security-monitor.service';
+import { type SessionService, sessionService } from '../session.service';
+import { authMethodFactory } from '../types/auth-method-factory';
+import type { AuthMethodContext } from '../types/auth-method-handler.interface';
 import {
   AuthChallengeType,
   AuthMethod,
   AuthNextStepKind,
   AuthStatus,
   AuthTxState,
-} from './constants';
-import { type MfaService, mfaService } from './mfa.service';
-import { type OtpService, otpService } from './otp.service';
-import { type PasswordService, passwordService } from './password.service';
+} from '../types/constants';
 import {
-  type SecurityMonitorService,
-  securityMonitorService,
-} from './security-monitor.service';
-import { type SessionService, sessionService } from './session.service';
+  createAuditContext,
+  createSecurityAuditLog,
+} from '../utils/auth-audit.util';
+import { assertUserExists } from '../utils/auth-errors.util';
+import {
+  type UserUtilService,
+  userUtilService,
+} from '../utils/auth-util.service';
+import { type AuthTxService, authTxService } from './auth-tx.service';
+import { type AuthUserService, authUserService } from './auth-user.service';
 
 export type AuthResponse = IAuthResponse;
 

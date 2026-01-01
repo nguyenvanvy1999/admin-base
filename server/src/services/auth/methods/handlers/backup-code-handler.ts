@@ -3,8 +3,8 @@ import type {
   AuthMethodContext,
   AuthMethodResult,
   IAuthMethodHandler,
-} from '../auth-method-handler.interface';
-import { AuthChallengeType, AuthMethod } from '../constants';
+} from '../../types/auth-method-handler.interface';
+import { AuthChallengeType, AuthMethod } from '../../types/constants';
 import type { MfaService } from '../mfa.service';
 
 export class BackupCodeHandler implements IAuthMethodHandler {

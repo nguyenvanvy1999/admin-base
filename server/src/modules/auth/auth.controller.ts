@@ -12,9 +12,9 @@ import {
   VerifyAccountRequestDto,
 } from 'src/dtos/auth.dto';
 import { authCheck } from 'src/services/auth';
-import { authService } from 'src/services/auth/auth.service';
-import { authFlowService } from 'src/services/auth/auth-flow.service';
-import { authUserService } from 'src/services/auth/auth-user.service';
+import { authService } from 'src/services/auth/core/auth.service';
+import { authFlowService } from 'src/services/auth/core/auth-flow.service';
+import { authUserService } from 'src/services/auth/core/auth-user.service';
 import { rateLimit } from 'src/services/rate-limit/auth-rate-limit.config';
 import {
   ACCESS_AUTH,

@@ -40,24 +40,32 @@ import {
   PurposeVerify,
   UnAuthErr,
 } from 'src/share';
-import { createAuditContext, createSecurityAuditLog } from './auth-audit.util';
-import { assertUserActiveOrBadReq, assertUserExists } from './auth-errors.util';
-import { type AuthUserService, authUserService } from './auth-user.service';
+import { type OtpService, otpService } from '../methods/otp.service';
+import {
+  type PasswordService,
+  passwordService,
+} from '../methods/password.service';
+import {
+  type SecurityMonitorService,
+  securityMonitorService,
+} from '../security/security-monitor.service';
+import { type SessionService, sessionService } from '../session.service';
+import { AuthMethod, AuthStatus } from '../types/constants';
+import {
+  createAuditContext,
+  createSecurityAuditLog,
+} from '../utils/auth-audit.util';
+import {
+  assertUserActiveOrBadReq,
+  assertUserExists,
+} from '../utils/auth-errors.util';
 import {
   type TokenService,
   tokenService,
   type UserUtilService,
   userUtilService,
-} from './auth-util.service';
-import { AuthMethod, AuthStatus } from './constants';
-
-import { type OtpService, otpService } from './otp.service';
-import { type PasswordService, passwordService } from './password.service';
-import {
-  type SecurityMonitorService,
-  securityMonitorService,
-} from './security-monitor.service';
-import { type SessionService, sessionService } from './session.service';
+} from '../utils/auth-util.service';
+import { type AuthUserService, authUserService } from './auth-user.service';
 
 export class AuthService {
   constructor(

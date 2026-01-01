@@ -5,7 +5,7 @@ import { RateLimitStrategy, UserStatus } from 'src/generated';
 import {
   type PasswordService,
   passwordService,
-} from 'src/services/auth/password.service';
+} from 'src/services/auth/methods/password.service';
 import {
   ADMIN_USER_ID,
   DB_PREFIX,

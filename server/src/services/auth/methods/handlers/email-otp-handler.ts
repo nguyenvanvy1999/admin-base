@@ -1,17 +1,19 @@
-import { BadReqErr, ErrCode, PurposeVerify } from 'src/share';
+import { BadReqErr, ErrCode } from 'src/share';
 import type {
   AuthMethodContext,
   AuthMethodResult,
   IAuthMethodHandler,
-} from '../auth-method-handler.interface';
-import { AuthChallengeType, AuthMethod } from '../constants';
+} from '../../types/auth-method-handler.interface';
+import { AuthChallengeType, AuthMethod } from '../../types/constants';
+import type { MfaService } from '../mfa.service';
 import type { OtpService } from '../otp.service';
 
-export class DeviceVerifyHandler implements IAuthMethodHandler {
-  readonly type = AuthChallengeType.DEVICE_VERIFY;
+export class EmailOtpHandler implements IAuthMethodHandler {
+  readonly type = AuthChallengeType.MFA_EMAIL_OTP;
 
   constructor(
     private readonly deps: {
+      mfaService: MfaService;
       otpService: OtpService;
     },
   ) {}
@@ -19,13 +21,12 @@ export class DeviceVerifyHandler implements IAuthMethodHandler {
   async verify(context: AuthMethodContext): Promise<AuthMethodResult> {
     const { authTx, userId, code } = context;
 
-    if (!authTx.deviceVerifyToken) {
+    if (!authTx.emailOtpToken) {
       throw new BadReqErr(ErrCode.InvalidState);
     }
 
-    const verifiedUserId = await this.deps.otpService.verifyOtp(
-      authTx.deviceVerifyToken,
-      PurposeVerify.DEVICE_VERIFY,
+    const verifiedUserId = await this.deps.mfaService.verifyEmailOtp(
+      authTx.emailOtpToken,
       code,
     );
 

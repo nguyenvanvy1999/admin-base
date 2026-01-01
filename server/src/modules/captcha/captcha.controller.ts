@@ -5,7 +5,7 @@ import {
   GenerateCaptchaDto,
   VerifyCaptchaDto,
 } from 'src/dtos/captcha.dto';
-import { captchaService } from 'src/services/auth/captcha.service';
+import { captchaService } from 'src/services/auth/security/captcha.service';
 
 export const captchaController = new Elysia({ prefix: '/captcha' })
   .get(

@@ -24,17 +24,17 @@ import {
   buildUpdateChanges,
 } from 'src/services/audit-logs/utils';
 import {
-  type UserUtilService,
-  userUtilService,
-} from 'src/services/auth/auth-util.service';
-import {
   type PasswordService,
   passwordService,
-} from 'src/services/auth/password.service';
+} from 'src/services/auth/methods/password.service';
 import {
   type SessionService,
   sessionService,
 } from 'src/services/auth/session.service';
+import {
+  type UserUtilService,
+  userUtilService,
+} from 'src/services/auth/utils/auth-util.service';
 import {
   BadReqErr,
   DB_PREFIX,

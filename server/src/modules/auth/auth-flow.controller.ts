@@ -7,7 +7,7 @@ import {
   AuthResponseDto,
   LoginRequestDto,
 } from 'src/dtos/auth.dto';
-import { authFlowService } from 'src/services/auth/auth-flow.service';
+import { authFlowService } from 'src/services/auth/core/auth-flow.service';
 import { rateLimit } from 'src/services/rate-limit/auth-rate-limit.config';
 import { castToRes, ErrorResDto, ResWrapper } from 'src/share';
 

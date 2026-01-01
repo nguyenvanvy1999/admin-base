@@ -29,8 +29,8 @@ import {
   idUtil,
   PurposeVerify,
 } from 'src/share';
-import type { LockingService } from '../misc';
-import { lockingService } from '../misc';
+import type { LockingService } from '../../misc';
+import { lockingService } from '../../misc';
 
 export class OtpService {
   constructor(

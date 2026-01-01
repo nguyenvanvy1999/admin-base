@@ -3,7 +3,7 @@ import type {
   SecurityEventSeverity,
   SecurityEventType,
 } from 'src/generated';
-import type { AuthMethod } from './constants';
+import type { AuthMethod } from '../types/constants';
 
 type SecurityEventData = {
   category: 'security';

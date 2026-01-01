@@ -14,12 +14,12 @@ mock.module('src/config/db', () => ({
   },
 }));
 
-import { AuthFlowService } from 'src/services/auth/auth-flow.service';
+import { AuthFlowService } from 'src/services/auth/core/auth-flow.service';
 import {
   AuthChallengeType,
   AuthStatus,
   AuthTxState,
-} from 'src/services/auth/constants';
+} from 'src/services/auth/types/constants';
 import { ctxStore, PurposeVerify } from 'src/share';
 
 describe('AuthFlowService - Device Verification', () => {

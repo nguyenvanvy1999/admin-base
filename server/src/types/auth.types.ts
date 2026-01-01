@@ -1,4 +1,4 @@
-import type { SecurityCheckResult } from 'src/services/auth/security-monitor.service';
+import type { SecurityCheckResult } from 'src/services/auth/security/security-monitor.service';
 
 export type AuthTxState =
   | 'PASSWORD_VERIFIED' // password OK, does not complete next step

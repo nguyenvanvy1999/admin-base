@@ -12,46 +12,46 @@ Hệ thống sử dụng cơ chế **Unified Auth Flow** (Luồng xác thực th
 
 ### Bước 1: Đăng ký tài khoản
 
-* **Màn hình**: [Register Page]
-* **Hành động**: Người dùng nhập Email và Password để đăng ký.
-* **API**: `POST /auth/user/register`
-* **Request Body**:
+- **Màn hình**: [Register Page]
+- **Hành động**: Người dùng nhập Email và Password để đăng ký.
+- **API**: `POST /auth/user/register`
+- **Request Body**:
 
-    ```json
-    {
-      "email": "user@example.com",
-      "password": "strongPassword123"
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "strongPassword123"
+  }
+  ```
+
+- **Response (200 OK)**:
+
+  ```json
+  {
+    "data": {
+      "otpToken": "abc123token..."
     }
-    ```
+  }
+  ```
 
-* **Response (200 OK)**:
-
-    ```json
-    {
-      "data": {
-        "otpToken": "abc123token..."
-      }
-    }
-    ```
-
-* **Ý nghĩa**: Tạo user ở trạng thái `inactive`. Hệ thống gửi email chứa mã OTP 6 số đến người dùng. `otpToken` được dùng để định danh giao dịch OTP ở bước sau.
+- **Ý nghĩa**: Tạo user ở trạng thái `inactive`. Hệ thống gửi email chứa mã OTP 6 số đến người dùng. `otpToken` được dùng để định danh giao dịch OTP ở bước sau.
 
 ### Bước 2: Kích hoạt tài khoản
 
-* **Màn hình**: [Verify Account Page]
-* **Hành động**: Người dùng nhập mã OTP từ email.
-* **API**: `POST /auth/user/verify-account`
-* **Request Body**:
+- **Màn hình**: [Verify Account Page]
+- **Hành động**: Người dùng nhập mã OTP từ email.
+- **API**: `POST /auth/user/verify-account`
+- **Request Body**:
 
-    ```json
-    {
-      "otp": "123456",
-      "otpToken": "abc123token..."
-    }
-    ```
+  ```json
+  {
+    "otp": "123456",
+    "otpToken": "abc123token..."
+  }
+  ```
 
-* **Response (200 OK)**: `{ "data": null }`
-* **Ý nghĩa**: Xác thực OTP thành công, chuyển trạng thái user sang `active`. Sau bước này FE có thể chuyển hướng người dùng về trang Login.
+- **Response (200 OK)**: `{ "data": null }`
+- **Ý nghĩa**: Xác thực OTP thành công, chuyển trạng thái user sang `active`. Sau bước này FE có thể chuyển hướng người dùng về trang Login.
 
 ---
 
@@ -61,51 +61,67 @@ Hệ thống sử dụng cơ chế **Unified Auth Flow** (Luồng xác thực th
 
 ### Bước 1: Khởi tạo Đăng nhập
 
-* **Màn hình**: [Login Page]
-* **API**: `POST /auth/login`
-* **Request Body**:
+- **Màn hình**: [Login Page]
+- **API**: `POST /auth/login`
+- **Request Body**:
 
-    ```json
-    {
-      "email": "user@example.com",
-      "password": "password123",
-      "captcha": { // Optional tùy cấu hình server
-        "token": "...",
-        "userInput": "..."
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "password123",
+    "captcha": {
+      // Optional tùy cấu hình server
+      "token": "...",
+      "userInput": "..."
+    }
+  }
+  ```
+
+- **Response (Trường hợp thành công ngay - Không có MFA)**:
+
+  ```json
+  {
+    "data": {
+      "status": "COMPLETED",
+      "session": {
+        "type": "COMPLETED",
+        "accessToken": "...",
+        "refreshToken": "...",
+        "exp": 1234567890,
+        "expired": "2024-01-01T00:00:00Z",
+        "user": {
+          "id": "...",
+          "email": "user@example.com",
+          "status": "active",
+          "mfaTotpEnabled": false,
+          "permissions": ["..."],
+          "created": "...",
+          "modified": "..."
+        },
+        "sessionId": "..."
       }
     }
-    ```
+  }
+  ```
 
-* **Response (Trường hợp thành công ngay - Không có MFA)**:
+- **Response (Trường hợp gặp thử thách - Challenge)**:
 
-    ```json
-    {
-      "data": {
-        "status": "COMPLETED",
-        "session": {
-          "accessToken": "...",
-          "refreshToken": "...",
-          "user": { ... }
-        }
+  ```json
+  {
+    "data": {
+      "status": "CHALLENGE",
+      "authTxId": "tx_uuid_here",
+      "challenge": {
+        "type": "MFA_TOTP" | "MFA_BACKUP_CODE" | "MFA_EMAIL_OTP" | "MFA_ENROLL" | "DEVICE_VERIFY",
+        "allowBackupCode": true, // Chỉ có khi type là MFA_TOTP
+        "destination": "v*@example.com", // Chỉ có khi type là DEVICE_VERIFY
+        "media": "email", // Chỉ có khi type là DEVICE_VERIFY
+        "methods": ["totp"], // Chỉ có khi type là MFA_ENROLL
+        "backupCodesWillBeGenerated": true // Chỉ có khi type là MFA_ENROLL
       }
     }
-    ```
-
-* **Response (Trường hợp gặp thử thách - Challenge)**:
-
-    ```json
-    {
-      "data": {
-        "status": "CHALLENGE",
-        "authTxId": "tx_uuid_here",
-        "challenge": {
-          "type": "MFA_TOTP" | "MFA_BACKUP_CODE" | "MFA_EMAIL_OTP" | "MFA_ENROLL" | "DEVICE_VERIFY",
-          "allowBackupCode": true, // Nếu type là MFA_TOTP
-          "destination": "v*@example.com" // Nếu type là DEVICE_VERIFY hoặc MFA_EMAIL_OTP
-        }
-      }
-    }
-    ```
+  }
+  ```
 
 ### Bước 2: Xử lý các Thử thách (Challenges)
 
@@ -113,40 +129,94 @@ Dựa vào `challenge.type` trả về ở Bước 1, FE hiển thị UI tương
 
 #### 2.1. MFA_TOTP / MFA_BACKUP_CODE / MFA_EMAIL_OTP / DEVICE_VERIFY
 
-* **Màn hình**: Hiển thị popup hoặc trang nhập mã xác thực tương ứng.
-* **Hành động**: Người dùng nhập mã code (6 số TOTP, 8 ký tự Backup code, hoặc OTP từ email).
-* **API**: `POST /auth/login/challenge`
-* **Request Body**:
+- **Màn hình**: Hiển thị popup hoặc trang nhập mã xác thực tương ứng.
+- **Hành động**: Người dùng nhập mã code (6 số TOTP, 8 ký tự Backup code, hoặc OTP từ email).
+- **API**: `POST /auth/login/challenge`
+- **Request Body**:
 
-    ```json
-    {
-      "authTxId": "tx_uuid_here",
-      "type": "MFA_TOTP" | "MFA_BACKUP_CODE" | "MFA_EMAIL_OTP" | "DEVICE_VERIFY",
-      "code": "123456"
-    }
-    ```
+  ```json
+  {
+    "authTxId": "tx_uuid_here",
+    "type": "MFA_TOTP" | "MFA_BACKUP_CODE" | "MFA_EMAIL_OTP" | "DEVICE_VERIFY",
+    "code": "123456"
+  }
+  ```
 
-* **Response**: Trả về `status: "COMPLETED"` nếu thành công, hoặc một `CHALLENGE` tiếp theo nếu cần xác thực thêm.
+- **Response**:
+  - Nếu thành công: Trả về `status: "COMPLETED"` kèm `session` object (cấu trúc giống response của login thành công).
+  - Nếu cần challenge tiếp theo: Trả về `status: "CHALLENGE"` với `authTxId` và `challenge` mới.
 
 #### 2.2. Luồng Đăng ký MFA ngay khi Login (MFA_ENROLL)
 
 Nếu user chưa cài MFA nhưng hệ thống bắt buộc (hoặc phát hiện rủi ro), server trả về `type: "MFA_ENROLL"`.
 
 1. **Lấy secret cài đặt**: FE gọi `POST /auth/mfa/enroll/start` với payload `{ "authTxId": "..." }`.
-    * **Response**: `{ "authTxId": "...", "enrollToken": "...", "otpauthUrl": "..." }`.
-    * **Hành động**: FE dùng `otpauthUrl` để generate mã QR. Người dùng quét bằng app Authenticator.
+   - **Response**:
+     ```json
+     {
+       "data": {
+         "authTxId": "...",
+         "enrollToken": "...",
+         "otpauthUrl": "..."
+       }
+     }
+     ```
+   - **Hành động**: FE dùng `otpauthUrl` để generate mã QR. Người dùng quét bằng app Authenticator.
 2. **Xác nhận cài đặt**: Sau khi quét, người dùng nhập mã từ app. FE gọi `POST /auth/mfa/enroll/confirm`.
-    * **Request Body**: `{ "authTxId": "...", "enrollToken": "...", "otp": "..." }`.
-    * **Response**: Trả về `status: "COMPLETED"` kèm session và **một mã Backup Code** duy nhất (FE **bắt buộc** phải hiển thị cho người dùng lưu lại ở bước này vì mã chỉ trả về 1 lần duy nhất).
+   - **Request Body**:
+     ```json
+     {
+       "authTxId": "...",
+       "enrollToken": "...",
+       "otp": "123456"
+     }
+     ```
+   - **Response**:
+     ```json
+     {
+       "data": {
+         "status": "COMPLETED",
+         "session": { ... },
+         "backupCodes": ["XXXXXXXX"] // Một mã backup code duy nhất
+       }
+     }
+     ```
+   - **Lưu ý quan trọng**: FE **bắt buộc** phải hiển thị `backupCodes[0]` cho người dùng lưu lại ở bước này vì mã chỉ trả về 1 lần duy nhất và không thể lấy lại sau này.
 
 ---
 
 ## 4. Luồng Google OAuth
 
-* **Hành động**: Người dùng click "Login with Google". FE lấy `idToken` từ Google SDK.
-* **API**: `POST /auth/oauth/google`
-* **Request Body**: `{ "idToken": "..." }`
-* **Response**: Trả về cấu trúc giống hệt API `POST /auth/login` (có thể là `COMPLETED` hoặc `CHALLENGE`). FE xử lý các bước tiếp theo như luồng đăng nhập thường.
+- **Hành động**: Người dùng click "Login with Google". FE lấy `idToken` từ Google SDK.
+- **API**: `POST /auth/oauth/google`
+- **Request Body**:
+  ```json
+  {
+    "idToken": "google_id_token_here"
+  }
+  ```
+- **Response**: Trả về cấu trúc giống hệt API `POST /auth/login`:
+  - Nếu thành công: `{ "data": { "status": "COMPLETED", "session": {...} } }`
+  - Nếu cần challenge: `{ "data": { "status": "CHALLENGE", "authTxId": "...", "challenge": {...} } }`
+- **Lưu ý**: FE xử lý các bước tiếp theo (challenge, MFA enroll) giống như luồng đăng nhập thường.
+
+### Link Telegram Account (Auth Required)
+
+- **API**: `POST /auth/oauth/link-telegram`
+- **Request Body**:
+  ```json
+  {
+    "id": "telegram_user_id",
+    "first_name": "...",
+    "last_name": "...",
+    "username": "...",
+    "photo_url": "...",
+    "auth_date": "1234567890",
+    "hash": "telegram_hash"
+  }
+  ```
+- **Response**: `{ "data": null }`
+- **Ý nghĩa**: Liên kết tài khoản Telegram với tài khoản hiện tại. Yêu cầu đã đăng nhập.
 
 ---
 
@@ -154,32 +224,49 @@ Nếu user chưa cài MFA nhưng hệ thống bắt buộc (hoặc phát hiện 
 
 ### Bước 1: Yêu cầu mã OTP qua Email
 
-* **API**: `POST /auth/otp/`
-* **Request Body**:
+- **API**: `POST /auth/otp/`
+- **Request Body**:
 
-    ```json
-    {
-      "email": "user@example.com",
-      "purpose": "FORGOT_PASSWORD"
+  ```json
+  {
+    "email": "user@example.com",
+    "purpose": "forgot-password"
+  }
+  ```
+
+- **Response**:
+
+  ```json
+  {
+    "data": {
+      "otpToken": "abc123token..."
     }
-    ```
+  }
+  ```
 
-* **Response**: `{ "data": { "otpToken": "..." } }`. Hệ thống gửi OTP về email.
+  Hoặc `{ "data": null }` nếu không thể gửi email.
+
+- **Lưu ý**: Các giá trị `purpose` hợp lệ:
+  - `"register"` - Xác thực đăng ký tài khoản
+  - `"forgot-password"` - Quên mật khẩu
+  - `"reset-mfa"` - Reset MFA
+  - `"mfa-login"` - MFA login
+  - `"device-verify"` - Xác thực thiết bị mới
 
 ### Bước 2: Đặt lại mật khẩu
 
-* **API**: `POST /auth/forgot-password`
-* **Request Body**:
+- **API**: `POST /auth/forgot-password`
+- **Request Body**:
 
-    ```json
-    {
-      "otp": "123456",
-      "otpToken": "...",
-      "newPassword": "newSecurePassword123"
-    }
-    ```
+  ```json
+  {
+    "otp": "123456",
+    "otpToken": "...",
+    "newPassword": "newSecurePassword123"
+  }
+  ```
 
-* **Response**: `{ "data": null }`. Đổi mật khẩu thành công và hủy toàn bộ session cũ.
+- **Response**: `{ "data": null }`. Đổi mật khẩu thành công và hủy toàn bộ session cũ.
 
 ---
 
@@ -187,34 +274,124 @@ Nếu user chưa cài MFA nhưng hệ thống bắt buộc (hoặc phát hiện 
 
 ### Refresh Token
 
-* Khi Access Token hết hạn, FE dùng Refresh Token để lấy token mới.
-* **API**: `POST /auth/refresh-token`
-* **Request Body**: `{ "token": "current_refresh_token_here" }`
-* **Response**: Trả về object session mới (accessToken, refreshToken mới).
+- Khi Access Token hết hạn, FE dùng Refresh Token để lấy token mới.
+- **API**: `POST /auth/refresh-token`
+- **Request Body**:
+  ```json
+  {
+    "token": "current_refresh_token_here"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "data": {
+      "type": "COMPLETED",
+      "accessToken": "...",
+      "refreshToken": "...",
+      "exp": 1234567890,
+      "expired": "2024-01-01T00:00:00Z",
+      "user": { ... },
+      "sessionId": "..."
+    }
+  }
+  ```
+- **Lưu ý**: `refreshToken` trong response là token cũ (giữ nguyên), không phải token mới.
 
 ### Đăng xuất (Logout)
 
-* **Logout hiện tại**: `POST /auth/logout` (Auth required, xóa session hiện tại).
-* **Logout tất cả**: `POST /auth/logout/all` (Auth required, xóa tất cả các device khác).
+- **Logout hiện tại**: `POST /auth/logout` (Auth required, xóa session hiện tại).
+  - **Response**: `{ "data": null }`
+- **Logout tất cả**: `POST /auth/logout/all` (Auth required, xóa tất cả các session khác).
+  - **Response**: `{ "data": null }`
 
 ### Lấy thông tin User hiện tại
 
-* **API**: `GET /auth/me` (Auth required).
-* **Response**: Thông tin profile, quyền hạn (`permissions`) và trạng thái MFA.
+- **API**: `GET /auth/me` (Auth required).
+- **Response**:
+  ```json
+  {
+    "data": {
+      "id": "...",
+      "email": "user@example.com",
+      "status": "active",
+      "mfaTotpEnabled": false,
+      "permissions": ["..."],
+      "created": "...",
+      "modified": "..."
+    }
+  }
+  ```
 
 ---
 
 ## 7. Các API bổ trợ (Auth Required)
 
-* **Đổi mật khẩu**: `POST /auth/change-password` (Payload: `{ oldPassword?, newPassword }`).
-* **Tạo mới Backup Code**: `POST /auth/mfa/backup-codes/regenerate` (Trả về một mã backup code mới, mã cũ sẽ bị vô hiệu hóa).
-* **Tắt MFA**: `POST /auth/mfa/disable` (Payload: `{ password, code }`).
+### Đổi mật khẩu
+
+- **API**: `POST /auth/change-password`
+- **Request Body**:
+  ```json
+  {
+    "oldPassword": "...", // Optional nếu user chưa có password (ví dụ: đăng ký bằng OAuth)
+    "newPassword": "newSecurePassword123"
+  }
+  ```
+- **Response**: `{ "data": null }`
+- **Lưu ý**: Nếu user đã có password thì `oldPassword` là bắt buộc.
+
+### Tạo mới Backup Code
+
+- **API**: `POST /auth/mfa/backup-codes/regenerate`
+- **Response**:
+  ```json
+  {
+    "data": {
+      "backupCodes": ["XXXXXXXX"] // Một mã backup code mới
+    }
+  }
+  ```
+- **Lưu ý**: Mã backup code cũ sẽ bị vô hiệu hóa. Mã mới chỉ trả về 1 lần duy nhất, FE cần hiển thị cho người dùng lưu lại.
+
+### Tắt MFA
+
+- **API**: `POST /auth/mfa/disable`
+- **Request Body**:
+  ```json
+  {
+    "password": "user_password",
+    "code": "123456" // Mã TOTP từ app Authenticator
+  }
+  ```
+- **Response**: `{ "data": null }`
+- **Lưu ý**: Sau khi tắt MFA, tất cả session hiện tại sẽ bị hủy và user cần đăng nhập lại.
 
 ---
 
 ## 8. Lưu ý quan trọng cho FE
 
 1. **Error Handling**: Toàn bộ API trả về cấu trúc chuẩn: `{ "data": ..., "error": { "code": "...", "message": "..." } }`. Hãy dựa vào `error.code` để hiển thị thông báo lỗi đa ngôn ngữ.
-2. **Base URL**: `/auth` (dành cho phần lớn các flow) và `/auth/user` (cho register/verify).
-3. **MFA Storage**: Khi nhận được mã `backupCode` sau khi enroll hoặc regenerate, hãy đảm bảo người dùng đã lưu lại. Mã này chỉ sử dụng được một lần duy nhất (one-time use).
+
+2. **Base URL**:
+
+   - `/auth` - Các API chính (login, challenge, refresh token, logout, MFA, etc.)
+   - `/auth/user` - Đăng ký và xác thực tài khoản
+   - `/auth/oauth` - OAuth (Google, Telegram)
+   - `/auth/otp` - Gửi OTP
+
+3. **MFA Storage**: Khi nhận được mã `backupCode` sau khi enroll hoặc regenerate, hãy đảm bảo người dùng đã lưu lại. Mã này chỉ sử dụng được một lần duy nhất (one-time use) và chỉ trả về 1 lần duy nhất.
+
 4. **Transaction ID**: `authTxId` có thời hạn ngắn (mặc định 10-15 phút), FE cần xử lý nếu transaction hết hạn (thường là báo lỗi và bắt người dùng quay lại bước đăng nhập).
+
+5. **Rate Limiting**: Một số API có rate limiting (như `/auth/login`, `/auth/refresh-token`, `/auth/forgot-password`, `/auth/change-password`). FE cần xử lý lỗi 429 (Too Many Requests) một cách phù hợp.
+
+6. **Captcha**: API `/auth/login` có thể yêu cầu captcha tùy theo cấu hình server. FE cần kiểm tra response error để biết khi nào cần hiển thị captcha.
+
+7. **Session Structure**: Object `session` trong response có cấu trúc:
+   - `type`: Luôn là `"COMPLETED"`
+   - `accessToken`: JWT token để xác thực các request tiếp theo
+   - `refreshToken`: Token để refresh access token khi hết hạn
+   - `exp`: Timestamp (milliseconds) khi access token hết hạn
+   - `expired`: ISO string của thời gian hết hạn
+   - `user`: Thông tin user với permissions
+   - `sessionId`: ID của session hiện tại

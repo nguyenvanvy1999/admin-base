@@ -1,5 +1,8 @@
 import { t } from 'elysia';
-import { AuthChallengeType, AuthStatus } from 'src/services/auth/constants';
+import {
+  AuthChallengeType,
+  AuthStatus,
+} from 'src/services/auth/types/constants';
 import { DtoFields } from 'src/share';
 import { BaseUserDto } from './users.dto';
 

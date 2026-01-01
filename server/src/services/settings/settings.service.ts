@@ -8,7 +8,7 @@ import { AuditLogVisibility, SettingDataType } from 'src/generated';
 import {
   type EncryptService,
   encryptService,
-} from 'src/services/auth/encrypt.service';
+} from 'src/services/auth/security/encrypt.service';
 import {
   BadReqErr,
   type defaultSettings,
