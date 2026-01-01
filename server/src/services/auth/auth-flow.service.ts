@@ -34,6 +34,8 @@ import {
 } from 'src/share';
 import { createAuditContext, createSecurityAuditLog } from './auth-audit.util';
 import { assertUserExists } from './auth-errors.util';
+import { authMethodFactory } from './auth-method-factory';
+import type { AuthMethodContext } from './auth-method-handler.interface';
 import { type AuthTxService, authTxService } from './auth-tx.service';
 import { type AuthUserService, authUserService } from './auth-user.service';
 import { type UserUtilService, userUtilService } from './auth-util.service';
@@ -403,53 +405,32 @@ export class AuthFlowService {
 
     const user = await this.deps.authUserService.loadUserForAuth(tx.userId);
 
-    let ok = false;
+    const handler = authMethodFactory.create(type);
 
-    if (type === AuthChallengeType.MFA_TOTP) {
-      if (!user.totpSecret) throw new BadReqErr(ErrCode.MfaBroken);
-      ok = this.deps.authenticator.verify({
-        secret: user.totpSecret,
-        token: code,
-      });
-    } else if (type === AuthChallengeType.MFA_BACKUP_CODE) {
-      ok = await this.consumeBackupCode(user, code);
-    } else if (type === AuthChallengeType.MFA_EMAIL_OTP) {
-      if (!tx.emailOtpToken) throw new BadReqErr(ErrCode.InvalidState); // Not waiting for email otp
-      const verifiedUserId = await this.deps.mfaService.verifyEmailOtp(
-        tx.emailOtpToken,
-        code,
-      );
-      ok = verifiedUserId === user.id;
-    } else if (type === AuthChallengeType.DEVICE_VERIFY) {
-      if (!tx.deviceVerifyToken) throw new BadReqErr(ErrCode.InvalidState);
-      const verifiedUserId = await this.deps.otpService.verifyOtp(
-        tx.deviceVerifyToken,
-        PurposeVerify.DEVICE_VERIFY,
-        code,
-      );
-      ok = verifiedUserId === user.id;
-    }
+    const context: AuthMethodContext = {
+      authTxId,
+      authTx: tx,
+      userId: user.id,
+      code,
+      clientIp,
+      userAgent,
+    };
 
-    if (!ok) {
+    const result = await handler.verify(context);
+
+    if (!result.verified) {
       await this.deps.authTxService.incrementChallengeAttempts(authTxId);
       await this.deps.auditLogService.pushSecurity(
         createSecurityAuditLog(
           SecurityEventType.mfa_failed,
           SecurityEventSeverity.medium,
-          type === AuthChallengeType.MFA_TOTP
-            ? AuthMethod.TOTP
-            : AuthMethod.EMAIL,
+          handler.getAuthMethod() as AuthMethod,
           user,
           { error: 'invalid_mfa_code' },
         ),
         createAuditContext(user.id),
       );
-      throw new BadReqErr(
-        type === AuthChallengeType.MFA_TOTP ||
-          type === AuthChallengeType.MFA_EMAIL_OTP
-          ? ErrCode.InvalidOtp
-          : ErrCode.InvalidBackupCode,
-      );
+      throw new BadReqErr(result.errorCode || ErrCode.InvalidOtp);
     }
 
     const securityContext = tx.securityResult;
@@ -463,19 +444,11 @@ export class AuthFlowService {
       securityContext,
     );
 
-    const method =
-      type === AuthChallengeType.MFA_TOTP
-        ? AuthMethod.TOTP
-        : type === AuthChallengeType.DEVICE_VERIFY ||
-            type === AuthChallengeType.MFA_EMAIL_OTP
-          ? AuthMethod.EMAIL
-          : AuthMethod.BACKUP_CODE;
-
     await this.deps.auditLogService.pushSecurity(
       createSecurityAuditLog(
         SecurityEventType.mfa_verified,
         SecurityEventSeverity.low,
-        method,
+        handler.getAuthMethod() as AuthMethod,
         user,
       ),
       createAuditContext(user.id, { sessionId: session.sessionId }),
@@ -604,17 +577,6 @@ export class AuthFlowService {
     );
 
     return { status: AuthStatus.COMPLETED, session, backupCodes: [code] };
-  }
-
-  private consumeBackupCode(
-    user: {
-      id: string;
-    },
-    backupCode: string,
-  ): Promise<boolean> {
-    if (!backupCode || backupCode.length !== 8) return Promise.resolve(false);
-
-    return this.deps.mfaService.verifyBackupCode(backupCode, user.id);
   }
 
   async regenerateBackupCodes(
