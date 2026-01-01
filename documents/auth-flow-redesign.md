@@ -1,211 +1,94 @@
-# Thiết kế lại luồng Auth + MFA (OTP/TOTP + Backup Code) theo hướng Transaction + Challenge
+# Tài liệu Kỹ thuật: Hệ thống Authentication & Authorization
 
-> Mục tiêu: làm luồng đăng nhập/MFA **rõ ràng như state machine**, giảm nhánh `if/else` rối trong `@server/src/services/auth/auth.service.ts`, chuẩn hoá API response, và **giữ (hoặc siết) bảo mật**.
->
-> Phạm vi tài liệu: đăng nhập bằng password + step-up MFA (TOTP/backup code) + bắt buộc setup MFA. (Các OTP cho đăng ký/quên mật khẩu vẫn tách riêng.)
+> **Mục đích**: Tài liệu này mô tả chi tiết kiến trúc, luồng xử lý, và các quy tắc bảo mật của hệ thống authentication và authorization. Được sử dụng làm chuẩn triển khai và tham chiếu cho việc phát triển, bảo trì, và audit bảo mật.
 
----
+> **Phạm vi**: Password login, OAuth (Google), MFA (TOTP/Backup Code/Email OTP), Device Verification, Password Management, Session Management, và Authorization.
 
-## 0) Bổ sung: OAuth flow (đồng bộ với auth mới)
-
-Tài liệu này trước đây tập trung vào **Password + MFA**. Sau refactor auth, cần mô tả thêm **OAuth (Google)** như một "điểm vào" (entrypoint) khác của AuthFlow và đảm bảo response/behavior thống nhất.
-
-### 0.1. Mục tiêu của OAuth refactor
-
-- Chuẩn hoá OAuth login để trả về cùng kiểu kết quả với login mới:
-  - `COMPLETED`: cấp session/tokens
-  - `CHALLENGE`: yêu cầu bước tiếp theo (MFA challenge hoặc MFA enroll)
-- Dùng lại **decision function** (`resolveNextStep`) và **Auth Transaction** (`authTx`) thay vì viết logic rẽ nhánh riêng cho OAuth.
-- Đảm bảo OAuth cũng tuân thủ policy bảo mật giống password login: enforce MFA, risk-based MFA, binding ip/ua, attempt limits, audit log.
-
-### 0.2. Endpoints hiện tại (tham chiếu code)
-
-Trong code hiện có:
-
-- `POST /auth/oauth/google` (public)
-- `POST /auth/oauth/link-telegram` (requires auth)
-
-File: `@server/src/modules/oauth/oauth.controller.ts`
-
-> Ghi chú: `link-telegram` là luồng "link account" sau khi user đã login, không thuộc phần "đăng nhập" (issuance session). Phần refactor OAuth trong tài liệu này tập trung vào `/auth/oauth/google`.
-
-### 0.3. OAuth Google login: luồng logic mong muốn
-
-#### Input
-
-`POST /auth/oauth/google`
-
-- Nhận dữ liệu từ client để xác minh với Google (tuỳ implementation thực tế): `code` (authorization code) hoặc `idToken`.
-
-#### Steps (logic tổng quát)
-
-1. **Verify Google credential**
-   - Validate `idToken` hoặc exchange `code` → lấy `googleProfile`.
-   - Bắt lỗi các case: token invalid/expired/aud mismatch.
-2. **Resolve user mapping**
-   - Tìm user theo `provider=google` + `providerSubject` (google sub).
-   - Nếu chưa có mapping:
-     - Nếu hệ thống cho phép auto-create → tạo user + tạo oauthIdentity.
-     - Nếu không auto-create → trả lỗi (hoặc yêu cầu user liên kết theo flow khác).
-3. **User policy checks**
-   - `assertCanLogin(user)` (active/blocked/...) giống password.
-4. **Security / risk evaluation** (nếu có)
-   - Evaluate risk theo IP/device; risk HIGH → block.
-5. **Create authTx**
-   - `state = PASSWORD_VERIFIED` (hoặc state trung tính kiểu `PRIMARY_AUTH_VERIFIED` nếu bạn muốn rename).
-   - Bind `ipHash/uaHash`.
-6. **Resolve next step** (dùng chung):
-   - Nếu cần MFA enroll → trả `CHALLENGE: MFA_ENROLL`.
-   - Nếu user đã bật MFA → trả `CHALLENGE: MFA_TOTP` (allow backup code).
-   - Nếu không cần MFA → cấp session ngay → `COMPLETED`.
-
-#### Output (chuẩn hoá)
-
-- Nếu hoàn tất:
-
-```json
-{
-  "status": "COMPLETED",
-  "session": {
-    "accessToken": "...",
-    "refreshToken": "...",
-    "expiresIn": 3600,
-    "sessionId": "...",
-    "user": { "...": "..." }
-  }
-}
-```
-
-- Nếu cần bước tiếp theo:
-
-```json
-{
-  "status": "CHALLENGE",
-  "authTxId": "...",
-  "challenge": {
-    "type": "MFA_TOTP",
-    "allowBackupCode": true
-  }
-}
-```
-
-> Quan trọng: OAuth login không được "bỏ qua" enforce MFA. Nếu policy yêu cầu enroll hoặc challenge thì OAuth cũng phải trả về `CHALLENGE` giống password login.
-
-### 0.4. Các bước refactor OAuth (step-by-step)
-
-1. **Đổi response của `oauthService.googleLogin()`**
-   - Từ `LoginResponseDto` hiện tại sang `AuthResponse` chuẩn hoá (`COMPLETED | CHALLENGE`).
-   - Hoặc nếu cần backward compatible: giữ `LoginResponseDto` nhưng bọc thêm field `status` và dần migrate client.
-2. **Trích xuất phần quyết định MFA thành nguồn chân lý chung**
-   - Tái sử dụng `resolveNextStep(user, policy, securityResult)` đang dùng cho password.
-3. **Tạo authTx trong OAuth flow**
-   - Sau khi verify Google & resolve user, tạo `authTx` tương tự `POST /auth/login`.
-4. **Đồng bộ controller swagger/DTO**
-   - Update `oauth.controller.ts` response schema:
-     - 200: `ResWrapper(AuthResponseDto)` (thay vì chỉ `LoginResponseDto`)
-   - Đảm bảo mô tả endpoint ghi rõ có thể trả `CHALLENGE`.
-5. **Audit log chuẩn hoá**
-   - Thêm event: `oauth_login_started`, `oauth_login_failed`, `oauth_login_success`, và reuse `mfa_challenge_*` / `mfa_enroll_*`.
-
-### 0.5. Mapping sang state machine hiện tại
-
-- OAuth Google tương đương với bước "primary authentication verified" (thay password verify).
-- Sau đó đi chung pipeline với password login:
-  - `resolveNextStep` → `CHALLENGE_MFA_REQUIRED` / `CHALLENGE_MFA_ENROLL` / `COMPLETED`.
+> **Cập nhật lần cuối**: Dựa trên codebase tại `server/src/services/auth/` và `server/src/modules/auth/`
 
 ---
 
-## 1) Hiện trạng & vấn đề
+## Mục lục
 
-Trong `auth.service.ts` hiện tại, hàm đăng nhập đang trộn nhiều trách nhiệm:
-
-- Xác thực password + lock/rate limit + kiểm tra trạng thái user + password expired
-- Quyết định cần MFA hay không
-- Nếu MFA bắt buộc mà user chưa setup → tạo setup token/cache
-- Nếu user đã bật MFA → tạo mfa token/cache
-- Nếu không → cấp session/token luôn
-- Khi bổ sung **backup code** và các trường hợp (enforce MFA, step-up cho action nhạy cảm, OTP cho register/forgot...) thì **logic nổ nhánh** và khó đảm bảo nhất quán.
-
-Các vấn đề điển hình:
-
-- **API response không nhất quán**: client phải “đoán” xem bước tiếp theo là gì dựa vào field rời rạc.
-- **Cache token phân tán** (mfa token, setup token, by-user token...) → khó quản TTL, revoke, audit.
-- **MFA enabled** vs **MFA required by policy** bị trộn.
-- Backup code thường thành endpoint/nhánh riêng → tăng độ phức tạp.
-
-Kết luận: nên chuẩn hoá thành **Transaction** (phiên đăng nhập đang diễn ra) + **Challenge** (một bước phải hoàn thành).
+1. [Tổng quan Kiến trúc](#1-tổng-quan-kiến-trúc)
+2. [Luồng Authentication](#2-luồng-authentication)
+3. [MFA (Multi-Factor Authentication)](#3-mfa-multi-factor-authentication)
+4. [OAuth Integration](#4-oauth-integration)
+5. [Password Management](#5-password-management)
+6. [Session Management](#6-session-management)
+7. [Authorization](#7-authorization)
+8. [Security Features](#8-security-features)
+9. [API Reference](#9-api-reference)
+10. [Implementation Status](#10-implementation-status)
+11. [Security Audit & Recommendations](#11-security-audit--recommendations)
+12. [Code Quality & Best Practices](#12-code-quality--best-practices)
 
 ---
 
-## 2) Thiết kế mới: “Auth Transaction” + “Challenge”
+## 1. Tổng quan Kiến trúc
 
-### 2.1. Khái niệm
+### 1.1. Core Concepts
 
-#### A. Auth Transaction (`authTx`)
+#### A. Auth Transaction (`AuthTx`)
 
-Một “phiên” đăng nhập _chưa phát hành access/refresh token_.
+Một "phiên" đăng nhập chưa hoàn tất, lưu trong Redis với TTL 5 phút (300 giây).
 
-- Lưu trong Redis (hoặc cache tương đương) theo `authTxId`
-- TTL ngắn: **5–10 phút**
-- Chứa metadata để quyết định và ràng buộc bảo mật:
+**Cấu trúc** (`server/src/types/auth.types.ts`):
 
-```ts
-type AuthTxState =
-  | "PASSWORD_VERIFIED" // password OK, chưa quyết xong next step
-  | "CHALLENGE_MFA_REQUIRED" // yêu cầu MFA (TOTP/backup)
-  | "CHALLENGE_MFA_ENROLL" // bắt buộc enroll TOTP
-  | "COMPLETED"; // đã cấp session (thường sẽ xoá tx)
-
+```typescript
 interface AuthTx {
-  id: string;
+  id: string; // UUID
   userId: string;
-  createdAt: number;
-  state: AuthTxState;
+  createdAt: number; // Timestamp
+  state: AuthTxState; // Trạng thái hiện tại
 
-  // binding (giảm nguy cơ bị đánh cắp authTxId)
-  ipHash?: string;
-  uaHash?: string;
+  // Security binding
+  ipHash?: string; // SHA256 hash của IP
+  uaHash?: string; // SHA256 hash của User-Agent
 
-  // chống brute-force ở bước challenge
-  challengeAttempts: number;
+  // Brute-force protection
+  challengeAttempts: number; // Số lần thử challenge
 
-  // kết quả đánh giá rủi ro (tuỳ hệ thống)
-  securityResult?: {
-    risk: "LOW" | "MEDIUM" | "HIGH";
-    reasonCodes?: string[];
-  };
+  // Security evaluation
+  securityResult?: SecurityCheckResult;
 
-  // dữ liệu enroll tạm
+  // MFA enrollment data
   enroll?: {
     enrollToken: string;
     tempTotpSecret: string;
     startedAt: number;
   };
+
+  // Email OTP context
+  emailOtpToken?: string;
+
+  // Device verification context
+  deviceVerifyToken?: string;
 }
 ```
 
-> `authTx` thay thế cho nhiều loại token/cache rời rạc (mfaToken, setupToken...).
+**States** (`server/src/services/auth/constants.ts`):
 
-#### B. Challenge
+- `PASSWORD_VERIFIED`: Password đã verify, chưa quyết định next step
+- `CHALLENGE_MFA_REQUIRED`: Yêu cầu MFA (TOTP/backup code)
+- `CHALLENGE_MFA_ENROLL`: Bắt buộc enroll TOTP
+- `CHALLENGE_DEVICE_VERIFY`: Xác minh thiết bị mới
 
-Một bước user cần hoàn thành để tiếp tục.
+#### B. Challenge Types
 
-Các challenge tối thiểu cho bài toán này:
+Các loại challenge được hỗ trợ:
 
-- `MFA_TOTP`: nhập OTP từ app authenticator (TOTP)
-- `MFA_BACKUP_CODE`: nhập backup code (one-time)
-- `MFA_ENROLL`: bắt buộc setup TOTP trước khi cấp session
+- `MFA_TOTP`: Nhập OTP từ authenticator app
+- `MFA_BACKUP_CODE`: Nhập backup code (one-time use)
+- `MFA_EMAIL_OTP`: Nhập OTP gửi qua email (fallback khi risk HIGH)
+- `MFA_ENROLL`: Bắt buộc setup TOTP
+- `DEVICE_VERIFY`: Xác minh thiết bị mới qua email OTP
 
-Sau này có thể mở rộng: `EMAIL_OTP`, `CAPTCHA`, `DEVICE_VERIFY`...
+#### C. Response Format
 
-#### C. Response chuẩn hoá
+Tất cả endpoints trả về `AuthResponse`:
 
-Tất cả endpoints quan trọng trả về 1 trong 2 trạng thái:
-
-- `COMPLETED`: cấp session/tokens
-- `CHALLENGE`: cần bước tiếp theo
-
-```ts
+```typescript
 type AuthResponse =
   | {
       status: "COMPLETED";
@@ -214,841 +97,1019 @@ type AuthResponse =
         refreshToken: string;
         expiresIn: number;
         sessionId: string;
-        user: unknown; // user dto
+        user: UserDto;
       };
+      backupCodes?: string[]; // Chỉ có khi enroll MFA
     }
   | {
       status: "CHALLENGE";
       authTxId: string;
       challenge: ChallengeDto;
     };
-
-type ChallengeDto =
-  | { type: "MFA_TOTP"; allowBackupCode: true }
-  | { type: "MFA_BACKUP_CODE" }
-  | {
-      type: "MFA_ENROLL";
-      methods: Array<"totp">;
-      backupCodesWillBeGenerated: boolean;
-    };
 ```
 
-> Client chỉ cần nhìn `status` để biết bước tiếp theo, không phải đoán.
+### 1.2. Service Architecture
+
+**Core Services** (`server/src/services/auth/`):
+
+1. **AuthFlowService**: Orchestrator chính cho login flow
+
+   - `startLogin()`: Bước đầu tiên (password/OAuth verification)
+   - `completeChallenge()`: Xử lý MFA/device verification
+   - `enrollStart()` / `enrollConfirm()`: MFA enrollment
+   - `resolveNextStep()`: Decision function duy nhất
+
+2. **AuthTxService**: Quản lý auth transactions trong Redis
+
+   - Create, get, update, delete
+   - Binding validation (IP/UA)
+   - Challenge attempts tracking
+
+3. **MfaService**: Logic MFA
+
+   - TOTP verification
+   - Backup code generation/verification/consumption
+   - Email OTP integration
+
+4. **PasswordService**: Password management
+
+   - Hashing (Bun.password với pepper)
+   - Verification với attempt tracking
+   - Expiration validation
+
+5. **SessionService**: Session management
+
+   - Create, revoke, list
+   - Device fingerprinting
+
+6. **SecurityMonitorService**: Risk evaluation
+
+   - Device recognition
+   - Unknown device detection
+   - Risk level calculation
+
+7. **OAuthService**: OAuth integration
+
+   - Google OAuth login
+   - Telegram account linking
+
+8. **AuthorizationService**: Permission checking
+   - Policy-based authorization
+   - Role-based access control
 
 ---
 
-## 3) Luồng đăng nhập mới (State machine rõ ràng)
+## 2. Luồng Authentication
 
-### 3.1. Bước 1 — `POST /auth/login`
+### 2.1. Password Login Flow
 
-**Input**: `email`, `password` (tuỳ policy có thể kèm captcha)
+#### Endpoint: `POST /auth/login`
 
-**Nhiệm vụ** endpoint này chỉ nên gồm:
-
-1. Normalize email → load user
-2. Verify password + policy lock/rate-limit
-3. Validate user status (active/blocked/...) và các điều kiện như password expired
-4. securityMonitor (nếu có) → có thể block
-5. Create `authTx`
-6. Quyết định bước tiếp theo bằng 1 hàm duy nhất: `resolveNextStep()`
-
-**Pseudo-code**:
-
-```ts
-async function startLogin(dto, ctx): Promise<AuthResponse> {
-  const user = await usersRepo.findByEmail(normalize(dto.email));
-
-  // Không leak user tồn tại hay không (tuỳ policy)
-  await loginAttemptPolicy.assertAllowed(dto.email, ctx.ip);
-
-  const passwordOk = await passwordService.verify(user, dto.password);
-  if (!passwordOk) {
-    await audit.log("login_failed", { userId: user?.id, ip: ctx.ip });
-    throw new AuthError("INVALID_CREDENTIALS");
-  }
-
-  userPolicy.assertCanLogin(user);
-
-  const securityResult = await securityMonitor.evaluateLogin({ user, ctx });
-  if (securityResult.risk === "HIGH") {
-    await audit.log("login_blocked", { userId: user.id, ...securityResult });
-    throw new AuthError("LOGIN_BLOCKED");
-  }
-
-  const authTx = await authTxService.create({
-    userId: user.id,
-    ctx,
-    securityResult,
-    state: "PASSWORD_VERIFIED",
-  });
-
-  const next = resolveNextStep({ user, policy: mfaPolicy, securityResult });
-
-  if (next.kind === "COMPLETE") {
-    // optional: có thể bỏ authTx luôn nếu complete ngay
-    await authTxService.delete(authTx.id);
-    return completeLogin(user, ctx);
-  }
-
-  if (next.kind === "ENROLL_MFA") {
-    await authTxService.setState(authTx.id, "CHALLENGE_MFA_ENROLL");
-    return {
-      status: "CHALLENGE",
-      authTxId: authTx.id,
-      challenge: {
-        type: "MFA_ENROLL",
-        methods: ["totp"],
-        backupCodesWillBeGenerated: true,
-      },
-    };
-  }
-
-  // MFA challenge
-  await authTxService.setState(authTx.id, "CHALLENGE_MFA_REQUIRED");
-  return {
-    status: "CHALLENGE",
-    authTxId: authTx.id,
-    challenge: { type: "MFA_TOTP", allowBackupCode: true },
-  };
-}
-```
-
-**Decision function duy nhất**:
-
-```ts
-function resolveNextStep({
-  user,
-  policy,
-  securityResult,
-}): { kind: "COMPLETE" } | { kind: "MFA_CHALLENGE" } | { kind: "ENROLL_MFA" } {
-  // Ví dụ policy: bắt buộc MFA cho mọi user
-  if (policy.mfaRequired && !user.mfaTotpEnabled) return { kind: "ENROLL_MFA" };
-
-  // Ví dụ: user đã bật MFA
-  if (user.mfaTotpEnabled) return { kind: "MFA_CHALLENGE" };
-
-  // (tuỳ chọn) risk-based MFA: risk cao -> bắt MFA
-  if (policy.riskBased && securityResult?.risk === "MEDIUM") {
-    return user.mfaTotpEnabled
-      ? { kind: "MFA_CHALLENGE" }
-      : { kind: "ENROLL_MFA" };
-  }
-
-  return { kind: "COMPLETE" };
-}
-```
-
-### 3.2. Bước 2 — `POST /auth/login/challenge`
-
-Dùng chung cho **TOTP** và **backup code**.
-
-**Input**:
+**Request**:
 
 ```json
 {
-  "authTxId": "...",
-  "type": "MFA_TOTP" | "MFA_BACKUP_CODE",
-  "code": "123456" | "backup-code"
+  "email": "user@example.com",
+  "password": "password123",
+  "captcha": {
+    "token": "captcha-token",
+    "userInput": "ABC123"
+  }
 }
 ```
+
+**Flow** (`server/src/services/auth/auth-flow.service.ts:132-396`):
+
+1. **Email Normalization & User Lookup**
+
+   - Normalize email (lowercase, trim)
+   - Load user từ database
+   - Nếu không tìm thấy → throw `UserNotFound` (không leak thông tin)
+
+2. **Captcha Validation** (nếu enabled)
+
+   - Check setting: `CAPTCHA_REQUIRED`
+   - Validate captcha token và user input
+   - Nếu invalid → audit log + throw `InvalidCaptcha`
+
+3. **Password Verification**
+
+   - Check password attempt limit (nếu enabled)
+   - Verify password với pepper: `password + PASSWORD_PEPPER`
+   - Track attempts: increment `passwordAttempt` nếu sai
+   - Nếu sai → audit log + throw `InvalidCredentials`
+
+4. **User Status Check**
+
+   - Verify `user.status === ACTIVE`
+   - Nếu không active → throw `UserNotActive`
+
+5. **Password Expiration Check** (nếu enabled)
+
+   - Verify `passwordExpired` date
+   - Nếu expired → throw `PasswordExpired`
+
+6. **Security Evaluation**
+
+   - Call `securityMonitorService.evaluateLogin()`
+   - Device fingerprinting: `SHA256(userAgent + IP)`
+   - Check known devices
+   - Calculate risk: `LOW` | `MEDIUM` | `HIGH`
+   - Nếu `action === 'block'` → throw `LoginBlocked`
+
+7. **Create Auth Transaction**
+
+   - Generate `authTxId` (UUID)
+   - Store trong Redis với TTL 300s
+   - Bind IP/UA hash
+
+8. **Resolve Next Step**
+
+   - Call `resolveNextStep()` với:
+     - `mfaRequired`: Setting từ database
+     - `riskBased`: Setting từ database
+     - `deviceVerificationEnabled`: Setting từ database
+     - `mfaEnrollRequired`: Flag từ user record
+   - Return: `COMPLETE` | `MFA_CHALLENGE` | `ENROLL_MFA` | `DEVICE_VERIFY`
+
+9. **Handle Next Step**
+   - Nếu `COMPLETE`: Delete authTx, issue session, return `COMPLETED`
+   - Nếu `ENROLL_MFA`:
+     - Risk HIGH + chưa có TOTP → Send email OTP, set state `CHALLENGE_MFA_REQUIRED`
+     - Bình thường → Set state `CHALLENGE_MFA_ENROLL`, return `CHALLENGE: MFA_ENROLL`
+   - Nếu `MFA_CHALLENGE`: Set state `CHALLENGE_MFA_REQUIRED`, return `CHALLENGE: MFA_TOTP`
+   - Nếu `DEVICE_VERIFY`: Send email OTP, set state `CHALLENGE_DEVICE_VERIFY`
+
+**Response Examples**:
+
+```json
+// Completed immediately
+{
+  "status": "COMPLETED",
+  "session": {
+    "accessToken": "eyJ...",
+    "refreshToken": "abc123...",
+    "expiresIn": 3600,
+    "sessionId": "sess_...",
+    "user": { ... }
+  }
+}
+
+// MFA Challenge required
+{
+  "status": "CHALLENGE",
+  "authTxId": "tx-uuid",
+  "challenge": {
+    "type": "MFA_TOTP",
+    "allowBackupCode": true
+  }
+}
+
+// MFA Enrollment required
+{
+  "status": "CHALLENGE",
+  "authTxId": "tx-uuid",
+  "challenge": {
+    "type": "MFA_ENROLL",
+    "methods": ["totp"],
+    "backupCodesWillBeGenerated": true
+  }
+}
+```
+
+### 2.2. MFA Challenge Flow
+
+#### Endpoint: `POST /auth/login/challenge`
+
+**Request**:
+
+```json
+{
+  "authTxId": "tx-uuid",
+  "type": "MFA_TOTP" | "MFA_BACKUP_CODE" | "MFA_EMAIL_OTP" | "DEVICE_VERIFY",
+  "code": "123456" | "BACKUP01" | "654321"
+}
+```
+
+**Flow** (`server/src/services/auth/auth-flow.service.ts:398-512`):
+
+1. **Load Auth Transaction**
+
+   - Get từ Redis
+   - Nếu không tồn tại → throw `AuthTxExpired`
+
+2. **Binding Validation**
+
+   - Verify IP hash match
+   - Verify UA hash match (nếu có)
+   - Nếu mismatch → throw `AuthTxBindingMismatch`
+
+3. **State Validation**
+
+   - Verify state: `CHALLENGE_MFA_REQUIRED` hoặc `CHALLENGE_DEVICE_VERIFY`
+   - Nếu invalid → throw `InvalidState`
+
+4. **Attempt Limit Check**
+
+   - Verify `challengeAttempts < 5`
+   - Nếu vượt → throw `TooManyAttempts`
+
+5. **Code Verification**
+
+   - `MFA_TOTP`: Verify với `user.totpSecret` bằng `otplib.authenticator.verify()`
+   - `MFA_BACKUP_CODE`: Verify và consume backup code (atomic operation)
+   - `MFA_EMAIL_OTP`: Verify với `emailOtpToken` từ authTx
+   - `DEVICE_VERIFY`: Verify với `deviceVerifyToken` từ authTx
+
+6. **On Failure**
+
+   - Increment `challengeAttempts`
+   - Audit log: `mfa_failed`
+   - Throw appropriate error
+
+7. **On Success**
+   - Delete authTx
+   - Issue session (call `completeLogin()`)
+   - Audit log: `mfa_verified`
+   - Return `COMPLETED`
+
+### 2.3. MFA Enrollment Flow
+
+#### A. Start Enrollment: `POST /auth/mfa/enroll/start`
+
+**Request**:
+
+```json
+{
+  "authTxId": "tx-uuid"
+}
+```
+
+**Flow** (`server/src/services/auth/auth-flow.service.ts:514-564`):
+
+1. Load authTx, verify binding, verify state `CHALLENGE_MFA_ENROLL`
+2. Generate temporary TOTP secret: `authenticator.generateSecret().toUpperCase()`
+3. Generate `otpauthUrl` cho QR code
+4. Generate `enrollToken` (UUID)
+5. Attach enroll data vào authTx
+6. Audit log: `mfa_setup_started`
+7. Return: `{ authTxId, enrollToken, otpauthUrl }`
+
+#### B. Confirm Enrollment: `POST /auth/mfa/enroll/confirm`
+
+**Request**:
+
+```json
+{
+  "authTxId": "tx-uuid",
+  "enrollToken": "enroll-token",
+  "otp": "123456"
+}
+```
+
+**Flow** (`server/src/services/auth/auth-flow.service.ts:566-640`):
+
+1. Load authTx, verify binding, verify state `CHALLENGE_MFA_ENROLL`
+2. Verify `enrollToken` match
+3. Verify OTP với `tempTotpSecret`
+4. Nếu invalid → increment attempts, throw error
+5. Generate backup code (8 chars, uppercase)
+6. Hash backup code: `Bun.password.hash(code)`
+7. Save to database:
+   - Update user: `totpSecret`, `mfaTotpEnabled = true`, `mfaEnrollRequired = false`
+   - Upsert `MfaBackupCode`: store hashed code
+8. Delete authTx
+9. Issue session
+10. Audit log: `mfa_setup_completed`
+11. Return: `{ status: "COMPLETED", session, backupCodes: [code] }`
+
+> **Lưu ý**: Backup code chỉ được trả về 1 lần duy nhất khi enroll. User phải lưu lại ngay.
+
+---
+
+## 3. MFA (Multi-Factor Authentication)
+
+### 3.1. TOTP (Time-based One-Time Password)
+
+**Implementation**: Sử dụng `otplib` library
+
+**Secret Storage**:
+
+- Lưu trong `user.totpSecret` (plain text, vì cần để verify)
+- Secret được generate khi enroll: `authenticator.generateSecret().toUpperCase()`
+
+**Verification** (`server/src/services/auth/auth-flow.service.ts:429-434`):
+
+```typescript
+ok = authenticator.verify({
+  secret: user.totpSecret,
+  token: code,
+});
+```
+
+**Issuer**: "Admin Base Portal" (hardcoded trong `enrollStart()`)
+
+### 3.2. Backup Codes
+
+**Generation** (`server/src/services/auth/mfa.service.ts:47-50`):
+
+- Format: 8 ký tự, uppercase
+- Generated bằng: `idUtil.token8().toUpperCase()`
+
+**Storage**:
+
+- Table: `MfaBackupCode`
+- Hash: `Bun.password.hash(code)` (bcrypt-like)
+- Single-use: Mark `usedAt` khi verify thành công
+
+**Verification** (`server/src/services/auth/mfa.service.ts:24-45`):
+
+1. Find unused backup code: `where: { userId, usedAt: null }`
+2. Verify hash: `Bun.password.verify(code, codeHash)`
+3. If match: Update `usedAt = now()` (atomic)
+4. Return boolean
+
+**Regeneration**: `POST /auth/mfa/backup-codes/regenerate`
+
+- Requires: User đã enable MFA
+- Invalidate old codes (upsert với new hash)
+- Return new backup code (1 code duy nhất)
+
+### 3.3. Email OTP (Fallback)
+
+**Use Cases**:
+
+1. Risk HIGH + user chưa có TOTP → Fallback enrollment
+2. Device verification cho new device
 
 **Flow**:
 
-1. Load `authTx` từ cache; check TTL
-2. Check state phải là `CHALLENGE_MFA_REQUIRED`
-3. (Optional nhưng khuyến nghị) verify binding ip/ua
-4. Check attempt limit
-5. Verify code theo type
-6. Nếu OK → completeLogin() cấp token/session
-7. Xoá `authTx`
+1. Send OTP via email queue
+2. Store `otpToken` trong authTx
+3. User submit OTP trong challenge endpoint
+4. Verify với `otpService.verifyOtp(otpToken, purpose, code)`
 
-**Pseudo-code**:
+**Purpose Types** (`server/src/share/constants/index.ts`):
 
-```ts
-async function completeChallenge(input, ctx): Promise<AuthResponse> {
-  const tx = await authTxService.getOrThrow(input.authTxId);
-  authTxService.assertBinding(tx, ctx);
+- `MFA_LOGIN`: MFA challenge via email
+- `DEVICE_VERIFY`: Device verification
 
-  if (tx.state !== "CHALLENGE_MFA_REQUIRED") {
-    throw new AuthError("INVALID_STATE");
-  }
+### 3.4. MFA Disable
 
-  await authTxService.assertChallengeAttemptsAllowed(tx);
+**Endpoint**: `POST /auth/mfa/disable`
 
-  const user = await usersRepo.findById(tx.userId);
+**Requirements**:
 
-  let ok = false;
-  if (input.type === "MFA_TOTP") {
-    ok = await mfaService.verifyTotp(user, input.code);
-  } else if (input.type === "MFA_BACKUP_CODE") {
-    ok = await mfaService.verifyBackupCodeAndConsume(user, input.code);
-  }
+- User đã enable MFA
+- Verify password
+- Verify TOTP code
 
-  if (!ok) {
-    await authTxService.incrementChallengeAttempts(tx.id);
-    await audit.log("mfa_challenge_failed", {
-      userId: user.id,
-      type: input.type,
-      ip: ctx.ip,
-    });
-    throw new AuthError("INVALID_MFA_CODE");
-  }
+**Flow** (`server/src/services/auth/auth-flow.service.ts:690-780`):
 
-  await audit.log("mfa_challenge_passed", {
-    userId: user.id,
-    type: input.type,
-    ip: ctx.ip,
-  });
-  await authTxService.delete(tx.id);
+1. Verify password
+2. Verify TOTP code
+3. Update user: `mfaTotpEnabled = false`, `totpSecret = null`
+4. Revoke all sessions
+5. Audit log: `mfa_disabled`
 
-  return completeLogin(user, ctx);
+---
+
+## 4. OAuth Integration
+
+### 4.1. Google OAuth Login
+
+**Endpoint**: `POST /auth/oauth/google` (trong `server/src/modules/oauth/oauth.controller.ts`)
+
+**Request**:
+
+```json
+{
+  "idToken": "google-id-token"
 }
 ```
 
-> Backup code chỉ là một `type` trong challenge, không cần endpoint riêng.
+**Flow** (`server/src/services/auth/oauth.service.ts:79-341`):
 
-### 3.3. Bắt buộc setup MFA — enroll flow
+1. **Verify Google ID Token**
 
-Khi `POST /auth/login` trả về `MFA_ENROLL`, client thực hiện 2 bước:
+   - Load provider config từ database
+   - Verify với Google OAuth2Client
+   - Extract payload: `email`, `sub` (Google ID)
 
-#### A) `POST /auth/mfa/enroll/start`
+2. **Resolve User**
 
-**Input**: `{ authTxId }`
+   - Find user by email
+   - Nếu chưa có → Auto-create user (status: ACTIVE, password: empty)
+   - Link Google account: Create `UserAuthProvider` record
 
-**Output**: `otpauthUrl` hoặc QR payload + `enrollToken`
+3. **User Status Check**
 
-**Pseudo-code**:
+   - Verify `user.status === ACTIVE`
 
-```ts
-async function enrollStart({ authTxId }, ctx) {
-  const tx = await authTxService.getOrThrow(authTxId);
-  authTxService.assertBinding(tx, ctx);
+4. **Security Evaluation**
 
-  if (tx.state !== "CHALLENGE_MFA_ENROLL") throw new AuthError("INVALID_STATE");
+   - Call `securityMonitorService.evaluateLogin()`
+   - Nếu block → throw error
 
-  const user = await usersRepo.findById(tx.userId);
+5. **Create Auth Transaction**
 
-  const { tempSecret, otpauthUrl } = await mfaService.generateTempTotpSecret(
-    user
-  );
-  const enrollToken = crypto.randomUUID();
+   - State: `PASSWORD_VERIFIED` (tương đương password verified)
 
-  await authTxService.attachEnroll(tx.id, {
-    enrollToken,
-    tempTotpSecret: tempSecret,
-    startedAt: Date.now(),
-  });
+6. **Resolve Next Step**
 
-  await audit.log("mfa_enroll_started", { userId: user.id, ip: ctx.ip });
+   - Call `resolveNextStep()` (chung với password login)
+   - Support: MFA challenge, MFA enroll
 
-  return { authTxId: tx.id, enrollToken, otpauthUrl };
-}
+7. **Return Response**
+   - `COMPLETED` hoặc `CHALLENGE` (giống password login)
+
+**Lưu ý**: OAuth login cũng phải tuân thủ MFA policy (required, risk-based, enroll required).
+
+### 4.2. Telegram Account Linking
+
+**Endpoint**: `POST /auth/oauth/link-telegram` (requires auth)
+
+**Flow** (`server/src/services/auth/oauth.service.ts:343-447`):
+
+1. Verify Telegram login data (HMAC-SHA256)
+2. Check duplicate (user hoặc provider ID)
+3. Create `UserAuthProvider` record
+4. Audit log
+
+**Lưu ý**: Chỉ có "link account", chưa có Telegram login flow (như Google).
+
+---
+
+## 5. Password Management
+
+### 5.1. Password Hashing
+
+**Algorithm**: Bun.password (bcrypt-like)
+
+**Pepper**: `PASSWORD_PEPPER` từ environment
+
+**Process** (`server/src/services/auth/password.service.ts:31-49`):
+
+```typescript
+const passwordWithPepper = password + env.PASSWORD_PEPPER;
+const passwordHash = await Bun.password.hash(passwordWithPepper);
 ```
 
-#### B) `POST /auth/mfa/enroll/confirm`
+**Expiration**: Configurable via `PASSWORD_EXPIRED` setting
 
-**Input**: `{ authTxId, enrollToken, otp }`
+### 5.2. Password Verification
 
-**Flow**:
+**Flow** (`server/src/services/auth/password.service.ts:79-91`):
 
-1. Load tx, check state `CHALLENGE_MFA_ENROLL`
-2. Verify `enrollToken` + OTP against `tempTotpSecret`
-3. Persist secret vào DB (`user.mfaTotpEnabled = true`)
-4. Generate một Backup Code (nếu policy yêu cầu) và trả **1 lần duy nhất**
-5. Sau enroll xong: **đề xuất cấp session ngay** (vì vừa chứng minh sở hữu thiết bị TOTP)
+1. Compare: `Bun.password.verify(password + pepper, hash)`
+2. Track attempts: Increment `passwordAttempt` nếu sai
+3. Check limit: `passwordAttempt >= PASSWORD_MAX_ATTEMPT` → throw error
 
-**Pseudo-code**:
+### 5.3. Change Password
 
-```ts
-async function enrollConfirm(
-  input,
-  ctx
-): Promise<AuthResponse & { backupCodes?: [string] }> {
-  const tx = await authTxService.getOrThrow(input.authTxId);
-  authTxService.assertBinding(tx, ctx);
+**Endpoint**: `POST /auth/change-password` (requires auth)
 
-  if (tx.state !== "CHALLENGE_MFA_ENROLL") throw new AuthError("INVALID_STATE");
-  if (!tx.enroll || tx.enroll.enrollToken !== input.enrollToken)
-    throw new AuthError("INVALID_ENROLL_TOKEN");
+**Flow** (`server/src/services/auth/auth.service.ts:141-192`):
 
-  const user = await usersRepo.findById(tx.userId);
+1. Verify old password (nếu user có password)
+2. Create new password hash
+3. Update: `password`, `passwordExpired`, `lastPasswordChangeAt`
+4. Revoke sessions (nếu `REVOKE_SESSIONS_ON_PASSWORD_CHANGE = true`)
+5. Audit log: `password_changed`
 
-  const otpOk = await mfaService.verifyTotpWithSecret(
-    tx.enroll.tempTotpSecret,
-    input.otp
-  );
-  if (!otpOk) {
-    await authTxService.incrementChallengeAttempts(tx.id);
-    throw new AuthError("INVALID_MFA_CODE");
-  }
+### 5.4. Forgot Password
 
-  await mfaService.persistTotpSecret(user.id, tx.enroll.tempTotpSecret);
-  const backupCode = await mfaService.generateAndStoreBackupCode(user.id);
+**Endpoint**: `POST /auth/forgot-password`
 
-  await audit.log("mfa_enroll_completed", { userId: user.id, ip: ctx.ip });
-  await authTxService.delete(tx.id);
+**Flow** (`server/src/services/auth/auth.service.ts:194-245`):
 
-  const completed = await completeLogin(user, ctx);
-  return { ...completed, backupCodes };
-}
+1. Verify OTP: `otpService.verifyOtp(otpToken, FORGOT_PASSWORD, otp)`
+2. Create new password hash
+3. Update password
+4. Revoke all sessions
+5. Audit log: `password_reset_completed`
+
+---
+
+## 6. Session Management
+
+### 6.1. Session Creation
+
+**Flow** (`server/src/services/auth/auth-util.service.ts:156-227`):
+
+1. **Single Session Mode** (nếu enabled):
+
+   - Revoke all existing sessions
+
+2. **Generate Tokens**:
+
+   - Access token: JWT với encrypted payload (AES-256)
+   - Refresh token: Random 32-char string
+
+3. **Create Session Record**:
+
+   - Store trong database: `Session` table
+   - Fields: `id`, `token` (refresh token), `expired`, `device`, `ip`, `deviceFingerprint`, `sessionType`
+
+4. **Update User**:
+
+   - `lastLoginAt = now()`
+
+5. **GeoIP Queue**:
+   - Async job để update session location từ IP
+
+### 6.2. Access Token
+
+**Structure** (`server/src/services/auth/auth-util.service.ts:40-104`):
+
+- JWT với claims: `iss`, `aud`, `sub`, `exp`, `iat`, `nbf`
+- Payload encrypted: `AES-256(JSON.stringify({ userId, sessionId, timestamp, clientIp, userAgent }))`
+- Secret: `JWT_ACCESS_TOKEN_SECRET_KEY`
+
+**Verification** (`server/src/services/auth/middleware.ts:16-63`):
+
+1. Extract từ `Authorization: Bearer <token>`
+2. Verify JWT signature
+3. Decrypt payload
+4. Load user từ cache hoặc database
+5. Check user status: `ACTIVE`
+6. Load permissions và roles
+7. Set `currentUser` trong context
+
+### 6.3. Refresh Token
+
+**Endpoint**: `POST /auth/refresh-token`
+
+**Flow** (`server/src/services/auth/auth.service.ts:298-371`):
+
+1. Find session by refresh token
+2. Verify: not revoked, not expired, user active
+3. Generate new access token
+4. Return new access token (refresh token giữ nguyên)
+
+### 6.4. Session Revocation
+
+**Endpoints**:
+
+- `POST /auth/logout`: Revoke current session
+- `POST /auth/logout/all`: Revoke all sessions
+
+**Triggers**:
+
+- User logout (manual)
+- Password change (nếu enabled)
+- MFA disable
+- Forgot password
+
+**Implementation** (`server/src/services/auth/session.service.ts:9-20`):
+
+- Update `Session.revoked = true`
+- Support revoke by `sessionIds` hoặc all sessions của user
+
+---
+
+## 7. Authorization
+
+### 7.1. Permission System
+
+**Architecture** (`server/src/services/auth/authorization.service.ts`):
+
+**Core Concepts**:
+
+- **Roles**: Group of permissions (stored in `Role` table)
+- **Permissions**: Granular access rights (stored in `Permission` table)
+- **RolePlayer**: User-Role assignment (with optional expiration)
+- **RolePermission**: Role-Permission mapping
+
+**Permission Loading** (`server/src/services/auth/auth-util.service.ts:141-154`):
+
+1. Get active role IDs: `RolePlayer` where `expiresAt IS NULL OR expiresAt > now()`
+2. Get permissions: `RolePermission` where `roleId IN (activeRoleIds)`
+3. Return unique permission titles
+
+### 7.2. Policy-Based Authorization
+
+**API** (`server/src/services/auth/authorization.service.ts`):
+
+**Predicates**:
+
+- `has(permission)`: Check user has permission
+- `isRole(roleName)`: Check user has role
+- `isSelf(selectUserId)`: Check user is accessing own resource
+- `resourceAttr(predicate)`: Check resource attribute
+
+**Composition**:
+
+- `allOf(...predicates)`: All must pass
+- `anyOf(...predicates)`: Any must pass
+- `notOf(predicate)`: Negate
+
+**Usage**:
+
+```typescript
+app.use(
+  authorize(
+    allOf(
+      has("user:read"),
+      anyOf(
+        isSelf((ctx) => ctx.params.userId),
+        isRole("admin")
+      )
+    )
+  )
+);
 ```
 
-**Tại sao nên cấp session ngay sau enroll?**
+### 7.3. Middleware Integration
 
-- User vừa chứng minh sở hữu secret (OTP hợp lệ) → tương đương vượt qua challenge.
-- Giảm số bước cho người dùng, giảm API round-trip.
+**Auth Check** (`server/src/services/auth/middleware.ts`):
 
-Nếu bạn muốn “siết” hơn (bắt user nhập OTP lần nữa) vẫn làm được: sau enroll confirm chỉ set state sang `CHALLENGE_MFA_REQUIRED` và yêu cầu `/auth/login/challenge`. Nhưng thường không cần.
-
----
-
-## 4) API đề xuất (tối giản nhưng rõ)
-
-### Auth
-
-- `POST /auth/login` → `COMPLETED` hoặc `CHALLENGE`
-- `POST /auth/login/challenge` → submit `MFA_TOTP` hoặc `MFA_BACKUP_CODE`
-
-### MFA enroll (khi cần)
-
-- `POST /auth/mfa/enroll/start`
-- `POST /auth/mfa/enroll/confirm`
-
-### Giữ nguyên các endpoint khác
-
-- refresh token, logout, logout all, me...
-- register / verify-account / forgot-password ... (OTP email độc lập)
+- Extract access token từ header
+- Verify và decrypt
+- Load user + permissions
+- Set `currentUser` trong context
+- Cache user trong Redis (key: `sessionId`)
 
 ---
 
-## 5) Tổ chức code (refactor đề xuất cho `auth.service.ts`)
+## 8. Security Features
 
-### 5.1. Tách 3 service chính
+### 8.1. Rate Limiting
 
-1. **AuthFlowService** (orchestrator)
+**Implementation**: `server/src/services/rate-limit/auth-rate-limit.config.ts`
 
-   - `startLogin()`
-   - `completeChallenge()`
-   - `enrollStart()`
-   - `enrollConfirm()`
+**Applied to**:
 
-2. **AuthTxService** (Redis/cache)
+- Login endpoints
+- Challenge endpoints
+- Register/verify endpoints
+- Refresh token
+- Forgot password
 
-   - `create/get/update/delete`
-   - `assertBinding(ip/ua)`
-   - `assertChallengeAttemptsAllowed()`
-   - `incrementChallengeAttempts()`
+**Configuration**: Redis-based sliding window
 
-3. **MfaService** (logic MFA)
-   - `verifyTotp(user, code)`
-   - `verifyBackupCodeAndConsume(user, code)`
-   - `generateTempTotpSecret(user)`
-   - `persistTotpSecret(userId, secret)`
-   - `generateAndStoreBackupCodes(userId)`
+### 8.2. Captcha
 
-> `auth.service.ts` nên trở thành façade gọi `AuthFlowService`, hoặc tách file mới rồi migrate dần.
+**Types**:
 
-### 5.2. Mấu chốt: 1 “decision function” duy nhất
+- Text captcha: Random characters
+- Math captcha: Simple arithmetic
 
-Không để nhiều nơi tự suy luận `mfaRequired`, `mfaEnabled`, `setupToken`...
+**Storage**: Redis cache với TTL ngắn
 
-- `resolveNextStep(user, policy, securityResult)` là nguồn chân lý.
+**Validation**: Case-insensitive comparison
 
----
+**Integration**: Optional trong login flow (setting: `CAPTCHA_REQUIRED`)
 
-## 6) Bảo mật: đảm bảo & nâng cấp
+### 8.3. Device Recognition
 
-### 6.1. TTL + attempt limits
+**Fingerprinting** (`server/src/services/auth/security-monitor.service.ts:93-98`):
 
-- `authTx` TTL: 5–10 phút
-- attempts cho challenge: ví dụ **5 lần / tx**, hoặc kết hợp sliding window theo IP
-- lock theo user/email khi password sai quá nhiều
-
-### 6.2. Binding `authTxId` với IP/UA
-
-- Lưu `ipHash`, `uaHash` trong tx
-- Khi submit challenge/enroll, so sánh hash
-- Tuỳ UX, có thể strict với IP, mềm với UA (vì UA có thể thay đổi nhẹ)
-
-### 6.3. Audit log theo state
-
-Gợi ý event names:
-
-- `login_failed`, `login_success`
-- `mfa_challenge_started`, `mfa_challenge_failed`, `mfa_challenge_passed`
-- `mfa_enroll_started`, `mfa_enroll_completed`
-- `backup_code_used`
-
-### 6.4. Không leak thông tin
-
-- Login fail trả thông báo chung (`INVALID_CREDENTIALS`)
-- Nhưng audit log nội bộ vẫn ghi lý do
-
-### 6.5. Session hygiene
-
-- Khi complete → rotate refresh token như hiện tại
-- Revoke sessions khi reset password / thay đổi bảo mật
-- Nếu tx bị expire → phải login lại từ đầu
-
----
-
-## 7) Mapping từ hệ thống hiện tại sang thiết kế mới
-
-Bạn đang có:
-
-- `mfaCache` (mfaToken)
-- `mfaSetupTokenCache` + `mfaSetupTokenByUserCache`
-- `otpService` (register/forgot)
-
-Đề xuất migration:
-
-1. Giữ `otpService` cho register/forgot như hiện tại (OTP email độc lập)
-2. Thay `mfaToken` + `setupToken*` bằng **duy nhất** `authTxId`
-3. Trong `authTx`, dùng `state` để phân biệt:
-   - `CHALLENGE_MFA_REQUIRED`
-   - `CHALLENGE_MFA_ENROLL`
-4. Gộp logic “confirm MFA login” và “login with backup code” vào `POST /auth/login/challenge`
-
----
-
-## 8) Đầu việc cụ thể cần làm (Task breakdown)
-
-### A. Thiết kế dữ liệu & DTO
-
-- [ ] Định nghĩa `AuthTx` model (ts interface) + schema serialize (JSON)
-- [x] Định nghĩa `AuthResponse` + `ChallengeDto`
-- [x] Chuẩn hoá error codes (`INVALID_CREDENTIALS`, `INVALID_MFA_CODE`, `INVALID_STATE`, ...)
-
-### B. AuthTxService (Redis)
-
-- [ ] `createAuthTx(userId, ctx, securityResult)`
-- [ ] `getAuthTxOrThrow(authTxId)`
-- [ ] `setState(authTxId, state)`
-- [ ] `attachEnroll(authTxId, enrollData)`
-- [ ] attempt counter helpers
-- [ ] binding helpers (ip/ua)
-
-### C. AuthFlowService
-
-- [x] `startLogin()` (bước password)
-- [x] `completeChallenge()` (TOTP/backup/email)
-- [x] `enrollStart()`
-- [x] `enrollConfirm()`
-- [x] `resolveNextStep()` function
-
-### D. MFA service adjustments
-
-- [x] verify TOTP
-- [x] verify + consume backup code (atomic)
-- [x] generate temp secret + persist secret
-- [x] generate backup codes và chỉ trả 1 lần
-
-### E. Controller/API wiring
-
-- [ ] Cập nhật routes theo 4 endpoint mới
-- [ ] Backward compatibility (nếu cần) bằng cách giữ endpoint cũ và proxy sang flow mới
-
-### F. Security & Observability
-
-- [ ] Audit log theo state
-- [ ] Rate limit cho password + challenge
-- [ ] Metrics (success/fail) nếu hệ thống có
-
----
-
-## 9) Phác thảo code mẫu (skeleton)
-
-### 9.1. AuthTxService (ví dụ)
-
-```ts
-export class AuthTxService {
-  constructor(private readonly redis: Redis) {}
-
-  async create(input: {
-    userId: string;
-    ctx: { ip: string; ua?: string };
-    securityResult?: any;
-    state: AuthTxState;
-  }): Promise<AuthTx> {
-    const id = crypto.randomUUID();
-    const tx: AuthTx = {
-      id,
-      userId: input.userId,
-      createdAt: Date.now(),
-      state: input.state,
-      ipHash: hashIp(input.ctx.ip),
-      uaHash: input.ctx.ua ? hashUa(input.ctx.ua) : undefined,
-      challengeAttempts: 0,
-      securityResult: input.securityResult,
-    };
-
-    await this.redis.setex(this.key(id), 600, JSON.stringify(tx));
-    return tx;
-  }
-
-  async getOrThrow(id: string): Promise<AuthTx> {
-    const raw = await this.redis.get(this.key(id));
-    if (!raw) throw new AuthError("AUTH_TX_EXPIRED");
-    return JSON.parse(raw);
-  }
-
-  async save(tx: AuthTx): Promise<void> {
-    // giữ TTL còn lại: tuỳ Redis client, có thể lấy TTL rồi setex lại
-    await this.redis.set(this.key(tx.id), JSON.stringify(tx), "EX", 600);
-  }
-
-  assertBinding(tx: AuthTx, ctx: { ip: string; ua?: string }) {
-    if (tx.ipHash && tx.ipHash !== hashIp(ctx.ip))
-      throw new AuthError("AUTH_TX_BINDING_MISMATCH");
-    if (tx.uaHash && ctx.ua && tx.uaHash !== hashUa(ctx.ua))
-      throw new AuthError("AUTH_TX_BINDING_MISMATCH");
-  }
-
-  async incrementChallengeAttempts(id: string) {
-    const tx = await this.getOrThrow(id);
-    tx.challengeAttempts += 1;
-    await this.save(tx);
-  }
-
-  async assertChallengeAttemptsAllowed(tx: AuthTx) {
-    if (tx.challengeAttempts >= 5) throw new AuthError("TOO_MANY_ATTEMPTS");
-  }
-
-  async delete(id: string) {
-    await this.redis.del(this.key(id));
-  }
-
-  private key(id: string) {
-    return `auth:tx:${id}`;
-  }
-}
+```typescript
+const fingerprint = SHA256(`${userAgent}::${clientIp}`);
 ```
 
-### 9.2. AuthFlowService (ý tưởng)
+**Features**:
 
-```ts
-export class AuthFlowService {
-  constructor(
-    private readonly usersRepo: UsersRepo,
-    private readonly authTx: AuthTxService,
-    private readonly mfa: MfaService,
-    private readonly session: SessionService,
-    private readonly audit: AuditService,
-    private readonly policy: PolicyService
-  ) {}
+- Unknown device detection
+- Optional blocking: `BLOCK_UNKNOWN_DEVICE`
+- Optional warning: `AUDIT_WARNING` (log suspicious activity)
+- Device verification: Email OTP cho new device
 
-  async startLogin(dto, ctx): Promise<AuthResponse> {
-    // giống phần pseudo ở trên
-  }
+### 8.4. Security Monitoring
 
-  async completeChallenge(input, ctx): Promise<AuthResponse> {
-    // giống phần pseudo ở trên
-  }
+**Risk Evaluation** (`server/src/services/auth/security-monitor.service.ts:47-91`):
 
-  async enrollStart(input, ctx) {
-    // giống phần pseudo ở trên
-  }
+**Risk Levels**:
 
-  async enrollConfirm(input, ctx) {
-    // giống phần pseudo ở trên
-  }
+- `LOW`: Known device
+- `MEDIUM`: New device (not blocked)
+- `HIGH`: New device + blocking enabled
 
-  private async completeLogin(user, ctx): Promise<AuthResponse> {
-    const session = await this.session.issue(user, ctx);
-    await this.audit.log("login_success", { userId: user.id, ip: ctx.ip });
-    return { status: "COMPLETED", session };
-  }
-}
-```
+**Actions**:
 
----
+- `allow`: Continue login
+- `block`: Reject login
 
-## 10) Quyết định cần bạn xác nhận (để chốt behavior)
+**Integration với MFA**:
 
-1. Khi `MFA_ENROLL` (bắt buộc setup) và user confirm OTP thành công: **cấp session ngay** hay bắt nhập OTP thêm lần nữa?
+- Risk `MEDIUM`/`HIGH` + risk-based MFA enabled → Require MFA
 
-   - Khuyến nghị: **cấp session ngay**.
+### 8.5. Audit Logging
 
-2. Backup code submit chung endpoint `POST /auth/login/challenge` hay tách endpoint riêng?
-   - Khuyến nghị: **chung endpoint** (giảm nhánh, dễ maintain).
+**Events** (`server/src/generated/index.ts` - `SecurityEventType`):
 
----
+**Authentication**:
 
-## Commit message gợi ý (English)
+- `login_success`, `login_failed`
+- `register_started`, `register_completed`, `register_failed`
+- `logout`
 
-`refactor(auth): redesign login flow using auth transaction and unified MFA challenges`
+**MFA**:
 
----
+- `mfa_challenge_started`, `mfa_verified`, `mfa_failed`
+- `mfa_setup_started`, `mfa_setup_completed`
+- `mfa_disabled`
+- `mfa_backup_codes_regenerated`
 
-## 11) So sánh Implementation hiện tại với Thiết kế
+**Password**:
 
-### ✅ ĐÃ TRIỂN KHAI (Implemented)
+- `password_changed`
+- `password_reset_completed`, `password_reset_failed`
 
-#### A. Core Infrastructure
+**Security**:
 
-1. **AuthTx Service** ✅
+- `suspicious_activity`
+- `refresh_token_success`, `refresh_token_failed`
+- `otp_sent`, `otp_send_failed`, `otp_invalid`
 
-   - File: `src/services/auth/auth-tx.service.ts`
-   - Đã implement đầy đủ: create, get, update, delete, setState, attachEnroll
-   - Có binding IP/UA hash
-   - Có challenge attempts tracking
-   - TTL: 300s (5 phút)
-   - Cache: Redis-based (`authTxCache`)
+**Storage**: `AuditLog` table với visibility levels:
 
-2. **Auth Types** ✅
+- `admin_only`: Chỉ admin xem được
+- `actor_and_subject`: User và subject user xem được
+- `actor_only`: Chỉ user thực hiện xem được
 
-   - File: `src/types/auth.types.ts`
-   - Đã định nghĩa: `AuthTxState`, `AuthTx`, `ChallengeDto`
-   - States: `PASSWORD_VERIFIED`, `CHALLENGE_MFA_REQUIRED`, `CHALLENGE_MFA_ENROLL`, `COMPLETED`
+### 8.6. IP/UA Binding
 
-3. **AuthFlow Service** ✅
+**Purpose**: Prevent authTxId theft
 
-   - File: `src/services/auth/auth-flow.service.ts`
-   - Đã implement:
-     - `startLogin()` - Password verification + decision logic
-     - `completeChallenge()` - MFA TOTP/Backup code verification
-     - `enrollStart()` - Start MFA enrollment
-     - `enrollConfirm()` - Confirm MFA enrollment with backup codes
-     - `resolveNextStep()` - Decision function
+**Implementation** (`server/src/services/auth/auth-tx.service.ts:61-73`):
 
-4. **AuthFlow Controller** ✅
+- Hash IP: `SHA256(ip)`
+- Hash UA: `SHA256(userAgent)`
+- Store trong authTx
+- Verify khi submit challenge/enroll
 
-   - File: `src/modules/auth/auth-flow.controller.ts`
-   - Endpoints:
-     - `POST /auth2/login`
-     - `POST /auth2/login/challenge`
-     - `POST /auth2/mfa/enroll/start`
-     - `POST /auth2/mfa/enroll/confirm`
+**Strictness**: IP strict, UA optional (vì UA có thể thay đổi nhẹ)
 
-5. **MFA Service** ✅
+### 8.7. Attempt Limits
 
-   - File: `src/services/auth/mfa.service.ts`
-   - Backup codes: generation, hashing, parsing
-   - Integrated vào `auth-flow.service.ts` (TOTP verify, backup code consume)
+**Password Attempts**:
 
-6. **Security Monitor** ✅
+- Max: `PASSWORD_MAX_ATTEMPT` (setting)
+- Track: `user.passwordAttempt`
+- Lock: Throw error nếu vượt limit
 
-   - File: `src/services/auth/security-monitor.service.ts`
-   - Device fingerprinting
-   - Unknown device detection
-   - Risk evaluation (allow/block)
-   - Audit logging for suspicious activity
+**Challenge Attempts**:
 
-7. **OAuth Integration** ✅
-
-   - File: `src/services/auth/oauth.service.ts`
-   - Google OAuth đã tích hợp với AuthTx flow
-   - Sử dụng `resolveNextStep()` chung
-   - Trả về `AuthResponse` chuẩn (COMPLETED/CHALLENGE)
-   - Hỗ trợ MFA challenge/enroll sau OAuth login
-
-8. **DTOs** ✅
-
-   - File: `src/dtos/auth.dto.ts`
-   - `AuthResponseDto` (union of COMPLETED/CHALLENGE)
-   - `ChallengeDto`
-   - Request/Response DTOs cho tất cả endpoints
-
-9. **Audit Logging** ✅
-
-   - Đầy đủ security events:
-     - `login_failed`, `login_success`
-     - `mfa_challenge_started`, `mfa_verified`, `mfa_failed`
-     - `mfa_setup_started`, `mfa_setup_completed`
-     - `suspicious_activity`
-   - Integrated vào `AuditLog` model với `SecurityEventType` enum
-
-10. **Database Schema** ✅
-    - User model có đầy đủ MFA fields:
-      - `mfaTotpEnabled`, `totpSecret`
-      - `backupCodes`, `backupCodesUsed`
-    - Session tracking với device fingerprint
-    - Security event types trong enum
-    - Account lockout support
-
-#### B. Supporting Features
-
-1. **Password Service** ✅
-
-    - File: `src/services/auth/password.service.ts`
-    - Verify and track attempts
-    - Password expiration validation
-    - Hashing/comparison
-
-2. **Session Service** ✅
-
-    - File: `src/services/auth/session.service.ts`
-    - Session creation/revocation
-    - Token management
-
-3. **Captcha Service** ✅
-
-    - File: `src/services/auth/captcha.service.ts`
-    - Text và Math captcha
-    - Token-based validation
-    - Cache-based storage
-
-4. **Rate Limiting** ✅
-    - Auth rate limit config: `src/services/rate-limit/auth-rate-limit.config.ts`
-    - Applied to auth endpoints
+- Max: 5 (hardcoded trong `auth-tx.service.ts:85`)
+- Track: `authTx.challengeAttempts`
+- Lock: Throw `TooManyAttempts` nếu vượt
 
 ---
 
-### ⚠️ CẦN CẢI THIỆN (Needs Improvement)
+## 9. API Reference
 
-#### 1. **Captcha Integration vào Login Flow** ✅
+### 9.1. Authentication Endpoints
 
-**Hiện trạng:**
+#### `POST /auth/login`
 
-- Captcha service đã có (`captchaService`)
-- Đã được tích hợp vào `authFlowService.startLogin()`
-- Có optional field `captcha` trong `LoginRequestDto`
-- Validate captcha token hợp lệ trước khi verify password
+- **Description**: Start login flow (password)
+- **Request**: `{ email, password, captcha? }`
+- **Response**: `AuthResponse` (COMPLETED | CHALLENGE)
+- **Rate Limited**: Yes
 
-**Trạng thái:** ✅ Đã hoàn thành (Implemented)
+#### `POST /auth/login/challenge`
+
+- **Description**: Submit MFA/device verification code
+- **Request**: `{ authTxId, type, code }`
+- **Response**: `AuthResponse` (COMPLETED)
+- **Rate Limited**: Yes
+
+#### `POST /auth/mfa/enroll/start`
+
+- **Description**: Start MFA enrollment
+- **Request**: `{ authTxId }`
+- **Response**: `{ authTxId, enrollToken, otpauthUrl }`
+- **Rate Limited**: Yes
+
+#### `POST /auth/mfa/enroll/confirm`
+
+- **Description**: Confirm MFA enrollment
+- **Request**: `{ authTxId, enrollToken, otp }`
+- **Response**: `AuthResponse` (COMPLETED + backupCodes)
+- **Rate Limited**: Yes
+
+### 9.2. OAuth Endpoints
+
+#### `POST /auth/oauth/google`
+
+- **Description**: Google OAuth login
+- **Request**: `{ idToken }`
+- **Response**: `AuthResponse` (COMPLETED | CHALLENGE)
+- **Rate Limited**: Yes
+
+#### `POST /auth/oauth/link-telegram`
+
+- **Description**: Link Telegram account (requires auth)
+- **Request**: `{ id, first_name?, last_name?, username?, photo_url?, auth_date, hash }`
+- **Response**: `null`
+- **Rate Limited**: No
+
+### 9.3. Password Management
+
+#### `POST /auth/change-password` (requires auth)
+
+- **Description**: Change password
+- **Request**: `{ oldPassword?, newPassword }`
+- **Response**: `null`
+- **Rate Limited**: Yes
+
+#### `POST /auth/forgot-password`
+
+- **Description**: Reset password via OTP
+- **Request**: `{ otp, otpToken, newPassword }`
+- **Response**: `null`
+- **Rate Limited**: Yes
+
+### 9.4. MFA Management
+
+#### `POST /auth/mfa/backup-codes/regenerate` (requires auth)
+
+- **Description**: Regenerate backup codes
+- **Request**: None
+- **Response**: `{ backupCodes: [string] }`
+- **Rate Limited**: No
+
+#### `POST /auth/mfa/disable` (requires auth)
+
+- **Description**: Disable MFA
+- **Request**: `{ password, code }`
+- **Response**: `null`
+- **Rate Limited**: No
+
+### 9.5. Session Management
+
+#### `POST /auth/refresh-token`
+
+- **Description**: Refresh access token
+- **Request**: `{ token }`
+- **Response**: `LoginResDto`
+- **Rate Limited**: Yes
+
+#### `POST /auth/logout` (requires auth)
+
+- **Description**: Logout current session
+- **Request**: None
+- **Response**: `null`
+- **Rate Limited**: No
+
+#### `POST /auth/logout/all` (requires auth)
+
+- **Description**: Logout all sessions
+- **Request**: None
+- **Response**: `null`
+- **Rate Limited**: No
+
+### 9.6. User Management
+
+#### `POST /auth/register`
+
+- **Description**: Register new user
+- **Request**: `{ email, password }`
+- **Response**: `{ otpToken } | null`
+- **Rate Limited**: Yes
+
+#### `POST /auth/verify-account`
+
+- **Description**: Verify account with OTP
+- **Request**: `{ otp, otpToken }`
+- **Response**: `null`
+- **Rate Limited**: Yes
+
+#### `GET /auth/me` (requires auth)
+
+- **Description**: Get current user profile
+- **Request**: None
+- **Response**: `UserResDto`
+- **Rate Limited**: No
 
 ---
 
-#### 2. **Risk-Based MFA** ✅
+## 10. Implementation Status
 
-**Hiện trạng:**
+### 10.1. ✅ Đã Triển Khai (Implemented)
 
-- `securityMonitorService.evaluateLogin()` trả về risk level (`LOW`, `MEDIUM`, `HIGH`)
-- `resolveNextStep()` đã xử lý logic: nếu Risk >= MEDIUM → yêu cầu MFA
-- Nếu Risk = HIGH và chưa setup TOTP → fallback sang Email OTP (hoặc block tuỳ configuration)
+#### Core Infrastructure
 
-**Trạng thái:** ✅ Đã hoàn thành (Implemented)
+- ✅ AuthTx Service (Redis-based, TTL 300s)
+- ✅ AuthFlow Service (startLogin, completeChallenge, enrollStart/Confirm)
+- ✅ MFA Service (TOTP, Backup Code, Email OTP)
+- ✅ Password Service (hashing, verification, expiration)
+- ✅ Session Service (create, revoke, list)
+- ✅ Security Monitor (device recognition, risk evaluation)
+- ✅ OAuth Service (Google login, Telegram linking)
+- ✅ Authorization Service (policy-based)
 
----
+#### Features
 
-#### 3. **Backup Code Regeneration** ✅
+- ✅ Password login với MFA challenge/enroll
+- ✅ OAuth Google login với MFA support
+- ✅ TOTP verification
+- ✅ Backup code (single-use, hashed storage)
+- ✅ Email OTP (fallback, device verification)
+- ✅ Device verification flow
+- ✅ MFA enrollment với backup code generation
+- ✅ MFA disable (password + TOTP required)
+- ✅ Backup code regeneration
+- ✅ Password change với session revocation
+- ✅ Forgot password flow
+- ✅ Captcha integration (optional)
+- ✅ Risk-based MFA
+- ✅ Admin force MFA enrollment (`mfaEnrollRequired` flag)
 
-**Hiện trạng:**
+#### Security
 
-- Đã có endpoint `POST /auth/mfa/backup-codes/regenerate`
-- Logic `regenerateBackupCodes` trong `AuthFlowService` yêu cầu user đang active và đã bật MFA
-- Audit log đầy đủ
+- ✅ IP/UA binding cho authTx
+- ✅ Challenge attempt limits (5 max)
+- ✅ Password attempt limits
+- ✅ Rate limiting cho auth endpoints
+- ✅ Audit logging đầy đủ
+- ✅ Session revocation on security changes
 
-**Trạng thái:** ✅ Đã hoàn thành (Implemented)
+### 10.2. ⚠️ Cần Cải Thiện (Needs Improvement)
 
----
+#### 1. Backup Code Storage
 
-#### 4. **MFA Disable Flow** ✅
+**Hiện trạng**:
 
-**Hiện trạng:**
+- Chỉ lưu 1 backup code tại một thời điểm (upsert)
+- Khi regenerate → invalidate code cũ
 
-- Có thể enable MFA (enroll flow)
-- **CHƯA** có flow để disable MFA
+**Vấn đề**:
 
-**Cần làm:**
+- User chỉ có 1 backup code → risk cao nếu mất
+- Không support multiple backup codes như các hệ thống khác
 
-- [x] Endpoint `POST /auth/mfa/disable` (requires auth)
-- [x] Yêu cầu verify password + TOTP code trước khi disable
-- [x] Update user: `mfaTotpEnabled = false`, clear `totpSecret`, `backupCodes`
-- [x] Audit log: `mfa_disabled`
-- [ ] Notification: email cảnh báo user về việc disable MFA
+**Khuyến nghị**:
 
----
+- [ ] Thay đổi schema: Support multiple backup codes per user
+- [ ] Generate 8-10 backup codes khi enroll
+- [ ] Store trong array hoặc separate table với `usedAt` tracking
+- [ ] Regenerate → invalidate all old, generate new set
 
-#### 5. **Session Hygiene - Revoke on Security Changes** ✅
+#### 2. OAuth Telegram Login
 
-**Hiện trạng:**
+**Hiện trạng**:
 
-- `sessionService.revoke()` đã có
-- Được gọi khi forgot password
-- **CHƯA** được gọi khi:
-  - User disable MFA
-  - User change password (trong `auth.service.ts` line 168-175 không revoke session)
-  - Admin force password reset
+- Chỉ có `link-telegram` (link account sau khi login)
+- Chưa có Telegram login flow
 
-**Cần làm:**
+**Khuyến nghị**:
 
-- [x] Trong `changePassword()`: thêm `await sessionService.revoke(userId)` sau update password
-- [x] Trong MFA disable: revoke all sessions
-- [x] Trong admin force password reset: revoke all sessions (Note: Admin password reset feature not currently implemented)
-- [x] Setting: `REVOKE_SESSIONS_ON_PASSWORD_CHANGE` (optional, default true)
+- [ ] Implement `POST /auth/oauth/telegram` tương tự Google
+- [ ] Verify Telegram login data (HMAC)
+- [ ] Tích hợp với authTx flow
+- [ ] Support MFA challenge/enroll
 
----
+#### 3. Error Code Standardization
 
-#### 6. **AuthTx Cleanup Job** ⚠️
+**Hiện trạng**:
 
-**Hiện trạng:**
+- Đã có `ErrCode` enum
+- Một số error codes còn thiếu:
+  - `BackupCodesExhausted` (khi user đã dùng hết)
+  - `MfaNotEnabled` (khi thao tác MFA nhưng chưa enable)
 
-- AuthTx có TTL 300s trong Redis
-- Redis tự động expire
-- **CHƯA** có monitoring/cleanup job cho orphaned transactions
+**Khuyến nghị**:
 
-**Cần làm:**
+- [ ] Thêm missing error codes
+- [ ] Đảm bảo error messages không leak thông tin
+- [ ] Document error codes trong API spec
 
-- [ ] (Optional) Background job để log expired transactions (analytics)
+#### 4. AuthTx Cleanup & Monitoring
+
+**Hiện trạng**:
+
+- AuthTx tự expire sau 300s (Redis TTL)
+- Không có monitoring/metrics
+
+**Khuyến nghị**:
+
+- [ ] (Optional) Background job để log expired transactions
 - [ ] Metrics: track số lượng transactions created vs completed
 - [ ] Alert nếu completion rate thấp (có thể do UX issue)
 
----
+#### 5. Session Management
 
-#### 7. **OAuth Telegram Login** ⚠️
+**Hiện trạng**:
 
-**Hiện trạng:**
+- Single session mode: revoke all khi login
+- Không có session timeout (chỉ có refresh token expiration)
 
-- Telegram chỉ có `linkTelegram()` (link account sau khi đã login)
-- **CHƯA** có Telegram login flow (như Google)
+**Khuyến nghị**:
 
-**Cần làm:**
+- [ ] (Optional) Session timeout: auto-revoke sau inactivity
+- [ ] (Optional) Session limit: max số sessions per user
+- [ ] (Optional) Session device management UI
 
-- [ ] Implement `telegramLogin()` tương tự `googleLogin()`
-- [ ] Endpoint: `POST /auth/oauth/telegram`
-- [ ] Sử dụng chung `authTx` flow
-- [ ] Trả về `AuthResponse` chuẩn
+#### 6. Testing Coverage
 
----
+**Hiện trạng**:
 
-#### 8. **Error Code Standardization** ⚠️
+- Có test folder nhưng chưa rõ coverage
 
-**Hiện trạng:**
-
-- Đã có `ErrCode` enum
-- Các error codes được sử dụng: `PasswordNotMatch`, `InvalidOtp`, `InvalidBackupCode`, etc.
-- **CHƯA** có error codes cho một số case mới:
-  - `CaptchaRequired`
-  - `InvalidCaptcha`
-  - `BackupCodesExhausted` (khi user đã dùng hết backup codes)
-
-**Cần làm:**
-
-- [ ] Thêm error codes vào `ErrCode` enum
-- [ ] Đảm bảo error messages không leak thông tin (vd: "Invalid credentials" thay vì "User not found")
-
----
-
-#### 9. **Documentation & API Spec** ⚠️
-
-**Hiện trạng:**
-
-- Swagger docs có cho `/auth2/*` endpoints
-- **CHƯA** có:
-  - Sequence diagrams cho các flows
-  - Postman collection
-  - Client integration guide
-
-**Cần làm:**
-
-- [ ] Tạo sequence diagrams:
-  - Password login → MFA challenge → Complete
-  - Password login → MFA enroll → Complete
-  - OAuth login → MFA challenge
-- [ ] Postman collection với examples
-- [ ] Client SDK/helper functions (nếu có frontend codebase)
-
----
-
-#### 10. **Testing Coverage** ⚠️
-
-**Hiện trạng:**
-
-- Có test folder: `server/test/`
-- **CHƯA** rõ coverage cho auth flow mới
-
-**Cần làm:**
+**Khuyến nghị**:
 
 - [ ] Unit tests cho `AuthFlowService`:
   - `startLogin()` với các scenarios
@@ -1065,80 +1126,27 @@ export class AuthFlowService {
   - Expired authTx
   - Invalid backup codes
 
----
+### 10.3. ❌ Chưa Triển Khai (Missing)
 
-### ❌ THIẾU HOÀN TOÀN (Missing)
+#### 1. Step-up Authentication
 
-#### 1. **Email OTP Challenge** ✅
+**Mô tả**: Re-authenticate cho sensitive actions (change email, delete account, etc.)
 
-**Hiện trạng:**
-
-- Đã implement như một fallback option trong `startLogin` khi Risk = HIGH và user chưa có TOTP.
-- Đã support verify `MFA_EMAIL_OTP` trong `completeChallenge`.
-
-**Trạng thái:** ✅ Đã hoàn thành (Implemented)
-
----
-
-#### 2. **Device Verification Challenge** ✅
-
-**Hiện trạng:**
-
-- `AuthFlowService` xử lý `DEVICE_VERIFY` step (send OTP).
-- `completeChallenge` verify OTP với purpose `DEVICE_VERIFY`.
-- Tích hợp với `securityMonitor` để detect new device.
-
-**Trạng thái:** ✅ Đã hoàn thành (Implemented)
-
----
-
-#### 3. **Step-up Authentication** ❌
-
-**Thiết kế đề cập:**
-
-- Section 1: "step-up cho action nhạy cảm"
-
-**Hiện trạng:**
-
-- Auth flow chỉ dùng cho login
-- **CHƯA** có mechanism để yêu cầu re-authenticate cho sensitive actions (vd: change password, delete account, transfer funds)
-
-**Cần làm (nếu muốn):**
+**Cần làm**:
 
 - [ ] Middleware `requireStepUp(action)`
 - [ ] Tạo authTx cho step-up (không phải login)
 - [ ] Challenge user với TOTP/password
 - [ ] Cache "step-up verified" trong session (TTL ngắn: 5-10 phút)
 
-**Lưu ý:** Advanced security feature.
+#### 2. MFA Recovery Codes
 
----
+**Phân biệt với Backup Codes**:
 
-#### 4. **Admin Force MFA Enrollment** ✅
+- **Backup codes**: Dùng thay TOTP để login (tiêu hao sau khi dùng)
+- **Recovery codes**: Dùng để disable MFA hoàn toàn (khi mất authenticator app)
 
-**Hiện trạng:**
-
-- Đã thêm `mfaEnrollRequired` vào User model.
-- Admin endpoint `POST /admin/users/:id/mfa/enroll-force`.
-- `resolveNextStep` check flag này để enforce `ENROLL_MFA`.
-
-**Trạng thái:** ✅ Đã hoàn thành (Implemented)
-
----
-
-#### 5. **MFA Recovery Codes (khác Backup Codes)** ❌
-
-**Hiện trạng:**
-
-- Có backup codes (one-time use)
-- **CHƯA** có "recovery codes" (dùng để disable MFA khi mất device)
-
-**Phân biệt:**
-
-- **Backup codes**: dùng thay TOTP để login (tiêu hao sau khi dùng)
-- **Recovery codes**: dùng để disable MFA hoàn toàn (khi mất authenticator app)
-
-**Cần làm (nếu muốn):**
+**Cần làm**:
 
 - [ ] Generate recovery code khi enroll MFA (1 code duy nhất, dài hơn backup code)
 - [ ] Endpoint: `POST /auth/mfa/recover` (public, không cần auth)
@@ -1147,99 +1155,497 @@ export class AuthFlowService {
   - Audit log + email notification
 - [ ] Store recovery code hash trong DB
 
----
+#### 3. Email Notification cho Security Events
 
-### 📊 Tổng kết Implementation Status
+**Hiện trạng**:
 
-| Hạng mục                     | Trạng thái | Ghi chú                                |
-| ---------------------------- | ---------- | -------------------------------------- |
-| **Core Auth Transaction**    | ✅ 100%    | Hoàn chỉnh                             |
-| **Password Login Flow**      | ✅ 100%    | Hoàn chỉnh                             |
-| **MFA TOTP Challenge**       | ✅ 100%    | Hoàn chỉnh                             |
-| **MFA Backup Code**          | ✅ 100%    | Single-use backup code implemented     |
-| **MFA Enrollment**           | ✅ 100%    | Hoàn chỉnh                             |
-| **OAuth Google Integration** | ✅ 100%    | Hoàn chỉnh                             |
-| **Security Monitoring**      | ✅ 100%    | Risk levels implemented                |
-| **Audit Logging**            | ✅ 100%    | Hoàn chỉnh                             |
-| **Captcha Integration**      | ✅ 100%    | Tích hợp vào login flow                |
-| **Risk-Based MFA**           | ✅ 100%    | Actionable risk logic                  |
-| **MFA Management**           | ✅ 100%    | Disable + Regenerate backup codes      |
-| **Session Hygiene**          | ✅ 100%    | Revoke on security changes implemented |
-| **OAuth Telegram Login**     | ❌ 0%      | Chỉ có link account                    |
-| **Email OTP Challenge**      | ✅ 100%    | Fallback & high risk                   |
-| **Device Verification**      | ✅ 100%    | Implemented                            |
-| **Admin Force Enroll**       | ✅ 100%    | Implemented                            |
-| **Step-up Auth**             | ❌ 0%      | Chưa implement                         |
+- Audit log đầy đủ
+- Chưa có email notification
 
----
+**Cần làm**:
 
-### 🎯 Khuyến nghị Ưu tiên (Priority Recommendations)
+- [ ] Email khi disable MFA
+- [ ] Email khi password changed
+- [ ] Email khi login từ new device
+- [ ] Email khi suspicious activity detected
 
-#### **P0 - Critical (Cần làm ngay)**
+#### 4. Account Lockout
 
-1. ✅ **Captcha Integration** - Chống brute-force
-2. ✅ **Session Revoke on Password Change** - Security hygiene
-3. ✅ **MFA Disable Flow** - User experience
+**Hiện trạng**:
 
-#### **P1 - High (Nên làm sớm)**
+- Password attempt limit → throw error
+- Chưa có account lockout (temporary ban)
 
-1. ✅ **Risk-Based MFA** - Adaptive security
-2. ✅ **Backup Code Regeneration** - User recovery
-3. ✅ **Error Code Standardization** - Better error handling
+**Cần làm**:
 
-#### **P2 - Medium (Có thể làm sau)**
-
-1. ⚠️ **OAuth Telegram Login** - Nếu có user base Telegram
-2. ⚠️ **Testing Coverage** - Quality assurance
-3. ⚠️ **Documentation** - Developer experience
-
-#### **P3 - Low (Nice to have)**
-
-1. ⚠️ **Email OTP Challenge** - Alternative MFA method
-2. ⚠️ **Device Verification** - Advanced security
-3. ⚠️ **Step-up Auth** - For sensitive operations
-4. ⚠️ **MFA Recovery Codes** - Edge case recovery
+- [ ] Account lockout sau N failed attempts
+- [ ] Lockout duration: configurable (15 phút, 1 giờ, etc.)
+- [ ] Auto-unlock sau duration
+- [ ] Admin unlock endpoint
 
 ---
 
-### 📝 Action Items Summary
+## 11. Security Audit & Recommendations
 
-**Để hoàn thiện hệ thống theo thiết kế, cần:**
+### 11.1. Security Strengths ✅
 
-**Backend:**
+1. **Strong Password Hashing**
 
-- [x] Integrate captcha vào login endpoint
-- [x] Implement risk-based MFA logic
-- [x] Add MFA disable endpoint
-- [x] Add backup code regeneration endpoint
-- [x] Revoke sessions on security changes
-- [x] Implement device verification flow
-- [x] Implement admin force MFA enroll
-- [ ] Add missing error codes
-- [x] Improve security monitor risk levels
+   - ✅ Bun.password (bcrypt-like)
+   - ✅ Pepper từ environment
+   - ✅ Expiration support
 
-**Database:**
+2. **MFA Implementation**
 
-- [x] Add settings: `REVOKE_SESSIONS_ON_PASSWORD_CHANGE`
-- [x] Add settings: `CAPTCHA_REQUIRED`, `MFA_RISK_BASED_ENABLED`
-- [x] Add `mfaEnrollRequired` field to User model
+   - ✅ TOTP với otplib
+   - ✅ Backup codes (hashed storage, single-use)
+   - ✅ Email OTP fallback
 
-**Testing:**
+3. **Session Security**
 
-- [ ] Unit tests cho AuthFlowService
+   - ✅ JWT với encrypted payload
+   - ✅ Refresh token rotation
+   - ✅ Session revocation on security changes
+
+4. **Rate Limiting**
+
+   - ✅ Applied to critical endpoints
+   - ✅ Redis-based sliding window
+
+5. **Audit Logging**
+
+   - ✅ Comprehensive security events
+   - ✅ Visibility levels
+   - ✅ User and session tracking
+
+6. **IP/UA Binding**
+   - ✅ Prevent authTxId theft
+   - ✅ Hash-based (SHA256)
+
+### 11.2. Security Concerns ⚠️
+
+#### 1. TOTP Secret Storage
+
+**Vấn đề**: `totpSecret` lưu plain text trong database
+
+**Risk**: Nếu database bị compromise → attacker có thể generate TOTP codes
+
+**Mitigation hiện tại**: Database encryption at rest (nếu có)
+
+**Khuyến nghị**:
+
+- [ ] (Optional) Encrypt `totpSecret` với AES-256
+- [ ] Key management: Store encryption key trong secure vault
+- [ ] Decrypt on-the-fly khi verify
+
+#### 2. Backup Code Storage
+
+**Vấn đề**: Chỉ 1 backup code tại một thời điểm
+
+**Risk**: User mất code → không thể recover
+
+**Khuyến nghị**: Đã đề cập ở phần 10.2.1
+
+#### 3. AuthTx TTL
+
+**Vấn đề**: TTL 300s (5 phút) có thể quá ngắn cho một số UX flows
+
+**Risk**: User mất nhiều thời gian → authTx expire → phải login lại
+
+**Khuyến nghị**:
+
+- [ ] (Optional) Extend TTL lên 10 phút (600s)
+- [ ] (Optional) Refresh TTL khi user interact (submit challenge)
+
+#### 4. Challenge Attempt Limit
+
+**Vấn đề**: Hardcoded 5 attempts
+
+**Risk**: Không flexible, có thể quá strict hoặc quá lenient
+
+**Khuyến nghị**:
+
+- [ ] Move to settings: `MFA_CHALLENGE_MAX_ATTEMPTS`
+- [ ] Support different limits cho different challenge types
+
+#### 5. Email OTP Security
+
+**Vấn đề**: Email không phải secure channel
+
+**Risk**: Email có thể bị intercept (MITM, compromised email account)
+
+**Khuyến nghị**:
+
+- [ ] Chỉ dùng email OTP như fallback (risk HIGH)
+- [ ] Khuyến khích user enable TOTP
+- [ ] (Optional) SMS OTP (nếu có budget)
+
+#### 6. Session Token Storage
+
+**Vấn đề**: Refresh token lưu trong database (plain text)
+
+**Risk**: Database compromise → attacker có thể refresh tokens
+
+**Mitigation hiện tại**:
+
+- Token là random 32-char string
+- Revoked flag
+- Expiration date
+
+**Khuyến nghị**:
+
+- [ ] (Optional) Hash refresh tokens (nhưng cần trade-off với lookup performance)
+- [ ] Ensure database encryption at rest
+- [ ] Regular security audits
+
+### 11.3. Security Best Practices ✅
+
+1. **No Information Leakage**
+
+   - ✅ Generic error messages (`InvalidCredentials` thay vì `UserNotFound`)
+   - ✅ Consistent response times (không leak user existence)
+
+2. **Defense in Depth**
+
+   - ✅ Multiple layers: Password → MFA → Device verification
+   - ✅ Risk-based MFA
+   - ✅ Rate limiting + attempt limits
+
+3. **Audit Trail**
+
+   - ✅ Comprehensive logging
+   - ✅ User and session tracking
+   - ✅ Security event categorization
+
+4. **Secure Defaults**
+   - ✅ MFA required (configurable)
+   - ✅ Password expiration (configurable)
+   - ✅ Session revocation on password change (configurable)
+
+---
+
+## 12. Code Quality & Best Practices
+
+### 12.1. Code Organization ✅
+
+**Strengths**:
+
+- ✅ Separation of concerns: Services tách biệt rõ ràng
+- ✅ Dependency injection: Services nhận deps qua constructor
+- ✅ Type safety: TypeScript với proper types
+- ✅ Error handling: Centralized error codes
+
+### 12.2. Code Issues & Improvements
+
+#### 1. Hardcoded Values
+
+**Vấn đề**:
+
+- Challenge attempt limit: 5 (hardcoded)
+- AuthTx TTL: 300s (hardcoded)
+- Backup code length: 8 (hardcoded)
+
+**Khuyến nghị**:
+
+- [ ] Move to settings hoặc environment variables
+- [ ] Document defaults
+
+#### 2. Magic Strings
+
+**Vấn đề**:
+
+- Một số strings không được extract thành constants
+- Ví dụ: `'Admin Base Portal'` trong `enrollStart()`
+
+**Khuyến nghị**:
+
+- [ ] Extract thành constants
+- [ ] Hoặc move to settings
+
+#### 3. Error Handling
+
+**Strengths**:
+
+- ✅ Centralized error codes
+- ✅ Proper error types (BadReqErr, UnAuthErr, etc.)
+
+**Improvements**:
+
+- [ ] Consistent error response format
+- [ ] Error context trong audit logs
+
+#### 4. Code Duplication
+
+**Vấn đề**:
+
+- Một số logic lặp lại giữa password login và OAuth login
+
+**Khuyến nghị**:
+
+- [ ] Extract common logic thành shared functions
+- [ ] Đã tốt: `resolveNextStep()` được reuse
+
+#### 5. Testing
+
+**Vấn đề**:
+
+- Chưa có unit tests cho auth flow
+
+**Khuyến nghị**:
+
+- [ ] Viết tests cho critical paths
 - [ ] Integration tests cho full flows
 - [ ] Security tests
 
-**Documentation:**
+### 12.3. Performance Considerations
 
-- [ ] Sequence diagrams
+#### 1. Database Queries
+
+**Strengths**:
+
+- ✅ Selective fields (`userResSelect`)
+- ✅ Indexed lookups (email, userId)
+
+**Improvements**:
+
+- [ ] (Optional) Cache user permissions (đã có trong middleware)
+- [ ] (Optional) Batch queries nếu cần
+
+#### 2. Redis Usage
+
+**Strengths**:
+
+- ✅ AuthTx trong Redis (fast)
+- ✅ User cache trong middleware
+
+**Improvements**:
+
+- [ ] (Optional) Monitor Redis memory usage
+- [ ] (Optional) TTL optimization
+
+#### 3. Async Operations
+
+**Strengths**:
+
+- ✅ Email queue (async)
+- ✅ GeoIP queue (async)
+
+**Improvements**:
+
+- [ ] (Optional) Parallel operations khi có thể (đã có trong `completeLogin()`)
+
+### 12.4. Documentation
+
+**Strengths**:
+
+- ✅ Swagger/OpenAPI docs
+- ✅ Code comments (một số)
+
+**Improvements**:
+
+- [ ] Sequence diagrams cho flows
 - [ ] Postman collection
 - [ ] Client integration guide
+- [ ] Architecture diagrams
 
-**Optional (Future):**
+---
 
-- [ ] OAuth Telegram login
-- [ ] Email OTP challenge
-- [ ] Device verification
-- [ ] Step-up authentication
-- [ ] MFA recovery codes
+## 13. Migration & Deployment
+
+### 13.1. Database Migrations
+
+**Required Fields**:
+
+- `User.mfaTotpEnabled`, `User.totpSecret`, `User.mfaEnrollRequired`
+- `MfaBackupCode` table
+- `Session` table với `deviceFingerprint`, `sessionType`
+- `AuditLog` với `SecurityEventType` enum
+
+### 13.2. Environment Variables
+
+**Required**:
+
+- `PASSWORD_PEPPER`: Pepper cho password hashing
+- `JWT_ACCESS_TOKEN_SECRET_KEY`: JWT signing key
+- `JWT_ACCESS_TOKEN_EXPIRED`: Access token expiration
+- `JWT_REFRESH_TOKEN_EXPIRED`: Refresh token expiration
+- `PASSWORD_EXPIRED`: Password expiration duration
+- `PASSWORD_MAX_ATTEMPT`: Max password attempts
+- `CAPTCHA_REQUIRED`: Enable captcha
+- `MFA_REQUIRED`: Require MFA for all users
+- `MFA_RISK_BASED_ENABLED`: Enable risk-based MFA
+- `DEVICE_VERIFICATION_ENABLED`: Enable device verification
+- `REVOKE_SESSIONS_ON_PASSWORD_CHANGE`: Revoke sessions on password change
+
+### 13.3. Redis Configuration
+
+**Required**:
+
+- Redis instance cho:
+  - AuthTx cache
+  - OTP cache
+  - Captcha cache
+  - User cache
+  - Rate limiting
+
+### 13.4. Queue Configuration
+
+**Required**:
+
+- Bull queue cho:
+  - Email queue (OTP sending)
+  - GeoIP queue (session location update)
+
+---
+
+## 14. Future Enhancements
+
+### 14.1. Short-term (P1)
+
+1. **Multiple Backup Codes**
+
+   - Generate 8-10 codes khi enroll
+   - Store trong array hoặc separate table
+
+2. **Telegram OAuth Login**
+
+   - Implement login flow (không chỉ link)
+
+3. **Error Code Standardization**
+
+   - Thêm missing error codes
+   - Document trong API spec
+
+4. **Testing Coverage**
+   - Unit tests cho critical paths
+   - Integration tests
+
+### 14.2. Medium-term (P2)
+
+1. **Step-up Authentication**
+
+   - Re-auth cho sensitive actions
+
+2. **MFA Recovery Codes**
+
+   - Recovery flow khi mất device
+
+3. **Email Notifications**
+
+   - Security event emails
+
+4. **Account Lockout**
+   - Temporary ban sau failed attempts
+
+### 14.3. Long-term (P3)
+
+1. **SMS OTP**
+
+   - Alternative to email OTP
+
+2. **WebAuthn / FIDO2**
+
+   - Passwordless authentication
+   - Hardware keys support
+
+3. **Social Login Expansion**
+
+   - Facebook, GitHub, etc.
+
+4. **Advanced Analytics**
+   - Login patterns
+   - Security insights
+   - User behavior
+
+---
+
+## 15. Appendix
+
+### 15.1. File Structure
+
+```
+server/src/
+├── services/auth/
+│   ├── auth-flow.service.ts      # Main orchestrator
+│   ├── auth-tx.service.ts        # Auth transaction management
+│   ├── auth.service.ts           # Legacy auth (register, change password, etc.)
+│   ├── mfa.service.ts            # MFA logic
+│   ├── password.service.ts        # Password hashing/verification
+│   ├── session.service.ts        # Session management
+│   ├── security-monitor.service.ts # Risk evaluation
+│   ├── oauth.service.ts          # OAuth integration
+│   ├── authorization.service.ts   # Permission checking
+│   ├── otp.service.ts            # OTP generation/verification
+│   ├── captcha.service.ts        # Captcha generation/validation
+│   ├── auth-util.service.ts      # User utilities, token service
+│   ├── middleware.ts             # Auth middleware
+│   └── constants.ts              # Auth constants
+├── modules/auth/
+│   ├── auth-flow.controller.ts   # New auth endpoints
+│   └── auth.controller.ts        # Legacy auth endpoints
+├── dtos/
+│   └── auth.dto.ts               # Request/Response DTOs
+└── types/
+    └── auth.types.ts             # Type definitions
+```
+
+### 15.2. Key Dependencies
+
+- `otplib`: TOTP generation/verification
+- `jose`: JWT signing/verification
+- `google-auth-library`: Google OAuth
+- `svg-captcha`: Captcha generation
+- `bun`: Runtime (password hashing)
+
+### 15.3. Database Schema (Key Tables)
+
+**User**:
+
+- `id`, `email`, `password`, `status`
+- `mfaTotpEnabled`, `totpSecret`, `mfaEnrollRequired`
+- `passwordAttempt`, `passwordExpired`, `lastPasswordChangeAt`
+
+**Session**:
+
+- `id`, `token` (refresh token), `expired`, `revoked`
+- `createdById`, `ip`, `device`, `userAgent`
+- `deviceFingerprint`, `sessionType`
+
+**MfaBackupCode**:
+
+- `id`, `userId`, `codeHash`, `usedAt`, `created`
+
+**RolePlayer**:
+
+- `id`, `playerId` (userId), `roleId`, `expiresAt`
+
+**RolePermission**:
+
+- `id`, `roleId`, `permissionId`
+
+**AuditLog**:
+
+- `id`, `category`, `eventType`, `severity`
+- `subjectUserId`, `userId`, `sessionId`
+- `visibility`, `metadata`
+
+---
+
+## Kết luận
+
+Tài liệu này mô tả đầy đủ hệ thống authentication và authorization hiện tại, bao gồm:
+
+- ✅ **Core Architecture**: Auth Transaction + Challenge pattern
+- ✅ **Complete Flows**: Password login, OAuth, MFA, Device verification
+- ✅ **Security Features**: Rate limiting, captcha, device recognition, audit logging
+- ✅ **Implementation Status**: Đã triển khai, cần cải thiện, và missing features
+- ✅ **Security Audit**: Strengths, concerns, và recommendations
+- ✅ **Code Quality**: Best practices và improvements
+
+**Lưu ý**: Tài liệu này được cập nhật dựa trên codebase thực tế tại thời điểm review. Khi có thay đổi code, cần cập nhật tài liệu tương ứng.
+
+---
+
+**Cập nhật lần cuối**: Dựa trên code review ngày [DATE]
+**Người review**: [REVIEWER]
+**Version**: 2.0
