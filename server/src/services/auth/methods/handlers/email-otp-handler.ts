@@ -1,3 +1,4 @@
+import { UserStatus } from 'src/generated';
 import type { MfaService } from 'src/services/auth/methods/mfa.service';
 import type { OtpService } from 'src/services/auth/methods/otp.service';
 import type {
@@ -52,8 +53,8 @@ export class EmailOtpHandler implements IAuthMethodHandler {
       label: 'Email OTP',
       description: 'Receive code via email',
       requiresSetup: false,
-      isAvailable: () => {
-        return Promise.resolve(true);
+      isAvailable: (context) => {
+        return Promise.resolve(context.user.status === UserStatus.active);
       },
     });
   }

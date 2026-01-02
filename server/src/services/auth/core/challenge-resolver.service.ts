@@ -6,10 +6,10 @@ import type { MethodRegistryService } from '../methods/method-registry.service';
 import { getMethodRegistry } from '../methods/method-registry-init';
 
 export interface ResolveAvailableMethodsContext {
-  user: Pick<User, 'id' | 'email' | 'mfaTotpEnabled'>;
+  user: Pick<User, 'id' | 'email' | 'mfaTotpEnabled' | 'status'>;
   authTx: AuthTx;
   securityResult?: SecurityCheckResult;
-  challengeType: 'MFA_REQUIRED' | 'DEVICE_VERIFY' | 'MFA_ENROLL';
+  challengeType: 'MFA_REQUIRED' | 'DEVICE_VERIFY';
 }
 
 export class ChallengeResolverService {
@@ -26,16 +26,13 @@ export class ChallengeResolverService {
   ): Promise<AuthMethodOption[]> {
     const { user, authTx, securityResult, challengeType } = context;
 
-    let configKey: 'mfaRequired' | 'deviceVerify' | 'mfaEnroll';
+    let configKey: 'mfaRequired' | 'deviceVerify';
     switch (challengeType) {
       case 'MFA_REQUIRED':
         configKey = 'mfaRequired';
         break;
       case 'DEVICE_VERIFY':
         configKey = 'deviceVerify';
-        break;
-      case 'MFA_ENROLL':
-        configKey = 'mfaEnroll';
         break;
       default:
         return Promise.resolve([]);

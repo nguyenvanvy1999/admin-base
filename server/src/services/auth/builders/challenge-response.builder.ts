@@ -70,23 +70,6 @@ export class ChallengeResponseBuilder {
     };
   }
 
-  buildMfaEnroll(context: ChallengeContext): ChallengeDto {
-    const { availableMethods } = context;
-
-    const metadata: ChallengeMetadata = {
-      enrollment: {
-        methods: ['totp'],
-        backupCodesWillBeGenerated: true,
-      },
-    };
-
-    return {
-      type: AuthChallengeType.MFA_ENROLL,
-      availableMethods,
-      metadata,
-    };
-  }
-
   private maskEmail(email: string): string {
     return email.replace(
       /^(.{2})(.*)(@.*)$/,

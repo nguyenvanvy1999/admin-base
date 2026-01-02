@@ -8,7 +8,7 @@ import { SETTING } from 'src/share';
 import type { AuthMethodConfig, AuthTx } from 'src/types/auth.types';
 
 export interface MethodAvailabilityContext {
-  user: Pick<User, 'id' | 'email' | 'mfaTotpEnabled'>;
+  user: Pick<User, 'id' | 'email' | 'mfaTotpEnabled' | 'status'>;
   authTx: AuthTx;
   securityResult?: SecurityCheckResult;
 }

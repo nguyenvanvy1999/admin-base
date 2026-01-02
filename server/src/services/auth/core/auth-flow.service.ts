@@ -6,6 +6,7 @@ import type {
   AuthChallengeRequestParams,
   AuthEnrollConfirmRequestParams,
   AuthEnrollStartRequestParams,
+  AuthEnrollStartResponseDto,
   DisableMfaRequestParams,
   IAuthResponse,
   LoginParams,
@@ -138,7 +139,6 @@ export class AuthFlowService {
     risk?: 'LOW' | 'MEDIUM' | 'HIGH';
     isNewDevice?: boolean;
     deviceVerificationEnabled?: boolean;
-    mfaEnrollRequired?: boolean;
   }): { kind: AuthNextStepKind } {
     const {
       user,
@@ -147,21 +147,19 @@ export class AuthFlowService {
       risk,
       isNewDevice,
       deviceVerificationEnabled,
-      mfaEnrollRequired,
     } = input;
 
     if (!user.mfaTotpEnabled && isNewDevice && deviceVerificationEnabled) {
       return { kind: AuthNextStepKind.DEVICE_VERIFY };
     }
 
-    if ((mfaRequired || mfaEnrollRequired) && !user.mfaTotpEnabled)
-      return { kind: AuthNextStepKind.ENROLL_MFA };
+    if (mfaRequired && !user.mfaTotpEnabled) {
+      return { kind: AuthNextStepKind.MFA_CHALLENGE };
+    }
     if (user.mfaTotpEnabled) return { kind: AuthNextStepKind.MFA_CHALLENGE };
 
     if (riskBased && (risk === 'MEDIUM' || risk === 'HIGH')) {
-      return user.mfaTotpEnabled
-        ? { kind: AuthNextStepKind.MFA_CHALLENGE }
-        : { kind: AuthNextStepKind.ENROLL_MFA };
+      return { kind: AuthNextStepKind.MFA_CHALLENGE };
     }
 
     return { kind: AuthNextStepKind.COMPLETE };
@@ -287,7 +285,6 @@ export class AuthFlowService {
       risk: securityResult.risk,
       isNewDevice: securityResult.isNewDevice,
       deviceVerificationEnabled,
-      mfaEnrollRequired: user.mfaEnrollRequired,
     });
 
     if (next.kind === AuthNextStepKind.COMPLETE) {
@@ -347,49 +344,40 @@ export class AuthFlowService {
       };
     }
 
-    if (next.kind === 'ENROLL_MFA') {
-      if (
-        mfaRiskBased &&
-        securityResult.risk === 'HIGH' &&
-        !user.mfaTotpEnabled
-      ) {
+    if (next.kind === 'MFA_CHALLENGE') {
+      await this.deps.authTxService.setState(
+        authTx.id,
+        AuthTxState.CHALLENGE_MFA_REQUIRED,
+      );
+
+      if (!user.mfaTotpEnabled && mfaRequired) {
         const res = await this.deps.otpService.sendOtpWithAudit(
           user.email,
           PurposeVerify.MFA_LOGIN,
         );
-        if (!res) throw new BadReqErr(ErrCode.InternalError);
-
-        await this.deps.authTxService.update(authTx.id, {
-          emailOtpToken: res.otpToken,
-          state: AuthTxState.CHALLENGE_MFA_REQUIRED,
-        });
-
-        const availableMethods =
-          await this.deps.challengeResolver.resolveAvailableMethods({
-            user,
-            authTx,
-            securityResult,
-            challengeType: 'MFA_REQUIRED',
+        if (res) {
+          await this.deps.authTxService.update(authTx.id, {
+            emailOtpToken: res.otpToken,
           });
-
-        const challenge =
-          await this.deps.challengeResponseBuilder.buildMfaRequired({
-            user,
-            authTx,
-            securityResult,
-            availableMethods,
-          });
-
-        return {
-          status: AuthStatus.CHALLENGE,
-          authTxId: authTx.id,
-          challenge,
-        };
+        }
       }
 
-      await this.deps.authTxService.setState(
-        authTx.id,
-        AuthTxState.CHALLENGE_MFA_ENROLL,
+      await this.deps.auditLogService.pushSecurity(
+        buildMfaChallengeStartedAuditLog(user, AuthMethod.EMAIL, {
+          userId: user.id,
+          metadata: {
+            stage: 'challenge',
+            from: 'login',
+            method: user.mfaTotpEnabled
+              ? 'totp_available'
+              : 'email_otp_fallback',
+          },
+        }),
+        {
+          userId: user.id,
+          subjectUserId: user.id,
+          visibility: AuditLogVisibility.actor_and_subject,
+        },
       );
 
       const availableMethods =
@@ -397,15 +385,16 @@ export class AuthFlowService {
           user,
           authTx,
           securityResult,
-          challengeType: 'MFA_ENROLL',
+          challengeType: 'MFA_REQUIRED',
         });
 
-      const challenge = this.deps.challengeResponseBuilder.buildMfaEnroll({
-        user,
-        authTx,
-        securityResult,
-        availableMethods,
-      });
+      const challenge =
+        await this.deps.challengeResponseBuilder.buildMfaRequired({
+          user,
+          authTx,
+          securityResult,
+          availableMethods,
+        });
 
       return {
         status: AuthStatus.CHALLENGE,
@@ -414,48 +403,9 @@ export class AuthFlowService {
       };
     }
 
-    await this.deps.authTxService.setState(
-      authTx.id,
-      AuthTxState.CHALLENGE_MFA_REQUIRED,
-    );
-
-    await this.deps.auditLogService.pushSecurity(
-      buildMfaChallengeStartedAuditLog(user, AuthMethod.EMAIL, {
-        userId: user.id,
-        metadata: {
-          stage: 'challenge',
-          from: 'login',
-        },
-      }),
-      {
-        userId: user.id,
-        subjectUserId: user.id,
-        visibility: AuditLogVisibility.actor_and_subject,
-      },
-    );
-
-    const availableMethods =
-      await this.deps.challengeResolver.resolveAvailableMethods({
-        user,
-        authTx,
-        securityResult,
-        challengeType: 'MFA_REQUIRED',
-      });
-
-    const challenge = await this.deps.challengeResponseBuilder.buildMfaRequired(
-      {
-        user,
-        authTx,
-        securityResult,
-        availableMethods,
-      },
-    );
-
-    return {
-      status: AuthStatus.CHALLENGE,
-      authTxId: authTx.id,
-      challenge,
-    };
+    throw new BadReqErr(ErrCode.InternalError, {
+      errors: `Unexpected next step: ${next.kind}`,
+    });
   }
 
   async completeChallenge(
@@ -541,16 +491,13 @@ export class AuthFlowService {
 
     const user = await this.deps.authUserService.loadUserForAuth(tx.userId);
 
-    let challengeType: 'MFA_REQUIRED' | 'DEVICE_VERIFY' | 'MFA_ENROLL';
+    let challengeType: 'MFA_REQUIRED' | 'DEVICE_VERIFY';
     switch (tx.state) {
       case AuthTxState.CHALLENGE_MFA_REQUIRED:
         challengeType = 'MFA_REQUIRED';
         break;
       case AuthTxState.CHALLENGE_DEVICE_VERIFY:
         challengeType = 'DEVICE_VERIFY';
-        break;
-      case AuthTxState.CHALLENGE_MFA_ENROLL:
-        challengeType = 'MFA_ENROLL';
         break;
       default:
         throw new BadReqErr(ErrCode.ValidationError, {
@@ -611,9 +558,30 @@ export class AuthFlowService {
     return { authTxId, enrollToken, otpauthUrl };
   }
 
-  async enrollConfirm(
+  async enrollStartForAuthenticatedUser(
+    userId: string,
+  ): Promise<typeof AuthEnrollStartResponseDto.static> {
+    const { clientIp, userAgent } = getIpAndUa();
+
+    const user = await this.deps.db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, mfaTotpEnabled: true },
+    });
+    assertUserExists(user);
+    if (user.mfaTotpEnabled) throw new BadReqErr(ErrCode.MFAHasBeenSetup);
+
+    const authTx = await this.deps.authTxService.create(
+      userId,
+      AuthTxState.CHALLENGE_MFA_ENROLL,
+      { ip: clientIp, ua: userAgent },
+    );
+
+    return await this.enrollStart({ authTxId: authTx.id });
+  }
+
+  async enrollConfirmForAuthenticatedUser(
     params: AuthEnrollConfirmRequestParams,
-  ): Promise<IAuthResponse & { backupCodes?: string[] }> {
+  ): Promise<{ backupCodes: string[] }> {
     const { authTxId, enrollToken, otp } = params;
     const { clientIp, userAgent } = getIpAndUa();
 
@@ -665,20 +633,14 @@ export class AuthFlowService {
 
     await this.deps.authTxService.delete(authTxId);
 
-    const session = await this.deps.userUtilService.completeLogin(
-      userResult,
-      clientIp,
-      userAgent,
-      tx.securityResult,
-    );
-
     await this.deps.auditLogService.pushSecurity(
       buildMfaSetupCompletedAuditLog(userResult, AuthMethod.TOTP, {
         userId: userResult.id,
       }),
       { userId: userResult.id, subjectUserId: userResult.id },
     );
-    return { status: AuthStatus.COMPLETED, session, backupCodes: [code] };
+
+    return { backupCodes: [code] };
   }
 
   async regenerateBackupCodes(

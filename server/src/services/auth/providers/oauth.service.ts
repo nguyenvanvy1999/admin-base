@@ -19,6 +19,10 @@ import {
 import { authFlowService } from 'src/services/auth/core/auth-flow.service';
 import { authTxService } from 'src/services/auth/core/auth-tx.service';
 import {
+  type OtpService,
+  otpService,
+} from 'src/services/auth/methods/otp.service';
+import {
   type SecurityMonitorService,
   securityMonitorService,
 } from 'src/services/auth/security/security-monitor.service';
@@ -46,6 +50,7 @@ import {
   idUtil,
   OAUTH,
   type PrismaTx,
+  PurposeVerify,
   UnAuthErr,
 } from 'src/share';
 import { ChallengeResponseBuilder } from '../builders/challenge-response.builder';
@@ -76,6 +81,7 @@ export class OAuthService {
       settingsService: SettingsService;
       challengeResponseBuilder: ChallengeResponseBuilder;
       challengeResolver: ChallengeResolverService;
+      otpService: OtpService;
     } = {
       db,
       oauth2ClientFactory: (clientId: string) => new OAuth2Client(clientId),
@@ -88,6 +94,7 @@ export class OAuthService {
       settingsService,
       challengeResponseBuilder: new ChallengeResponseBuilder(),
       challengeResolver: new ChallengeResolverService(),
+      otpService,
     },
   ) {}
 
@@ -299,47 +306,44 @@ export class OAuthService {
       return { status: AuthStatus.COMPLETED, session };
     }
 
-    if (next.kind === AuthNextStepKind.ENROLL_MFA) {
-      await authTxService.setState(authTx.id, AuthTxState.CHALLENGE_MFA_ENROLL);
+    if (next.kind === AuthNextStepKind.MFA_CHALLENGE) {
+      await authTxService.setState(
+        authTx.id,
+        AuthTxState.CHALLENGE_MFA_REQUIRED,
+      );
 
-      const availableMethods =
-        await this.deps.challengeResolver.resolveAvailableMethods({
-          user,
-          authTx,
-          securityResult,
-          challengeType: 'MFA_ENROLL',
-        });
+      if (!user.mfaTotpEnabled && mfaRequired) {
+        const res = await this.deps.otpService.sendOtpWithAudit(
+          user.email,
+          PurposeVerify.MFA_LOGIN,
+        );
+        if (res) {
+          await authTxService.update(authTx.id, {
+            emailOtpToken: res.otpToken,
+          });
+        }
+      }
 
-      const challenge = this.deps.challengeResponseBuilder.buildMfaEnroll({
-        user,
-        authTx,
-        securityResult,
-        availableMethods,
-      });
-
-      return {
-        status: AuthStatus.CHALLENGE,
-        authTxId: authTx.id,
-        challenge,
-      };
+      await Promise.allSettled([
+        this.deps.auditLogsService.pushSecurity(
+          buildMfaChallengeStartedAuditLog(user, AuthMethod.EMAIL, {
+            userId: user.id,
+            metadata: {
+              stage: 'challenge',
+              from: 'oauth',
+              method: user.mfaTotpEnabled
+                ? 'totp_available'
+                : 'email_otp_fallback',
+            },
+          }),
+          {
+            subjectUserId: user.id,
+            userId: user.id,
+            visibility: AuditLogVisibility.actor_and_subject,
+          },
+        ),
+      ]);
     }
-
-    // MFA challenge required
-    await authTxService.setState(authTx.id, AuthTxState.CHALLENGE_MFA_REQUIRED);
-
-    await Promise.allSettled([
-      this.deps.auditLogsService.pushSecurity(
-        buildMfaChallengeStartedAuditLog(user, AuthMethod.EMAIL, {
-          userId: user.id,
-          metadata: { stage: 'challenge', from: 'login' },
-        }),
-        {
-          subjectUserId: user.id,
-          userId: user.id,
-          visibility: AuditLogVisibility.actor_and_subject,
-        },
-      ),
-    ]);
 
     const availableMethods =
       await this.deps.challengeResolver.resolveAvailableMethods({

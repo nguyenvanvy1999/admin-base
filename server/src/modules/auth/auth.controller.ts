@@ -1,5 +1,7 @@
 import { Elysia, t } from 'elysia';
 import {
+  AuthEnrollConfirmRequestDto,
+  AuthEnrollStartResponseDto,
   ChangePasswordRequestDto,
   DisableMfaRequestDto,
   ForgotPasswordRequestDto,
@@ -162,6 +164,47 @@ const authProtectedRoutes = new Elysia()
         summary: 'Regenerate MFA backup codes',
         description:
           'Invalidates old backup codes and returns a new set. Requires MFA to be enabled.',
+        security: ACCESS_AUTH,
+      },
+    },
+  )
+  .post(
+    '/mfa/enroll/start',
+    async ({ currentUser }) => {
+      return castToRes(
+        await authFlowService.enrollStartForAuthenticatedUser(currentUser.id),
+      );
+    },
+    {
+      response: {
+        200: ResWrapper(AuthEnrollStartResponseDto),
+        ...authErrors,
+      },
+      detail: {
+        summary: 'Start MFA enrollment',
+        description:
+          'Start MFA enrollment for the current user. Returns QR code URL and enroll token.',
+        security: ACCESS_AUTH,
+      },
+    },
+  )
+  .post(
+    '/mfa/enroll/confirm',
+    async ({ body }) => {
+      return castToRes(
+        await authFlowService.enrollConfirmForAuthenticatedUser(body),
+      );
+    },
+    {
+      body: AuthEnrollConfirmRequestDto,
+      response: {
+        200: ResWrapper(RegenerateBackupCodesResponseDto),
+        ...authErrors,
+      },
+      detail: {
+        summary: 'Confirm MFA enrollment',
+        description:
+          'Confirm MFA enrollment with OTP code. Returns backup codes.',
         security: ACCESS_AUTH,
       },
     },

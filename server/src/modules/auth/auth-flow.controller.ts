@@ -1,9 +1,6 @@
 import { Elysia, t } from 'elysia';
 import {
   AuthChallengeRequestDto,
-  AuthEnrollConfirmRequestDto,
-  AuthEnrollStartRequestDto,
-  AuthEnrollStartResponseDto,
   AuthResponseDto,
   ChallengeMethodsResponseDto,
   LoginRequestDto,
@@ -53,26 +50,5 @@ export const authFlowController = new Elysia({
       body: AuthChallengeRequestDto,
       response: { 200: ResWrapper(AuthResponseDto), 400: ErrorResDto },
       detail: { summary: 'Submit MFA / backup code' },
-    },
-  )
-  .post(
-    '/mfa/enroll/start',
-    async ({ body }) => castToRes(await authFlowService.enrollStart(body)),
-    {
-      body: AuthEnrollStartRequestDto,
-      response: {
-        200: ResWrapper(AuthEnrollStartResponseDto),
-        400: ErrorResDto,
-      },
-      detail: { summary: 'Start MFA enroll' },
-    },
-  )
-  .post(
-    '/mfa/enroll/confirm',
-    async ({ body }) => castToRes(await authFlowService.enrollConfirm(body)),
-    {
-      body: AuthEnrollConfirmRequestDto,
-      response: { 200: ResWrapper(AuthResponseDto), 400: ErrorResDto },
-      detail: { summary: 'Confirm MFA enroll' },
     },
   );

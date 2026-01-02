@@ -102,7 +102,6 @@ export const AuthMethodOptionDto = t.Object({
     t.Literal(AuthChallengeType.MFA_TOTP),
     t.Literal(AuthChallengeType.MFA_BACKUP_CODE),
     t.Literal(AuthChallengeType.MFA_EMAIL_OTP),
-    t.Literal(AuthChallengeType.MFA_ENROLL),
     t.Literal(AuthChallengeType.DEVICE_VERIFY),
     t.Literal(AuthChallengeType.MFA_REQUIRED),
   ]),
@@ -145,11 +144,6 @@ export const ChallengeDto = t.Union([
   }),
   t.Object({
     type: t.Literal(AuthChallengeType.DEVICE_VERIFY),
-    availableMethods: t.Array(AuthMethodOptionDto),
-    metadata: t.Optional(ChallengeMetadataDto),
-  }),
-  t.Object({
-    type: t.Literal(AuthChallengeType.MFA_ENROLL),
     availableMethods: t.Array(AuthMethodOptionDto),
     metadata: t.Optional(ChallengeMetadataDto),
   }),

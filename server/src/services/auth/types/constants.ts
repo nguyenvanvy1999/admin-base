@@ -7,7 +7,6 @@ export enum AuthChallengeType {
   MFA_TOTP = 'MFA_TOTP',
   MFA_BACKUP_CODE = 'MFA_BACKUP_CODE',
   MFA_EMAIL_OTP = 'MFA_EMAIL_OTP',
-  MFA_ENROLL = 'MFA_ENROLL',
   DEVICE_VERIFY = 'DEVICE_VERIFY',
   MFA_REQUIRED = 'MFA_REQUIRED',
 }
@@ -28,6 +27,5 @@ export enum AuthMethod {
 export enum AuthNextStepKind {
   COMPLETE = 'COMPLETE',
   MFA_CHALLENGE = 'MFA_CHALLENGE',
-  ENROLL_MFA = 'ENROLL_MFA',
   DEVICE_VERIFY = 'DEVICE_VERIFY',
 }
