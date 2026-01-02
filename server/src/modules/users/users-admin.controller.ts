@@ -129,25 +129,6 @@ export const usersAdminController = new Elysia({
     },
   )
   .post(
-    '/:id/mfa/disable',
-    async ({ params: { id }, body }) =>
-      castToRes(
-        await usersService.disableUserMfa({
-          targetUserId: id,
-          ...body,
-        }),
-      ),
-    {
-      params: IdDto,
-      body: AdminUserMfaActionDto,
-      response: {
-        200: ResWrapper(AdminUserActionResDto),
-        400: ErrorResDto,
-        ...authErrors,
-      },
-    },
-  )
-  .post(
     '/:id/mfa/enroll-force',
     async ({ params: { id }, body }) =>
       castToRes(

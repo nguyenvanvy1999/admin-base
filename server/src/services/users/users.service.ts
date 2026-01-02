@@ -42,7 +42,6 @@ import {
   ErrCode,
   type IdUtil,
   idUtil,
-  type MfaChangeMethod,
   NotFoundErr,
   normalizeEmail,
   ServiceUtils,
@@ -274,7 +273,7 @@ export class UsersService {
   }
 
   disableUserMfa(params: BaseUserActionParams): Promise<AdminUserActionResult> {
-    return this.performMfaReset(params, 'admin-disable');
+    return this.performMfaReset(params, 'user-disable');
   }
 
   async forceUserMfaEnroll(
@@ -320,7 +319,7 @@ export class UsersService {
 
   private async performMfaReset(
     params: BaseUserActionParams,
-    method: MfaChangeMethod,
+    method: string,
   ): Promise<AdminUserActionResult> {
     const { targetUserId, reason } = params;
     const normalizedReason = ServiceUtils.normalizeReason(reason);
