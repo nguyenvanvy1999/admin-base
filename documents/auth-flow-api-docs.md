@@ -4,7 +4,7 @@ Tài liệu này mô tả chi tiết các luồng logic liên quan đến xác t
 
 ## 1. Tổng quan hệ thống Auth
 
-Hệ thống sử dụng cơ chế **Unified Auth Flow** (Luồng xác thực thống nhất) dựa trên Transaction ID (`authTxId`). Điều này cho phép xử lý linh hoạt các tình huống như Login thông thường, MFA (Multi-Factor Authentication), Đăng ký thiết bị mới, và Bắt buộc đăng ký MFA ngay trong luồng đăng nhập.
+Hệ thống sử dụng cơ chế **Unified Auth Flow** (Luồng xác thực thống nhất) dựa trên Transaction ID (`authTxId`). Điều này cho phép xử lý linh hoạt các tình huống như Login thông thường, MFA (Multi-Factor Authentication), và Xác thực thiết bị mới.
 
 ---
 
@@ -112,7 +112,7 @@ Hệ thống sử dụng cơ chế **Unified Auth Flow** (Luồng xác thực th
       "status": "CHALLENGE",
       "authTxId": "tx_uuid_here",
       "challenge": {
-        "type": "MFA_REQUIRED" | "DEVICE_VERIFY" | "MFA_ENROLL",
+        "type": "MFA_REQUIRED" | "DEVICE_VERIFY",
         "availableMethods": [
           {
             "method": "MFA_TOTP" | "MFA_BACKUP_CODE" | "MFA_EMAIL_OTP" | "DEVICE_VERIFY",
@@ -132,10 +132,6 @@ Hệ thống sử dụng cơ chế **Unified Auth Flow** (Luồng xác thực th
           "device": {
             "isNewDevice": true,
             "deviceFingerprint": "..."
-          },
-          "enrollment": {
-            "methods": ["totp"],
-            "backupCodesWillBeGenerated": true
           }
         }
       }
@@ -145,14 +141,12 @@ Hệ thống sử dụng cơ chế **Unified Auth Flow** (Luồng xác thực th
 
 - **Giải thích Challenge Response**:
   - `type`: Loại challenge hiện tại
-    - `MFA_REQUIRED`: Yêu cầu xác thực MFA (user đã có MFA)
-    - `DEVICE_VERIFY`: Xác thực thiết bị mới
-    - `MFA_ENROLL`: Bắt buộc đăng ký MFA (user chưa có MFA)
+    - `MFA_REQUIRED`: Yêu cầu xác thực MFA. Nếu user đã có MFA TOTP, có thể dùng TOTP hoặc Backup Code. Nếu user chưa có MFA nhưng hệ thống yêu cầu, hệ thống sẽ tự động gửi Email OTP và phương thức `MFA_EMAIL_OTP` sẽ có sẵn.
+    - `DEVICE_VERIFY`: Xác thực thiết bị mới (chỉ khi user chưa có MFA và device verification được bật)
   - `availableMethods`: Danh sách các phương thức xác thực có sẵn cho challenge này
   - `metadata`: Thông tin bổ sung tùy theo loại challenge:
-    - **MFA_REQUIRED**: Chỉ có `metadata.totp.allowBackupCode` (boolean) - cho biết user có backup code chưa sử dụng không
+    - **MFA_REQUIRED**: Có `metadata.totp.allowBackupCode` (boolean) - cho biết user có backup code chưa sử dụng không. Nếu user chưa có MFA, hệ thống sẽ tự động gửi email OTP và `metadata.email` sẽ có `destination` (email đã mask) và `sentAt` (timestamp).
     - **DEVICE_VERIFY**: Có `metadata.device` (isNewDevice, deviceFingerprint) và `metadata.email` (destination, sentAt)
-    - **MFA_ENROLL**: Chỉ có `metadata.enrollment` (methods, backupCodesWillBeGenerated)
 
 ### Bước 2: Xử lý các Thử thách (Challenges)
 
@@ -211,60 +205,7 @@ Dựa vào `challenge.type` trả về ở Bước 1, FE hiển thị UI tương
 
 - **Response**:
   - Nếu thành công: Trả về `status: "COMPLETED"` kèm `session` object (cấu trúc giống response của login thành công).
-  - Nếu cần challenge tiếp theo: Trả về `status: "CHALLENGE"` với `authTxId` và `challenge` mới.
-
-#### 2.3. Luồng Đăng ký MFA ngay khi Login (MFA_ENROLL)
-
-Nếu user chưa cài MFA nhưng hệ thống bắt buộc (hoặc phát hiện rủi ro), server trả về `type: "MFA_ENROLL"`.
-
-1. **Lấy secret cài đặt**: FE gọi `POST /auth/mfa/enroll/start` với payload `{ "authTxId": "..." }`.
-
-   - **Request Body**:
-     ```json
-     {
-       "authTxId": "tx_uuid_here"
-     }
-     ```
-   - **Response**:
-     ```json
-     {
-       "data": {
-         "authTxId": "...",
-         "enrollToken": "...",
-         "otpauthUrl": "..."
-       }
-     }
-     ```
-   - **Hành động**: FE dùng `otpauthUrl` để generate mã QR. Người dùng quét bằng app Authenticator (Google Authenticator, Authy, etc.).
-
-2. **Xác nhận cài đặt**: Sau khi quét, người dùng nhập mã từ app. FE gọi `POST /auth/mfa/enroll/confirm`.
-   - **Request Body**:
-     ```json
-     {
-       "authTxId": "...",
-       "enrollToken": "...",
-       "otp": "123456"
-     }
-     ```
-   - **Response**:
-     ```json
-     {
-       "data": {
-         "status": "COMPLETED",
-         "session": {
-           "type": "COMPLETED",
-           "accessToken": "...",
-           "refreshToken": "...",
-           "exp": 1234567890,
-           "expired": "2024-01-01T00:00:00Z",
-           "user": { ... },
-           "sessionId": "..."
-         },
-         "backupCodes": ["XXXXXXXX"] // Một mã backup code duy nhất
-       }
-     }
-     ```
-   - **Lưu ý quan trọng**: FE **bắt buộc** phải hiển thị `backupCodes[0]` cho người dùng lưu lại ở bước này vì mã chỉ trả về 1 lần duy nhất và không thể lấy lại sau này.
+  - Nếu cần challenge tiếp theo: Trả về `status: "CHALLENGE"` với `authTxId` và `challenge` mới (hiện tại hệ thống không hỗ trợ multiple challenges trong một login flow).
 
 ---
 
@@ -281,7 +222,7 @@ Nếu user chưa cài MFA nhưng hệ thống bắt buộc (hoặc phát hiện 
 - **Response**: Trả về cấu trúc giống hệt API `POST /auth/login`:
   - Nếu thành công: `{ "data": { "status": "COMPLETED", "session": {...} } }`
   - Nếu cần challenge: `{ "data": { "status": "CHALLENGE", "authTxId": "...", "challenge": {...} } }`
-- **Lưu ý**: FE xử lý các bước tiếp theo (challenge, MFA enroll) giống như luồng đăng nhập thường.
+- **Lưu ý**: FE xử lý các bước tiếp theo (challenge) giống như luồng đăng nhập thường. Nếu user chưa có MFA nhưng hệ thống yêu cầu, hệ thống sẽ tự động gửi Email OTP và user có thể dùng `MFA_EMAIL_OTP` để hoàn thành đăng nhập.
 
 ### Link Telegram Account (Auth Required)
 
@@ -423,6 +364,46 @@ Nếu user chưa cài MFA nhưng hệ thống bắt buộc (hoặc phát hiện 
 - **Response**: `{ "data": null }`
 - **Lưu ý**: Nếu user đã có password thì `oldPassword` là bắt buộc.
 
+### Đăng ký MFA (MFA Enrollment)
+
+Đăng ký MFA chỉ có thể thực hiện khi user đã đăng nhập. Không thể đăng ký MFA trong luồng login.
+
+1. **Bắt đầu đăng ký MFA**:
+
+   - **API**: `POST /auth/mfa/enroll/start`
+   - **Request Body**: Không cần body (sử dụng token từ header)
+   - **Response**:
+     ```json
+     {
+       "data": {
+         "authTxId": "...",
+         "enrollToken": "...",
+         "otpauthUrl": "..."
+       }
+     }
+     ```
+   - **Hành động**: FE dùng `otpauthUrl` để generate mã QR. Người dùng quét bằng app Authenticator (Google Authenticator, Authy, etc.).
+
+2. **Xác nhận đăng ký MFA**:
+   - **API**: `POST /auth/mfa/enroll/confirm`
+   - **Request Body**:
+     ```json
+     {
+       "authTxId": "...",
+       "enrollToken": "...",
+       "otp": "123456"
+     }
+     ```
+   - **Response**:
+     ```json
+     {
+       "data": {
+         "backupCodes": ["XXXXXXXX"] // Một mã backup code duy nhất
+       }
+     }
+     ```
+   - **Lưu ý quan trọng**: FE **bắt buộc** phải hiển thị `backupCodes[0]` cho người dùng lưu lại ở bước này vì mã chỉ trả về 1 lần duy nhất và không thể lấy lại sau này.
+
 ### Tạo mới Backup Code
 
 - **API**: `POST /auth/mfa/backup-codes/regenerate`
@@ -482,9 +463,12 @@ Nếu user chưa cài MFA nhưng hệ thống bắt buộc (hoặc phát hiện 
 
 8. **Challenge Types và Available Methods**:
 
-   - Challenge type `MFA_REQUIRED`: Có thể có các method: `MFA_TOTP`, `MFA_BACKUP_CODE`, `MFA_EMAIL_OTP`
-   - Challenge type `DEVICE_VERIFY`: Thường chỉ có method `DEVICE_VERIFY` (gửi OTP qua email)
-   - Challenge type `MFA_ENROLL`: Chỉ có method `MFA_ENROLL` (yêu cầu setup TOTP)
+   - Challenge type `MFA_REQUIRED`:
+     - Nếu user đã có MFA TOTP: Có thể có các method `MFA_TOTP`, `MFA_BACKUP_CODE` (nếu có backup code chưa dùng)
+     - Nếu user chưa có MFA nhưng hệ thống yêu cầu: Hệ thống tự động gửi Email OTP và có method `MFA_EMAIL_OTP`
+   - Challenge type `DEVICE_VERIFY`: Chỉ có method `DEVICE_VERIFY` (gửi OTP qua email). Chỉ xuất hiện khi user chưa có MFA và device verification được bật.
    - FE nên hiển thị danh sách `availableMethods` để user chọn phương thức xác thực phù hợp
 
-9. **Method Requirement**: Khi gửi challenge, FE **bắt buộc** phải chỉ định rõ ràng `method` (hoặc `type`) để code đơn giản, dễ hiểu và minh bạch. Hệ thống không còn tự động phát hiện method dựa trên format của code.
+9. **Method Requirement**: Khi gửi challenge, FE **bắt buộc** phải chỉ định rõ ràng `method` để code đơn giản, dễ hiểu và minh bạch. Hệ thống không tự động phát hiện method dựa trên format của code.
+
+10. **MFA Enrollment trong Login Flow**: Hệ thống **không** hỗ trợ đăng ký MFA trong luồng đăng nhập. Nếu user chưa có MFA nhưng hệ thống yêu cầu, hệ thống sẽ tự động gửi Email OTP và user có thể dùng `MFA_EMAIL_OTP` để hoàn thành đăng nhập. Để đăng ký MFA, user cần đăng nhập trước và sử dụng các API trong mục 7 (Đăng ký MFA).
