@@ -157,7 +157,7 @@ describe('AuthFlowService - Device Verification', () => {
     await ctxStore.run(mockContext, async () => {
       const result = await service.completeChallenge({
         authTxId: 'tx-1',
-        type: AuthChallengeType.DEVICE_VERIFY,
+        method: AuthChallengeType.DEVICE_VERIFY,
         code: '123456',
       });
 
@@ -183,7 +183,7 @@ describe('AuthFlowService - Device Verification', () => {
       expect(
         service.completeChallenge({
           authTxId: 'tx-1',
-          type: AuthChallengeType.DEVICE_VERIFY,
+          method: AuthChallengeType.DEVICE_VERIFY,
           code: '123456',
         }),
       ).rejects.toThrow();

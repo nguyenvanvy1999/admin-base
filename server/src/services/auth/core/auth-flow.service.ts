@@ -47,7 +47,6 @@ import {
 import { authMethodFactory } from 'src/services/auth/types/auth-method-factory';
 import type { AuthMethodContext } from 'src/services/auth/types/auth-method-handler.interface';
 import {
-  AuthChallengeType,
   AuthMethod,
   AuthNextStepKind,
   AuthStatus,
@@ -462,7 +461,7 @@ export class AuthFlowService {
   async completeChallenge(
     params: AuthChallengeRequestParams,
   ): Promise<IAuthResponse> {
-    const { authTxId, type, method, code } = params;
+    const { authTxId, method, code } = params;
     const { clientIp, userAgent } = getIpAndUa();
 
     const tx = await this.deps.authTxService.getOrThrow(authTxId);
@@ -481,15 +480,7 @@ export class AuthFlowService {
 
     const user = await this.deps.authUserService.loadUserForAuth(tx.userId);
 
-    const challengeType = method || type || this.autoDetectMethod(code);
-
-    if (!challengeType) {
-      throw new BadReqErr(ErrCode.ValidationError, {
-        errors: 'Method or type is required',
-      });
-    }
-
-    const handler = authMethodFactory.create(challengeType);
+    const handler = authMethodFactory.create(method);
 
     const context: AuthMethodContext = {
       authTxId,
@@ -540,16 +531,6 @@ export class AuthFlowService {
     );
 
     return { status: AuthStatus.COMPLETED, session };
-  }
-
-  private autoDetectMethod(code: string): AuthChallengeType | null {
-    if (/^\d{6}$/.test(code)) {
-      return AuthChallengeType.MFA_TOTP;
-    }
-    if (/^[A-Z0-9]{8}$/.test(code)) {
-      return AuthChallengeType.MFA_BACKUP_CODE;
-    }
-    return null;
   }
 
   async getChallengeMethods(authTxId: string) {
@@ -801,11 +782,7 @@ export class AuthFlowService {
       select: { id: true },
     });
 
-    try {
-      await this.deps.sessionService.revoke(userId);
-    } catch {
-      // ignore
-    }
+    await this.deps.sessionService.revoke(userId);
 
     await this.deps.auditLogService.pushSecurity(
       buildMfaDisabledAuditLog(user, AuthMethod.TOTP, 'user', {

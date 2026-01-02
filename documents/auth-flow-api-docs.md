@@ -112,45 +112,119 @@ Hệ thống sử dụng cơ chế **Unified Auth Flow** (Luồng xác thực th
       "status": "CHALLENGE",
       "authTxId": "tx_uuid_here",
       "challenge": {
-        "type": "MFA_TOTP" | "MFA_BACKUP_CODE" | "MFA_EMAIL_OTP" | "MFA_ENROLL" | "DEVICE_VERIFY",
-        "allowBackupCode": true, // Chỉ có khi type là MFA_TOTP
-        "destination": "v*@example.com", // Chỉ có khi type là DEVICE_VERIFY
-        "media": "email", // Chỉ có khi type là DEVICE_VERIFY
-        "methods": ["totp"], // Chỉ có khi type là MFA_ENROLL
-        "backupCodesWillBeGenerated": true // Chỉ có khi type là MFA_ENROLL
+        "type": "MFA_REQUIRED" | "DEVICE_VERIFY" | "MFA_ENROLL",
+        "availableMethods": [
+          {
+            "method": "MFA_TOTP" | "MFA_BACKUP_CODE" | "MFA_EMAIL_OTP" | "DEVICE_VERIFY",
+            "label": "Authenticator App",
+            "description": "Use your TOTP app",
+            "requiresSetup": false
+          }
+        ],
+        "metadata": {
+          "totp": {
+            "allowBackupCode": true
+          },
+          "email": {
+            "destination": "v*@example.com",
+            "sentAt": 1234567890
+          },
+          "device": {
+            "isNewDevice": true,
+            "deviceFingerprint": "..."
+          },
+          "enrollment": {
+            "methods": ["totp"],
+            "backupCodesWillBeGenerated": true
+          }
+        }
       }
     }
   }
   ```
 
+- **Giải thích Challenge Response**:
+  - `type`: Loại challenge hiện tại
+    - `MFA_REQUIRED`: Yêu cầu xác thực MFA (user đã có MFA)
+    - `DEVICE_VERIFY`: Xác thực thiết bị mới
+    - `MFA_ENROLL`: Bắt buộc đăng ký MFA (user chưa có MFA)
+  - `availableMethods`: Danh sách các phương thức xác thực có sẵn cho challenge này
+  - `metadata`: Thông tin bổ sung tùy theo loại challenge:
+    - **MFA_REQUIRED**: Chỉ có `metadata.totp.allowBackupCode` (boolean) - cho biết user có backup code chưa sử dụng không
+    - **DEVICE_VERIFY**: Có `metadata.device` (isNewDevice, deviceFingerprint) và `metadata.email` (destination, sentAt)
+    - **MFA_ENROLL**: Chỉ có `metadata.enrollment` (methods, backupCodesWillBeGenerated)
+
 ### Bước 2: Xử lý các Thử thách (Challenges)
 
 Dựa vào `challenge.type` trả về ở Bước 1, FE hiển thị UI tương ứng:
 
-#### 2.1. MFA_TOTP / MFA_BACKUP_CODE / MFA_EMAIL_OTP / DEVICE_VERIFY
+#### 2.1. Lấy danh sách phương thức xác thực có sẵn (Optional)
+
+- **API**: `GET /auth/challenge/:authTxId/methods`
+- **Response**:
+  ```json
+  {
+    "data": {
+      "availableMethods": [
+        {
+          "method": "MFA_TOTP",
+          "label": "Authenticator App",
+          "description": "Use your TOTP app",
+          "requiresSetup": false
+        },
+        {
+          "method": "MFA_BACKUP_CODE",
+          "label": "Backup Code",
+          "description": "Use one of your backup codes",
+          "requiresSetup": false
+        },
+        {
+          "method": "MFA_EMAIL_OTP",
+          "label": "Email OTP",
+          "description": "Receive code via email",
+          "requiresSetup": false
+        }
+      ]
+    }
+  }
+  ```
+- **Lưu ý**: API này hữu ích khi FE muốn hiển thị danh sách các phương thức cho user chọn. Nếu không cần, có thể bỏ qua và sử dụng `availableMethods` từ response của Bước 1.
+
+#### 2.2. Xác thực Challenge (MFA_REQUIRED / DEVICE_VERIFY)
 
 - **Màn hình**: Hiển thị popup hoặc trang nhập mã xác thực tương ứng.
-- **Hành động**: Người dùng nhập mã code (6 số TOTP, 8 ký tự Backup code, hoặc OTP từ email).
+- **Hành động**: Người dùng chọn phương thức từ `availableMethods` và nhập mã code (6 số TOTP, 8 ký tự Backup code, hoặc OTP từ email).
 - **API**: `POST /auth/login/challenge`
 - **Request Body**:
 
   ```json
   {
     "authTxId": "tx_uuid_here",
-    "type": "MFA_TOTP" | "MFA_BACKUP_CODE" | "MFA_EMAIL_OTP" | "DEVICE_VERIFY",
+    "method": "MFA_TOTP" | "MFA_BACKUP_CODE" | "MFA_EMAIL_OTP" | "DEVICE_VERIFY",
     "code": "123456"
   }
   ```
+
+- **Lưu ý**:
+
+  - `method` là bắt buộc. FE phải chỉ định rõ ràng phương thức xác thực.
 
 - **Response**:
   - Nếu thành công: Trả về `status: "COMPLETED"` kèm `session` object (cấu trúc giống response của login thành công).
   - Nếu cần challenge tiếp theo: Trả về `status: "CHALLENGE"` với `authTxId` và `challenge` mới.
 
-#### 2.2. Luồng Đăng ký MFA ngay khi Login (MFA_ENROLL)
+#### 2.3. Luồng Đăng ký MFA ngay khi Login (MFA_ENROLL)
 
 Nếu user chưa cài MFA nhưng hệ thống bắt buộc (hoặc phát hiện rủi ro), server trả về `type: "MFA_ENROLL"`.
 
 1. **Lấy secret cài đặt**: FE gọi `POST /auth/mfa/enroll/start` với payload `{ "authTxId": "..." }`.
+
+   - **Request Body**:
+     ```json
+     {
+       "authTxId": "tx_uuid_here"
+     }
+     ```
    - **Response**:
      ```json
      {
@@ -161,7 +235,8 @@ Nếu user chưa cài MFA nhưng hệ thống bắt buộc (hoặc phát hiện 
        }
      }
      ```
-   - **Hành động**: FE dùng `otpauthUrl` để generate mã QR. Người dùng quét bằng app Authenticator.
+   - **Hành động**: FE dùng `otpauthUrl` để generate mã QR. Người dùng quét bằng app Authenticator (Google Authenticator, Authy, etc.).
+
 2. **Xác nhận cài đặt**: Sau khi quét, người dùng nhập mã từ app. FE gọi `POST /auth/mfa/enroll/confirm`.
    - **Request Body**:
      ```json
@@ -176,7 +251,15 @@ Nếu user chưa cài MFA nhưng hệ thống bắt buộc (hoặc phát hiện 
      {
        "data": {
          "status": "COMPLETED",
-         "session": { ... },
+         "session": {
+           "type": "COMPLETED",
+           "accessToken": "...",
+           "refreshToken": "...",
+           "exp": 1234567890,
+           "expired": "2024-01-01T00:00:00Z",
+           "user": { ... },
+           "sessionId": "..."
+         },
          "backupCodes": ["XXXXXXXX"] // Một mã backup code duy nhất
        }
      }
@@ -388,6 +471,7 @@ Nếu user chưa cài MFA nhưng hệ thống bắt buộc (hoặc phát hiện 
 6. **Captcha**: API `/auth/login` có thể yêu cầu captcha tùy theo cấu hình server. FE cần kiểm tra response error để biết khi nào cần hiển thị captcha.
 
 7. **Session Structure**: Object `session` trong response có cấu trúc:
+
    - `type`: Luôn là `"COMPLETED"`
    - `accessToken`: JWT token để xác thực các request tiếp theo
    - `refreshToken`: Token để refresh access token khi hết hạn
@@ -395,3 +479,12 @@ Nếu user chưa cài MFA nhưng hệ thống bắt buộc (hoặc phát hiện 
    - `expired`: ISO string của thời gian hết hạn
    - `user`: Thông tin user với permissions
    - `sessionId`: ID của session hiện tại
+
+8. **Challenge Types và Available Methods**:
+
+   - Challenge type `MFA_REQUIRED`: Có thể có các method: `MFA_TOTP`, `MFA_BACKUP_CODE`, `MFA_EMAIL_OTP`
+   - Challenge type `DEVICE_VERIFY`: Thường chỉ có method `DEVICE_VERIFY` (gửi OTP qua email)
+   - Challenge type `MFA_ENROLL`: Chỉ có method `MFA_ENROLL` (yêu cầu setup TOTP)
+   - FE nên hiển thị danh sách `availableMethods` để user chọn phương thức xác thực phù hợp
+
+9. **Method Requirement**: Khi gửi challenge, FE **bắt buộc** phải chỉ định rõ ràng `method` (hoặc `type`) để code đơn giản, dễ hiểu và minh bạch. Hệ thống không còn tự động phát hiện method dựa trên format của code.

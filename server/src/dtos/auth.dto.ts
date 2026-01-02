@@ -180,22 +180,12 @@ export type IAuthResponse = typeof AuthResponseDto.static;
 
 export const AuthChallengeRequestDto = t.Object({
   authTxId: t.String({ minLength: 1 }),
-  type: t.Optional(
-    t.Union([
-      t.Literal(AuthChallengeType.MFA_TOTP),
-      t.Literal(AuthChallengeType.MFA_BACKUP_CODE),
-      t.Literal(AuthChallengeType.MFA_EMAIL_OTP),
-      t.Literal(AuthChallengeType.DEVICE_VERIFY),
-    ]),
-  ),
-  method: t.Optional(
-    t.Union([
-      t.Literal(AuthChallengeType.MFA_TOTP),
-      t.Literal(AuthChallengeType.MFA_BACKUP_CODE),
-      t.Literal(AuthChallengeType.MFA_EMAIL_OTP),
-      t.Literal(AuthChallengeType.DEVICE_VERIFY),
-    ]),
-  ),
+  method: t.Union([
+    t.Literal(AuthChallengeType.MFA_TOTP),
+    t.Literal(AuthChallengeType.MFA_BACKUP_CODE),
+    t.Literal(AuthChallengeType.MFA_EMAIL_OTP),
+    t.Literal(AuthChallengeType.DEVICE_VERIFY),
+  ]),
   code: t.String({ minLength: 1 }),
 });
 export type AuthChallengeRequestParams = typeof AuthChallengeRequestDto.static;
