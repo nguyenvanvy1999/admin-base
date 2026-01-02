@@ -1,12 +1,12 @@
 import type { AuditLogVisibility } from 'src/generated';
 import { SecurityEventSeverity, SecurityEventType } from 'src/generated';
-import type { SecurityEventPayloadBase } from 'src/services/audit-logs/types';
+import type { SecurityEventPayloadBase } from 'src/services/audit-logs/audit-logs.types';
 import {
   toAuditAuthMethod,
   toAuditMfaMethod,
   toAuditMfaMethodLimited,
   toAuditRegisterMethod,
-} from 'src/services/audit-logs/types';
+} from 'src/services/audit-logs/audit-logs.types';
 import type { AuthMethod } from 'src/services/auth/types/constants';
 import type { PurposeVerify } from 'src/share';
 

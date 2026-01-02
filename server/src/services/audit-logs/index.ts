@@ -1,3 +1,3 @@
 export * from './audit-logs.service';
-export * from './types';
-export * from './utils';
+export * from './audit-logs.types';
+export * from './audit-logs.utils';

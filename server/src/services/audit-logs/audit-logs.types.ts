@@ -1,6 +1,133 @@
-import type { SecurityEventSeverity, SecurityEventType } from 'src/generated';
+import type {
+  Prisma,
+  SecurityEventSeverity,
+  SecurityEventType,
+} from 'src/generated';
 import { AuthMethod } from 'src/services/auth/types/constants';
-import type { PurposeVerify } from 'src/share';
+import type { LOG_LEVEL, PurposeVerify } from 'src/share';
+
+// ============================================================================
+// CUD Types (Create, Update, Delete)
+// ============================================================================
+
+export type CudAction = 'create' | 'update' | 'delete';
+
+export type AuditChangeSet<T = unknown> = Record<
+  string,
+  { previous: T; next: T }
+>;
+
+export type CudPayloadBase<
+  TEntityType extends string = string,
+  TAction extends CudAction = CudAction,
+> = {
+  category: 'cud';
+  entityType: TEntityType;
+  entityId: string;
+  action: TAction;
+  changes?: AuditChangeSet;
+  entityDisplay?: Record<string, unknown>;
+};
+
+export type CudCreatePayload<TEntityType extends string> = CudPayloadBase<
+  TEntityType,
+  'create'
+>;
+
+export type CudUpdatePayload<TEntityType extends string> = CudPayloadBase<
+  TEntityType,
+  'update'
+> & {
+  changes: AuditChangeSet;
+};
+
+export type CudDeletePayload<TEntityType extends string> = CudPayloadBase<
+  TEntityType,
+  'delete'
+>;
+
+// ============================================================================
+// Entity Types
+// ============================================================================
+
+export type PrismaModelName = Prisma.ModelName;
+
+export const ENTITY_TYPE_MAP = {
+  User: 'user',
+  Role: 'role',
+  Session: 'session',
+  UserIpWhitelist: 'ip_whitelist',
+  Setting: 'setting',
+  ApiKey: 'api_key',
+  ApiKeyUsage: 'api_key_usage',
+  Permission: 'permission',
+  RolePermission: 'role_permission',
+  RolePlayer: 'role_player',
+  Notification: 'notification',
+  NotificationTemplate: 'notification_template',
+  RateLimitConfig: 'rate_limit_config',
+  I18n: 'i18n',
+  AuditLog: 'audit_log',
+  Referral: 'referral',
+  AuthProvider: 'auth_provider',
+  UserAuthProvider: 'user_auth_provider',
+  Proxy: 'proxy',
+  MfaBackupCode: 'mfa_backup_code',
+} as const satisfies Record<PrismaModelName, string>;
+
+export type EntityType = (typeof ENTITY_TYPE_MAP)[PrismaModelName];
+
+// ============================================================================
+// Internal Event Types
+// ============================================================================
+
+export type InternalEventType =
+  | 'internal_error'
+  | 'rate_limit'
+  | 'system_event'
+  | 'api_event';
+
+export interface InternalEventPayloadMap {
+  internal_error: {
+    error: string;
+    stack?: string;
+    context?: Record<string, unknown>;
+  };
+  rate_limit: {
+    routePath: string;
+    identifier: string;
+    count: number;
+    limit: number;
+  };
+  system_event: {
+    event: string;
+    details: Record<string, unknown>;
+  };
+  api_event: {
+    endpoint: string;
+    method: string;
+    statusCode: number;
+    duration?: number;
+  };
+}
+
+export type InternalEventPayload<T extends InternalEventType> =
+  T extends keyof InternalEventPayloadMap
+    ? {
+        category: 'internal' | 'system';
+        eventType: T;
+        level: LOG_LEVEL;
+      } & InternalEventPayloadMap[T]
+    : {
+        category: 'internal' | 'system';
+        eventType: T;
+        level: LOG_LEVEL;
+        detail: Record<string, unknown>;
+      };
+
+// ============================================================================
+// Security Event Types
+// ============================================================================
 
 export type AuthMethodType = `${AuthMethod}`;
 export type AuditAuthMethod = AuthMethodType | 'oauth' | 'api_key';

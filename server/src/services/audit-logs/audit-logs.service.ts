@@ -23,7 +23,7 @@ import type {
   InternalEventPayload,
   InternalEventType,
   SecurityEventPayloadBase,
-} from './types';
+} from './audit-logs.types';
 
 export class AuditLogsService {
   constructor(

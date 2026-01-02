@@ -9,7 +9,7 @@ import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import {
   buildCreateChanges,
   buildUpdateChanges,
-} from 'src/services/audit-logs/utils';
+} from 'src/services/audit-logs/audit-logs.utils';
 import {
   BadReqErr,
   DB_PREFIX,
