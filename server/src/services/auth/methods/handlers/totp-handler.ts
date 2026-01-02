@@ -5,15 +5,12 @@ import type {
   AuthMethodResult,
   IAuthMethodHandler,
 } from 'src/services/auth/types/auth-method-handler.interface';
-import {
-  AuthChallengeType,
-  AuthMethod,
-} from 'src/services/auth/types/constants';
+import { AuthMethod, AuthMethodType } from 'src/services/auth/types/constants';
 import { BadReqErr, ErrCode } from 'src/share';
 import type { MethodRegistryService } from '../method-registry.service';
 
 export class TotpHandler implements IAuthMethodHandler {
-  readonly type = AuthChallengeType.MFA_TOTP;
+  readonly type = AuthMethodType.TOTP;
 
   constructor(
     private readonly deps: {
@@ -48,7 +45,7 @@ export class TotpHandler implements IAuthMethodHandler {
 
   static registerCapability(registry: MethodRegistryService): void {
     registry.register({
-      method: AuthChallengeType.MFA_TOTP,
+      method: AuthMethodType.TOTP,
       label: 'Authenticator App',
       description: 'Use your TOTP authenticator app',
       requiresSetup: true,

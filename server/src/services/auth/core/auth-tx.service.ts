@@ -1,6 +1,9 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { authTxCache, type IAuthTxCache } from 'src/config/cache';
-import type { AuthTxState } from 'src/services/auth/types/constants';
+import type {
+  AuthTxState,
+  ChallengeType,
+} from 'src/services/auth/types/constants';
 import { BadReqErr, ErrCode, UnAuthErr } from 'src/share';
 import type { AuthTx } from 'src/types/auth.types';
 
@@ -15,6 +18,7 @@ export class AuthTxService {
     state: AuthTxState,
     ctx: { ip: string; ua?: string },
     securityResult?: any,
+    challengeType?: ChallengeType,
   ): Promise<AuthTx> {
     const tx: AuthTx = {
       id: randomUUID(),
@@ -25,6 +29,7 @@ export class AuthTxService {
       ipHash: this.hashIp(ctx.ip),
       uaHash: ctx.ua ? this.hashUa(ctx.ua) : undefined,
       securityResult,
+      ...(challengeType && { challengeType }),
     };
 
     await this.cache.set(tx.id, tx, this.ttl);
@@ -87,13 +92,6 @@ export class AuthTxService {
     if (tx.challengeAttempts >= maxAttempts) {
       throw new BadReqErr(ErrCode.TooManyAttempts);
     }
-  }
-
-  async setState(id: string, state: AuthTxState): Promise<AuthTx> {
-    const tx = await this.getOrThrow(id);
-    const updatedTx = { ...tx, state };
-    await this.cache.set(id, updatedTx, this.calculateRemainingTtl(tx));
-    return updatedTx;
   }
 
   async attachEnroll(

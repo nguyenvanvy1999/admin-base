@@ -28,9 +28,9 @@ import {
 } from 'src/services/auth/security/security-monitor.service';
 import {
   AuthMethod,
-  AuthNextStepKind,
   AuthStatus,
   AuthTxState,
+  ChallengeType,
 } from 'src/services/auth/types/constants';
 import {
   type UserUtilService,
@@ -273,13 +273,13 @@ export class OAuthService {
 
     // 6. Determine next step (MFA challenge/enroll or complete login)
     const mfaRequired = await this.deps.settingsService.enbMfaRequired();
-    const next = authFlowService.resolveNextStep({
+    const challengeType = authFlowService.resolveNextStep({
       user: { mfaTotpEnabled: user.mfaTotpEnabled },
       mfaRequired,
     });
 
     // 7. Handle next step
-    if (next.kind === AuthNextStepKind.COMPLETE) {
+    if (!challengeType) {
       await authTxService.delete(authTx.id);
       const session = await this.deps.userUtilService.completeLogin(
         user,
@@ -306,11 +306,11 @@ export class OAuthService {
       return { status: AuthStatus.COMPLETED, session };
     }
 
-    if (next.kind === AuthNextStepKind.MFA_CHALLENGE) {
-      await authTxService.setState(
-        authTx.id,
-        AuthTxState.CHALLENGE_MFA_REQUIRED,
-      );
+    if (challengeType === ChallengeType.MFA_REQUIRED) {
+      await authTxService.update(authTx.id, {
+        state: AuthTxState.CHALLENGE,
+        challengeType: ChallengeType.MFA_REQUIRED,
+      });
 
       if (!user.mfaTotpEnabled && mfaRequired) {
         const res = await this.deps.otpService.sendOtpWithAudit(
@@ -343,30 +343,32 @@ export class OAuthService {
           },
         ),
       ]);
+
+      const updatedTx = await authTxService.getOrThrow(authTx.id);
+      const availableMethods =
+        await this.deps.challengeResolver.resolveAvailableMethods({
+          user,
+          authTx: updatedTx,
+          securityResult,
+          challengeType: ChallengeType.MFA_REQUIRED,
+        });
+
+      const challenge =
+        await this.deps.challengeResponseBuilder.buildMfaRequired({
+          user,
+          availableMethods,
+        });
+
+      return {
+        status: AuthStatus.CHALLENGE,
+        authTxId: authTx.id,
+        challenge,
+      };
     }
 
-    const availableMethods =
-      await this.deps.challengeResolver.resolveAvailableMethods({
-        user,
-        authTx,
-        securityResult,
-        challengeType: 'MFA_REQUIRED',
-      });
-
-    const challenge = await this.deps.challengeResponseBuilder.buildMfaRequired(
-      {
-        user,
-        authTx,
-        securityResult,
-        availableMethods,
-      },
-    );
-
-    return {
-      status: AuthStatus.CHALLENGE,
-      authTxId: authTx.id,
-      challenge,
-    };
+    throw new BadReqErr(ErrCode.InternalError, {
+      errors: `Unexpected challenge type: ${challengeType}`,
+    });
   }
 
   async linkTelegram(params: LinkTelegramParams) {

@@ -8,16 +8,16 @@ import { mfaService } from 'src/services/auth/methods/mfa.service';
 import { otpService } from 'src/services/auth/methods/otp.service';
 import { BadReqErr, ErrCode } from 'src/share';
 import type { IAuthMethodHandler } from './auth-method-handler.interface';
-import { AuthChallengeType } from './constants';
+import { AuthMethodType } from './constants';
 
 export class AuthMethodFactory {
-  private handlers: Map<AuthChallengeType, IAuthMethodHandler>;
+  private handlers: Map<AuthMethodType, IAuthMethodHandler>;
 
   constructor() {
-    const handlerMap = new Map<AuthChallengeType, IAuthMethodHandler>();
+    const handlerMap = new Map<AuthMethodType, IAuthMethodHandler>();
 
     handlerMap.set(
-      AuthChallengeType.MFA_TOTP,
+      AuthMethodType.TOTP,
       new TotpHandler({
         authenticator,
         authUserService,
@@ -25,14 +25,14 @@ export class AuthMethodFactory {
     );
 
     handlerMap.set(
-      AuthChallengeType.MFA_BACKUP_CODE,
+      AuthMethodType.BACKUP_CODE,
       new BackupCodeHandler({
         mfaService,
       }),
     );
 
     handlerMap.set(
-      AuthChallengeType.MFA_EMAIL_OTP,
+      AuthMethodType.EMAIL_OTP,
       new EmailOtpHandler({
         mfaService,
         otpService,
@@ -40,7 +40,7 @@ export class AuthMethodFactory {
     );
 
     handlerMap.set(
-      AuthChallengeType.DEVICE_VERIFY,
+      AuthMethodType.DEVICE_VERIFY,
       new DeviceVerifyHandler({
         otpService,
       }),
@@ -49,11 +49,11 @@ export class AuthMethodFactory {
     this.handlers = handlerMap;
   }
 
-  create(type: AuthChallengeType): IAuthMethodHandler {
+  create(type: AuthMethodType): IAuthMethodHandler {
     const handler = this.handlers.get(type);
     if (!handler) {
       throw new BadReqErr(ErrCode.ValidationError, {
-        errors: `Unsupported auth challenge type: ${type}`,
+        errors: `Unsupported auth method type: ${type}`,
       });
     }
     return handler;

@@ -1,7 +1,8 @@
 import type { SecurityCheckResult } from 'src/services/auth/security/security-monitor.service';
 import type {
-  AuthChallengeType,
+  AuthMethodType,
   AuthTxState,
+  ChallengeType,
 } from 'src/services/auth/types/constants';
 
 export interface AuthTx {
@@ -9,6 +10,7 @@ export interface AuthTx {
   userId: string;
   createdAt: number;
   state: AuthTxState;
+  challengeType?: ChallengeType;
 
   // binding (reduce risk of authTxId being stolen)
   ipHash?: string;
@@ -36,15 +38,15 @@ export interface AuthTx {
 
 export interface AuthMethodConfig {
   mfaRequired: {
-    enabled: AuthChallengeType[];
-    labels: Record<AuthChallengeType, { label: string; description?: string }>;
+    enabled: AuthMethodType[];
+    labels: Record<AuthMethodType, { label: string; description?: string }>;
   };
   deviceVerify: {
-    enabled: AuthChallengeType[];
-    labels: Record<AuthChallengeType, { label: string; description?: string }>;
+    enabled: AuthMethodType[];
+    labels: Record<AuthMethodType, { label: string; description?: string }>;
   };
   mfaEnroll: {
-    enabled: AuthChallengeType[];
-    labels: Record<AuthChallengeType, { label: string; description?: string }>;
+    enabled: AuthMethodType[];
+    labels: Record<AuthMethodType, { label: string; description?: string }>;
   };
 }

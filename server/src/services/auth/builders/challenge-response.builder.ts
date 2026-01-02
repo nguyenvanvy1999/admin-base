@@ -6,17 +6,9 @@ import type {
 } from 'src/dtos/auth.dto';
 import type { User } from 'src/generated';
 import type { SecurityCheckResult } from 'src/services/auth/security/security-monitor.service';
-import { AuthChallengeType } from 'src/services/auth/types/constants';
-import type { AuthTx } from 'src/types/auth.types';
+import { ChallengeType } from 'src/services/auth/types/constants';
 import type { MfaService } from '../methods/mfa.service';
 import { mfaService } from '../methods/mfa.service';
-
-export interface ChallengeContext {
-  user: Pick<User, 'id' | 'email' | 'mfaTotpEnabled'>;
-  authTx: AuthTx;
-  securityResult?: SecurityCheckResult;
-  availableMethods: AuthMethodOption[];
-}
 
 export class ChallengeResponseBuilder {
   constructor(
@@ -29,7 +21,10 @@ export class ChallengeResponseBuilder {
     },
   ) {}
 
-  async buildMfaRequired(context: ChallengeContext): Promise<ChallengeDto> {
+  async buildMfaRequired(context: {
+    user: Pick<User, 'id' | 'email' | 'mfaTotpEnabled'>;
+    availableMethods: AuthMethodOption[];
+  }): Promise<ChallengeDto> {
     const { user, availableMethods } = context;
 
     const hasBackup = await this.hasBackupCode(user.id);
@@ -41,13 +36,17 @@ export class ChallengeResponseBuilder {
     };
 
     return {
-      type: AuthChallengeType.MFA_REQUIRED,
+      type: ChallengeType.MFA_REQUIRED,
       availableMethods,
       metadata,
     };
   }
 
-  buildDeviceVerify(context: ChallengeContext): ChallengeDto {
+  buildDeviceVerify(context: {
+    user: Pick<User, 'id' | 'email' | 'mfaTotpEnabled'>;
+    availableMethods: AuthMethodOption[];
+    securityResult?: SecurityCheckResult;
+  }): ChallengeDto {
     const { user, availableMethods, securityResult } = context;
 
     const maskedEmail = this.maskEmail(user.email || '');
@@ -64,7 +63,7 @@ export class ChallengeResponseBuilder {
     };
 
     return {
-      type: AuthChallengeType.DEVICE_VERIFY,
+      type: ChallengeType.DEVICE_VERIFY,
       availableMethods,
       metadata,
     };

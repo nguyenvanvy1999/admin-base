@@ -4,15 +4,12 @@ import type {
   AuthMethodResult,
   IAuthMethodHandler,
 } from 'src/services/auth/types/auth-method-handler.interface';
-import {
-  AuthChallengeType,
-  AuthMethod,
-} from 'src/services/auth/types/constants';
+import { AuthMethod, AuthMethodType } from 'src/services/auth/types/constants';
 import { BadReqErr, ErrCode, PurposeVerify } from 'src/share';
 import type { MethodRegistryService } from '../method-registry.service';
 
 export class DeviceVerifyHandler implements IAuthMethodHandler {
-  readonly type = AuthChallengeType.DEVICE_VERIFY;
+  readonly type = AuthMethodType.DEVICE_VERIFY;
 
   constructor(
     private readonly deps: {
@@ -47,7 +44,7 @@ export class DeviceVerifyHandler implements IAuthMethodHandler {
 
   static registerCapability(registry: MethodRegistryService): void {
     registry.register({
-      method: AuthChallengeType.DEVICE_VERIFY,
+      method: AuthMethodType.DEVICE_VERIFY,
       label: 'Email Verification',
       description: 'Receive code via email',
       requiresSetup: false,

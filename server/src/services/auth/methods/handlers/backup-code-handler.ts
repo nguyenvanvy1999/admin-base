@@ -4,16 +4,13 @@ import type {
   AuthMethodResult,
   IAuthMethodHandler,
 } from 'src/services/auth/types/auth-method-handler.interface';
-import {
-  AuthChallengeType,
-  AuthMethod,
-} from 'src/services/auth/types/constants';
+import { AuthMethod, AuthMethodType } from 'src/services/auth/types/constants';
 import { ErrCode } from 'src/share';
 import type { MethodRegistryService } from '../method-registry.service';
 import { mfaService } from '../mfa.service';
 
 export class BackupCodeHandler implements IAuthMethodHandler {
-  readonly type = AuthChallengeType.MFA_BACKUP_CODE;
+  readonly type = AuthMethodType.BACKUP_CODE;
 
   constructor(
     private readonly deps: {
@@ -47,7 +44,7 @@ export class BackupCodeHandler implements IAuthMethodHandler {
 
   static registerCapability(registry: MethodRegistryService): void {
     registry.register({
-      method: AuthChallengeType.MFA_BACKUP_CODE,
+      method: AuthMethodType.BACKUP_CODE,
       label: 'Backup Code',
       description: 'Use one of your backup codes',
       requiresSetup: true,

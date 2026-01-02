@@ -1,28 +1,30 @@
 import type { AuthMethodOption } from 'src/dtos/auth.dto';
-import type { User } from 'src/generated';
-import type { SecurityCheckResult } from 'src/services/auth/security/security-monitor.service';
-import type { AuthChallengeType } from 'src/services/auth/types/constants';
+import {
+  type AuthMethodType,
+  ChallengeType,
+} from 'src/services/auth/types/constants';
 import type { SettingsService } from 'src/services/settings/settings.service';
 import { settingsService } from 'src/services/settings/settings.service';
 import { SETTING } from 'src/share';
-import type { AuthMethodConfig, AuthTx } from 'src/types/auth.types';
-
-export interface MethodAvailabilityContext {
-  user: Pick<User, 'id' | 'email' | 'mfaTotpEnabled' | 'status'>;
-  authTx: AuthTx;
-  securityResult?: SecurityCheckResult;
-}
+import type { AuthMethodConfig } from 'src/types/auth.types';
+import type { AuthContext } from '../types/auth-method-handler.interface';
 
 export interface MethodCapability {
-  method: AuthChallengeType;
+  method: AuthMethodType;
   label: string;
   description?: string;
   requiresSetup: boolean;
-  isAvailable: (context: MethodAvailabilityContext) => Promise<boolean>;
+  isAvailable: (context: AuthContext) => Promise<boolean>;
 }
 
+const CHALLENGE_CONFIG_MAP: Record<ChallengeType, keyof AuthMethodConfig> = {
+  [ChallengeType.MFA_REQUIRED]: 'mfaRequired',
+  [ChallengeType.DEVICE_VERIFY]: 'deviceVerify',
+  [ChallengeType.MFA_ENROLL]: 'mfaEnroll',
+};
+
 export class MethodRegistryService {
-  private capabilities: Map<AuthChallengeType, MethodCapability> = new Map();
+  private capabilities: Map<AuthMethodType, MethodCapability> = new Map();
 
   constructor(
     private readonly deps: {
@@ -36,15 +38,13 @@ export class MethodRegistryService {
     this.capabilities.set(capability.method, capability);
   }
 
-  async getAvailableMethods(
-    context: MethodAvailabilityContext,
-    challengeType: 'mfaRequired' | 'deviceVerify' | 'mfaEnroll',
-  ): Promise<AuthMethodOption[]> {
+  async getAvailableMethods(context: AuthContext): Promise<AuthMethodOption[]> {
     const config = await this.deps.settingService.getSetting<AuthMethodConfig>(
       SETTING.AUTH_METHODS_CONFIG,
     );
-
-    const challengeConfig = config[challengeType];
+    const challengeType = context.challengeType;
+    const configKey = CHALLENGE_CONFIG_MAP[challengeType];
+    const challengeConfig = config[configKey];
     if (!challengeConfig) {
       return [];
     }

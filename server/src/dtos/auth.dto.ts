@@ -1,7 +1,8 @@
 import { t } from 'elysia';
 import {
-  AuthChallengeType,
+  AuthMethodType,
   AuthStatus,
+  ChallengeType,
 } from 'src/services/auth/types/constants';
 import { DtoFields } from 'src/share';
 import { BaseUserDto } from './users.dto';
@@ -99,11 +100,10 @@ export type LinkTelegramParams = {
 
 export const AuthMethodOptionDto = t.Object({
   method: t.Union([
-    t.Literal(AuthChallengeType.MFA_TOTP),
-    t.Literal(AuthChallengeType.MFA_BACKUP_CODE),
-    t.Literal(AuthChallengeType.MFA_EMAIL_OTP),
-    t.Literal(AuthChallengeType.DEVICE_VERIFY),
-    t.Literal(AuthChallengeType.MFA_REQUIRED),
+    t.Literal(AuthMethodType.TOTP),
+    t.Literal(AuthMethodType.BACKUP_CODE),
+    t.Literal(AuthMethodType.EMAIL_OTP),
+    t.Literal(AuthMethodType.DEVICE_VERIFY),
   ]),
   label: t.String(),
   description: t.Optional(t.String()),
@@ -138,12 +138,12 @@ export const ChallengeMetadataDto = t.Object({
 
 export const ChallengeDto = t.Union([
   t.Object({
-    type: t.Literal(AuthChallengeType.MFA_REQUIRED),
+    type: t.Literal(ChallengeType.MFA_REQUIRED),
     availableMethods: t.Array(AuthMethodOptionDto),
     metadata: t.Optional(ChallengeMetadataDto),
   }),
   t.Object({
-    type: t.Literal(AuthChallengeType.DEVICE_VERIFY),
+    type: t.Literal(ChallengeType.DEVICE_VERIFY),
     availableMethods: t.Array(AuthMethodOptionDto),
     metadata: t.Optional(ChallengeMetadataDto),
   }),
@@ -175,10 +175,10 @@ export type IAuthResponse = typeof AuthResponseDto.static;
 export const AuthChallengeRequestDto = t.Object({
   authTxId: t.String({ minLength: 1 }),
   method: t.Union([
-    t.Literal(AuthChallengeType.MFA_TOTP),
-    t.Literal(AuthChallengeType.MFA_BACKUP_CODE),
-    t.Literal(AuthChallengeType.MFA_EMAIL_OTP),
-    t.Literal(AuthChallengeType.DEVICE_VERIFY),
+    t.Literal(AuthMethodType.TOTP),
+    t.Literal(AuthMethodType.BACKUP_CODE),
+    t.Literal(AuthMethodType.EMAIL_OTP),
+    t.Literal(AuthMethodType.DEVICE_VERIFY),
   ]),
   code: t.String({ minLength: 1 }),
 });

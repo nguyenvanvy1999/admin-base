@@ -16,9 +16,10 @@ mock.module('src/config/db', () => ({
 
 import { AuthFlowService } from 'src/services/auth/core/auth-flow.service';
 import {
-  AuthChallengeType,
+  AuthMethodType,
   AuthStatus,
   AuthTxState,
+  ChallengeType,
 } from 'src/services/auth/types/constants';
 import { ctxStore, PurposeVerify } from 'src/share';
 
@@ -122,7 +123,7 @@ describe('AuthFlowService - Device Verification', () => {
         status: AuthStatus.CHALLENGE,
         authTxId: 'tx-1',
         challenge: {
-          type: AuthChallengeType.DEVICE_VERIFY,
+          type: ChallengeType.DEVICE_VERIFY,
           availableMethods: expect.any(Array),
           metadata: expect.objectContaining({
             email: expect.objectContaining({
@@ -139,7 +140,8 @@ describe('AuthFlowService - Device Verification', () => {
     );
     expect(mockDeps.authTxService.update).toHaveBeenCalledWith('tx-1', {
       deviceVerifyToken: 'otp-token-1',
-      state: AuthTxState.CHALLENGE_DEVICE_VERIFY,
+      state: AuthTxState.CHALLENGE,
+      challengeType: ChallengeType.DEVICE_VERIFY,
     });
   });
 
@@ -147,7 +149,8 @@ describe('AuthFlowService - Device Verification', () => {
     mockDeps.authTxService.getOrThrow.mockResolvedValue({
       id: 'tx-1',
       userId: 'user-1',
-      state: AuthTxState.CHALLENGE_DEVICE_VERIFY,
+      state: AuthTxState.CHALLENGE,
+      challengeType: ChallengeType.DEVICE_VERIFY,
       deviceVerifyToken: 'otp-token-1',
       securityResult: { isNewDevice: true },
     });
@@ -157,7 +160,7 @@ describe('AuthFlowService - Device Verification', () => {
     await ctxStore.run(mockContext, async () => {
       const result = await service.completeChallenge({
         authTxId: 'tx-1',
-        method: AuthChallengeType.DEVICE_VERIFY,
+        method: AuthMethodType.DEVICE_VERIFY,
         code: '123456',
       });
 
@@ -176,14 +179,15 @@ describe('AuthFlowService - Device Verification', () => {
   it('should fail DEVICE_VERIFY if state is invalid', () => {
     mockDeps.authTxService.getOrThrow.mockResolvedValue({
       id: 'tx-1',
-      state: AuthTxState.CHALLENGE_MFA_REQUIRED, // Wrong state
+      state: AuthTxState.CHALLENGE,
+      challengeType: ChallengeType.MFA_REQUIRED, // Wrong challenge type
     });
 
     ctxStore.run(mockContext, () => {
       expect(
         service.completeChallenge({
           authTxId: 'tx-1',
-          method: AuthChallengeType.DEVICE_VERIFY,
+          method: AuthMethodType.DEVICE_VERIFY,
           code: '123456',
         }),
       ).rejects.toThrow();
