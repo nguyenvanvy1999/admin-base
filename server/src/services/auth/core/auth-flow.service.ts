@@ -87,14 +87,6 @@ import { type AuthUserService, authUserService } from './auth-user.service';
 import { ChallengeResolverService } from './challenge-resolver.service';
 import { LoginStepsService } from './login-steps.service';
 
-export type AuthResponse = IAuthResponse;
-
-type NextStep =
-  | { kind: AuthNextStepKind.COMPLETE }
-  | { kind: AuthNextStepKind.MFA_CHALLENGE }
-  | { kind: AuthNextStepKind.ENROLL_MFA }
-  | { kind: AuthNextStepKind.DEVICE_VERIFY };
-
 export class AuthFlowService {
   constructor(
     private readonly deps: {
@@ -148,7 +140,7 @@ export class AuthFlowService {
     isNewDevice?: boolean;
     deviceVerificationEnabled?: boolean;
     mfaEnrollRequired?: boolean;
-  }): NextStep {
+  }): { kind: AuthNextStepKind } {
     const {
       user,
       mfaRequired,
@@ -176,7 +168,7 @@ export class AuthFlowService {
     return { kind: AuthNextStepKind.COMPLETE };
   }
 
-  async startLogin(params: LoginParams): Promise<AuthResponse> {
+  async startLogin(params: LoginParams): Promise<IAuthResponse> {
     const { email, password, captcha } = params;
     const { clientIp, userAgent } = getIpAndUa();
 
@@ -469,7 +461,7 @@ export class AuthFlowService {
 
   async completeChallenge(
     params: AuthChallengeRequestParams,
-  ): Promise<AuthResponse> {
+  ): Promise<IAuthResponse> {
     const { authTxId, type, method, code } = params;
     const { clientIp, userAgent } = getIpAndUa();
 
@@ -640,7 +632,7 @@ export class AuthFlowService {
 
   async enrollConfirm(
     params: AuthEnrollConfirmRequestParams,
-  ): Promise<AuthResponse & { backupCodes?: string[] }> {
+  ): Promise<IAuthResponse & { backupCodes?: string[] }> {
     const { authTxId, enrollToken, otp } = params;
     const { clientIp, userAgent } = getIpAndUa();
 

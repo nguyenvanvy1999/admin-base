@@ -1,12 +1,8 @@
 import type { SecurityCheckResult } from 'src/services/auth/security/security-monitor.service';
-import type { AuthChallengeType } from 'src/services/auth/types/constants';
-
-export type AuthTxState =
-  | 'PASSWORD_VERIFIED' // password OK, does not complete next step
-  | 'CHALLENGE_MFA_REQUIRED' // require MFA (TOTP/backup)
-  | 'CHALLENGE_MFA_ENROLL' // require enroll TOTP
-  | 'CHALLENGE_DEVICE_VERIFY' // new device verification
-  | 'COMPLETED'; // complete login, usually delete tx
+import type {
+  AuthChallengeType,
+  AuthTxState,
+} from 'src/services/auth/types/constants';
 
 export interface AuthTx {
   id: string;
@@ -52,45 +48,3 @@ export interface AuthMethodConfig {
     labels: Record<AuthChallengeType, { label: string; description?: string }>;
   };
 }
-
-export interface AuthMethodOption {
-  method: AuthChallengeType;
-  label: string;
-  description?: string;
-  requiresSetup?: boolean;
-}
-
-export interface ChallengeMetadata {
-  email?: {
-    destination: string;
-    sentAt?: number;
-  };
-  totp?: {
-    allowBackupCode: boolean;
-  };
-  enrollment?: {
-    methods: string[];
-    backupCodesWillBeGenerated: boolean;
-  };
-  device?: {
-    isNewDevice: boolean;
-    deviceFingerprint?: string;
-  };
-}
-
-export type ChallengeDto =
-  | {
-      type: AuthChallengeType.MFA_REQUIRED;
-      availableMethods: AuthMethodOption[];
-      metadata?: ChallengeMetadata;
-    }
-  | {
-      type: AuthChallengeType.DEVICE_VERIFY;
-      availableMethods: AuthMethodOption[];
-      metadata?: ChallengeMetadata;
-    }
-  | {
-      type: AuthChallengeType.MFA_ENROLL;
-      availableMethods: AuthMethodOption[];
-      metadata?: ChallengeMetadata;
-    };

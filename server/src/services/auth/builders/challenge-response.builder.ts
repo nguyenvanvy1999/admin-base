@@ -1,13 +1,13 @@
 import { db, type IDb } from 'src/config/db';
+import type {
+  AuthMethodOption,
+  ChallengeDto,
+  ChallengeMetadata,
+} from 'src/dtos/auth.dto';
 import type { User } from 'src/generated';
 import type { SecurityCheckResult } from 'src/services/auth/security/security-monitor.service';
 import { AuthChallengeType } from 'src/services/auth/types/constants';
-import type {
-  AuthMethodOption,
-  AuthTx,
-  ChallengeDto,
-  ChallengeMetadata,
-} from 'src/types/auth.types';
+import type { AuthTx } from 'src/types/auth.types';
 import type { MfaService } from '../methods/mfa.service';
 import { mfaService } from '../methods/mfa.service';
 

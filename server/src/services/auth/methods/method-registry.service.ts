@@ -1,14 +1,11 @@
+import type { AuthMethodOption } from 'src/dtos/auth.dto';
 import type { User } from 'src/generated';
 import type { SecurityCheckResult } from 'src/services/auth/security/security-monitor.service';
 import type { AuthChallengeType } from 'src/services/auth/types/constants';
 import type { SettingsService } from 'src/services/settings/settings.service';
 import { settingsService } from 'src/services/settings/settings.service';
 import { SETTING } from 'src/share';
-import type {
-  AuthMethodConfig,
-  AuthMethodOption,
-  AuthTx,
-} from 'src/types/auth.types';
+import type { AuthMethodConfig, AuthTx } from 'src/types/auth.types';
 
 export interface MethodAvailabilityContext {
   user: Pick<User, 'id' | 'email' | 'mfaTotpEnabled'>;

@@ -1,7 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { authTxCache, type IAuthTxCache } from 'src/config/cache';
+import type { AuthTxState } from 'src/services/auth/types/constants';
 import { BadReqErr, ErrCode, UnAuthErr } from 'src/share';
-import type { AuthTx, AuthTxState } from 'src/types/auth.types';
+import type { AuthTx } from 'src/types/auth.types';
 
 export class AuthTxService {
   constructor(

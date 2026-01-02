@@ -1,3 +1,5 @@
+import type { LoginRequestDto } from 'src/dtos/auth.dto';
+import type { User } from 'src/generated';
 import { BadReqErr, ErrCode, type LoginMethod } from 'src/share';
 import type { PasswordService } from '../methods/password.service';
 import type { CaptchaService } from '../security/captcha.service';
@@ -6,17 +8,9 @@ import type {
   SecurityMonitorService,
 } from '../security/security-monitor.service';
 
-export interface CaptchaParams {
-  token: string;
-  userInput: string;
-}
-
-type UserForPassword = {
-  id: string;
-  password: string;
-  passwordAttempt: number;
-};
-type UserForSecurity = { id: string };
+type CaptchaParams = NonNullable<typeof LoginRequestDto.static.captcha>;
+type UserForPassword = Pick<User, 'id' | 'password' | 'passwordAttempt'>;
+type UserForSecurity = Pick<User, 'id'>;
 
 export class LoginStepsService {
   constructor(

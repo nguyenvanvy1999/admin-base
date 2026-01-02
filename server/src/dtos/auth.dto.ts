@@ -97,7 +97,7 @@ export type LinkTelegramParams = {
   telegramData: typeof LinkTelegramRequestDto.static;
 };
 
-const AuthMethodOptionDto = t.Object({
+export const AuthMethodOptionDto = t.Object({
   method: t.Union([
     t.Literal(AuthChallengeType.MFA_TOTP),
     t.Literal(AuthChallengeType.MFA_BACKUP_CODE),
@@ -111,7 +111,7 @@ const AuthMethodOptionDto = t.Object({
   requiresSetup: t.Optional(t.Boolean()),
 });
 
-const ChallengeMetadataDto = t.Object({
+export const ChallengeMetadataDto = t.Object({
   email: t.Optional(
     t.Object({
       destination: t.String(),
@@ -154,6 +154,10 @@ export const ChallengeDto = t.Union([
     metadata: t.Optional(ChallengeMetadataDto),
   }),
 ]);
+
+export type AuthMethodOption = typeof AuthMethodOptionDto.static;
+export type ChallengeMetadata = typeof ChallengeMetadataDto.static;
+export type ChallengeDto = typeof ChallengeDto.static;
 
 export const AuthCompletedResponseDto = t.Object({
   status: t.Literal('COMPLETED'),
