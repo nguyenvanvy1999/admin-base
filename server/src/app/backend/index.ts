@@ -1,4 +1,5 @@
 import process from 'node:process';
+import 'src/config/container';
 import { logger } from 'src/config/logger';
 import { backendAppService } from 'src/services/infrastructure/backend.service';
 

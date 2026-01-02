@@ -1,17 +1,19 @@
 import { createCipheriv, createDecipheriv } from 'node:crypto';
-import { env } from 'src/config/env';
+import { container } from 'src/config/container';
+import type { IEnv } from 'src/config/env';
 
 const algorithm = 'aes-256-cbc';
 
 export class EncryptService {
+  constructor(private readonly env: IEnv = env) {}
   hexToBuffer(hex: string): Buffer {
     const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
     return Buffer.from(clean, 'hex');
   }
 
   getKeyAndIv(): { key: Buffer; iv: Buffer } {
-    const key = this.hexToBuffer(env.ENCRYPT_KEY);
-    const iv = this.hexToBuffer(env.ENCRYPT_IV);
+    const key = this.hexToBuffer(this.env.ENCRYPT_KEY);
+    const iv = this.hexToBuffer(this.env.ENCRYPT_IV);
     return { key, iv };
   }
 
@@ -44,4 +46,4 @@ export class EncryptService {
   }
 }
 
-export const encryptService = new EncryptService();
+export const encryptService = container.resolve<EncryptService>(EncryptService);

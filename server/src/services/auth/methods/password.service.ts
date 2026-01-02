@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
-import { db, type IDb } from 'src/config/db';
-import { env, type IEnv } from 'src/config/env';
+import { container } from 'src/config/container';
+import type { IDb } from 'src/config/db';
+import type { IEnv } from 'src/config/env';
 import type { SettingsService } from 'src/services/settings/settings.service';
-import { settingsService } from 'src/services/settings/settings.service';
 import { BadReqErr, ErrCode, SETTING, timeStringToSeconds } from 'src/share';
 
 export class BunPasswordHasher {
@@ -22,11 +22,6 @@ export class PasswordService {
       db: IDb;
       passwordHasher: BunPasswordHasher;
       settingsService: SettingsService;
-    } = {
-      env,
-      db,
-      passwordHasher: new BunPasswordHasher(),
-      settingsService: settingsService,
     },
   ) {}
 
@@ -98,9 +93,5 @@ export class PasswordService {
   }
 }
 
-export const passwordService = new PasswordService({
-  env,
-  db,
-  passwordHasher: new BunPasswordHasher(),
-  settingsService,
-});
+export const passwordService =
+  container.resolve<PasswordService>(PasswordService);

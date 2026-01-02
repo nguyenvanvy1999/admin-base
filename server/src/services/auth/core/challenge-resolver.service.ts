@@ -3,7 +3,6 @@ import type { User } from 'src/generated';
 import type { SecurityCheckResult } from 'src/services/auth/security/security-monitor.service';
 import type { AuthTx } from 'src/types/auth.types';
 import type { MethodRegistryService } from '../methods/method-registry.service';
-import { getMethodRegistry } from '../methods/method-registry-init';
 
 export interface ResolveAvailableMethodsContext {
   user: Pick<User, 'id' | 'email' | 'mfaTotpEnabled'>;
@@ -16,8 +15,6 @@ export class ChallengeResolverService {
   constructor(
     private readonly deps: {
       methodRegistry: MethodRegistryService;
-    } = {
-      methodRegistry: getMethodRegistry(),
     },
   ) {}
 

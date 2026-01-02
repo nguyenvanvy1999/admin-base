@@ -1,31 +1,16 @@
-import {
-  type IOTPCache,
-  type IOtpRateLimitCache,
-  otpCache,
-  otpRateLimitCache,
-  type RedisCache,
-  registerOtpLimitCache,
+import type {
+  IOTPCache,
+  IOtpRateLimitCache,
+  RedisCache,
 } from 'src/config/cache';
-import { db, type IDb } from 'src/config/db';
-import { emailQueue, type IEmailQueue } from 'src/config/queue';
+import { container } from 'src/config/container';
+import type { IDb } from 'src/config/db';
+import type { IEmailQueue } from 'src/config/queue';
 import { AuditLogVisibility, UserStatus } from 'src/generated';
-import {
-  type AuditLogsService,
-  auditLogsService,
-} from 'src/services/audit-logs/audit-logs.service';
+import type { AuditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import type { LockingService } from 'src/services/misc';
-import { lockingService } from 'src/services/misc';
-import {
-  type SettingsService,
-  settingsService,
-} from 'src/services/settings/settings.service';
-import {
-  ctxStore,
-  EmailType,
-  type IdUtil,
-  idUtil,
-  PurposeVerify,
-} from 'src/share';
+import type { SettingsService } from 'src/services/settings/settings.service';
+import { ctxStore, EmailType, type IdUtil, PurposeVerify } from 'src/share';
 import {
   buildOtpSendFailedAuditLog,
   buildOtpSentAuditLog,
@@ -43,16 +28,6 @@ export class OtpService {
       auditLogService: AuditLogsService;
       settingService: SettingsService;
       idUtil: IdUtil;
-    } = {
-      db,
-      otpCache,
-      otpRateLimitCache,
-      registerOtpLimitCache,
-      lockingService: lockingService,
-      emailQueue,
-      auditLogService: auditLogsService,
-      settingService: settingsService,
-      idUtil,
     },
   ) {}
 
@@ -236,4 +211,4 @@ export class OtpService {
   }
 }
 
-export const otpService = new OtpService();
+export const otpService = container.resolve<OtpService>(OtpService);

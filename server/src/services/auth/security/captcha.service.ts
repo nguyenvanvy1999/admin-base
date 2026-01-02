@@ -1,6 +1,6 @@
-import { captchaCache, type ICaptchaCache } from 'src/config/cache';
-import { type IdUtil, idUtil } from 'src/share';
-import svgCaptcha from 'svg-captcha';
+import type { ICaptchaCache } from 'src/config/cache';
+import { container } from 'src/config/container';
+import type { IdUtil } from 'src/share';
 
 export interface CaptchaOptions {
   size?: number;
@@ -34,10 +34,6 @@ export class CaptchaService {
       cache: ICaptchaCache;
       svg: SvgCaptchaGenerator;
       idUtil: IdUtil;
-    } = {
-      cache: captchaCache,
-      svg: svgCaptcha,
-      idUtil,
     },
   ) {}
 
@@ -112,4 +108,4 @@ export class CaptchaService {
   }
 }
 
-export const captchaService = new CaptchaService();
+export const captchaService = container.resolve<CaptchaService>(CaptchaService);

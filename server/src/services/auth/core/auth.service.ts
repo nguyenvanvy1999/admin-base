@@ -1,7 +1,8 @@
 import dayjs from 'dayjs';
 
-import { db, type IDb } from 'src/config/db';
-import { env, type IEnv } from 'src/config/env';
+import { container } from 'src/config/container';
+import type { IDb } from 'src/config/db';
+import type { IEnv } from 'src/config/env';
 import type {
   ChangePasswordParams,
   ForgotPasswordParams,
@@ -12,45 +13,25 @@ import type {
   VerifyAccountParams,
 } from 'src/dtos/auth.dto';
 import { AuditLogVisibility, UserStatus } from 'src/generated';
-import {
-  type AuditLogsService,
-  auditLogsService,
-} from 'src/services/audit-logs/audit-logs.service';
+import type { AuditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import {
   buildDeleteChanges,
   buildUpdateChanges,
 } from 'src/services/audit-logs/audit-logs.utils';
-import {
-  type OtpService,
-  otpService,
-} from 'src/services/auth/methods/otp.service';
-import {
-  type PasswordService,
-  passwordService,
-} from 'src/services/auth/methods/password.service';
-import {
-  type SecurityMonitorService,
-  securityMonitorService,
-} from 'src/services/auth/security/security-monitor.service';
-import {
-  type SessionService,
-  sessionService,
-} from 'src/services/auth/session.service';
+import type { OtpService } from 'src/services/auth/methods/otp.service';
+import type { PasswordService } from 'src/services/auth/methods/password.service';
+import type { SecurityMonitorService } from 'src/services/auth/security/security-monitor.service';
+import type { SessionService } from 'src/services/auth/session.service';
 import { AuthMethod, AuthStatus } from 'src/services/auth/types/constants';
 import {
   assertUserActiveOrBadReq,
   assertUserExists,
 } from 'src/services/auth/utils/auth-errors.util';
-import {
-  type TokenService,
-  tokenService,
-  type UserUtilService,
-  userUtilService,
+import type {
+  TokenService,
+  UserUtilService,
 } from 'src/services/auth/utils/auth-util.service';
-import {
-  type SettingsService,
-  settingsService,
-} from 'src/services/settings/settings.service';
+import type { SettingsService } from 'src/services/settings/settings.service';
 import {
   BadReqErr,
   ctxStore,
@@ -73,7 +54,7 @@ import {
   buildRegisterFailedAuditLog,
   buildRegisterStartedAuditLog,
 } from '../utils/auth-audit.helper';
-import { type AuthUserService, authUserService } from './auth-user.service';
+import type { AuthUserService } from './auth-user.service';
 
 export class AuthService {
   constructor(
@@ -89,18 +70,6 @@ export class AuthService {
       userUtilService: UserUtilService;
       authUserService: AuthUserService;
       securityMonitorService: SecurityMonitorService;
-    } = {
-      db,
-      env,
-      passwordService,
-      tokenService,
-      otpService,
-      sessionService,
-      settingService: settingsService,
-      auditLogService: auditLogsService,
-      userUtilService,
-      authUserService,
-      securityMonitorService,
     },
   ) {}
 
@@ -404,4 +373,4 @@ export class AuthService {
   }
 }
 
-export const authService = new AuthService();
+export const authService = container.resolve<AuthService>(AuthService);

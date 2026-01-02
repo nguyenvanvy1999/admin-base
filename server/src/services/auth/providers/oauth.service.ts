@@ -1,7 +1,8 @@
-import { createHash, createHmac, randomBytes, randomUUID } from 'crypto';
-import { OAuth2Client } from 'google-auth-library';
-import { authenticator } from 'otplib';
-import { db, type IDb } from 'src/config/db';
+import type { createHash, createHmac, randomBytes, randomUUID } from 'crypto';
+import type { OAuth2Client } from 'google-auth-library';
+import type { authenticator } from 'otplib';
+import { container } from 'src/config/container';
+import type { IDb } from 'src/config/db';
 import type {
   GoogleLoginParams,
   IAuthResponse,
@@ -12,30 +13,16 @@ import {
   SecurityEventSeverity,
   UserStatus,
 } from 'src/generated';
-import {
-  type AuditLogsService,
-  auditLogsService,
-} from 'src/services/audit-logs/audit-logs.service';
-import { authFlowService } from 'src/services/auth/core/auth-flow.service';
-import { authTxService } from 'src/services/auth/core/auth-tx.service';
-import {
-  type SecurityMonitorService,
-  securityMonitorService,
-} from 'src/services/auth/security/security-monitor.service';
+import type { AuditLogsService } from 'src/services/audit-logs/audit-logs.service';
+import type { SecurityMonitorService } from 'src/services/auth/security/security-monitor.service';
 import {
   AuthMethod,
   AuthNextStepKind,
   AuthStatus,
   AuthTxState,
 } from 'src/services/auth/types/constants';
-import {
-  type UserUtilService,
-  userUtilService,
-} from 'src/services/auth/utils/auth-util.service';
-import {
-  type SettingsService,
-  settingsService,
-} from 'src/services/settings/settings.service';
+import type { UserUtilService } from 'src/services/auth/utils/auth-util.service';
+import type { SettingsService } from 'src/services/settings/settings.service';
 import {
   BadReqErr,
   CoreErr,
@@ -43,13 +30,14 @@ import {
   defaultRoles,
   ErrCode,
   type IdUtil,
-  idUtil,
   OAUTH,
   type PrismaTx,
   UnAuthErr,
 } from 'src/share';
-import { ChallengeResponseBuilder } from '../builders/challenge-response.builder';
-import { ChallengeResolverService } from '../core/challenge-resolver.service';
+import type { ChallengeResponseBuilder } from '../builders/challenge-response.builder';
+import type { AuthFlowService } from '../core/auth-flow.service';
+import type { AuthTxService } from '../core/auth-tx.service';
+import type { ChallengeResolverService } from '../core/challenge-resolver.service';
 import {
   buildLoginFailedAuditLog,
   buildLoginSuccessAuditLog,
@@ -76,18 +64,8 @@ export class OAuthService {
       settingsService: SettingsService;
       challengeResponseBuilder: ChallengeResponseBuilder;
       challengeResolver: ChallengeResolverService;
-    } = {
-      db,
-      oauth2ClientFactory: (clientId: string) => new OAuth2Client(clientId),
-      userUtilService,
-      auditLogsService,
-      securityMonitorService,
-      idUtil: idUtil,
-      crypto: { createHash, createHmac, randomBytes, randomUUID },
-      authenticator,
-      settingsService,
-      challengeResponseBuilder: new ChallengeResponseBuilder(),
-      challengeResolver: new ChallengeResolverService(),
+      authTxService: AuthTxService;
+      authFlowService: AuthFlowService;
     },
   ) {}
 
@@ -257,7 +235,7 @@ export class OAuthService {
     }
 
     // 5. Create auth transaction
-    const authTx = await authTxService.create(
+    const authTx = await this.deps.authTxService.create(
       user.id,
       AuthTxState.PASSWORD_VERIFIED,
       { ip, ua: userAgent },
@@ -266,14 +244,14 @@ export class OAuthService {
 
     // 6. Determine next step (MFA challenge/enroll or complete login)
     const mfaRequired = await this.deps.settingsService.enbMfaRequired();
-    const next = authFlowService.resolveNextStep({
+    const next = this.deps.authFlowService.resolveNextStep({
       user: { mfaTotpEnabled: user.mfaTotpEnabled },
       mfaRequired,
     });
 
     // 7. Handle next step
     if (next.kind === AuthNextStepKind.COMPLETE) {
-      await authTxService.delete(authTx.id);
+      await this.deps.authTxService.delete(authTx.id);
       const session = await this.deps.userUtilService.completeLogin(
         user,
         ip,
@@ -300,7 +278,10 @@ export class OAuthService {
     }
 
     if (next.kind === AuthNextStepKind.ENROLL_MFA) {
-      await authTxService.setState(authTx.id, AuthTxState.CHALLENGE_MFA_ENROLL);
+      await this.deps.authTxService.setState(
+        authTx.id,
+        AuthTxState.CHALLENGE_MFA_ENROLL,
+      );
 
       const availableMethods =
         await this.deps.challengeResolver.resolveAvailableMethods({
@@ -325,7 +306,10 @@ export class OAuthService {
     }
 
     // MFA challenge required
-    await authTxService.setState(authTx.id, AuthTxState.CHALLENGE_MFA_REQUIRED);
+    await this.deps.authTxService.setState(
+      authTx.id,
+      AuthTxState.CHALLENGE_MFA_REQUIRED,
+    );
 
     await Promise.allSettled([
       this.deps.auditLogsService.pushSecurity(
@@ -488,4 +472,4 @@ export class OAuthService {
   }
 }
 
-export const oauthService = new OAuthService();
+export const oauthService = container.resolve<OAuthService>(OAuthService);

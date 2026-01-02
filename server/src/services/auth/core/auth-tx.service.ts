@@ -1,12 +1,13 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { authTxCache, type IAuthTxCache } from 'src/config/cache';
+import type { IAuthTxCache } from 'src/config/cache';
+import { container } from 'src/config/container';
 import type { AuthTxState } from 'src/services/auth/types/constants';
 import { BadReqErr, ErrCode, UnAuthErr } from 'src/share';
 import type { AuthTx } from 'src/types/auth.types';
 
 export class AuthTxService {
   constructor(
-    private readonly cache: IAuthTxCache = authTxCache,
+    private readonly cache: IAuthTxCache,
     private readonly ttl: number = 300, // 5 minutes
   ) {}
 
@@ -120,4 +121,4 @@ export class AuthTxService {
   }
 }
 
-export const authTxService = new AuthTxService();
+export const authTxService = container.resolve<AuthTxService>(AuthTxService);

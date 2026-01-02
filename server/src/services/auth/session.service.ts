@@ -1,10 +1,11 @@
-import { db, type IDb } from 'src/config/db';
+import { container } from 'src/config/container';
+import type { IDb } from 'src/config/db';
 import type { SessionListParams } from 'src/dtos/session.dto';
 import type { SessionWhereInput } from 'src/generated';
 import { userResSelect } from 'src/share';
 
 export class SessionService {
-  constructor(private readonly deps: { db: IDb } = { db }) {}
+  constructor(private readonly deps: { db: IDb }) {}
 
   async revoke(userId: string, sessionIds: string[] = []): Promise<void> {
     const whereCondition: SessionWhereInput = {
@@ -108,4 +109,4 @@ export class SessionService {
   }
 }
 
-export const sessionService = new SessionService();
+export const sessionService = container.resolve<SessionService>(SessionService);

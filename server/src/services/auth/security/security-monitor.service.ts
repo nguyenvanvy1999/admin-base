@@ -1,18 +1,13 @@
 import crypto from 'node:crypto';
-import { db, type IDb } from 'src/config/db';
+import { container } from 'src/config/container';
+import type { IDb } from 'src/config/db';
 import {
   AuditLogVisibility,
   SecurityEventSeverity,
   SecurityEventType,
 } from 'src/generated';
-import {
-  type AuditLogsService,
-  auditLogsService,
-} from 'src/services/audit-logs/audit-logs.service';
-import {
-  type SettingsService,
-  settingsService,
-} from 'src/services/settings/settings.service';
+import type { AuditLogsService } from 'src/services/audit-logs/audit-logs.service';
+import type { SettingsService } from 'src/services/settings/settings.service';
 import {
   ctxStore,
   getIpAndUa,
@@ -37,10 +32,6 @@ export class SecurityMonitorService {
       db: IDb;
       auditLogService: AuditLogsService;
       settingService: SettingsService;
-    } = {
-      db,
-      auditLogService: auditLogsService,
-      settingService: settingsService,
     },
   ) {}
 
@@ -122,4 +113,6 @@ export class SecurityMonitorService {
   }
 }
 
-export const securityMonitorService = new SecurityMonitorService();
+export const securityMonitorService = container.resolve<SecurityMonitorService>(
+  SecurityMonitorService,
+);

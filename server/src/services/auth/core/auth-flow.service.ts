@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { authenticator } from 'otplib';
-import { db, type IDb } from 'src/config/db';
-import { env, type IEnv } from 'src/config/env';
+import type { authenticator } from 'otplib';
+import { container } from 'src/config/container';
+import type { IDb } from 'src/config/db';
+import type { IEnv } from 'src/config/env';
 import type {
   AuthChallengeRequestParams,
   AuthEnrollConfirmRequestParams,
@@ -16,34 +17,13 @@ import {
   SecurityEventSeverity,
   UserStatus,
 } from 'src/generated';
-import {
-  type AuditLogsService,
-  auditLogsService,
-} from 'src/services/audit-logs/audit-logs.service';
-import {
-  type MfaService,
-  mfaService,
-} from 'src/services/auth/methods/mfa.service';
-import {
-  type OtpService,
-  otpService,
-} from 'src/services/auth/methods/otp.service';
-import {
-  type PasswordService,
-  passwordService,
-} from 'src/services/auth/methods/password.service';
-import {
-  type CaptchaService,
-  captchaService,
-} from 'src/services/auth/security/captcha.service';
-import {
-  type SecurityMonitorService,
-  securityMonitorService,
-} from 'src/services/auth/security/security-monitor.service';
-import {
-  type SessionService,
-  sessionService,
-} from 'src/services/auth/session.service';
+import type { AuditLogsService } from 'src/services/audit-logs/audit-logs.service';
+import type { MfaService } from 'src/services/auth/methods/mfa.service';
+import type { OtpService } from 'src/services/auth/methods/otp.service';
+import type { PasswordService } from 'src/services/auth/methods/password.service';
+import type { CaptchaService } from 'src/services/auth/security/captcha.service';
+import type { SecurityMonitorService } from 'src/services/auth/security/security-monitor.service';
+import type { SessionService } from 'src/services/auth/session.service';
 import { authMethodFactory } from 'src/services/auth/types/auth-method-factory';
 import type { AuthMethodContext } from 'src/services/auth/types/auth-method-handler.interface';
 import {
@@ -53,14 +33,8 @@ import {
   AuthTxState,
 } from 'src/services/auth/types/constants';
 import { assertUserExists } from 'src/services/auth/utils/auth-errors.util';
-import {
-  type UserUtilService,
-  userUtilService,
-} from 'src/services/auth/utils/auth-util.service';
-import {
-  type SettingsService,
-  settingsService,
-} from 'src/services/settings/settings.service';
+import type { UserUtilService } from 'src/services/auth/utils/auth-util.service';
+import type { SettingsService } from 'src/services/settings/settings.service';
 import {
   BadReqErr,
   ErrCode,
@@ -69,7 +43,7 @@ import {
   SETTING,
   userResSelect,
 } from 'src/share';
-import { ChallengeResponseBuilder } from '../builders/challenge-response.builder';
+import type { ChallengeResponseBuilder } from '../builders/challenge-response.builder';
 import {
   buildLoginFailedAuditLog,
   buildLoginSuccessAuditLog,
@@ -81,10 +55,10 @@ import {
   buildMfaSetupStartedAuditLog,
   buildMfaVerifiedAuditLog,
 } from '../utils/auth-audit.helper';
-import { type AuthTxService, authTxService } from './auth-tx.service';
-import { type AuthUserService, authUserService } from './auth-user.service';
-import { ChallengeResolverService } from './challenge-resolver.service';
-import { LoginStepsService } from './login-steps.service';
+import type { AuthTxService } from './auth-tx.service';
+import type { AuthUserService } from './auth-user.service';
+import type { ChallengeResolverService } from './challenge-resolver.service';
+import type { LoginStepsService } from './login-steps.service';
 
 export class AuthFlowService {
   constructor(
@@ -106,28 +80,6 @@ export class AuthFlowService {
       challengeResponseBuilder: ChallengeResponseBuilder;
       challengeResolver: ChallengeResolverService;
       loginSteps: LoginStepsService;
-    } = {
-      db,
-      env,
-      passwordService,
-      userUtilService,
-      authUserService,
-      authTxService,
-      securityMonitorService,
-      settingService: settingsService,
-      auditLogService: auditLogsService,
-      authenticator,
-      captchaService,
-      sessionService,
-      otpService,
-      mfaService,
-      challengeResponseBuilder: new ChallengeResponseBuilder(),
-      challengeResolver: new ChallengeResolverService(),
-      loginSteps: new LoginStepsService({
-        passwordService,
-        captchaService,
-        securityMonitorService,
-      }),
     },
   ) {}
 
@@ -802,4 +754,5 @@ export class AuthFlowService {
   }
 }
 
-export const authFlowService = new AuthFlowService();
+export const authFlowService =
+  container.resolve<AuthFlowService>(AuthFlowService);

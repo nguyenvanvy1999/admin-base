@@ -1,12 +1,10 @@
-import { db, type IDb } from 'src/config/db';
+import { container } from 'src/config/container';
+import type { IDb } from 'src/config/db';
 import {
   assertUserActive,
   assertUserExists,
 } from 'src/services/auth/utils/auth-errors.util';
-import {
-  type UserUtilService,
-  userUtilService,
-} from 'src/services/auth/utils/auth-util.service';
+import type { UserUtilService } from 'src/services/auth/utils/auth-util.service';
 import { type ICurrentUser, userResSelect } from 'src/share';
 
 export class AuthUserService {
@@ -14,9 +12,6 @@ export class AuthUserService {
     private readonly deps: {
       db: IDb;
       userUtilService: UserUtilService;
-    } = {
-      db,
-      userUtilService,
     },
   ) {}
 
@@ -69,4 +64,5 @@ export class AuthUserService {
   }
 }
 
-export const authUserService = new AuthUserService();
+export const authUserService =
+  container.resolve<AuthUserService>(AuthUserService);

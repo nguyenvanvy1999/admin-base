@@ -1,4 +1,4 @@
-import { db, type IDb } from 'src/config/db';
+import type { IDb } from 'src/config/db';
 import type {
   AuthMethodOption,
   ChallengeDto,
@@ -9,7 +9,6 @@ import type { SecurityCheckResult } from 'src/services/auth/security/security-mo
 import { AuthChallengeType } from 'src/services/auth/types/constants';
 import type { AuthTx } from 'src/types/auth.types';
 import type { MfaService } from '../methods/mfa.service';
-import { mfaService } from '../methods/mfa.service';
 
 export interface ChallengeContext {
   user: Pick<User, 'id' | 'email' | 'mfaTotpEnabled'>;
@@ -23,9 +22,6 @@ export class ChallengeResponseBuilder {
     private readonly deps: {
       db: IDb;
       mfaService: MfaService;
-    } = {
-      db,
-      mfaService,
     },
   ) {}
 

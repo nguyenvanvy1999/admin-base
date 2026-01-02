@@ -14,7 +14,7 @@ CREATE TYPE "UserStatus" AS ENUM ('inactive', 'active', 'suspendded', 'banned');
 CREATE TYPE "SecurityEventSeverity" AS ENUM ('low', 'medium', 'high', 'critical');
 
 -- CreateEnum
-CREATE TYPE "SecurityEventType" AS ENUM ('login_failed', 'login_success', 'password_changed', 'password_reset_requested', 'password_reset_completed', 'mfa_enabled', 'mfa_disabled', 'mfa_verified', 'mfa_failed', 'account_locked', 'account_unlocked', 'suspicious_activity', 'ip_changed', 'device_changed', 'permission_escalation', 'api_key_created', 'api_key_revoked', 'data_exported', 'bulk_operation', 'rate_limit_exceeded');
+CREATE TYPE "SecurityEventType" AS ENUM ('login_failed', 'login_success', 'logout', 'logout_all_sessions', 'refresh_token_success', 'refresh_token_failed', 'password_changed', 'password_reset_requested', 'password_reset_completed', 'password_reset_failed', 'register_started', 'register_completed', 'register_failed', 'mfa_enabled', 'mfa_disabled', 'mfa_verified', 'mfa_failed', 'mfa_setup_started', 'mfa_setup_completed', 'mfa_setup_failed', 'mfa_backup_codes_regenerated', 'mfa_challenge_started', 'account_locked', 'account_unlocked', 'suspicious_activity', 'ip_changed', 'device_changed', 'permission_escalation', 'api_key_created', 'api_key_revoked', 'api_key_usage_blocked', 'data_exported', 'bulk_operation', 'rate_limit_exceeded', 'otp_sent', 'otp_send_failed', 'otp_invalid', 'otp_rate_limited');
 
 -- CreateEnum
 CREATE TYPE "LockoutReason" AS ENUM ('brute_force', 'suspicious_activity', 'admin_action', 'policy_violation');
@@ -36,9 +36,6 @@ CREATE TYPE "ApiKeyStatus" AS ENUM ('active', 'revoked', 'expired');
 
 -- CreateEnum
 CREATE TYPE "LogType" AS ENUM ('audit', 'security', 'system', 'api', 'rate_limit');
-
--- CreateEnum
-CREATE TYPE "LogLevel" AS ENUM ('info', 'warning', 'error', 'critical');
 
 -- CreateEnum
 CREATE TYPE "AuditLogCategory" AS ENUM ('cud', 'security', 'internal', 'system');
@@ -65,8 +62,7 @@ CREATE TABLE "users" (
     "ref_code" TEXT,
     "mfa_totp_enabled" BOOLEAN NOT NULL DEFAULT false,
     "totp_secret" TEXT,
-    "backup_codes" TEXT,
-    "backup_codes_used" TEXT,
+    "mfa_enroll_required" BOOLEAN NOT NULL DEFAULT false,
     "email_verified" BOOLEAN NOT NULL DEFAULT false,
     "email_verification_token" TEXT,
     "lockout_until" TIMESTAMP(3),
@@ -80,6 +76,17 @@ CREATE TABLE "users" (
     "active_ref" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "mfa_backup_codes" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "code_hash" TEXT NOT NULL,
+    "used_at" TIMESTAMP(3),
+    "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "mfa_backup_codes_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -382,6 +389,12 @@ CREATE INDEX "user_refCode_idx" ON "users"("ref_code");
 CREATE INDEX "user_emailVerified_idx" ON "users"("email_verified");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "mfa_backup_codes_user_id_key" ON "mfa_backup_codes"("user_id");
+
+-- CreateIndex
+CREATE INDEX "mfa_backup_codes_user_id_idx" ON "mfa_backup_codes"("user_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "auth_providers_name_key" ON "auth_providers"("name");
 
 -- CreateIndex
@@ -569,6 +582,9 @@ CREATE INDEX "api_key_usage_apiKeyId_timestamp_idx" ON "api_key_usage"("api_key_
 
 -- CreateIndex
 CREATE INDEX "api_key_usage_timestamp_idx" ON "api_key_usage"("timestamp");
+
+-- AddForeignKey
+ALTER TABLE "mfa_backup_codes" ADD CONSTRAINT "mfa_backup_codes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "user_auth_providers" ADD CONSTRAINT "user_auth_providers_provider_code_fkey" FOREIGN KEY ("provider_code") REFERENCES "auth_providers"("code") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -1,27 +1,15 @@
 import dayjs from 'dayjs';
 import { type JWTPayload, jwtVerify, SignJWT } from 'jose';
-import { db, type IDb } from 'src/config/db';
-import { env, type IEnv } from 'src/config/env';
-import { geoIPQueue, type IGeoIPQueue } from 'src/config/queue';
+import type { IDb } from 'src/config/db';
+import type { IEnv } from 'src/config/env';
+import type { IGeoIPQueue } from 'src/config/queue';
 import type { ILoginRes } from 'src/dtos/auth.dto';
 import { type User, UserStatus } from 'src/generated';
-import {
-  type PasswordService,
-  passwordService,
-} from 'src/services/auth/methods/password.service';
-import {
-  type EncryptService,
-  encryptService,
-} from 'src/services/auth/security/encrypt.service';
-import {
-  type SessionService,
-  sessionService,
-} from 'src/services/auth/session.service';
+import type { PasswordService } from 'src/services/auth/methods/password.service';
+import type { EncryptService } from 'src/services/auth/security/encrypt.service';
+import type { SessionService } from 'src/services/auth/session.service';
 import { AuthStatus } from 'src/services/auth/types/constants';
-import {
-  type SettingsService,
-  settingsService,
-} from 'src/services/settings/settings.service';
+import type { SettingsService } from 'src/services/settings/settings.service';
 import {
   ArrayUtil,
   DB_PREFIX,
@@ -31,7 +19,6 @@ import {
   type IdUtil,
   type IJwtVerified,
   type ITokenPayload,
-  idUtil,
   NotFoundErr,
   normalizeEmail,
   type SecurityDeviceInsight,
@@ -42,9 +29,9 @@ import {
 
 export class TokenService {
   constructor(
-    private readonly e: IEnv = env,
-    private readonly idGen: IdUtil = idUtil,
-    private readonly encryptSvc: EncryptService = encryptService,
+    private readonly e: IEnv,
+    private readonly idGen: IdUtil,
+    private readonly encryptSvc: EncryptService,
   ) {}
 
   signJwt(payload: Record<string, any>): Promise<string> {
@@ -106,7 +93,9 @@ export class TokenService {
   }
 }
 
-export const tokenService = new TokenService();
+import { container } from 'src/config/container';
+
+export const tokenService = container.resolve<TokenService>(TokenService);
 
 export class UserUtilService {
   constructor(
@@ -118,14 +107,6 @@ export class UserUtilService {
       geoIPQueue: IGeoIPQueue;
       passwordService: PasswordService;
       idUtil: IdUtil;
-    } = {
-      db,
-      tokenService,
-      sessionService,
-      settingService: settingsService,
-      geoIPQueue,
-      passwordService,
-      idUtil,
     },
   ) {}
 
@@ -280,4 +261,5 @@ export class UserUtilService {
   }
 }
 
-export const userUtilService = new UserUtilService();
+export const userUtilService =
+  container.resolve<UserUtilService>(UserUtilService);

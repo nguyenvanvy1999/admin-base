@@ -1,6 +1,7 @@
-import { db, type IDb } from 'src/config/db';
-import { type IdUtil, idUtil, PurposeVerify } from 'src/share';
-import { type OtpService, otpService } from './otp.service';
+import { container } from 'src/config/container';
+import type { IDb } from 'src/config/db';
+import { type IdUtil, PurposeVerify } from 'src/share';
+import type { OtpService } from './otp.service';
 
 export class MfaService {
   constructor(
@@ -8,10 +9,6 @@ export class MfaService {
       db: IDb;
       otpService: OtpService;
       idUtil: IdUtil;
-    } = {
-      db,
-      otpService,
-      idUtil,
     },
   ) {}
 
@@ -65,4 +62,4 @@ export class MfaService {
   }
 }
 
-export const mfaService = new MfaService();
+export const mfaService = container.resolve<MfaService>(MfaService);

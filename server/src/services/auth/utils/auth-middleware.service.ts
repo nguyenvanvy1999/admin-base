@@ -1,10 +1,8 @@
-import { currentUserCache } from 'src/config/cache';
-import {
-  type AuthUserService,
-  authUserService,
-} from 'src/services/auth/core/auth-user.service';
-import { ctxStore, type ICurrentUser } from 'src/share';
-import { type TokenService, tokenService } from './auth-util.service';
+import type { currentUserCache } from 'src/config/cache';
+import { container } from 'src/config/container';
+import type { AuthUserService } from 'src/services/auth/core/auth-user.service';
+import type { ctxStore, ICurrentUser } from 'src/share';
+import type { TokenService } from './auth-util.service';
 
 export class AuthMiddlewareService {
   constructor(
@@ -13,11 +11,6 @@ export class AuthMiddlewareService {
       authUserService: AuthUserService;
       currentUserCache: typeof currentUserCache;
       ctxStore: typeof ctxStore;
-    } = {
-      tokenService,
-      authUserService,
-      currentUserCache,
-      ctxStore,
     },
   ) {}
 
@@ -53,4 +46,6 @@ export class AuthMiddlewareService {
   }
 }
 
-export const authMiddlewareService = new AuthMiddlewareService();
+export const authMiddlewareService = container.resolve<AuthMiddlewareService>(
+  AuthMiddlewareService,
+);
