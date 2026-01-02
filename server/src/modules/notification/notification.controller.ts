@@ -9,6 +9,7 @@ import {
 import { authCheck } from 'src/services/auth';
 import { notificationsService } from 'src/services/notifications/notifications.service';
 import {
+  ACCESS_AUTH,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -33,6 +34,7 @@ const canNotificationDelete = (user: ICurrentUser) =>
 export const notificationController = new Elysia({
   prefix: '/notifications',
   tags: [DOC_TAG.NOTIFICATION],
+  detail: { security: ACCESS_AUTH },
 })
   .use(authCheck)
   .get(

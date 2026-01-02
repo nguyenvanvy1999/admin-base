@@ -7,6 +7,7 @@ import {
 import { authCheck, authorize, has } from 'src/services/auth';
 import { i18nService } from 'src/services/i18n/i18n.service';
 import {
+  ACCESS_AUTH,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -18,6 +19,7 @@ import {
 export const i18nAdminController = new Elysia({
   prefix: '/admin/i18n',
   tags: [DOC_TAG.ADMIN_I18N],
+  detail: { security: ACCESS_AUTH },
 })
   .use(authCheck)
   .use(authorize(has('I18N.VIEW')))

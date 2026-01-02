@@ -50,6 +50,7 @@ export const fileController = new Elysia({
     {
       params: t.Object({ filename: t.String({ minLength: 1 }) }),
       detail: {
+        security: ACCESS_AUTH,
         summary: 'Download file',
         description: 'Download file',
         responses: {

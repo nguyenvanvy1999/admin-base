@@ -8,6 +8,7 @@ import {
 import { authCheck, authorize, has } from 'src/services/auth';
 import { notificationTemplatesService } from 'src/services/notifications/notification-templates.service';
 import {
+  ACCESS_AUTH,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -20,6 +21,7 @@ import {
 export const notificationTemplatesAdminController = new Elysia({
   prefix: '/admin/notification-templates',
   tags: [DOC_TAG.ADMIN_NOTIFICATION_TEMPLATE],
+  detail: { security: ACCESS_AUTH },
 })
   .use(authCheck)
   .use(authorize(has('NOTIFICATION_TEMPLATE.VIEW')))

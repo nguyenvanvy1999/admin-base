@@ -10,6 +10,7 @@ import {
 import { apiKeyService } from 'src/services/api-keys';
 import { authCheck } from 'src/services/auth';
 import {
+  ACCESS_AUTH,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -32,6 +33,7 @@ const canApiKeyDelete = (user: ICurrentUser) =>
 export const apiKeysController = new Elysia({
   prefix: '/api-keys',
   tags: [DOC_TAG.API_KEY],
+  detail: { security: ACCESS_AUTH },
 })
   .use(authCheck)
   .get(

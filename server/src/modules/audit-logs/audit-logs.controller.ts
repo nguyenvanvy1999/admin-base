@@ -6,6 +6,7 @@ import {
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import { authCheck } from 'src/services/auth';
 import {
+  ACCESS_AUTH,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -23,6 +24,7 @@ const canAuditLogView = (user: ICurrentUser) =>
 export const auditLogsController = new Elysia({
   prefix: '/audit-logs',
   tags: [DOC_TAG.ADMIN_AUDIT_LOG],
+  detail: { security: ACCESS_AUTH },
 })
   .use(authCheck)
   .get(

@@ -4,6 +4,7 @@ import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
 import { authCheck } from 'src/services/auth';
 import { sessionService } from 'src/services/auth/session.service';
 import {
+  ACCESS_AUTH,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -22,6 +23,7 @@ const canSessionUpdate = (user: ICurrentUser) =>
 export const sessionController = new Elysia({
   prefix: '/sessions',
   tags: [DOC_TAG.SESSION],
+  detail: { security: ACCESS_AUTH },
 })
   .use(authCheck)
   .get(

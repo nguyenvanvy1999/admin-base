@@ -8,6 +8,7 @@ import {
 import { authCheck } from 'src/services/auth';
 import { ipWhitelistService } from 'src/services/security/ip-whitelist.service';
 import {
+  ACCESS_AUTH,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -31,6 +32,7 @@ const canIpWhitelistDelete = (user: ICurrentUser) =>
 export const ipWhitelistController = new Elysia({
   prefix: '/user-ip-whitelists',
   tags: [DOC_TAG.ADMIN_IP_WHITELIST],
+  detail: { security: ACCESS_AUTH },
 })
   .use(authCheck)
   .get(

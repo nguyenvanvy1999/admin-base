@@ -7,6 +7,7 @@ import {
 import { authCheck, authorize, has } from 'src/services/auth';
 import { rateLimitConfigService } from 'src/services/rate-limit/rate-limit-config.service';
 import {
+  ACCESS_AUTH,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -18,6 +19,7 @@ import {
 export const rateLimitAdminController = new Elysia({
   prefix: '/admin/rate-limits',
   tags: [DOC_TAG.ADMIN_RATE_LIMIT],
+  detail: { security: ACCESS_AUTH },
 })
   .use(authCheck)
   .use(authorize(has('RATE_LIMIT.VIEW')))

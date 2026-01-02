@@ -8,6 +8,7 @@ import {
 import { apiKeyUsageService } from 'src/services/api-keys';
 import { authCheck } from 'src/services/auth';
 import {
+  ACCESS_AUTH,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -21,6 +22,7 @@ const canApiKeyView = (user: ICurrentUser) =>
 export const apiKeyUsageController = new Elysia({
   prefix: '/api-key-usage',
   tags: [DOC_TAG.API_KEY_USAGE],
+  detail: { security: ACCESS_AUTH },
 })
   .use(authCheck)
   .get(

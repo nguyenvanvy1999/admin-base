@@ -12,6 +12,7 @@ import {
 import { authCheck, authorize, has } from 'src/services/auth';
 import { usersService } from 'src/services/users/users.service';
 import {
+  ACCESS_AUTH,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -23,6 +24,7 @@ import {
 export const usersAdminController = new Elysia({
   prefix: '/admin/users',
   tags: [DOC_TAG.ADMIN_USER],
+  detail: { security: ACCESS_AUTH },
 })
   .use(authCheck)
   .use(authorize(has('USER.VIEW')))

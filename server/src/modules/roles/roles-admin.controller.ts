@@ -8,6 +8,7 @@ import {
 import { allOf, authCheck, authorize, has } from 'src/services/auth';
 import { rolesService } from 'src/services/roles/roles.service';
 import {
+  ACCESS_AUTH,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -20,6 +21,7 @@ import {
 export const rolesAdminController = new Elysia({
   prefix: '/admin/roles',
   tags: [DOC_TAG.ADMIN_ROLE],
+  detail: { security: ACCESS_AUTH },
 })
   .use(authCheck)
   .use(authorize(has('ROLE.VIEW')))

@@ -7,6 +7,7 @@ import {
 import { authCheck, authorize, has } from 'src/services/auth';
 import { settingsService } from 'src/services/settings/settings.service';
 import {
+  ACCESS_AUTH,
   authErrors,
   castToRes,
   DOC_TAG,
@@ -18,6 +19,7 @@ import {
 export const settingsAdminController = new Elysia({
   prefix: '/admin/settings',
   tags: [DOC_TAG.ADMIN_SETTING],
+  detail: { security: ACCESS_AUTH },
 })
   .use(authCheck)
   .use(authorize(has('SETTING.VIEW')))
