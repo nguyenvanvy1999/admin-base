@@ -63,7 +63,6 @@ import {
   UnAuthErr,
 } from 'src/share';
 import {
-  buildAuditLogPushOptions,
   buildLogoutAuditLog,
   buildOtpInvalidAuditLog,
   buildPasswordChangedAuditLog,
@@ -144,7 +143,7 @@ export class AuthService {
         AuthMethod.EMAIL,
         { userId: createdUserId },
       ),
-      buildAuditLogPushOptions(createdUserId),
+      { userId: createdUserId, subjectUserId: createdUserId },
     );
 
     if (otpToken) {
@@ -195,7 +194,7 @@ export class AuthService {
         userId,
         sessionId,
       }),
-      buildAuditLogPushOptions(userId, { sessionId }),
+      { userId, sessionId: sessionId ?? null, subjectUserId: userId },
     );
   }
 
@@ -238,7 +237,7 @@ export class AuthService {
         { id: user.id, email: null },
         { userId: user.id },
       ),
-      buildAuditLogPushOptions(user.id),
+      { userId: user.id, subjectUserId: user.id },
     );
   }
 
@@ -315,9 +314,11 @@ export class AuthService {
             sessionId: session?.id,
           },
         ),
-        buildAuditLogPushOptions(session?.createdBy?.id ?? '', {
-          sessionId: session?.id,
-        }),
+        {
+          userId: session?.createdBy?.id ?? '',
+          sessionId: session?.id ?? null,
+          subjectUserId: session?.createdBy?.id ?? '',
+        },
       );
       throw new UnAuthErr(ErrCode.ExpiredToken);
     }
@@ -355,9 +356,11 @@ export class AuthService {
           sessionId: session.id,
         },
       ),
-      buildAuditLogPushOptions(session.createdBy.id, {
-        sessionId: session.id,
-      }),
+      {
+        userId: session.createdBy.id,
+        sessionId: session.id ?? null,
+        subjectUserId: session.createdBy.id,
+      },
     );
 
     return {
@@ -379,7 +382,7 @@ export class AuthService {
         userId: id,
         sessionId,
       }),
-      buildAuditLogPushOptions(id, { sessionId }),
+      { userId: id, sessionId: sessionId ?? null, subjectUserId: id },
     );
 
     await this.deps.sessionService.revoke(id, [sessionId]);

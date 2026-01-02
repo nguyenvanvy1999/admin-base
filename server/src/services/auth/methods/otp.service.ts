@@ -8,12 +8,7 @@ import {
 } from 'src/config/cache';
 import { db, type IDb } from 'src/config/db';
 import { emailQueue, type IEmailQueue } from 'src/config/queue';
-import {
-  AuditLogVisibility,
-  SecurityEventSeverity,
-  SecurityEventType,
-  UserStatus,
-} from 'src/generated';
+import { AuditLogVisibility, UserStatus } from 'src/generated';
 import {
   type AuditLogsService,
   auditLogsService,
@@ -31,6 +26,10 @@ import {
   idUtil,
   PurposeVerify,
 } from 'src/share';
+import {
+  buildOtpSendFailedAuditLog,
+  buildOtpSentAuditLog,
+} from '../utils/auth-audit.helper';
 
 export class OtpService {
   constructor(
@@ -169,18 +168,14 @@ export class OtpService {
     if (!user) {
       const { userId, sessionId } = ctxStore.getStore() ?? {};
       await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.otp_send_failed,
-          severity: SecurityEventSeverity.medium,
-          email,
-          purpose,
-          error: 'user_not_found',
-        },
-        {
-          visibility: AuditLogVisibility.admin_only,
+        buildOtpSendFailedAuditLog(email, purpose, 'user_not_found', {
           userId,
           sessionId,
+        }),
+        {
+          visibility: AuditLogVisibility.admin_only,
+          userId: userId ?? undefined,
+          sessionId: sessionId ?? null,
         },
       );
       return null;
@@ -190,18 +185,14 @@ export class OtpService {
     if (!allowed) {
       const { sessionId } = ctxStore.getStore() ?? {};
       await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.otp_send_failed,
-          severity: SecurityEventSeverity.medium,
-          email,
-          purpose,
-          error: 'otp_conditions_not_met',
-        },
+        buildOtpSendFailedAuditLog(email, purpose, 'otp_conditions_not_met', {
+          userId: user.id,
+          sessionId,
+        }),
         {
           subjectUserId: user.id,
           userId: user.id,
-          sessionId,
+          sessionId: sessionId ?? null,
         },
       );
       return null;
@@ -211,18 +202,14 @@ export class OtpService {
     if (!otpToken) {
       const { sessionId } = ctxStore.getStore() ?? {};
       await this.deps.auditLogService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.otp_send_failed,
-          severity: SecurityEventSeverity.medium,
-          email,
-          purpose,
-          error: 'otp_send_failed',
-        },
+        buildOtpSendFailedAuditLog(email, purpose, 'otp_send_failed', {
+          userId: user.id,
+          sessionId,
+        }),
         {
           subjectUserId: user.id,
           userId: user.id,
-          sessionId,
+          sessionId: sessionId ?? null,
         },
       );
       return null;
@@ -230,17 +217,14 @@ export class OtpService {
 
     const { sessionId } = ctxStore.getStore() ?? {};
     await this.deps.auditLogService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.otp_sent,
-        severity: SecurityEventSeverity.low,
-        email,
-        purpose,
-      },
+      buildOtpSentAuditLog(email, purpose, {
+        userId: user.id,
+        sessionId,
+      }),
       {
         subjectUserId: user.id,
         userId: user.id,
-        sessionId,
+        sessionId: sessionId ?? null,
       },
     );
 

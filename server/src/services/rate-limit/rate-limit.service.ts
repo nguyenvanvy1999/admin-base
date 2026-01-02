@@ -1,11 +1,8 @@
 import { rateLimitCache } from 'src/config/cache';
 import { redis } from 'src/config/redis';
-import {
-  AuditLogVisibility,
-  SecurityEventSeverity,
-  SecurityEventType,
-} from 'src/generated';
+import { AuditLogVisibility } from 'src/generated';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
+import { buildRateLimitExceededAuditLog } from 'src/services/auth/utils/auth-audit.helper';
 import { ctxStore } from 'src/share';
 
 type CheckAndIncrementParams = {
@@ -75,20 +72,18 @@ export class RateLimitService {
     if (currentCount > limit) {
       const { sessionId } = ctxStore.getStore() ?? {};
       await auditLogsService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.rate_limit_exceeded,
-          severity: SecurityEventSeverity.high,
+        buildRateLimitExceededAuditLog(
           routePath,
           identifier,
-          count: currentCount,
+          currentCount,
           limit,
-        },
+          { userId, sessionId },
+        ),
         {
           visibility: AuditLogVisibility.admin_only,
           subjectUserId: userId,
           userId,
-          sessionId,
+          sessionId: sessionId ?? null,
         },
       );
 

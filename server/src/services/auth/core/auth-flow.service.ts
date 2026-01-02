@@ -72,7 +72,6 @@ import {
 } from 'src/share';
 import { ChallengeResponseBuilder } from '../builders/challenge-response.builder';
 import {
-  buildAuditLogPushOptions,
   buildLoginFailedAuditLog,
   buildLoginSuccessAuditLog,
   buildMfaBackupCodesRegeneratedAuditLog,
@@ -206,9 +205,11 @@ export class AuthFlowService {
         buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'captcha_required', {
           userId: user.id,
         }),
-        buildAuditLogPushOptions(user.id, {
+        {
+          userId: user.id,
+          subjectUserId: user.id,
           visibility: AuditLogVisibility.actor_and_subject,
-        }),
+        },
       );
       throw new BadReqErr(ErrCode.CaptchaRequired);
     }
@@ -221,9 +222,11 @@ export class AuthFlowService {
           buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'invalid_captcha', {
             userId: user.id,
           }),
-          buildAuditLogPushOptions(user.id, {
+          {
+            userId: user.id,
+            subjectUserId: user.id,
             visibility: AuditLogVisibility.actor_and_subject,
-          }),
+          },
         );
       }
       throw error;
@@ -240,9 +243,11 @@ export class AuthFlowService {
         buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'password_mismatch', {
           userId: user.id,
         }),
-        buildAuditLogPushOptions(user.id, {
+        {
+          userId: user.id,
+          subjectUserId: user.id,
           visibility: AuditLogVisibility.actor_and_subject,
-        }),
+        },
       );
       throw new BadReqErr(ErrCode.InvalidCredentials);
     }
@@ -252,7 +257,7 @@ export class AuthFlowService {
         buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'user_not_active', {
           userId: user.id,
         }),
-        buildAuditLogPushOptions(user.id),
+        { userId: user.id, subjectUserId: user.id },
       );
       throw new BadReqErr(ErrCode.UserNotActive);
     }
@@ -272,7 +277,7 @@ export class AuthFlowService {
           userId: user.id,
           severity: SecurityEventSeverity.high,
         }),
-        buildAuditLogPushOptions(user.id),
+        { userId: user.id, subjectUserId: user.id },
       );
       throw new BadReqErr(ErrCode.LoginBlocked);
     }
@@ -308,9 +313,11 @@ export class AuthFlowService {
           sessionId: session.sessionId,
           isNewDevice: securityResult?.isNewDevice ?? false,
         }),
-        buildAuditLogPushOptions(user.id, {
-          sessionId: session.sessionId,
-        }),
+        {
+          userId: user.id,
+          sessionId: session.sessionId ?? null,
+          subjectUserId: user.id,
+        },
       );
       return { status: AuthStatus.COMPLETED, session };
     }
@@ -429,9 +436,11 @@ export class AuthFlowService {
           from: 'login',
         },
       }),
-      buildAuditLogPushOptions(user.id, {
+      {
+        userId: user.id,
+        subjectUserId: user.id,
         visibility: AuditLogVisibility.actor_and_subject,
-      }),
+      },
     );
 
     const availableMethods =
@@ -510,7 +519,7 @@ export class AuthFlowService {
           'invalid_mfa_code',
           { userId: user.id },
         ),
-        buildAuditLogPushOptions(user.id),
+        { userId: user.id, subjectUserId: user.id },
       );
       throw new BadReqErr(result.errorCode || ErrCode.InvalidOtp);
     }
@@ -531,9 +540,11 @@ export class AuthFlowService {
         userId: user.id,
         sessionId: session.sessionId,
       }),
-      buildAuditLogPushOptions(user.id, {
-        sessionId: session.sessionId,
-      }),
+      {
+        userId: user.id,
+        sessionId: session.sessionId ?? null,
+        subjectUserId: user.id,
+      },
     );
 
     return { status: AuthStatus.COMPLETED, session };
@@ -621,7 +632,7 @@ export class AuthFlowService {
       buildMfaSetupStartedAuditLog(user, AuthMethod.TOTP, 'request', {
         userId: user.id,
       }),
-      buildAuditLogPushOptions(user.id),
+      { userId: user.id, subjectUserId: user.id },
     );
 
     return { authTxId, enrollToken, otpauthUrl };
@@ -682,7 +693,7 @@ export class AuthFlowService {
       buildMfaSetupCompletedAuditLog(userResult, AuthMethod.TOTP, {
         userId: userResult.id,
       }),
-      buildAuditLogPushOptions(userResult.id),
+      { userId: userResult.id, subjectUserId: userResult.id },
     );
 
     await this.deps.authTxService.delete(authTxId);
@@ -721,9 +732,11 @@ export class AuthFlowService {
       buildMfaBackupCodesRegeneratedAuditLog(user, {
         userId: user.id,
       }),
-      buildAuditLogPushOptions(user.id, {
+      {
+        userId: user.id,
+        subjectUserId: user.id,
         visibility: AuditLogVisibility.actor_only,
-      }),
+      },
     );
 
     return { backupCodes: [code] };
@@ -761,7 +774,7 @@ export class AuthFlowService {
           'password_verification_failed_during_disable_mfa',
           { userId: user.id },
         ),
-        buildAuditLogPushOptions(user.id),
+        { userId: user.id, subjectUserId: user.id },
       );
       throw new BadReqErr(ErrCode.PasswordNotMatch);
     }
@@ -782,7 +795,7 @@ export class AuthFlowService {
           'invalid_otp_during_disable_mfa',
           { userId: user.id },
         ),
-        buildAuditLogPushOptions(user.id),
+        { userId: user.id, subjectUserId: user.id },
       );
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
@@ -806,9 +819,11 @@ export class AuthFlowService {
       buildMfaDisabledAuditLog(user, AuthMethod.TOTP, 'user', {
         userId: user.id,
       }),
-      buildAuditLogPushOptions(user.id, {
+      {
+        userId: user.id,
+        subjectUserId: user.id,
         visibility: AuditLogVisibility.actor_and_subject,
-      }),
+      },
     );
   }
 }

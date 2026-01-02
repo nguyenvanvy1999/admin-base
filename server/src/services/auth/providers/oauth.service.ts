@@ -10,7 +10,6 @@ import type {
 import {
   AuditLogVisibility,
   SecurityEventSeverity,
-  SecurityEventType,
   UserStatus,
 } from 'src/generated';
 import {
@@ -51,6 +50,12 @@ import {
 } from 'src/share';
 import { ChallengeResponseBuilder } from '../builders/challenge-response.builder';
 import { ChallengeResolverService } from '../core/challenge-resolver.service';
+import {
+  buildLoginFailedAuditLog,
+  buildLoginSuccessAuditLog,
+  buildMfaChallengeStartedAuditLog,
+  buildRegisterCompletedAuditLog,
+} from '../utils/auth-audit.helper';
 
 export class OAuthService {
   constructor(
@@ -105,14 +110,11 @@ export class OAuthService {
     const { clientId } = (provider?.config as { clientId?: string }) || {};
     if (!provider || !provider.enabled || !clientId) {
       await this.deps.auditLogsService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.medium,
-          method: 'email',
-          email: '',
-          error: 'provider_not_found',
-        },
+        buildLoginFailedAuditLog(
+          { id: '', email: null },
+          AuthMethod.EMAIL,
+          'provider_not_found',
+        ),
         { visibility: AuditLogVisibility.admin_only },
       );
       throw new CoreErr(ErrCode.OAuthProviderNotFound);
@@ -127,14 +129,11 @@ export class OAuthService {
 
     if (!payload) {
       await this.deps.auditLogsService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.medium,
-          method: AuthMethod.EMAIL,
-          email: '',
-          error: 'invalid_google_account',
-        },
+        buildLoginFailedAuditLog(
+          { id: '', email: null },
+          AuthMethod.EMAIL,
+          'invalid_google_account',
+        ),
         { visibility: AuditLogVisibility.admin_only },
       );
       throw new UnAuthErr(ErrCode.InvalidGoogleAccount);
@@ -145,14 +144,11 @@ export class OAuthService {
 
     if (!email) {
       await this.deps.auditLogsService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.medium,
-          method: AuthMethod.EMAIL,
-          email: '',
-          error: 'google_account_not_found',
-        },
+        buildLoginFailedAuditLog(
+          { id: '', email: null },
+          AuthMethod.EMAIL,
+          'google_account_not_found',
+        ),
         { visibility: AuditLogVisibility.admin_only },
       );
       throw new UnAuthErr(ErrCode.GoogleAccountNotFound);
@@ -183,14 +179,10 @@ export class OAuthService {
         });
 
         await this.deps.auditLogsService.pushSecurity(
-          {
-            category: 'security',
-            eventType: SecurityEventType.login_success,
-            severity: SecurityEventSeverity.low,
-            method: AuthMethod.EMAIL,
-            email,
+          buildLoginSuccessAuditLog(user, AuthMethod.EMAIL, {
+            userId: user.id,
             metadata: { linked: true },
-          },
+          }),
           { subjectUserId: user.id, userId: user.id },
         );
       }
@@ -229,13 +221,9 @@ export class OAuthService {
       });
 
       await this.deps.auditLogsService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.register_completed,
-          severity: SecurityEventSeverity.low,
-          method: AuthMethod.EMAIL,
-          email,
-        },
+        buildRegisterCompletedAuditLog(user, 'oauth', {
+          userId: user.id,
+        }),
         { subjectUserId: user.id, userId: user.id },
       );
     }
@@ -255,14 +243,10 @@ export class OAuthService {
 
     if (securityResult.action === 'block') {
       await this.deps.auditLogsService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
+        buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'security_blocked', {
+          userId: user.id,
           severity: SecurityEventSeverity.high,
-          method: AuthMethod.EMAIL,
-          email: email || '',
-          error: 'security_blocked',
-        },
+        }),
         { subjectUserId: user.id, userId: user.id },
       );
       throw new BadReqErr(ErrCode.SuspiciousLoginBlocked);
@@ -294,18 +278,15 @@ export class OAuthService {
       );
 
       await this.deps.auditLogsService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_success,
-          severity: SecurityEventSeverity.low,
-          method: AuthMethod.EMAIL,
-          email: email || '',
+        buildLoginSuccessAuditLog(user, AuthMethod.EMAIL, {
+          userId: user.id,
+          sessionId: session.sessionId,
           isNewDevice: securityResult.isNewDevice ?? false,
-        },
+        }),
         {
           subjectUserId: user.id,
           userId: user.id,
-          sessionId: session.sessionId,
+          sessionId: session.sessionId ?? null,
         },
       );
 
@@ -341,13 +322,10 @@ export class OAuthService {
     await authTxService.setState(authTx.id, AuthTxState.CHALLENGE_MFA_REQUIRED);
 
     await this.deps.auditLogsService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.mfa_challenge_started,
-        severity: SecurityEventSeverity.low,
-        method: AuthMethod.EMAIL,
+      buildMfaChallengeStartedAuditLog(user, AuthMethod.EMAIL, {
+        userId: user.id,
         metadata: { stage: 'challenge', from: 'login' },
-      },
+      }),
       {
         subjectUserId: user.id,
         userId: user.id,
@@ -390,14 +368,11 @@ export class OAuthService {
     const { botToken } = (provider?.config as { botToken?: string }) || {};
     if (!provider || !provider.enabled || !botToken) {
       await this.deps.auditLogsService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.medium,
-          method: AuthMethod.EMAIL,
-          email: '',
-          error: 'provider_not_found',
-        },
+        buildLoginFailedAuditLog(
+          { id: userId, email: null },
+          AuthMethod.EMAIL,
+          'provider_not_found',
+        ),
         {
           subjectUserId: userId,
           userId,
@@ -411,14 +386,11 @@ export class OAuthService {
 
     if (!isValid) {
       await this.deps.auditLogsService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.medium,
-          method: AuthMethod.EMAIL,
-          email: '',
-          error: 'invalid_telegram_account',
-        },
+        buildLoginFailedAuditLog(
+          { id: userId, email: null },
+          AuthMethod.EMAIL,
+          'invalid_telegram_account',
+        ),
         {
           subjectUserId: userId,
           userId,
@@ -440,14 +412,11 @@ export class OAuthService {
 
     if (authExists) {
       await this.deps.auditLogsService.pushSecurity(
-        {
-          category: 'security',
-          eventType: SecurityEventType.login_failed,
-          severity: SecurityEventSeverity.medium,
-          method: AuthMethod.EMAIL,
-          email: '',
-          error: 'account_already_linked',
-        },
+        buildLoginFailedAuditLog(
+          { id: userId, email: null },
+          AuthMethod.EMAIL,
+          'account_already_linked',
+        ),
         {
           subjectUserId: userId,
           userId,
@@ -468,14 +437,10 @@ export class OAuthService {
     });
 
     await this.deps.auditLogsService.pushSecurity(
-      {
-        category: 'security',
-        eventType: SecurityEventType.login_success,
-        severity: SecurityEventSeverity.low,
-        method: AuthMethod.EMAIL,
-        email: '',
+      buildLoginSuccessAuditLog({ id: userId, email: null }, AuthMethod.EMAIL, {
+        userId,
         metadata: { providerId: telegramData.id },
-      },
+      }),
       {
         subjectUserId: userId,
         userId,

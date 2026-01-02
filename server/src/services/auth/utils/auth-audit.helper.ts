@@ -17,6 +17,7 @@ type AuditLogOptions = {
   sessionId?: string;
   visibility?: AuditLogVisibility;
   subjectUserId?: string;
+  metadata?: Record<string, unknown>;
 };
 
 export function buildLoginSuccessAuditLog(
@@ -38,6 +39,7 @@ export function buildLoginSuccessAuditLog(
     metadata: {
       userId: user.id,
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -62,6 +64,7 @@ export function buildLoginFailedAuditLog(
     metadata: {
       userId: user.id,
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -79,6 +82,7 @@ export function buildMfaVerifiedAuditLog(
     metadata: {
       userId: user.id,
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -98,6 +102,7 @@ export function buildMfaFailedAuditLog(
     metadata: {
       userId: user.id,
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -137,6 +142,7 @@ export function buildMfaSetupStartedAuditLog(
     metadata: {
       userId: user.id,
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -154,6 +160,7 @@ export function buildMfaSetupCompletedAuditLog(
     metadata: {
       userId: user.id,
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -176,6 +183,7 @@ export function buildMfaDisabledAuditLog(
     metadata: {
       userId: user.id,
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -191,6 +199,7 @@ export function buildMfaBackupCodesRegeneratedAuditLog(
     metadata: {
       userId: user.id,
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -209,6 +218,7 @@ export function buildRegisterStartedAuditLog(
     metadata: {
       userId: user.id,
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -229,6 +239,26 @@ export function buildRegisterFailedAuditLog(
     metadata: {
       ...(options?.userId && { userId: options.userId }),
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
+    },
+  };
+}
+
+export function buildRegisterCompletedAuditLog(
+  user: UserForAudit,
+  method: AuthMethod | 'oauth',
+  options?: AuditLogOptions,
+): SecurityEventPayloadBase<'register_completed'> {
+  return {
+    category: 'security',
+    eventType: SecurityEventType.register_completed,
+    severity: SecurityEventSeverity.low,
+    method: toAuditRegisterMethod(method),
+    email: user.email ?? '',
+    metadata: {
+      userId: user.id,
+      ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -249,6 +279,7 @@ export function buildPasswordChangedAuditLog(
     metadata: {
       userId: user.id,
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -265,6 +296,7 @@ export function buildPasswordResetCompletedAuditLog(
     metadata: {
       userId: user.id,
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -283,6 +315,7 @@ export function buildPasswordResetFailedAuditLog(
     metadata: {
       ...(options?.userId && { userId: options.userId }),
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -303,6 +336,70 @@ export function buildOtpInvalidAuditLog(
     metadata: {
       ...(options?.userId && { userId: options.userId }),
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
+    },
+  };
+}
+
+export function buildOtpSentAuditLog(
+  email: string,
+  purpose: PurposeVerify,
+  options?: AuditLogOptions,
+): SecurityEventPayloadBase<'otp_sent'> {
+  return {
+    category: 'security',
+    eventType: SecurityEventType.otp_sent,
+    severity: SecurityEventSeverity.low,
+    email,
+    purpose,
+    metadata: {
+      ...(options?.userId && { userId: options.userId }),
+      ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
+    },
+  };
+}
+
+export function buildOtpSendFailedAuditLog(
+  email: string | undefined,
+  purpose: PurposeVerify,
+  error: string,
+  options?: AuditLogOptions,
+): SecurityEventPayloadBase<'otp_send_failed'> {
+  return {
+    category: 'security',
+    eventType: SecurityEventType.otp_send_failed,
+    severity: SecurityEventSeverity.medium,
+    email,
+    purpose,
+    error,
+    metadata: {
+      ...(options?.userId && { userId: options.userId }),
+      ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
+    },
+  };
+}
+
+export function buildRateLimitExceededAuditLog(
+  routePath: string,
+  identifier: string,
+  count: number,
+  limit: number,
+  options?: AuditLogOptions,
+): SecurityEventPayloadBase<'rate_limit_exceeded'> {
+  return {
+    category: 'security',
+    eventType: SecurityEventType.rate_limit_exceeded,
+    severity: SecurityEventSeverity.high,
+    routePath,
+    identifier,
+    count,
+    limit,
+    metadata: {
+      ...(options?.userId && { userId: options.userId }),
+      ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -318,6 +415,7 @@ export function buildRefreshTokenSuccessAuditLog(
     metadata: {
       userId: user.id,
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -335,6 +433,7 @@ export function buildRefreshTokenFailedAuditLog(
     metadata: {
       userId: user.id,
       ...(options?.sessionId && { sessionId: options.sessionId }),
+      ...options?.metadata,
     },
   };
 }
@@ -354,26 +453,5 @@ export function buildLogoutAuditLog(
     metadata: {
       userId: user.id,
     },
-  };
-}
-
-export function buildAuditLogPushOptions(
-  userId: string,
-  options?: {
-    sessionId?: string;
-    visibility?: AuditLogVisibility;
-    subjectUserId?: string;
-  },
-): {
-  userId: string;
-  sessionId?: string | null;
-  visibility?: AuditLogVisibility;
-  subjectUserId?: string;
-} {
-  return {
-    userId,
-    sessionId: options?.sessionId ?? null,
-    visibility: options?.visibility,
-    subjectUserId: options?.subjectUserId ?? userId,
   };
 }

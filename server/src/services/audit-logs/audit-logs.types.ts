@@ -6,10 +6,6 @@ import type {
 import { AuthMethod } from 'src/services/auth/types/constants';
 import type { LOG_LEVEL, PurposeVerify } from 'src/share';
 
-// ============================================================================
-// CUD Types (Create, Update, Delete)
-// ============================================================================
-
 export type CudAction = 'create' | 'update' | 'delete';
 
 export type AuditChangeSet<T = unknown> = Record<
@@ -46,10 +42,6 @@ export type CudDeletePayload<TEntityType extends string> = CudPayloadBase<
   'delete'
 >;
 
-// ============================================================================
-// Entity Types
-// ============================================================================
-
 export type PrismaModelName = Prisma.ModelName;
 
 export const ENTITY_TYPE_MAP = {
@@ -76,10 +68,6 @@ export const ENTITY_TYPE_MAP = {
 } as const satisfies Record<PrismaModelName, string>;
 
 export type EntityType = (typeof ENTITY_TYPE_MAP)[PrismaModelName];
-
-// ============================================================================
-// Internal Event Types
-// ============================================================================
 
 export type InternalEventType =
   | 'internal_error'
@@ -124,10 +112,6 @@ export type InternalEventPayload<T extends InternalEventType> =
         level: LOG_LEVEL;
         detail: Record<string, unknown>;
       };
-
-// ============================================================================
-// Security Event Types
-// ============================================================================
 
 export type AuthMethodType = `${AuthMethod}`;
 export type AuditAuthMethod = AuthMethodType | 'oauth' | 'api_key';
