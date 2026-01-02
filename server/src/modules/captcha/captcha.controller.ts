@@ -6,8 +6,12 @@ import {
   VerifyCaptchaDto,
 } from 'src/dtos/captcha.dto';
 import { captchaService } from 'src/services/auth/security/captcha.service';
+import { DOC_TAG } from 'src/share';
 
-export const captchaController = new Elysia({ prefix: '/captcha' })
+export const captchaController = new Elysia({
+  prefix: '/captcha',
+  tags: [DOC_TAG.CAPTCHA],
+})
   .get(
     '/generate',
     async ({ query }) => {
@@ -33,7 +37,6 @@ export const captchaController = new Elysia({ prefix: '/captcha' })
       detail: {
         summary: 'Generate captcha',
         description: 'Generate a new captcha (text or math expression)',
-        tags: ['Captcha'],
       },
     },
   )
@@ -62,7 +65,6 @@ export const captchaController = new Elysia({ prefix: '/captcha' })
       detail: {
         summary: 'Verify captcha',
         description: 'Verify user input against generated captcha',
-        tags: ['Captcha'],
       },
     },
   );

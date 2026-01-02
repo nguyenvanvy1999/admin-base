@@ -21,7 +21,7 @@ const canSessionUpdate = (user: ICurrentUser) =>
 
 export const sessionController = new Elysia({
   prefix: '/sessions',
-  tags: [DOC_TAG.MISC],
+  tags: [DOC_TAG.SESSION],
 })
   .use(authCheck)
   .get(

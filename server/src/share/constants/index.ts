@@ -212,178 +212,126 @@ export enum OAUTH {
 export const IDEMPOTENCY_TTL = 300;
 
 export enum DOC_TAG {
-  AUTH = 'Base Auth',
+  AUTH = 'Authentication',
   OAUTH = 'OAuth',
-  MFA = 'MFA',
-  USER_AUTH = 'User Auth',
-  MISC = 'Misc',
+  OTP = 'OTP',
+  CAPTCHA = 'Captcha',
+  SESSION = 'Session',
   FILE = 'File',
-  USER = 'User',
-  P2P = 'P2P',
-  P2P_AD = 'P2P Ad',
-  P2P_RELATION = 'P2P Relation',
-  P2P_PAYMENT_ACCOUNT = 'P2P Payment Account',
-  USER_ACCOUNT = 'User Account',
-  USER_BALANCE = 'User Balance',
-  CURRENCY = 'Currency',
-  NETWORK = 'Network',
-  ORDER_REVIEW = 'Order Review',
-  CHAT = 'Chat',
-  ADMIN_I18N = 'Admin I18N',
-  ADMIN_ROLE = 'Admin Role',
-  ADMIN_PERMISSION = 'Admin Permission',
-  ADMIN_SETTING = 'Admin Setting',
-  ADMIN_USER = 'Admin User',
-  ADMIN_SESSION = 'Admin Session',
-  ADMIN_TELEGRAM = 'Admin Telegram',
-  ADMIN_USER_IP_WHITELIST = 'Admin User IP Whitelist',
-  ADMIN_AUDIT_LOG = 'Admin Audit Log',
-  ADMIN_NOTIFICATION = 'Admin Notification',
-  ADMIN_NOTIFICATION_TEMPLATE = 'Admin Notification Template',
-  ADMIN_RATE_LIMIT = 'Admin Rate Limit',
-  ADMIN_API_KEY = 'Admin API Key',
-  USER_API_KEY = 'User API Key',
-  ADMIN_API_KEY_USAGE = 'Admin API Key Usage',
-  USER_API_KEY_USAGE = 'User API Key Usage',
+  SYSTEM = 'System',
+  NOTIFICATION = 'Notification',
+  API_KEY = 'API Key',
+  API_KEY_USAGE = 'API Key Usage',
+  ADMIN_USER = 'Admin - User Management',
+  ADMIN_ROLE = 'Admin - Role Management',
+  ADMIN_PERMISSION = 'Admin - Permission Management',
+  ADMIN_SETTING = 'Admin - System Settings',
+  ADMIN_I18N = 'Admin - Internationalization',
+  ADMIN_IP_WHITELIST = 'Admin - IP Whitelist',
+  ADMIN_RATE_LIMIT = 'Admin - Rate Limit',
+  ADMIN_AUDIT_LOG = 'Admin - Audit Log',
+  ADMIN_NOTIFICATION_TEMPLATE = 'Admin - Notification Template',
 }
 
 export const ACCESS_AUTH = [{ accessToken: [] }];
 export const DOC_OPTIONS = {
   info: {
-    title: 'NBitExchange Documentation',
-    description: 'Development documentation',
-    contact: {
-      name: 'NBit',
-      email: 'notbitcoin.community@gmail.com',
-    },
-    license: { name: 'MIT', url: 'https://opensource.org/license/mit' },
-    termsOfService: 'termsOfService',
+    title: 'Admin Portal API Documentation',
+    description: 'Complete API documentation for Admin Portal',
   },
   tags: {
-    auth: { name: DOC_TAG.AUTH, description: 'Base authentication endpoints' },
-    userAuth: {
-      name: DOC_TAG.USER_AUTH,
-      description: 'User authentication endpoints',
+    auth: {
+      name: DOC_TAG.AUTH,
+      description:
+        'Authentication endpoints including login, logout, password management, and MFA operations',
     },
-    misc: {
-      name: DOC_TAG.MISC,
-      description: 'MISC endpoints',
+    oauth: {
+      name: DOC_TAG.OAUTH,
+      description:
+        'OAuth authentication endpoints for third-party providers (Google, Telegram)',
+    },
+    otp: {
+      name: DOC_TAG.OTP,
+      description:
+        'One-time password (OTP) generation and verification endpoints',
+    },
+    captcha: {
+      name: DOC_TAG.CAPTCHA,
+      description: 'Captcha generation and verification endpoints for security',
+    },
+    session: {
+      name: DOC_TAG.SESSION,
+      description:
+        'Session management endpoints for viewing and revoking sessions (available for both users and administrators)',
     },
     file: {
       name: DOC_TAG.FILE,
-      description: 'File endpoints',
+      description: 'File upload and management endpoints',
     },
-    oAuth: {
-      name: DOC_TAG.OAUTH,
-      description: 'OAuth endpoints',
+    system: {
+      name: DOC_TAG.SYSTEM,
+      description:
+        'System information endpoints including health check, version, and system status',
     },
-    mfa: {
-      name: DOC_TAG.MFA,
-      description: 'MFA endpoints',
+    notification: {
+      name: DOC_TAG.NOTIFICATION,
+      description:
+        'Notification management endpoints for viewing, creating, and managing notifications (available for both users and administrators)',
     },
-    user: {
-      name: DOC_TAG.USER,
-      description: 'User endpoints',
+    apiKey: {
+      name: DOC_TAG.API_KEY,
+      description:
+        'API key management endpoints for creating, viewing, and revoking API keys (available for both users and administrators)',
     },
-    p2p: {
-      name: DOC_TAG.P2P,
-      description: 'P2P endpoints',
-    },
-    p2pPaymentAccount: {
-      name: DOC_TAG.P2P_PAYMENT_ACCOUNT,
-      description: 'P2P payment account endpoints',
-    },
-    p2pAd: {
-      name: DOC_TAG.P2P_AD,
-      description: 'P2P ad endpoints',
-    },
-    p2pRelation: {
-      name: DOC_TAG.P2P_RELATION,
-      description: 'P2P relation endpoints',
-    },
-    userAccount: {
-      name: DOC_TAG.USER_ACCOUNT,
-      description: 'User account endpoints',
-    },
-    userBalance: {
-      name: DOC_TAG.USER_BALANCE,
-      description: 'User balance endpoints',
-    },
-    currency: {
-      name: DOC_TAG.CURRENCY,
-      description: 'Currency endpoints',
-    },
-    network: {
-      name: DOC_TAG.NETWORK,
-      description: 'Network endpoints',
-    },
-    orderReview: {
-      name: DOC_TAG.ORDER_REVIEW,
-      description: 'Order review endpoints',
-    },
-    chat: {
-      name: DOC_TAG.CHAT,
-      description: 'Chat endpoints',
-    },
-    adminI18n: {
-      name: DOC_TAG.ADMIN_I18N,
-      description: 'Admin i18n endpoints',
-    },
-    adminRole: {
-      name: DOC_TAG.ADMIN_ROLE,
-      description: 'Admin role endpoints',
-    },
-    adminPermission: {
-      name: DOC_TAG.ADMIN_PERMISSION,
-      description: 'Admin permission endpoints',
-    },
-    adminSetting: {
-      name: DOC_TAG.ADMIN_SETTING,
-      description: 'Admin setting endpoints',
+    apiKeyUsage: {
+      name: DOC_TAG.API_KEY_USAGE,
+      description:
+        'API key usage tracking endpoints for viewing usage statistics and analytics (available for both users and administrators)',
     },
     adminUser: {
       name: DOC_TAG.ADMIN_USER,
-      description: 'Admin user management endpoints',
+      description:
+        'Administrator endpoints for managing users, including user creation, updates, role assignment, and MFA reset',
     },
-    adminTelegram: {
-      name: DOC_TAG.ADMIN_TELEGRAM,
-      description: 'Admin telegram endpoints',
+    adminRole: {
+      name: DOC_TAG.ADMIN_ROLE,
+      description:
+        'Administrator endpoints for managing roles and role assignments',
     },
-    adminSession: {
-      name: DOC_TAG.ADMIN_SESSION,
-      description: 'Admin session endpoints',
+    adminPermission: {
+      name: DOC_TAG.ADMIN_PERMISSION,
+      description:
+        'Administrator endpoints for managing permissions and access control',
     },
-    adminAuditLog: {
-      name: DOC_TAG.ADMIN_AUDIT_LOG,
-      description: 'Admin audit log endpoints',
+    adminSetting: {
+      name: DOC_TAG.ADMIN_SETTING,
+      description:
+        'Administrator endpoints for managing system settings and configuration',
     },
-    adminNotification: {
-      name: DOC_TAG.ADMIN_NOTIFICATION,
-      description: 'Admin notification endpoints',
+    adminI18n: {
+      name: DOC_TAG.ADMIN_I18N,
+      description:
+        'Administrator endpoints for managing internationalization (i18n) translations',
     },
-    adminNotificationTemplate: {
-      name: DOC_TAG.ADMIN_NOTIFICATION_TEMPLATE,
-      description: 'Admin notification template endpoints',
+    adminIpWhitelist: {
+      name: DOC_TAG.ADMIN_IP_WHITELIST,
+      description:
+        'Administrator endpoints for managing IP whitelist rules and restrictions',
     },
     adminRateLimit: {
       name: DOC_TAG.ADMIN_RATE_LIMIT,
-      description: 'Admin rate limit endpoints',
+      description:
+        'Administrator endpoints for configuring rate limiting rules and policies',
     },
-    adminApiKey: {
-      name: DOC_TAG.ADMIN_API_KEY,
-      description: 'Admin API key management endpoints',
+    adminAuditLog: {
+      name: DOC_TAG.ADMIN_AUDIT_LOG,
+      description:
+        'Administrator endpoints for viewing and managing audit logs and security events',
     },
-    userApiKey: {
-      name: DOC_TAG.USER_API_KEY,
-      description: 'User API key management endpoints',
-    },
-    adminApiKeyUsage: {
-      name: DOC_TAG.ADMIN_API_KEY_USAGE,
-      description: 'Admin API key usage tracking endpoints',
-    },
-    userApiKeyUsage: {
-      name: DOC_TAG.USER_API_KEY_USAGE,
-      description: 'User API key usage tracking endpoints',
+    adminNotificationTemplate: {
+      name: DOC_TAG.ADMIN_NOTIFICATION_TEMPLATE,
+      description:
+        'Administrator endpoints for managing notification templates',
     },
   },
 };

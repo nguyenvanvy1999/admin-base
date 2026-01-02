@@ -20,7 +20,7 @@ const canApiKeyView = (user: ICurrentUser) =>
 
 export const apiKeyUsageController = new Elysia({
   prefix: '/api-key-usage',
-  tags: [DOC_TAG.USER_API_KEY_USAGE, DOC_TAG.ADMIN_API_KEY_USAGE],
+  tags: [DOC_TAG.API_KEY_USAGE],
 })
   .use(authCheck)
   .get(

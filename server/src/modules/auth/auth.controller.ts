@@ -20,6 +20,7 @@ import {
   ACCESS_AUTH,
   authErrors,
   castToRes,
+  DOC_TAG,
   ErrorResDto,
   ResWrapper,
 } from 'src/share';
@@ -191,7 +192,7 @@ const authProtectedRoutes = new Elysia()
 
 export const authController = new Elysia({
   prefix: '/auth',
-  tags: ['auth'],
+  tags: [DOC_TAG.AUTH],
 })
   .use(authRateLimitedRoutes)
   .use(authRateLimitedProtectedRoutes)
@@ -237,5 +238,5 @@ const userAuthRateLimitedRoutes = new Elysia()
 
 export const userAuthController = new Elysia({
   prefix: '/auth/user',
-  tags: ['user-auth'],
+  tags: [DOC_TAG.AUTH],
 }).use(userAuthRateLimitedRoutes);

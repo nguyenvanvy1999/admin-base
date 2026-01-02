@@ -11,8 +11,8 @@ import {
 } from 'src/share';
 
 export const miscController = new Elysia({
-  detail: { tags: [DOC_TAG.MISC] },
   prefix: 'misc',
+  tags: [DOC_TAG.SYSTEM],
 })
   .get(
     'health',

@@ -22,7 +22,7 @@ const canAuditLogView = (user: ICurrentUser) =>
 
 export const auditLogsController = new Elysia({
   prefix: '/audit-logs',
-  tags: [DOC_TAG.MISC, DOC_TAG.ADMIN_AUDIT_LOG],
+  tags: [DOC_TAG.ADMIN_AUDIT_LOG],
 })
   .use(authCheck)
   .get(

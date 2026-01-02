@@ -11,7 +11,7 @@ import {
 
 export const otpController = new Elysia({
   prefix: '/auth/otp',
-  tags: [DOC_TAG.AUTH],
+  tags: [DOC_TAG.OTP],
 }).post(
   '/',
   async ({ body: { email, purpose } }) => {

@@ -30,7 +30,7 @@ const canIpWhitelistDelete = (user: ICurrentUser) =>
 
 export const ipWhitelistController = new Elysia({
   prefix: '/user-ip-whitelists',
-  tags: [DOC_TAG.MISC, DOC_TAG.ADMIN_USER_IP_WHITELIST],
+  tags: [DOC_TAG.ADMIN_IP_WHITELIST],
 })
   .use(authCheck)
   .get(

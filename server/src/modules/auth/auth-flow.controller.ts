@@ -10,11 +10,11 @@ import {
 } from 'src/dtos/auth.dto';
 import { authFlowService } from 'src/services/auth/core/auth-flow.service';
 import { rateLimit } from 'src/services/rate-limit/auth-rate-limit.config';
-import { castToRes, ErrorResDto, ResWrapper } from 'src/share';
+import { castToRes, DOC_TAG, ErrorResDto, ResWrapper } from 'src/share';
 
 export const authFlowController = new Elysia({
   prefix: '/auth',
-  tags: ['auth'],
+  tags: [DOC_TAG.AUTH],
 })
   .use(rateLimit())
   .post(

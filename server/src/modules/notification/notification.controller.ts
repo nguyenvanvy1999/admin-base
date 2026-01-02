@@ -32,7 +32,7 @@ const canNotificationDelete = (user: ICurrentUser) =>
 
 export const notificationController = new Elysia({
   prefix: '/notifications',
-  tags: [DOC_TAG.MISC, DOC_TAG.ADMIN_NOTIFICATION],
+  tags: [DOC_TAG.NOTIFICATION],
 })
   .use(authCheck)
   .get(

@@ -31,7 +31,7 @@ const canApiKeyDelete = (user: ICurrentUser) =>
 
 export const apiKeysController = new Elysia({
   prefix: '/api-keys',
-  tags: [DOC_TAG.USER_API_KEY, DOC_TAG.ADMIN_API_KEY],
+  tags: [DOC_TAG.API_KEY],
 })
   .use(authCheck)
   .get(
