@@ -38,7 +38,10 @@ export class AuthUserService {
     const activeRoleIds = await this.deps.userUtilService.getActiveRoleIds(
       user.id,
     );
-    const permissions = await this.deps.userUtilService.getPermissions(user);
+    const permissions = await this.deps.userUtilService.getPermissions(
+      user,
+      activeRoleIds,
+    );
 
     return {
       ...user,

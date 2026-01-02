@@ -178,13 +178,15 @@ export class OAuthService {
           select: { id: true },
         });
 
-        await this.deps.auditLogsService.pushSecurity(
-          buildLoginSuccessAuditLog(user, AuthMethod.EMAIL, {
-            userId: user.id,
-            metadata: { linked: true },
-          }),
-          { subjectUserId: user.id, userId: user.id },
-        );
+        await Promise.allSettled([
+          this.deps.auditLogsService.pushSecurity(
+            buildLoginSuccessAuditLog(user, AuthMethod.EMAIL, {
+              userId: user.id,
+              metadata: { linked: true },
+            }),
+            { subjectUserId: user.id, userId: user.id },
+          ),
+        ]);
       }
     } else {
       // Create new user with Google OAuth
@@ -220,12 +222,14 @@ export class OAuthService {
         return createdUser;
       });
 
-      await this.deps.auditLogsService.pushSecurity(
-        buildRegisterCompletedAuditLog(user, 'oauth', {
-          userId: user.id,
-        }),
-        { subjectUserId: user.id, userId: user.id },
-      );
+      await Promise.allSettled([
+        this.deps.auditLogsService.pushSecurity(
+          buildRegisterCompletedAuditLog(user, 'oauth', {
+            userId: user.id,
+          }),
+          { subjectUserId: user.id, userId: user.id },
+        ),
+      ]);
     }
 
     // 3. Check user status
@@ -277,18 +281,20 @@ export class OAuthService {
         securityResult,
       );
 
-      await this.deps.auditLogsService.pushSecurity(
-        buildLoginSuccessAuditLog(user, AuthMethod.EMAIL, {
-          userId: user.id,
-          sessionId: session.sessionId,
-          isNewDevice: securityResult.isNewDevice ?? false,
-        }),
-        {
-          subjectUserId: user.id,
-          userId: user.id,
-          sessionId: session.sessionId ?? null,
-        },
-      );
+      await Promise.allSettled([
+        this.deps.auditLogsService.pushSecurity(
+          buildLoginSuccessAuditLog(user, AuthMethod.EMAIL, {
+            userId: user.id,
+            sessionId: session.sessionId,
+            isNewDevice: securityResult.isNewDevice ?? false,
+          }),
+          {
+            subjectUserId: user.id,
+            userId: user.id,
+            sessionId: session.sessionId ?? null,
+          },
+        ),
+      ]);
 
       return { status: AuthStatus.COMPLETED, session };
     }
@@ -321,17 +327,19 @@ export class OAuthService {
     // MFA challenge required
     await authTxService.setState(authTx.id, AuthTxState.CHALLENGE_MFA_REQUIRED);
 
-    await this.deps.auditLogsService.pushSecurity(
-      buildMfaChallengeStartedAuditLog(user, AuthMethod.EMAIL, {
-        userId: user.id,
-        metadata: { stage: 'challenge', from: 'login' },
-      }),
-      {
-        subjectUserId: user.id,
-        userId: user.id,
-        visibility: AuditLogVisibility.actor_and_subject,
-      },
-    );
+    await Promise.allSettled([
+      this.deps.auditLogsService.pushSecurity(
+        buildMfaChallengeStartedAuditLog(user, AuthMethod.EMAIL, {
+          userId: user.id,
+          metadata: { stage: 'challenge', from: 'login' },
+        }),
+        {
+          subjectUserId: user.id,
+          userId: user.id,
+          visibility: AuditLogVisibility.actor_and_subject,
+        },
+      ),
+    ]);
 
     const availableMethods =
       await this.deps.challengeResolver.resolveAvailableMethods({
@@ -436,16 +444,22 @@ export class OAuthService {
       select: { id: true },
     });
 
-    await this.deps.auditLogsService.pushSecurity(
-      buildLoginSuccessAuditLog({ id: userId, email: null }, AuthMethod.EMAIL, {
-        userId,
-        metadata: { providerId: telegramData.id },
-      }),
-      {
-        subjectUserId: userId,
-        userId,
-      },
-    );
+    await Promise.allSettled([
+      this.deps.auditLogsService.pushSecurity(
+        buildLoginSuccessAuditLog(
+          { id: userId, email: null },
+          AuthMethod.EMAIL,
+          {
+            userId,
+            metadata: { providerId: telegramData.id },
+          },
+        ),
+        {
+          subjectUserId: userId,
+          userId,
+        },
+      ),
+    ]);
 
     return null;
   }

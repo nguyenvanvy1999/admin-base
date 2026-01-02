@@ -518,17 +518,19 @@ export class AuthFlowService {
       securityContext,
     );
 
-    await this.deps.auditLogService.pushSecurity(
-      buildMfaVerifiedAuditLog(user, handler.getAuthMethod() as AuthMethod, {
-        userId: user.id,
-        sessionId: session.sessionId,
-      }),
-      {
-        userId: user.id,
-        sessionId: session.sessionId ?? null,
-        subjectUserId: user.id,
-      },
-    );
+    await Promise.allSettled([
+      this.deps.auditLogService.pushSecurity(
+        buildMfaVerifiedAuditLog(user, handler.getAuthMethod() as AuthMethod, {
+          userId: user.id,
+          sessionId: session.sessionId,
+        }),
+        {
+          userId: user.id,
+          sessionId: session.sessionId ?? null,
+          subjectUserId: user.id,
+        },
+      ),
+    ]);
 
     return { status: AuthStatus.COMPLETED, session };
   }
@@ -645,29 +647,23 @@ export class AuthFlowService {
     }
 
     const code = this.deps.mfaService.generateBackupCode();
-    const hash = await this.deps.mfaService.hashBackupCode(code);
+    const [hash, userResult] = await Promise.all([
+      this.deps.mfaService.hashBackupCode(code),
+      this.deps.db.user.update({
+        where: { id: tx.userId },
+        data: {
+          totpSecret: tx.enroll.tempTotpSecret,
+          mfaTotpEnabled: true,
+          mfaEnrollRequired: false,
+        },
+        select: userResSelect,
+      }),
+    ]);
     await this.deps.mfaService.saveBackupCode(tx.userId, hash);
-
-    const userResult = await this.deps.db.user.update({
-      where: { id: tx.userId },
-      data: {
-        totpSecret: tx.enroll.tempTotpSecret,
-        mfaTotpEnabled: true,
-        mfaEnrollRequired: false,
-      },
-      select: userResSelect,
-    });
 
     if (userResult.status !== UserStatus.active) {
       throw new BadReqErr(ErrCode.UserNotActive);
     }
-
-    await this.deps.auditLogService.pushSecurity(
-      buildMfaSetupCompletedAuditLog(userResult, AuthMethod.TOTP, {
-        userId: userResult.id,
-      }),
-      { userId: userResult.id, subjectUserId: userResult.id },
-    );
 
     await this.deps.authTxService.delete(authTxId);
 
@@ -678,6 +674,14 @@ export class AuthFlowService {
       tx.securityResult,
     );
 
+    await Promise.allSettled([
+      this.deps.auditLogService.pushSecurity(
+        buildMfaSetupCompletedAuditLog(userResult, AuthMethod.TOTP, {
+          userId: userResult.id,
+        }),
+        { userId: userResult.id, subjectUserId: userResult.id },
+      ),
+    ]);
     return { status: AuthStatus.COMPLETED, session, backupCodes: [code] };
   }
 
@@ -782,18 +786,19 @@ export class AuthFlowService {
       select: { id: true },
     });
 
-    await this.deps.sessionService.revoke(userId);
-
-    await this.deps.auditLogService.pushSecurity(
-      buildMfaDisabledAuditLog(user, AuthMethod.TOTP, 'user', {
-        userId: user.id,
-      }),
-      {
-        userId: user.id,
-        subjectUserId: user.id,
-        visibility: AuditLogVisibility.actor_and_subject,
-      },
-    );
+    await Promise.allSettled([
+      this.deps.sessionService.revoke(userId),
+      this.deps.auditLogService.pushSecurity(
+        buildMfaDisabledAuditLog(user, AuthMethod.TOTP, 'user', {
+          userId: user.id,
+        }),
+        {
+          userId: user.id,
+          subjectUserId: user.id,
+          visibility: AuditLogVisibility.actor_and_subject,
+        },
+      ),
+    ]);
   }
 }
 

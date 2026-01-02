@@ -141,14 +141,17 @@ export class UserUtilService {
     return rolePlayers.map((x) => x.roleId);
   }
 
-  async getPermissions(user: { id: string }): Promise<UPermission[]> {
-    const activeRoleIds = await this.getActiveRoleIds(user.id);
-    if (activeRoleIds.length === 0) {
+  async getPermissions(
+    user: { id: string },
+    activeRoleIds?: string[],
+  ): Promise<UPermission[]> {
+    const roleIds = activeRoleIds ?? (await this.getActiveRoleIds(user.id));
+    if (roleIds.length === 0) {
       return [];
     }
 
     const permissions = await this.deps.db.rolePermission.findMany({
-      where: { roleId: { in: activeRoleIds } },
+      where: { roleId: { in: roleIds } },
       select: { permission: { select: { title: true } } },
     });
     return ArrayUtil.uniq(
