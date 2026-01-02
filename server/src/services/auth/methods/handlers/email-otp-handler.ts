@@ -1,33 +1,21 @@
 import { UserStatus } from 'src/generated';
-import type { MfaService } from 'src/services/auth/methods/mfa.service';
-import type { OtpService } from 'src/services/auth/methods/otp.service';
 import type {
   AuthMethodContext,
   AuthMethodResult,
-  IAuthMethodHandler,
 } from 'src/services/auth/types/auth-method-handler.interface';
 import { AuthMethod, AuthMethodType } from 'src/services/auth/types/constants';
 import { BadReqErr, ErrCode } from 'src/share';
-import type { MethodRegistryService } from '../method-registry.service';
+import { mfaService } from '../mfa.service';
 
-export class EmailOtpHandler implements IAuthMethodHandler {
-  readonly type = AuthMethodType.EMAIL_OTP;
-
-  constructor(
-    private readonly deps: {
-      mfaService: MfaService;
-      otpService: OtpService;
-    },
-  ) {}
-
-  async verify(context: AuthMethodContext): Promise<AuthMethodResult> {
+export const emailOtpHandler = {
+  verify: async (context: AuthMethodContext): Promise<AuthMethodResult> => {
     const { authTx, userId, code } = context;
 
     if (!authTx.emailOtpToken) {
       throw new BadReqErr(ErrCode.InvalidState);
     }
 
-    const verifiedUserId = await this.deps.mfaService.verifyEmailOtp(
+    const verifiedUserId = await mfaService.verifyEmailOtp(
       authTx.emailOtpToken,
       code,
     );
@@ -38,21 +26,19 @@ export class EmailOtpHandler implements IAuthMethodHandler {
       verified,
       errorCode: verified ? undefined : ErrCode.InvalidOtp,
     };
-  }
+  },
 
-  getAuthMethod(): string {
+  getAuthMethod: (): string => {
     return AuthMethod.EMAIL;
-  }
+  },
+};
 
-  static registerCapability(registry: MethodRegistryService): void {
-    registry.register({
-      method: AuthMethodType.EMAIL_OTP,
-      label: 'Email OTP',
-      description: 'Receive code via email',
-      requiresSetup: false,
-      isAvailable: (context) => {
-        return Promise.resolve(context.user.status === UserStatus.active);
-      },
-    });
-  }
-}
+export const emailOtpCapability = {
+  method: AuthMethodType.EMAIL_OTP,
+  label: 'Email OTP',
+  description: 'Receive code via email',
+  requiresSetup: false,
+  isAvailable: (context: { user: { status: UserStatus } }) => {
+    return Promise.resolve(context.user.status === UserStatus.active);
+  },
+};

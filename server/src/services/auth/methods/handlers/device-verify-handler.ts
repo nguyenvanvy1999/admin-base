@@ -1,30 +1,20 @@
-import type { OtpService } from 'src/services/auth/methods/otp.service';
 import type {
   AuthMethodContext,
   AuthMethodResult,
-  IAuthMethodHandler,
 } from 'src/services/auth/types/auth-method-handler.interface';
 import { AuthMethod, AuthMethodType } from 'src/services/auth/types/constants';
 import { BadReqErr, ErrCode, PurposeVerify } from 'src/share';
-import type { MethodRegistryService } from '../method-registry.service';
+import { otpService } from '../otp.service';
 
-export class DeviceVerifyHandler implements IAuthMethodHandler {
-  readonly type = AuthMethodType.DEVICE_VERIFY;
-
-  constructor(
-    private readonly deps: {
-      otpService: OtpService;
-    },
-  ) {}
-
-  async verify(context: AuthMethodContext): Promise<AuthMethodResult> {
+export const deviceVerifyHandler = {
+  verify: async (context: AuthMethodContext): Promise<AuthMethodResult> => {
     const { authTx, userId, code } = context;
 
     if (!authTx.deviceVerifyToken) {
       throw new BadReqErr(ErrCode.InvalidState);
     }
 
-    const verifiedUserId = await this.deps.otpService.verifyOtp(
+    const verifiedUserId = await otpService.verifyOtp(
       authTx.deviceVerifyToken,
       PurposeVerify.DEVICE_VERIFY,
       code,
@@ -36,21 +26,19 @@ export class DeviceVerifyHandler implements IAuthMethodHandler {
       verified,
       errorCode: verified ? undefined : ErrCode.InvalidOtp,
     };
-  }
+  },
 
-  getAuthMethod(): string {
+  getAuthMethod: (): string => {
     return AuthMethod.EMAIL;
-  }
+  },
+};
 
-  static registerCapability(registry: MethodRegistryService): void {
-    registry.register({
-      method: AuthMethodType.DEVICE_VERIFY,
-      label: 'Email Verification',
-      description: 'Receive code via email',
-      requiresSetup: false,
-      isAvailable: () => {
-        return Promise.resolve(true);
-      },
-    });
-  }
-}
+export const deviceVerifyCapability = {
+  method: AuthMethodType.DEVICE_VERIFY,
+  label: 'Email Verification',
+  description: 'Receive code via email',
+  requiresSetup: false,
+  isAvailable: () => {
+    return Promise.resolve(true);
+  },
+};

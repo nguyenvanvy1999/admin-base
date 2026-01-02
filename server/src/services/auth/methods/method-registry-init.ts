@@ -1,21 +1,49 @@
+import { AuthMethodType } from '../types/constants';
+import { AuthMethodRegistry } from './auth-method-registry.service';
 import {
-  BackupCodeHandler,
-  DeviceVerifyHandler,
-  EmailOtpHandler,
-  TotpHandler,
+  backupCodeCapability,
+  backupCodeHandler,
+  deviceVerifyCapability,
+  deviceVerifyHandler,
+  emailOtpCapability,
+  emailOtpHandler,
+  totpCapability,
+  totpHandler,
 } from './handlers';
-import { MethodRegistryService } from './method-registry.service';
 
-let registryInstance: MethodRegistryService | null = null;
+let registryInstance: AuthMethodRegistry | null = null;
 
-export function getMethodRegistry(): MethodRegistryService {
+export function getMethodRegistry(): AuthMethodRegistry {
   if (!registryInstance) {
-    registryInstance = new MethodRegistryService();
+    registryInstance = new AuthMethodRegistry();
 
-    TotpHandler.registerCapability(registryInstance);
-    BackupCodeHandler.registerCapability(registryInstance);
-    EmailOtpHandler.registerCapability(registryInstance);
-    DeviceVerifyHandler.registerCapability(registryInstance);
+    registryInstance.register(
+      AuthMethodType.TOTP,
+      totpHandler.verify,
+      totpHandler.getAuthMethod,
+      totpCapability,
+    );
+
+    registryInstance.register(
+      AuthMethodType.BACKUP_CODE,
+      backupCodeHandler.verify,
+      backupCodeHandler.getAuthMethod,
+      backupCodeCapability,
+    );
+
+    registryInstance.register(
+      AuthMethodType.EMAIL_OTP,
+      emailOtpHandler.verify,
+      emailOtpHandler.getAuthMethod,
+      emailOtpCapability,
+    );
+
+    registryInstance.register(
+      AuthMethodType.DEVICE_VERIFY,
+      deviceVerifyHandler.verify,
+      deviceVerifyHandler.getAuthMethod,
+      deviceVerifyCapability,
+    );
   }
 
   return registryInstance;

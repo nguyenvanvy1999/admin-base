@@ -21,6 +21,7 @@ import {
   type AuditLogsService,
   auditLogsService,
 } from 'src/services/audit-logs/audit-logs.service';
+import { getMethodRegistry } from 'src/services/auth/methods/method-registry-init';
 import {
   type MfaService,
   mfaService,
@@ -46,7 +47,6 @@ import {
   type SessionService,
   sessionService,
 } from 'src/services/auth/session.service';
-import { authMethodFactory } from 'src/services/auth/types/auth-method-factory';
 import type { AuthMethodContext } from 'src/services/auth/types/auth-method-handler.interface';
 import {
   AuthMethod,
@@ -477,7 +477,8 @@ export class AuthFlowService {
     this.deps.authTxService.assertChallengeAttemptsAllowed(tx);
 
     const user = await this.deps.authUserService.loadUserForAuth(tx.userId);
-    const handler = authMethodFactory.create(method);
+    const registry = getMethodRegistry();
+    const handler = registry.getHandler(method);
 
     const context: AuthMethodContext = {
       authTxId,
@@ -495,7 +496,7 @@ export class AuthFlowService {
       await this.deps.auditLogService.pushSecurity(
         buildMfaFailedAuditLog(
           user,
-          handler.getAuthMethod() as AuthMethod,
+          registry.getAuthMethod(method) as AuthMethod,
           'invalid_mfa_code',
           { userId: user.id },
         ),
@@ -514,10 +515,14 @@ export class AuthFlowService {
     );
 
     await this.deps.auditLogService.pushSecurity(
-      buildMfaVerifiedAuditLog(user, handler.getAuthMethod() as AuthMethod, {
-        userId: user.id,
-        sessionId: session.sessionId,
-      }),
+      buildMfaVerifiedAuditLog(
+        user,
+        registry.getAuthMethod(method) as AuthMethod,
+        {
+          userId: user.id,
+          sessionId: session.sessionId,
+        },
+      ),
       {
         userId: user.id,
         sessionId: session.sessionId ?? null,

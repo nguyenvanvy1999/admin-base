@@ -13,7 +13,6 @@ export * from './security/encrypt.service';
 export * from './security/security-monitor.service';
 export * from './session.service';
 
-export * from './types/auth-method-factory';
 export * from './types/auth-method-handler.interface';
 export * from './types/constants';
 
