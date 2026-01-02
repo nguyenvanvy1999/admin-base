@@ -5,7 +5,7 @@ import {
   ChallengeMethodsResponseDto,
   LoginRequestDto,
 } from 'src/dtos/auth.dto';
-import { authFlowService } from 'src/services/auth/core/auth-flow.service';
+import { useCaseFactory } from 'src/services/auth/application/use-cases/use-case-factory';
 import { rateLimit } from 'src/services/rate-limit/auth-rate-limit.config';
 import { castToRes, DOC_TAG, ErrorResDto, ResWrapper } from 'src/share';
 
@@ -16,7 +16,7 @@ export const authFlowController = new Elysia({
   .use(rateLimit())
   .post(
     '/login',
-    async ({ body }) => castToRes(await authFlowService.startLogin(body)),
+    async ({ body }) => castToRes(await useCaseFactory.login.execute(body)),
     {
       body: LoginRequestDto,
       response: { 200: ResWrapper(AuthResponseDto), 400: ErrorResDto },
@@ -28,7 +28,8 @@ export const authFlowController = new Elysia({
     async ({ params }) => {
       const { authTxId } = params;
       return castToRes({
-        availableMethods: await authFlowService.getChallengeMethods(authTxId),
+        availableMethods:
+          await useCaseFactory.getChallengeMethods.execute(authTxId),
       });
     },
     {
@@ -45,7 +46,7 @@ export const authFlowController = new Elysia({
   .post(
     '/login/challenge',
     async ({ body }) =>
-      castToRes(await authFlowService.completeChallenge(body)),
+      castToRes(await useCaseFactory.completeChallenge.execute(body)),
     {
       body: AuthChallengeRequestDto,
       response: { 200: ResWrapper(AuthResponseDto), 400: ErrorResDto },

@@ -14,8 +14,7 @@ import {
   VerifyAccountRequestDto,
 } from 'src/dtos/auth.dto';
 import { authCheck } from 'src/services/auth';
-import { authService } from 'src/services/auth/core/auth.service';
-import { authFlowService } from 'src/services/auth/core/auth-flow.service';
+import { useCaseFactory } from 'src/services/auth/application/use-cases/use-case-factory';
 import { authUserService } from 'src/services/auth/core/auth-user.service';
 import { rateLimit } from 'src/services/rate-limit/auth-rate-limit.config';
 import {
@@ -31,7 +30,8 @@ const authRateLimitedRoutes = new Elysia()
   .use(rateLimit())
   .post(
     '/refresh-token',
-    async ({ body }) => castToRes(await authService.refreshToken(body)),
+    async ({ body }) =>
+      castToRes(await useCaseFactory.refreshToken.execute(body)),
     {
       body: RefreshTokenRequestDto,
       response: {
@@ -48,7 +48,7 @@ const authRateLimitedRoutes = new Elysia()
   .post(
     '/forgot-password',
     async ({ body }) => {
-      await authService.forgotPassword(body);
+      await useCaseFactory.forgotPassword.execute(body);
       return castToRes(null);
     },
     {
@@ -71,7 +71,7 @@ const authRateLimitedProtectedRoutes = new Elysia()
   .post(
     '/change-password',
     async ({ body, currentUser: { id } }) => {
-      await authService.changePassword({ userId: id, ...body });
+      await useCaseFactory.changePassword.execute({ userId: id, ...body });
       return castToRes(null);
     },
     {
@@ -93,7 +93,7 @@ const authProtectedRoutes = new Elysia()
   .post(
     '/logout',
     async ({ currentUser }) => {
-      await authService.logout(currentUser);
+      await useCaseFactory.logout.execute(currentUser);
       return castToRes(null);
     },
     {
@@ -111,7 +111,7 @@ const authProtectedRoutes = new Elysia()
   .post(
     '/logout/all',
     async ({ currentUser }) => {
-      await authService.logoutAll(currentUser);
+      await useCaseFactory.logoutAll.execute(currentUser);
       return castToRes(null);
     },
     {
@@ -152,7 +152,7 @@ const authProtectedRoutes = new Elysia()
     '/mfa/backup-codes/regenerate',
     async ({ currentUser }) => {
       return castToRes(
-        await authFlowService.regenerateBackupCodes(currentUser.id),
+        await useCaseFactory.regenerateBackupCodes.execute(currentUser.id),
       );
     },
     {
@@ -172,7 +172,9 @@ const authProtectedRoutes = new Elysia()
     '/mfa/enroll/start',
     async ({ currentUser }) => {
       return castToRes(
-        await authFlowService.enrollStartForAuthenticatedUser(currentUser.id),
+        await useCaseFactory.mfaEnrollStart.executeForAuthenticatedUser(
+          currentUser.id,
+        ),
       );
     },
     {
@@ -191,9 +193,7 @@ const authProtectedRoutes = new Elysia()
   .post(
     '/mfa/enroll/confirm',
     async ({ body }) => {
-      return castToRes(
-        await authFlowService.enrollConfirmForAuthenticatedUser(body),
-      );
+      return castToRes(await useCaseFactory.mfaEnrollConfirm.execute(body));
     },
     {
       body: AuthEnrollConfirmRequestDto,
@@ -212,7 +212,7 @@ const authProtectedRoutes = new Elysia()
   .post(
     '/mfa/disable',
     async ({ body, currentUser }) => {
-      await authFlowService.disableMfa({
+      await useCaseFactory.disableMfa.execute({
         userId: currentUser.id,
         ...body,
       });
@@ -245,7 +245,7 @@ const userAuthRateLimitedRoutes = new Elysia()
   .use(rateLimit())
   .post(
     '/register',
-    async ({ body }) => castToRes(await authService.register(body)),
+    async ({ body }) => castToRes(await useCaseFactory.register.execute(body)),
     {
       body: RegisterRequestDto,
       detail: {
@@ -262,7 +262,7 @@ const userAuthRateLimitedRoutes = new Elysia()
   .post(
     '/verify-account',
     async ({ body }) => {
-      await authService.verifyAccount(body);
+      await useCaseFactory.verifyAccount.execute(body);
       return castToRes(null);
     },
     {

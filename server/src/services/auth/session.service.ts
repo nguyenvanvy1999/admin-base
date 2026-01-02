@@ -1,109 +1,59 @@
-import { db, type IDb } from 'src/config/db';
+import { db } from 'src/config/db';
+import { env } from 'src/config/env';
+import { geoIPQueue } from 'src/config/queue';
 import type { SessionListParams } from 'src/dtos/session.dto';
-import type { SessionWhereInput } from 'src/generated';
-import { userResSelect } from 'src/share';
+import { settingsService } from 'src/services/settings/settings.service';
+import { idUtil } from 'src/share';
+import type { ISessionService } from './domain/interfaces/session.service.interface';
+import { SessionService as DomainSessionService } from './domain/services/session.service';
+import { jwtProvider } from './infrastructure/providers/jwt.provider';
+import { sessionRepository } from './infrastructure/repositories/session.repository';
+import { userUtilService } from './utils/auth-util.service';
+
+const domainSessionService = new DomainSessionService({
+  db,
+  tokenService: jwtProvider,
+  userUtilService,
+  settingService: settingsService as any,
+  geoIPQueue,
+  idUtil,
+  env,
+  sessionRepository,
+});
 
 export class SessionService {
-  constructor(private readonly deps: { db: IDb } = { db }) {}
+  constructor(
+    private readonly domainService: ISessionService = domainSessionService,
+  ) {}
 
   async revoke(userId: string, sessionIds: string[] = []): Promise<void> {
-    const whereCondition: SessionWhereInput = {
-      createdById: userId,
-      revoked: { not: { equals: true } },
-      ...(sessionIds.length > 0 && { id: { in: sessionIds } }),
-    };
-
-    await this.deps.db.session.updateMany({
-      where: whereCondition,
-      data: { revoked: true },
-    });
+    await this.domainService.revoke(userId, sessionIds);
   }
 
-  findByToken(token: string) {
-    return this.deps.db.session.findFirst({
-      where: { token },
-      select: {
-        revoked: true,
-        id: true,
-        expired: true,
-        createdBy: { select: userResSelect },
-      },
-    });
+  async findByToken(token: string) {
+    const session = await this.domainService.findByToken(token);
+    if (!session) return null;
+
+    return {
+      revoked: session.revoked,
+      id: session.id,
+      expired: session.expired,
+      createdBy: session.createdBy,
+    };
   }
 
   async revokeMany(sessionIds: string[] = []): Promise<void> {
-    if (sessionIds.length === 0) return;
-
-    await this.deps.db.session.updateMany({
-      where: {
-        id: { in: sessionIds },
-        revoked: { not: { equals: true } },
-      },
-      data: { revoked: true },
-    });
+    await this.domainService.revokeMany(sessionIds);
   }
 
   async list(params: SessionListParams) {
-    const {
-      created0,
-      created1,
-      ip,
-      userIds,
-      cursor,
-      take,
-      revoked,
-      currentUserId,
-      hasViewPermission,
-    } = params;
-
-    const conditions: SessionWhereInput[] = [
-      {
-        created: {
-          gte: new Date(created0),
-          lte: new Date(created1),
-        },
-      },
-    ];
-
-    if (!hasViewPermission) {
-      conditions.push({ createdById: currentUserId });
-    }
-
-    if (userIds && userIds.length > 0) {
-      conditions.push({ createdById: { in: userIds } });
-    }
-
-    if (ip) {
-      conditions.push({ ip });
-    }
-
-    if (revoked !== undefined) {
-      conditions.push({ revoked });
-    }
-
-    const sessions = await this.deps.db.session.findMany({
-      select: {
-        id: true,
-        created: true,
-        createdById: true,
-        expired: true,
-        revoked: true,
-        ip: true,
-        device: true,
-        lastActivityAt: true,
-      },
-      where: { AND: conditions },
-      take,
-      orderBy: { created: 'desc' },
-      cursor: cursor ? { id: cursor } : undefined,
-      skip: cursor ? 1 : 0,
-    });
-    const hasNext = sessions.length === take;
-
+    const result = await this.domainService.list(params);
     return {
-      docs: sessions,
-      hasNext,
-      nextCursor: hasNext ? sessions[sessions.length - 1]?.id : undefined,
+      ...result,
+      docs: result.docs.map((doc) => ({
+        ...doc,
+        device: doc.device ?? '',
+      })),
     };
   }
 }

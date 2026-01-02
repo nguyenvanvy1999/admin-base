@@ -16,8 +16,8 @@ import {
   type AuditLogsService,
   auditLogsService,
 } from 'src/services/audit-logs/audit-logs.service';
-import { authFlowService } from 'src/services/auth/core/auth-flow.service';
-import { authTxService } from 'src/services/auth/core/auth-tx.service';
+import { AuthStateMachine } from 'src/services/auth/domain/state-machine/auth-state-machine';
+import { authTxRepository } from 'src/services/auth/infrastructure/repositories/auth-tx.repository';
 import {
   type OtpService,
   otpService,
@@ -82,6 +82,7 @@ export class OAuthService {
       challengeResponseBuilder: ChallengeResponseBuilder;
       challengeResolver: ChallengeResolverService;
       otpService: OtpService;
+      authTxRepository: typeof authTxRepository;
     } = {
       db,
       oauth2ClientFactory: (clientId: string) => new OAuth2Client(clientId),
@@ -95,6 +96,7 @@ export class OAuthService {
       challengeResponseBuilder: new ChallengeResponseBuilder(),
       challengeResolver: new ChallengeResolverService(),
       otpService,
+      authTxRepository,
     },
   ) {}
 
@@ -264,7 +266,7 @@ export class OAuthService {
     }
 
     // 5. Create auth transaction
-    const authTx = await authTxService.create(
+    const authTx = await this.deps.authTxRepository.create(
       user.id,
       AuthTxState.PASSWORD_VERIFIED,
       { ip, ua: userAgent },
@@ -273,14 +275,19 @@ export class OAuthService {
 
     // 6. Determine next step (MFA challenge/enroll or complete login)
     const mfaRequired = await this.deps.settingsService.enbMfaRequired();
-    const challengeType = authFlowService.resolveNextStep({
-      user: { mfaTotpEnabled: user.mfaTotpEnabled },
+    const stateMachine = new AuthStateMachine();
+    const challengeType = stateMachine.resolveNextChallenge({
+      mfaTotpEnabled: user.mfaTotpEnabled,
       mfaRequired,
+      riskBased: false,
+      risk: securityResult.risk,
+      isNewDevice: securityResult.isNewDevice,
+      deviceVerificationEnabled: false,
     });
 
     // 7. Handle next step
     if (!challengeType) {
-      await authTxService.delete(authTx.id);
+      await this.deps.authTxRepository.delete(authTx.id);
       const session = await this.deps.userUtilService.completeLogin(
         user,
         ip,
@@ -307,7 +314,7 @@ export class OAuthService {
     }
 
     if (challengeType === ChallengeType.MFA_REQUIRED) {
-      await authTxService.update(authTx.id, {
+      await this.deps.authTxRepository.update(authTx.id, {
         state: AuthTxState.CHALLENGE,
         challengeType: ChallengeType.MFA_REQUIRED,
       });
@@ -318,7 +325,7 @@ export class OAuthService {
           PurposeVerify.MFA_LOGIN,
         );
         if (res) {
-          await authTxService.update(authTx.id, {
+          await this.deps.authTxRepository.update(authTx.id, {
             emailOtpToken: res.otpToken,
           });
         }
@@ -344,7 +351,7 @@ export class OAuthService {
         ),
       ]);
 
-      const updatedTx = await authTxService.getOrThrow(authTx.id);
+      const updatedTx = await this.deps.authTxRepository.getOrThrow(authTx.id);
       const availableMethods =
         await this.deps.challengeResolver.resolveAvailableMethods({
           user,
