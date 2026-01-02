@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { db } from 'src/config/db';
+import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import type { SettingsService } from 'src/services/settings/settings.service';
 import { settingsService } from 'src/services/settings/settings.service';
@@ -16,22 +16,19 @@ export class BunPasswordHasher {
 }
 
 export class PasswordService {
-  private env: IEnv;
-  private db: typeof db;
-  private passwordHasher: BunPasswordHasher;
-  private settingsService: SettingsService;
-
-  constructor(deps: {
-    env: IEnv;
-    db: typeof db;
-    passwordHasher: BunPasswordHasher;
-    settingsService: SettingsService;
-  }) {
-    this.env = deps.env;
-    this.db = deps.db;
-    this.passwordHasher = deps.passwordHasher;
-    this.settingsService = deps.settingsService;
-  }
+  constructor(
+    private readonly deps: {
+      env: IEnv;
+      db: IDb;
+      passwordHasher: BunPasswordHasher;
+      settingsService: SettingsService;
+    } = {
+      env,
+      db,
+      passwordHasher: new BunPasswordHasher(),
+      settingsService: settingsService,
+    },
+  ) {}
 
   async createPassword(password: string): Promise<{
     password: string;
@@ -39,10 +36,13 @@ export class PasswordService {
     passwordCreated: Date;
     passwordAttempt: 0;
   }> {
-    const passwordWithPepper = password + this.env.PASSWORD_PEPPER;
-    const passwordHash = await this.passwordHasher.hash(passwordWithPepper);
+    const passwordWithPepper = password + this.deps.env.PASSWORD_PEPPER;
+    const passwordHash =
+      await this.deps.passwordHasher.hash(passwordWithPepper);
     const passwordExpiredSetting =
-      await this.settingsService.getSetting<string>(SETTING.PASSWORD_EXPIRED);
+      await this.deps.settingsService.getSetting<string>(
+        SETTING.PASSWORD_EXPIRED,
+      );
     const passwordExpired = dayjs()
       .add(timeStringToSeconds(passwordExpiredSetting), 's')
       .toDate();
@@ -56,7 +56,7 @@ export class PasswordService {
   }
 
   async increasePasswordAttempt(id: string): Promise<void> {
-    await this.db.user.update({
+    await this.deps.db.user.update({
       where: { id },
       data: { passwordAttempt: { increment: 1 } },
       select: { id: true },
@@ -64,8 +64,8 @@ export class PasswordService {
   }
 
   comparePassword(password: string, passwordHash: string): Promise<boolean> {
-    const passwordWithPepper = password + this.env.PASSWORD_PEPPER;
-    return this.passwordHasher.verify(passwordWithPepper, passwordHash);
+    const passwordWithPepper = password + this.deps.env.PASSWORD_PEPPER;
+    return this.deps.passwordHasher.verify(passwordWithPepper, passwordHash);
   }
 
   validateAttempt(
