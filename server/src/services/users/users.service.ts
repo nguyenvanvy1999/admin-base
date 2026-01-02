@@ -22,7 +22,7 @@ import {
 import {
   buildCreateChanges,
   buildUpdateChanges,
-} from 'src/services/audit-logs/utils';
+} from 'src/services/audit-logs/audit-logs.utils';
 import {
   type PasswordService,
   passwordService,

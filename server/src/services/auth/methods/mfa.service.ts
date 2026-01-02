@@ -2,8 +2,6 @@ import { db, type IDb } from 'src/config/db';
 import { type IdUtil, idUtil, PurposeVerify } from 'src/share';
 import { type OtpService, otpService } from './otp.service';
 
-export const BACKUP_CODE_LENGTH = 8;
-
 export class MfaService {
   constructor(
     private readonly deps: {

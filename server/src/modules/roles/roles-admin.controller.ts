@@ -6,7 +6,7 @@ import {
   UpsertRoleDto,
 } from 'src/dtos/roles.dto';
 import { allOf, authCheck, authorize, has } from 'src/services/auth';
-import { rolesService } from 'src/services/roles';
+import { rolesService } from 'src/services/roles/roles.service';
 import {
   authErrors,
   castToRes,

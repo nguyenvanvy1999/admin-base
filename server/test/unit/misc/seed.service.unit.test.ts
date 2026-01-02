@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import type { IEnv } from 'src/config/env';
 import type { ILogger } from 'src/config/logger';
 import type { PasswordService } from 'src/services/auth/methods/password.service';
-import { SeedService } from 'src/services/dev';
+import { SeedService } from 'src/services/dev/seed.service';
 import {
   ADMIN_USER_ID,
   defaultRoles,

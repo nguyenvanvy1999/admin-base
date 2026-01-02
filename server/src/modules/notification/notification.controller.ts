@@ -7,7 +7,7 @@ import {
   PaginateNotificationResDto,
 } from 'src/dtos/notification.dto';
 import { authCheck } from 'src/services/auth';
-import { notificationsService } from 'src/services/notifications';
+import { notificationsService } from 'src/services/notifications/notifications.service';
 import {
   authErrors,
   castToRes,

@@ -10,7 +10,7 @@ import {
   AdminUserUpdateRolesDto,
 } from 'src/dtos/users.dto';
 import { authCheck, authorize, has } from 'src/services/auth';
-import { usersService } from 'src/services/users';
+import { usersService } from 'src/services/users/users.service';
 import {
   authErrors,
   castToRes,

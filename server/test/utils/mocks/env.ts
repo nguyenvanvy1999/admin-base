@@ -33,9 +33,7 @@ export const DEFAULT_TEST_ENV: Partial<IEnv> = {
   SYSTEM_PASSWORD: 'test-system-password',
   ADMIN_PASSWORD: 'test-admin-password',
   SALT_LENGTH: 10,
-  PASSWORD_MAX_ATTEMPT: 5,
   PASSWORD_PEPPER: 'test-pepper',
-  PASSWORD_EXPIRED: '180 days',
   ENCRYPT_KEY:
     '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
   ENCRYPT_IV: '0123456789abcdef0123456789abcdef',

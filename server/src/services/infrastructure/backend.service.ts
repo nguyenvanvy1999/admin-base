@@ -42,7 +42,7 @@ import type { SeedService } from 'src/services/dev/seed.service';
 import { seedService } from 'src/services/dev/seed.service';
 import { gracefulShutdownService } from 'src/services/infrastructure/graceful-shutdown.service';
 import { httpLoggerMiddleware } from 'src/services/middleware/http-logger.middleware';
-import { ipWhitelistMiddleware } from 'src/services/security';
+import { ipWhitelistMiddleware } from 'src/services/security/ip-whitelist.middleware';
 import { APP_ENV } from 'src/share';
 import { reqMeta } from '../../config/request';
 

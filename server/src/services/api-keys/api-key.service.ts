@@ -11,7 +11,7 @@ import {
   type ApiKeyWhereInput,
 } from 'src/generated';
 import { auditLogsService } from 'src/services/audit-logs/audit-logs.service';
-import { buildUpdateChanges } from 'src/services/audit-logs/utils';
+import { buildUpdateChanges } from 'src/services/audit-logs/audit-logs.utils';
 import {
   BadReqErr,
   buildSearchOrCondition,

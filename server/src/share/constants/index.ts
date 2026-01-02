@@ -138,6 +138,8 @@ export enum QueueName {
 export enum SETTING {
   MAINTENANCE_END_DATE = 'MAINTENANCE_END_DATE',
   ENB_PASSWORD_ATTEMPT = 'ENB_PASSWORD_ATTEMPT',
+  PASSWORD_MAX_ATTEMPT = 'PASSWORD_MAX_ATTEMPT',
+  PASSWORD_EXPIRED = 'PASSWORD_EXPIRED',
   ENB_PASSWORD_EXPIRED = 'ENB_PASSWORD_EXPIRED',
   ENB_MFA_REQUIRED = 'ENB_MFA_REQUIRED',
   ENB_IP_WHITELIST = 'ENB_IP_WHITELIST',
@@ -150,6 +152,7 @@ export enum SETTING {
   ENB_MFA_RISK_BASED = 'ENB_MFA_RISK_BASED',
   ENB_DEVICE_VERIFICATION = 'ENB_DEVICE_VERIFICATION',
   REVOKE_SESSIONS_ON_PASSWORD_CHANGE = 'REVOKE_SESSIONS_ON_PASSWORD_CHANGE',
+  AUTH_METHODS_CONFIG = 'AUTH_METHODS_CONFIG',
 }
 
 export enum CACHE_NS {
@@ -403,6 +406,14 @@ export const defaultSettings = {
     type: SettingDataType.boolean,
     value: 'false',
   },
+  [SETTING.PASSWORD_MAX_ATTEMPT]: {
+    type: SettingDataType.number,
+    value: '5',
+  },
+  [SETTING.PASSWORD_EXPIRED]: {
+    type: SettingDataType.string,
+    value: '180 days',
+  },
   [SETTING.ENB_PASSWORD_EXPIRED]: {
     type: SettingDataType.boolean,
     value: 'false',
@@ -446,6 +457,46 @@ export const defaultSettings = {
   [SETTING.REVOKE_SESSIONS_ON_PASSWORD_CHANGE]: {
     type: SettingDataType.boolean,
     value: 'true',
+  },
+  [SETTING.AUTH_METHODS_CONFIG]: {
+    type: SettingDataType.json,
+    value: JSON.stringify({
+      mfaRequired: {
+        enabled: ['MFA_TOTP', 'MFA_BACKUP_CODE', 'MFA_EMAIL_OTP'],
+        labels: {
+          MFA_TOTP: {
+            label: 'Authenticator App',
+            description: 'Use your TOTP app',
+          },
+          MFA_BACKUP_CODE: {
+            label: 'Backup Code',
+            description: 'Use one of your backup codes',
+          },
+          MFA_EMAIL_OTP: {
+            label: 'Email OTP',
+            description: 'Receive code via email',
+          },
+        },
+      },
+      deviceVerify: {
+        enabled: ['DEVICE_VERIFY'],
+        labels: {
+          DEVICE_VERIFY: {
+            label: 'Email Verification',
+            description: 'Receive code via email',
+          },
+        },
+      },
+      mfaEnroll: {
+        enabled: ['MFA_ENROLL'],
+        labels: {
+          MFA_ENROLL: {
+            label: 'Setup TOTP',
+            description: 'Scan QR code with authenticator app',
+          },
+        },
+      },
+    }),
   },
 } satisfies Record<SETTING, { value: string; type: SettingDataType }>;
 

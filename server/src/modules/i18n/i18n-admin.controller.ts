@@ -5,7 +5,7 @@ import {
   PaginateI18nResDto,
 } from 'src/dtos/i18n.dto';
 import { authCheck, authorize, has } from 'src/services/auth';
-import { i18nService } from 'src/services/i18n';
+import { i18nService } from 'src/services/i18n/i18n.service';
 import {
   authErrors,
   castToRes,

@@ -58,10 +58,6 @@ export class AuthMethodFactory {
     }
     return handler;
   }
-
-  getSupportedTypes(): AuthChallengeType[] {
-    return Array.from(this.handlers.keys());
-  }
 }
 
 export const authMethodFactory = new AuthMethodFactory();

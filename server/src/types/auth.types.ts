@@ -1,11 +1,8 @@
 import type { SecurityCheckResult } from 'src/services/auth/security/security-monitor.service';
-
-export type AuthTxState =
-  | 'PASSWORD_VERIFIED' // password OK, does not complete next step
-  | 'CHALLENGE_MFA_REQUIRED' // require MFA (TOTP/backup)
-  | 'CHALLENGE_MFA_ENROLL' // require enroll TOTP
-  | 'CHALLENGE_DEVICE_VERIFY' // new device verification
-  | 'COMPLETED'; // complete login, usually delete tx
+import type {
+  AuthChallengeType,
+  AuthTxState,
+} from 'src/services/auth/types/constants';
 
 export interface AuthTx {
   id: string;
@@ -37,13 +34,17 @@ export interface AuthTx {
   deviceVerifyToken?: string;
 }
 
-export type ChallengeDto =
-  | { type: 'MFA_TOTP'; allowBackupCode: true }
-  | { type: 'MFA_BACKUP_CODE' }
-  | { type: 'MFA_EMAIL_OTP' }
-  | { type: 'DEVICE_VERIFY'; media: 'email'; destination: string }
-  | {
-      type: 'MFA_ENROLL';
-      methods: Array<'totp'>;
-      backupCodesWillBeGenerated: boolean;
-    };
+export interface AuthMethodConfig {
+  mfaRequired: {
+    enabled: AuthChallengeType[];
+    labels: Record<AuthChallengeType, { label: string; description?: string }>;
+  };
+  deviceVerify: {
+    enabled: AuthChallengeType[];
+    labels: Record<AuthChallengeType, { label: string; description?: string }>;
+  };
+  mfaEnroll: {
+    enabled: AuthChallengeType[];
+    labels: Record<AuthChallengeType, { label: string; description?: string }>;
+  };
+}

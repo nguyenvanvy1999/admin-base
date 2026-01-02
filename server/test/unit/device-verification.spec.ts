@@ -123,8 +123,12 @@ describe('AuthFlowService - Device Verification', () => {
         authTxId: 'tx-1',
         challenge: {
           type: AuthChallengeType.DEVICE_VERIFY,
-          media: 'email',
-          destination: 'te**@example.com',
+          availableMethods: expect.any(Array),
+          metadata: expect.objectContaining({
+            email: expect.objectContaining({
+              destination: 'te**@example.com',
+            }),
+          }),
         },
       });
     });

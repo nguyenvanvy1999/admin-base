@@ -14,7 +14,6 @@ import type {
 import {
   AuditLogVisibility,
   SecurityEventSeverity,
-  SecurityEventType,
   UserStatus,
 } from 'src/generated';
 import {
@@ -54,10 +53,6 @@ import {
   AuthStatus,
   AuthTxState,
 } from 'src/services/auth/types/constants';
-import {
-  createAuditContext,
-  createSecurityAuditLog,
-} from 'src/services/auth/utils/auth-audit.util';
 import { assertUserExists } from 'src/services/auth/utils/auth-errors.util';
 import {
   type UserUtilService,
@@ -75,16 +70,22 @@ import {
   SETTING,
   userResSelect,
 } from 'src/share';
+import { ChallengeResponseBuilder } from '../builders/challenge-response.builder';
+import {
+  buildLoginFailedAuditLog,
+  buildLoginSuccessAuditLog,
+  buildMfaBackupCodesRegeneratedAuditLog,
+  buildMfaChallengeStartedAuditLog,
+  buildMfaDisabledAuditLog,
+  buildMfaFailedAuditLog,
+  buildMfaSetupCompletedAuditLog,
+  buildMfaSetupStartedAuditLog,
+  buildMfaVerifiedAuditLog,
+} from '../utils/auth-audit.helper';
 import { type AuthTxService, authTxService } from './auth-tx.service';
 import { type AuthUserService, authUserService } from './auth-user.service';
-
-export type AuthResponse = IAuthResponse;
-
-type NextStep =
-  | { kind: AuthNextStepKind.COMPLETE }
-  | { kind: AuthNextStepKind.MFA_CHALLENGE }
-  | { kind: AuthNextStepKind.ENROLL_MFA }
-  | { kind: AuthNextStepKind.DEVICE_VERIFY };
+import { ChallengeResolverService } from './challenge-resolver.service';
+import { LoginStepsService } from './login-steps.service';
 
 export class AuthFlowService {
   constructor(
@@ -103,6 +104,9 @@ export class AuthFlowService {
       sessionService: SessionService;
       otpService: OtpService;
       mfaService: MfaService;
+      challengeResponseBuilder: ChallengeResponseBuilder;
+      challengeResolver: ChallengeResolverService;
+      loginSteps: LoginStepsService;
     } = {
       db,
       env,
@@ -118,6 +122,13 @@ export class AuthFlowService {
       sessionService,
       otpService,
       mfaService,
+      challengeResponseBuilder: new ChallengeResponseBuilder(),
+      challengeResolver: new ChallengeResolverService(),
+      loginSteps: new LoginStepsService({
+        passwordService,
+        captchaService,
+        securityMonitorService,
+      }),
     },
   ) {}
 
@@ -129,7 +140,7 @@ export class AuthFlowService {
     isNewDevice?: boolean;
     deviceVerificationEnabled?: boolean;
     mfaEnrollRequired?: boolean;
-  }): NextStep {
+  }): { kind: AuthNextStepKind } {
     const {
       user,
       mfaRequired,
@@ -157,7 +168,7 @@ export class AuthFlowService {
     return { kind: AuthNextStepKind.COMPLETE };
   }
 
-  async startLogin(params: LoginParams): Promise<AuthResponse> {
+  async startLogin(params: LoginParams): Promise<IAuthResponse> {
     const { email, password, captcha } = params;
     const { clientIp, userAgent } = getIpAndUa();
 
@@ -166,6 +177,7 @@ export class AuthFlowService {
     const [
       captchaRequired,
       enbAttempt,
+      passwordMaxAttempt,
       enbExpired,
       mfaRequired,
       mfaRiskBased,
@@ -173,6 +185,7 @@ export class AuthFlowService {
     ] = await this.deps.settingService.getManySettings([
       SETTING.ENB_CAPTCHA_REQUIRED,
       SETTING.ENB_PASSWORD_ATTEMPT,
+      SETTING.PASSWORD_MAX_ATTEMPT,
       SETTING.ENB_PASSWORD_EXPIRED,
       SETTING.ENB_MFA_REQUIRED,
       SETTING.ENB_MFA_RISK_BASED,
@@ -181,81 +194,62 @@ export class AuthFlowService {
 
     if (captchaRequired && !captcha) {
       await this.deps.auditLogService.pushSecurity(
-        createSecurityAuditLog(
-          SecurityEventType.login_failed,
-          SecurityEventSeverity.medium,
-          AuthMethod.EMAIL,
-          user,
-          { error: 'captcha_required' },
-        ),
-        createAuditContext(user.id, {
-          visibility: AuditLogVisibility.actor_and_subject,
+        buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'captcha_required', {
+          userId: user.id,
         }),
+        {
+          userId: user.id,
+          subjectUserId: user.id,
+          visibility: AuditLogVisibility.actor_and_subject,
+        },
       );
       throw new BadReqErr(ErrCode.CaptchaRequired);
     }
 
-    if (captcha) {
-      const captchaValid = await this.deps.captchaService.validateCaptcha({
-        token: captcha.token,
-        userInput: captcha.userInput,
-      });
-
-      if (!captchaValid) {
+    try {
+      await this.deps.loginSteps.validateCaptcha(captcha);
+    } catch (error) {
+      if (error instanceof BadReqErr && error.code === ErrCode.InvalidCaptcha) {
         await this.deps.auditLogService.pushSecurity(
-          createSecurityAuditLog(
-            SecurityEventType.login_failed,
-            SecurityEventSeverity.medium,
-            AuthMethod.EMAIL,
-            user,
-            { error: 'invalid_captcha' },
-          ),
-          createAuditContext(user.id, {
-            visibility: AuditLogVisibility.actor_and_subject,
+          buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'invalid_captcha', {
+            userId: user.id,
           }),
+          {
+            userId: user.id,
+            subjectUserId: user.id,
+            visibility: AuditLogVisibility.actor_and_subject,
+          },
         );
-        throw new BadReqErr(ErrCode.InvalidCaptcha);
       }
+      throw error;
     }
 
-    if (enbAttempt) {
-      this.deps.passwordService.validateAttempt(
-        user,
-        this.deps.env.PASSWORD_MAX_ATTEMPT,
-      );
-    }
-
-    const passwordValid = await this.deps.passwordService.verifyAndTrack(
+    const passwordValid = await this.deps.loginSteps.validatePassword(
       password,
       user,
+      enbAttempt ? passwordMaxAttempt : undefined,
     );
 
     if (!passwordValid) {
       await this.deps.auditLogService.pushSecurity(
-        createSecurityAuditLog(
-          SecurityEventType.login_failed,
-          SecurityEventSeverity.medium,
-          AuthMethod.EMAIL,
-          user,
-          { error: 'password_mismatch' },
-        ),
-        createAuditContext(user.id, {
-          visibility: AuditLogVisibility.actor_and_subject,
+        buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'password_mismatch', {
+          userId: user.id,
         }),
+        {
+          userId: user.id,
+          subjectUserId: user.id,
+          visibility: AuditLogVisibility.actor_and_subject,
+        },
       );
       throw new BadReqErr(ErrCode.InvalidCredentials);
     }
 
     if (user.status !== UserStatus.active) {
       await this.deps.auditLogService.pushSecurity(
-        createSecurityAuditLog(
-          SecurityEventType.login_failed,
-          SecurityEventSeverity.medium,
-          AuthMethod.EMAIL,
-          user,
-          { error: 'user_not_active' },
-        ),
-        createAuditContext(user.id),
+        buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'user_not_active', {
+          userId: user.id,
+        }),
+        { userId: user.id, subjectUserId: user.id },
       );
       throw new BadReqErr(ErrCode.UserNotActive);
     }
@@ -264,23 +258,18 @@ export class AuthFlowService {
       this.deps.passwordService.validateExpiration(user);
     }
 
-    const securityResult = await this.deps.securityMonitorService.evaluateLogin(
-      {
-        userId: user.id,
-        method: 'email',
-      },
+    const securityResult = await this.deps.loginSteps.evaluateSecurity(
+      user,
+      'email',
     );
 
     if (securityResult.action === 'block') {
       await this.deps.auditLogService.pushSecurity(
-        createSecurityAuditLog(
-          SecurityEventType.login_failed,
-          SecurityEventSeverity.high,
-          AuthMethod.EMAIL,
-          user,
-          { error: 'security_blocked' },
-        ),
-        createAuditContext(user.id),
+        buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'security_blocked', {
+          userId: user.id,
+          severity: SecurityEventSeverity.high,
+        }),
+        { userId: user.id, subjectUserId: user.id },
       );
       throw new BadReqErr(ErrCode.LoginBlocked);
     }
@@ -311,14 +300,16 @@ export class AuthFlowService {
         securityResult,
       );
       await this.deps.auditLogService.pushSecurity(
-        createSecurityAuditLog(
-          SecurityEventType.login_success,
-          SecurityEventSeverity.low,
-          AuthMethod.EMAIL,
-          user,
-          { isNewDevice: securityResult?.isNewDevice ?? false },
-        ),
-        createAuditContext(user.id, { sessionId: session.sessionId }),
+        buildLoginSuccessAuditLog(user, AuthMethod.EMAIL, {
+          userId: user.id,
+          sessionId: session.sessionId,
+          isNewDevice: securityResult?.isNewDevice ?? false,
+        }),
+        {
+          userId: user.id,
+          sessionId: session.sessionId ?? null,
+          subjectUserId: user.id,
+        },
       );
       return { status: AuthStatus.COMPLETED, session };
     }
@@ -335,20 +326,25 @@ export class AuthFlowService {
         state: AuthTxState.CHALLENGE_DEVICE_VERIFY,
       });
 
-      // Mask email for response
-      const maskedEmail = user.email.replace(
-        /^(.{2})(.*)(@.*)$/,
-        (_, a, b, c) => `${a}${'*'.repeat(b.length)}${c}`,
-      );
+      const availableMethods =
+        await this.deps.challengeResolver.resolveAvailableMethods({
+          user,
+          authTx,
+          securityResult,
+          challengeType: 'DEVICE_VERIFY',
+        });
+
+      const challenge = this.deps.challengeResponseBuilder.buildDeviceVerify({
+        user,
+        authTx,
+        securityResult,
+        availableMethods,
+      });
 
       return {
         status: AuthStatus.CHALLENGE,
         authTxId: authTx.id,
-        challenge: {
-          type: AuthChallengeType.DEVICE_VERIFY,
-          media: 'email',
-          destination: maskedEmail,
-        },
+        challenge,
       };
     }
 
@@ -362,17 +358,33 @@ export class AuthFlowService {
           user.email,
           PurposeVerify.MFA_LOGIN,
         );
-        if (!res) throw new BadReqErr(ErrCode.InternalError); // Failed to send
+        if (!res) throw new BadReqErr(ErrCode.InternalError);
 
         await this.deps.authTxService.update(authTx.id, {
           emailOtpToken: res.otpToken,
           state: AuthTxState.CHALLENGE_MFA_REQUIRED,
         });
 
+        const availableMethods =
+          await this.deps.challengeResolver.resolveAvailableMethods({
+            user,
+            authTx,
+            securityResult,
+            challengeType: 'MFA_REQUIRED',
+          });
+
+        const challenge =
+          await this.deps.challengeResponseBuilder.buildMfaRequired({
+            user,
+            authTx,
+            securityResult,
+            availableMethods,
+          });
+
         return {
           status: AuthStatus.CHALLENGE,
           authTxId: authTx.id,
-          challenge: { type: AuthChallengeType.MFA_EMAIL_OTP },
+          challenge,
         };
       }
 
@@ -380,14 +392,26 @@ export class AuthFlowService {
         authTx.id,
         AuthTxState.CHALLENGE_MFA_ENROLL,
       );
+
+      const availableMethods =
+        await this.deps.challengeResolver.resolveAvailableMethods({
+          user,
+          authTx,
+          securityResult,
+          challengeType: 'MFA_ENROLL',
+        });
+
+      const challenge = this.deps.challengeResponseBuilder.buildMfaEnroll({
+        user,
+        authTx,
+        securityResult,
+        availableMethods,
+      });
+
       return {
         status: AuthStatus.CHALLENGE,
         authTxId: authTx.id,
-        challenge: {
-          type: AuthChallengeType.MFA_ENROLL,
-          methods: ['totp'],
-          backupCodesWillBeGenerated: true,
-        },
+        challenge,
       };
     }
 
@@ -397,29 +421,48 @@ export class AuthFlowService {
     );
 
     await this.deps.auditLogService.pushSecurity(
-      createSecurityAuditLog(
-        SecurityEventType.mfa_challenge_started,
-        SecurityEventSeverity.low,
-        AuthMethod.EMAIL,
-        user,
-        { metadata: { stage: 'challenge', from: 'login' } },
-      ),
-      createAuditContext(user.id, {
-        visibility: AuditLogVisibility.actor_and_subject,
+      buildMfaChallengeStartedAuditLog(user, AuthMethod.EMAIL, {
+        userId: user.id,
+        metadata: {
+          stage: 'challenge',
+          from: 'login',
+        },
       }),
+      {
+        userId: user.id,
+        subjectUserId: user.id,
+        visibility: AuditLogVisibility.actor_and_subject,
+      },
+    );
+
+    const availableMethods =
+      await this.deps.challengeResolver.resolveAvailableMethods({
+        user,
+        authTx,
+        securityResult,
+        challengeType: 'MFA_REQUIRED',
+      });
+
+    const challenge = await this.deps.challengeResponseBuilder.buildMfaRequired(
+      {
+        user,
+        authTx,
+        securityResult,
+        availableMethods,
+      },
     );
 
     return {
       status: AuthStatus.CHALLENGE,
       authTxId: authTx.id,
-      challenge: { type: AuthChallengeType.MFA_TOTP, allowBackupCode: true },
+      challenge,
     };
   }
 
   async completeChallenge(
     params: AuthChallengeRequestParams,
-  ): Promise<AuthResponse> {
-    const { authTxId, type, code } = params;
+  ): Promise<IAuthResponse> {
+    const { authTxId, type, method, code } = params;
     const { clientIp, userAgent } = getIpAndUa();
 
     const tx = await this.deps.authTxService.getOrThrow(authTxId);
@@ -438,7 +481,15 @@ export class AuthFlowService {
 
     const user = await this.deps.authUserService.loadUserForAuth(tx.userId);
 
-    const handler = authMethodFactory.create(type);
+    const challengeType = method || type || this.autoDetectMethod(code);
+
+    if (!challengeType) {
+      throw new BadReqErr(ErrCode.ValidationError, {
+        errors: 'Method or type is required',
+      });
+    }
+
+    const handler = authMethodFactory.create(challengeType);
 
     const context: AuthMethodContext = {
       authTxId,
@@ -454,14 +505,13 @@ export class AuthFlowService {
     if (!result.verified) {
       await this.deps.authTxService.incrementChallengeAttempts(authTxId);
       await this.deps.auditLogService.pushSecurity(
-        createSecurityAuditLog(
-          SecurityEventType.mfa_failed,
-          SecurityEventSeverity.medium,
-          handler.getAuthMethod() as AuthMethod,
+        buildMfaFailedAuditLog(
           user,
-          { error: 'invalid_mfa_code' },
+          handler.getAuthMethod() as AuthMethod,
+          'invalid_mfa_code',
+          { userId: user.id },
         ),
-        createAuditContext(user.id),
+        { userId: user.id, subjectUserId: user.id },
       );
       throw new BadReqErr(result.errorCode || ErrCode.InvalidOtp);
     }
@@ -478,16 +528,61 @@ export class AuthFlowService {
     );
 
     await this.deps.auditLogService.pushSecurity(
-      createSecurityAuditLog(
-        SecurityEventType.mfa_verified,
-        SecurityEventSeverity.low,
-        handler.getAuthMethod() as AuthMethod,
-        user,
-      ),
-      createAuditContext(user.id, { sessionId: session.sessionId }),
+      buildMfaVerifiedAuditLog(user, handler.getAuthMethod() as AuthMethod, {
+        userId: user.id,
+        sessionId: session.sessionId,
+      }),
+      {
+        userId: user.id,
+        sessionId: session.sessionId ?? null,
+        subjectUserId: user.id,
+      },
     );
 
     return { status: AuthStatus.COMPLETED, session };
+  }
+
+  private autoDetectMethod(code: string): AuthChallengeType | null {
+    if (/^\d{6}$/.test(code)) {
+      return AuthChallengeType.MFA_TOTP;
+    }
+    if (/^[A-Z0-9]{8}$/.test(code)) {
+      return AuthChallengeType.MFA_BACKUP_CODE;
+    }
+    return null;
+  }
+
+  async getChallengeMethods(authTxId: string) {
+    const { clientIp, userAgent } = getIpAndUa();
+
+    const tx = await this.deps.authTxService.getOrThrow(authTxId);
+    this.deps.authTxService.assertBinding(tx, { ip: clientIp, ua: userAgent });
+
+    const user = await this.deps.authUserService.loadUserForAuth(tx.userId);
+
+    let challengeType: 'MFA_REQUIRED' | 'DEVICE_VERIFY' | 'MFA_ENROLL';
+    switch (tx.state) {
+      case AuthTxState.CHALLENGE_MFA_REQUIRED:
+        challengeType = 'MFA_REQUIRED';
+        break;
+      case AuthTxState.CHALLENGE_DEVICE_VERIFY:
+        challengeType = 'DEVICE_VERIFY';
+        break;
+      case AuthTxState.CHALLENGE_MFA_ENROLL:
+        challengeType = 'MFA_ENROLL';
+        break;
+      default:
+        throw new BadReqErr(ErrCode.ValidationError, {
+          errors: 'Invalid auth transaction state',
+        });
+    }
+
+    return this.deps.challengeResolver.resolveAvailableMethods({
+      user,
+      authTx: tx,
+      securityResult: tx.securityResult,
+      challengeType,
+    });
   }
 
   async enrollStart(params: AuthEnrollStartRequestParams) {
@@ -526,14 +621,10 @@ export class AuthFlowService {
     });
 
     await this.deps.auditLogService.pushSecurity(
-      createSecurityAuditLog(
-        SecurityEventType.mfa_setup_started,
-        SecurityEventSeverity.low,
-        AuthMethod.TOTP,
-        user,
-        { stage: 'request' },
-      ),
-      createAuditContext(user.id),
+      buildMfaSetupStartedAuditLog(user, AuthMethod.TOTP, 'request', {
+        userId: user.id,
+      }),
+      { userId: user.id, subjectUserId: user.id },
     );
 
     return { authTxId, enrollToken, otpauthUrl };
@@ -541,7 +632,7 @@ export class AuthFlowService {
 
   async enrollConfirm(
     params: AuthEnrollConfirmRequestParams,
-  ): Promise<AuthResponse & { backupCodes?: string[] }> {
+  ): Promise<IAuthResponse & { backupCodes?: string[] }> {
     const { authTxId, enrollToken, otp } = params;
     const { clientIp, userAgent } = getIpAndUa();
 
@@ -591,13 +682,10 @@ export class AuthFlowService {
     }
 
     await this.deps.auditLogService.pushSecurity(
-      createSecurityAuditLog(
-        SecurityEventType.mfa_setup_completed,
-        SecurityEventSeverity.low,
-        AuthMethod.TOTP,
-        userResult,
-      ),
-      createAuditContext(userResult.id),
+      buildMfaSetupCompletedAuditLog(userResult, AuthMethod.TOTP, {
+        userId: userResult.id,
+      }),
+      { userId: userResult.id, subjectUserId: userResult.id },
     );
 
     await this.deps.authTxService.delete(authTxId);
@@ -633,15 +721,14 @@ export class AuthFlowService {
     await this.deps.mfaService.saveBackupCode(userId, hashedCode);
 
     await this.deps.auditLogService.pushSecurity(
-      createSecurityAuditLog(
-        SecurityEventType.mfa_backup_codes_regenerated,
-        SecurityEventSeverity.medium,
-        AuthMethod.TOTP,
-        user,
-      ),
-      createAuditContext(user.id, {
-        visibility: AuditLogVisibility.actor_only,
+      buildMfaBackupCodesRegeneratedAuditLog(user, {
+        userId: user.id,
       }),
+      {
+        userId: user.id,
+        subjectUserId: user.id,
+        visibility: AuditLogVisibility.actor_only,
+      },
     );
 
     return { backupCodes: [code] };
@@ -673,14 +760,13 @@ export class AuthFlowService {
 
     if (!passwordValid) {
       await this.deps.auditLogService.pushSecurity(
-        createSecurityAuditLog(
-          SecurityEventType.login_failed,
-          SecurityEventSeverity.medium,
-          AuthMethod.EMAIL,
+        buildLoginFailedAuditLog(
           user,
-          { error: 'password_verification_failed_during_disable_mfa' },
+          AuthMethod.EMAIL,
+          'password_verification_failed_during_disable_mfa',
+          { userId: user.id },
         ),
-        createAuditContext(user.id),
+        { userId: user.id, subjectUserId: user.id },
       );
       throw new BadReqErr(ErrCode.PasswordNotMatch);
     }
@@ -695,14 +781,13 @@ export class AuthFlowService {
       if (!otpOk) throw new Error('Invalid OTP');
     } catch {
       await this.deps.auditLogService.pushSecurity(
-        createSecurityAuditLog(
-          SecurityEventType.mfa_failed,
-          SecurityEventSeverity.medium,
-          AuthMethod.TOTP,
+        buildMfaFailedAuditLog(
           user,
-          { error: 'invalid_otp_during_disable_mfa' },
+          AuthMethod.TOTP,
+          'invalid_otp_during_disable_mfa',
+          { userId: user.id },
         ),
-        createAuditContext(user.id),
+        { userId: user.id, subjectUserId: user.id },
       );
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
@@ -723,16 +808,14 @@ export class AuthFlowService {
     }
 
     await this.deps.auditLogService.pushSecurity(
-      createSecurityAuditLog(
-        SecurityEventType.mfa_disabled,
-        SecurityEventSeverity.high,
-        AuthMethod.TOTP,
-        user,
-        { disabledBy: 'user' },
-      ),
-      createAuditContext(user.id, {
-        visibility: AuditLogVisibility.actor_and_subject,
+      buildMfaDisabledAuditLog(user, AuthMethod.TOTP, 'user', {
+        userId: user.id,
       }),
+      {
+        userId: user.id,
+        subjectUserId: user.id,
+        visibility: AuditLogVisibility.actor_and_subject,
+      },
     );
   }
 }

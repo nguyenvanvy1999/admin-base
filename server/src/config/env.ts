@@ -46,14 +46,7 @@ export const envSchema = t.Object({
 
   // Password
   SALT_LENGTH: t.Integer({ minimum: 8, maximum: 20, default: 10 }),
-  PASSWORD_MAX_ATTEMPT: t.Integer({ minimum: 1, maximum: 100, default: 5 }),
   PASSWORD_PEPPER: t.String(),
-  PASSWORD_EXPIRED: t.RegExp(REGEX_TIME, { default: '180 days' }),
-  PASSWORD_MIN_LENGTH: t.Integer({ minimum: 4, maximum: 128, default: 8 }),
-  PASSWORD_REQUIRE_UPPERCASE: t.Boolean({ default: true }),
-  PASSWORD_REQUIRE_LOWERCASE: t.Boolean({ default: true }),
-  PASSWORD_REQUIRE_NUMBER: t.Boolean({ default: true }),
-  PASSWORD_REQUIRE_SPECIAL_CHAR: t.Boolean({ default: true }),
 
   // Encryption
   ENCRYPT_KEY: t.String(),

@@ -1,4 +1,4 @@
-import type { AuditChangeSet } from '../types';
+import type { AuditChangeSet } from './audit-logs.types';
 
 export function computeChanges<
   TPrev extends Record<string, unknown>,

@@ -6,7 +6,7 @@ import {
   UpsertIpWhitelistDto,
 } from 'src/dtos/ip-whitelist.dto';
 import { authCheck } from 'src/services/auth';
-import { ipWhitelistService } from 'src/services/security';
+import { ipWhitelistService } from 'src/services/security/ip-whitelist.service';
 import {
   authErrors,
   castToRes,
