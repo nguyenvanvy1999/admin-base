@@ -1,7 +1,9 @@
-import { BackupCodeHandler } from './handlers/backup-code-handler';
-import { DeviceVerifyHandler } from './handlers/device-verify-handler';
-import { EmailOtpHandler } from './handlers/email-otp-handler';
-import { TotpHandler } from './handlers/totp-handler';
+import {
+  BackupCodeHandler,
+  DeviceVerifyHandler,
+  EmailOtpHandler,
+  TotpHandler,
+} from './handlers';
 import { MethodRegistryService } from './method-registry.service';
 
 let registryInstance: MethodRegistryService | null = null;

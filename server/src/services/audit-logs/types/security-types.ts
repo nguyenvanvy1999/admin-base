@@ -1,16 +1,62 @@
 import type { SecurityEventSeverity, SecurityEventType } from 'src/generated';
+import { AuthMethod } from 'src/services/auth/types/constants';
 import type { PurposeVerify } from 'src/share';
+
+export type AuthMethodType = `${AuthMethod}`;
+export type AuditAuthMethod = AuthMethodType | 'oauth' | 'api_key';
+export type AuditMfaMethod = 'totp' | 'email' | 'backup-code';
+export type AuditRegisterMethod = 'email' | 'oauth';
+
+export function toAuditAuthMethod(
+  method: AuthMethod | 'oauth' | 'api_key',
+): AuditAuthMethod {
+  return method;
+}
+
+export function toAuditMfaMethod(
+  method: AuthMethod | 'backup-code',
+): AuditMfaMethod {
+  if (method === 'backup-code') {
+    return 'backup-code';
+  }
+  const authMethod = method as AuthMethod;
+  if (authMethod === AuthMethod.BACKUP_CODE) {
+    return 'backup-code';
+  }
+  if (authMethod === AuthMethod.TOTP) {
+    return 'totp';
+  }
+  return 'email';
+}
+
+export function toAuditMfaMethodLimited(
+  method: AuthMethod,
+): Extract<AuditMfaMethod, 'totp' | 'email'> {
+  if (method === AuthMethod.TOTP) {
+    return 'totp';
+  }
+  return 'email';
+}
+
+export function toAuditRegisterMethod(
+  method: AuthMethod | 'oauth',
+): AuditRegisterMethod {
+  if (method === AuthMethod.EMAIL) {
+    return 'email';
+  }
+  return 'oauth';
+}
 
 export interface SecurityEventPayloadMap {
   // Auth login
   login_failed: {
-    method: 'email' | 'oauth' | 'api_key';
+    method: AuditAuthMethod;
     email?: string;
     error: string;
     attemptCount?: number;
   };
   login_success: {
-    method: 'email' | 'oauth' | 'api_key';
+    method: AuditAuthMethod;
     email: string;
     isNewDevice?: boolean;
     deviceFingerprint?: string;
@@ -18,12 +64,12 @@ export interface SecurityEventPayloadMap {
 
   // Logout & session
   logout: {
-    method: 'email' | 'oauth' | 'api_key';
+    method: AuditAuthMethod;
     email?: string;
     sessionId?: string;
   };
   logout_all_sessions: {
-    method: 'email' | 'oauth' | 'api_key';
+    method: AuditAuthMethod;
     revokedSessions: number;
   };
 
@@ -45,48 +91,48 @@ export interface SecurityEventPayloadMap {
 
   // Registration & account state
   register_started: {
-    method: 'email' | 'oauth';
+    method: AuditRegisterMethod;
     email: string;
   };
   register_completed: {
-    method: 'email' | 'oauth';
+    method: AuditRegisterMethod;
     email: string;
   };
   register_failed: {
-    method: 'email' | 'oauth';
+    method: AuditRegisterMethod;
     email?: string;
     error: string;
   };
 
   // MFA lifecycle
   mfa_enabled: {
-    method: 'totp' | 'email';
+    method: Extract<AuditMfaMethod, 'totp' | 'email'>;
   };
   mfa_disabled: {
-    method: 'totp' | 'email';
+    method: Extract<AuditMfaMethod, 'totp' | 'email'>;
     disabledBy: 'user' | 'admin';
     adminId?: string;
   };
   mfa_verified: {
-    method: 'totp' | 'email' | 'backup-code';
+    method: AuditMfaMethod;
   };
   mfa_failed: {
-    method: 'totp' | 'email' | 'backup-code';
+    method: AuditMfaMethod;
     error: string;
   };
   mfa_setup_started: {
-    method: 'totp' | 'email';
+    method: Extract<AuditMfaMethod, 'totp' | 'email'>;
     stage: 'request' | 'required_before_login';
   };
   mfa_setup_completed: {
     method: 'totp';
   };
   mfa_setup_failed: {
-    method: 'totp' | 'email';
+    method: Extract<AuditMfaMethod, 'totp' | 'email'>;
     error: string;
   };
   mfa_challenge_started: {
-    method: 'totp' | 'email';
+    method: Extract<AuditMfaMethod, 'totp' | 'email'>;
     metadata?: Record<string, unknown>;
   };
 

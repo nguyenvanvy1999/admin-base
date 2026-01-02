@@ -199,8 +199,6 @@ export type AuthChallengeRequestParams = typeof AuthChallengeRequestDto.static;
 export const ChallengeMethodsResponseDto = t.Object({
   availableMethods: t.Array(AuthMethodOptionDto),
 });
-export type ChallengeMethodsResponse =
-  typeof ChallengeMethodsResponseDto.static;
 
 export const AuthEnrollStartRequestDto = t.Object({
   authTxId: t.String({ minLength: 1 }),

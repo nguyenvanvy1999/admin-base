@@ -17,7 +17,7 @@ export * from './types/auth-method-factory';
 export * from './types/auth-method-handler.interface';
 export * from './types/constants';
 
-export * from './utils/auth-audit.util';
+export * from './utils/auth-audit.helper';
 export * from './utils/auth-errors.util';
 export * from './utils/auth-middleware.service';
 export * from './utils/auth-util.service';

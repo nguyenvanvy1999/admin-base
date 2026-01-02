@@ -14,7 +14,6 @@ import type {
 import {
   AuditLogVisibility,
   SecurityEventSeverity,
-  SecurityEventType,
   UserStatus,
 } from 'src/generated';
 import {
@@ -54,7 +53,6 @@ import {
   AuthStatus,
   AuthTxState,
 } from 'src/services/auth/types/constants';
-import { createSecurityAuditLog } from 'src/services/auth/utils/auth-audit.util';
 import { assertUserExists } from 'src/services/auth/utils/auth-errors.util';
 import {
   type UserUtilService,
@@ -72,8 +70,19 @@ import {
   SETTING,
   userResSelect,
 } from 'src/share';
-import { AuditLogBuilder } from '../builders/audit-log.builder';
 import { ChallengeResponseBuilder } from '../builders/challenge-response.builder';
+import {
+  buildAuditLogPushOptions,
+  buildLoginFailedAuditLog,
+  buildLoginSuccessAuditLog,
+  buildMfaBackupCodesRegeneratedAuditLog,
+  buildMfaChallengeStartedAuditLog,
+  buildMfaDisabledAuditLog,
+  buildMfaFailedAuditLog,
+  buildMfaSetupCompletedAuditLog,
+  buildMfaSetupStartedAuditLog,
+  buildMfaVerifiedAuditLog,
+} from '../utils/auth-audit.helper';
 import { type AuthTxService, authTxService } from './auth-tx.service';
 import { type AuthUserService, authUserService } from './auth-user.service';
 import { ChallengeResolverService } from './challenge-resolver.service';
@@ -106,7 +115,6 @@ export class AuthFlowService {
       mfaService: MfaService;
       challengeResponseBuilder: ChallengeResponseBuilder;
       challengeResolver: ChallengeResolverService;
-      auditLogBuilder: AuditLogBuilder;
       loginSteps: LoginStepsService;
     } = {
       db,
@@ -125,7 +133,6 @@ export class AuthFlowService {
       mfaService,
       challengeResponseBuilder: new ChallengeResponseBuilder(),
       challengeResolver: new ChallengeResolverService(),
-      auditLogBuilder: new AuditLogBuilder(),
       loginSteps: new LoginStepsService({
         passwordService,
         captchaService,
@@ -196,12 +203,10 @@ export class AuthFlowService {
 
     if (captchaRequired && !captcha) {
       await this.deps.auditLogService.pushSecurity(
-        this.deps.auditLogBuilder.buildLoginFailed(
-          user,
-          AuthMethod.EMAIL,
-          'captcha_required',
-        ),
-        this.deps.auditLogBuilder.buildAuditContext(user.id, {
+        buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'captcha_required', {
+          userId: user.id,
+        }),
+        buildAuditLogPushOptions(user.id, {
           visibility: AuditLogVisibility.actor_and_subject,
         }),
       );
@@ -213,12 +218,10 @@ export class AuthFlowService {
     } catch (error) {
       if (error instanceof BadReqErr && error.code === ErrCode.InvalidCaptcha) {
         await this.deps.auditLogService.pushSecurity(
-          this.deps.auditLogBuilder.buildLoginFailed(
-            user,
-            AuthMethod.EMAIL,
-            'invalid_captcha',
-          ),
-          this.deps.auditLogBuilder.buildAuditContext(user.id, {
+          buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'invalid_captcha', {
+            userId: user.id,
+          }),
+          buildAuditLogPushOptions(user.id, {
             visibility: AuditLogVisibility.actor_and_subject,
           }),
         );
@@ -234,12 +237,10 @@ export class AuthFlowService {
 
     if (!passwordValid) {
       await this.deps.auditLogService.pushSecurity(
-        this.deps.auditLogBuilder.buildLoginFailed(
-          user,
-          AuthMethod.EMAIL,
-          'password_mismatch',
-        ),
-        this.deps.auditLogBuilder.buildAuditContext(user.id, {
+        buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'password_mismatch', {
+          userId: user.id,
+        }),
+        buildAuditLogPushOptions(user.id, {
           visibility: AuditLogVisibility.actor_and_subject,
         }),
       );
@@ -248,12 +249,10 @@ export class AuthFlowService {
 
     if (user.status !== UserStatus.active) {
       await this.deps.auditLogService.pushSecurity(
-        this.deps.auditLogBuilder.buildLoginFailed(
-          user,
-          AuthMethod.EMAIL,
-          'user_not_active',
-        ),
-        this.deps.auditLogBuilder.buildAuditContext(user.id),
+        buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'user_not_active', {
+          userId: user.id,
+        }),
+        buildAuditLogPushOptions(user.id),
       );
       throw new BadReqErr(ErrCode.UserNotActive);
     }
@@ -269,13 +268,11 @@ export class AuthFlowService {
 
     if (securityResult.action === 'block') {
       await this.deps.auditLogService.pushSecurity(
-        this.deps.auditLogBuilder.buildLoginFailed(
-          user,
-          AuthMethod.EMAIL,
-          'security_blocked',
-          SecurityEventSeverity.high,
-        ),
-        this.deps.auditLogBuilder.buildAuditContext(user.id),
+        buildLoginFailedAuditLog(user, AuthMethod.EMAIL, 'security_blocked', {
+          userId: user.id,
+          severity: SecurityEventSeverity.high,
+        }),
+        buildAuditLogPushOptions(user.id),
       );
       throw new BadReqErr(ErrCode.LoginBlocked);
     }
@@ -306,13 +303,12 @@ export class AuthFlowService {
         securityResult,
       );
       await this.deps.auditLogService.pushSecurity(
-        this.deps.auditLogBuilder.buildLoginSuccess(
-          user,
-          AuthMethod.EMAIL,
-          session.sessionId,
-          { isNewDevice: securityResult?.isNewDevice ?? false },
-        ),
-        this.deps.auditLogBuilder.buildAuditContext(user.id, {
+        buildLoginSuccessAuditLog(user, AuthMethod.EMAIL, {
+          userId: user.id,
+          sessionId: session.sessionId,
+          isNewDevice: securityResult?.isNewDevice ?? false,
+        }),
+        buildAuditLogPushOptions(user.id, {
           sessionId: session.sessionId,
         }),
       );
@@ -426,11 +422,14 @@ export class AuthFlowService {
     );
 
     await this.deps.auditLogService.pushSecurity(
-      this.deps.auditLogBuilder.buildMfaChallengeStarted(user, {
-        stage: 'challenge',
-        from: 'login',
+      buildMfaChallengeStartedAuditLog(user, AuthMethod.EMAIL, {
+        userId: user.id,
+        metadata: {
+          stage: 'challenge',
+          from: 'login',
+        },
       }),
-      this.deps.auditLogBuilder.buildAuditContext(user.id, {
+      buildAuditLogPushOptions(user.id, {
         visibility: AuditLogVisibility.actor_and_subject,
       }),
     );
@@ -505,12 +504,13 @@ export class AuthFlowService {
     if (!result.verified) {
       await this.deps.authTxService.incrementChallengeAttempts(authTxId);
       await this.deps.auditLogService.pushSecurity(
-        this.deps.auditLogBuilder.buildMfaFailed(
+        buildMfaFailedAuditLog(
           user,
           handler.getAuthMethod() as AuthMethod,
           'invalid_mfa_code',
+          { userId: user.id },
         ),
-        this.deps.auditLogBuilder.buildAuditContext(user.id),
+        buildAuditLogPushOptions(user.id),
       );
       throw new BadReqErr(result.errorCode || ErrCode.InvalidOtp);
     }
@@ -527,12 +527,11 @@ export class AuthFlowService {
     );
 
     await this.deps.auditLogService.pushSecurity(
-      this.deps.auditLogBuilder.buildMfaVerified(
-        user,
-        handler.getAuthMethod() as AuthMethod,
-        session.sessionId,
-      ),
-      this.deps.auditLogBuilder.buildAuditContext(user.id, {
+      buildMfaVerifiedAuditLog(user, handler.getAuthMethod() as AuthMethod, {
+        userId: user.id,
+        sessionId: session.sessionId,
+      }),
+      buildAuditLogPushOptions(user.id, {
         sessionId: session.sessionId,
       }),
     );
@@ -619,14 +618,10 @@ export class AuthFlowService {
     });
 
     await this.deps.auditLogService.pushSecurity(
-      createSecurityAuditLog(
-        SecurityEventType.mfa_setup_started,
-        SecurityEventSeverity.low,
-        AuthMethod.TOTP,
-        { id: user.id, email: user.email },
-        { stage: 'request' },
-      ),
-      this.deps.auditLogBuilder.buildAuditContext(user.id),
+      buildMfaSetupStartedAuditLog(user, AuthMethod.TOTP, 'request', {
+        userId: user.id,
+      }),
+      buildAuditLogPushOptions(user.id),
     );
 
     return { authTxId, enrollToken, otpauthUrl };
@@ -684,13 +679,10 @@ export class AuthFlowService {
     }
 
     await this.deps.auditLogService.pushSecurity(
-      createSecurityAuditLog(
-        SecurityEventType.mfa_setup_completed,
-        SecurityEventSeverity.low,
-        AuthMethod.TOTP,
-        { id: userResult.id, email: userResult.email },
-      ),
-      this.deps.auditLogBuilder.buildAuditContext(userResult.id),
+      buildMfaSetupCompletedAuditLog(userResult, AuthMethod.TOTP, {
+        userId: userResult.id,
+      }),
+      buildAuditLogPushOptions(userResult.id),
     );
 
     await this.deps.authTxService.delete(authTxId);
@@ -726,13 +718,10 @@ export class AuthFlowService {
     await this.deps.mfaService.saveBackupCode(userId, hashedCode);
 
     await this.deps.auditLogService.pushSecurity(
-      createSecurityAuditLog(
-        SecurityEventType.mfa_backup_codes_regenerated,
-        SecurityEventSeverity.medium,
-        AuthMethod.TOTP,
-        { id: user.id, email: user.email },
-      ),
-      this.deps.auditLogBuilder.buildAuditContext(user.id, {
+      buildMfaBackupCodesRegeneratedAuditLog(user, {
+        userId: user.id,
+      }),
+      buildAuditLogPushOptions(user.id, {
         visibility: AuditLogVisibility.actor_only,
       }),
     );
@@ -766,12 +755,13 @@ export class AuthFlowService {
 
     if (!passwordValid) {
       await this.deps.auditLogService.pushSecurity(
-        this.deps.auditLogBuilder.buildLoginFailed(
+        buildLoginFailedAuditLog(
           user,
           AuthMethod.EMAIL,
           'password_verification_failed_during_disable_mfa',
+          { userId: user.id },
         ),
-        this.deps.auditLogBuilder.buildAuditContext(user.id),
+        buildAuditLogPushOptions(user.id),
       );
       throw new BadReqErr(ErrCode.PasswordNotMatch);
     }
@@ -786,12 +776,13 @@ export class AuthFlowService {
       if (!otpOk) throw new Error('Invalid OTP');
     } catch {
       await this.deps.auditLogService.pushSecurity(
-        this.deps.auditLogBuilder.buildMfaFailed(
+        buildMfaFailedAuditLog(
           user,
           AuthMethod.TOTP,
           'invalid_otp_during_disable_mfa',
+          { userId: user.id },
         ),
-        this.deps.auditLogBuilder.buildAuditContext(user.id),
+        buildAuditLogPushOptions(user.id),
       );
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
@@ -812,14 +803,10 @@ export class AuthFlowService {
     }
 
     await this.deps.auditLogService.pushSecurity(
-      createSecurityAuditLog(
-        SecurityEventType.mfa_disabled,
-        SecurityEventSeverity.high,
-        AuthMethod.TOTP,
-        { id: user.id, email: user.email },
-        { disabledBy: 'user' },
-      ),
-      this.deps.auditLogBuilder.buildAuditContext(user.id, {
+      buildMfaDisabledAuditLog(user, AuthMethod.TOTP, 'user', {
+        userId: user.id,
+      }),
+      buildAuditLogPushOptions(user.id, {
         visibility: AuditLogVisibility.actor_and_subject,
       }),
     );
