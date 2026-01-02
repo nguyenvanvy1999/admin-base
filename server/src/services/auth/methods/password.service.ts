@@ -1,7 +1,9 @@
 import dayjs from 'dayjs';
 import { db } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
-import { BadReqErr, ErrCode, timeStringToSeconds } from 'src/share';
+import type { SettingsService } from 'src/services/settings/settings.service';
+import { settingsService } from 'src/services/settings/settings.service';
+import { BadReqErr, ErrCode, SETTING, timeStringToSeconds } from 'src/share';
 
 export class BunPasswordHasher {
   hash(password: string): Promise<string> {
@@ -17,15 +19,18 @@ export class PasswordService {
   private env: IEnv;
   private db: typeof db;
   private passwordHasher: BunPasswordHasher;
+  private settingsService: SettingsService;
 
   constructor(deps: {
     env: IEnv;
     db: typeof db;
     passwordHasher: BunPasswordHasher;
+    settingsService: SettingsService;
   }) {
     this.env = deps.env;
     this.db = deps.db;
     this.passwordHasher = deps.passwordHasher;
+    this.settingsService = deps.settingsService;
   }
 
   async createPassword(password: string): Promise<{
@@ -36,8 +41,10 @@ export class PasswordService {
   }> {
     const passwordWithPepper = password + this.env.PASSWORD_PEPPER;
     const passwordHash = await this.passwordHasher.hash(passwordWithPepper);
+    const passwordExpiredSetting =
+      await this.settingsService.getSetting<string>(SETTING.PASSWORD_EXPIRED);
     const passwordExpired = dayjs()
-      .add(timeStringToSeconds(this.env.PASSWORD_EXPIRED), 's')
+      .add(timeStringToSeconds(passwordExpiredSetting), 's')
       .toDate();
     const passwordCreated = new Date();
     return {
@@ -95,4 +102,5 @@ export const passwordService = new PasswordService({
   env,
   db,
   passwordHasher: new BunPasswordHasher(),
+  settingsService,
 });

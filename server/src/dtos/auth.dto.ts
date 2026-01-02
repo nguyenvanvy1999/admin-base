@@ -97,22 +97,61 @@ export type LinkTelegramParams = {
   telegramData: typeof LinkTelegramRequestDto.static;
 };
 
+const AuthMethodOptionDto = t.Object({
+  method: t.Union([
+    t.Literal(AuthChallengeType.MFA_TOTP),
+    t.Literal(AuthChallengeType.MFA_BACKUP_CODE),
+    t.Literal(AuthChallengeType.MFA_EMAIL_OTP),
+    t.Literal(AuthChallengeType.MFA_ENROLL),
+    t.Literal(AuthChallengeType.DEVICE_VERIFY),
+    t.Literal(AuthChallengeType.MFA_REQUIRED),
+  ]),
+  label: t.String(),
+  description: t.Optional(t.String()),
+  requiresSetup: t.Optional(t.Boolean()),
+});
+
+const ChallengeMetadataDto = t.Object({
+  email: t.Optional(
+    t.Object({
+      destination: t.String(),
+      sentAt: t.Optional(t.Number()),
+    }),
+  ),
+  totp: t.Optional(
+    t.Object({
+      allowBackupCode: t.Boolean(),
+    }),
+  ),
+  enrollment: t.Optional(
+    t.Object({
+      methods: t.Array(t.String()),
+      backupCodesWillBeGenerated: t.Boolean(),
+    }),
+  ),
+  device: t.Optional(
+    t.Object({
+      isNewDevice: t.Boolean(),
+      deviceFingerprint: t.Optional(t.String()),
+    }),
+  ),
+});
+
 export const ChallengeDto = t.Union([
   t.Object({
-    type: t.Literal(AuthChallengeType.MFA_TOTP),
-    allowBackupCode: t.Literal(true),
-  }),
-  t.Object({ type: t.Literal(AuthChallengeType.MFA_BACKUP_CODE) }),
-  t.Object({ type: t.Literal(AuthChallengeType.MFA_EMAIL_OTP) }),
-  t.Object({
-    type: t.Literal(AuthChallengeType.MFA_ENROLL),
-    methods: t.Array(t.Literal('totp')),
-    backupCodesWillBeGenerated: t.Boolean(),
+    type: t.Literal(AuthChallengeType.MFA_REQUIRED),
+    availableMethods: t.Array(AuthMethodOptionDto),
+    metadata: t.Optional(ChallengeMetadataDto),
   }),
   t.Object({
     type: t.Literal(AuthChallengeType.DEVICE_VERIFY),
-    media: t.Literal('email'),
-    destination: t.String(),
+    availableMethods: t.Array(AuthMethodOptionDto),
+    metadata: t.Optional(ChallengeMetadataDto),
+  }),
+  t.Object({
+    type: t.Literal(AuthChallengeType.MFA_ENROLL),
+    availableMethods: t.Array(AuthMethodOptionDto),
+    metadata: t.Optional(ChallengeMetadataDto),
   }),
 ]);
 
@@ -137,15 +176,31 @@ export type IAuthResponse = typeof AuthResponseDto.static;
 
 export const AuthChallengeRequestDto = t.Object({
   authTxId: t.String({ minLength: 1 }),
-  type: t.Union([
-    t.Literal(AuthChallengeType.MFA_TOTP),
-    t.Literal(AuthChallengeType.MFA_BACKUP_CODE),
-    t.Literal(AuthChallengeType.MFA_EMAIL_OTP),
-    t.Literal(AuthChallengeType.DEVICE_VERIFY),
-  ]),
+  type: t.Optional(
+    t.Union([
+      t.Literal(AuthChallengeType.MFA_TOTP),
+      t.Literal(AuthChallengeType.MFA_BACKUP_CODE),
+      t.Literal(AuthChallengeType.MFA_EMAIL_OTP),
+      t.Literal(AuthChallengeType.DEVICE_VERIFY),
+    ]),
+  ),
+  method: t.Optional(
+    t.Union([
+      t.Literal(AuthChallengeType.MFA_TOTP),
+      t.Literal(AuthChallengeType.MFA_BACKUP_CODE),
+      t.Literal(AuthChallengeType.MFA_EMAIL_OTP),
+      t.Literal(AuthChallengeType.DEVICE_VERIFY),
+    ]),
+  ),
   code: t.String({ minLength: 1 }),
 });
 export type AuthChallengeRequestParams = typeof AuthChallengeRequestDto.static;
+
+export const ChallengeMethodsResponseDto = t.Object({
+  availableMethods: t.Array(AuthMethodOptionDto),
+});
+export type ChallengeMethodsResponse =
+  typeof ChallengeMethodsResponseDto.static;
 
 export const AuthEnrollStartRequestDto = t.Object({
   authTxId: t.String({ minLength: 1 }),

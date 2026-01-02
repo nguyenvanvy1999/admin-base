@@ -10,6 +10,7 @@ import {
   AuthMethod,
 } from 'src/services/auth/types/constants';
 import { BadReqErr, ErrCode } from 'src/share';
+import type { MethodRegistryService } from '../method-registry.service';
 
 export class TotpHandler implements IAuthMethodHandler {
   readonly type = AuthChallengeType.MFA_TOTP;
@@ -43,5 +44,17 @@ export class TotpHandler implements IAuthMethodHandler {
 
   getAuthMethod(): string {
     return AuthMethod.TOTP;
+  }
+
+  static registerCapability(registry: MethodRegistryService): void {
+    registry.register({
+      method: AuthChallengeType.MFA_TOTP,
+      label: 'Authenticator App',
+      description: 'Use your TOTP authenticator app',
+      requiresSetup: true,
+      isAvailable: (context) => {
+        return Promise.resolve(context.user.mfaTotpEnabled === true);
+      },
+    });
   }
 }

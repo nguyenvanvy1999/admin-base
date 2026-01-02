@@ -9,6 +9,7 @@ export enum AuthChallengeType {
   MFA_EMAIL_OTP = 'MFA_EMAIL_OTP',
   MFA_ENROLL = 'MFA_ENROLL',
   DEVICE_VERIFY = 'DEVICE_VERIFY',
+  MFA_REQUIRED = 'MFA_REQUIRED',
 }
 
 export enum AuthTxState {

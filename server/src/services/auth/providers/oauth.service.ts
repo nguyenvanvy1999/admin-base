@@ -24,7 +24,6 @@ import {
   securityMonitorService,
 } from 'src/services/auth/security/security-monitor.service';
 import {
-  AuthChallengeType,
   AuthMethod,
   AuthNextStepKind,
   AuthStatus,
@@ -50,6 +49,8 @@ import {
   type PrismaTx,
   UnAuthErr,
 } from 'src/share';
+import { ChallengeResponseBuilder } from '../builders/challenge-response.builder';
+import { ChallengeResolverService } from '../core/challenge-resolver.service';
 
 export class OAuthService {
   constructor(
@@ -68,6 +69,8 @@ export class OAuthService {
       };
       authenticator: typeof authenticator;
       settingsService: SettingsService;
+      challengeResponseBuilder: ChallengeResponseBuilder;
+      challengeResolver: ChallengeResolverService;
     } = {
       db,
       oauth2ClientFactory: (clientId: string) => new OAuth2Client(clientId),
@@ -78,6 +81,8 @@ export class OAuthService {
       crypto: { createHash, createHmac, randomBytes, randomUUID },
       authenticator,
       settingsService,
+      challengeResponseBuilder: new ChallengeResponseBuilder(),
+      challengeResolver: new ChallengeResolverService(),
     },
   ) {}
 
@@ -309,14 +314,26 @@ export class OAuthService {
 
     if (next.kind === AuthNextStepKind.ENROLL_MFA) {
       await authTxService.setState(authTx.id, AuthTxState.CHALLENGE_MFA_ENROLL);
+
+      const availableMethods =
+        await this.deps.challengeResolver.resolveAvailableMethods({
+          user,
+          authTx,
+          securityResult,
+          challengeType: 'MFA_ENROLL',
+        });
+
+      const challenge = this.deps.challengeResponseBuilder.buildMfaEnroll({
+        user,
+        authTx,
+        securityResult,
+        availableMethods,
+      });
+
       return {
         status: AuthStatus.CHALLENGE,
         authTxId: authTx.id,
-        challenge: {
-          type: AuthChallengeType.MFA_ENROLL,
-          methods: ['totp'],
-          backupCodesWillBeGenerated: true,
-        },
+        challenge,
       };
     }
 
@@ -338,10 +355,27 @@ export class OAuthService {
       },
     );
 
+    const availableMethods =
+      await this.deps.challengeResolver.resolveAvailableMethods({
+        user,
+        authTx,
+        securityResult,
+        challengeType: 'MFA_REQUIRED',
+      });
+
+    const challenge = await this.deps.challengeResponseBuilder.buildMfaRequired(
+      {
+        user,
+        authTx,
+        securityResult,
+        availableMethods,
+      },
+    );
+
     return {
       status: AuthStatus.CHALLENGE,
       authTxId: authTx.id,
-      challenge: { type: AuthChallengeType.MFA_TOTP, allowBackupCode: true },
+      challenge,
     };
   }
 

@@ -9,6 +9,8 @@ import {
   AuthMethod,
 } from 'src/services/auth/types/constants';
 import { ErrCode } from 'src/share';
+import type { MethodRegistryService } from '../method-registry.service';
+import { mfaService } from '../mfa.service';
 
 export class BackupCodeHandler implements IAuthMethodHandler {
   readonly type = AuthChallengeType.MFA_BACKUP_CODE;
@@ -16,6 +18,8 @@ export class BackupCodeHandler implements IAuthMethodHandler {
   constructor(
     private readonly deps: {
       mfaService: MfaService;
+    } = {
+      mfaService,
     },
   ) {}
 
@@ -39,5 +43,21 @@ export class BackupCodeHandler implements IAuthMethodHandler {
 
   getAuthMethod(): string {
     return AuthMethod.BACKUP_CODE;
+  }
+
+  static registerCapability(registry: MethodRegistryService): void {
+    registry.register({
+      method: AuthChallengeType.MFA_BACKUP_CODE,
+      label: 'Backup Code',
+      description: 'Use one of your backup codes',
+      requiresSetup: true,
+      isAvailable: async (context) => {
+        const { db } = await import('src/config/db');
+        const backupCode = await db.mfaBackupCode.findUnique({
+          where: { userId: context.user.id, usedAt: null },
+        });
+        return !!backupCode;
+      },
+    });
   }
 }

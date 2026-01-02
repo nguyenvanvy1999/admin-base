@@ -1,4 +1,5 @@
 import type { SecurityCheckResult } from 'src/services/auth/security/security-monitor.service';
+import type { AuthChallengeType } from 'src/services/auth/types/constants';
 
 export type AuthTxState =
   | 'PASSWORD_VERIFIED' // password OK, does not complete next step
@@ -37,13 +38,59 @@ export interface AuthTx {
   deviceVerifyToken?: string;
 }
 
+export interface AuthMethodConfig {
+  mfaRequired: {
+    enabled: AuthChallengeType[];
+    labels: Record<AuthChallengeType, { label: string; description?: string }>;
+  };
+  deviceVerify: {
+    enabled: AuthChallengeType[];
+    labels: Record<AuthChallengeType, { label: string; description?: string }>;
+  };
+  mfaEnroll: {
+    enabled: AuthChallengeType[];
+    labels: Record<AuthChallengeType, { label: string; description?: string }>;
+  };
+}
+
+export interface AuthMethodOption {
+  method: AuthChallengeType;
+  label: string;
+  description?: string;
+  requiresSetup?: boolean;
+}
+
+export interface ChallengeMetadata {
+  email?: {
+    destination: string;
+    sentAt?: number;
+  };
+  totp?: {
+    allowBackupCode: boolean;
+  };
+  enrollment?: {
+    methods: string[];
+    backupCodesWillBeGenerated: boolean;
+  };
+  device?: {
+    isNewDevice: boolean;
+    deviceFingerprint?: string;
+  };
+}
+
 export type ChallengeDto =
-  | { type: 'MFA_TOTP'; allowBackupCode: true }
-  | { type: 'MFA_BACKUP_CODE' }
-  | { type: 'MFA_EMAIL_OTP' }
-  | { type: 'DEVICE_VERIFY'; media: 'email'; destination: string }
   | {
-      type: 'MFA_ENROLL';
-      methods: Array<'totp'>;
-      backupCodesWillBeGenerated: boolean;
+      type: AuthChallengeType.MFA_REQUIRED;
+      availableMethods: AuthMethodOption[];
+      metadata?: ChallengeMetadata;
+    }
+  | {
+      type: AuthChallengeType.DEVICE_VERIFY;
+      availableMethods: AuthMethodOption[];
+      metadata?: ChallengeMetadata;
+    }
+  | {
+      type: AuthChallengeType.MFA_ENROLL;
+      availableMethods: AuthMethodOption[];
+      metadata?: ChallengeMetadata;
     };
