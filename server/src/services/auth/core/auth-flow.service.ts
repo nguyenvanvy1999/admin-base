@@ -518,19 +518,17 @@ export class AuthFlowService {
       securityContext,
     );
 
-    await Promise.allSettled([
-      this.deps.auditLogService.pushSecurity(
-        buildMfaVerifiedAuditLog(user, handler.getAuthMethod() as AuthMethod, {
-          userId: user.id,
-          sessionId: session.sessionId,
-        }),
-        {
-          userId: user.id,
-          sessionId: session.sessionId ?? null,
-          subjectUserId: user.id,
-        },
-      ),
-    ]);
+    await this.deps.auditLogService.pushSecurity(
+      buildMfaVerifiedAuditLog(user, handler.getAuthMethod() as AuthMethod, {
+        userId: user.id,
+        sessionId: session.sessionId,
+      }),
+      {
+        userId: user.id,
+        sessionId: session.sessionId ?? null,
+        subjectUserId: user.id,
+      },
+    );
 
     return { status: AuthStatus.COMPLETED, session };
   }
@@ -674,14 +672,12 @@ export class AuthFlowService {
       tx.securityResult,
     );
 
-    await Promise.allSettled([
-      this.deps.auditLogService.pushSecurity(
-        buildMfaSetupCompletedAuditLog(userResult, AuthMethod.TOTP, {
-          userId: userResult.id,
-        }),
-        { userId: userResult.id, subjectUserId: userResult.id },
-      ),
-    ]);
+    await this.deps.auditLogService.pushSecurity(
+      buildMfaSetupCompletedAuditLog(userResult, AuthMethod.TOTP, {
+        userId: userResult.id,
+      }),
+      { userId: userResult.id, subjectUserId: userResult.id },
+    );
     return { status: AuthStatus.COMPLETED, session, backupCodes: [code] };
   }
 
@@ -740,7 +736,7 @@ export class AuthFlowService {
 
     const passwordValid = await this.deps.passwordService.verifyAndTrack(
       password,
-      user as any,
+      user,
     );
 
     if (!passwordValid) {

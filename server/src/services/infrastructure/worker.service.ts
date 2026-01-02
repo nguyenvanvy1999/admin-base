@@ -110,12 +110,13 @@ export class WorkerService {
   async handleGeoIPJob(_jobName: string, data: GeoIPJobData): Promise<void> {
     const { sessionId, ip } = data;
 
-    const location = await this.deps.geoIPService.getLocationByIP(ip);
+    const location: Record<string, any> | null =
+      await this.deps.geoIPService.getLocationByIP(ip);
 
     if (location) {
       await this.deps.db.session.update({
         where: { id: sessionId },
-        data: { location: location as any },
+        data: { location: location },
         select: { id: true },
       });
     }

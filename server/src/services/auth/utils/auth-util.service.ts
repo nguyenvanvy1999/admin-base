@@ -227,7 +227,7 @@ export class UserUtilService {
       refreshToken,
       exp: expirationTime.getTime(),
       expired: dayjs(expirationTime).format(),
-      user: userRes as any,
+      user: userRes,
       sessionId,
     };
   }
