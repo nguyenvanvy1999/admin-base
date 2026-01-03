@@ -30,18 +30,6 @@ export class SessionService {
     await this.domainService.revoke(userId, sessionIds);
   }
 
-  async findByToken(token: string) {
-    const session = await this.domainService.findByToken(token);
-    if (!session) return null;
-
-    return {
-      revoked: session.revoked,
-      id: session.id,
-      expired: session.expired,
-      createdBy: session.createdBy,
-    };
-  }
-
   async revokeMany(sessionIds: string[] = []): Promise<void> {
     await this.domainService.revokeMany(sessionIds);
   }

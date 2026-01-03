@@ -359,10 +359,6 @@ export class SettingsService {
     return this.getSetting<boolean>(SETTING.ENB_IP_WHITELIST);
   }
 
-  revokeSessionsOnPasswordChange(): Promise<boolean> {
-    return this.getSetting<boolean>(SETTING.REVOKE_SESSIONS_ON_PASSWORD_CHANGE);
-  }
-
   registerOtpLimit(): Promise<number> {
     return this.getSetting<number>(SETTING.REGISTER_OTP_LIMIT);
   }

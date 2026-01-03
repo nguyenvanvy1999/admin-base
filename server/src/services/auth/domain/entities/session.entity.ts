@@ -17,8 +17,4 @@ export class Session {
   isExpired(): boolean {
     return new Date() > this.expired;
   }
-
-  isActive(): boolean {
-    return !this.revoked && !this.isExpired();
-  }
 }

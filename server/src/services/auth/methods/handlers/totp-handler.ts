@@ -39,6 +39,6 @@ export const totpCapability = {
   description: 'Use your TOTP authenticator app',
   requiresSetup: true,
   isAvailable: (context: { user: { mfaTotpEnabled: boolean } }) => {
-    return Promise.resolve(context.user.mfaTotpEnabled === true);
+    return Promise.resolve(context.user.mfaTotpEnabled);
   },
 };

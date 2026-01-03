@@ -151,7 +151,6 @@ export enum SETTING {
   ENB_CAPTCHA_REQUIRED = 'ENB_CAPTCHA_REQUIRED',
   ENB_MFA_RISK_BASED = 'ENB_MFA_RISK_BASED',
   ENB_DEVICE_VERIFICATION = 'ENB_DEVICE_VERIFICATION',
-  REVOKE_SESSIONS_ON_PASSWORD_CHANGE = 'REVOKE_SESSIONS_ON_PASSWORD_CHANGE',
   AUTH_METHODS_CONFIG = 'AUTH_METHODS_CONFIG',
 }
 
@@ -401,10 +400,6 @@ export const defaultSettings = {
   [SETTING.ENB_DEVICE_VERIFICATION]: {
     type: SettingDataType.boolean,
     value: 'false',
-  },
-  [SETTING.REVOKE_SESSIONS_ON_PASSWORD_CHANGE]: {
-    type: SettingDataType.boolean,
-    value: 'true',
   },
   [SETTING.AUTH_METHODS_CONFIG]: {
     type: SettingDataType.json,

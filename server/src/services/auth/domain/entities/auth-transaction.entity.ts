@@ -45,8 +45,4 @@ export class AuthTransaction {
   hasExceededMaxAttempts(maxAttempts: number): boolean {
     return this.challengeAttempts >= maxAttempts;
   }
-
-  getCurrentState(): AuthTxState {
-    return this.state;
-  }
 }

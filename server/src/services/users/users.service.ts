@@ -272,10 +272,6 @@ export class UsersService {
     return this.performMfaReset(params, 'admin-reset');
   }
 
-  disableUserMfa(params: BaseUserActionParams): Promise<AdminUserActionResult> {
-    return this.performMfaReset(params, 'user-disable');
-  }
-
   async forceUserMfaEnroll(
     params: BaseUserActionParams,
   ): Promise<AdminUserActionResult> {
