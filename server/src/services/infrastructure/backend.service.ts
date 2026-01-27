@@ -183,7 +183,7 @@ export class BackendServerService {
       .group(this.deps.env.API_PREFIX, (app) =>
         app
           .use(cors())
-          .use(elysiaXSS({ as: 'global' }))
+          .use(elysiaXSS())
           .use([
             ...(this.deps.env.APP_ENV === APP_ENV.DEV
               ? [

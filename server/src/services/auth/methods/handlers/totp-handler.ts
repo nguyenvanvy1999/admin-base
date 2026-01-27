@@ -1,4 +1,4 @@
-import { authenticator } from 'otplib';
+import { verify } from 'otplib';
 import { authUserService } from 'src/services/auth/core/auth-user.service';
 import type {
   AuthMethodContext,
@@ -17,13 +17,13 @@ export const totpHandler = {
       throw new BadReqErr(ErrCode.MfaBroken);
     }
 
-    const verified = authenticator.verify({
+    const verified = await verify({
       secret: user.totpSecret,
       token: code,
     });
 
     return {
-      verified,
+      verified: verified.valid,
       errorCode: verified ? undefined : ErrCode.InvalidOtp,
     };
   },

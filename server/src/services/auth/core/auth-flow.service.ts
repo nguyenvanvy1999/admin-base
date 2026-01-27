@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { authenticator } from 'otplib';
+import { generateSecret, generateURI, verify } from 'otplib';
 import { db, type IDb } from 'src/config/db';
 import { env, type IEnv } from 'src/config/env';
 import type {
@@ -100,7 +100,6 @@ export class AuthFlowService {
       securityMonitorService: SecurityMonitorService;
       settingService: SettingsService;
       auditLogService: AuditLogsService;
-      authenticator: typeof authenticator;
       captchaService: CaptchaService;
       sessionService: SessionService;
       otpService: OtpService;
@@ -118,7 +117,6 @@ export class AuthFlowService {
       securityMonitorService,
       settingService: settingsService,
       auditLogService: auditLogsService,
-      authenticator,
       captchaService,
       sessionService,
       otpService,
@@ -578,12 +576,12 @@ export class AuthFlowService {
     assertUserExists(user);
     if (user.mfaTotpEnabled) throw new BadReqErr(ErrCode.MFAHasBeenSetup);
 
-    const tempSecret = this.deps.authenticator.generateSecret().toUpperCase();
-    const otpauthUrl = this.deps.authenticator.keyuri(
-      user.email ?? user.id,
-      'Admin Base Portal',
-      tempSecret,
-    );
+    const tempSecret = generateSecret().toUpperCase();
+    const otpauthUrl = generateURI({
+      issuer: user.email ?? user.id,
+      label: 'Admin Base Portal',
+      secret: tempSecret,
+    });
 
     const enrollToken = randomUUID();
 
@@ -652,12 +650,12 @@ export class AuthFlowService {
 
     this.deps.authTxService.assertChallengeAttemptsAllowed(tx);
 
-    const otpOk = this.deps.authenticator.verify({
+    const otpOk = await verify({
       secret: tx.enroll.tempTotpSecret,
       token: otp,
     });
 
-    if (!otpOk) {
+    if (!otpOk.valid) {
       await this.deps.authTxService.incrementChallengeAttempts(authTxId);
       throw new BadReqErr(ErrCode.InvalidOtp);
     }
@@ -763,11 +761,11 @@ export class AuthFlowService {
     if (!user.totpSecret) throw new BadReqErr(ErrCode.MfaBroken);
 
     try {
-      const otpOk = this.deps.authenticator.verify({
+      const otpOk = await verify({
         secret: user.totpSecret,
         token: code,
       });
-      if (!otpOk) throw new Error('Invalid OTP');
+      if (!otpOk.valid) throw new Error('Invalid OTP');
     } catch {
       await this.deps.auditLogService.pushSecurity(
         buildMfaFailedAuditLog(

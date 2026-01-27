@@ -1,6 +1,5 @@
 import { createHash, createHmac, randomBytes, randomUUID } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
-import { authenticator } from 'otplib';
 import { db, type IDb } from 'src/config/db';
 import type {
   GoogleLoginParams,
@@ -77,7 +76,6 @@ export class OAuthService {
         randomBytes: typeof randomBytes;
         randomUUID: typeof randomUUID;
       };
-      authenticator: typeof authenticator;
       settingsService: SettingsService;
       challengeResponseBuilder: ChallengeResponseBuilder;
       challengeResolver: ChallengeResolverService;
@@ -90,7 +88,6 @@ export class OAuthService {
       securityMonitorService,
       idUtil: idUtil,
       crypto: { createHash, createHmac, randomBytes, randomUUID },
-      authenticator,
       settingsService,
       challengeResponseBuilder: new ChallengeResponseBuilder(),
       challengeResolver: new ChallengeResolverService(),
