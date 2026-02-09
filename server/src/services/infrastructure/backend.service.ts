@@ -8,7 +8,6 @@ import type { RedisClient } from 'bun';
 import { type Spawn, spawn } from 'bun';
 import { Elysia } from 'elysia';
 import { rateLimit } from 'elysia-rate-limit';
-import { elysiaXSS } from 'elysia-xss';
 import { bullBoardConfig } from 'src/config/bull-board';
 import { env, type IEnv } from 'src/config/env';
 import { httpError } from 'src/config/error';
@@ -183,7 +182,6 @@ export class BackendServerService {
       .group(this.deps.env.API_PREFIX, (app) =>
         app
           .use(cors())
-          .use(elysiaXSS())
           .use([
             ...(this.deps.env.APP_ENV === APP_ENV.DEV
               ? [
